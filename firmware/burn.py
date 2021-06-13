@@ -11,25 +11,100 @@ import venv
 from burn import config
 
 
+class Board:
+    class EsptoolThread(threading.Thread):
+        def __init__(self, action, success, failure):
+            super().__init__()
+            self.action = action
+            self.success = success
+            self.failure = failure
+
+        def run(self) -> None:
+            # noinspection PyBroadException
+            try:
+                self.action()
+                self.success()
+            except Exception as e:
+                print(e)
+                self.failure()
+
+    def __init__(self, port, master):
+        from download.micropython_master.tools import pyboard as pb
+        import esptool as et
+
+        self.port = port
+        self.master = master
+        self.driver: pb = pb
+        self.toolbox: et = et
+
+    def clear(self):
+        self.EsptoolThread(
+            action=lambda: self.toolbox.main(argv=["--chip", "esp32", "--port", self.port, "erase_flash"]),
+            success=lambda: self.master.sendlog("Ereased Chip"),
+            failure=lambda: self.master.sendlog("Could not erease Chip")
+        ).start()
+
+    def write_micropython(self):
+        self.EsptoolThread(
+            action=lambda: self.toolbox.main(argv=["--chip", "esp32", "--port", self.port,
+                                                   "write_flash", "-z", "0x1000",
+                                                   "stub/esp32-idf4-20210202-v1.14.bin"]),
+            success=lambda: self.master.sendlog("Wrote Micropython"),
+            failure=lambda: self.master.sendlog("Could not write Micropython")
+        ).start()
+
+
 class Burn:
     class Application(tk.Frame):
-        class Board:
-            def __init__(self, port):
-                from download.micropython_master.tools import pyboard as pb
-                import esptool as et
+        class Controls(tk.Frame):
+            def __init__(self, master=None):
+                super().__init__(master)
+                self.master: Burn.Application = master
+                self.create_btns()
 
-                self.port = port
-                self.driver: pb = pb
-                self.toolbox: et = et
+            def clear_board(self):
+                try:
+                    self.master.connected.clear()
+                except AttributeError:
+                    self.master.sendlog("Connection not given")
 
-            def clear(self):
-                self.toolbox.main(argv=["--chip", "esp32", "--port", self.port, "erase_flash"])
+            def write_micropy(self):
+                try:
+                    self.master.connected.write_micropython()
+                except AttributeError:
+                    self.master.sendlog("Connection not given")
+
+            def get_button(self, name, action):
+                btn = tk.Button(self)
+                btn["text"] = name
+                btn["command"] = action
+                btn.pack()
+
+                return btn
+
+            def create_btns(self):
+                self.get_button(
+                    "Clear",
+                    lambda: self.clear_board()
+                )
+
+                self.get_button(
+                    "Write Python",
+                    lambda: self.write_micropy()
+                )
+
+                self.get_button(
+                    "Open Putty",
+                    lambda: os.system("putty -serial COM4 -sercfg 115200,8,n,1,N")
+                )
 
         def __init__(self, master=None):
             super().__init__(master)
             self.master = master
             self.grid()
             self.create_widgets()
+
+            self.connected: Board
 
         def create_widgets(self):
             self.connection_possibilities = tk.Text(self)
@@ -43,7 +118,11 @@ class Burn:
 
             self.log = tk.Text(self)
             self.log["state"] = "disabled"
-            self.log.grid(row=2)
+            self.log.grid(row=2, column=0)
+
+            self.controls = self.Controls(self)
+            self.controls.grid(row=2, column=1)
+
             self.sendlog("Welcome to burn.py")
             self.sendlog("Connect to Controller via widget above")
 
@@ -52,32 +131,9 @@ class Burn:
             self.log.insert(tk.END, text + "\n")
             self.log["state"] = "disabled"
 
-        class ConnectionThread(threading.Thread):
-            def __init__(self, port, connection_success, connection_failed):
-                super().__init__()
-                self.port = port
-                self.connection_success = connection_success
-                self.connection_failed = connection_failed
-
-            def run(self) -> None:
-                if os.system("venv"
-                             + os.sep + "Scripts"
-                             + os.sep + "python download"
-                             + os.sep + "micropython_master"
-                             + os.sep + "tools"
-                             + os.sep + "pyboard.py -d " + self.port + " -c 'exit()'"
-                             ) == 0:
-                    self.connection_success()
-                else:
-                    self.connection_failed()
-
         def connecttosrv(self):
-            self.sendlog("Trying to connect to " + self.connection_possibilities.get("1.0", 'end-1c'))
-            self.ConnectionThread(
-                self.connection_possibilities.get("1.0", 'end-1c'),
-                lambda: self.sendlog("Connected"),
-                lambda: self.sendlog("Failed to Connect")
-            ).start()
+            self.sendlog("Set Port to " + self.connection_possibilities.get("1.0", 'end-1c'))
+            self.connected = Board(self.connection_possibilities.get("1.0", 'end-1c'), self)
 
     def __init__(self, logger_configurated: logging.Logger):
         self.log = logger_configurated
@@ -85,6 +141,7 @@ class Burn:
 
         self.ui_root = tk.Tk()
         self.ui_root.wm_title("burn.py")
+        # noinspection PyProtectedMember
         self.ui_root.tk.call('wm', 'iconphoto', self.ui_root._w, tk.PhotoImage(file='burn/FlameV1.png'))
         self.ui = self.Application(self.ui_root)
         self.ui.mainloop()
