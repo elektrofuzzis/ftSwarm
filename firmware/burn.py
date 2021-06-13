@@ -13,6 +13,18 @@ from burn import config
 
 class Burn:
     class Application(tk.Frame):
+        class Board:
+            def __init__(self, port):
+                from download.micropython_master.tools import pyboard as pb
+                import esptool as et
+
+                self.port = port
+                self.driver: pb = pb
+                self.toolbox: et = et
+
+            def clear(self):
+                self.toolbox.main(argv=["--chip", "esp32", "--port", self.port, "erase_flash"])
+
         def __init__(self, master=None):
             super().__init__(master)
             self.master = master
