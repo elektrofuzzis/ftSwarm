@@ -338,3 +338,5 @@ Backup of *.doc*
 *.xlk
 ~$*.ppt*
 *.~vsd*
+
+firmware/download/
