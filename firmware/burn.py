@@ -78,10 +78,33 @@ class Board:
 
         return ""
 
-    def remove_files(self):
-        ls = "import uos\nfor f in uos.ilistdir(" + "" + "):  print(f[0])"
+    def list_files(self):
+        ls = "import uos\nfor f in uos.ilistdir():  print(f[0])"
 
-        print(self.command(ls))
+        self.master.sendlog("Files:")
+
+        for file in self.command(ls).split("\n"):
+            if file == "":
+                continue
+
+            self.master.sendlog(" - " + file)
+
+    def remove_files(self):
+        ls = "import uos\nfor f in uos.ilistdir():  print(f[0])"
+
+        cmd = self.command(ls)
+
+        pyb = self.driver.Pyboard(device=self.port)
+        pyb.enter_raw_repl()
+
+        for file in cmd.split("\n"):
+            if file == "" or "." not in file:
+                continue
+
+            pyb.fs_rm(file)
+
+        pyb.exit_raw_repl()
+        pyb.close()
 
 
 class Burn:
@@ -101,6 +124,12 @@ class Burn:
             def write_micropy(self):
                 try:
                     self.master.connected.write_micropython()
+                except AttributeError:
+                    self.master.sendlog("Connection not given")
+
+            def list_fw(self):
+                try:
+                    self.master.connected.list_files()
                 except AttributeError:
                     self.master.sendlog("Connection not given")
 
@@ -158,6 +187,11 @@ class Burn:
                 self.get_button(
                     "Stop running Program",
                     lambda: self.kill()
+                )
+
+                self.get_button(
+                    "List files",
+                    lambda: self.list_fw()
                 )
 
                 self.get_button(
