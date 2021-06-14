@@ -199,9 +199,10 @@ class Burn:
                     lambda: self.remove_fw()
                 )
 
-        def __init__(self, master=None):
+        def __init__(self, master=None, logger=None):
             super().__init__(master)
             self.master = master
+            self.logger = logger
             self.grid()
             self.create_widgets()
 
@@ -228,6 +229,7 @@ class Burn:
             self.sendlog("Connect to Controller via widget above")
 
         def sendlog(self, text):
+            self.logger.info("SwarmDevTool: " + text)
             self.log["state"] = "normal"
             self.log.insert(tk.END, text + "\n")
             self.log["state"] = "disabled"
@@ -237,17 +239,17 @@ class Burn:
             self.connected = Board(self.connection_possibilities.get("1.0", 'end-1c'), self)
 
     def __init__(self, logger_configurated: logging.Logger):
-        self.log = logger_configurated
-        self.log.info("Welcome to burn.py")
+        self.logger = logger_configurated
+        self.logger.info("Welcome to burn.py")
 
         self.ui_root = tk.Tk()
         self.ui_root.wm_title("burn.py")
         # noinspection PyProtectedMember
         self.ui_root.tk.call('wm', 'iconphoto', self.ui_root._w, tk.PhotoImage(file='burn/FlameV1.png'))
-        self.ui = self.Application(self.ui_root)
+        self.ui = self.Application(self.ui_root, self.logger)
         self.ui.mainloop()
 
-        self.log.info("Bye from burn.py")
+        self.logger.info("Bye from burn.py")
 
 
 class Bootstrap:
