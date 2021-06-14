@@ -269,6 +269,7 @@ class Bootstrap:
             self.install_packages()
             self.download_all()
             os.system("venv" + os.sep + "Scripts" + os.sep + "python burn.py -a")
+            os.system("venv" + os.sep + "bin" + os.sep + "python burn.py -a")
             self.deactivate()
 
     def activate(self):
