@@ -1,4 +1,5 @@
 import argparse
+import subprocess
 import logging
 import os
 import sys
@@ -11,6 +12,7 @@ import venv
 from burn import config
 
 
+# noinspection PyUnresolvedReferences
 class Board:
     class EsptoolThread(threading.Thread):
         def __init__(self, action, success, failure):
@@ -53,6 +55,34 @@ class Board:
             failure=lambda: self.master.sendlog("Could not write Micropython")
         ).start()
 
+    def sigkill(self):
+        pyb = self.driver.Pyboard(device=self.port)
+        pyb.enter_raw_repl()
+        pyb.exit_raw_repl()
+        pyb.close()
+
+        self.master.sendlog("Killed Program")
+
+    def command(self, cmd) -> str:
+        try:
+            pyb = self.driver.Pyboard(device=self.port)
+            pyb.enter_raw_repl()
+
+            out = pyb.exec(cmd).decode('UTF-8').replace('\r', '')
+
+            pyb.exit_raw_repl()
+            pyb.close()
+            return out
+        except self.driver.PyboardError as error:
+            self.master.sendlog("A Pyboard Error occured: " + str(error))
+
+        return ""
+
+    def remove_files(self):
+        ls = "import uos\nfor f in uos.ilistdir(" + "" + "):  print(f[0])"
+
+        print(self.command(ls))
+
 
 class Burn:
     class Application(tk.Frame):
@@ -71,6 +101,33 @@ class Burn:
             def write_micropy(self):
                 try:
                     self.master.connected.write_micropython()
+                except AttributeError:
+                    self.master.sendlog("Connection not given")
+
+            def remove_fw(self):
+                try:
+                    self.master.connected.remove_files()
+                except AttributeError:
+                    self.master.sendlog("Connection not given")
+
+            def kill(self):
+                try:
+                    self.master.connected.sigkill()
+                except AttributeError:
+                    self.master.sendlog("Connection not given")
+
+            def openputty(self):
+                try:
+                    if hasattr(self, "putty"):
+                        self.putty.kill()
+
+                    self.putty = subprocess.Popen(
+                        [
+                            "putty",
+                            "-serial", self.master.connected.port,
+                            "-sercfg", "115200,8,n,1,N"
+                        ]
+                    )
                 except AttributeError:
                     self.master.sendlog("Connection not given")
 
@@ -95,7 +152,17 @@ class Burn:
 
                 self.get_button(
                     "Open Putty",
-                    lambda: os.system("putty -serial COM4 -sercfg 115200,8,n,1,N")
+                    lambda: self.openputty()
+                )
+
+                self.get_button(
+                    "Stop running Program",
+                    lambda: self.kill()
+                )
+
+                self.get_button(
+                    "Remove Files",
+                    lambda: self.remove_fw()
                 )
 
         def __init__(self, master=None):
