@@ -280,9 +280,11 @@ class Bootstrap:
             ).create("venv")
 
         os.system("venv" + os.sep + "Scripts" + os.sep + "activate")
+        os.system("venv" + os.sep + "bin" + os.sep + "activate")
 
     def deactivate(self):
         os.system("venv" + os.sep + "Scripts" + os.sep + "deactivate")
+        os.system("venv" + os.sep + "bin" + os.sep + "deactivate")
 
     def install_packages(self):
         self.logger.info("Installing Packages")
@@ -291,6 +293,12 @@ class Bootstrap:
         os.system("venv" + os.sep + "Scripts" + os.sep + "python -m pip install docopt==0.6.2")
         os.system("venv" + os.sep + "Scripts" + os.sep + "python -m pip install adafruit-ampy==1.0.5")
         os.system("venv" + os.sep + "Scripts" + os.sep + "python -m pip install requests")
+
+        os.system("venv" + os.sep + "bin" + os.sep + "python -m pip install --upgrade pip")
+        os.system("venv" + os.sep + "bin" + os.sep + "python -m pip install esptool")
+        os.system("venv" + os.sep + "bin" + os.sep + "python -m pip install docopt==0.6.2")
+        os.system("venv" + os.sep + "bin" + os.sep + "python -m pip install adafruit-ampy==1.0.5")
+        os.system("venv" + os.sep + "bin" + os.sep + "python -m pip install requests")
 
     def download_all(self):
         try:
