@@ -138,6 +138,8 @@ class Board:
         pyb.exit_raw_repl()
         pyb.close()
 
+        self.master.sendlog("Deleted all files")
+
     def remove_file(self, file):
         pyb = self.driver.Pyboard(device=self.port)
         pyb.enter_raw_repl()
