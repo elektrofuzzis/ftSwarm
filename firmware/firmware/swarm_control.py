@@ -1,79 +1,6 @@
-from machine import *
 import time
+from machine import Pin, ADC
 import ssd1306
-
-
-class Joystick:
-    state_x = 0
-    state_y = 0
-    state_sw = False
-
-    cache_x = 0
-    cache_y = 0
-    cache_sw = False
-
-    def __init__(self, px, py, psw):
-        self.xa = ADC(Pin(px, Pin.IN))
-        self.ya = ADC(Pin(py, Pin.IN))
-        self.sw = Pin(psw, Pin.IN)
-
-        self.ya.atten(ADC.ATTN_11DB)
-        self.xa.atten(ADC.ATTN_11DB)
-
-    def digital_value_x(self):
-        val = self.xa.read()
-        if val == 0:
-            return -1
-        elif val == 4095:
-            return 1
-        else:
-            return 0
-
-    def digital_value_y(self):
-        val = self.ya.read()
-        if val == 0:
-            return -1
-        elif val == 4095:
-            return 1
-        else:
-            return 0
-
-    def digital_value_sw(self):
-        # noinspection PyArgumentList
-        return self.sw.value() != 1
-
-    def digital_value_sw_change(self):
-        actual_value = self.digital_value_sw()
-
-        if self.state_sw != actual_value:
-            self.state_sw = actual_value
-            self.cache_sw = actual_value
-            return actual_value
-        else:
-            self.cache_sw = False
-            return False
-
-    def digital_value_x_change(self):
-        actual_value = self.digital_value_x()
-
-        if self.state_x != actual_value:
-            self.state_x = actual_value
-            self.cache_x = actual_value
-            return actual_value
-        else:
-            self.cache_x = 0
-            return 0
-
-    def digital_value_y_change(self):
-        actual_value = self.digital_value_y()
-
-        if self.state_y != actual_value:
-            self.state_y = actual_value
-            self.cache_y = actual_value
-            return actual_value
-        else:
-            self.cache_y = 0
-            return 0
 
 
 class Oled:
@@ -184,3 +111,76 @@ class Menu:
 
     def get_current(self):
         return self._local
+
+
+class Joystick:
+    state_x = 0
+    state_y = 0
+    state_sw = False
+
+    cache_x = 0
+    cache_y = 0
+    cache_sw = False
+
+    def __init__(self, px, py, psw):
+        self.xa = ADC(Pin(px, Pin.IN))
+        self.ya = ADC(Pin(py, Pin.IN))
+        self.sw = Pin(psw, Pin.IN)
+
+        self.ya.atten(ADC.ATTN_11DB)
+        self.xa.atten(ADC.ATTN_11DB)
+
+    def digital_value_x(self):
+        val = self.xa.read()
+        if val == 0:
+            return -1
+        elif val == 4095:
+            return 1
+        else:
+            return 0
+
+    def digital_value_y(self):
+        val = self.ya.read()
+        if val == 0:
+            return -1
+        elif val == 4095:
+            return 1
+        else:
+            return 0
+
+    def digital_value_sw(self):
+        # noinspection PyArgumentList
+        return self.sw.value() != 1
+
+    def digital_value_sw_change(self):
+        actual_value = self.digital_value_sw()
+
+        if self.state_sw != actual_value:
+            self.state_sw = actual_value
+            self.cache_sw = actual_value
+            return actual_value
+        else:
+            self.cache_sw = False
+            return False
+
+    def digital_value_x_change(self):
+        actual_value = self.digital_value_x()
+
+        if self.state_x != actual_value:
+            self.state_x = actual_value
+            self.cache_x = actual_value
+            return actual_value
+        else:
+            self.cache_x = 0
+            return 0
+
+    def digital_value_y_change(self):
+        actual_value = self.digital_value_y()
+
+        if self.state_y != actual_value:
+            self.state_y = actual_value
+            self.cache_y = actual_value
+            return actual_value
+        else:
+            self.cache_y = 0
+            return 0

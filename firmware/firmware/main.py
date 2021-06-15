@@ -1,16 +1,17 @@
-from local import *
-from bundleduis import *
+from swarm_control import *
+from build_in_uis import *
+from machine import *
 from ser import SerialIn
+import json
 import time
 import uos
 
 
 class Application:
-    teardown_counter = 0
-
     def __init__(self):
-        self.i2c = SoftI2C(scl=Pin(22), sda=Pin(21))
+        self.load_config()
 
+        self.i2c = SoftI2C(scl=Pin(22), sda=Pin(21))
         self.serial = SerialIn(self)
 
         self.joystick1 = Joystick(32, 33, 26)
@@ -33,7 +34,7 @@ class Application:
             self.oled.update()
 
             if self.teardown_request:
-                self.oled.teardown()
+                self.teardown()
                 if self.should_restart:
                     self.teardown_request = False
                     self.should_restart = False
@@ -42,6 +43,12 @@ class Application:
     def restart(self):
         self.teardown_request = True
         self.should_restart = True
+
+    def teardown(self):
+        self.oled.teardown()
+
+    def load_config(self):
+        json.load(open(""))
 
 
 app = Application()
@@ -57,8 +64,6 @@ if __name__ == '__main__':
         mods.append(mod)
 
     app.menu.append_menu_item(["Bluescreen", draw_bluescreen])
-    app.menu.append_menu_item(["UI 2", draw_initial2])
-    app.menu.append_menu_item(["UI 3", draw_initial3])
     app.menu.append_menu_item(["Joystick", draw_jstickctrl])
     app.menu.append_menu_item(["Close", draw_close])
 

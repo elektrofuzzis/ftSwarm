@@ -2,14 +2,6 @@ import ssd1306
 import main
 
 
-def draw_initial2(oled_class, oled: ssd1306.SSD1306_I2C):
-    oled_class.show_title("Initial UI2")
-
-
-def draw_initial3(oled_class, oled: ssd1306.SSD1306_I2C):
-    oled_class.show_title("Initial UI3")
-
-
 def draw_close(oled_class, oled: ssd1306.SSD1306_I2C):
     main.app.teardown_request = True
     main.app.oled.show_title(str(main.app.teardown_counter))
