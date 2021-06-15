@@ -5,6 +5,8 @@ import os
 import sys
 import threading
 import tkinter as tk
+from tkinter import simpledialog as mbox
+from tkinter import filedialog
 from zipfile import ZipFile
 
 import venv
@@ -29,6 +31,19 @@ class Board:
             except Exception as e:
                 print(e)
                 self.failure()
+
+    class ProcessBegin(threading.Thread):
+        def __init__(self, process, error):
+            super().__init__()
+            self.action = process
+            self.error = error
+
+        def run(self) -> None:
+            # noinspection PyBroadException
+            try:
+                self.action()
+            except Exception as e:
+                self.error(e)
 
     def __init__(self, port, master):
         from download.micropython_master.tools import pyboard as pb
@@ -57,7 +72,7 @@ class Board:
 
     def sigkill(self):
         pyb = self.driver.Pyboard(device=self.port)
-        pyb.enter_raw_repl()
+        pyb.enter_raw_repl(soft_reset=False)
         pyb.exit_raw_repl()
         pyb.close()
 
@@ -89,6 +104,19 @@ class Board:
 
             self.master.sendlog(" - " + file)
 
+    def list_programs(self):
+        ls = "import uos\nfor f in uos.ilistdir('programs'):  print(f[0])"
+
+        progs = []
+
+        for file in self.command(ls).split("\n"):
+            if file == "":
+                continue
+
+            progs.append(file)
+
+        return progs
+
     def remove_files(self):
         ls = "import uos\nfor f in uos.ilistdir():  print(f[0])"
 
@@ -98,11 +126,59 @@ class Board:
         pyb.enter_raw_repl()
 
         for file in cmd.split("\n"):
-            if file == "" or "." not in file:
+            if file == "":
+                continue
+
+            if "." not in file:
+                pyb.fs_rmdir(file)
                 continue
 
             pyb.fs_rm(file)
 
+        pyb.exit_raw_repl()
+        pyb.close()
+
+    def remove_file(self, file):
+        pyb = self.driver.Pyboard(device=self.port)
+        pyb.enter_raw_repl()
+        pyb.fs_rm(file)
+        pyb.exit_raw_repl()
+        pyb.close()
+
+    def upload_file(self, local, remote):
+        pyb = self.driver.Pyboard(device=self.port)
+        pyb.enter_raw_repl()
+        pyb.fs_put(local, "programs/" + remote)
+        pyb.exit_raw_repl()
+        pyb.close()
+
+    def upload_files(self):
+        pyb = self.driver.Pyboard(device=self.port)
+        pyb.enter_raw_repl()
+
+        files = os.listdir("firmware")
+
+        for file in files:
+            if file == "" or "." not in file:
+                pyb.fs_mkdir(file)
+                continue
+
+            pyb.fs_put("firmware" + os.sep + file, file)
+
+        pyb.exit_raw_repl()
+        pyb.close()
+
+    def bootstrap(self, file):
+        pyb = self.driver.Pyboard(device=self.port)
+        pyb.enter_raw_repl(soft_reset=False)
+        pyb.exec("""f = open("boot.py", "w")\r\nf.write("exec(open('""" + file + """').read())")\r\nf.close()""")
+        pyb.exit_raw_repl()
+        pyb.close()
+
+    def start(self, file):
+        pyb = self.driver.Pyboard(device=self.port)
+        pyb.enter_raw_repl(soft_reset=False)
+        pyb.exec("exec(open('" + file + "').read())")
         pyb.exit_raw_repl()
         pyb.close()
 
@@ -112,6 +188,7 @@ class Burn:
         class Controls(tk.Frame):
             def __init__(self, master=None):
                 super().__init__(master)
+                self.program_config = {}
                 self.master: Burn.Application = master
                 self.create_btns()
 
@@ -139,6 +216,61 @@ class Burn:
                 except AttributeError:
                     self.master.sendlog("Connection not given")
 
+            def upload_fw(self):
+                try:
+                    self.master.connected.upload_files()
+                except AttributeError:
+                    self.master.sendlog("Connection not given")
+
+            def bootstrap_fw(self):
+                try:
+                    self.master.connected.bootstrap("main.py")
+                except AttributeError:
+                    self.master.sendlog("Connection not given")
+
+            def start_fw(self):
+                try:
+                    self.master.connected.ProcessBegin(
+                        lambda: self.master.connected.start("main.py"),
+                        lambda e: self.master.sendlog("Error while executing: " + str(e))
+                    ).start()
+                except AttributeError:
+                    self.master.sendlog("Connection not given")
+
+            def program_list(self):
+                try:
+                    prgs = self.master.connected.list_programs()
+                    self.master.sendlog("Programs:")
+                    for x in prgs:
+                        self.master.sendlog(" - " + x)
+                except AttributeError:
+                    self.master.sendlog("Connection not given")
+
+            def program_remove(self):
+                try:
+                    prgs = self.master.connected.list_programs()
+                    prg = mbox.askstring("Filename", "Choose the Filename of the program")
+
+                    if prg not in prgs:
+                        self.master.sendlog("File not found")
+                        return
+
+                    self.master.connected.remove_file("programs/" + prg)
+                    self.master.sendlog("Deleted programs/" + prg)
+
+                except AttributeError:
+                    self.master.sendlog("Connection not given")
+
+            def program_upload(self):
+                try:
+                    prg = filedialog.askopenfilename()
+
+                    self.master.connected.upload_file(prg, prg.split("/")[-1])
+                    self.master.sendlog("Uploaded programs/" + prg.split("/")[-1])
+
+                except AttributeError:
+                    self.master.sendlog("Connection not given")
+
             def kill(self):
                 try:
                     self.master.connected.sigkill()
@@ -161,7 +293,7 @@ class Burn:
                     self.master.sendlog("Connection not given")
 
             def get_button(self, name, action):
-                btn = tk.Button(self)
+                btn = tk.Button(self, width=20)
                 btn["text"] = name
                 btn["command"] = action
                 btn.pack()
@@ -199,6 +331,36 @@ class Burn:
                     lambda: self.remove_fw()
                 )
 
+                self.get_button(
+                    "Upload Firmware",
+                    lambda: self.upload_fw()
+                )
+
+                self.get_button(
+                    "Bootstrap Firmware",
+                    lambda: self.bootstrap_fw()
+                )
+
+                self.get_button(
+                    "Start Firmware",
+                    lambda: self.start_fw()
+                )
+
+                self.get_button(
+                    "Program List",
+                    lambda: self.program_list()
+                )
+
+                self.get_button(
+                    "Program Remove",
+                    lambda: self.program_remove()
+                )
+
+                self.get_button(
+                    "Program Upload",
+                    lambda: self.program_upload()
+                )
+
         def __init__(self, master=None, logger=None):
             super().__init__(master)
             self.master = master
@@ -213,7 +375,7 @@ class Burn:
             self.connection_possibilities["height"] = 1
             self.connection_possibilities.grid(row=1, column=0)
 
-            self.connect = tk.Button(self)
+            self.connect = tk.Button(self, width=20)
             self.connect["text"] = "Connect"
             self.connect["command"] = self.connecttosrv
             self.connect.grid(row=1, column=1)
@@ -236,7 +398,7 @@ class Burn:
 
         def connecttosrv(self):
             self.sendlog("Set Port to " + self.connection_possibilities.get("1.0", 'end-1c'))
-            self.connected = Board(self.connection_possibilities.get("1.0", 'end-1c'), self)
+            self.connected = Board(self.connection_possibilities.get("1.0", 'end-1c'), master=self)
 
     def __init__(self, logger_configurated: logging.Logger):
         self.logger = logger_configurated
