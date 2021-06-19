@@ -427,10 +427,10 @@ class Bootstrap:
         args = parser.parse_args()
 
         if args.use_active_env > 0:
+            self.install_packages()
             Burn(configure_logger("burn.py"))
         else:
             self.activate()
-            self.install_packages()
             self.download_all()
             os.system("venv" + os.sep + "Scripts" + os.sep + "python burn.py -a")
             os.system("venv" + os.sep + "bin" + os.sep + "python burn.py -a")
