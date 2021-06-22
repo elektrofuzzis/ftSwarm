@@ -48,7 +48,7 @@ class Application:
         self.oled.teardown()
 
     def load_config(self):
-        json.load(open(""))
+        json.load(open("config.json"))
 
 
 app = Application()

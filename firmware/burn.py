@@ -5,6 +5,7 @@ import os
 import sys
 import threading
 import tkinter as tk
+import json
 from tkinter import simpledialog as mbox
 from tkinter import filedialog
 from zipfile import ZipFile
@@ -77,6 +78,46 @@ class Board:
         pyb.close()
 
         self.master.sendlog("Killed Program")
+
+    def setmode(self, mid):
+        def set_mode(cfg):
+            cfg["mode"] = mid
+
+        self.editcfg(set_mode)
+
+        self.master.sendlog("Set mode to " + str(mid))
+
+    def setautostart(self, autostart):
+        def set_autostart(cfg):
+            cfg["autostart"] = autostart
+
+        self.editcfg(set_autostart)
+
+        self.master.sendlog("Set Autostart to " + str(autostart))
+
+    def setperipherals(self, peripherals):
+        def set_peripherals(cfg):
+            cfg["peripherals"] = peripherals
+
+        self.editcfg(set_peripherals)
+
+        self.master.sendlog("Set Peripherals to " + str(mid))
+
+    def editcfg(self, edit):
+        pyb = self.driver.Pyboard(device=self.port)
+        pyb.enter_raw_repl(soft_reset=False)
+        pyb.fs_get("config.json", "tmp/config.json")
+
+        cfg = json.load(open("tmp/config.json"))
+
+        edit(cfg)
+
+        with open('tmp/config.json', 'w') as f:
+            json.dump(cfg, f)
+
+        pyb.fs_put("tmp/config.json", "config.json")
+        pyb.exit_raw_repl()
+        pyb.close()
 
     def command(self, cmd) -> str:
         try:
@@ -279,6 +320,27 @@ class Burn:
                 except AttributeError:
                     self.master.sendlog("Connection not given")
 
+            def set_mode(self):
+                try:
+                    tid = mbox.askinteger("Mode", "1: Kelda\n2: Wee Free Man")
+                    self.master.connected.setmode(tid - 1)
+                except AttributeError:
+                    self.master.sendlog("Connection not given")
+
+            def set_autostart(self):
+                try:
+                    astart = mbox.askstring("Autostart", "Enter File Name")
+                    self.master.connected.setautostart(astart)
+                except AttributeError:
+                    self.master.sendlog("Connection not given")
+
+            def set_peripherals(self):
+                try:
+                    pid = mbox.askinteger("Peripherals", "1: Native (Ohne Zusatzgerät)\n2: SwarmJST\n3: SwarmControl")
+                    self.master.connected.setperipherals(pid - 1)
+                except AttributeError:
+                    self.master.sendlog("Connection not given")
+
             def openputty(self):
                 try:
                     if hasattr(self, "putty"):
@@ -361,6 +423,21 @@ class Burn:
                 self.get_button(
                     "Program Upload",
                     lambda: self.program_upload()
+                )
+
+                self.get_button(
+                    "Set Mode",
+                    lambda: self.set_mode()
+                )
+
+                self.get_button(
+                    "Set Autostart",
+                    lambda: self.set_autostart()
+                )
+
+                self.get_button(
+                    "Set Peripherals",
+                    lambda: self.set_peripherals()
                 )
 
         def __init__(self, master=None, logger=None):
@@ -471,6 +548,12 @@ class Bootstrap:
             self.logger.debug("Download Directory created")
         except FileExistsError:
             self.logger.debug("Download Directory exists")
+
+        try:
+            os.mkdir("tmp")
+            self.logger.debug("Temp Directory created")
+        except FileExistsError:
+            self.logger.debug("Temp Directory exists")
 
         if not os.path.isdir("download" + os.sep + "direct_downloads"):
             os.mkdir("download" + os.sep + "direct_downloads")

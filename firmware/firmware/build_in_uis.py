@@ -4,7 +4,7 @@ import main
 
 def draw_close(oled_class, oled: ssd1306.SSD1306_I2C):
     main.app.teardown_request = True
-    main.app.oled.show_title(str(main.app.teardown_counter))
+    main.app.oled.show_title("Shutdown")
 
 
 def draw_jstickctrl(oled_class, oled: ssd1306.SSD1306_I2C):
