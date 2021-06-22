@@ -340,3 +340,4 @@ Backup of *.doc*
 *.~vsd*
 
 firmware/download/
+firmware/tmp/
