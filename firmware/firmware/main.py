@@ -14,14 +14,26 @@ class Application:
         self.i2c = SoftI2C(scl=Pin(22), sda=Pin(21))
         self.serial = SerialIn(self)
 
-        self.joystick1 = Joystick(32, 33, 26)
-        self.menu = Menu()
+        cfg = self.load_config()
+        self.mode = cfg["mode"]
+        self.autostart = cfg["autostart"]
+        self.peripherals = cfg["peripherals"]
 
-        self.oled = Oled(
-            self.i2c,
-            self.joystick1,
-            self.menu
-        )
+        self.control = self.peripherals == 2 and self.autostart != "" and self.mode == 0
+
+        if self.control:
+            self.joystick1 = Joystick(32, 33, 26)
+            self.menu = Menu()
+
+            self.menu.append_menu_item(["Bluescreen", draw_bluescreen])
+            self.menu.append_menu_item(["Joystick", draw_jstickctrl])
+            self.menu.append_menu_item(["Close", draw_close])
+
+            self.oled = Oled(
+                self.i2c,
+                self.joystick1,
+                self.menu
+            )
 
         self.teardown_request = False
         self.should_restart = False
@@ -31,7 +43,9 @@ class Application:
             time.sleep(0.2)
 
             self.serial.update()
-            self.oled.update()
+
+            if self.control:
+                self.oled.update()
 
             if self.teardown_request:
                 self.teardown()
@@ -45,10 +59,11 @@ class Application:
         self.should_restart = True
 
     def teardown(self):
-        self.oled.teardown()
+        if self.control:
+            self.oled.teardown()
 
     def load_config(self):
-        json.load(open("config.json"))
+        return json.load(open("config.json"))
 
 
 app = Application()
@@ -62,9 +77,5 @@ if __name__ == '__main__':
         mod.init(app)
 
         mods.append(mod)
-
-    app.menu.append_menu_item(["Bluescreen", draw_bluescreen])
-    app.menu.append_menu_item(["Joystick", draw_jstickctrl])
-    app.menu.append_menu_item(["Close", draw_close])
 
     app.start()
