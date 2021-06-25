@@ -4,6 +4,12 @@ from error_defs import *
 
 class FtSwarmObject:
     def __init__(self, adress, *ports):
+        """
+        The basic object that every Object extends from
+        :param adress: The Adress of the FtSwarm. Uses local FtSwam if adress is "local". Else use the MAC adress.
+        :param ports: The corresponding Port(s) on the connected FtSwarm.
+        """
+
         self.__local = adress == "local"
 
         self.adress = adress
@@ -21,6 +27,12 @@ class FtSwarmMotor(FtSwarmObject):
     __PWM_M1, __PWM_M2 = range(2)
 
     def __init__(self, adress, motor):
+        """
+        Represents a local or remote Motor
+        :param adress: The Adress of the FtSwarm. Uses local FtSwam if adress is "local". Else use the MAC adress.
+        :param motor: The corresponding Port on the connected FtSwarm. Either FtSwarmMotor.M1 or FtSwarmMotor.M2
+        """
+
         super().__init__(adress, motor)
         if not self.is_local():
             # Remote Init Code
@@ -31,7 +43,7 @@ class FtSwarmMotor(FtSwarmObject):
 
         self.__in1 = None
         self.__in2 = None
-        self.__pwmChannel = None
+        FtSwarmMotor.__pwmChannel = None
 
         # Pin modes and pin set
         self.__sleep = Pin(5, mode=Pin.OUT)
@@ -39,12 +51,12 @@ class FtSwarmMotor(FtSwarmObject):
         if self.motor == FtSwarmMotor.M1:
             self.__in1 = Pin(23, mode=Pin.OUT)
             self.__in2 = Pin(4, mode=Pin.OUT)
-            self.__pwmChannel = FtSwarmMotor.__PWM_M1
+            FtSwarmMotor.__pwmChannel = FtSwarmMotor.__PWM_M1
 
         elif self.motor == FtSwarmMotor.M2:
             self.__in1 = Pin(2, mode=Pin.OUT)
             self.__in2 = Pin(0, mode=Pin.OUT)
-            self.__pwmChannel = FtSwarmMotor.__PWM_M2
+            FtSwarmMotor.__pwmChannel = FtSwarmMotor.__PWM_M2
 
         else:
             self.last_error = FTSWARM_NO_PORT
@@ -122,6 +134,11 @@ class FtSwarmDigitalInput(FtSwarmObject):
     FTSWARM_UNKNOWN = 255
 
     def __init__(self, adress, port):
+        """
+        Represents a local or remote Digital Input
+        :param adress: The Adress of the FtSwarm. Uses local FtSwam if adress is "local". Else use the MAC adress.
+        :param port: The corresponding Port on the connected FtSwarm. Can be FtSwarmDigitalInput.A1 - A4
+        """
         super().__init__(adress, port)
 
         self.last_error = FTSWARM_OK
