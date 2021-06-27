@@ -169,3 +169,69 @@ class FtSwarmDigitalInput(FtSwarmObject):
 
     def is_low(self):
         return self.get_state() == 0
+
+
+class FtSwarmSwitch(FtSwarmObject):
+    FTSWARM_PRESSED = 0
+    FTSWARM_RELEASED = 1
+    FTSWARM_UNKNOWN = 255
+
+    FTSWARM_S1 = 0
+    FTSWARM_S2 = 1
+    FTSWARM_S3 = 2
+    FTSWARM_S4 = 3
+    FTSWARM_F1 = 4
+    FTSWARM_F2 = 5
+    FTSWARM_J1 = 6
+    FTSWARM_J2 = 7
+
+    __HC165_LOAD = 18
+    __HC165_CLKINH = 19
+
+    def __init__(self, adress, port):
+        super().__init__(adress, port)
+
+        if self.is_local():
+            # local startup logic
+            self.__HC165_LOAD_PIN = Pin(self.__HC165_LOAD, mode=Pin.OUT)
+            self.__HC165_CLKINH_PIN = Pin(self.__HC165_CLKINH, mode=Pin.OUT)
+
+            self.__HC165_LOAD_PIN.value(1)
+            self.__HC165_CLKINH_PIN.value(1)
+
+            self.__spi = SPI(-1, polarity=1, phase=1, firstbit=SPI.MSB, sck=Pin(14), mosi=Pin(12), miso=Pin(13))
+
+    def __get_hc165(self):
+        # Load Data into Register
+        self.__HC165_LOAD_PIN.value(0)
+        time.sleep(0.001)  # Fix Timing: 1 ms
+        self.__HC165_LOAD_PIN.value(1)
+
+        time.sleep(0.001)  # Just to be safe on timing: 1 ms
+
+        # transfer data
+        self.__HC165_LOAD_PIN.value(0)
+        hc165_data = self.__spi.read(1)  # Get Data
+        self.__HC165_LOAD_PIN.value(1)
+
+        return hc165_data
+
+    def get_state(self):
+        if self.is_local():
+            # Local read
+            hc165 = self.__get_hc165()
+
+            if hc165 & (1 << self.ports[0]):
+                return FtSwarmSwitch.FTSWARM_PRESSED
+            else:
+                return FtSwarmSwitch.FTSWARM_RELEASED
+
+        else:
+            # Remote Read
+            return FtSwarmSwitch.FTSWARM_UNKNOWN
+
+    def is_pressed(self):
+        return self.get_state() == FtSwarmSwitch.FTSWARM_PRESSED
+
+    def is_released(self):
+        return self.get_state() == FtSwarmSwitch.FTSWARM_RELEASED
