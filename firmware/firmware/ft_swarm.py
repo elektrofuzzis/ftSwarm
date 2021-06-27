@@ -189,6 +189,11 @@ class FtSwarmSwitch(FtSwarmObject):
     __HC165_CLKINH = 19
 
     def __init__(self, adress, port):
+        """
+        Represents a switch using the internal shift register hcl165
+        :param adress: The Adress of the FtSwarm. Uses local FtSwam if adress is "local". Else use the MAC adress.
+        :param port: FTSWARM_S1, FTSWARM_S2, FTSWARM_S3, FTSWARM_S4, FTSWARM_F1, FTSWARM_F2, FTSWARM_J1 or FTSWARM_J2
+        """
         super().__init__(adress, port)
 
         if self.is_local():
