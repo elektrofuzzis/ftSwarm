@@ -101,7 +101,7 @@ class Board:
 
         self.editcfg(set_peripherals)
 
-        self.master.sendlog("Set Peripherals to " + str(mid))
+        self.master.sendlog("Set Peripherals to " + str(peripherals))
 
     def editcfg(self, edit):
         pyb = self.driver.Pyboard(device=self.port)
