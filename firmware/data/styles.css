@@ -1,0 +1,197 @@
+* {
+    font-family: Trebuchet, sans-serif;
+}
+
+html {
+    background: rgb(13, 157, 253);
+    background: linear-gradient(45deg, rgb(19, 95, 145) 35%, rgb(77, 31, 150) 100%);
+    background-size: 100%;
+    min-height: 100%;
+}
+
+body {
+    background: transparent;
+    color: #fff;
+}
+
+.center {
+    width: 100%;
+    text-align: right;
+}
+
+.title {
+    fill: white!important;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+th, td {
+    text-align: right;
+    padding: 4px 4px;
+}
+
+.innerFields {
+    background-color: white;
+    border-color: transparent;
+    border-radius: .375rem;
+    padding: 1.5rem;
+    margin: .3rem;
+    color: black;
+}
+
+.innerFields img {
+    height: 25px !important;
+    width: 25px !important;
+    border-radius: 50%;
+    padding: 10%;
+}
+
+.first {
+    width: 80%;
+    float: left;
+}
+
+.last {
+    width: 40px;
+    float: right;
+}
+
+input {
+    border: none;
+    color: #F7F9F9;
+    text-align: right;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    width: 50px;
+}
+
+input.on {
+    text-align: right;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    background-color: red;
+}
+
+input.off {
+    text-align: right;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    background-color: green;
+}
+
+input.radio {
+    text-align: left;
+}
+
+label.radio {
+    text-align: left;
+}
+
+fieldset {
+    text-align: left;
+}
+
+input.slider {
+    vertical-align: center;
+    width: 100%;
+}
+
+.fields {
+    width: 95%;
+    margin-right: 2%;
+    margin-left: 2%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.type-input {
+    width: 20%;
+    text-align: left;
+    min-width: 200px;
+}
+
+.servo {
+    width: calc(44%) !important;
+}
+
+.swarm {
+    border-radius: 1.5rem;
+    font-size: 20px;
+    border: 10px white solid;
+}
+
+em {
+    font-style: normal;
+}
+
+.blue {
+    background-color: #0d6efd;
+}
+
+.indigo {
+    background-color: #6610f2;
+}
+
+.purple {
+    background-color: #6f42c1;
+}
+
+.pink {
+    background-color: #d63384;
+}
+
+.red {
+    background-color: #dc3545;
+}
+
+.orange {
+    background-color: #fd7e14;
+}
+
+.yellow {
+    background-color: #ffc107;
+}
+
+.green {
+    background-color: #198754;
+}
+
+.teal {
+    background-color: #20c975;
+}
+
+.cyan {
+    background-color: #0dcaf0;
+}
+
+.in {
+    text-align: left!important;
+}
+
+.muted-upper {
+    text-transform: uppercase;
+    font-size: small;
+    font-weight: bold;
+    color: #626262;
+}
+
+.muted-upper-big {
+    text-transform: uppercase;
+    font-size: medium;
+    font-weight: bold;
+    color: #626262;
+}
+
+.select-motor {
+    background-color: #ffffff;
+    border: none;
+    user-select: none;
+    -webkit-user-drag: none;
+}
