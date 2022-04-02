@@ -724,6 +724,7 @@ void SwOSJoystick::jsonize( JSONize *json, uint8_t id) {
   SwOSIO::jsonize(json, id);
   json->variable("valueLR", _lastLR);
   json->variable("valueFB", _lastFB);
+  json->variable("button", static_cast<SwOSSwarmControl *>(_ctrl)->button[6+_port]->getState());
   json->endObject();
 }
 
@@ -1593,7 +1594,7 @@ void SwOSSwarmControl::jsonize( JSONize *json, uint8_t id) {
 
   for (uint8_t i=0; i<4; i++) { input[i]->jsonize( json, id ); }
   for (uint8_t i=0; i<2; i++) { actor[i]->jsonize( json, id ); }
-  for (uint8_t i=0; i<8; i++) { button[i]->jsonize( json, id ); }
+  for (uint8_t i=0; i<6; i++) { button[i]->jsonize( json, id ); }
   for (uint8_t i=0; i<2; i++) { joystick[i]->jsonize( json, id ); }
   if (gyro)  { gyro->jsonize(json, id); }
 
