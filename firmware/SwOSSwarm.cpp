@@ -96,7 +96,7 @@ void readTask( void *parameter ) {
  *
  ***************************************************/
 
-void SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
+FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 
   if (verbose) printf("\n\nftSwarmOS 0.10\n\n(C) Christian Bergschneider & Stefan Fuss\n\nPress any key to enter bios settings.\n");
  
@@ -108,8 +108,13 @@ void SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 	if (nvs.controlerType == FTSWARM ) {
 		Ctrl[maxCtrl] = new SwOSSwarmJST(     nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda );
 	} else {
-		Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda );
+		Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda, nvs.joyZero );
 	}
+
+  // Open NVS again & load alias names
+  nvs_handle_t my_handle;
+  ESP_ERROR_CHECK( nvs_open("ftSwarm", NVS_READWRITE, &my_handle) );
+  myOSSwarm.Ctrl[0]->loadAliasFromNVS( my_handle );
 
   // now I can visualize my state
   setState( BOOTING );
@@ -143,8 +148,8 @@ void SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
     int keys = 0;
     for (uint8_t i=0; i<20; i++ ) {
 
-      // connected?
-      if (WiFi.status() == WL_CONNECTED) break;
+    // connected?
+    if (WiFi.status() == WL_CONNECTED) break;
 
       // any key ?
       uart_get_buffered_data_len( UART_NUM_0, (size_t*)&keys);
@@ -163,7 +168,7 @@ void SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 
     // any key?
     if ( keys > 0 ) {
-      printf( "\n\nStarting setup..\n" );
+      printf( "\nStarting setup..\n" );
       ftSwarm.setup();
       ESP.restart();
     }
@@ -180,12 +185,12 @@ void SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
     Ctrl[0]->IP = WiFi.localIP();
   }
 
-  if (verbose) printf("\n\nhostname: %s\nip-address: %s\n", Ctrl[0]->getHostname(), Ctrl[0]->IP.toString() );
+  if (verbose) printf("hostname: %s\nip-address: %s\n", Ctrl[0]->getHostname(), Ctrl[0]->IP.toString() );
 
   // Init ESP-NOW
   if (!SwOSStartCommunication( nvs.swarmSecret, nvs.swarmPIN )) {
     if (verbose) printf("Error initializing ESP-NOW\n");
-    return;
+    return 0;
   }
 
   // now I need to find some friends
@@ -202,6 +207,8 @@ void SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 
   if (verbose) printf("Start normal operation.\n");
 
+  return Ctrl[0]->serialNumber;
+
 }
 
 
@@ -215,17 +222,14 @@ uint8_t SwOSSwarm::_getIndex( FtSwarmSerialNumber_t serialNumber ) {
   while ( i<=maxCtrl) {
     
     // controler found?
-    if ( ( Ctrl[i] ) && ( Ctrl[i]->serialNumber == serialNumber ) ) break;
+    if ( ( Ctrl[i] ) && ( Ctrl[i]->serialNumber == serialNumber ) ) return i;
 
     // free index foud?
-    if ( ( !Ctrl[i] ) && ( f <= maxCtrl ) ) f = i;
+    if ( ( !Ctrl[i] ) && ( i < f) ) f = i;
 
     // go on
     i++;
   }
-
-  // did I find my controler?
-  if ( i<=maxCtrl ) return i;
 
   // new player in town, check if I need to increase my high water mark
   if ( f > maxCtrl ) maxCtrl = f;
@@ -238,10 +242,28 @@ SwOSIO* SwOSSwarm::getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmIOType_t io
 
   // check on valid controler
   uint8_t i = _getIndex( serialNumber );
+
   if ( Ctrl[i] ) return Ctrl[i]->getIO( ioType, port );
 
   // nothing found
   return NULL;
+  
+}
+
+SwOSIO* SwOSSwarm::getIO( const char *name ) {
+
+  SwOSIO *IO = NULL;
+
+  for ( uint8_t i=0; i<=maxCtrl; i++ ) {
+
+    if ( Ctrl[i] ) {
+      IO = Ctrl[i]->getIO( name );
+      if (IO) break;
+    }
+    
+  }
+
+  return IO;
   
 }
 
@@ -479,7 +501,7 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
       ESP_LOGD( LOGFTSWARM, "add a new controler type %d", com->data.ctrlType);
       switch (com->data.ctrlType) {
         case FTSWARM:        Ctrl[i] = new SwOSSwarmJST    ( com->data.serialNumber, com->mac, false, com->data.registerCmd.versionCPU, com->data.registerCmd.versionHAT, com->data.registerCmd.IAmAKelda ); break;
-        case FTSWARMCONTROL: Ctrl[i] = new SwOSSwarmControl( com->data.serialNumber, com->mac, false, com->data.registerCmd.versionCPU, com->data.registerCmd.versionHAT, com->data.registerCmd.IAmAKelda ); break;
+        case FTSWARMCONTROL: Ctrl[i] = new SwOSSwarmControl( com->data.serialNumber, com->mac, false, com->data.registerCmd.versionCPU, com->data.registerCmd.versionHAT, com->data.registerCmd.IAmAKelda, NULL ); break;
         default: ESP_LOGW( LOGFTSWARM, "Unknown controler type while adding a new controller to my swarm." ); return;
       }
     } else {

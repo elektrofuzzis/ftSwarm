@@ -29,7 +29,7 @@ public:
   bool     allowPairing = false;
 
   SwOSSwarm( ) { for ( uint8_t i=0; i<MAXCTRL; i++ ) { Ctrl[i] = NULL; } }; // constructor
-	void begin( bool IAmAKelda, bool verbose );                               // start my swarm
+	FtSwarmSerialNumber_t begin( bool IAmAKelda, bool verbose );                               // start my swarm
 
   // set/get time etween two reads
   void setReadDelay( uint16_t readDelay ) { _readDelay = readDelay; };
@@ -39,18 +39,20 @@ public:
   void lock();   // request single access
   void unlock(); // free access
 
-	virtual void *getControler(char *name);
+	void *getControler(char *name);
 
+  // search an IO in my swarm via <serialNumber, ioType, port> or with my IO's name
   virtual SwOSIO* getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmIOType_t ioType, FtSwarmPort_t port);
+  virtual SwOSIO* getIO( const char *name );
 
   // **** REST API ****
-	virtual void jsonize( JSONize *json);                         // transfer my swarm to a JSON structure
-  virtual bool apiActorCmd( char *id, int cmd );                // send an actor's command (from api)
-  virtual bool apiActorPower( char *id, int power );            // send an actor's power (from api)
-	virtual bool apiLED( char *id, int brightness, int color );   // send a LED command (from api)
-	virtual bool apiServo( char *id, int offset, int position );  // send a Servo command (from api)
+	void jsonize( JSONize *json);                         // transfer my swarm to a JSON structure
+  bool apiActorCmd( char *id, int cmd );                // send an actor's command (from api)
+  bool apiActorPower( char *id, int power );            // send an actor's power (from api)
+	bool apiLED( char *id, int brightness, int color );   // send a LED command (from api)
+	bool apiServo( char *id, int offset, int position );  // send a Servo command (from api)
 
-  virtual void setState( int state );
+  void setState( int state );
     // visualizes controler's state
 
   // **** inter swarm communication ****

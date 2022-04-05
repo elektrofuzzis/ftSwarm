@@ -1,29 +1,48 @@
+/*
+ * ftSwarm.h
+ *
+ * framework to build a ftSwarm application
+ * 
+ * (C) 2021/22 Christian Bergschneider & Stefan Fuss
+ * 
+ */
+ 
 #pragma once
 
 #include <stdint.h>
 #include <cstddef>
 
-#define LOGFTSWARM  "FTSWARM"
-#define SWOSVERSION "0.10"
+#include "SwOS.h"
 
-#define MAXIDENTIFIER 32
-
-typedef void*    FtSwarmIOHandle_t;
 typedef uint16_t FtSwarmSerialNumber_t;
 typedef uint8_t  FtSwarmPort_t;
 
-// some internal stuff, don't use.
-typedef enum { FTSWARM_UNDEF = -1, FTSWARM_INPUT, FTSWARM_ACTOR, FTSWARM_BUTTON, FTSWARM_JOYSTICK, FTSWARM_LED, FTSWARM_SERVO,	FTSWARM_OLED, FTSWARM_GYRO, FTSWARM_HC165, FTSWARM_MAXIOTYPE } FtSwarmIOType_t;
+// **** enumerations ****
+
+// IO types
+typedef enum { FTSWARM_UNDEF = -1, FTSWARM_INPUT, FTSWARM_ACTOR, FTSWARM_BUTTON, FTSWARM_JOYSTICK, FTSWARM_LED, FTSWARM_SERVO,  FTSWARM_OLED, FTSWARM_GYRO, FTSWARM_HC165, FTSWARM_MAXIOTYPE } FtSwarmIOType_t;
+
+// controler types
 typedef enum { FTSWARM_NOCTRL = -1, FTSWARM = 0, FTSWARMCONTROL = 1 } FtSwarmControler_t;
+
+// sensor types
 typedef enum { FTSWARM_DIGITAL, FTSWARM_ANALOG, FTSWARM_SWITCH, FTSWARM_REEDSWITCH, FTSWARM_VOLTMETER, FTSWARM_OHMMETER, FTSWARM_THERMOMETER, FTSWARM_LDR, FTSWARM_TRAILSENSOR, FTSWARM_COLORSENSOR, FTSWARM_ULTRASONIC, FTSWARM_MAXSENSOR } FtSwarmSensor_t;
+
+// actor types
 typedef enum { FTSWARM_XMOTOR, FTSWARM_TRACTOR,  FTSWARM_ENCODER, FTSWARM_LAMP, FTSWARM_MAXACTOR } FtSwarmActor_t;
 
-
-// more interesting stuff
+// HW versions
 typedef enum { FTSWARM_NOVERSION = -1, FTSWARM_1V0, FTSWARM_1V3, FTSWARM_1V15 } FtSwarmVersion_t;
+
+// how to move
 typedef enum { FTSWARM_COAST, FTSWARM_BRAKE, FTSWARM_ON } FtSwarmMotion_t;
+
+// toggles
 typedef enum { FTSWARM_NOTOGGLE, FTSWARM_TOGGLEUP, FTSWARM_TOGGLEDOWN } FtSwarmToggle_t;
 
+// **** port definitions ****
+
+// switches
 #define FTSWARM_S1 0
 #define FTSWARM_S2 1
 #define FTSWARM_S3 2
@@ -33,175 +52,270 @@ typedef enum { FTSWARM_NOTOGGLE, FTSWARM_TOGGLEUP, FTSWARM_TOGGLEDOWN } FtSwarmT
 #define FTSWARM_J1 6
 #define FTSWARM_J2 7
 
+// inputs
 #define FTSWARM_A1 0
 #define FTSWARM_A2 1
 #define FTSWARM_A3 2
 #define FTSWARM_A4 3
 
+// outputs
 #define FTSWARM_M1 0
 #define FTSWARM_M2 1 
 
+// joysticks
 #define FTSWARM_JOY1 0
 #define FTSWARM_JOY2 1
 
+// leds
 #define FTSWARM_LED1 0
 #define FTSWARM_LED2 1
 
+// **** some internal types & classes, don't use them at all ****
+
+// handle/pointer to a swarm IO, used by FtSwarmIO base class
+typedef void* SwOSIOHandle_t;      
+
 class FtSwarmIO {
-  // base class, don't use this class at all
+  // base class for all ftSwarm interfaces, don't use this class at all
+  
   protected:
-    FtSwarmIOHandle_t me = NULL;
-  public:
+    SwOSIOHandle_t me = NULL; // pointer to my swarm HW
+    
+    // constructors
     FtSwarmIO() {};
     FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmIOType_t ioType);
+    FtSwarmIO( const char *name );
+
+  public:
+    // check, if I'm online
     bool isOnline();
 };
 
 class FtSwarmInput : public FtSwarmIO {
   // an input base class, don't use this class at all
-  public:
+  
+  protected:
     FtSwarmInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmSensor_t sensorType, bool normallyOpen = true);
+    FtSwarmInput( const char *name, FtSwarmSensor_t sensorType, bool normallyOpen = true );
 };
 
+// **** input / actor classes to use in your sketch ****
+
 class FtSwarmDigitalInput : public FtSwarmInput {
+  // digital inputs. ports A1..A4, all controler types
+
   protected:
     FtSwarmDigitalInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmSensor_t sensorType, bool normallyOpen = true);
+    FtSwarmDigitalInput( const char *name, FtSwarmSensor_t sensorType, bool normallyOpen );
+  
   public:
     FtSwarmDigitalInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
-    bool isPressed();
-    bool isReleased();
-    bool hasToggledUp();
-    bool hasToggledDown();
-    virtual bool getState();
-    virtual FtSwarmToggle_t getToggle();
+    FtSwarmDigitalInput( const char *name  );
+
+    bool isPressed();                     // getState()
+    bool isReleased();                    // !getState()
+    bool hasToggledUp();                  // was the last toggle event from down to up, since a hasToggled* method called last time?
+    bool hasToggledDown();                // was the last toggle event from up to down, since a hasToggled* method called last time?
+    virtual bool getState();              // true if input is high, false otherwise
+    virtual FtSwarmToggle_t getToggle();  // last toggle event since a hasToggled* method called last time
 };
 
 class FtSwarmSwitch : public FtSwarmDigitalInput {
+  // all kind of mechanical switches, A1..A4 all controlers
+  // fischertechnik switches: 1-3 is normally open, 1-2 is normally closed
   public:
     FtSwarmSwitch( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool normallyOpen = true);
+    FtSwarmSwitch( const char *name, bool normallyOpen = true );
 };
 
 class FtSwarmReedSwitch : public FtSwarmDigitalInput {
+  // reed switches, A1..A4 all controlers
   public:
     FtSwarmReedSwitch( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool normallyOpen = true);
-    // fischertechnik switches: 1-3 is normally open, 1-2 is normally closed
+    FtSwarmReedSwitch( const char *name, bool normallyOpen = true);
 };
 
 class FtSwarmButton : public FtSwarmIO {
+  // onboard buttons, FtSwarmControl only
   public:
     FtSwarmButton( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
-    bool isPressed();
-    bool isReleased();
-    bool hasToggledUp();
-    bool hasToggledDown();
-    virtual bool getState();
-    virtual FtSwarmToggle_t getToggle();
+    FtSwarmButton( const char *name );
+    
+    bool isPressed();                     // button is pressed
+    bool isReleased();                    // button is released
+    bool hasToggledUp();                  // was the last toggle event from down to up, since a hasToggled* method called last time?
+    bool hasToggledDown();                // was the last toggle event from up to down, since a hasToggled* method called last time?
+    virtual bool getState();              // true, if the button is pressed
+    virtual FtSwarmToggle_t getToggle();  // last toggle event since a hasToggled* method called last time
 };
 
 class FtSwarmAnalogInput : public FtSwarmInput { 
+  // general analog input, A1..A4 ftSwarm only
   protected:
     FtSwarmAnalogInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmSensor_t sensorType);
+    FtSwarmAnalogInput( const char *name, FtSwarmSensor_t sensorType );
+
   public:
     FtSwarmAnalogInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
-    int32_t getValue();
+    FtSwarmAnalogInput( const char *name );
+
+    int32_t getValue();  // get 12 bit raw reading
 };
 
 class FtSwarmVoltmeter : public FtSwarmAnalogInput {
+  // Voltmeter, ftSwarm.A2 only
   public:
     FtSwarmVoltmeter( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
-    float getVoltage();
+    FtSwarmVoltmeter( const char *name );
+    
+    float getVoltage();  // get calibrated value 150 mV ~ 2450 mV
 };
 
 class FtSwarmOhmmeter : public FtSwarmAnalogInput {
+  // Ohmmeter, A11.A4 ftSwarm only
+  
   public:
     FtSwarmOhmmeter( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
-    float getResistance();
+    FtSwarmOhmmeter( const char * name );
+    
+    float getResistance(); 
 };
 
 class FtSwarmThermometer : public FtSwarmAnalogInput {
+  // Thermometer based on 1.5kOhm NTC, A1..A4 ftSwarm only
+  
   public:
     FtSwarmThermometer( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
+    FtSwarmThermometer( const char *name );
+    
     float getCelcius();
     float getKelvin();
     float getFahrenheit();
 };
 
 class FtSwarmLDR : public FtSwarmAnalogInput {
+  // LDR, A1..A4 ftSwarm only
+  // At FtSwarmControl you could use a LDR with a FtSwarmDigitalInput as well
   public:
     FtSwarmLDR( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
+    FtSwarmLDR( const char * name );
 };
 
 class FtSwarmActor : public FtSwarmIO {
-  // an input base class, don't use this class at all
-  public:
+  // an actor base class, don't use this class at all
+  protected:
     FtSwarmActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType );
+    FtSwarmActor( const char *name, FtSwarmActor_t actorType );
 };
 
 
 class FtSwarmMotor : public FtSwarmActor {
+  // general motor class, use this class for (old) gray motors, mini motors, XS motors
+  // M1..M2 all contollers - keep power budget in mind!
   public:
     FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType = FTSWARM_XMOTOR );
-    void run( int16_t speed );
-    uint16_t getSpeed();
+    FtSwarmMotor( const char *name, FtSwarmActor_t actorType = FTSWARM_XMOTOR );
+    
+    void     setSpeed( int16_t speed );    // speed +/-256, speed 0 motor stopss
+    uint16_t getSpeed();                   // actual speed
 };
 
 class FtSwarmTractorMotor : public FtSwarmMotor {
+  // tractor motor
+  // M1..M2 all contollers - keep power budget in mind!
+  protected:
+    FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType );
+    FtSwarmTractorMotor( const char * name, FtSwarmActor_t actorType );
+      
   public:
-    // FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
-    FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType = FTSWARM_TRACTOR);
+    FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
+    FtSwarmTractorMotor( const char * name );
+
+    // FtSwarmTractor has different options for stopping motor:
     virtual void setMotionType( FtSwarmMotion_t motionType );
+    FtSwarmMotion_t getMotionType();
     virtual void coast( void ) { setMotionType( FTSWARM_COAST ); };
     virtual void brake( void ) { setMotionType( FTSWARM_BRAKE ); };
-    FtSwarmMotion_t getMotionType();
 };
 
 class FtSwarmEncoderMotor : public FtSwarmTractorMotor {
+  // encoder motor
+  // M1..M2 all contollers - keep power budget in mind!
+  // TODO: implement encoder input
   public:
     FtSwarmEncoderMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
+    FtSwarmEncoderMotor( const char * name );
 };
 
 class FtSwarmLamp : public FtSwarmActor {
+  // classic lamps and LEDs
+  // M1..M2 all contollers - keep power budget in mind!
   public:
     FtSwarmLamp( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
+    FtSwarmLamp( const char *name );
+    
     void on( uint8_t power = 255 );
     void off( void );
 };
 
 class FtSwarmJoystick : public FtSwarmIO {
+  protected:
+    SwOSIOHandle_t button = NULL;
   public:
-    FtSwarmButton *button = NULL;
     FtSwarmJoystick( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
-    int16_t getFB();
-    int16_t getLR();
-    void getValue( int16_t *FB, int16_t *LR );
+    FtSwarmJoystick( const char *name );
+    
+    int16_t getFB();         // front/back position
+    int16_t getLR();         // left/right position
+    bool getButtonState();   // button pressed/released
+    void getValue( int16_t *FB, int16_t *LR, bool *buttonState );
 };
 
 class FtSwarmLED : public FtSwarmIO {
+  // RGB LEDs, ftSwarm only
+  // one LED takes up to 60mA, keep power budget in mind!
   public:
     FtSwarmLED( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
+    FtSwarmLED( const char *name );
+
+    // brightness 0..255
     uint8_t getBrightness();
     void setBrightness(uint8_t brightness);
+
+    // color
     uint32_t getColor();
     void setColor(uint32_t color);
 };
 
 class FtSwarmServo : public FtSwarmIO {
+  // Servo, ftSwarm only
+  // A servo has 150mA typically, higher values with load. Keep power budget in mind!
   public:
     FtSwarmServo( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
+    FtSwarmServo( const char *name );
+
+    // position
     int16_t getPosition();
     void setPosition( int16_t position );
+
+    // offset
     int16_t getOffset();
     void setOffset( int16_t position );
 };
 
 class FtSwarm {
+  // my swarm...
   protected:
-    bool _IAmKelda;
+    bool _IAmAKelda = false;
+    bool _verbose = false;
+    
   public:
-    void begin( bool IAmAKelda = true, bool verbose = false ) ;
-    void setReadDelay( uint16_t readDelay );
-    void setWifi( const char *ssid, const char *pwd, bool APMode = false, bool writeNVS = true );
-    void setup(void);
+    FtSwarmSerialNumber_t begin( bool IAmAKelda = true );  // start my swarm
+    void verbose( bool on );                               // be chatty
+    void setReadDelay( uint16_t readDelay );               // set delay between two measures
+    void setWifi( const char *ssid, const char *pwd, bool APMode = false, bool writeNVS = true );  // setup wifi
+    void setup(void); // interactive setup
 };
 
+// There is one only
 extern FtSwarm ftSwarm;

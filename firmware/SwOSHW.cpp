@@ -19,6 +19,8 @@
 
 const char IOTYPE[FTSWARM_MAXIOTYPE][10] = { "INPUT", "ACTOR", "BUTTON", "JOYSTICK", "LED", "SERVO", "OLED", "GYRO", "HC165" };
 
+const char EMPTYSTRING[] = "";
+
 const char SENSORICON[FTSWARM_MAXSENSOR][20] = {
   "00_digital.svg",
   "01_analog.svg",
@@ -61,6 +63,23 @@ SwOSObj::~SwOSObj() {
   if (_alias) free( _alias );
 }
 
+void SwOSObj::loadAliasFromNVS( nvs_handle_t my_handle ) {
+
+  size_t size = MAXIDENTIFIER;
+  char alias[MAXIDENTIFIER];
+
+  if ( ESP_OK == nvs_get_str( my_handle, getName(), alias, &size ) ) {
+    setAlias( alias );
+  }
+}
+
+
+void SwOSObj::saveAliasToNVS( nvs_handle_t my_handle ) {
+
+  nvs_set_str( my_handle, getName(), getAlias() );
+  
+}
+
 void SwOSObj::setAlias( const char *alias ) {
 
   if (_alias!=NULL) { free( (void*) _alias); }
@@ -86,8 +105,13 @@ char * SwOSObj::getName( ) {
   return _name;
 }
 
+
 char * SwOSObj::getAlias( ) {
-  return _alias;
+  if (!_alias) {
+    return (char *) EMPTYSTRING;
+  } else {
+    return _alias;
+  }
 }
 
 
@@ -135,8 +159,8 @@ SwOSIO::SwOSIO( const char *name, SwOSCtrl *ctrl ) : SwOSIO( name, 255, ctrl ) {
 
 void SwOSIO::jsonize( JSONize *json, uint8_t id) {
   SwOSObj::jsonize(json, id);
-  json->variable("type", IOTYPE[getIOType()]);
-  json->variable("icon", getIcon() );
+  json->variable("type", (char *) IOTYPE[getIOType()]);
+  json->variable("icon", (char *) getIcon() );
 }
 
 /***************************************************
@@ -441,8 +465,8 @@ void SwOSInput::jsonize( JSONize *json, uint8_t id) {
   json->startObject();
   SwOSIO::jsonize(json, id);
   json->variable("sensorType", _sensorType);
-  json->variable("subType", SENSORTYPE[_sensorType]);
-  
+  json->variable("subType",    (char *) SENSORTYPE[_sensorType]);
+
   if ( isDigitalSensor() ) {
     json->variable("value", getValueUI32() );
   } else if ( _sensorType == FTSWARM_VOLTMETER ) {
@@ -454,6 +478,7 @@ void SwOSInput::jsonize( JSONize *json, uint8_t id) {
   } else {
     json->variable("value", getValueUI32() );
   }
+  
   json->endObject();
 }
 
@@ -636,7 +661,7 @@ void SwOSActor::_setLocal() {
 void SwOSActor::jsonize( JSONize *json, uint8_t id) {
   json->startObject();
   SwOSIO::jsonize(json, id);
-  json->variable("subType", ACTORTYPE[ _actorType ] );
+  json->variable("subType",    (char *) ACTORTYPE[ _actorType ] );
   json->variable("motiontype", getMotionType() );
   json->variable("power",      getPower() );
   json->endObject();
@@ -656,14 +681,23 @@ void SwOSActor::jsonize( JSONize *json, uint8_t id) {
  *
  ***************************************************/
 
-SwOSJoystick::SwOSJoystick(const char *name, uint8_t port,SwOSCtrl *ctrl) : SwOSIO( name, port, ctrl ) {
+SwOSJoystick::SwOSJoystick(const char *name, uint8_t port,SwOSCtrl *ctrl, int16_t zeroLR, int16_t zeroFB ) : SwOSIO( name, port, ctrl ) {
 
   // set read values to undefined
   _lastLR = 0;
   _lastFB = 0;
+  _zeroLR = 0;
+  _zeroFB = 0;
+  _lastRawLR = -1;
+  _lastRawFB = -1;
 
   // initialize local HW
-  if (_ctrl->isLocal()) _setupLocal();
+  if (_ctrl->isLocal()) {
+    _zeroLR = zeroLR;
+    _zeroFB = zeroFB;
+    _setupLocal();
+  }
+  
 }
 
 void SwOSJoystick::_setupLocal() {
@@ -708,15 +742,59 @@ void SwOSJoystick::_setupLocal() {
 
 }
 
+int16_t readChannel( adc1_channel_t channel, int16_t zero, int16_t *lastRaw, uint8_t port) {
+
+  // with correct channels only
+  if ( channel == ADC1_CHANNEL_MAX ) return 0;
+
+  // get two readings and calc mean value
+  int16_t newRaw = ( adc1_get_raw( channel ) + adc1_get_raw( channel ) ) /2;
+
+  // hysteresis
+  if ( ( abs( newRaw - *lastRaw ) < 40 ) && ( lastRaw >= 0 ) ) { newRaw = *lastRaw; }
+  *lastRaw = newRaw;
+
+  // calc result
+  int16_t result = ( newRaw - zero ) / 20;
+
+  if ( result >  100 ) result =  100;
+  if ( result < -100 ) result = -100;
+
+  // change directions on right joystick
+  if (port>0) result = -result;
+
+  return result;
+  
+}
+
 void SwOSJoystick::read() {
 
   // nothing ToDO with remote HW
   if (!_ctrl->isLocal()) return;
 
-  // local HW only
-  if (_ADCChannelLR != ADC1_CHANNEL_MAX ) { _lastLR = adc1_get_raw( _ADCChannelLR ); }
-  if (_ADCChannelFB != ADC1_CHANNEL_MAX ) { _lastFB = adc1_get_raw( _ADCChannelFB ); }
+  _lastLR = readChannel( _ADCChannelLR, _zeroLR, &_lastRawLR, _port );
+  _lastFB = readChannel( _ADCChannelFB, _zeroFB, &_lastRawFB, _port );
 
+}
+
+void SwOSJoystick::calibrate( int16_t *zeroLR, int16_t *zeroFB ) {
+  
+  // nothing ToDO with remote HW
+  if (!_ctrl->isLocal()) return;
+  if ( (_ADCChannelLR == ADC1_CHANNEL_MAX ) || ( _ADCChannelFB == ADC1_CHANNEL_MAX )) return;
+
+  // get 3 values
+  int16_t lr[3], fb[3];
+  for ( uint8_t i=0; i<3; i++ ) {
+    lr[i] =  adc1_get_raw( _ADCChannelLR ); 
+    fb[i] =  adc1_get_raw( _ADCChannelFB ); 
+    vTaskDelay( 25 / portTICK_PERIOD_MS );
+  }
+
+  // and calculate mean value
+  *zeroLR = _zeroLR = ( lr[0] + lr[1] + lr[2] ) / 3;
+  *zeroFB = _zeroFB = ( fb[0] + fb[1] + fb[2] ) / 3;
+  
 }
 
 void SwOSJoystick::jsonize( JSONize *json, uint8_t id) {
@@ -1091,7 +1169,7 @@ void SwOSHC165::read( ) {
  *
  ***************************************************/
 
-SwOSCtrl::SwOSCtrl( uint16_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda ):SwOSObj() {
+SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda ):SwOSObj() {
 
   // copy master data
   _IAmAKelda = IAmAKelda;
@@ -1160,7 +1238,7 @@ bool SwOSCtrl::cmdAlias( char *device, uint8_t port, const char *alias) {
 
 }
 
-SwOSIO *SwOSCtrl::getIO( char *name) {
+SwOSIO *SwOSCtrl::getIO( const char *name) {
 
   for (uint8_t i=0;i<4;i++) { if (input[i]->equals(name) ) { return input[i]; } }
   for (uint8_t i=0;i<2;i++) { if (actor[i]->equals(name) ) { return actor[i]; } }
@@ -1229,7 +1307,7 @@ void SwOSCtrl::jsonize( JSONize *json, uint8_t id) {
   json->variable( "serialNumber", serialNumber);
 
   char hostinfo[250];
-  sprintf(hostinfo, "%s S/N: %lu HAT%s CPU%s Kelda: %d", myType(), (unsigned long) serialNumber, getVersionHAT(), getVersionCPU(), _IAmAKelda );
+  sprintf(hostinfo, "%s S/N: %u HAT%s CPU%s Kelda: %d", myType(), serialNumber, getVersionHAT(), getVersionCPU(), _IAmAKelda );
   json->variable( "hostinfo", hostinfo);
   json->variable( "type", strdup( myType() ) );
 
@@ -1324,10 +1402,21 @@ SwOSCom *SwOSCtrl::state2Com( void ) {
 
 }
 
-void SwOSCtrl::setup( void ) {
+void SwOSCtrl::saveAliasToNVS( nvs_handle_t my_handle ) {
+
+  SwOSObj::saveAliasToNVS( my_handle );
+  for (uint8_t i=0; i<4; i++ ) input[i]->saveAliasToNVS( my_handle );
+  for (uint8_t i=0; i<2; i++ ) actor[i]->saveAliasToNVS( my_handle );
   
 }
 
+void SwOSCtrl::loadAliasFromNVS( nvs_handle_t my_handle ) {
+
+  SwOSObj::loadAliasFromNVS( my_handle );
+  for (uint8_t i=0; i<4; i++ ) input[i]->loadAliasFromNVS( my_handle );
+  for (uint8_t i=0; i<2; i++ ) actor[i]->loadAliasFromNVS( my_handle );
+  
+}
 
 /***************************************************
  *
@@ -1335,7 +1424,7 @@ void SwOSCtrl::setup( void ) {
  *
  ***************************************************/
 
-SwOSSwarmJST::SwOSSwarmJST( uint16_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda ):SwOSCtrl( SN, macAddress, local, CPU, HAT, IAmAKelda ) {
+SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda ):SwOSCtrl( SN, macAddress, local, CPU, HAT, IAmAKelda ) {
 
   char buffer[32];
   sprintf( buffer, "%s%d", myType(), SN);
@@ -1363,7 +1452,7 @@ bool SwOSSwarmJST::cmdAlias( char *device, uint8_t port, const char *alias) {
 
 }
 
-SwOSIO *SwOSSwarmJST::getIO( char *name) {
+SwOSIO *SwOSSwarmJST::getIO( const char *name) {
 
   // check on base class hardware
   SwOSIO *IO = SwOSCtrl::getIO(name);
@@ -1371,7 +1460,7 @@ SwOSIO *SwOSSwarmJST::getIO( char *name) {
 
   // check on specific hardware
   for (uint8_t i=0;i<2;i++) { if (led[i]->equals(name) ) { return led[i]; } }
-  if (servo->equals(name) ) { return servo; }
+  if ( (servo) && servo->equals(name) ) { return servo; }
 
   return NULL;
 
@@ -1500,6 +1589,23 @@ bool SwOSSwarmJST::OnDataRecv(SwOSCom *com ) {
 
 }
 
+void SwOSSwarmJST::saveAliasToNVS( nvs_handle_t my_handle ) {
+
+  SwOSCtrl::saveAliasToNVS( my_handle );
+
+  if (gyro) gyro->saveAliasToNVS( my_handle );
+  for (uint8_t i=0; i<2; i++ ) led[i]->saveAliasToNVS( my_handle );
+  
+}
+
+void SwOSSwarmJST::loadAliasFromNVS( nvs_handle_t my_handle ) {
+
+  SwOSCtrl::loadAliasFromNVS( my_handle );
+
+  if (gyro) gyro->loadAliasFromNVS( my_handle );
+  for (uint8_t i=0; i<2; i++ ) led[i]->loadAliasFromNVS( my_handle );
+  
+}
 
 /***************************************************
  *
@@ -1507,7 +1613,7 @@ bool SwOSSwarmJST::OnDataRecv(SwOSCom *com ) {
  *
  ***************************************************/
 
-SwOSSwarmControl::SwOSSwarmControl( uint16_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda ):SwOSCtrl( SN, macAddress, local, CPU, HAT, IAmAKelda ) {
+SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda, int16_t zero[2][2] ):SwOSCtrl( SN, macAddress, local, CPU, HAT, IAmAKelda ) {
 
   char buffer[32];
   sprintf( buffer, "%s%d", myType(), SN);
@@ -1517,7 +1623,7 @@ SwOSSwarmControl::SwOSSwarmControl( uint16_t SN, const uint8_t *macAddress, bool
   for (uint8_t i=0; i<4; i++) { button[i]   = new SwOSButton("S", i, this); }
   for (uint8_t i=0; i<2; i++) { button[4+i] = new SwOSButton("F", i, this); }
   for (uint8_t i=0; i<2; i++) { button[6+i] = new SwOSButton("J", i, this); }
-  for (uint8_t i=0; i<2; i++) { joystick[i] = new SwOSJoystick("JOY", i, this); }
+  for (uint8_t i=0; i<2; i++) { joystick[i] = new SwOSJoystick("JOY", i, this, zero[i][0], zero[i][1]); }
   hc165 = new SwOSHC165("HC165", this);
   oled  = new SwOSOLED("OLED", this);
 }
@@ -1544,7 +1650,7 @@ bool SwOSSwarmControl::cmdAlias( char *device, uint8_t port, const char *alias) 
 
 }
 
-SwOSIO *SwOSSwarmControl::getIO( char *name) {
+SwOSIO *SwOSSwarmControl::getIO( const char *name ) {
 
   // check on base base class hardware
   SwOSIO *IO = SwOSCtrl::getIO(name);
@@ -1553,7 +1659,7 @@ SwOSIO *SwOSSwarmControl::getIO( char *name) {
   // check on specific hardware
   for (uint8_t i=0;i<8;i++) { if (button[i]->equals(name) )   { return button[i]; } }
   for (uint8_t i=0;i<2;i++) { if (joystick[i]->equals(name) ) { return joystick[i]; } }
-  if (oled->equals(name) ) { return oled; }
+  if ( (oled) && ( oled->equals(name) ) ) { return oled; }
 
   return NULL;
 
@@ -1672,4 +1778,25 @@ bool SwOSSwarmControl::OnDataRecv(SwOSCom *com ) {
 
   return false;
 
+}
+
+void SwOSSwarmControl::saveAliasToNVS( nvs_handle_t my_handle ) {
+
+  SwOSCtrl::saveAliasToNVS( my_handle );
+
+  if (oled) oled->saveAliasToNVS( my_handle );
+  for (uint8_t i=0; i<8; i++ ) button[i]->saveAliasToNVS( my_handle );
+  for (uint8_t i=0; i<2; i++ ) joystick[i]->saveAliasToNVS( my_handle );
+  
+}
+
+
+void SwOSSwarmControl::loadAliasFromNVS( nvs_handle_t my_handle ) {
+
+  SwOSCtrl::loadAliasFromNVS( my_handle );
+
+  if (oled) oled->loadAliasFromNVS( my_handle );
+  for (uint8_t i=0; i<8; i++ ) button[i]->loadAliasFromNVS( my_handle );
+  for (uint8_t i=0; i<2; i++ ) joystick[i]->loadAliasFromNVS( my_handle );
+  
 }
