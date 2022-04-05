@@ -1,3 +1,12 @@
+/*
+ * SwOSWEB.h
+ *
+ * fTSwarm buildin WebServer
+ * 
+ * (C) 2021/22 Christian Bergschneider & Stefan Fuss
+ * 
+ */
+ 
 #include <esp_http_server.h>
 #include <esp_log.h>
 #include <cJSON.h>

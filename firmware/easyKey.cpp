@@ -1,3 +1,12 @@
+/*
+ * easykey.cpp
+ *
+ * simple keyboard input commands
+ * 
+ * (C) 2021/22 Christian Bergschneider & Stefan Fuss
+ * 
+ */
+ 
 #include <stdint.h>
 #include <stdio.h>
 #include <ctype.h>

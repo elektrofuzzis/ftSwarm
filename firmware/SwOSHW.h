@@ -1,4 +1,13 @@
-#pragma once
+/*
+ * SwOSHW.h
+ *
+ * internal implementation of all ftSwarm HW. Use ftSwarm-classes in ftSwarm.h to access your HW!
+ * 
+ * (C) 2021/22 Christian Bergschneider & Stefan Fuss
+ * 
+ */
+ 
+ #pragma once
 
 #include <stdint.h>
 

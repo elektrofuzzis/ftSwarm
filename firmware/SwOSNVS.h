@@ -1,10 +1,12 @@
 /*
- * SwOSNVS.h
+ * SwOSSNVS.h
  *
- *  Created on: 20.10.2021
- *      Author: Stefan
+ * internal represenation of nvs values.
+ * 
+ * (C) 2021/22 Christian Bergschneider & Stefan Fuss
+ * 
  */
-
+ 
 #pragma once
 
 #include <stdint.h>

@@ -1,3 +1,12 @@
+/*
+ * SwOSCom.h
+ *
+ * Communication between your controlers
+ * 
+ * (C) 2021/22 Christian Bergschneider & Stefan Fuss
+ * 
+ */
+ 
 #pragma once
 
 #include <stdint.h>

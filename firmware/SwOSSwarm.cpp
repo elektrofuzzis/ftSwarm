@@ -1,9 +1,12 @@
-/***************************************************
+/*
+ * SwOSSwarm.cpp
  *
- *   SwOSSwarm - all controllers in the swarm.
- *
- ***************************************************/
-
+ * internal represenation of my swarm. Use FtSwarm-Classes in FtSwarm.h to access your swarm!
+ * 
+ * (C) 2021/22 Christian Bergschneider & Stefan Fuss
+ * 
+ */
+ 
 #include <WiFi.h>
 #include <esp_now.h>
 #include <esp_wifi.h>

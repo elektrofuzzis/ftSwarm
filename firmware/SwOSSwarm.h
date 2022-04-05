@@ -1,3 +1,12 @@
+/*
+ * SwOSSwarm.h
+ *
+ * internal represenation of my swarm. Use FtSwarm-Classes in FtSwarm.h to access your swarm!
+ * 
+ * (C) 2021/22 Christian Bergschneider & Stefan Fuss
+ * 
+ */
+ 
 #pragma once
 
 #include <stdint.h>

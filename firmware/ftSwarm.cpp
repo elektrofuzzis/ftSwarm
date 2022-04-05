@@ -1,3 +1,12 @@
+/*
+ * ftSwarm.cpp
+ *
+ * framework to build a ftSwarm application
+ * 
+ * (C) 2021/22 Christian Bergschneider & Stefan Fuss
+ * 
+ */
+ 
 #include "ftSwarm.h"
 #include "SwOSSwarm.h"
 #include "easykey.h"

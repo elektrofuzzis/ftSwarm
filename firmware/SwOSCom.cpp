@@ -1,3 +1,12 @@
+/*
+ * SwOSCom.cpp
+ *
+ * Communication between your controlers
+ * 
+ * (C) 2021/22 Christian Bergschneider & Stefan Fuss
+ * 
+ */
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>

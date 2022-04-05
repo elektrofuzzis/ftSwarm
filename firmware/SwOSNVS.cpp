@@ -1,10 +1,12 @@
 /*
- * SwOSNVS.cpp
+ * SwOSSNVS.cpp
  *
- *  Created on: 20.10.2021
- *      Author: Stefan
+ * internal represenation of nvs values.
+ * 
+ * (C) 2021/22 Christian Bergschneider & Stefan Fuss
+ * 
  */
-
+ 
 #include <nvs.h>
 #include <nvs_flash.h>
 #include <esp_err.h>
