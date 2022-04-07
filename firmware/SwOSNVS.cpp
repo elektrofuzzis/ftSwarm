@@ -1,10 +1,12 @@
 /*
- * SwOSNVS.cpp
+ * SwOSSNVS.cpp
  *
- *  Created on: 20.10.2021
- *      Author: Stefan
+ * internal represenation of nvs values.
+ * 
+ * (C) 2021/22 Christian Bergschneider & Stefan Fuss
+ * 
  */
-
+ 
 #include <nvs.h>
 #include <nvs_flash.h>
 #include <esp_err.h>
@@ -14,8 +16,8 @@
 #include "SwOSNVS.h"
 #include "easykey.h"
 
-uint16_t generateSecret( int16_t serialNumber ) {
-  return ( ( ( uint16_t) serialNumber ) & 0xFF ) | ( rand() & 0xFF ) ;
+uint16_t generateSecret( FtSwarmSerialNumber_t serialNumber ) {
+  return ( ( ( ( uint16_t) serialNumber ) & 0xFF ) << 8 ) | ( rand() & 0xFF ) ;
 }
 
 void SwOSNVS::_initialSetup( void ) {
@@ -66,7 +68,7 @@ SwOSNVS::SwOSNVS() {
 	// initialize to undefined
 	version       = -1;
 	controlerType = FTSWARM_NOCTRL;
-	serialNumber  = -1;
+	serialNumber  = 0;
 	CPU           = FTSWARM_NOVERSION;
 	HAT           = FTSWARM_NOVERSION;
 	wifiSSID[0]   = '\0';
@@ -75,6 +77,11 @@ SwOSNVS::SwOSNVS() {
   swarmSecret   = 0xFFFF;
   swarmPIN      = 9999;
   swarmName[0]  = '\0';
+
+  // initialize zero positions
+  for (uint8_t i=0;i<2;i++)
+    for (uint8_t j=0;j<2;j++)
+      joyZero[i][j]=2000;
 
 }
 
@@ -95,8 +102,6 @@ void SwOSNVS::begin() {
     _initialSetup();
   }
 
-  printNVS();
-
 }
 
 bool SwOSNVS::load() {
@@ -113,18 +118,27 @@ bool SwOSNVS::load() {
      
   // start with HW configuration
   nvs_get_u32( my_handle, "controlerType", (uint32_t *) &controlerType );
-  nvs_get_i16( my_handle, "serialNumber",               &serialNumber );
+
+  nvs_get_u16( my_handle, "serialNumber",  (uint16_t *) &serialNumber );
   nvs_get_u32( my_handle, "CPU",           (uint32_t *) &CPU );
   nvs_get_u32( my_handle, "HAT",           (uint32_t *) &HAT );
 
   // check on valid hw data
   if ( ( controlerType == FTSWARM_NOCTRL ) ||
-       ( serialNumber < 0 ) ||
+       ( serialNumber == 0 ) ||
        ( CPU == FTSWARM_NOVERSION ) ||
        ( HAT == FTSWARM_NOVERSION ) ) {
     return false;
   }
 
+  // ftSwarmControl: get joystick calibration
+  if ( controlerType == FTSWARMCONTROL ) {
+    nvs_get_i16( my_handle, "joyZero00", &joyZero[0][0]);
+    nvs_get_i16( my_handle, "joyZero01", &joyZero[0][1]);
+    nvs_get_i16( my_handle, "joyZero10", &joyZero[1][0]);
+    nvs_get_i16( my_handle, "joyZero11", &joyZero[1][1]);
+  }
+  
   size_t dummy;
        
   // wifi
@@ -143,32 +157,42 @@ bool SwOSNVS::load() {
 }
 
 void SwOSNVS::save( bool writeAll ) {
-    // Open
-    nvs_handle_t my_handle;
-    ESP_ERROR_CHECK( nvs_open("ftSwarm", NVS_READWRITE, &my_handle) );
 
-    // Write
-    if (writeAll) {
-      ESP_ERROR_CHECK( nvs_set_i32( my_handle, "NVSVersion", 1) );
-      ESP_ERROR_CHECK( nvs_set_u32( my_handle, "controlerType", (uint32_t) controlerType ) );
-      ESP_ERROR_CHECK( nvs_set_i16( my_handle, "serialNumber", serialNumber ) );
-      ESP_ERROR_CHECK( nvs_set_u32( my_handle, "CPU", (uint32_t) CPU ) );
-      ESP_ERROR_CHECK( nvs_set_u32( my_handle, "HAT", (uint32_t) HAT )  );
-    }
+  // Open
+  nvs_handle_t my_handle;
+  ESP_ERROR_CHECK( nvs_open("ftSwarm", NVS_READWRITE, &my_handle) );
 
-    // wifi
-    ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "APMode",   (uint8_t) APMode ) );
-    ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "Channel",  (uint8_t) channel ) );
-    ESP_ERROR_CHECK( nvs_set_str( my_handle, "wifiSSID",           wifiSSID)  );
-    ESP_ERROR_CHECK( nvs_set_str( my_handle, "wifiPwd",            wifiPwd)  );
+  // Write
+  if (writeAll) {
+    ESP_ERROR_CHECK( nvs_set_i32( my_handle, "NVSVersion", 1) );
+    ESP_ERROR_CHECK( nvs_set_u32( my_handle, "controlerType", (uint32_t) controlerType ) );
+    ESP_ERROR_CHECK( nvs_set_u16( my_handle, "serialNumber", (FtSwarmSerialNumber_t) serialNumber ) );
+    ESP_ERROR_CHECK( nvs_set_u32( my_handle, "CPU", (uint32_t) CPU ) );
+    ESP_ERROR_CHECK( nvs_set_u32( my_handle, "HAT", (uint32_t) HAT )  );
+  }
 
-    // swarm
-    ESP_ERROR_CHECK( nvs_set_u16( my_handle, "swarmSecret", swarmSecret ) );
-    ESP_ERROR_CHECK( nvs_set_u16( my_handle, "swarmPIN",    swarmPIN ) );
-    ESP_ERROR_CHECK( nvs_set_str( my_handle, "swarmName",   swarmName ) );
-    
-    // commit
-    ESP_ERROR_CHECK( nvs_commit( my_handle ) );
+  // ftSwarmControl: set joystick calibration
+  if ( controlerType == FTSWARMCONTROL ) {
+    ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero00", joyZero[0][0]) );
+    ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero01", joyZero[0][1]) );
+    ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero10", joyZero[1][0]) );
+    ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero11", joyZero[1][1]) );
+  }
+
+  // wifi
+  ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "APMode",   (uint8_t) APMode ) );
+  ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "Channel",  (uint8_t) channel ) );
+  ESP_ERROR_CHECK( nvs_set_str( my_handle, "wifiSSID",           wifiSSID)  );
+  ESP_ERROR_CHECK( nvs_set_str( my_handle, "wifiPwd",            wifiPwd)  );
+
+  // swarm
+  ESP_ERROR_CHECK( nvs_set_u16( my_handle, "swarmSecret", swarmSecret ) );
+  ESP_ERROR_CHECK( nvs_set_u16( my_handle, "swarmPIN",    swarmPIN ) );
+  ESP_ERROR_CHECK( nvs_set_str( my_handle, "swarmName",   swarmName ) );
+   
+  // commit
+  ESP_ERROR_CHECK( nvs_commit( my_handle ) );
+
 }
 
 void SwOSNVS::saveAndRestart( void ) {

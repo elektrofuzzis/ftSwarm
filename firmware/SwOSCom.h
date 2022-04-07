@@ -1,3 +1,12 @@
+/*
+ * SwOSCom.h
+ *
+ * Communication between your controlers
+ * 
+ * (C) 2021/22 Christian Bergschneider & Stefan Fuss
+ * 
+ */
+ 
 #pragma once
 
 #include <stdint.h>
@@ -41,11 +50,11 @@ struct Servo_t { int16_t offset; int16_t position; };
 struct Joystick_t { int16_t LR; int16_t FB; };
 
 struct SwOSDatagram_t {
-  uint16_t           secret;
-  uint8_t            version;
-  uint16_t           serialNumber;
-  FtSwarmControler_t ctrlType;
-  SwOSCommand_t      cmd;
+  uint16_t              secret;
+  uint8_t               version;
+  FtSwarmSerialNumber_t serialNumber;
+  FtSwarmControler_t    ctrlType;
+  SwOSCommand_t         cmd;
   union {
     struct { FtSwarmVersion_t versionCPU; FtSwarmVersion_t versionHAT; bool IAmAKelda; uint16_t pin; } registerCmd;
     struct { uint16_t pin; uint16_t swarmSecret; char swarmName[MAXIDENTIFIER]; } joinCmd;
@@ -76,7 +85,7 @@ public:
   SwOSDatagram_t data;
 
   SwOSCom( const uint8_t *mac_addr, const uint8_t *buffer, int length);
-  SwOSCom( const uint8_t *mac_addr, uint16_t serialNumber, FtSwarmControler_t ctrlType, SwOSCommand_t cmd );
+  SwOSCom( const uint8_t *mac_addr, FtSwarmSerialNumber_t serialNumber, FtSwarmControler_t ctrlType, SwOSCommand_t cmd );
 
   void setMAC( const uint8_t *mac_addr );
   

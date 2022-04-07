@@ -343,5 +343,6 @@ Backup of *.doc*
 # my ignores
 *.bin
 Tests.txt
+test.sh
 *.old
 old/

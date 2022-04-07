@@ -1,7 +1,17 @@
-#pragma once
+/*
+ * SwOSHW.h
+ *
+ * internal implementation of all ftSwarm HW. Use ftSwarm-classes in ftSwarm.h to access your HW!
+ * 
+ * (C) 2021/22 Christian Bergschneider & Stefan Fuss
+ * 
+ */
+ 
+ #pragma once
 
 #include <stdint.h>
 
+#include <nvs.h>
 #include <driver/ledc.h>
 #include <driver/gpio.h>
 #include <driver/adc.h>
@@ -40,6 +50,9 @@ public:
   SwOSObj() {};                     // std constructor
 	SwOSObj( const char *name);		    // constructor, sets the objects HW name
   ~SwOSObj();                       // destructor
+
+  virtual void loadAliasFromNVS(  nvs_handle_t my_handle ); // write my alias to NVS
+  virtual void saveAliasToNVS(  nvs_handle_t my_handle );   // load my alias from NVS
   
 	void setName( const char *name);   // set new name
   char *getName();                   // get name
@@ -72,6 +85,8 @@ public:
 	SwOSIO(const char *name, uint8_t port, SwOSCtrl *ctrl);   // constructor name, port, pointer to overlying controler
 
   // Administrative stuff
+  virtual uint8_t         getPort() { return _port; };
+  virtual SwOSCtrl*       getCtrl() { return _ctrl; };
 	virtual FtSwarmIOType_t getIOType() { return FTSWARM_UNDEF; };
   virtual char*           getIcon() { return (char *) "UNDEFINED"; };
 	virtual void            jsonize( JSONize *json, uint8_t id);
@@ -172,13 +187,15 @@ class SwOSJoystick : public SwOSIO {
 protected:
 	adc1_channel_t _ADCChannelLR, _ADCChannelFB;
 	int16_t        _lastLR, _lastFB;
+  int16_t        _zeroLR, _zeroFB;
+  int16_t        _lastRawLR, _lastRawFB;
 
   // local HW procedures
   virtual void _setupLocal(); // initializes local HW
   
 public:
   // constructors
-	SwOSJoystick(const char *name, uint8_t port, SwOSCtrl *ctrl);
+	SwOSJoystick(const char *name, uint8_t port, SwOSCtrl *ctrl, int16_t zeroLR, int16_t zeroFB );
 
   // administrative stuff
 	virtual FtSwarmIOType_t getIOType() { return FTSWARM_JOYSTICK; };
@@ -191,6 +208,7 @@ public:
   // commands
   virtual void getValue( int16_t* FB, int16_t* LR ) { *FB = _lastFB; *LR = _lastLR; };
   virtual void setValue( int16_t  FB, int16_t  lastLR );
+  virtual void calibrate( int16_t *zeroLR, int16_t *zeroFB );  // uses actual readings to calibrate
 };
 
 /***************************************************
@@ -365,8 +383,8 @@ protected:
 	const char *     version( FtSwarmVersion_t v);
 public:
   IPAddress IP;
-	uint16_t  serialNumber;
-  uint8_t   mac[ESP_NOW_ETH_ALEN] = {0,0,0,0,0,0};
+	FtSwarmSerialNumber_t serialNumber;
+  uint8_t mac[ESP_NOW_ETH_ALEN] = {0,0,0,0,0,0};
   
   // common hardware
 	SwOSInput    *input[4];
@@ -374,15 +392,15 @@ public:
 	SwOSGyro     *gyro;
 	
   // constructor, destructor
-  SwOSCtrl( uint16_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda );
+  SwOSCtrl( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda );
   ~SwOSCtrl();
 
   // administrative stuff
   bool AmIAKelda() { return _IAmAKelda; };
 	virtual bool cmdAlias( const char *obj, const char *alias);            // set an alias for this board or IO device
 	virtual bool cmdAlias( char *device, uint8_t port, const char *alias); // set an alias for a IO device
-  virtual SwOSIO *getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port);   // get a pointer to an IO port via address
-	virtual SwOSIO *getIO( char *name);                                    // get a pointer to an IO port via name or alias
+  virtual SwOSIO *getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port);    // get a pointer to an IO port via address
+	virtual SwOSIO *getIO( const char *name);                              // get a pointer to an IO port via name or alias
   virtual FtSwarmControler_t getType();                                  // what I am?
 	virtual char*              myType();                                   // what I am?
   virtual FtSwarmVersion_t   getCPU() { return _CPU; };                  // my CPU type
@@ -392,6 +410,8 @@ public:
   virtual bool               isLocal() { return _local; };               // local or remote?
 	virtual char *             getHostname( );                             // hostname
 	virtual void               jsonize( JSONize *json, uint8_t id);        // send board & IO device information as a json string
+  virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
+  virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
 
   virtual void read(); // run measurements
 
@@ -409,9 +429,6 @@ public:
   // Communications
   virtual bool OnDataRecv( SwOSCom *com );  // data via espnow revceived
   virtual SwOSCom *state2Com( void );    // copy my state in a com struct
-
-  // setup
-  virtual void setup( void );
     
 };
 
@@ -430,16 +447,18 @@ public:
 	SwOSServo *servo;
 
   // constructor, destructor
-	SwOSSwarmJST( uint16_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda );
+	SwOSSwarmJST( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda );
   ~SwOSSwarmJST();
   
   // administrative stuff
 	virtual bool cmdAlias( char *device, uint8_t port, const char *alias); // set an alias for a IO device
   virtual SwOSIO *getIO( FtSwarmIOType_t ioType,  FtSwarmPort_t port);   // get an pointer to the requested IO Device via type&port
-	virtual SwOSIO *getIO( char *name);                                    // get an pointer to the requested IO Device via name or alias
+	virtual SwOSIO *getIO( const char *name);                              // get an pointer to the requested IO Device via name or alias
 	virtual FtSwarmControler_t getType();                                  // what I am?
 	virtual char* myType();                                                // what I am?
 	virtual void jsonize( JSONize *json, uint8_t id);                      // send board & IO device information as a json string
+  virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
+  virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
 
   // API commands
 	virtual bool apiLED( char *id, int brightness, int color );    // send a LED command (from api)
@@ -468,16 +487,18 @@ public:
 	SwOSJoystick *joystick[2];
 	SwOSOLED     *oled;
 
-	SwOSSwarmControl(uint16_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda ); // constructor
+	SwOSSwarmControl(FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda, int16_t zero[2][2] ); // constructor
   ~SwOSSwarmControl(); // destructor
   
   // administrative stuff
 	virtual bool cmdAlias( char *device, uint8_t port, const char *alias); // set an alias for a IO device
   virtual SwOSIO *getIO( FtSwarmIOType_t ioType,  FtSwarmPort_t port);   // get a pointer to the requested IO Device via type & port
-	virtual SwOSIO *getIO( char *name);                                    // get a pointer to the requested IO Device via name or alias
+	virtual SwOSIO *getIO( const char *name);                              // get a pointer to the requested IO Device via name or alias
 	virtual char* myType();                                                // what I am?
 	virtual FtSwarmControler_t getType();                                  // what I am?
 	virtual void jsonize( JSONize *json, uint8_t id);                      // send board & IO device information as a json string
+  virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
+  virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
 
 	virtual void read();                       // run measurements
 

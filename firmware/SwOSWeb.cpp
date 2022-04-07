@@ -1,3 +1,12 @@
+/*
+ * SwOSWEB.h
+ *
+ * fTSwarm buildin WebServer
+ * 
+ * (C) 2021/22 Christian Bergschneider & Stefan Fuss
+ * 
+ */
+ 
 #include <esp_http_server.h>
 #include <esp_log.h>
 #include <cJSON.h>
@@ -384,8 +393,6 @@ esp_err_t apiPostHandler(httpd_req_t *req )
 
 bool SwOSStartWebServer( void ) {
 
-  ESP_LOGD( LOGFTSWARM, "starting webserver.." );
-
   http_server_context_t *http_context = (http_server_context_t*)calloc(1, sizeof(http_server_context_t));
 
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
@@ -420,8 +427,6 @@ bool SwOSStartWebServer( void ) {
   httpd_uri_t staticGet = { .uri = "/static/*", .method = HTTP_GET, .handler = &staticHandler, .user_ctx = NULL };
   httpd_register_uri_handler(server, &staticGet);
 
-  ESP_LOGD( LOGFTSWARM, "webserver is online." );
-  
   return true;
 
 }

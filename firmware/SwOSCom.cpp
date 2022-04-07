@@ -1,3 +1,12 @@
+/*
+ * SwOSCom.cpp
+ *
+ * Communication between your controlers
+ * 
+ * (C) 2021/22 Christian Bergschneider & Stefan Fuss
+ * 
+ */
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -44,7 +53,7 @@ SwOSCom::SwOSCom( const uint8_t *mac_addr, const uint8_t *buffer, int length) {
 
 }
 
-SwOSCom::SwOSCom( const uint8_t *mac_addr, uint16_t serialNumber, FtSwarmControler_t ctrlType, SwOSCommand_t cmd ) {
+SwOSCom::SwOSCom( const uint8_t *mac_addr, FtSwarmSerialNumber_t serialNumber, FtSwarmControler_t ctrlType, SwOSCommand_t cmd ) {
 
   // clear data
   memset(&data, 0, sizeof(data));
