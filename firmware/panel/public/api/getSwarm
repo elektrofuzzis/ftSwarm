@@ -109,7 +109,7 @@
           "icon": "05_resistor.svg",
           "sensorType": 5,
           "subType": "OHMMETER",
-          "value": "2279 Ohm"
+          "value": "42069 Ohm"
         },
         {
           "name": "Alias4",
@@ -136,7 +136,7 @@
           "icon": "17_tractor.svg",
           "subType": "TRACTORMOTOR",
           "motiontype": 0,
-          "power": 0
+          "power": 255
         },
         {
           "name": "ALias7",

@@ -15,6 +15,7 @@
     <div class="outputs" v-if="current === ftswarm['id']">
       <div class="descriptor">OUTPUTS</div>
       <ul>
+        <FtSwarmMotor v-for="output in ftswarm['io'].filter(value => value['type'] === 'ACTOR')" :output="output" :loggedin="!!localStorage.getItem('pin')"></FtSwarmMotor>
       </ul>
     </div>
   </div>
@@ -24,6 +25,7 @@
 import Auth from "@/components/Auth.vue"
 import FtSwarmIcon from "@/components/FtSwarmIcon.vue"
 import FtSwarmInput from "@/components/FtSwarmInput.vue"
+import FtSwarmMotor from "@/components/FtSwarmMotor.vue"
 import {FtSwarm, getSwarm} from "@/loader/ApiLoader";
 import {ref} from "vue";
 
@@ -57,7 +59,8 @@ export default {
   components: {
     Auth,
     FtSwarmIcon,
-    FtSwarmInput
+    FtSwarmInput,
+    FtSwarmMotor
   }
 }
 </script>
@@ -117,4 +120,55 @@ ul {
   align-items: center;
   float: left;
 }
+
+
+li {
+  margin: 5px 2px 2px 5px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+  width: 90%;
+  float: left;
+}
+
+.vertical-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+select {
+  border: none;
+  border-radius: 0;
+  background-color: #f5f5f5;
+  font-size: 0.8em;
+}
+
+.name {
+  font-size: 1.2em;
+  margin-left: 5px;
+}
+
+img {
+  border-radius: 50%;
+  background-color: red;
+  height: 30px;
+}
+
+.on {
+  background-color: green;
+}
+
+.id {
+  color: #a4a4a4;
+  font-size: 0.8em;
+  opacity: 0;
+}
+
+.name:hover>.id {
+  opacity: 1;
+}
+
 </style>

@@ -13,10 +13,10 @@
         <option value="8" :selected="input['sensorType'] === 8">Trailsensor</option>
         <option value="9" :selected="input['sensorType'] === 9">Ultrasonic</option>
       </select>
-      <span class="name">{{input.name}}</span>
+      <span class="name">{{input.name}} <span class="id">{{input.id}}</span></span>
     </div>
     <span class="value">{{input.value.toString().replace("Â", "")}}</span>
-    <img alt="Icon" :src="'../assets/' + input.icon" class="on">
+    <img alt="Icon" :src="'../assets/' + input.icon">
   </li>
 </template>
 
@@ -35,46 +35,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-
-li {
-  margin: 5px 2px 2px 5px;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  height: 100%;
-  width: 90%;
-  float: left;
-}
-
-.vertical-container {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-select {
-  border: none;
-  border-radius: 0;
-  background-color: #f5f5f5;
-  font-size: 0.8em;
-}
-
-.name {
-  font-size: 1.2em;
-  margin-left: 5px;
-}
-
-img {
-  border-radius: 50%;
-  background-color: red;
-  height: 30px;
-}
-
-.on {
-  background-color: green;
-}
-
-</style>
