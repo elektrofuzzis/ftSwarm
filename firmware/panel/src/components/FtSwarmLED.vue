@@ -1,9 +1,12 @@
 <template>
   <li>
+    <div class="vertical-container">
+      <span class="text-muted">Button</span>
       <span class="name">{{ output.name }} <span class="id">{{ output.id }}</span></span>
-    <input class="value" type="range" min="0" max="255" :value="output['brightness']" :disabled="!loggedin">
-    <input type="color" :disabled="!loggedin" :value="'#' + output.color">
-    <img alt="Icon" :src="'../assets/' + output.icon">
+    </div>
+    <input :disabled="!loggedin" :value="output['brightness']" class="value" max="255" min="0" type="range">
+    <input :disabled="!loggedin" :value="'#' + output.color" type="color">
+    <img :src="'../assets/' + output.icon" alt="Icon">
   </li>
 </template>
 

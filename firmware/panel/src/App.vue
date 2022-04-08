@@ -10,6 +10,7 @@
       <div class="descriptor">INPUTS</div>
       <ul>
         <FtSwarmInput v-for="input in ftswarm['io'].filter(value => value['type'] === 'INPUT')" :input="input" :loggedin="!!localStorage.getItem('pin')"></FtSwarmInput>
+        <FtSwarmButton v-for="input in ftswarm['io'].filter(value => value['type'] === 'BUTTON')" :input="input" :loggedin="!!localStorage.getItem('pin')"></FtSwarmButton>
       </ul>
     </div>
     <div class="outputs" v-if="current === ftswarm['id']">
@@ -30,6 +31,7 @@ import FtSwarmInput from "@/components/FtSwarmInput.vue"
 import FtSwarmMotor from "@/components/FtSwarmMotor.vue"
 import FtSwarmLED from "@/components/FtSwarmLED.vue"
 import FtSwarmServo from "@/components/FtSwarmServo.vue"
+import FtSwarmButton from "@/components/FtSwarmButton.vue"
 import {FtSwarm, getSwarm} from "@/loader/ApiLoader";
 import {ref} from "vue";
 
@@ -66,7 +68,8 @@ export default {
     FtSwarmInput,
     FtSwarmMotor,
     FtSwarmLED,
-    FtSwarmServo
+    FtSwarmServo,
+    FtSwarmButton
   }
 }
 </script>
@@ -150,6 +153,11 @@ select {
   border-radius: 0;
   background-color: #f5f5f5;
   font-size: 0.8em;
+}
+
+
+.text-muted {
+  color: #bdc3c7;
 }
 
 .name {

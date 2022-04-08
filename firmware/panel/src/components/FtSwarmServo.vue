@@ -1,8 +1,12 @@
 <template>
   <li>
+    <div class="vertical-container">
+      <span class="text-muted">Servo</span>
       <span class="name">{{ output.name }} <span class="id">{{ output.id }}</span></span>
-    <input class="value" type="range" min="-255" max="255" :value="output['position']" :disabled="!loggedin" style="width: 70%">
-    <img alt="Icon" :src="'../assets/' + output.icon">
+    </div>
+    <input :disabled="!loggedin" :value="output['position']" class="value" max="255" min="-255" style="width: 70%"
+           type="range">
+    <img :src="'../assets/' + output.icon" alt="Icon">
   </li>
 </template>
 
