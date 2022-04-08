@@ -133,11 +133,15 @@ ul {
   float: left;
 }
 
+.container {
+  overflow-x: hidden;
+}
 
 li {
   margin: 5px 2px 2px 5px;
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   height: 100%;

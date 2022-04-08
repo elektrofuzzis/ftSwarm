@@ -193,6 +193,15 @@
           "valueLr": 50,
           "valueFb": 50,
           "button": 1
+        },
+        {
+          "name": "J1",
+          "id": "0-JOYSTICK1",
+          "type": "JOYSTICK",
+          "icon": "11_joystick.svg",
+          "valueLr": 50,
+          "valueFb": 50,
+          "button": 1
         }
       ]
     }
