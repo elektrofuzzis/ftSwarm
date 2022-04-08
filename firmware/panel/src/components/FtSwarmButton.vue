@@ -2,10 +2,10 @@
   <li>
     <div class="vertical-container">
       <span class="text-muted">Button</span>
-      <span class="name">{{input.name}} <span class="id">{{input.id}}</span></span>
+      <span class="name">{{ input.name }} <span class="id">{{ input.id }}</span></span>
     </div>
-    <span class="value">{{input.state.toString().replace("Â", "")}}</span>
-    <img alt="Icon" :src="'../assets/' + input.icon" :class="input.state===1?'on':''">
+    <span class="value">{{ input.state.toString().replace("Â", "") }}</span>
+    <img :class="input.state===1?'on':''" :src="'../assets/' + input.icon" alt="Icon">
   </li>
 </template>
 

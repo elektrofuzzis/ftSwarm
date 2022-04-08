@@ -11,6 +11,7 @@
       <ul>
         <FtSwarmInput v-for="input in ftswarm['io'].filter(value => value['type'] === 'INPUT')" :input="input" :loggedin="!!localStorage.getItem('pin')"></FtSwarmInput>
         <FtSwarmButton v-for="input in ftswarm['io'].filter(value => value['type'] === 'BUTTON')" :input="input" :loggedin="!!localStorage.getItem('pin')"></FtSwarmButton>
+        <FtSwarmJoystick v-for="input in ftswarm['io'].filter(value => value['type'] === 'JOYSTICK')" :input="input" :loggedin="!!localStorage.getItem('pin')"></FtSwarmJoystick>
       </ul>
     </div>
     <div class="outputs" v-if="current === ftswarm['id']">
@@ -32,6 +33,7 @@ import FtSwarmMotor from "@/components/FtSwarmMotor.vue"
 import FtSwarmLED from "@/components/FtSwarmLED.vue"
 import FtSwarmServo from "@/components/FtSwarmServo.vue"
 import FtSwarmButton from "@/components/FtSwarmButton.vue"
+import FtSwarmJoystick from "@/components/FtSwarmJoystick.vue";
 import {FtSwarm, getSwarm} from "@/loader/ApiLoader";
 import {ref} from "vue";
 
@@ -69,7 +71,8 @@ export default {
     FtSwarmMotor,
     FtSwarmLED,
     FtSwarmServo,
-    FtSwarmButton
+    FtSwarmButton,
+    FtSwarmJoystick
   }
 }
 </script>
@@ -172,7 +175,7 @@ img {
 }
 
 .on {
-  background-color: green;
+  background-color: green!important;
 }
 
 .id {

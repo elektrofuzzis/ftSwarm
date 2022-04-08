@@ -172,19 +172,28 @@
           "position": 0
         },
         {
-                  "name": "B1",
-                  "id": "0-BUTTON1",
-                  "type": "BUTTON",
-                  "icon": "12_button.svg",
-                  "state": 0
-                },
-                {
-                                  "name": "B2",
-                                  "id": "0-BUTTON2",
-                                  "type": "BUTTON",
-                                  "icon": "12_button.svg",
-                                  "state": 1
-                                }
+          "name": "B1",
+          "id": "0-BUTTON1",
+          "type": "BUTTON",
+          "icon": "12_button.svg",
+          "state": 0
+        },
+        {
+          "name": "B2",
+          "id": "0-BUTTON2",
+          "type": "BUTTON",
+          "icon": "12_button.svg",
+          "state": 1
+        },
+        {
+          "name": "J1",
+          "id": "0-JOYSTICK1",
+          "type": "JOYSTICK",
+          "icon": "11_joystick.svg",
+          "valueLr": 50,
+          "valueFb": 50,
+          "button": 1
+        }
       ]
     }
 ]
