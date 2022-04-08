@@ -1,21 +1,21 @@
 <template>
-  <input id="authShown" type="checkbox" hidden ref="authShown">
+  <input id="authShown" ref="authShown" hidden type="checkbox">
   <div class="overlay" @click="$refs.authShown.checked = !$refs.authShown.checked">
     <div @click="() => $refs.authShown.checked = !$refs.authShown.checked">
       <div class="key"></div>
       <h2>Login</h2>
       <div class="flex-container">
-        <input type="text" @input="(e) => sanitize(e.target)" name="pin" maxlength="4">
+        <input maxlength="4" name="pin" type="text" @input="(e) => sanitize(e.target)">
         <button id="unlock_btn" disabled @click="(e) => login(e.target)">Unlock with PIN</button>
       </div>
     </div>
   </div>
   <div class="click-to-overlay" @click="popupHandle">
-    <span>{{loginlogout}}</span>
+    <span>{{ loginlogout }}</span>
   </div>
 </template>
 
-<script>
+<script lang="ts">
 export default {
   name: "Auth",
   data() {
@@ -24,27 +24,32 @@ export default {
     return {
       localStorage,
       loginlogout,
-      sanitize(elem) {
+      sanitize(elem: HTMLInputElement) {
         let matches = elem.value.match(/\d+/g);
         if (matches)
           elem.value = matches.join("")
         else
           elem.value = ""
+        // @ts-ignore
         document.querySelector("#unlock_btn").disabled = elem.value.length !== 4
       },
-      login(elem) {
-        if(elem.disabled) return
+      login(elem: HTMLButtonElement) {
+        if (elem.disabled) return
+        // @ts-ignore
         localStorage.setItem("pin", document.querySelector("input[name='pin']").value)
         this.loginlogout = "Logout"
+        // @ts-ignore
+        this.id("authShown").checked = false
       },
-      id(refname){
+      id(refname: string) {
         return document.querySelector(`#${refname}`)
       },
       popupHandle() {
-        if(localStorage.getItem("pin")){
+        if (localStorage.getItem("pin")) {
           localStorage.clear()
           this.loginlogout = "Login"
         }
+        // @ts-ignore
         this.id("authShown").checked = !this.id("authShown").checked
       }
     }
@@ -54,7 +59,7 @@ export default {
 
 <style scoped>
 .click-to-overlay {
-  position: absolute;
+  position: fixed;
   right: 5px;
   bottom: 0;
   width: 100px;
@@ -62,6 +67,8 @@ export default {
   background-color: coral;
   border-top-left-radius: 11px;
   border-top-right-radius: 11px;
+
+  cursor: pointer;
 
   display: flex;
   align-items: center;
@@ -71,6 +78,7 @@ export default {
 
 .overlay {
   position: absolute;
+  text-align: center;
   left: 0;
   right: 0;
   top: -100vh;

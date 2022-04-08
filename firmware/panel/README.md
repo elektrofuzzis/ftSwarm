@@ -15,5 +15,7 @@ npm run serve
 npm run build
 ```
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+### Compiles for deployment on ftSwarm / ESP32 WebServer
+```
+npm run deploy
+```
