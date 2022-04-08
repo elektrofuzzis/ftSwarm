@@ -1,15 +1,14 @@
 <template>
   <li>
       <span class="name">{{ output.name }} <span class="id">{{ output.id }}</span></span>
-    <input class="value" type="range" min="0" max="255" :value="output['brightness']" :disabled="!loggedin">
-    <input type="color" :disabled="!loggedin" :value="'#' + output.color">
+    <input class="value" type="range" min="-255" max="255" :value="output['position']" :disabled="!loggedin" style="width: 70%">
     <img alt="Icon" :src="'../assets/' + output.icon">
   </li>
 </template>
 
 <script lang="ts">
 export default {
-  name: "FtSwarmLED",
+  name: "FtSwarmServo",
   props: {
     output: {
       type: Object,

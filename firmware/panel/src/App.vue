@@ -17,6 +17,7 @@
       <ul>
         <FtSwarmMotor v-for="output in ftswarm['io'].filter(value => value['type'] === 'ACTOR')" :output="output" :loggedin="!!localStorage.getItem('pin')"></FtSwarmMotor>
         <FtSwarmLED v-for="output in ftswarm['io'].filter(value => value['type'] === 'LED')" :output="output" :loggedin="!!localStorage.getItem('pin')"></FtSwarmLED>
+        <FtSwarmServo v-for="output in ftswarm['io'].filter(value => value['type'] === 'SERVO')" :output="output" :loggedin="!!localStorage.getItem('pin')"></FtSwarmServo>
       </ul>
     </div>
   </div>
@@ -28,6 +29,7 @@ import FtSwarmIcon from "@/components/FtSwarmIcon.vue"
 import FtSwarmInput from "@/components/FtSwarmInput.vue"
 import FtSwarmMotor from "@/components/FtSwarmMotor.vue"
 import FtSwarmLED from "@/components/FtSwarmLED.vue"
+import FtSwarmServo from "@/components/FtSwarmServo.vue"
 import {FtSwarm, getSwarm} from "@/loader/ApiLoader";
 import {ref} from "vue";
 
@@ -63,7 +65,8 @@ export default {
     FtSwarmIcon,
     FtSwarmInput,
     FtSwarmMotor,
-    FtSwarmLED
+    FtSwarmLED,
+    FtSwarmServo
   }
 }
 </script>
