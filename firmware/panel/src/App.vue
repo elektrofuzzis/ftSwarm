@@ -16,6 +16,7 @@
       <div class="descriptor">OUTPUTS</div>
       <ul>
         <FtSwarmMotor v-for="output in ftswarm['io'].filter(value => value['type'] === 'ACTOR')" :output="output" :loggedin="!!localStorage.getItem('pin')"></FtSwarmMotor>
+        <FtSwarmLED v-for="output in ftswarm['io'].filter(value => value['type'] === 'LED')" :output="output" :loggedin="!!localStorage.getItem('pin')"></FtSwarmLED>
       </ul>
     </div>
   </div>
@@ -26,6 +27,7 @@ import Auth from "@/components/Auth.vue"
 import FtSwarmIcon from "@/components/FtSwarmIcon.vue"
 import FtSwarmInput from "@/components/FtSwarmInput.vue"
 import FtSwarmMotor from "@/components/FtSwarmMotor.vue"
+import FtSwarmLED from "@/components/FtSwarmLED.vue"
 import {FtSwarm, getSwarm} from "@/loader/ApiLoader";
 import {ref} from "vue";
 
@@ -60,7 +62,8 @@ export default {
     Auth,
     FtSwarmIcon,
     FtSwarmInput,
-    FtSwarmMotor
+    FtSwarmMotor,
+    FtSwarmLED
   }
 }
 </script>
@@ -171,4 +174,18 @@ img {
   opacity: 1;
 }
 
+input[type="range"] {
+  -webkit-appearance: none;
+  height: 10px;
+  border-radius: 5px;
+  background-color: #a4a4a4;
+  outline: none;
+}
+
+input[type="color"] {
+  border: none;
+  border-radius: 0;
+  background-color: #d7d7d7;
+  outline: none;
+}
 </style>
