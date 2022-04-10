@@ -1,12 +1,14 @@
 <template>
   <li>
-    <div class="vertical-container">
-      <span class="text-muted">Servo</span>
-      <span class="name">{{ output.name }} <span class="id">{{ output.id }}</span></span>
+    <div class="horizontal-container">
+      <img :src="'../assets/' + output.icon" alt="Icon">
+      <div class="vertical-container">
+        <span class="text-muted">Servo</span>
+        <span class="name">{{ output.name }}</span>
+      </div>
     </div>
-    <input :disabled="!loggedin" :value="output['position']" class="value" max="255" min="-255" style="width: 70%"
+    <input :disabled="!loggedin" :value="output['position']" class="value" max="255" min="-255" style="float: left"
            type="range">
-    <img :src="'../assets/' + output.icon" alt="Icon">
   </li>
 </template>
 

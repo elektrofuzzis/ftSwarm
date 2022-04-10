@@ -80,13 +80,14 @@ export default {
 <style lang="scss">
 html, body {
   margin: 0;
+  background-color: #151517;
 }
 
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
+  color: #a9a9a9;
   box-sizing: border-box;
 }
 
@@ -106,8 +107,9 @@ nav {
 
 ul {
   height: 100%;
-  width: 80%;
-  float: right;
+  display: flex;
+  flex-direction: column;
+
 }
 
 .inputs, .outputs {
@@ -121,10 +123,10 @@ ul {
   position: absolute;
   font-size: 1.5em;
   font-weight: bold;
-  color: #2c3e50;
+  color: #a4a4a4;
   writing-mode: vertical-lr;
   transform: rotate(180deg);
-  border-right: 5px solid #2c3e50;
+  border-right: 5px solid #a4a4a4;
   margin: 2px;
   display: flex;
   flex-direction: row;
@@ -135,6 +137,7 @@ ul {
 
 .container {
   overflow-x: hidden;
+  width: 100%;
 }
 
 li {
@@ -142,11 +145,15 @@ li {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  justify-content: space-between;
+  justify-content: left;
   align-items: center;
   height: 100%;
-  width: 90%;
+  width: fit-content;
   float: left;
+}
+
+li>*{
+  margin: 2px 10px;
 }
 
 .vertical-container {
@@ -155,16 +162,25 @@ li {
   justify-content: center;
 }
 
+.horizontal-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
 select {
   border: none;
   border-radius: 0;
-  background-color: #f5f5f5;
+  background-color: #34343b;
+  color: white;
   font-size: 0.8em;
+  width: 120px;
 }
 
 
 .text-muted {
   color: #bdc3c7;
+  width: 120px;
 }
 
 .name {
@@ -174,12 +190,15 @@ select {
 
 img {
   border-radius: 50%;
-  background-color: red;
+  background-color: #9d0000;
   height: 30px;
+  margin: 6px;
+  padding: 2px;
+  color: #a9a9a9!important;
 }
 
 .on {
-  background-color: green!important;
+  background-color: #006900 !important;
 }
 
 .id {

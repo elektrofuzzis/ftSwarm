@@ -64,9 +64,10 @@ export default {
   bottom: 0;
   width: 100px;
   height: 30px;
-  background-color: coral;
+  background-color: #9d0000;
   border-top-left-radius: 11px;
   border-top-right-radius: 11px;
+  color: white;
 
   cursor: pointer;
 
@@ -93,7 +94,7 @@ export default {
   width: 200px;
   height: 300px;
   border-radius: 12px;
-  background-color: darkorange;
+  background-color: #9d0000;
 }
 
 #authShown:checked + .overlay {

@@ -1,14 +1,20 @@
 <template>
   <li>
-    <div class="vertical-container">
-      <span class="text-muted">Joystick</span>
-      <span class="name">{{input.name}} <span class="id">{{input.id}}</span></span>
+    <div class="horizontal-container">
+      <img :src="'../assets/' + input.icon" alt="Icon">
+      <div class="vertical-container">
+        <span class="text-muted">Joystick</span>
+        <span class="name">{{ input.name }} <span class="id">{{ input.id }}</span></span>
+      </div>
     </div>
-    <span class="value">Up-Down: {{ input.valueFb.toString().replace("Â", "") }}%</span>
-    <span class="value">Left-Right: {{ input.valueLr.toString().replace("Â", "") }}%</span>
+    <div class="vertical-container">
+      <span class="value">Up-Down: {{ input.valueFb.toString().replace("Â", "") }}%</span>
+      <span class="value">Left-Right: {{ input.valueLr.toString().replace("Â", "") }}%</span>
+    </div>
     <span class="value">Button: {{ input.button.toString().replace("Â", "") }}</span>
     <div class="joystickarea">
-      <div class="joystick" :style="{left:input.valueLr/2+50+'%',top:(-(input.valueFb))/2+50+'%'}" :class="input.button===1?'on':''"></div>
+      <div :class="input.button===1?'on':''" :style="{left:input.valueLr/4+50+'%',top:(-(input.valueFb))/4+25+'%'}"
+           class="joystick"></div>
     </div>
   </li>
 </template>
@@ -31,13 +37,14 @@ export default {
 
 <style scoped>
 .joystickarea {
-  width: 100px;
-  height: 100px;
+  width: 50px;
+  height: 50px;
   border: 1px solid #ccc;
   border-radius: 50%;
   background-color: #ccc;
   position: relative;
 }
+
 .joystick {
   width: 10px;
   height: 10px;

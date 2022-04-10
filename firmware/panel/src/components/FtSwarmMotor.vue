@@ -1,21 +1,23 @@
 <template>
   <li>
-    <div class="vertical-container">
-      <select :disabled="!loggedin">
-        <option value="XMOTOR" :selected="output['subType'] === 'XMOTOR'">XMotor</option>
-        <option value="TRACTORMOTOR" :selected="output['subType'] === 'TRACTORMOTOR'">Tractor Motor</option>
-        <option value="ENCODERMOTOR" :selected="output['subType'] === 'ENCODERMOTOR'">Encoder Motor</option>
-        <option value="LAMP" :selected="output['subType'] === 'LAMP'">Lamp</option>
-      </select>
-      <span class="name">{{ output.name }} <span class="id">{{ output.id }}</span></span>
+    <div class="horizontal-container">
+      <img :src="'../assets/' + output.icon" alt="Icon">
+      <div class="vertical-container">
+        <select :disabled="!loggedin">
+          <option :selected="output['subType'] === 'XMOTOR'" value="XMOTOR">XMotor</option>
+          <option :selected="output['subType'] === 'TRACTORMOTOR'" value="TRACTORMOTOR">Tractor Motor</option>
+          <option :selected="output['subType'] === 'ENCODERMOTOR'" value="ENCODERMOTOR">Encoder Motor</option>
+          <option :selected="output['subType'] === 'LAMP'" value="LAMP">Lamp</option>
+        </select>
+        <span class="name">{{ output.name }} <span class="id">{{ output.id }}</span></span>
+      </div>
     </div>
-    <input class="value" type="range" min="-255" max="255" :value="output['power']" :disabled="!loggedin">
+    <input :disabled="!loggedin" :value="output['power']" class="value" max="255" min="-255" type="range">
     <select :disabled="!loggedin">
-      <option value="0" :selected="output['motiontype'] === 0">COAST</option>
-      <option value="1" :selected="output['motiontype'] === 1">BRAKE</option>
-      <option value="2" :selected="output['motiontype'] === 2">RUN</option>
+      <option :selected="output['motiontype'] === 0" value="0">COAST</option>
+      <option :selected="output['motiontype'] === 1" value="1">BRAKE</option>
+      <option :selected="output['motiontype'] === 2" value="2">RUN</option>
     </select>
-    <img alt="Icon" :src="'../assets/' + output.icon">
   </li>
 </template>
 
