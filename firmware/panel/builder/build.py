@@ -151,7 +151,7 @@ for i in os.walk('gzipped', topdown=True, onerror=None, followlinks=False):
         sfs_files_h += "\n"
         sfs_files_h += f"// /{dirname}/{filename}  SHA1:{get_file_hash(os.path.join(i[0], filename))}\n"
         sfs_files_h += "extern const char sfs" + str(os.path.join(i[0], filename).replace("gzipped", "").replace(os.path.sep, "_").replace(".", "_").replace("-", "_")) + "[];\n"
-        sfs_files_h += "#define SFS_" + str(filename.replace("gzipped", "").replace(os.path.sep, "_").replace(".", "_").replace("-", "_")) + " " + str(get_file_size(os.path.join(i[0], filename))) + "\n"
+        sfs_files_h += "#define SFS_" + str(filename.replace("gzipped", "").replace(os.path.sep, "_").replace(".", "_").replace("-", "_")) + "_len " + str(get_file_size(os.path.join(i[0], filename))) + "\n"
 
 sfs_files_cpp += sfs_files_cpp_appedix
 sfs_files_cpp += """{
