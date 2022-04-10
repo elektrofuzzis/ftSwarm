@@ -346,6 +346,7 @@ Tests.txt
 test.sh
 *.old
 old/
+3D
 
 # Build Files
 deployment/

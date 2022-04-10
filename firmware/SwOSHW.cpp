@@ -809,8 +809,8 @@ void SwOSJoystick::calibrate( int16_t *zeroLR, int16_t *zeroFB ) {
 void SwOSJoystick::jsonize( JSONize *json, uint8_t id) {
   json->startObject();
   SwOSIO::jsonize(json, id);
-  json->variableI16("valueLR", _lastLR );
-  json->variableI16("valueFB", _lastFB );
+  json->variableI16("valueLr", _lastLR );
+  json->variableI16("valueFb", _lastFB );
   json->variableB("button", static_cast<SwOSSwarmControl *>(_ctrl)->button[6+_port]->getState());
   json->endObject();
 }

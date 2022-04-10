@@ -763,25 +763,26 @@ void localMenu( void ) {
       
       for (uint8_t i=0; i<8; i++ ) {
         OSObj[item++] = ftSwarmControl->button[i];
-        printf("(%d) %s - %s\n", item++, ftSwarmControl->button[i]->getName(),   ftSwarmControl->button[i]->getAlias() );
+        printf("(%d) %s - %s\n", item, ftSwarmControl->button[i]->getName(),   ftSwarmControl->button[i]->getAlias() );
       }
       
       for (uint8_t i=0; i<2; i++ ) {
         OSObj[item++] = ftSwarmControl->joystick[i];
-        printf("(%d) %s - %s\n", item++, ftSwarmControl->joystick[i]->getName(), ftSwarmControl->joystick[i]->getAlias() );
+        printf("(%d) %s - %s\n", item, ftSwarmControl->joystick[i]->getName(), ftSwarmControl->joystick[i]->getAlias() );
       }
       
       if (ftSwarmControl->oled) {
         OSObj[item++] = ftSwarmControl->oled;
-        printf("(%d) %s - %s\n", item++, ftSwarmControl->oled->getName(), ftSwarmControl->oled->getAlias() );
+        printf("(%d) %s - %s\n", item, ftSwarmControl->oled->getName(), ftSwarmControl->oled->getAlias() );
       }
       
-      printf("(%d) calibrate joysticks\n", item );
+      printf("(%d) calibrate joysticks\n", ++item );
       
     }
 
     // User's choise
-    uint8_t choise = simpleSelect("\n(0) exit\nlocal controler>", '0', '1'+item) - '0';
+    uint8_t choise = 0xFF;
+    while ( choise > item ) choise = enterNumber("\n(0) exit\nlocal controler>");
 
     // exit?
     if ( choise == 0 ) {
