@@ -57,7 +57,7 @@ def get_sfs_defs(sfs_file):
             lines.append("    " + ", ".join(chunk) + ",")
 
         definition = """
-const char sfs""" + str(sfs_file.replace("gzipped", "").replace(os.path.sep, "_").replace(".", "_")) + """[] = {
+const char sfs""" + str(sfs_file.replace("gzipped", "").replace(os.path.sep, "_").replace(".", "_").replace("-", "_")) + """[] = {
 """
 
         definition += "\n".join(lines)
@@ -75,9 +75,9 @@ def get_file_appendix(sfs_file):
     :return: The appendix for the given SFS file
     """
     return """
-    if (strcmp(filename, \"""" + sfs_file[7:] + """\") == 0) {
+    if (strcmp(filename, \"""" + sfs_file[7:].replace("\\", "/") + """\") == 0) {
         *length = """ + str(get_file_size(sfs_file)) + """;
-        return sfs_index_html;
+        return sfs""" + str(str(sfs_file).replace("gzipped", "").replace(os.path.sep, "_").replace(".", "_").replace("-", "_")) + """;
     } else """
 
 consoleloader = Halo(text='Preparing...', spinner="arc")
@@ -140,8 +140,6 @@ sfs_files_cpp = """
 
 sfs_files_cpp_appedix = """
 const char *sfs_get_file( char *filename, uint32_t *length ) {
-
-}
 """
 
 # Get the SFS file definitions
@@ -152,13 +150,14 @@ for i in os.walk('gzipped', topdown=True, onerror=None, followlinks=False):
         sfs_files_cpp_appedix += get_file_appendix(os.path.join(i[0], filename))
         sfs_files_h += "\n"
         sfs_files_h += f"// /{dirname}/{filename}  SHA1:{get_file_hash(os.path.join(i[0], filename))}\n"
-        sfs_files_h += "extern const char sfs" + str(os.path.join(i[0], filename).replace("gzipped", "").replace(os.path.sep, "_").replace(".", "_")) + "[];\n"
-        sfs_files_h += "#define SFS_" + str(filename.replace("gzipped", "").replace(os.path.sep, "_").replace(".", "_")) + " " + str(get_file_size(os.path.join(i[0], filename))) + "\n"
+        sfs_files_h += "extern const char sfs" + str(os.path.join(i[0], filename).replace("gzipped", "").replace(os.path.sep, "_").replace(".", "_").replace("-", "_")) + "[];\n"
+        sfs_files_h += "#define SFS_" + str(filename.replace("gzipped", "").replace(os.path.sep, "_").replace(".", "_").replace("-", "_")) + " " + str(get_file_size(os.path.join(i[0], filename))) + "\n"
 
 sfs_files_cpp += sfs_files_cpp_appedix
 sfs_files_cpp += """{
-    *length = 0;
-    return "";
+        *length = 0;
+        return "";
+    }
 }
 
 """
