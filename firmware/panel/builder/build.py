@@ -183,3 +183,14 @@ shutil.rmtree('base')
 # Warn user about encoding headers
 consoleloader.warn("Please be sure to provide the HTTP header 'Content-Encoding: gzip' to the client.")
 consoleloader.succeed("Cleaned up")
+consoleloader = Halo("Integrating...")
+
+if os.path.exists("../../sfs_files.cpp"):
+    os.remove("../../sfs_files.cpp")
+if os.path.exists("../../sfs_files.h"):
+    os.remove("../../sfs_files.h")
+
+shutil.copy("../deployment/sfs_files.cpp", "../../")
+shutil.copy("../deployment/sfs_files.h", "../../")
+
+consoleloader.succeed("Integrated")
