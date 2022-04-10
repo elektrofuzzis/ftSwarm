@@ -42,8 +42,12 @@ public:
 
   // write variables
 	void variable( const char *identifier, char *value);
-	void variable( const char *identifier, uint32_t i );
-	void variableX( const char *identifier, uint32_t i );
+  void variableB( const char *identifier, bool b );
+  void variableUI8( const char *identifier, uint8_t i );
+  void variableI16( const char *identifier, int16_t i );
+  void variableUI16( const char *identifier, uint16_t i );
+	void variableUI32( const char *identifier, uint32_t i );
+  void variableUI32X( const char *identifier, uint32_t i );
   void variableVolt( const char *identifier, float f);
 	void variableOhm( const char *identifier, float f);
   void variableCelcius( const char *identifier, float f);

@@ -135,31 +135,6 @@ cJSON *getJSON( httpd_req_t *req ) {
   return cJSON_Parse(body);
 }
 
-esp_err_t indexHandler(httpd_req_t *req )
-{
-  char line[512];
-
-  ESP_LOGD( LOGFTSWARM, "/index.html");
-
-  httpd_resp_send_chunk(req, sfs_index_html, sfs_index_len);
-
-  httpd_resp_sendstr_chunk(req, NULL);
-
-  return ESP_OK;
-}
-
-esp_err_t stylesHandler(httpd_req_t *req )
-{
-    ESP_LOGD( LOGFTSWARM, "/static/styles.css");
-  
-    httpd_resp_set_type(req, "text/css");
-    httpd_resp_send_chunk(req, sfs_styles_css, sfs_styles_len);
-
-    httpd_resp_sendstr_chunk(req, NULL);
-
-    return ESP_OK;
-}
-
 #define CHECK_FILE_EXTENSION(filename, ext) (strcasecmp(&filename[strlen(filename) - strlen(ext)], ext) == 0)
 
 /* Set HTTP response content type according to file extension */
@@ -200,15 +175,32 @@ char * findlast( char *str, char ch) {
 
 }
 
-esp_err_t staticHandler(httpd_req_t *req )
+esp_err_t indexHandler(httpd_req_t *req )
+{
+  char line[512];
+
+  ESP_LOGD( LOGFTSWARM, "/index.html");
+
+  httpd_resp_set_hdr( req, "Content-Encoding", "gzip" );
+  httpd_resp_set_type( req, "text/html" ); 
+
+  httpd_resp_send_chunk(req, sfs_index_html, SFS_index_html_len);
+
+  httpd_resp_sendstr_chunk(req, NULL);
+
+  return ESP_OK;
+}
+
+esp_err_t fileHandler(httpd_req_t *req )
 {
   ESP_LOGD( LOGFTSWARM, "%s", req->uri);
 
   char *file = findlast( (char *) req->uri, '/' );
   set_content_type_from_file( req, file);
-
+  httpd_resp_set_hdr( req, "Content-Encoding", "gzip" );
+  
   uint32_t len;
-  const char * x = sfs_get_file( file, &len);
+  const char * x = sfs_get_file( (char *) req->uri, &len);
 
   httpd_resp_send_chunk(req, x, len);
   httpd_resp_sendstr_chunk(req, NULL);
@@ -418,14 +410,18 @@ bool SwOSStartWebServer( void ) {
   // /api/* HTTP_POST
   httpd_uri_t apiPost = { .uri = "/api/*", .method = HTTP_POST, .handler = &apiPostHandler, .user_ctx = http_context };
   httpd_register_uri_handler(server, &apiPost);
-
-  // styles.css
-  httpd_uri_t stylesGet = { .uri = "/styles.css", .method = HTTP_GET, .handler = &stylesHandler, .user_ctx = NULL };
-  httpd_register_uri_handler(server, &stylesGet);
     
-  // images
-  httpd_uri_t staticGet = { .uri = "/static/*", .method = HTTP_GET, .handler = &staticHandler, .user_ctx = NULL };
-  httpd_register_uri_handler(server, &staticGet);
+  // css
+  httpd_uri_t cssGet = { .uri = "/css/*", .method = HTTP_GET, .handler = &fileHandler, .user_ctx = NULL };
+  httpd_register_uri_handler(server, &cssGet);
+
+  // js
+  httpd_uri_t jsGet = { .uri = "/js/*", .method = HTTP_GET, .handler = &fileHandler, .user_ctx = NULL };
+  httpd_register_uri_handler(server, &jsGet);
+
+    // assets
+  httpd_uri_t assetsGet = { .uri = "/assets/*", .method = HTTP_GET, .handler = &fileHandler, .user_ctx = NULL };
+  httpd_register_uri_handler(server, &assetsGet);
 
   return true;
 

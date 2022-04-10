@@ -187,8 +187,8 @@ class SwOSJoystick : public SwOSIO {
 protected:
 	adc1_channel_t _ADCChannelLR, _ADCChannelFB;
 	int16_t        _lastLR, _lastFB;
-  int16_t        _zeroLR, _zeroFB;
-  int16_t        _lastRawLR, _lastRawFB;
+  int16_t         _zeroLR, _zeroFB;
+  int16_t         _lastRawLR, _lastRawFB;
 
   // local HW procedures
   virtual void _setupLocal(); // initializes local HW

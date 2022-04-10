@@ -473,11 +473,11 @@ FtSwarmToggle_t SwOSInput::getToggle() {
 void SwOSInput::jsonize( JSONize *json, uint8_t id) {
   json->startObject();
   SwOSIO::jsonize(json, id);
-  json->variable("sensorType", _sensorType);
+  json->variableUI32("sensorType", _sensorType);
   json->variable("subType",    (char *) SENSORTYPE[_sensorType]);
 
   if ( isDigitalSensor() ) {
-    json->variable("value", getValueUI32() );
+    json->variableUI32("value", getValueUI32() );
   } else if ( _sensorType == FTSWARM_VOLTMETER ) {
     json->variableVolt("value", getVoltage() );
   } else if ( _sensorType == FTSWARM_OHMMETER ) {
@@ -485,7 +485,7 @@ void SwOSInput::jsonize( JSONize *json, uint8_t id) {
   } else if ( _sensorType == FTSWARM_THERMOMETER ) {
     json->variableCelcius("value", getCelcius() );
   } else {
-    json->variable("value", getValueUI32() );
+    json->variableUI32("value", getValueUI32() );
   }
   
   json->endObject();
@@ -671,8 +671,8 @@ void SwOSActor::jsonize( JSONize *json, uint8_t id) {
   json->startObject();
   SwOSIO::jsonize(json, id);
   json->variable("subType",    (char *) ACTORTYPE[ _actorType ] );
-  json->variable("motiontype", getMotionType() );
-  json->variable("power",      getPower() );
+  json->variableUI32("motiontype", getMotionType() );
+  json->variableI16 ("power",      getPower() );
   json->endObject();
 }
 
@@ -809,9 +809,9 @@ void SwOSJoystick::calibrate( int16_t *zeroLR, int16_t *zeroFB ) {
 void SwOSJoystick::jsonize( JSONize *json, uint8_t id) {
   json->startObject();
   SwOSIO::jsonize(json, id);
-  json->variable("valueLR", _lastLR);
-  json->variable("valueFB", _lastFB);
-  json->variable("button", static_cast<SwOSSwarmControl *>(_ctrl)->button[6+_port]->getState());
+  json->variableI16("valueLR", _lastLR );
+  json->variableI16("valueFB", _lastFB );
+  json->variableB("button", static_cast<SwOSSwarmControl *>(_ctrl)->button[6+_port]->getState());
   json->endObject();
 }
 
@@ -915,8 +915,8 @@ void SwOSLED::_setBrightnessLocal() {
 void SwOSLED::jsonize( JSONize *json, uint8_t id) {
   json->startObject();
   SwOSIO::jsonize(json, id);
-  json->variable("brightness", _brightness);
-  json->variableX("color",     _color);
+  json->variableUI8  ("brightness", _brightness);
+  json->variableUI32X("color",     _color);
   json->endObject();
 }
 
@@ -1010,8 +1010,8 @@ void SwOSServo::_setRemote() {
 void SwOSServo::jsonize( JSONize *json, uint8_t id) {
   json->startObject();
   SwOSIO::jsonize(json, id);
-  json->variable("offset",   _offset);
-  json->variable("position", _position);
+  json->variableI16("offset",   _offset);
+  json->variableI16("position", _position);
   json->endObject();
 }
 
@@ -1069,7 +1069,7 @@ SwOSButton::SwOSButton(const char *name, uint8_t port, SwOSCtrl *ctrl) : SwOSIO(
 void SwOSButton::jsonize( JSONize *json, uint8_t id) {
   json->startObject();
   SwOSIO::jsonize(json, id);
-  json->variable("state", _lastState );
+  json->variableB("state", _lastState );
   json->endObject();
 }
 void SwOSButton::setState( bool state ) {
@@ -1312,13 +1312,13 @@ char *SwOSCtrl::getHostname( void ) {
 void SwOSCtrl::jsonize( JSONize *json, uint8_t id) {
 
   json->variable( "name", getHostname());
-  json->variable( "id", id);
-  json->variable( "serialNumber", serialNumber);
+  json->variableUI8( "id", id);
+  json->variableUI16( "serialNumber", serialNumber);
 
   char hostinfo[250];
   sprintf(hostinfo, "%s S/N: %u HAT%s CPU%s Kelda: %d", myType(), serialNumber, getVersionHAT(), getVersionCPU(), _IAmAKelda );
   json->variable( "hostinfo", hostinfo);
-  json->variable( "type", strdup( myType() ) );
+  json->variable( "type", myType() );
 
 }
 
@@ -1701,21 +1701,19 @@ FtSwarmControler_t SwOSSwarmControl::getType() {
 void SwOSSwarmControl::jsonize( JSONize *json, uint8_t id) {
 
   json->startObject();
-
   SwOSCtrl::jsonize(json, id);
-
   json->startArray( "io" );
-
 
   for (uint8_t i=0; i<4; i++) { input[i]->jsonize( json, id ); }
   for (uint8_t i=0; i<2; i++) { actor[i]->jsonize( json, id ); }
   for (uint8_t i=0; i<6; i++) { button[i]->jsonize( json, id ); }
-  for (uint8_t i=0; i<2; i++) { joystick[i]->jsonize( json, id ); }
+  for (uint8_t i=0; i<2; i++) { joystick[i]->jsonize( json, id ); } 
   if (gyro)  { gyro->jsonize(json, id); }
 
   json->endArray();
   json->endObject();
 }
+
 
 void SwOSSwarmControl::read() {
 
