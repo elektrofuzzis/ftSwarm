@@ -55,6 +55,10 @@ const char ACTORICON[FTSWARM_MAXACTOR][20] = {
 
 const char ACTORTYPE[FTSWARM_MAXACTOR][20] = { "XMOTOR", "TRACTORMOTOR", "ENCODERMOTOR", "LAMP" };
 
+const uint32_t LEDCOLOR0[MAXSTATE] = { CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red };
+const uint32_t LEDCOLOR1[MAXSTATE] = { CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red };
+const char     OLEDMSG[MAXSTATE][20] = { "booting", "connecting wifi", "normal operation", "ERROR - check logs" };
+
 /***************************************************
  *
  *   SwOSObj - Base class for all SwOS objects.
@@ -1039,9 +1043,196 @@ void SwOSServo::setOffset( int16_t offset ) {
  *
  ***************************************************/
 
-SwOSOLED::SwOSOLED(const char *name, SwOSCtrl *ctrl) : SwOSIO( name, ctrl ) {
+void SwOSOLED::_setupLocal() {
+  
+   _display = new Adafruit_SSD1306 (128, 64, &Wire, -1);
+   if ( !_display->begin(SSD1306_SWITCHCAPVCC, 0x3C ) ) {
+    delete _display;
+    _display = NULL;
+    ESP_LOGE( LOGFTSWARM, "Couldn't initialize OLED display." );
+    return;
+   }
+
+   // set useful default values
+   setTextSize(1);              // Normal 1:1 pixel scale
+   setTextColor(SSD1306_WHITE); // Draw white text
+   setCursor(0, 0);             // Start at top-left corner
+   cp437(true);                 // Use full 256 char 'Code Page 437' font
+   clearDisplay();
 
 }
+
+SwOSOLED::SwOSOLED(const char *name, SwOSCtrl *ctrl) : SwOSIO( name, ctrl ) {
+
+  if ( _ctrl->isLocal() ) _setupLocal();
+
+}
+
+void SwOSOLED::display(void) {
+  if (_display) _display->display();
+}
+
+void SwOSOLED::clearDisplay(void) {
+  if (_display) _display->clearDisplay();
+}
+
+void SwOSOLED::invertDisplay(bool i) {
+  if (_display) _display->invertDisplay( i );
+}
+
+void SwOSOLED::dim(bool dim) {
+  if (_display) _display->dim( dim );
+}
+
+void SwOSOLED::drawPixel(int16_t x, int16_t y, uint16_t color) {
+  if (_display) _display->drawPixel( x, y, color );
+}
+
+void SwOSOLED::drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) {
+  if (_display) _display->drawFastHLine( x, y, w, color );
+}
+
+void SwOSOLED::drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color) {
+  if (_display) _display->drawFastVLine( x, y, h, color );
+}
+
+void SwOSOLED::startscrollright(uint8_t start, uint8_t stop) {
+  if (_display) _display->startscrollright( start, stop );
+}
+
+void SwOSOLED::startscrollleft(uint8_t start, uint8_t stop) {
+  if (_display) _display->startscrollleft( start, stop );
+}
+
+void SwOSOLED::startscrolldiagright(uint8_t start, uint8_t stop) {
+  if (_display) _display->startscrolldiagright( start, stop );
+}
+
+void SwOSOLED::startscrolldiagleft(uint8_t start, uint8_t stop) {
+  if (_display) _display->startscrolldiagleft( start, stop );
+}
+
+void SwOSOLED::stopscroll(void) {
+  if (_display) _display->stopscroll( );
+}
+
+void SwOSOLED::setRotation(uint8_t r) {
+  if (_display) _display->stopscroll( );
+}
+
+void SwOSOLED::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
+  if (_display) _display->fillRect( x, y, w, h, color );
+} 
+
+void SwOSOLED::fillScreen(uint16_t color) {
+  if (_display) _display->fillScreen( color ); 
+} 
+
+void SwOSOLED::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color) {
+  if (_display) _display->drawLine( x0, y0, x1, y1, color ); 
+} 
+
+void SwOSOLED::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
+  if (_display) _display->drawRect( x, y, w, h, color );
+} 
+
+void SwOSOLED::drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) {
+  if (_display) _display->drawCircle( x0, y0, r, color); 
+} 
+
+void SwOSOLED::fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) {
+  if (_display) _display->fillCircle( x0, y0,r, color );
+} 
+
+void SwOSOLED::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color) {
+  if (_display) _display->drawTriangle( x0, y0, x1, y1, x2, y2, color );
+} 
+
+void SwOSOLED::fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color) {
+  if (_display) _display->fillTriangle( x0, y0, x1, y1, x2, y2, color );
+} 
+
+void SwOSOLED::drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, uint16_t color) {
+  if (_display) _display->drawRoundRect( x0, y0, w, h, radius, color ); 
+} 
+
+void SwOSOLED::fillRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, uint16_t color) {
+  if (_display) _display->fillRoundRect( x0, y0, w, h, radius, color );
+} 
+
+void SwOSOLED::drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t size) {
+  if (_display) _display->drawChar( x, y, c, color, bg, size);
+} 
+
+void SwOSOLED::drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t size_x, uint8_t size_y) {
+  if (_display) _display->drawChar( x, y, c, color, bg, size_x, size_y );
+} 
+
+void SwOSOLED::getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h) {
+  if (_display) _display->getTextBounds( string, x, y, x1, y1, w, h );
+} 
+
+void SwOSOLED::setTextSize(uint8_t s) {
+  if (_display) _display->setTextSize( s ); 
+} 
+
+void SwOSOLED::setTextSize(uint8_t sx, uint8_t sy) {
+  if (_display) _display->setTextSize( sx, sy );
+} 
+
+void SwOSOLED::setFont(const GFXfont *f ) {
+  if (_display) _display->setFont( f );
+}
+
+void SwOSOLED::setCursor(int16_t x, int16_t y) {
+  if (_display) _display->setCursor( x, y );
+}
+
+void SwOSOLED::setTextColor(uint16_t c) {
+  if (_display) _display->setTextColor( c );
+}
+
+void SwOSOLED::setTextColor(uint16_t c, uint16_t bg) {
+  if (_display) _display->setTextColor( c, bg );
+}
+
+void SwOSOLED::setTextWrap(bool w) {
+  if (_display) _display->setTextWrap( w );
+}
+
+void SwOSOLED::cp437(bool x ) {
+  if (_display) _display->cp437( x );
+}
+
+void SwOSOLED::write(uint8_t ch) {
+  if (_display) _display->write( ch );
+}
+
+void SwOSOLED::write(const char *str) {
+  char *ptr = (char *) str;
+  while (*ptr != '\0') { write( *ptr ); ptr++; }
+}
+
+int16_t SwOSOLED::width(void)  {
+  if (_display) return _display->width( ); else return 0;
+}
+
+int16_t SwOSOLED::height(void) {
+  if (_display) return _display->height( ); else return 0;
+}
+
+uint8_t SwOSOLED::getRotation(void)  {
+  if (_display) return _display->getRotation( ); else return 0;
+}
+
+int16_t SwOSOLED::getCursorX(void) {
+  if (_display) return _display->getCursorX( ); else return 0;
+}
+
+int16_t SwOSOLED::getCursorY(void) {
+  if (_display) return _display->getCursorY( ); else return 0;
+}
+
 
 
 /***************************************************
@@ -1374,9 +1565,9 @@ bool SwOSCtrl::maintenanceMode() {
   return false;
 }
 
-void SwOSCtrl::setState( int state ) { 
-    // visualizes controler's state
-
+void SwOSCtrl::setState( SwOSState_t state ) {
+  // visualizes controler's state like booting, error,...
+  // no display, no led, no fun
 }
 
 bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
@@ -1548,11 +1739,11 @@ bool SwOSSwarmJST::apiServo( char *id, int offset, int position ) {
 
 }
 
-void SwOSSwarmJST::setState( int state ) { 
-  // visualizes controler's state
+void SwOSSwarmJST::setState( SwOSState_t state ) {
+  // visualizes controler's state like booting, error,...
 
-  if (led[0]) led[0]->setColor(state);
-  if (led[1]) led[1]->setColor(state);
+  if (led[0]) led[0]->setColor( LEDCOLOR0[state] );
+  if (led[1]) led[1]->setColor( LEDCOLOR1[state] );
   
 }
 
@@ -1734,11 +1925,20 @@ void SwOSSwarmControl::read() {
 
 }
 
-void SwOSSwarmControl::setState( int state ) { 
-    // visualizes controler's state
+void SwOSSwarmControl::setState( SwOSState_t state ) {
+  // visualizes controler's state like booting, error,...
 
-    // TODO show state on OLED
+  if (!oled) return;
+  
+  oled->fillRect( 0, 0, 128, 8, 0 );
 
+  int16_t x1, y1;
+  uint16_t w, h;
+  oled->getTextBounds( OLEDMSG[state], 0, 0, &x1, &y1, &w, &h );
+  oled->setCursor( ( oled->width() - w ) / 2, 0 ); oled->write( OLEDMSG[state] );
+
+  oled->display();
+ 
 }
 
 SwOSCom *SwOSSwarmControl::state2Com( void ) {

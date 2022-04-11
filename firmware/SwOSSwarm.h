@@ -61,7 +61,7 @@ public:
 	bool apiLED( char *id, int brightness, int color );   // send a LED command (from api)
 	bool apiServo( char *id, int offset, int position );  // send a Servo command (from api)
 
-  void setState( int state );
+  void setState( SwOSState_t state );
     // visualizes controler's state
 
   // **** inter swarm communication ****

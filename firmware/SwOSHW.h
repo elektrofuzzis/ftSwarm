@@ -31,12 +31,10 @@
 #define MAXPIXEL 16
 #define BRIGHTNESSDEFAULT 48
 
-#define BOOTING   CRGB::Blue
-#define STARTWIFI CRGB::Yellow
-#define RUNNING   CRGB::Green
-#define ERROR     CRGB::Red
-
 class SwOSCtrl; // forward declaration
+
+// state
+typedef enum { BOOTING, STARTWIFI, RUNNING, ERROR, MAXSTATE } SwOSState_t;
 
 /***************************************************
  *
@@ -293,20 +291,59 @@ class SwOSServo : public SwOSIO {
 
 class SwOSOLED : public SwOSIO {
   protected:
-/*
-    // **** OLED ****
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 64 // OLED display height, in pixels
-#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
-#define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-Adafruit_SSD1306 ftSwarmOLED(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-*/
-public:
-  // constructor
-	SwOSOLED(const char *name, SwOSCtrl *ctrl);
+    Adafruit_SSD1306 *_display = NULL;
+    
+    // local HW procedures
+    virtual void _setupLocal(); // initializes local HW
+    
+  public:
+    // constructor
+	  SwOSOLED(const char *name, SwOSCtrl *ctrl);
 
-  // administrative stuff
-	virtual FtSwarmIOType_t getIOType() { return FTSWARM_OLED; };
+    // administrative stuff
+	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_OLED; };
+
+    void display(void);
+    void clearDisplay(void);
+    void invertDisplay(bool i);
+    void dim(bool dim);
+    void drawPixel(int16_t x, int16_t y, uint16_t color);
+    void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);
+    void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
+    void startscrollright(uint8_t start, uint8_t stop);
+    void startscrollleft(uint8_t start, uint8_t stop);
+    void startscrolldiagright(uint8_t start, uint8_t stop);
+    void startscrolldiagleft(uint8_t start, uint8_t stop);
+    void stopscroll(void);   
+    void setRotation(uint8_t r);
+    void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
+    void fillScreen(uint16_t color);
+    void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
+    void drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
+    void drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
+    void fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
+    void drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
+    void fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
+    void drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, uint16_t color);
+    void fillRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, uint16_t color);
+    void drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t size);
+    void drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t size_x, uint8_t size_y);
+    void getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h);
+    void setTextSize(uint8_t s);
+    void setTextSize(uint8_t sx, uint8_t sy);
+    void setFont(const GFXfont *f = NULL);   
+    void setCursor(int16_t x, int16_t y);
+    void setTextColor(uint16_t c);
+    void setTextColor(uint16_t c, uint16_t bg);
+    void setTextWrap(bool w);
+    void cp437(bool x = true);
+    void write(uint8_t ch);
+    void write(const char *str);
+    int16_t width(void);
+    int16_t height(void);
+    uint8_t getRotation(void);
+    int16_t getCursorX(void);
+    int16_t getCursorY(void);
 };
 
 /***************************************************
@@ -423,7 +460,8 @@ public:
 	virtual void               jsonize( JSONize *json, uint8_t id);        // send board & IO device information as a json string
   virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
   virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
-
+  virtual void setState( SwOSState_t state );                            // visualizes controler's state like booting, error,...
+    
   virtual void read(); // run measurements
 
   // API commnds
@@ -434,8 +472,6 @@ public:
 
   virtual bool maintenanceMode();
 
-  virtual void setState( int state );
-    // visualizes controler's state
 
   // Communications
   virtual bool OnDataRecv( SwOSCom *com );  // data via espnow revceived
@@ -470,12 +506,11 @@ public:
 	virtual void jsonize( JSONize *json, uint8_t id);                      // send board & IO device information as a json string
   virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
   virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
+  virtual void setState( SwOSState_t state );                            // visualizes controler's state like booting, error,...
 
   // API commands
 	virtual bool apiLED( char *id, int brightness, int color );    // send a LED command (from api)
 	virtual bool apiServo( char *id, int offset, int position );   // send a Servo command (from api)
-
-  virtual void setState( int state );      // visualizes controler's state
 
   // **** Communications *****
   virtual bool recvState( SwOSCom *com );  // receive state from another ftSwarmControl
@@ -510,10 +545,9 @@ public:
 	virtual void jsonize( JSONize *json, uint8_t id);                      // send board & IO device information as a json string
   virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
   virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
+  virtual void setState( SwOSState_t state );                            // visualizes controler's state like booting, error,...
 
 	virtual void read();                       // run measurements
-
-  virtual void setState( int state );        // visualizes controler's state
 
   // **** Communications *****
   virtual bool recvState( SwOSCom *com );    // receive state from another FtSwarmControl

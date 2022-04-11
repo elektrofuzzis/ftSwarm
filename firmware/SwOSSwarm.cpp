@@ -99,6 +99,51 @@ void readTask( void *parameter ) {
  *
  ***************************************************/
 
+/*
+ export default function (prevAccessToken: number, pin: number) {
+    let pinCodeTokenMix = 0
+    let prevAccessTokenBinaryString = prevAccessToken.toString(2)
+
+    for (let i = 0; i < prevAccessTokenBinaryString.length; i++) {
+        pinCodeTokenMix += (prevAccessTokenBinaryString.charAt(i) == "0" ? 0 : 1)^pin << i^pin;
+    }
+
+    pinCodeTokenMix ^= pin << pinCodeTokenMix&prevAccessToken
+    pinCodeTokenMix = (~pin) ^ pinCodeTokenMix
+
+    pinCodeTokenMix *= pinCodeTokenMix
+
+    // Get the first 16 bits out of this
+    let pinCodeTokenMixBinaryString = pinCodeTokenMix.toString(2)
+    let first16bits = 0
+    for (let i = 0; i < Math.min(pinCodeTokenMixBinaryString.length, 16); i++) {
+        first16bits += (pinCodeTokenMixBinaryString.charAt(i) == "0" ? 0 : 1) << i;
+    }
+
+    return first16bits
+}
+*/
+
+uint16_t newToken( uint16_t prevAccessToken, uint16_t pin ) {
+
+  uint32_t pin32            = pin;
+  uint32_t prevAccesToken32 = prevAccessToken;
+  uint32_t pinCodeTokenMix  = 0;
+
+  uint32_t flag = 1<<15;
+  for ( uint8_t i=0; i<16; i++ ) {
+    pinCodeTokenMix += ( ( prevAccessToken & flag ) ^ pin ) << (i ^ pin );
+  }
+
+  pinCodeTokenMix ^= pin << ( pinCodeTokenMix & prevAccessToken );
+  pinCodeTokenMix = (~pin) ^ pinCodeTokenMix;
+
+  pinCodeTokenMix *= pinCodeTokenMix;
+
+  return ( ( pinCodeTokenMix >> 16) & 0xFFFF );
+  
+}
+
 FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 
   if (verbose) printf("\n\nftSwarmOS 0.10\n\n(C) Christian Bergschneider & Stefan Fuss\n\nPress any key to enter bios settings.\n");
@@ -405,7 +450,7 @@ bool SwOSSwarm::apiServo( char *id, int offset, int position ) {
   
 }
 
-void SwOSSwarm::setState( int state ) {
+void SwOSSwarm::setState( SwOSState_t state ) {
 
   if (Ctrl[0]) Ctrl[0]->setState( state );
 
