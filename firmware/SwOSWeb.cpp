@@ -71,26 +71,25 @@ static char *getBody(httpd_req_t *req) {
   
 }
 
-esp_err_t sendResponse( httpd_req_t *req, uint16_t status ) {
+esp_err_t sendResponse( httpd_req_t *req, uint16_t status, bool keepOpen = false ) {
 
+  httpd_resp_set_type( req, "application/json; charset=utf-8" );
+  
   switch (status) {
-    case 200:
-      httpd_resp_set_status( req, HTTPD_200 );
-      httpd_resp_sendstr(req, "Post control value successfully");
-      return ESP_OK;
-    case 400:
-      httpd_resp_set_status( req, HTTPD_400 );
-      return ESP_FAIL;
-    case 401:
-      httpd_resp_set_status( req, HTTPD_401 );
-      return ESP_FAIL;
-    case 404:
-      httpd_resp_set_status( req, HTTPD_404 );
-      return ESP_FAIL;
-    default:
-      httpd_resp_set_status( req, HTTPD_500 );
-      return ESP_FAIL;
+    case 200: httpd_resp_set_status( req, HTTPD_200 ); break;
+    case 400: httpd_resp_set_status( req, HTTPD_400 ); break;
+    case 401: httpd_resp_set_status( req, HTTPD_401 ); break;
+    case 404: httpd_resp_set_status( req, HTTPD_404 ); break;
+    default:  httpd_resp_set_status( req, HTTPD_500 ); break;
   }
+
+  if (!keepOpen) {
+    // reply noting
+    httpd_resp_sendstr(req, "{}" ); 
+    httpd_resp_sendstr(req, NULL );
+  }
+  
+  return ESP_OK;
 }
 
 cJSON *getJSON( httpd_req_t *req ) {
@@ -268,31 +267,35 @@ esp_err_t fileHandler(httpd_req_t *req ) {
   // file found?
   if ( x[0] != '\0' ) {
     httpd_resp_send_chunk(req, x, len);
-    httpd_resp_sendstr_chunk(req, NULL);
-    return ESP_OK;
-    
   } else {
-    return sendResponse( req, 404 );
+    httpd_resp_set_status( req, HTTPD_404 );
   }
+  
+  httpd_resp_sendstr_chunk(req, NULL);
+  return ESP_OK;
 
 }
 
 esp_err_t apiGetSwarm(httpd_req_t *req ) {
   // reply on /api/getSwarm
 
+  sendResponse( req, 200, true );
+
   JSONize json(req);
 
   myOSSwarm.lock();
   myOSSwarm.jsonize(&json);
   myOSSwarm.unlock();
-  
-  httpd_resp_sendstr_chunk(req, NULL);
 
+  httpd_resp_sendstr_chunk(req, NULL);
+  
   return ESP_OK;
 }
 
 esp_err_t apiGetToken(httpd_req_t *req ) {
   // reply on /api/getToken
+
+  sendResponse( req, 200, true );
 
   JSONize json(req);
 
@@ -313,7 +316,7 @@ esp_err_t apiGetHandler(httpd_req_t *req ) {
   if (strcmp( req->uri, "/api/getToken" ) == 0 ) { return apiGetToken( req ); }
 
   // unknown URL: FAIL
-  return sendResponse( req, 404 );
+  return sendResponse( req, 404, NULL );
 }
 
 
@@ -321,7 +324,7 @@ esp_err_t apiActor( httpd_req_t *req ) {
   // reply on /api/actor
 
   // check on valid json 
-  cJSON *root = getJSON( req ); if ( root == NULL ) return ESP_FAIL;
+  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400 );
  
   char id[64];
   int  cmd = 0;
@@ -331,8 +334,8 @@ esp_err_t apiActor( httpd_req_t *req ) {
   uint16_t token;
   uint16_t status = 200;
 
-  if ( !getParameter( req, root, "id", id, true ) ) return ESP_FAIL;
-  if ( !getParameter( req, root, "token", &token, true ) ) return ESP_FAIL;
+  if ( !getParameter( req, root, "id", id, true ) ) return sendResponse( req, 400 );
+  if ( !getParameter( req, root, "token", &token, true ) ) return sendResponse( req, 400 );
 
   // optional parameters
   hasCmd   = ( req, getParameter( req, root, "cmd", &cmd, false ) );
@@ -362,17 +365,17 @@ esp_err_t apiLED( httpd_req_t *req ) {
   // reply on /api/led
 
   // check on valid json 
-  cJSON *root = getJSON( req ); if ( root == NULL ) return ESP_FAIL;
+  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400 );
 
   char     id[64];
   int      brightness, color;
   uint16_t status = 200;
   uint16_t token;
 
-  if (!getParameter( req, root, "id", id, true ) )                  return ESP_FAIL;
-  if (!getParameter( req, root, "token", &token, true ) )           return ESP_FAIL;
-  if (!getParameter( req, root, "brightness", &brightness, true ) ) return ESP_FAIL;
-  if (!getParameter( req, root, "color", &color, true ) )           return ESP_FAIL;
+  if (!getParameter( req, root, "id", id, true ) )                  return sendResponse( req, 400 );
+  if (!getParameter( req, root, "token", &token, true ) )           return sendResponse( req, 400 );
+  if (!getParameter( req, root, "brightness", &brightness, true ) ) return sendResponse( req, 400 );
+  if (!getParameter( req, root, "color", &color, true ) )           return sendResponse( req, 400 );
 
   // cleanup
   cJSON_Delete(root);
@@ -390,17 +393,17 @@ esp_err_t apiServo(httpd_req_t *req ) {
   // reply on /api/servo
 
   // check on valid json 
-  cJSON *root = getJSON( req ); if ( root == NULL ) return ESP_FAIL;
+  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400 );
 
   char     id[64];
   int      offset, position;
   uint16_t token;
   uint16_t status;
 
-  if ( !getParameter( req, root, "id", id, true ) )              return ESP_FAIL;
-  if ( !getParameter( req, root, "token", &token, true ) )       return ESP_FAIL;
-  if ( !getParameter( req, root, "offset", &offset, true ) )     return ESP_FAIL;
-  if ( !getParameter( req, root, "position", &position, true ) ) return ESP_FAIL;
+  if ( !getParameter( req, root, "id", id, true ) )              return sendResponse( req, 400 );
+  if ( !getParameter( req, root, "token", &token, true ) )       return sendResponse( req, 400 );
+  if ( !getParameter( req, root, "offset", &offset, true ) )     return sendResponse( req, 400 );
+  if ( !getParameter( req, root, "position", &position, true ) ) return sendResponse( req, 400 );
 
   // cleanup
   cJSON_Delete(root);
@@ -417,19 +420,17 @@ esp_err_t apiServo(httpd_req_t *req ) {
 esp_err_t apiIsAuthorized( httpd_req_t *req ) {
   // reply on api/isAuthorized
 
-
   // check on valid json 
-  cJSON *root = getJSON( req ); if ( root == NULL ) return ESP_FAIL;
+  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400 );
 
-  uint16_t status;
   uint16_t token;
-  if (!getParameter( req, root, "token", &token ) ) return ESP_FAIL;
+  if (!getParameter( req, root, "token", &token ) ) return sendResponse( req, 400 );
 
   // cleanup
   cJSON_Delete(root);
 
   myOSSwarm.lock();
-  status = myOSSwarm.apiIsAuthorized( token );
+  uint16_t status = myOSSwarm.apiIsAuthorized( token );
   myOSSwarm.unlock();
 
   return sendResponse( req, status );
@@ -440,10 +441,10 @@ esp_err_t apiPostHandler(httpd_req_t *req ) {
   // reply on post /api
 
   // check on sub url
-  if (strcmp( req->uri, "/api/led" )   == 0 )       return apiLED( req ); 
-  if (strcmp( req->uri, "/api/servo" ) == 0 )       return apiServo( req ); 
-  if (strcmp( req->uri, "/api/actor")  == 0 )       return apiActor( req ); 
-  if (strcmp( req->uri, "/api/isAuthorized") == 0 ) return apiIsAuthorized( req ); 
+  if (strcmp( req->uri, "/api/led" )   == 0 )          return apiLED( req ); 
+  if (strcmp( req->uri, "/api/servo" ) == 0 )          return apiServo( req ); 
+  if (strcmp( req->uri, "/api/actor")  == 0 )          return apiActor( req ); 
+  if (strcmp( req->uri, "/api/isAuthenticated") == 0 ) return apiIsAuthorized( req ); 
  
   // unknown URL: FAIL
   return sendResponse( req, 404 );
