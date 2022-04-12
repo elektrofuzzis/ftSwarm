@@ -12,6 +12,8 @@
 #include <stdint.h>
 #include <cstddef>
 
+#include <Adafruit_GFX.h>
+
 #include "SwOS.h"
 
 typedef uint16_t FtSwarmSerialNumber_t;
@@ -303,6 +305,53 @@ class FtSwarmServo : public FtSwarmIO {
     void setOffset( int16_t position );
 };
 
+class FtSwarmOLED : public FtSwarmIO {
+  // OLED display, ftSwarmControl only
+  // TODO: add remote calls. Actually the display is limited to local displays.
+  public:
+    void display(void);
+    void clearDisplay(void);
+    void invertDisplay(bool i);
+    void dim(bool dim);
+    void drawPixel(int16_t x, int16_t y, uint16_t color);
+    void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);
+    void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
+    void startscrollright(uint8_t start, uint8_t stop);
+    void startscrollleft(uint8_t start, uint8_t stop);
+    void startscrolldiagright(uint8_t start, uint8_t stop);
+    void startscrolldiagleft(uint8_t start, uint8_t stop);
+    void stopscroll(void);   
+    void setRotation(uint8_t r);
+    void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
+    void fillScreen(uint16_t color);
+    void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
+    void drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
+    void drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
+    void fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
+    void drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
+    void fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
+    void drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, uint16_t color);
+    void fillRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, uint16_t color);
+    void drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t size);
+    void drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t size_x, uint8_t size_y);
+    void getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h);
+    void setTextSize(uint8_t s);
+    void setTextSize(uint8_t sx, uint8_t sy);
+    void setFont(const GFXfont *f = NULL);   
+    void setCursor(int16_t x, int16_t y);
+    void setTextColor(uint16_t c);
+    void setTextColor(uint16_t c, uint16_t bg);
+    void setTextWrap(bool w);
+    void cp437(bool x = true);
+    void write(uint8_t ch);
+    void write(const char *str);
+    int16_t width(void);
+    int16_t height(void);
+    uint8_t getRotation(void);
+    int16_t getCursorX(void);
+    int16_t getCursorY(void);
+};
+
 class FtSwarm {
   // my swarm...
   protected:
@@ -313,8 +362,7 @@ class FtSwarm {
     FtSwarmSerialNumber_t begin( bool IAmAKelda = true );  // start my swarm
     void verbose( bool on );                               // be chatty
     void setReadDelay( uint16_t readDelay );               // set delay between two measures
-    void setWifi( const char *ssid, const char *pwd, bool APMode = false, bool writeNVS = true );  // setup wifi
-    void setup(void); // interactive setup
+    void setup( void );                                    // setup
 };
 
 // There is one only

@@ -22,9 +22,9 @@ uint16_t generateSecret( FtSwarmSerialNumber_t serialNumber ) {
 
 void SwOSNVS::_initialSetup( void ) {
 
-  controlerType = (FtSwarmControler_t) (simpleSelectUI8(("Controler Type\n (1) ftSwarm\n (2) ftSwarmControl\n>"), '1', '2' ) - 1 );
+  controlerType = (FtSwarmControler_t) (enterNumber(("Controler Type\n (1) ftSwarm\n (2) ftSwarmControl\n>"), 0, 1, 2 ) - 1 );
 
-  switch( simpleSelect("CPU Version\n (1) 1V0\n (2) 1V3\n (3) 1V15\n>", '1', '3') ) {
+  switch( enterNumber("CPU Version\n (1) 1V0\n (2) 1V3\n (3) 1V15\n>", 0, 1, 3) ) {
     case '1':  CPU = FTSWARM_1V0;  break;
     case '2':  CPU = FTSWARM_1V3;  break;
     case '3':  CPU = FTSWARM_1V15; break;
@@ -33,7 +33,7 @@ void SwOSNVS::_initialSetup( void ) {
 
   HAT = FTSWARM_1V0;
 
-  serialNumber = enterNumber("Serial number>");
+  serialNumber = enterNumber("Serial number [1..65535]>", 0, 1, 65535 );
 
   APMode = true;
   if ( controlerType == FTSWARM ) {

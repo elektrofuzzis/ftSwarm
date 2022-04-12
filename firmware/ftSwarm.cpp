@@ -512,6 +512,388 @@ void FtSwarmServo::setOffset(int16_t offset) {
   myOSSwarm.unlock();
 }
 
+// **** FtSwarmOLED ****
+
+void FtSwarmOLED::display(void) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->display();
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::clearDisplay(void) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->clearDisplay();
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::invertDisplay(bool i) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->invertDisplay( i );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::dim(bool dim) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->dim( dim );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::drawPixel(int16_t x, int16_t y, uint16_t color) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->drawPixel( x, y, color );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->drawFastHLine( x, y, w, color );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->drawFastVLine( x, y, h, color );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::startscrollright(uint8_t start, uint8_t stop) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->startscrollright( start, stop );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::startscrollleft(uint8_t start, uint8_t stop) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->startscrollleft( start, stop );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::startscrolldiagright(uint8_t start, uint8_t stop) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->startscrolldiagright( start, stop );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::startscrolldiagleft(uint8_t start, uint8_t stop) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->startscrolldiagleft( start, stop );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::stopscroll(void) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->stopscroll( );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::setRotation(uint8_t r) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->setRotation( r );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->fillRect( x, y,w, h, color );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::fillScreen(uint16_t color) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->fillScreen( color );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->drawLine( x0, y0, x1, y1, color );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->drawRect( x, y, w, h, color );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->drawCircle( x0, y0, r, color );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->fillCircle( x0, y0, r, color );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->drawTriangle( x0, y0, x1, y1, x2, y2, color );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->fillTriangle( x0, y0, x1, y1, x2, y2, color );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, uint16_t color) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->drawRoundRect( x0, y0, w, h, radius, color );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::fillRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, uint16_t color) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->fillRoundRect( x0, y0, w, h, radius, color );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t size) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->drawChar(x, y, c, color, bg, size );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t size_x, uint8_t size_y) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->drawChar(x, y, c, color, bg, size_x, size_y );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->getTextBounds( string, x, y, x1, y1, w, h );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::setTextSize(uint8_t s) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->setTextSize( s );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::setTextSize(uint8_t sx, uint8_t sy) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->setTextSize( sx, sy );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::setFont(const GFXfont *f ) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->setFont( f );
+  myOSSwarm.unlock();
+}
+   
+void FtSwarmOLED::setCursor(int16_t x, int16_t y) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->setCursor( x, y );
+  myOSSwarm.unlock();
+}
+ 
+void FtSwarmOLED::setTextColor(uint16_t c) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->setTextColor( c );
+  myOSSwarm.unlock();
+}
+ 
+void FtSwarmOLED::setTextColor(uint16_t c, uint16_t bg) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->setTextColor( c, bg );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::setTextWrap(bool w) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->setTextWrap( w );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::cp437(bool x) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->cp437( x );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::write(uint8_t ch)  {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->write( ch );
+  myOSSwarm.unlock();
+}
+
+void FtSwarmOLED::write(const char *str) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->write( str );
+  myOSSwarm.unlock();
+}
+
+int16_t FtSwarmOLED::width(void) {
+
+  if (!me) return 0;
+  
+  myOSSwarm.lock();
+  int16_t result = static_cast<SwOSOLED*>(me)->width( );
+  myOSSwarm.unlock();
+
+  return result;
+}
+
+int16_t FtSwarmOLED::height(void) {
+
+  if (!me) return 0;
+  
+  myOSSwarm.lock();
+  int16_t result = static_cast<SwOSOLED*>(me)->height( );
+  myOSSwarm.unlock();
+
+  return result;
+}
+
+uint8_t FtSwarmOLED::getRotation(void) {
+
+  if (!me) return 0;
+  
+  myOSSwarm.lock();
+  uint8_t result = static_cast<SwOSOLED*>(me)->getRotation( );
+  myOSSwarm.unlock();
+
+  return result;
+}
+
+int16_t FtSwarmOLED::getCursorX(void) {
+
+  if (!me) return 0;
+  
+  myOSSwarm.lock();
+  int16_t result = static_cast<SwOSOLED*>(me)->getCursorX( );
+  myOSSwarm.unlock();
+
+  return result;
+}
+
+int16_t FtSwarmOLED::getCursorY(void) {
+
+  if (!me) return 0;
+  
+  myOSSwarm.lock();
+  int16_t result = static_cast<SwOSOLED*>(me)->getCursorY( );
+  myOSSwarm.unlock();
+
+  return result;
+}
+
+
 // **** FtSwarm ****
 
 void FtSwarm::verbose( bool on ) {
@@ -533,18 +915,11 @@ void FtSwarm::setReadDelay( uint16_t readDelay ) {
 
 }
 
-void FtSwarm::setWifi( const char *ssid, const char *pwd, bool APMode, bool writeNVS ) {
-  myOSSwarm.nvs.APMode = APMode;
-  strncpy( myOSSwarm.nvs.wifiSSID, ssid, sizeof( myOSSwarm.nvs.wifiSSID ) );
-  strncpy( myOSSwarm.nvs.wifiPwd,  pwd,  sizeof( myOSSwarm.nvs.wifiPwd ) );
-  if (writeNVS) myOSSwarm.nvs.save();
-}
-
 void wifiMenu( void ) {
 
-  char prompt[250];
-  char maxItem;
-  bool anythingChanged = false;
+  char     prompt[250];
+  uint16_t maxItem;
+  bool     anythingChanged = false;
 
   while(1) {
 
@@ -552,16 +927,16 @@ void wifiMenu( void ) {
 
     if ( myOSSwarm.nvs.APMode ) {
       sprintf( prompt, "(1) AP-Mode:  AP-MODE\n(2) SSID:     %s\n(X) Password: NOPASSWORD\n(4) Channel:  %d\n\n(0) main\nwifi>", myOSSwarm.nvs.wifiSSID, myOSSwarm.nvs.channel );
-      maxItem = '4';
+      maxItem = 4;
       
     } else {
       sprintf( prompt, "(1) AP-Mode:  CLIENT-MODE\n(2) SSID:     %s\n(3) Password: ******\n\n(0) exit\nwifi>", myOSSwarm.nvs.wifiSSID );
-      maxItem = '3';
+      maxItem = 3;
     }
     
-    switch( simpleSelect( prompt, '0', maxItem ) ) {
+    switch( enterNumber( prompt, 0, 0, maxItem ) ) {
       
-      case '0': // exit
+      case 0: // exit
         if ( ( anythingChanged) && ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) ) {
           // save config
           myOSSwarm.nvs.saveAndRestart();
@@ -569,29 +944,27 @@ void wifiMenu( void ) {
           return;
         }
         
-      case '1': // AP-Mode/Client-Mode
+      case 1: // AP-Mode/Client-Mode
         anythingChanged = true;
         myOSSwarm.nvs.APMode = !myOSSwarm.nvs.APMode;
         if ( ( myOSSwarm.nvs.APMode ) && ( ( myOSSwarm.nvs.channel < 1 ) || ( myOSSwarm.nvs.channel > 13 ) ) ) myOSSwarm.nvs.channel = 1; // to avoid invalid channel settings
         break;
         
-      case '2': // SSID
+      case 2: // SSID
         anythingChanged = true;
         enterString("Please enter new SSID: ", myOSSwarm.nvs.wifiSSID, 64);
         break;
         
-      case '3': // Password
+      case 3: // Password
         if (!myOSSwarm.nvs.APMode) {
           anythingChanged = true;
           enterString("Please enter new Password: ", myOSSwarm.nvs.wifiPwd, 64, true);
         }
         break;
 
-      case '4': // Channel
+      case 4: // Channel
         anythingChanged = true;
-        uint8_t newChannel = 0;
-        while ( ( newChannel < 1 ) || ( newChannel > 11 ) ) newChannel = enterNumber("enter channel [1..13] - use 1,6 or 11 if possible: " );
-        myOSSwarm.nvs.channel = newChannel;
+        myOSSwarm.nvs.channel = enterNumber( "enter channel [1..13] - use 1,6 or 11 if possible: ", myOSSwarm.nvs.channel, 1, 13 );
         break;
     }
     
@@ -619,8 +992,7 @@ void joinSwarm( bool createNewSwarm ) {
   }
 
   // get new swarm's pin
-  uint16_t pin = 0;
-  while ( ( pin < 1 ) || ( pin > 9999 ) ) pin = enterNumber("Please enter new swarm's PIN [1..9999]: " );
+  uint16_t pin = enterNumber("Please enter new swarm's PIN [1..9999]: ", 0, 1, 9999 );
 
   // build swarm
   if ( createNewSwarm ) {
@@ -682,25 +1054,21 @@ void swarmMenu( void ) {
   
   while (1) {
 
-    // build new swarm geht immer
-    // leave swarm auch -> muss zumindest Swarm mit sich selbst bilden
-    // join 
-
     printf( "\nSwarm menu\n\nThis device is connected to swarm \"%s\" with %d member(s) online.\nSwarm PIN is %d.\n", myOSSwarm.nvs.swarmName, myOSSwarm.members(), myOSSwarm.nvs.swarmPIN );
     
-    switch( simpleSelect("(1) create a new swarm\n(2) join another swarm\n(3) list swarm members\n\n(0) main\nswarm>", '0', '3') ) {
-      case '0': // main
+    switch( enterNumber("(1) create a new swarm\n(2) join another swarm\n(3) list swarm members\n\n(0) main\nswarm>", 0, 0, 3) ) {
+      case 0: // main
         return;
         
-      case '1': // create new swarm
+      case 1: // create new swarm
         joinSwarm( true ); 
         break;
         
-      case '2': // join a swarm
+      case 2: // join a swarm
         joinSwarm( false ); 
         break;
         
-      case '3': // list swarm members
+      case 3: // list swarm members
         printf("\nSwarm members:\n" );
         for (uint8_t i=0; i<=myOSSwarm.maxCtrl; i++ ) {
           if ( myOSSwarm.Ctrl[i] )
@@ -724,18 +1092,20 @@ void localMenu( void ) {
     printf("local controler menu:\n\n");
     
     OSObj[item++] = myOSSwarm.Ctrl[0]; 
-    printf("(%d) %s - %s\n", item, myOSSwarm.Ctrl[0]->getName(), myOSSwarm.Ctrl[0]->getAlias() );
+    printf("(%2d) hostname %s - %s\n", item, myOSSwarm.Ctrl[0]->getName(), myOSSwarm.Ctrl[0]->getAlias() );
 
     // list inputs
     for (uint8_t i=0; i<4; i++ ) { 
       OSObj[item++] = myOSSwarm.Ctrl[0]->input[i];
-      printf("(%d) %s - %s\n", item, myOSSwarm.Ctrl[0]->input[i]->getName(), myOSSwarm.Ctrl[0]->input[i]->getAlias() );
+      printf("(%2d) %-4s - %-32s\n", 
+              item, myOSSwarm.Ctrl[0]->input[i]->getName(), myOSSwarm.Ctrl[0]->input[i]->getAlias());
     }
 
     // list actors
     for (uint8_t i=0; i<2; i++ ) {
       OSObj[item++] = myOSSwarm.Ctrl[0]->actor[i];
-      printf("(%d) %s - %s\n", item, myOSSwarm.Ctrl[0]->actor[i]->getName(), myOSSwarm.Ctrl[0]->actor[i]->getAlias() );
+      printf("(%2d) %-4s - %-32s\n", 
+             item, myOSSwarm.Ctrl[0]->actor[i]->getName(), myOSSwarm.Ctrl[0]->actor[i]->getAlias());
     }
 
     // FTSWARM special HW
@@ -746,13 +1116,14 @@ void localMenu( void ) {
       // list LEDs
       for (uint8_t i=0; i<2; i++ ) {
         OSObj[item++] = ftSwarm->led[i];
-        printf("(%d) %s - %s\n", item, ftSwarm->led[i]->getName(), ftSwarm->led[i]->getAlias() );
+        printf("(%2d) %-4s - %-32s\n", 
+               item, ftSwarm->led[i]->getName(), ftSwarm->led[i]->getAlias());
       }
-
+      
       // list gyro
       if (ftSwarm->gyro) {
         OSObj[item++] = ftSwarm->gyro;
-        printf("(%d) %s - %s\n", item, ftSwarm->gyro->getName(), ftSwarm->gyro->getAlias() );
+        printf("(%2d) %-4s - %-32s\n", item, ftSwarm->gyro->getName(), ftSwarm->gyro->getAlias() );
       }
     }
 
@@ -760,28 +1131,32 @@ void localMenu( void ) {
     if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
       
       SwOSSwarmControl *ftSwarmControl = static_cast<SwOSSwarmControl *>(myOSSwarm.Ctrl[0]);
-      
+
+      // buttons
       for (uint8_t i=0; i<8; i++ ) {
         OSObj[item++] = ftSwarmControl->button[i];
-        printf("(%d) %s - %s\n", item++, ftSwarmControl->button[i]->getName(),   ftSwarmControl->button[i]->getAlias() );
+        printf("(%2d) %-4s - %-32s\n", 
+                item, ftSwarmControl->button[i]->getName(),   ftSwarmControl->button[i]->getAlias() );
       }
-      
+
+      // joysticks
       for (uint8_t i=0; i<2; i++ ) {
         OSObj[item++] = ftSwarmControl->joystick[i];
-        printf("(%d) %s - %s\n", item++, ftSwarmControl->joystick[i]->getName(), ftSwarmControl->joystick[i]->getAlias() );
+        printf("(%2d) %-4s - %-32s\n", 
+               item, ftSwarmControl->joystick[i]->getName(), ftSwarmControl->joystick[i]->getAlias());
       }
       
       if (ftSwarmControl->oled) {
         OSObj[item++] = ftSwarmControl->oled;
-        printf("(%d) %s - %s\n", item++, ftSwarmControl->oled->getName(), ftSwarmControl->oled->getAlias() );
+        printf("(%2d) %-4s - %-32s\n", item, ftSwarmControl->oled->getName(), ftSwarmControl->oled->getAlias() );
       }
       
-      printf("(%d) calibrate joysticks\n", item );
+      printf("(%2d) calibrate joysticks\n", ++item );
       
     }
 
     // User's choise
-    uint8_t choise = simpleSelect("\n(0) exit\nlocal controler>", '0', '1'+item) - '0';
+    uint8_t choise = enterNumber("\n(0) exit\nlocal controler>", 0, 0, item );
 
     // exit?
     if ( choise == 0 ) {
@@ -812,7 +1187,9 @@ void localMenu( void ) {
     // set name
     } else {
       char alias[MAXIDENTIFIER];
-      enterString( "%s - please enter new alias: ", alias, MAXIDENTIFIER);
+      char prompt[250];
+      sprintf( prompt, "%s - please enter new alias: ", OSObj[choise-1]->getName() );
+      enterIdentifier( prompt, alias, MAXIDENTIFIER );
       OSObj[choise-1]->setAlias( alias );
       anythingChanged = true;
     }
@@ -827,11 +1204,11 @@ void FtSwarm::setup( void ) {
 
   while (1) {
     
-    switch( simpleSelect("\nMain menu\n\n(1) wifi settings\n(2) swarm settings\n(3) local controller\n\n(0) exit\nmain>", '0', '3') ) {
-      case '0': return;
-      case '1': wifiMenu(); break;
-      case '2': swarmMenu(); break;
-      case '3': localMenu(); break;
+    switch( enterNumber("\nMain menu\n\n(1) wifi settings\n(2) swarm settings\n(3) local controller\n\n(0) exit\nmain>", 0, 0, 3) ) {
+      case 0: return;
+      case 1: wifiMenu(); break;
+      case 2: swarmMenu(); break;
+      case 3: localMenu(); break;
     }
     
   }

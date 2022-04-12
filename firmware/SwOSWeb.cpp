@@ -20,6 +20,7 @@
 #include "sfs_files.h"
 
 #define SCRATCH_BUFSIZE (10240)
+#define HTTPD_401 "401 Unauthorized"
 
 typedef struct http_server_context {
     char base_path[16 + 1];
@@ -38,36 +39,130 @@ esp_err_t httpd_resp_sendstr_chunk_cr(httpd_req_t *req, const char *line ) {
   return ESP_OK;
 }
 
-bool getParameter( cJSON * root, const char *parameter, int *value ) {
+static char *getBody(httpd_req_t *req) {
 
-  cJSON *p = cJSON_GetObjectItem(root, parameter );
-
-  if ( p != NULL ) {
-
-    if ( p->type == cJSON_Number ) {
-      *value = p->valueint;
-    } else {
-      ESP_LOGW( LOGFTSWARM, "%s has wrong type", parameter );
-      return false;  
+  int total_len = req->content_len;
+  int cur_len = 0;
+  char *buf = ((http_server_context_t *)(req->user_ctx))->scratch;
+  int received = 0;
+  
+  if (total_len >= SCRATCH_BUFSIZE) {
+    // Respond with 500 Internal Server Error 
+    httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "content too long");
+    return NULL;
+  }
+  
+  while (cur_len < total_len) {
+    
+    received = httpd_req_recv(req, buf + cur_len, total_len);
+    
+    if (received <= 0) {
+      // Respond with 500 Internal Server Error
+      httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to post control value");
+      return NULL;
     }
     
-    ESP_LOGD( LOGFTSWARM, "%s=%d", parameter, *value );
-    return true;  
-  
-  } else {
-
-    ESP_LOGW( LOGFTSWARM, "Missing parameter %s.", parameter );
-    return false;
-  
+    cur_len += received;
   }
+  
+  buf[total_len] = '\0';
+
+  return buf;
+  
+}
+
+esp_err_t sendResponse( httpd_req_t *req, uint16_t status ) {
+
+  switch (status) {
+    case 200:
+      httpd_resp_set_status( req, HTTPD_200 );
+      httpd_resp_sendstr(req, "Post control value successfully");
+      return ESP_OK;
+    case 400:
+      httpd_resp_set_status( req, HTTPD_400 );
+      return ESP_FAIL;
+    case 401:
+      httpd_resp_set_status( req, HTTPD_401 );
+      return ESP_FAIL;
+    case 404:
+      httpd_resp_set_status( req, HTTPD_404 );
+      return ESP_FAIL;
+    default:
+      httpd_resp_set_status( req, HTTPD_500 );
+      return ESP_FAIL;
+  }
+}
+
+cJSON *getJSON( httpd_req_t *req ) {
+  // test on valid JSON
+
+  // get body
+  char *body = getBody(req);
+  if ( body == NULL ) {
+    ESP_LOGE( LOGFTSWARM, "getJSON: getBody failed");
+    httpd_resp_set_status( req, HTTPD_400 );
+    return NULL;
+  }
+
+  // parse data
+  cJSON *root = cJSON_Parse(body);
+
+  // parsing error?
+  if ( root == NULL ) { 
+    ESP_LOGE( LOGFTSWARM, "invalid JSON string" );
+    httpd_resp_set_status( req, HTTPD_400 );
+    return NULL;
+  }
+
+  return root;
 
 }
 
-bool getParameter( cJSON * root, const char *parameter, bool *value ) {
+bool getParameter( httpd_req_t *req, cJSON * root, const char *parameter, int *value, bool mandatory = true ) {
+  // get a number
 
+  cJSON *p = cJSON_GetObjectItem(root, parameter );
+
+  // check if everything is ok
+  if ( ( p != NULL ) && ( p->type == cJSON_Number ) ) {
+    *value = p->valueint;
+    return true;
+  }
+
+  // missing mandatory parameter?
+  if ( ( p == NULL ) && ( mandatory ) ) {
+    ESP_LOGE( LOGFTSWARM, "Missing parameter %s.", parameter );
+    httpd_resp_set_status( req, HTTPD_400 );
+
+  // wrong type?
+  } else if ( p != NULL )  {
+    ESP_LOGE( LOGFTSWARM, "%s has wrong type", parameter );
+    httpd_resp_set_status( req, HTTPD_400 );
+  }
+
+  return false;    
+
+}
+
+bool getParameter( httpd_req_t *req, cJSON * root, const char *parameter, uint16_t *value, bool mandatory = true ) {
+  // get uint16_t
+  int v;
+  
+  if ( getParameter( req, root, parameter, &v, mandatory ) ) {
+    *value = (uint16_t) v;
+    return true;
+  }
+
+  return false;
+}
+
+
+bool getParameter( httpd_req_t *req, cJSON * root, const char *parameter, bool *value, bool mandatory = true ) {
+  // get a boolean
+  
   int i;
 
-  if ( getParameter( root, parameter, &i ) ) {
+  if ( getParameter( req, root, parameter, &i, mandatory ) ) {
     *value = (i!=0);
     return true;
   }
@@ -76,64 +171,32 @@ bool getParameter( cJSON * root, const char *parameter, bool *value ) {
 
 }
 
-bool getParameter( cJSON * root, const char *parameter, char *value ) {
+bool getParameter( httpd_req_t *req, cJSON * root, const char *parameter, char *value, bool mandatory = true ) {
+  // get a string
 
-  cJSON *p = cJSON_GetObjectItem(root, parameter );
+  cJSON *p = cJSON_GetObjectItem( root, parameter );
 
-  if ( p != NULL ) {    
+  // check if everything is ok
+  if ( ( p != NULL ) && ( p->type == cJSON_String ) ) {
     strcpy( value, p->valuestring );
-    ESP_LOGD( LOGFTSWARM, "%s=%s", parameter, value );
-    return true;  
-  
-  } else {
+    return true;
+  }
+
+  // missing mandatory parameter?
+  if ( ( p == NULL ) && ( mandatory ) ) {
     ESP_LOGW( LOGFTSWARM, "Missing parameter %s.", parameter );
-    return false;
+    httpd_resp_set_status( req, HTTPD_400 );
+
+  // wrong type?
+  } else if ( p != NULL )  {
+    ESP_LOGW( LOGFTSWARM, "%s has wrong type", parameter );
+    httpd_resp_set_status( req, HTTPD_400 );
+  }
   
-  }
+  return false;    
 
 }
 
-static char *getBody(httpd_req_t *req)
-{
-
-  int total_len = req->content_len;
-    int cur_len = 0;
-    char *buf = ((http_server_context_t *)(req->user_ctx))->scratch;
-    int received = 0;
-    if (total_len >= SCRATCH_BUFSIZE) {
-        // Respond with 500 Internal Server Error 
-        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "content too long");
-        return NULL;
-    }
-    while (cur_len < total_len) {
-        received = httpd_req_recv(req, buf + cur_len, total_len);
-        if (received <= 0) {
-            // Respond with 500 Internal Server Error
-            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to post control value");
-            return NULL;
-        }
-        cur_len += received;
-    }
-    buf[total_len] = '\0';
-
-    return buf;
-}
-
-cJSON *getJSON( httpd_req_t *req ) {
- 
-  ESP_LOGD( LOGFTSWARM, "getBody");
-
-  char *body = getBody(req);
-
-  if (body==NULL) {
-    ESP_LOGD( LOGFTSWARM, "getBody failed");
-    return NULL;
-  }
-
-  ESP_LOGD( LOGFTSWARM, "Parse");
-
-  return cJSON_Parse(body);
-}
 
 #define CHECK_FILE_EXTENSION(filename, ext) (strcasecmp(&filename[strlen(filename) - strlen(ext)], ext) == 0)
 
@@ -175,8 +238,9 @@ char * findlast( char *str, char ch) {
 
 }
 
-esp_err_t indexHandler(httpd_req_t *req )
-{
+esp_err_t indexHandler(httpd_req_t *req ) {
+  // reply on /index.html
+  
   char line[512];
 
   ESP_LOGD( LOGFTSWARM, "/index.html");
@@ -191,10 +255,9 @@ esp_err_t indexHandler(httpd_req_t *req )
   return ESP_OK;
 }
 
-esp_err_t fileHandler(httpd_req_t *req )
-{
-  ESP_LOGD( LOGFTSWARM, "%s", req->uri);
-
+esp_err_t fileHandler(httpd_req_t *req ) {
+  // reply on /assets/* or /js/* or /css/*
+  
   char *file = findlast( (char *) req->uri, '/' );
   set_content_type_from_file( req, file);
   httpd_resp_set_hdr( req, "Content-Encoding", "gzip" );
@@ -202,15 +265,20 @@ esp_err_t fileHandler(httpd_req_t *req )
   uint32_t len;
   const char * x = sfs_get_file( (char *) req->uri, &len);
 
-  httpd_resp_send_chunk(req, x, len);
-  httpd_resp_sendstr_chunk(req, NULL);
-
-  return ESP_OK;
+  // file found?
+  if ( x[0] != '\0' ) {
+    httpd_resp_send_chunk(req, x, len);
+    httpd_resp_sendstr_chunk(req, NULL);
+    return ESP_OK;
+    
+  } else {
+    return sendResponse( req, 404 );
+  }
 
 }
 
-esp_err_t apiGetSwarm(httpd_req_t *req )
-{
+esp_err_t apiGetSwarm(httpd_req_t *req ) {
+  // reply on /api/getSwarm
 
   JSONize json(req);
 
@@ -223,165 +291,164 @@ esp_err_t apiGetSwarm(httpd_req_t *req )
   return ESP_OK;
 }
 
-esp_err_t apiGetHandler(httpd_req_t *req )
-{
+esp_err_t apiGetToken(httpd_req_t *req ) {
+  // reply on /api/getToken
 
-  // log request
-  ESP_LOGD( LOGFTSWARM, "GET %s", req->uri );
+  JSONize json(req);
+
+  myOSSwarm.lock();
+  myOSSwarm.getToken(&json);
+  myOSSwarm.unlock();
+  
+  httpd_resp_sendstr_chunk(req, NULL);
+
+  return ESP_OK;
+}
+
+esp_err_t apiGetHandler(httpd_req_t *req ) {
+  // reply on get /api/*
 
   // check on sub urls, apiGetSwarm will lock
   if (strcmp( req->uri, "/api/getSwarm" ) == 0 ) { return apiGetSwarm( req ); }
+  if (strcmp( req->uri, "/api/getToken" ) == 0 ) { return apiGetToken( req ); }
 
   // unknown URL: FAIL
-  return ESP_FAIL;
+  return sendResponse( req, 404 );
 }
 
-esp_err_t apiWifi(httpd_req_t *req )
-{ // /api/wifi <apmode> <ssid> <pwd>
 
-  cJSON *root = getJSON( req );
-  if ( root == NULL ) { 
-    ESP_LOGW( LOGFTSWARM, "invalid JSON string" );
-    return ESP_FAIL;
-  }
-  
-  esp_err_t xReturn = ESP_OK;
+esp_err_t apiActor( httpd_req_t *req ) {
+  // reply on /api/actor
 
-  myOSSwarm.lock();
-  if (!getParameter( root, "apmode", &myOSSwarm.nvs.APMode ) ) xReturn = ESP_FAIL;
-  if (!getParameter( root, "ssid", myOSSwarm.nvs.wifiSSID ) )  xReturn = ESP_FAIL;
-  if (!getParameter( root, "pwd", myOSSwarm.nvs.wifiPwd ) )    xReturn = ESP_FAIL;
-  myOSSwarm.unlock();
-
-  cJSON_Delete(root);
-  httpd_resp_sendstr(req, "Post control value successfully");
-
-  return xReturn;
-
-}
-
-esp_err_t apiSave(httpd_req_t *req )
-{ // /api/save
-
-  myOSSwarm.lock();
-  myOSSwarm.nvs.save();
-  myOSSwarm.unlock();
-  
-  httpd_resp_sendstr(req, "Post control value successfully");
-
-  return ESP_OK;
-
-}
-
-esp_err_t apiActor(httpd_req_t *req )
-{
-
-  cJSON *root = getJSON( req );
-  if ( root == NULL ) { 
-    ESP_LOGW( LOGFTSWARM, "invalid JSON string" );
-    return ESP_FAIL;
-  }
-
+  // check on valid json 
+  cJSON *root = getJSON( req ); if ( root == NULL ) return ESP_FAIL;
+ 
   char id[64];
   int  cmd = 0;
   int  power = 0;
   bool hasCmd   = false;
   bool hasPower = false;
+  uint16_t token;
+  uint16_t status = 200;
 
-  if (!getParameter( root, "id", id )) return ESP_FAIL;
+  if ( !getParameter( req, root, "id", id, true ) ) return ESP_FAIL;
+  if ( !getParameter( req, root, "token", &token, true ) ) return ESP_FAIL;
 
   // optional parameters
-  hasCmd   = (getParameter( root, "cmd", &cmd ));
-  hasPower = (getParameter( root, "power", &power ));
+  hasCmd   = ( req, getParameter( req, root, "cmd", &cmd, false ) );
+  hasPower = ( req, getParameter( req, root, "power", &power, false ) );
 
-  ESP_LOGD( LOGFTSWARM, "apiActor: hasCmd %d cmd %d hasPower %d power %d", hasCmd, cmd, hasPower, power );
+  // cleanup
+  cJSON_Delete( root );
 
-  // but at least one
-  if ( (!hasCmd) && (!hasPower) ) return ESP_FAIL;
-
-  // let's send
+  // let's do it
   myOSSwarm.lock();
-  if (hasCmd)   myOSSwarm.apiActorCmd(id, cmd);
-  if (hasPower) myOSSwarm.apiActorPower(id, power);
-  myOSSwarm.unlock();
   
-  cJSON_Delete(root);
-  httpd_resp_sendstr(req, "Post control value successfully");
-
-  return ESP_OK;
-
-}
-
-esp_err_t apiLED(httpd_req_t *req )
-{
-
-  cJSON *root = getJSON( req );
-  if ( root == NULL ) { 
-    ESP_LOGW( LOGFTSWARM, "invalid JSON string" );
-    return ESP_FAIL;
+  if ( hasCmd ) {
+    status = myOSSwarm.apiActorCmd( token, id, cmd );
+  } else if ( hasPower ) {
+    status = myOSSwarm.apiActorPower( token, id, power); 
+  } else {
+    status = 400;
   }
 
-  char id[64];
-  int  brightness, color;
+  myOSSwarm.unlock();
 
-  if (!getParameter( root, "id", id )) return ESP_FAIL;
-  if (!getParameter( root, "brightness", &brightness )) return ESP_FAIL;
-  if (!getParameter( root, "color", &color )) return ESP_FAIL;
+  return sendResponse( req, status );
 
+}
+
+esp_err_t apiLED( httpd_req_t *req ) {
+  // reply on /api/led
+
+  // check on valid json 
+  cJSON *root = getJSON( req ); if ( root == NULL ) return ESP_FAIL;
+
+  char     id[64];
+  int      brightness, color;
+  uint16_t status = 200;
+  uint16_t token;
+
+  if (!getParameter( req, root, "id", id, true ) )                  return ESP_FAIL;
+  if (!getParameter( req, root, "token", &token, true ) )           return ESP_FAIL;
+  if (!getParameter( req, root, "brightness", &brightness, true ) ) return ESP_FAIL;
+  if (!getParameter( req, root, "color", &color, true ) )           return ESP_FAIL;
+
+  // cleanup
+  cJSON_Delete(root);
+
+  // let's do it
   myOSSwarm.lock();
-  myOSSwarm.apiLED(id, brightness, color );
+  status = myOSSwarm.apiLED( token, id, brightness, color );
   myOSSwarm.unlock();
   
-  cJSON_Delete(root);
-  httpd_resp_sendstr(req, "Post control value successfully");
-
-  return ESP_OK;
+  return sendResponse( req, status );
 
 }
 
-esp_err_t apiServo(httpd_req_t *req )
-{
+esp_err_t apiServo(httpd_req_t *req ) {
+  // reply on /api/servo
 
-  cJSON *root = getJSON( req );
-  if ( root == NULL ) { 
-    ESP_LOGW( LOGFTSWARM, "invalid JSON string" );
-    return ESP_FAIL;
-  }
+  // check on valid json 
+  cJSON *root = getJSON( req ); if ( root == NULL ) return ESP_FAIL;
 
-  char id[64];
-  int  offset, position;
+  char     id[64];
+  int      offset, position;
+  uint16_t token;
+  uint16_t status;
 
-  if (!getParameter( root, "id", id )) return ESP_FAIL;
-  if (!getParameter( root, "offset", &offset )) return ESP_FAIL;
-  if (!getParameter( root, "position", &position )) return ESP_FAIL;
+  if ( !getParameter( req, root, "id", id, true ) )              return ESP_FAIL;
+  if ( !getParameter( req, root, "token", &token, true ) )       return ESP_FAIL;
+  if ( !getParameter( req, root, "offset", &offset, true ) )     return ESP_FAIL;
+  if ( !getParameter( req, root, "position", &position, true ) ) return ESP_FAIL;
 
+  // cleanup
+  cJSON_Delete(root);
+
+  // let's do it
   myOSSwarm.lock();
-  myOSSwarm.apiServo( id, offset, position );
+  status = myOSSwarm.apiServo( token, id, offset, position );
   myOSSwarm.unlock();
 
-  cJSON_Delete(root);
-  httpd_resp_sendstr(req, "Post control value successfully");
-
-  return ESP_OK;
+  return sendResponse( req, status );
 
 }
 
-esp_err_t apiPostHandler(httpd_req_t *req )
-{
+esp_err_t apiIsAuthorized( httpd_req_t *req ) {
+  // reply on api/isAuthorized
 
-  // log request
-  ESP_LOGD( LOGFTSWARM, "POST %s", req->uri );
+
+  // check on valid json 
+  cJSON *root = getJSON( req ); if ( root == NULL ) return ESP_FAIL;
+
+  uint16_t status;
+  uint16_t token;
+  if (!getParameter( req, root, "token", &token ) ) return ESP_FAIL;
+
+  // cleanup
+  cJSON_Delete(root);
+
+  myOSSwarm.lock();
+  status = myOSSwarm.apiIsAuthorized( token );
+  myOSSwarm.unlock();
+
+  return sendResponse( req, status );
+
+}
+
+esp_err_t apiPostHandler(httpd_req_t *req ) {
+  // reply on post /api
 
   // check on sub url
-  if      (strcmp( req->uri, "/api/led" )   == 0 ) return apiLED( req ); 
-  else if (strcmp( req->uri, "/api/servo" ) == 0 ) return apiServo( req ); 
-  else if (strcmp( req->uri, "/api/actor")  == 0 ) return apiActor( req ); 
-  else if (strcmp( req->uri, "/api/wifi")   == 0 ) return apiWifi( req ); 
-  else if (strcmp( req->uri, "/api/save" )  == 0 ) return apiSave( req ); 
-  else return ESP_FAIL;
+  if (strcmp( req->uri, "/api/led" )   == 0 )       return apiLED( req ); 
+  if (strcmp( req->uri, "/api/servo" ) == 0 )       return apiServo( req ); 
+  if (strcmp( req->uri, "/api/actor")  == 0 )       return apiActor( req ); 
+  if (strcmp( req->uri, "/api/isAuthorized") == 0 ) return apiIsAuthorized( req ); 
+ 
+  // unknown URL: FAIL
+  return sendResponse( req, 404 );
 
 }
-
 
 bool SwOSStartWebServer( void ) {
 
@@ -419,7 +486,7 @@ bool SwOSStartWebServer( void ) {
   httpd_uri_t jsGet = { .uri = "/js/*", .method = HTTP_GET, .handler = &fileHandler, .user_ctx = NULL };
   httpd_register_uri_handler(server, &jsGet);
 
-    // assets
+  // assets
   httpd_uri_t assetsGet = { .uri = "/assets/*", .method = HTTP_GET, .handler = &fileHandler, .user_ctx = NULL };
   httpd_register_uri_handler(server, &assetsGet);
 

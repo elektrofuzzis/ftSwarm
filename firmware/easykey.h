@@ -11,17 +11,14 @@
 
 #include <stdint.h>
 
-char simpleSelect( const char *prompt, char minChar, char maxChar );
-// write prompt, test stdin on a key between minChar and maxChar.
-
-uint8_t simpleSelectUI8( const char *prompt, char minChar, char maxChar );
-// get a uint8_t via keyboard/serial
-
-bool yesNo( const char *prompt );
+bool yesNo( const char *prompt, bool defaultValue = false );
 // write prompt and check on y/n keys. true, if Y pressed
 
-uint16_t enterNumber( const char *prompt );
+uint16_t enterNumber( const char *prompt, uint16_t defaultValue, uint16_t minValue = 0, uint16_t maxValue = 65535 );
 // write a prompt and get a uint16_t reading
 
-void enterString( const char *prompt, char *s, uint8_t maxChars, bool hidden = false );
+void enterString( const char *prompt, char *s, uint16_t size, bool hidden = false );
 // write a prompt and read a string from serial
+
+void enterIdentifier( const char *prompt, char *s, uint16_t size );
+// write a prompt and read an identifier from serial

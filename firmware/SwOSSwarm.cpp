@@ -99,9 +99,61 @@ void readTask( void *parameter ) {
  *
  ***************************************************/
 
+/*
+ export default function (prevAccessToken: number, pin: number) {
+    let pinCodeTokenMix = 0
+    let prevAccessTokenBinaryString = prevAccessToken.toString(2)
+
+    for (let i = 0; i < prevAccessTokenBinaryString.length; i++) {
+        pinCodeTokenMix += (prevAccessTokenBinaryString.charAt(i) == "0" ? 0 : 1)^pin << i^pin;
+    }
+
+    pinCodeTokenMix ^= pin << pinCodeTokenMix&prevAccessToken
+    pinCodeTokenMix = (~pin) ^ pinCodeTokenMix
+
+    pinCodeTokenMix *= pinCodeTokenMix
+
+    // Get the first 16 bits out of this
+    let pinCodeTokenMixBinaryString = pinCodeTokenMix.toString(2)
+    let first16bits = 0
+    for (let i = 0; i < Math.min(pinCodeTokenMixBinaryString.length, 16); i++) {
+        first16bits += (pinCodeTokenMixBinaryString.charAt(i) == "0" ? 0 : 1) << i;
+    }
+
+    return first16bits
+}
+*/
+
+uint16_t SwOSSwarm::_nextToken( ) {
+
+  uint32_t pin              = nvs.swarmPIN;
+  uint32_t prevAccessToken  = _lastToken;
+  uint32_t pinCodeTokenMix  = 0;
+
+  uint32_t flag = 1<<15;
+  for ( uint8_t i=0; i<16; i++ ) {
+    pinCodeTokenMix += ( ( prevAccessToken & flag ) ^ pin ) << (i ^ pin );
+  }
+
+  pinCodeTokenMix ^= pin << ( pinCodeTokenMix & prevAccessToken );
+  pinCodeTokenMix = (~pin) ^ pinCodeTokenMix;
+
+  pinCodeTokenMix *= pinCodeTokenMix;
+
+  _lastToken = ( ( pinCodeTokenMix >> 16) & 0xFFFF );
+
+  return _lastToken;
+  
+}
+
+
 FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 
-  if (verbose) printf("\n\nftSwarmOS 0.10\n\n(C) Christian Bergschneider & Stefan Fuss\n\nPress any key to enter bios settings.\n");
+  if (verbose) {
+    printf("\n\nftSwarmOS " ); 
+    printf(SWOSVERSION);
+    printf("\n\n(C) Christian Bergschneider & Stefan Fuss\n\nPress any key to enter bios settings.\n");
+  }
  
   // initialize nvs
   nvs.begin();
@@ -303,6 +355,15 @@ void SwOSSwarm::jsonize( JSONize *json) {
 
 }
 
+void SwOSSwarm::getToken( JSONize *json) {
+
+  _lastToken = rand();
+  json->startObject();
+  json->variableUI16( "Token", _lastToken );
+  json->endObject();
+  
+}
+
 bool SwOSSwarm::_splitId( char *id, uint8_t *index, char *io, size_t sizeIO) {
 
 	// split id "12-LED1" into i=12 and io="LED1"
@@ -339,73 +400,92 @@ bool SwOSSwarm::_splitId( char *id, uint8_t *index, char *io, size_t sizeIO) {
 	*index = i;
 
 	return true;
+} 
+
+uint16_t SwOSSwarm::apiIsAuthorized( uint16_t token ) {
+  
+  if ( token != _nextToken() ) return 401;
+
+  return 200;
 }
 
-bool SwOSSwarm::apiActorCmd( char *id, int cmd ) {
+uint16_t SwOSSwarm::apiActorCmd( uint16_t token, char *id, int cmd ) {
 // send an actor's command (from api)
 
 	uint8_t i;
 	char    io[20];
 
+  // Token error
+  if ( token != _nextToken() ) return 401;
+
 	// split ID to device and nr
-	if (!_splitId(id, &i, io, sizeof(io))) { return false; }
+	if (!_splitId(id, &i, io, sizeof(io))) return 400;
 
 	// execute cmd
-  if ( Ctrl[i] ) return Ctrl[i]->apiActorCmd(io, cmd );
+  if ( ( Ctrl[i] ) && ( Ctrl[i]->apiActorCmd( io, cmd ) ) ) return 200;
 
-  return false;
+  return 400;
 
 }
 
-bool SwOSSwarm::apiActorPower( char *id, int power ) {
+uint16_t SwOSSwarm::apiActorPower( uint16_t token, char *id, int power ) {
 // send an actor's power(from api)
 
   uint8_t i;
   char    io[20];
 
+  // Token error
+  if ( token != _nextToken() ) return 401;
+
   // split ID to device and nr
-  if (!_splitId(id, &i, io, sizeof(io))) { return false; }
+  if (!_splitId(id, &i, io, sizeof(io))) return 400;
 
   // execute cmd
-  if ( Ctrl[i] ) return Ctrl[i]->apiActorPower(io, power );
+  if ( ( Ctrl[i] ) && ( Ctrl[i]->apiActorPower( io, power ) ) ) return 200;
 
-  return false;
+  return 400;
   
 }
 
-bool SwOSSwarm::apiLED( char *id, int brightness, int color ) {
+uint16_t SwOSSwarm::apiLED( uint16_t token, char *id, int brightness, int color ) {
   // send a LED command (from api)
 
 	uint8_t i;
 	char    io[20];
 
+  // Token error
+  if ( token != _nextToken() ) return 401;
+
 	// split ID to device and nr
-	if (!_splitId(id, &i, io, sizeof(io))) { return false; }
+	if (!_splitId(id, &i, io, sizeof(io))) return 400;
 
 	// execute cmd
-	if ( Ctrl[i] ) return Ctrl[i]->apiLED(io, brightness, color );
-
-  return false;
+	if ( ( Ctrl[i] ) && ( Ctrl[i]->apiLED( io, brightness, color ) ) ) return 200;
+  
+  return 400;
 
 }
 
-bool SwOSSwarm::apiServo( char *id, int offset, int position ) {
+uint16_t SwOSSwarm::apiServo( uint16_t token, char *id, int offset, int position ) {
   // send a Servo command (from api)
   
 	uint8_t i;
 	char    io[20];
 
+  // Token error
+  if ( token != _nextToken() ) return 401;
+
 	// split ID to device and nr
-	if (!_splitId(id, &i, io, sizeof(io))) { return false; }
+	if (!_splitId(id, &i, io, sizeof(io))) return 400;
 
 	// execute cmd
-	if ( Ctrl[i] ) return Ctrl[i]->apiServo( io, offset, position );
+	if ( ( Ctrl[i] ) && ( Ctrl[i]->apiServo( io, offset, position ) ) ) return 200;
 
-  return false;
+  return 400;
   
 }
 
-void SwOSSwarm::setState( int state ) {
+void SwOSSwarm::setState( SwOSState_t state ) {
 
   if (Ctrl[0]) Ctrl[0]->setState( state );
 

@@ -10,69 +10,14 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
 
 #include "easykey.h"
 
+bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, int (*validChar)( int ch ) ) {
 
-char simpleSelect( const char *prompt, char minChar, char maxChar ) {
-
-  printf(prompt);
-
-  char c = '\0';
-  while ( (c < minChar) || ( c > maxChar) ) {
-    c = getchar();
-  }
-
-  printf( "%c\n", c);
-
-  return c;
-
-}
-
-uint8_t simpleSelectUI8( const char *prompt, char minChar, char maxChar ) {
-
-  char c = simpleSelect( prompt, minChar, maxChar );
-  return (c - minChar)+1;
-  
-}
-
-bool yesNo( const char *prompt ) {
-
-  printf(prompt);
-
-  char c = '\0';
-  while ( (c != 'Y') &&  ( c != 'N' ) ) {
-    c = toupper( getchar() );
-  }
-
-  printf( "%c\n", c);
-
-  return ( c == 'Y' );
-
-}
-
-uint16_t enterNumber( const char *prompt ) {
-
-  uint16_t i = 0;
-  printf(prompt);
-
-  char c = '0';
-  while ( (c != '\n') || ( i == 0 ) ) {
-    c = getchar();
-    if ( isdigit(c) ) {
-      putchar(c);
-      i=i*10+(c-'0');
-    }
-  }
-  printf("\n");
-
-  return i;
-
-}
-
-void enterString( const char *prompt, char *s, uint8_t maxChars, bool hidden ) {
-
-  char    ch;
+  char ch;
+  char *str = (char *) calloc( size, sizeof(char) );
   uint8_t i = 0;
   
   printf(prompt);
@@ -81,24 +26,86 @@ void enterString( const char *prompt, char *s, uint8_t maxChars, bool hidden ) {
     
     ch = getchar();
 
-    if (ch == '\n') {
-      // got "enter"
-      s[i]='\0';
-      putchar(ch);
-      return;
+    switch (ch) {
       
-    } else if ( ( ch >=32 ) && ( ch < 128 ) && ( i<maxChars ) ) {
-      // add printable char
-
-      if ( hidden )
-        putchar( '*' );
-      else
-        putchar( ch );
-
-      s[i++] = ch;
+      case '\n': strcpy( s, str );
+                 free(str);
+                 putchar('\n');
+                 return true;        
       
+      case '\b': 
+      case 127:  if (i>0) { 
+                   str[--i] = '\0'; 
+                   putchar( 127 ); 
+                 }
+                 break;
+      
+      case '\e': free(str);
+                 putchar('\n');
+                 return false;
+      
+      default:   if ( ( ch < 255 ) && ( validChar( ch ) ) && ( i<size-1) ) {
+                   // add printable char
+                   (hidden)?putchar( '*' ):putchar( ch );
+                   str[i++] = ch;
+                 }
+                 break;
     }
-    
+
   }
   
+}
+
+int printable( int ch ) {
+  return (ch>=32) && (ch <= 126);
+}
+
+void enterString( const char *prompt, char *s, uint16_t size, bool hidden ) {
+
+  if (!enterSomething( prompt, s, size, hidden, printable ) ) s[0] = '\0';
+  
+}
+
+int identifier( int ch ) {
+  return isdigit(ch) || isalpha(ch);
+}
+
+void enterIdentifier( const char *prompt, char *s, uint16_t size ) {
+
+  if (!enterSomething( prompt, s, size, false, identifier ) ) s[0] = '\0';
+  
+}
+
+uint16_t enterNumber( const char *prompt, uint16_t defaultValue, uint16_t minValue, uint16_t maxValue ) {
+
+  char str[6];
+  uint16_t i;
+
+  while (1) {
+
+    // get number and check on defaults
+    if ( ( !enterSomething( prompt, str, 6, false, isdigit ) ) || ( str[0] == '\0' ) ) {
+      i = defaultValue;
+    } else {
+      i = atoi( str );
+    }
+
+    // in range?
+    if ( ( i >= minValue ) && ( i <= maxValue ) ) return i;
+
+  }
+
+}
+
+int YN( int ch ) {
+  return ( ch == 'Y' ) || ( ch == 'y' ) || ( ch == 'N' ) || ( ch == 'n' ) ;
+}
+
+bool yesNo( const char *prompt, bool defaultValue ) {
+
+  char str[2];
+  if ( (!enterSomething( prompt, str, 2, false, YN ) ) || ( strlen( str ) == 0 ) ) return defaultValue;
+
+  return ( str[0] == 'y' ) || ( str[0] == 'Y' ) ;
+
 }
