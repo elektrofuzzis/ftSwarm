@@ -1,15 +1,4 @@
 <template>
-  <!--<input id="authShown" ref="authShown" hidden type="checkbox">
-  <div class="overlay" @click="$refs.authShown.checked = !$refs.authShown.checked">
-    <div @click="() => $refs.authShown.checked = !$refs.authShown.checked">
-      <div class="key"></div>
-      <h2>Login</h2>
-      <div class="flex-container">
-        <input maxlength="4" name="pin" type="text" @input="(e) => sanitize(e.target)">
-        <button id="unlock_btn" disabled @click="(e) => login(e.target)">Unlock with PIN</button>
-      </div>
-    </div>
-  </div>-->
   <div class="click-to-overlay" @click="showLoginDialogue">
     <span>{{ loginlogout }}</span>
   </div>
@@ -115,52 +104,15 @@ export default {
   z-index: 9998;
 }
 
-.overlay {
-  position: fixed;
-  text-align: center;
-  left: 0;
-  right: 0;
-  top: -100vh;
-  bottom: 100vh;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.overlay > div {
-  width: 200px;
-  height: 300px;
-  border-radius: 12px;
-  background-color: rgba(139, 0, 0, 0.89);
-}
-
 input {
   background-color: rgba(189, 195, 199, 0.89);
   border: none;
   color: #333;
 }
 
-#authShown:checked + .overlay {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  z-index: 9999;
-}
-
 input {
   font-size: 20px;
   width: 80%;
   text-align: center;
-}
-
-.flex-container {
-  display: flex;
-  height: 100%;
-  align-items: center;
-  justify-content: space-evenly;
-  flex-direction: column;
 }
 </style>
