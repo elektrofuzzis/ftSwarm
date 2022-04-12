@@ -362,8 +362,7 @@ class FtSwarm {
     FtSwarmSerialNumber_t begin( bool IAmAKelda = true );  // start my swarm
     void verbose( bool on );                               // be chatty
     void setReadDelay( uint16_t readDelay );               // set delay between two measures
-    void setWifi( const char *ssid, const char *pwd, bool APMode = false, bool writeNVS = true );  // setup wifi
-    void setup(void); // interactive setup
+    void setup( void );                                    // setup
 };
 
 // There is one only

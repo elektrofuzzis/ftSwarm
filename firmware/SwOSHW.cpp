@@ -57,7 +57,7 @@ const char ACTORTYPE[FTSWARM_MAXACTOR][20] = { "XMOTOR", "TRACTORMOTOR", "ENCODE
 
 const uint32_t LEDCOLOR0[MAXSTATE] = { CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red };
 const uint32_t LEDCOLOR1[MAXSTATE] = { CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red };
-const char     OLEDMSG[MAXSTATE][20] = { "booting", "connecting wifi", "normal operation", "ERROR - check logs" };
+const char     OLEDMSG[MAXSTATE][20] = { "booting", "connecting wifi", "online", "ERROR - check logs" };
 
 /***************************************************
  *
@@ -1045,20 +1045,32 @@ void SwOSServo::setOffset( int16_t offset ) {
 
 void SwOSOLED::_setupLocal() {
   
-   _display = new Adafruit_SSD1306 (128, 64, &Wire, -1);
-   if ( !_display->begin(SSD1306_SWITCHCAPVCC, 0x3C ) ) {
+  _display = new Adafruit_SSD1306 (128, 64, &Wire, -1);
+  if ( !_display->begin(SSD1306_SWITCHCAPVCC, 0x3C ) ) {
     delete _display;
     _display = NULL;
     ESP_LOGE( LOGFTSWARM, "Couldn't initialize OLED display." );
     return;
-   }
+  }
 
-   // set useful default values
-   setTextSize(1);              // Normal 1:1 pixel scale
-   setTextColor(SSD1306_WHITE); // Draw white text
-   setCursor(0, 0);             // Start at top-left corner
-   cp437(true);                 // Use full 256 char 'Code Page 437' font
-   clearDisplay();
+  clearDisplay();
+   
+  // set useful default values
+  setTextColor(SSD1306_WHITE); // Draw white text
+  cp437(true);                 // Use full 256 char 'Code Page 437' font
+
+  setTextSize(3);              // Logo
+  writeAligned("ftSwarm", width()/2, 32 );
+
+  setTextSize(1);              // Version
+  writeAligned( SWOSVERSION, width()/2, 58 );
+
+  // additional default values
+  setTextSize(1);              // Normal 1:1 pixel scale
+  setCursor(0, 0);             // Start at top-left corner
+
+  display();
+   
 
 }
 
@@ -1066,6 +1078,25 @@ SwOSOLED::SwOSOLED(const char *name, SwOSCtrl *ctrl) : SwOSIO( name, ctrl ) {
 
   if ( _ctrl->isLocal() ) _setupLocal();
 
+}
+
+void SwOSOLED::writeAligned( char *str, int16_t x, int16_t y, bool fill ) { 
+
+  // no display...
+  if (!_display) return;
+
+  int16_t x1, y1;
+  uint16_t w, h;
+  getTextBounds( str, 0, 0, &x1, &y1, &w, &h );
+
+  x -= w/2;
+  y -= h/2;
+
+  if (fill) fillRect( x, y, w, h, 0 );
+
+  setCursor( x, y );
+  write( str );
+  
 }
 
 void SwOSOLED::display(void) {

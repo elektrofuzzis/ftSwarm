@@ -15,6 +15,7 @@ void setup() {
 
   ftSwarm.verbose(true);
   LOCAL = ftSwarm.begin( );
+  ftSwarm.setup();
 
   new FtSwarmVoltmeter( LOCAL, FTSWARM_A1 );
   new FtSwarmOhmmeter( LOCAL, FTSWARM_A2 );
@@ -22,10 +23,7 @@ void setup() {
   new FtSwarmLDR( LOCAL, FTSWARM_A4 );
 
   new FtSwarmTractorMotor( LOCAL, FTSWARM_M1 );
-
-
-  ftSwarm.setup();
-
+ 
   LED1 = new FtSwarmLED( LOCAL, FTSWARM_LED1 );
   LED2 = new FtSwarmLED( LOCAL, FTSWARM_LED2 );
 

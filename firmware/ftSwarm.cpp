@@ -915,18 +915,11 @@ void FtSwarm::setReadDelay( uint16_t readDelay ) {
 
 }
 
-void FtSwarm::setWifi( const char *ssid, const char *pwd, bool APMode, bool writeNVS ) {
-  myOSSwarm.nvs.APMode = APMode;
-  strncpy( myOSSwarm.nvs.wifiSSID, ssid, sizeof( myOSSwarm.nvs.wifiSSID ) );
-  strncpy( myOSSwarm.nvs.wifiPwd,  pwd,  sizeof( myOSSwarm.nvs.wifiPwd ) );
-  if (writeNVS) myOSSwarm.nvs.save();
-}
-
 void wifiMenu( void ) {
 
-  char prompt[250];
-  char maxItem;
-  bool anythingChanged = false;
+  char     prompt[250];
+  uint16_t maxItem;
+  bool     anythingChanged = false;
 
   while(1) {
 
@@ -934,16 +927,16 @@ void wifiMenu( void ) {
 
     if ( myOSSwarm.nvs.APMode ) {
       sprintf( prompt, "(1) AP-Mode:  AP-MODE\n(2) SSID:     %s\n(X) Password: NOPASSWORD\n(4) Channel:  %d\n\n(0) main\nwifi>", myOSSwarm.nvs.wifiSSID, myOSSwarm.nvs.channel );
-      maxItem = '4';
+      maxItem = 4;
       
     } else {
       sprintf( prompt, "(1) AP-Mode:  CLIENT-MODE\n(2) SSID:     %s\n(3) Password: ******\n\n(0) exit\nwifi>", myOSSwarm.nvs.wifiSSID );
-      maxItem = '3';
+      maxItem = 3;
     }
     
-    switch( simpleSelect( prompt, '0', maxItem ) ) {
+    switch( enterNumber( prompt, 0, 0, maxItem ) ) {
       
-      case '0': // exit
+      case 0: // exit
         if ( ( anythingChanged) && ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) ) {
           // save config
           myOSSwarm.nvs.saveAndRestart();
@@ -951,29 +944,27 @@ void wifiMenu( void ) {
           return;
         }
         
-      case '1': // AP-Mode/Client-Mode
+      case 1: // AP-Mode/Client-Mode
         anythingChanged = true;
         myOSSwarm.nvs.APMode = !myOSSwarm.nvs.APMode;
         if ( ( myOSSwarm.nvs.APMode ) && ( ( myOSSwarm.nvs.channel < 1 ) || ( myOSSwarm.nvs.channel > 13 ) ) ) myOSSwarm.nvs.channel = 1; // to avoid invalid channel settings
         break;
         
-      case '2': // SSID
+      case 2: // SSID
         anythingChanged = true;
         enterString("Please enter new SSID: ", myOSSwarm.nvs.wifiSSID, 64);
         break;
         
-      case '3': // Password
+      case 3: // Password
         if (!myOSSwarm.nvs.APMode) {
           anythingChanged = true;
           enterString("Please enter new Password: ", myOSSwarm.nvs.wifiPwd, 64, true);
         }
         break;
 
-      case '4': // Channel
+      case 4: // Channel
         anythingChanged = true;
-        uint8_t newChannel = 0;
-        while ( ( newChannel < 1 ) || ( newChannel > 11 ) ) newChannel = enterNumber("enter channel [1..13] - use 1,6 or 11 if possible: " );
-        myOSSwarm.nvs.channel = newChannel;
+        myOSSwarm.nvs.channel = enterNumber( "enter channel [1..13] - use 1,6 or 11 if possible: ", myOSSwarm.nvs.channel, 1, 13 );
         break;
     }
     
@@ -1001,8 +992,7 @@ void joinSwarm( bool createNewSwarm ) {
   }
 
   // get new swarm's pin
-  uint16_t pin = 0;
-  while ( ( pin < 1 ) || ( pin > 9999 ) ) pin = enterNumber("Please enter new swarm's PIN [1..9999]: " );
+  uint16_t pin = enterNumber("Please enter new swarm's PIN [1..9999]: ", 0, 1, 9999 );
 
   // build swarm
   if ( createNewSwarm ) {
@@ -1064,25 +1054,21 @@ void swarmMenu( void ) {
   
   while (1) {
 
-    // build new swarm geht immer
-    // leave swarm auch -> muss zumindest Swarm mit sich selbst bilden
-    // join 
-
     printf( "\nSwarm menu\n\nThis device is connected to swarm \"%s\" with %d member(s) online.\nSwarm PIN is %d.\n", myOSSwarm.nvs.swarmName, myOSSwarm.members(), myOSSwarm.nvs.swarmPIN );
     
-    switch( simpleSelect("(1) create a new swarm\n(2) join another swarm\n(3) list swarm members\n\n(0) main\nswarm>", '0', '3') ) {
-      case '0': // main
+    switch( enterNumber("(1) create a new swarm\n(2) join another swarm\n(3) list swarm members\n\n(0) main\nswarm>", 0, 0, 3) ) {
+      case 0: // main
         return;
         
-      case '1': // create new swarm
+      case 1: // create new swarm
         joinSwarm( true ); 
         break;
         
-      case '2': // join a swarm
+      case 2: // join a swarm
         joinSwarm( false ); 
         break;
         
-      case '3': // list swarm members
+      case 3: // list swarm members
         printf("\nSwarm members:\n" );
         for (uint8_t i=0; i<=myOSSwarm.maxCtrl; i++ ) {
           if ( myOSSwarm.Ctrl[i] )
@@ -1106,18 +1092,20 @@ void localMenu( void ) {
     printf("local controler menu:\n\n");
     
     OSObj[item++] = myOSSwarm.Ctrl[0]; 
-    printf("(%d) %s - %s\n", item, myOSSwarm.Ctrl[0]->getName(), myOSSwarm.Ctrl[0]->getAlias() );
+    printf("(%2d) hostname %s - %s\n", item, myOSSwarm.Ctrl[0]->getName(), myOSSwarm.Ctrl[0]->getAlias() );
 
     // list inputs
     for (uint8_t i=0; i<4; i++ ) { 
       OSObj[item++] = myOSSwarm.Ctrl[0]->input[i];
-      printf("(%d) %s - %s\n", item, myOSSwarm.Ctrl[0]->input[i]->getName(), myOSSwarm.Ctrl[0]->input[i]->getAlias() );
+      printf("(%2d) %-4s - %-32s\n", 
+              item, myOSSwarm.Ctrl[0]->input[i]->getName(), myOSSwarm.Ctrl[0]->input[i]->getAlias());
     }
 
     // list actors
     for (uint8_t i=0; i<2; i++ ) {
       OSObj[item++] = myOSSwarm.Ctrl[0]->actor[i];
-      printf("(%d) %s - %s\n", item, myOSSwarm.Ctrl[0]->actor[i]->getName(), myOSSwarm.Ctrl[0]->actor[i]->getAlias() );
+      printf("(%2d) %-4s - %-32s\n", 
+             item, myOSSwarm.Ctrl[0]->actor[i]->getName(), myOSSwarm.Ctrl[0]->actor[i]->getAlias());
     }
 
     // FTSWARM special HW
@@ -1128,13 +1116,14 @@ void localMenu( void ) {
       // list LEDs
       for (uint8_t i=0; i<2; i++ ) {
         OSObj[item++] = ftSwarm->led[i];
-        printf("(%d) %s - %s\n", item, ftSwarm->led[i]->getName(), ftSwarm->led[i]->getAlias() );
+        printf("(%2d) %-4s - %-32s\n", 
+               item, ftSwarm->led[i]->getName(), ftSwarm->led[i]->getAlias());
       }
-
+      
       // list gyro
       if (ftSwarm->gyro) {
         OSObj[item++] = ftSwarm->gyro;
-        printf("(%d) %s - %s\n", item, ftSwarm->gyro->getName(), ftSwarm->gyro->getAlias() );
+        printf("(%2d) %-4s - %-32s\n", item, ftSwarm->gyro->getName(), ftSwarm->gyro->getAlias() );
       }
     }
 
@@ -1142,29 +1131,32 @@ void localMenu( void ) {
     if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
       
       SwOSSwarmControl *ftSwarmControl = static_cast<SwOSSwarmControl *>(myOSSwarm.Ctrl[0]);
-      
+
+      // buttons
       for (uint8_t i=0; i<8; i++ ) {
         OSObj[item++] = ftSwarmControl->button[i];
-        printf("(%d) %s - %s\n", item, ftSwarmControl->button[i]->getName(),   ftSwarmControl->button[i]->getAlias() );
+        printf("(%2d) %-4s - %-32s\n", 
+                item, ftSwarmControl->button[i]->getName(),   ftSwarmControl->button[i]->getAlias() );
       }
-      
+
+      // joysticks
       for (uint8_t i=0; i<2; i++ ) {
         OSObj[item++] = ftSwarmControl->joystick[i];
-        printf("(%d) %s - %s\n", item, ftSwarmControl->joystick[i]->getName(), ftSwarmControl->joystick[i]->getAlias() );
+        printf("(%2d) %-4s - %-32s\n", 
+               item, ftSwarmControl->joystick[i]->getName(), ftSwarmControl->joystick[i]->getAlias());
       }
       
       if (ftSwarmControl->oled) {
         OSObj[item++] = ftSwarmControl->oled;
-        printf("(%d) %s - %s\n", item, ftSwarmControl->oled->getName(), ftSwarmControl->oled->getAlias() );
+        printf("(%2d) %-4s - %-32s\n", item, ftSwarmControl->oled->getName(), ftSwarmControl->oled->getAlias() );
       }
       
-      printf("(%d) calibrate joysticks\n", ++item );
+      printf("(%2d) calibrate joysticks\n", ++item );
       
     }
 
     // User's choise
-    uint8_t choise = 0xFF;
-    while ( choise > item ) choise = enterNumber("\n(0) exit\nlocal controler>");
+    uint8_t choise = enterNumber("\n(0) exit\nlocal controler>", 0, 0, item );
 
     // exit?
     if ( choise == 0 ) {
@@ -1195,7 +1187,9 @@ void localMenu( void ) {
     // set name
     } else {
       char alias[MAXIDENTIFIER];
-      enterString( "%s - please enter new alias: ", alias, MAXIDENTIFIER);
+      char prompt[250];
+      sprintf( prompt, "%s - please enter new alias: ", OSObj[choise-1]->getName() );
+      enterIdentifier( prompt, alias, MAXIDENTIFIER );
       OSObj[choise-1]->setAlias( alias );
       anythingChanged = true;
     }
@@ -1210,11 +1204,11 @@ void FtSwarm::setup( void ) {
 
   while (1) {
     
-    switch( simpleSelect("\nMain menu\n\n(1) wifi settings\n(2) swarm settings\n(3) local controller\n\n(0) exit\nmain>", '0', '3') ) {
-      case '0': return;
-      case '1': wifiMenu(); break;
-      case '2': swarmMenu(); break;
-      case '3': localMenu(); break;
+    switch( enterNumber("\nMain menu\n\n(1) wifi settings\n(2) swarm settings\n(3) local controller\n\n(0) exit\nmain>", 0, 0, 3) ) {
+      case 0: return;
+      case 1: wifiMenu(); break;
+      case 2: swarmMenu(); break;
+      case 3: localMenu(); break;
     }
     
   }

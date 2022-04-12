@@ -303,6 +303,7 @@ class SwOSOLED : public SwOSIO {
     // administrative stuff
 	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_OLED; };
 
+    void writeAligned( char *str, int16_t x, int16_t y, bool fill = true );
     void display(void);
     void clearDisplay(void);
     void invertDisplay(bool i);

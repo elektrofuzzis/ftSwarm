@@ -26,10 +26,12 @@
 class SwOSSwarm {
 protected:
   SemaphoreHandle_t _xAccessLock = xSemaphoreCreateMutex();
+  uint16_t _lastToken = rand();
   uint16_t _readDelay = 25;
 
   uint8_t _getIndex( FtSwarmSerialNumber_t serialNumber );               // return index of controler with this s/n or are free slot if not found
 	bool    _splitId( char *id, uint8_t *index, char *io, size_t sizeIO);  // split identifier
+  uint16_t _nextToken( void );
   
 public:
   SwOSNVS  nvs;
@@ -41,7 +43,7 @@ public:
 	FtSwarmSerialNumber_t begin( bool IAmAKelda, bool verbose );                               // start my swarm
 
   // set/get time etween two reads
-  void setReadDelay( uint16_t readDelay ) { _readDelay = readDelay; };
+  void     setReadDelay( uint16_t readDelay ) { _readDelay = readDelay; };
   uint16_t getReadDelay() { return _readDelay; };
 
   // locking 
@@ -55,11 +57,13 @@ public:
   virtual SwOSIO* getIO( const char *name );
 
   // **** REST API ****
-	void jsonize( JSONize *json);                         // transfer my swarm to a JSON structure
-  bool apiActorCmd( char *id, int cmd );                // send an actor's command (from api)
-  bool apiActorPower( char *id, int power );            // send an actor's power (from api)
-	bool apiLED( char *id, int brightness, int color );   // send a LED command (from api)
-	bool apiServo( char *id, int offset, int position );  // send a Servo command (from api)
+	void jsonize( JSONize *json);                                             // transfer my swarm to a JSON structure
+  void getToken( JSONize *json);                                            // get a new token
+  uint16_t apiIsAuthorized( uint16_t token );                               // check, if it's a correct token
+  uint16_t apiActorCmd( uint16_t token, char *id, int cmd );                // send an actor's command (from api)
+  uint16_t apiActorPower( uint16_t token, char *id, int power );            // send an actor's power (from api)
+	uint16_t apiLED( uint16_t token, char *id, int brightness, int color );   // send a LED command (from api)
+	uint16_t apiServo( uint16_t token, char *id, int offset, int position );  // send a Servo command (from api)
 
   void setState( SwOSState_t state );
     // visualizes controler's state
