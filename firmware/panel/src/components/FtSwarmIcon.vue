@@ -25,8 +25,8 @@ export default {
 
 <style lang="sass" scoped>
 .box
-  background-color: #ffa57f
-  border-color: #ffa57f
+  background-color: #151517
+  border-color: #151517
   width: fit-content
   padding: 0.2em 0.4em
   margin: 0 1px
@@ -36,7 +36,7 @@ export default {
   cursor: pointer
 
 .box-active
-  border-color: blueviolet
+  border-color: darkred
 
 code
   font-family: monospace

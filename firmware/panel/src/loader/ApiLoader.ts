@@ -1,8 +1,28 @@
+import tokenSwap from './NotSecureSecurityModule';
+
 export async function obtainAccessToken() {
-    const response = await fetch(`/api/token`, {
+    const response = await fetch(`/api/getToken`, {
         method: 'GET',
     });
-    return Number(await response.text());
+    return Number((await response.json())["Token"]);
+}
+
+export function performTokenMod() {
+    const token: number = Number(localStorage.getItem('token'));
+    const pin: number = Number(localStorage.getItem('pin'));
+    const newToken = tokenSwap(token, pin);
+    localStorage.setItem('token', newToken.toString());
+}
+
+export async function isAuthenticated() {
+    const response = await fetch(`/api/isAuthenticated`, {
+        body: JSON.stringify({
+            Token: localStorage.getItem('token')
+        }),
+        method: 'POST',
+    });
+
+    return response.ok;
 }
 
 export type FtSwarmIo = {

@@ -1,5 +1,5 @@
 <template>
-  <input id="authShown" ref="authShown" hidden type="checkbox">
+  <!--<input id="authShown" ref="authShown" hidden type="checkbox">
   <div class="overlay" @click="$refs.authShown.checked = !$refs.authShown.checked">
     <div @click="() => $refs.authShown.checked = !$refs.authShown.checked">
       <div class="key"></div>
@@ -9,13 +9,16 @@
         <button id="unlock_btn" disabled @click="(e) => login(e.target)">Unlock with PIN</button>
       </div>
     </div>
-  </div>
-  <div class="click-to-overlay" @click="popupHandle">
+  </div>-->
+  <div class="click-to-overlay" @click="showLoginDialogue">
     <span>{{ loginlogout }}</span>
   </div>
 </template>
 
 <script lang="ts">
+import Swal from "sweetalert2";
+import {obtainAccessToken, isAuthenticated, performTokenMod} from "@/loader/ApiLoader";
+
 export default {
   name: "Auth",
   data() {
@@ -24,33 +27,68 @@ export default {
     return {
       localStorage,
       loginlogout,
-      sanitize(elem: HTMLInputElement) {
-        let matches = elem.value.match(/\d+/g);
-        if (matches)
-          elem.value = matches.join("")
-        else
-          elem.value = ""
-        // @ts-ignore
-        document.querySelector("#unlock_btn").disabled = elem.value.length !== 4
-      },
-      login(elem: HTMLButtonElement) {
-        if (elem.disabled) return
-        // @ts-ignore
-        localStorage.setItem("pin", document.querySelector("input[name='pin']").value)
-        this.loginlogout = "Logout"
-        // @ts-ignore
-        this.id("authShown").checked = false
-      },
-      id(refname: string) {
-        return document.querySelector(`#${refname}`)
-      },
-      popupHandle() {
-        if (localStorage.getItem("pin")) {
-          localStorage.clear()
-          this.loginlogout = "Login"
+      showLoginDialogue() {
+        if (localStorage.getItem('pin') != null) {
+          this.localStorage.removeItem('pin')
+          this.loginlogout = 'Login'
+          Swal.fire({
+            title: 'Logged out',
+            showConfirmButton: false,
+            timer: 1500
+          })
+          return
         }
-        // @ts-ignore
-        this.id("authShown").checked = !this.id("authShown").checked
+
+        Swal.fire({
+          title: 'Login',
+          html: `<input type="text" id="login" name="pin" class="swal2-input" placeholder="PIN" maxlength="4">`,
+          confirmButtonText: 'Login',
+          allowEnterKey: true,
+          focusConfirm: false,
+          preConfirm: async () => {
+            // @ts-ignore
+            const pin = Swal.getPopup().querySelector('#login').value
+            if (!pin) {
+              Swal.showValidationMessage(`Please enter your PIN`)
+              return {pin: undefined}
+            }
+
+            // Check if pin is numeric
+            if (isNaN(pin)) {
+              Swal.showValidationMessage(`PIN must be numeric`)
+              return {pin: undefined}
+            }
+
+            if (pin.length !== 4) {
+              Swal.showValidationMessage(`Please enter a valid PIN`)
+              return {pin: undefined}
+            }
+
+            // Check pin on backend
+            const accessToken = await obtainAccessToken()
+            localStorage.setItem("accessToken", String(accessToken))
+            localStorage.setItem("pin", pin)
+            performTokenMod()
+            localStorage.removeItem("pin")
+
+            if (await isAuthenticated()) {
+              Swal.showValidationMessage(`ftSwarm refused PIN`)
+              return {pin: undefined}
+            }
+
+            return {pin: pin}
+          }
+        }).then((result) => {
+          if (result.value?.pin) {
+            this.loginlogout = "Logout"
+            localStorage.setItem("pin", result.value.pin)
+            Swal.fire({
+              title: 'Logged in',
+              showConfirmButton: false,
+              timer: 1500
+            })
+          }
+        })
       }
     }
   }
@@ -78,7 +116,7 @@ export default {
 }
 
 .overlay {
-  position: absolute;
+  position: fixed;
   text-align: center;
   left: 0;
   right: 0;
@@ -94,11 +132,17 @@ export default {
   width: 200px;
   height: 300px;
   border-radius: 12px;
-  background-color: #9d0000;
+  background-color: rgba(139, 0, 0, 0.89);
+}
+
+input {
+  background-color: rgba(189, 195, 199, 0.89);
+  border: none;
+  color: #333;
 }
 
 #authShown:checked + .overlay {
-  position: absolute;
+  position: fixed;
   left: 0;
   right: 0;
   top: 0;
