@@ -462,6 +462,7 @@ public:
   virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
   virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
   virtual void setState( SwOSState_t state );                            // visualizes controler's state like booting, error,...
+  virtual void factorySettings( void );                                  // reset factory settings
     
   virtual void read(); // run measurements
 
@@ -508,6 +509,7 @@ public:
   virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
   virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
   virtual void setState( SwOSState_t state );                            // visualizes controler's state like booting, error,...
+  virtual void factorySettings( void );                                  // reset factory settings
 
   // API commands
 	virtual bool apiLED( char *id, int brightness, int color );    // send a LED command (from api)
@@ -547,6 +549,7 @@ public:
   virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
   virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
   virtual void setState( SwOSState_t state );                            // visualizes controler's state like booting, error,...
+  virtual void factorySettings( void );                                  // reset factory settings
 
 	virtual void read();                       // run measurements
 

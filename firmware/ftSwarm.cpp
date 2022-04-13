@@ -1198,17 +1198,35 @@ void localMenu( void ) {
   
 }
 
+void factorySettings( void ) {
+  // reset controller to factory settings
+
+
+}
+
 void FtSwarm::setup( void ) {
 
   printf("\n\nftSwarmOS %s\n\n(C) Christian Bergschneider & Stefan Fuss\n", SWOSVERSION );
 
   while (1) {
     
-    switch( enterNumber("\nMain menu\n\n(1) wifi settings\n(2) swarm settings\n(3) local controller\n\n(0) exit\nmain>", 0, 0, 3) ) {
+    switch( enterNumber("\nMain menu\n\n(1) wifi settings\n(2) swarm settings\n(3) local controller\n(4) reset to factory settings\n\n(0) exit\nmain>", 0, 0, 4) ) {
       case 0: return;
       case 1: wifiMenu(); break;
       case 2: swarmMenu(); break;
       case 3: localMenu(); break;
+      case 4: if (yesNo("Do you want to reset this device to it's factory settings (Y/N)?" ) ) {
+                myOSSwarm.nvs.factorySettings();
+                myOSSwarm.Ctrl[0]->factorySettings();
+                printf("device will restart now.\n");
+                delay(2000);
+                nvs_handle_t my_handle;
+                ESP_ERROR_CHECK( nvs_open("ftSwarm", NVS_READWRITE, &my_handle) );
+                myOSSwarm.Ctrl[0]->saveAliasToNVS( my_handle );
+                ESP_ERROR_CHECK( nvs_commit( my_handle ) );
+                myOSSwarm.nvs.saveAndRestart();
+              } 
+              break;
     }
     
   }

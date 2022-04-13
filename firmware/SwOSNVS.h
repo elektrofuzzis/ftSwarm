@@ -35,5 +35,6 @@ public:
 	  void save( bool writeAll = false );    // save config to flash
     void saveAndRestart();                 // save config & restart
     void createSwarm( char *name, uint16_t pin ); // create a new swarm
+    void factorySettings( void );          // reset to factory settings
     void printNVS();                       // print settings for debugging only  
 };

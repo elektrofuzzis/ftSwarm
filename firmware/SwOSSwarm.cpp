@@ -177,6 +177,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
   // no wifi config?
   if (nvs.wifiSSID[0]=='\0') {
     if (verbose) printf("Invalid wifi configuration found. Starting AP mode.\n");
+    strcpy( nvs.wifiSSID, Ctrl[0]->getHostname() );
     nvs.APMode = true;
   }
 
@@ -189,7 +190,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
     WiFi.mode(WIFI_MODE_AP);
     esp_wifi_set_ps(WIFI_PS_NONE);
     WiFi.softAPsetHostname(Ctrl[0]->getHostname());
-    WiFi.softAP(Ctrl[0]->getHostname(), "", nvs.channel); // passphrase not allowed on ESP32WROOM
+    WiFi.softAP( nvs.wifiSSID, "", nvs.channel); // passphrase not allowed on ESP32WROOM
     Ctrl[0]->IP = WiFi.softAPIP();
     
   } else {
@@ -203,8 +204,8 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
     int keys = 0;
     for (uint8_t i=0; i<20; i++ ) {
 
-    // connected?
-    if (WiFi.status() == WL_CONNECTED) break;
+      // connected?
+      if (WiFi.status() == WL_CONNECTED) break;
 
       // any key ?
       uart_get_buffered_data_len( UART_NUM_0, (size_t*)&keys);
@@ -359,7 +360,7 @@ void SwOSSwarm::getToken( JSONize *json) {
 
   _lastToken = rand();
   json->startObject();
-  json->variableUI16( "Token", _lastToken );
+  json->variableUI16( "token", _lastToken );
   json->endObject();
   
 }

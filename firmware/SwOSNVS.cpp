@@ -36,11 +36,7 @@ void SwOSNVS::_initialSetup( void ) {
   serialNumber = enterNumber("Serial number [1..65535]>", 0, 1, 65535 );
 
   APMode = true;
-  if ( controlerType == FTSWARM ) {
-    sprintf( wifiSSID, "ftSwarm%d", serialNumber );
-  } else {
-    sprintf( wifiSSID, "ftSwarmControl%d", serialNumber );
-  };
+  sprintf( wifiSSID, "ftSwarm%d", serialNumber );
   wifiPwd[0]  = '\0';
 
   strcpy( swarmName, wifiSSID );
@@ -198,6 +194,23 @@ void SwOSNVS::save( bool writeAll ) {
 void SwOSNVS::saveAndRestart( void ) {
   save();
   ESP.restart();
+}
+
+
+void SwOSNVS::factorySettings( void ) {
+
+  channel = 1;
+  
+  memset( wifiSSID, '\0', 64 );
+  memset( wifiPwd,  '\0', 128 );
+  
+  APMode = true;
+  sprintf( wifiSSID, "ftSwarm%d", serialNumber );
+
+  strcpy( swarmName, wifiSSID );
+  swarmSecret = generateSecret( serialNumber ); 
+  swarmPIN    = serialNumber;
+
 }
 
 void SwOSNVS::createSwarm( char *name, uint16_t pin ) {

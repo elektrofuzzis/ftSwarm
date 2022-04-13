@@ -1425,6 +1425,15 @@ SwOSCtrl::~SwOSCtrl() {
   
 }
 
+void SwOSCtrl::factorySettings( void ) {
+
+  setAlias("");
+  for (uint8_t i=0; i<4; i++) { if ( input[i] ) input[i]->setAlias( "" ); }
+  for (uint8_t i=0; i<2; i++) { if ( actor[i] ) actor[i]->setAlias( "" ); }
+  if (gyro) gyro->setAlias("");
+  
+}
+
 bool SwOSCtrl::cmdAlias( const char *obj, const char *alias) {
 
   char device[30];
@@ -1658,7 +1667,7 @@ void SwOSCtrl::loadAliasFromNVS( nvs_handle_t my_handle ) {
 SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda ):SwOSCtrl( SN, macAddress, local, CPU, HAT, IAmAKelda ) {
 
   char buffer[32];
-  sprintf( buffer, "%s%d", myType(), SN);
+  sprintf( buffer, "ftSwarm%d", SN);
   setName( buffer );
   
   // define specific hardware
@@ -1672,6 +1681,14 @@ SwOSSwarmJST::~SwOSSwarmJST() {
   for ( uint8_t i=0; i<2; i++ ) { if ( led[i] ) delete led[i]; }
   if ( servo ) delete servo;
 
+}
+
+void SwOSSwarmJST::factorySettings( void ) {
+
+  SwOSCtrl::factorySettings();
+  for (uint8_t i=0; i<2; i++) { if ( led[i] ) led[i]->setAlias( "" ); }
+  if (servo) servo->setAlias("");
+  
 }
 
 bool SwOSSwarmJST::cmdAlias( char *device, uint8_t port, const char *alias) {
@@ -1847,7 +1864,7 @@ void SwOSSwarmJST::loadAliasFromNVS( nvs_handle_t my_handle ) {
 SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda, int16_t zero[2][2] ):SwOSCtrl( SN, macAddress, local, CPU, HAT, IAmAKelda ) {
 
   char buffer[32];
-  sprintf( buffer, "%s%d", myType(), SN);
+  sprintf( buffer, "ftSwarm%d", SN);
   setName( buffer );
 
   // define specific hardware
@@ -1866,6 +1883,15 @@ SwOSSwarmControl::~SwOSSwarmControl() {
   for ( uint8_t i=0; i<2; i++ ) { if ( joystick[i] ) delete joystick[i]; }
   if ( hc165 ) delete hc165;
   if ( oled  ) delete oled;
+  
+}
+
+void SwOSSwarmControl::factorySettings( void ) {
+
+  SwOSCtrl::factorySettings();
+  for (uint8_t i=0; i<8; i++) { if ( button[i] ) button[i]->setAlias( "" ); }
+  if (hc165) hc165->setAlias("");
+  if (oled)  oled->setAlias("");
   
 }
 
