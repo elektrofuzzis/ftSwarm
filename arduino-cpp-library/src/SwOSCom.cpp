@@ -85,7 +85,7 @@ void SwOSCom::setMAC( const uint8_t *mac_addr ) {
 
 void SwOSCom::print() {
 
-  printf("mac: %02x:%02x:%02x:%02x:%02x:%02x\n", mac);
+  printf("mac: %02x:%02x:%02x:%02x:%02x:%02x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], mac[6] );
   printf("secret: %04X\n", data.secret);
   printf("serialNumber: %d\n", data.serialNumber);
   printf("ctrlType: %d\n", data.ctrlType);

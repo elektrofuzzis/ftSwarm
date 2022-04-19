@@ -1,0 +1,36 @@
+{
+ 	"name": "ftSwarm",
+ 	"description": "Interface libray to build robotics swarms using ftSwarm/ESP32 hardware",
+ 	"keywords": "ftSwarm,swarm,robotics,fischertechnik,esp32",
+ 	"authors": [
+        	{
+            		"name": "Christian Bergschneider",
+            		"url": "https://github.com/elektrofuzzis
+            		"maintainer": true
+        	},
+        	{
+            		"name": "Stefan Fuss",
+            		"url": "https://github.com/elektrofuzzis
+            		"maintainer": true
+        	},
+  	],
+  	"repository":
+ 		{
+    			"type": "git",
+    			"url": "https://github.com/elektrofuzzis/ftSwarm"
+  		},
+  	"version": "0.10.0",
+    	"license": GNU",
+    	"homepage": "http://elektrofuzzis.githib.io/ftSwarm",
+    	"frameworks": "arduino",
+    	"platforms": "atmelavr, atmelsam, freescalekinetis, nordicnrf51, nxplpc, ststm32, teensy, espressif8266, espressif32, nordicnrf52",
+	"build": {
+        		"srcFilter": [
+            			"+<*.c>",
+            			"+<*.cpp>",
+            			"+<*.h>",
+            			"+<platforms/esp/32/*.cpp>"
+        		],
+        		"libArchive": false
+    	}
+}
