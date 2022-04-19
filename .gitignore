@@ -338,3 +338,16 @@ Backup of *.doc*
 *.xlk
 ~$*.ppt*
 *.~vsd*
+
+
+# my ignores
+*.bin
+Tests.txt
+test.sh
+*.old
+old/
+3D
+release/
+
+# Build Files
+deployment/
