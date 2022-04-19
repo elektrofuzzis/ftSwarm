@@ -5,14 +5,14 @@
  	"authors": [
         	{
             		"name": "Christian Bergschneider",
-            		"url": "https://github.com/elektrofuzzis
+            		"url": "https://github.com/Bloeckchengrafik",
             		"maintainer": true
         	},
         	{
             		"name": "Stefan Fuss",
-            		"url": "https://github.com/elektrofuzzis
+            		"url": "https://github.com/yet-another-fuzzi",
             		"maintainer": true
-        	},
+        	}
   	],
   	"repository":
  		{
@@ -20,8 +20,8 @@
     			"url": "https://github.com/elektrofuzzis/ftSwarm"
   		},
   	"version": "0.10.0",
-    	"license": GNU",
-    	"homepage": "http://elektrofuzzis.githib.io/ftSwarm",
+    	"license": "GNU",
+    	"homepage": "https://elektrofuzzis.githib.io/ftSwarm",
     	"frameworks": "arduino",
     	"platforms": "atmelavr, atmelsam, freescalekinetis, nordicnrf51, nxplpc, ststm32, teensy, espressif8266, espressif32, nordicnrf52",
 	"build": {
