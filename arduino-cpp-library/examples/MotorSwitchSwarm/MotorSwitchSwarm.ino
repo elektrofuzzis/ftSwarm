@@ -4,7 +4,7 @@
 //
 // (C) 2022 Christian Bergschneider, Stefan Fuss
 
-#include "ftSwarm.h"
+#include <ftSwarm.h>
 
 // serial number of the second controller - change it to your 2nd device serial number
 #define remote 2

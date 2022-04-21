@@ -4,7 +4,7 @@
 //
 // (C) 2022 Christian Bergschneider, Stefan Fuss
 
-#include "ftSwarm.h"
+#include <ftSwarm.h>
 
 FtSwarmSwitch *sw;
 FtSwarmMotor  *mot;
