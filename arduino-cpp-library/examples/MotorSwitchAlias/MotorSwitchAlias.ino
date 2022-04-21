@@ -11,6 +11,8 @@ FtSwarmMotor  *mot;
 
 void setup( ) {
 
+  Serial.begin(115200);
+
   // start the swarm
   FtSwarmSerialNumber_t local = ftSwarm.begin( );
 	

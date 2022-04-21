@@ -12,4 +12,4 @@
 
 #define LOGFTSWARM  "FTSWARM"
 #define MAXIDENTIFIER 32
-#define SWOSVERSION "0.10"
+#define SWOSVERSION "0.2.0"
