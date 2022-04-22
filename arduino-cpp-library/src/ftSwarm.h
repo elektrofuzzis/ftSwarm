@@ -356,7 +356,7 @@ class FtSwarm {
   // my swarm...
   protected:
     bool _IAmAKelda = false;
-    bool _verbose = false;
+    bool _verbose = true;
     
   public:
     FtSwarmSerialNumber_t begin( bool IAmAKelda = true );  // start my swarm

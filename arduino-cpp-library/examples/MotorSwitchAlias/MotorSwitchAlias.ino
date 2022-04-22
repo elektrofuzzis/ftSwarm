@@ -1,22 +1,24 @@
 // MotorSwitch
 //
-// Simple ftSwarm starter application. Details at https://elektrofuzzis.github.io/ftSwarm.
+// Simple ftSwarm starter application using alias names. Details at https://elektrofuzzis.github.io/ftSwarm.
 //
 // (C) 2022 Christian Bergschneider, Stefan Fuss
 
-#include "ftSwarm.h"
+#include <ftSwarm.h>
 
 FtSwarmSwitch *sw;
 FtSwarmMotor  *mot;
 
 void setup( ) {
 
+  Serial.begin(115200);
+
   // start the swarm
   FtSwarmSerialNumber_t local = ftSwarm.begin( );
 	
   // get switch and motor instances
-  sw  = new FtSwarmSwitch( local, FTSWARM_A1 );
-  mot = new FtSwarmMotor( local, FTSWARM_M2 );
+  sw  = new FtSwarmSwitch( "switch" );
+  mot = new FtSwarmMotor( "motor" );
 
 }
 
