@@ -22,13 +22,15 @@ uint16_t generateSecret( FtSwarmSerialNumber_t serialNumber ) {
 
 void SwOSNVS::_initialSetup( void ) {
 
+  version = 2;
+
   controlerType = (FtSwarmControler_t) (enterNumber(("Controler Type\n (1) ftSwarm\n (2) ftSwarmControl\n>"), 0, 1, 2 ) - 1 );
 
   switch( enterNumber("CPU Version\n (1) 1V0\n (2) 1V3\n (3) 1V15\n>", 0, 1, 3) ) {
-    case '1':  CPU = FTSWARM_1V0;  break;
-    case '2':  CPU = FTSWARM_1V3;  break;
-    case '3':  CPU = FTSWARM_1V15; break;
-    default:   CPU = FTSWARM_1V0;  break;
+    case 1:  CPU = FTSWARM_1V0;  break;
+    case 2:  CPU = FTSWARM_1V3;  break;
+    case 3:  CPU = FTSWARM_1V15; break;
+    default: CPU = FTSWARM_1V0;  break;
   }
 
   HAT = FTSWARM_1V0;
@@ -108,13 +110,15 @@ bool SwOSNVS::load() {
 
   // start reading my version to check my data is valid
   nvs_get_i32( my_handle, "NVSVersion", &version);
-  if ( version == -1 ) {
-     return false;
+  if ( version <= 1 ) {
+    // no version data, or old version 1
+    return false;
   }
      
   // start with HW configuration
   nvs_get_u32( my_handle, "controlerType", (uint32_t *) &controlerType );
 
+  uint32_t ui32;
   nvs_get_u16( my_handle, "serialNumber",  (uint16_t *) &serialNumber );
   nvs_get_u32( my_handle, "CPU",           (uint32_t *) &CPU );
   nvs_get_u32( my_handle, "HAT",           (uint32_t *) &HAT );
@@ -160,7 +164,7 @@ void SwOSNVS::save( bool writeAll ) {
 
   // Write
   if (writeAll) {
-    ESP_ERROR_CHECK( nvs_set_i32( my_handle, "NVSVersion", 1) );
+    ESP_ERROR_CHECK( nvs_set_i32( my_handle, "NVSVersion", version ) );
     ESP_ERROR_CHECK( nvs_set_u32( my_handle, "controlerType", (uint32_t) controlerType ) );
     ESP_ERROR_CHECK( nvs_set_u16( my_handle, "serialNumber", (FtSwarmSerialNumber_t) serialNumber ) );
     ESP_ERROR_CHECK( nvs_set_u32( my_handle, "CPU", (uint32_t) CPU ) );
