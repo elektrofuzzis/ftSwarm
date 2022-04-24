@@ -60,7 +60,7 @@ export default {
             performTokenMod()
             localStorage.removeItem("pin")
 
-            if (await isAuthenticated()) {
+            if (!await isAuthenticated()) {
               Swal.showValidationMessage(`ftSwarm refused PIN`)
               return {pin: undefined}
             }
