@@ -4,7 +4,7 @@ export async function obtainAccessToken() {
     const response = await fetch(`/api/getToken`, {
         method: 'GET',
     });
-    return Number((await response.json())["Token"]);
+    return Number((await response.json())["token"]);
 }
 
 export function performTokenMod() {
