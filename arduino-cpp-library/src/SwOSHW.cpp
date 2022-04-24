@@ -190,7 +190,7 @@ void SwOSIO::jsonize( JSONize *json, uint8_t id) {
  ***************************************************/
 
 SwOSInput::SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSIO( name, port, ctrl ) {
-
+  
   // initialize some vars to undefined
   _lastRawValue = 0;
   _toggle       = FTSWARM_NOTOGGLE;

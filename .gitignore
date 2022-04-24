@@ -347,6 +347,8 @@ test.sh
 *.old
 old/
 3D
+release/
+arduino-cpp-library/src/src.ino
 
 # Build Files
 deployment/
