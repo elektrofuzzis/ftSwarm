@@ -57,6 +57,8 @@ export default {
             const accessToken = await obtainAccessToken()
             localStorage.setItem("token", String(accessToken))
             localStorage.setItem("pin", pin)
+            // Wait a few milliseconds
+            await new Promise(resolve => setTimeout(resolve, 10))
             performTokenMod()
             localStorage.removeItem("pin")
 
