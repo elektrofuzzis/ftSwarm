@@ -542,8 +542,6 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
 
   uint8_t i = _getIndex( com->data.serialNumber );
 
-  ESP_LOGD( LOGFTSWARM, "hä?" );
-
   // check on join message
   if ( com->data.cmd == CMD_SWARMJOIN ) {
 
