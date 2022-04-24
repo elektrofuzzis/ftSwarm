@@ -242,8 +242,6 @@ esp_err_t indexHandler(httpd_req_t *req ) {
   
   char line[512];
 
-  ESP_LOGD( LOGFTSWARM, "/index.html");
-
   httpd_resp_set_hdr( req, "Content-Encoding", "gzip" );
   httpd_resp_set_type( req, "text/html" ); 
 
@@ -439,7 +437,7 @@ esp_err_t apiIsAuthorized( httpd_req_t *req ) {
 
 esp_err_t apiPostHandler(httpd_req_t *req ) {
   // reply on post /api
-
+  
   // check on sub url
   if (strcmp( req->uri, "/api/led" )   == 0 )          return apiLED( req ); 
   if (strcmp( req->uri, "/api/servo" ) == 0 )          return apiServo( req ); 

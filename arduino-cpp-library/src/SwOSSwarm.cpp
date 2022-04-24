@@ -122,7 +122,7 @@ void readTask( void *parameter ) {
 
     return first16bits
 }
-*/
+
 
 uint16_t SwOSSwarm::_nextToken( ) {
 
@@ -145,7 +145,16 @@ uint16_t SwOSSwarm::_nextToken( ) {
   return _lastToken;
   
 }
+*/
 
+uint16_t SwOSSwarm::_nextToken( ) {
+
+  uint32_t pin = nvs.swarmPIN;
+  _lastToken = ( 2 + ( _lastToken ^ pin ) ) & 0xFFFF;
+
+  return _lastToken;
+  
+}
 
 FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 
@@ -359,6 +368,7 @@ void SwOSSwarm::jsonize( JSONize *json) {
 void SwOSSwarm::getToken( JSONize *json) {
 
   _lastToken = rand();
+
   json->startObject();
   json->variableUI16( "token", _lastToken );
   json->endObject();
@@ -404,8 +414,10 @@ bool SwOSSwarm::_splitId( char *id, uint8_t *index, char *io, size_t sizeIO) {
 } 
 
 uint16_t SwOSSwarm::apiIsAuthorized( uint16_t token ) {
-  
-  if ( token != _nextToken() ) return 401;
+
+  uint16_t n = _nextToken();
+
+  if ( token != n ) return 401;
 
   return 200;
 }
