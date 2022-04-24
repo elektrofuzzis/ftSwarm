@@ -8,9 +8,11 @@ export async function obtainAccessToken() {
 }
 
 export function performTokenMod() {
-    const token: number = Number(localStorage.getItem('token'));
-    const pin: number = Number(localStorage.getItem('pin'));
+    const token: number = parseInt(String(localStorage.getItem('token')), 10);
+    const pin: number = parseInt(String(localStorage.getItem('pin')), 10);
+    console.log(token, pin);
     const newToken = tokenSwap(token, pin);
+    console.log(newToken);
     localStorage.setItem('token', newToken.toString());
 }
 
