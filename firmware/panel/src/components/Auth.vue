@@ -55,7 +55,7 @@ export default {
 
             // Check pin on backend
             const accessToken = await obtainAccessToken()
-            localStorage.setItem("accessToken", String(accessToken))
+            localStorage.setItem("token", String(accessToken))
             localStorage.setItem("pin", pin)
             performTokenMod()
             localStorage.removeItem("pin")
