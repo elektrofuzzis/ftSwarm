@@ -132,7 +132,7 @@ export default {
       load() {
         if (this.hasLoaded) return;
         this.reload()
-        setInterval(this.reload, 5000);
+        setInterval(this.reload, 500);
         this.hasLoaded = true;
         return "";
       },
