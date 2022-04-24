@@ -17,7 +17,7 @@ export function performTokenMod() {
 export async function isAuthenticated() {
     const response = await fetch(`/api/isAuthenticated`, {
         body: JSON.stringify({
-            Token: parseInt(localStorage.getItem('token'), 1)
+            Token: parseInt(String(localStorage.getItem('token')), 10)
         }),
         method: 'POST',
     });
