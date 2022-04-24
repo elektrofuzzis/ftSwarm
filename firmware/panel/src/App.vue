@@ -178,7 +178,6 @@ html, body {
 
 nav {
   width: 100%;
-  background-color: #2a2b38;
   position: absolute;
   left: 0;
   right: 0;

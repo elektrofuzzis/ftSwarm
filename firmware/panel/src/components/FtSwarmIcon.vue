@@ -36,7 +36,7 @@ export default {
   cursor: pointer
 
 .box-active
-  border-color: darkred
+  box-shadow: 0 0 5px 1px #724766
 
 code
   font-family: monospace

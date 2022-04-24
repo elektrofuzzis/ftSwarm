@@ -3,7 +3,7 @@
     <div class="horizontal-container">
       <img :src="'../assets/' + input.icon" alt="Icon">
       <div class="vertical-container">
-        <select :disabled="!loggedin">
+        <select disabled>
           <option :selected="input['sensorType'] === 0" value="0">Digital</option>
           <option :selected="input['sensorType'] === 1" value="1">Analog</option>
           <option :selected="input['sensorType'] === 2" value="2">Switch</option>

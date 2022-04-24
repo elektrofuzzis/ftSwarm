@@ -3,7 +3,7 @@
     <div class="horizontal-container">
       <img :src="'../assets/' + output.icon" alt="Icon">
       <div class="vertical-container">
-        <select :disabled="!loggedin">
+        <select disabled>
           <option :selected="output['subType'] === 'XMOTOR'" value="XMOTOR">XMotor</option>
           <option :selected="output['subType'] === 'TRACTORMOTOR'" value="TRACTORMOTOR">Tractor Motor</option>
           <option :selected="output['subType'] === 'ENCODERMOTOR'" value="ENCODERMOTOR">Encoder Motor</option>
