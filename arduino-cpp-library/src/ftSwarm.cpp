@@ -982,7 +982,7 @@ void joinSwarm( bool createNewSwarm ) {
   // get new swarm's name
   while (1) {
     
-    enterString( "Please enter new swarm's name [minimm 5 chars]: ", name, MAXIDENTIFIER);
+    enterString( "Please enter new swarm's name [minimum 5 chars]: ", name, MAXIDENTIFIER);
 
     // different names, at least 5 chars
     if ( ( strcmp( myOSSwarm.nvs.swarmName, name ) != 0 ) && ( strlen( name ) > 4 ) ) {
@@ -1038,7 +1038,7 @@ void joinSwarm( bool createNewSwarm ) {
     myOSSwarm.lock();
     myOSSwarm.reload();
     myOSSwarm.unlock();
-    printf("ERROR: swarm \"%s\" not found. Rejoined old swam %s\n", name, myOSSwarm.nvs.swarmName );
+    printf("ERROR: swarm \"%s\" not found. Rejoined old swarm %s\n", name, myOSSwarm.nvs.swarmName );
     return;
   }
 

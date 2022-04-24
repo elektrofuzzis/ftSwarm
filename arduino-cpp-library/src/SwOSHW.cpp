@@ -1871,7 +1871,10 @@ SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, const uint8_t *mac
   for (uint8_t i=0; i<4; i++) { button[i]   = new SwOSButton("S", i, this); }
   for (uint8_t i=0; i<2; i++) { button[4+i] = new SwOSButton("F", i, this); }
   for (uint8_t i=0; i<2; i++) { button[6+i] = new SwOSButton("J", i, this); }
-  for (uint8_t i=0; i<2; i++) { joystick[i] = new SwOSJoystick("JOY", i, this, zero[i][0], zero[i][1]); }
+  for (uint8_t i=0; i<2; i++) { 
+    if (zero) joystick[i] = new SwOSJoystick("JOY", i, this, zero[i][0], zero[i][1]); 
+    else      joystick[i] = new SwOSJoystick("JOY", i, this, 0, 0 ); 
+  }
   hc165 = new SwOSHC165("HC165", this);
   oled  = new SwOSOLED("OLED", this);
 }

@@ -38,7 +38,6 @@ void recvTask( void *parameter ) {
   // This tasks waits for such events and process them vai myOSSwarm.OnDataRecv.
 
   SwOSCom event( broadcast, NULL, 0 );
-
   // forever
   while (1) {
 
@@ -542,6 +541,8 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
   if (!com) return;
 
   uint8_t i = _getIndex( com->data.serialNumber );
+
+  ESP_LOGD( LOGFTSWARM, "hä?" );
 
   // check on join message
   if ( com->data.cmd == CMD_SWARMJOIN ) {
