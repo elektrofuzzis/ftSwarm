@@ -457,6 +457,7 @@ bool SwOSStartWebServer( void ) {
   config.uri_match_fn = httpd_uri_match_wildcard;
   config.max_uri_handlers = 10;
   config.stack_size = 50000;
+  config.core_id = 0;
 
   httpd_handle_t server = NULL;
 

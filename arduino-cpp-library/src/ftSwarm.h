@@ -16,6 +16,9 @@
 
 #include "SwOS.h"
 
+// max LEDs ftSwarm
+#define MAXLED 16
+
 typedef uint16_t FtSwarmSerialNumber_t;
 typedef uint8_t  FtSwarmPort_t;
 
@@ -28,10 +31,10 @@ typedef enum { FTSWARM_UNDEF = -1, FTSWARM_INPUT, FTSWARM_ACTOR, FTSWARM_BUTTON,
 typedef enum { FTSWARM_NOCTRL = -1, FTSWARM = 0, FTSWARMCONTROL = 1 } FtSwarmControler_t;
 
 // sensor types
-typedef enum { FTSWARM_DIGITAL, FTSWARM_ANALOG, FTSWARM_SWITCH, FTSWARM_REEDSWITCH, FTSWARM_VOLTMETER, FTSWARM_OHMMETER, FTSWARM_THERMOMETER, FTSWARM_LDR, FTSWARM_TRAILSENSOR, FTSWARM_COLORSENSOR, FTSWARM_ULTRASONIC, FTSWARM_MAXSENSOR } FtSwarmSensor_t;
+typedef enum { FTSWARM_DIGITAL, FTSWARM_ANALOG, FTSWARM_SWITCH, FTSWARM_REEDSWITCH, FTSWARM_LIGHTBARRIER, FTSWARM_VOLTMETER, FTSWARM_OHMMETER, FTSWARM_THERMOMETER, FTSWARM_LDR, FTSWARM_TRAILSENSOR, FTSWARM_COLORSENSOR, FTSWARM_ULTRASONIC, FTSWARM_MAXSENSOR } FtSwarmSensor_t;
 
 // actor types
-typedef enum { FTSWARM_XMOTOR, FTSWARM_TRACTOR,  FTSWARM_ENCODER, FTSWARM_LAMP, FTSWARM_MAXACTOR } FtSwarmActor_t;
+typedef enum { FTSWARM_XMOTOR, FTSWARM_XMMOTOR, FTSWARM_TRACTOR,  FTSWARM_ENCODER, FTSWARM_LAMP, FTSWARM_MAXACTOR } FtSwarmActor_t;
 
 // HW versions
 typedef enum { FTSWARM_NOVERSION = -1, FTSWARM_1V0, FTSWARM_1V3, FTSWARM_1V15 } FtSwarmVersion_t;
@@ -41,6 +44,9 @@ typedef enum { FTSWARM_COAST, FTSWARM_BRAKE, FTSWARM_ON } FtSwarmMotion_t;
 
 // toggles
 typedef enum { FTSWARM_NOTOGGLE, FTSWARM_TOGGLEUP, FTSWARM_TOGGLEDOWN } FtSwarmToggle_t;
+
+// alignment
+typedef enum { FTSWARM_ALIGNLEFT, FTSWARM_ALIGNCENTER, FTSWARM_ALIGNRIGHT } FtSwarmAlign_t;
 
 // **** port definitions ****
 
@@ -137,6 +143,13 @@ class FtSwarmReedSwitch : public FtSwarmDigitalInput {
     FtSwarmReedSwitch( const char *name, bool normallyOpen = true);
 };
 
+class FtSwarmLightBarrier: public FtSwarmDigitalInput {
+  // photo transistor as light barrier, A1..A4 all controlers
+  public:
+    FtSwarmLightBarrier( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool normallyOpen = true);
+    FtSwarmLightBarrier( const char *name, bool normallyOpen = true);
+};
+
 class FtSwarmButton : public FtSwarmIO {
   // onboard buttons, FtSwarmControl only
   public:
@@ -223,7 +236,7 @@ class FtSwarmMotor : public FtSwarmActor {
 };
 
 class FtSwarmTractorMotor : public FtSwarmMotor {
-  // tractor motor
+  // tractor & XM motor
   // M1..M2 all contollers - keep power budget in mind!
   protected:
     FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType );
@@ -238,6 +251,14 @@ class FtSwarmTractorMotor : public FtSwarmMotor {
     FtSwarmMotion_t getMotionType();
     virtual void coast( void ) { setMotionType( FTSWARM_COAST ); };
     virtual void brake( void ) { setMotionType( FTSWARM_BRAKE ); };
+};
+
+class FtSwarmXMMotor : public FtSwarmTractorMotor {
+  // xm motor
+  // M1..M2 all contollers - keep power budget in mind!
+  public:
+    FtSwarmXMMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
+    FtSwarmXMMotor( const char * name );
 };
 
 class FtSwarmEncoderMotor : public FtSwarmTractorMotor {
@@ -345,6 +366,7 @@ class FtSwarmOLED : public FtSwarmIO {
     void cp437(bool x = true);
     void write(uint8_t ch);
     void write(const char *str);
+    void write( char *str, int16_t x, int16_t y, FtSwarmAlign_t align = FTSWARM_ALIGNCENTER, bool fill = true );
     int16_t width(void);
     int16_t height(void);
     uint8_t getRotation(void);

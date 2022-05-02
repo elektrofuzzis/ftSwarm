@@ -25,15 +25,17 @@ FtSwarmIO::FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, Ft
     // check, if IO is online
     myOSSwarm.lock(); 
     me = (SwOSIOHandle_t) myOSSwarm.getIO( serialNumber, ioType, port);
-    myOSSwarm.unlock();
 
     // no success, wait 25 ms
-    if (!me) {
-      if ( firstTry ) ESP_LOGD( LOGFTSWARM, "waiting on device" );
+    if ( (!me) && ( firstTry ) ) {
+      ESP_LOGD( LOGFTSWARM, "waiting on device" );
+      myOSSwarm.setState( WAITING );
       firstTry = false;
-      vTaskDelay( 25 / portTICK_PERIOD_MS );
     }
+    
+    myOSSwarm.unlock();
 
+    if (!me) vTaskDelay( 25 / portTICK_PERIOD_MS );
   }
   
 };
@@ -47,17 +49,19 @@ FtSwarmIO::FtSwarmIO( const char *name ) {
 
     myOSSwarm.lock();
     me = myOSSwarm.getIO( name );
-    myOSSwarm.unlock();
 
     // no success, wait 25 ms
-    if (!me) {
-      if ( firstTry ) ESP_LOGD( LOGFTSWARM, "waiting on device" );
+    if ( (!me) && ( firstTry ) ) {
+      ESP_LOGD( LOGFTSWARM, "waiting on device" );
+      myOSSwarm.setState( WAITING );
       firstTry = false;
-      vTaskDelay( 25 / portTICK_PERIOD_MS );
     }
+    
+    myOSSwarm.unlock();
 
+    if (!me) vTaskDelay( 25 / portTICK_PERIOD_MS );
   }
-
+  
 }
 
 bool FtSwarmIO::isOnline() { 
@@ -133,6 +137,11 @@ bool FtSwarmDigitalInput::getState() {
 
 FtSwarmSwitch::FtSwarmSwitch( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool normallyOpen):FtSwarmDigitalInput( serialNumber, port, FTSWARM_SWITCH, normallyOpen ) {};
 FtSwarmSwitch::FtSwarmSwitch( const char * name, bool normallyOpen):FtSwarmDigitalInput( name, FTSWARM_SWITCH, normallyOpen ) {};
+
+// **** FtSwarmLightBarrier ****
+
+FtSwarmLightBarrier::FtSwarmLightBarrier( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool normallyOpen):FtSwarmDigitalInput( serialNumber, port, FTSWARM_LIGHTBARRIER, normallyOpen ) {};
+FtSwarmLightBarrier::FtSwarmLightBarrier( const char * name, bool normallyOpen):FtSwarmDigitalInput( name, FTSWARM_LIGHTBARRIER, normallyOpen ) {};
 
 // **** FtSwarmReedSwitch ****
 
@@ -343,6 +352,11 @@ FtSwarmMotion_t FtSwarmTractorMotor::getMotionType( void ) {
   return motionType;
   
 }
+
+// **** FtSwarmXMMotor
+
+FtSwarmXMMotor::FtSwarmXMMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmTractorMotor( serialNumber, port, FTSWARM_XMMOTOR ) {};
+FtSwarmXMMotor::FtSwarmXMMotor( const char *name ):FtSwarmTractorMotor( name, FTSWARM_XMMOTOR ) {};
 
 // **** FtSwarmEncodeMotor
 
@@ -838,6 +852,15 @@ void FtSwarmOLED::write(const char *str) {
   myOSSwarm.unlock();
 }
 
+void FtSwarmOLED::write( char *str, int16_t x, int16_t y, FtSwarmAlign_t align, bool fill ) {
+
+  if (!me) return;
+  
+  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->write( str, x, y, align, fill );
+  myOSSwarm.unlock();
+}
+
 int16_t FtSwarmOLED::width(void) {
 
   if (!me) return 0;
@@ -1114,10 +1137,12 @@ void localMenu( void ) {
       SwOSSwarmJST *ftSwarm = static_cast<SwOSSwarmJST *>(myOSSwarm.Ctrl[0]);
 
       // list LEDs
-      for (uint8_t i=0; i<2; i++ ) {
-        OSObj[item++] = ftSwarm->led[i];
-        printf("(%2d) %-4s - %-32s\n", 
-               item, ftSwarm->led[i]->getName(), ftSwarm->led[i]->getAlias());
+      for (uint8_t i=0; i<MAXLED; i++ ) {
+        if (ftSwarm->led[i]) {
+          OSObj[item++] = ftSwarm->led[i];
+          printf("(%2d) %-4s - %-32s\n", 
+                 item, ftSwarm->led[i]->getName(), ftSwarm->led[i]->getAlias());
+        }
       }
       
       // list gyro

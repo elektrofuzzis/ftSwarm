@@ -28,13 +28,12 @@
 #include "SwOSCom.h"
 
 #define MAXSPEED 255
-#define MAXPIXEL 16
 #define BRIGHTNESSDEFAULT 48
 
 class SwOSCtrl; // forward declaration
 
 // state
-typedef enum { BOOTING, STARTWIFI, RUNNING, ERROR, MAXSTATE } SwOSState_t;
+typedef enum { BOOTING, STARTWIFI, RUNNING, ERROR, WAITING, MAXSTATE } SwOSState_t;
 
 /***************************************************
  *
@@ -258,7 +257,7 @@ class SwOSServo : public SwOSIO {
     gpio_num_t      _SERVO;
 	  ledc_channel_t  _channelSERVO;
 	  int16_t _position = 0;
-	  int16_t _offset   = 0;
+	  int16_t _offset   = 128;
     
     // local HW procedures
     virtual void _setupLocal(); // initializes local HW
@@ -292,6 +291,8 @@ class SwOSServo : public SwOSIO {
 class SwOSOLED : public SwOSIO {
   protected:
     Adafruit_SSD1306 *_display = NULL;
+    uint8_t _textSizeX = 0;
+    uint8_t _textSizeY = 0;
     
     // local HW procedures
     virtual void _setupLocal(); // initializes local HW
@@ -303,7 +304,6 @@ class SwOSOLED : public SwOSIO {
     // administrative stuff
 	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_OLED; };
 
-    void writeAligned( char *str, int16_t x, int16_t y, bool fill = true );
     void display(void);
     void clearDisplay(void);
     void invertDisplay(bool i);
@@ -340,11 +340,14 @@ class SwOSOLED : public SwOSIO {
     void cp437(bool x = true);
     void write(uint8_t ch);
     void write(const char *str);
+    void write( char *str, int16_t x, int16_t y, FtSwarmAlign_t align = FTSWARM_ALIGNCENTER, bool fill = true );
     int16_t width(void);
     int16_t height(void);
     uint8_t getRotation(void);
     int16_t getCursorX(void);
     int16_t getCursorY(void);
+    uint8_t getTextSize( void );
+    void getTextSize( uint8_t *sx, uint8_t *sy );
 };
 
 /***************************************************
@@ -461,7 +464,7 @@ public:
 	virtual void               jsonize( JSONize *json, uint8_t id);        // send board & IO device information as a json string
   virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
   virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
-  virtual void setState( SwOSState_t state );                            // visualizes controler's state like booting, error,...
+  virtual void setState( SwOSState_t state, uint8_t members );           // visualizes controler's state like booting, error,...
   virtual void factorySettings( void );                                  // reset factory settings
     
   virtual void read(); // run measurements
@@ -508,7 +511,7 @@ public:
 	virtual void jsonize( JSONize *json, uint8_t id);                      // send board & IO device information as a json string
   virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
   virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
-  virtual void setState( SwOSState_t state );                            // visualizes controler's state like booting, error,...
+  virtual void setState( SwOSState_t state, uint8_t members );           // visualizes controler's state like booting, error,...
   virtual void factorySettings( void );                                  // reset factory settings
 
   // API commands
@@ -548,7 +551,7 @@ public:
 	virtual void jsonize( JSONize *json, uint8_t id);                      // send board & IO device information as a json string
   virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
   virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
-  virtual void setState( SwOSState_t state );                            // visualizes controler's state like booting, error,...
+  virtual void setState( SwOSState_t state, uint8_t members );           // visualizes controler's state like booting, error,...
   virtual void factorySettings( void );                                  // reset factory settings
 
 	virtual void read();                       // run measurements

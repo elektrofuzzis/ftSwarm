@@ -60,7 +60,7 @@ struct SwOSDatagram_t {
     struct { uint16_t pin; uint16_t swarmSecret; char swarmName[MAXIDENTIFIER]; } joinCmd;
     struct { Input_t input[4];
              Actor_t actor[2];
-             LED_t led[2];
+             LED_t led[MAXLED];
              Servo_t servo;
            } stateCmdJST;
     struct { Input_t input[4];

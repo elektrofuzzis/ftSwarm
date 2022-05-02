@@ -44,10 +44,12 @@ void recvTask( void *parameter ) {
     // new data available?
     if ( xQueueReceive( recvNotification, &event, ESPNOW_MAXDELAY ) == pdTRUE ) {
 
-      if ( event.data.cmd != CMD_STATE ) {
-        ESP_LOGD( LOGFTSWARM, "my friend sends some data...\nMAC: %02X:%02X:%02X:%02X:%02X:%02X secret %04X cmd %d valid %d", event.mac[0], event.mac[1], event.mac[2], event.mac[3], event.mac[4], event.mac[5], event.data.secret, event.data.cmd, event.isValid() );
-        // buffer->print();
-      }
+      #ifdef DEBUG_COMMUNICATION
+        if ( event.data.cmd != CMD_STATE ) {
+          ESP_LOGD( LOGFTSWARM, "my friend sends some data...\nMAC: %02X:%02X:%02X:%02X:%02X:%02X secret %04X cmd %d valid %d", event.mac[0], event.mac[1], event.mac[2], event.mac[3], event.mac[4], event.mac[5], event.data.secret, event.data.cmd, event.isValid() );
+          // buffer->print();
+        }
+      #endif
       
       myOSSwarm.lock();
       myOSSwarm.OnDataRecv( &event );
@@ -190,7 +192,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
   }
 
   // Start wifi
-  setState( STARTWIFI );
+  setState( STARTWIFI  );
   
   if ( ( nvs.APMode ) || Ctrl[0]->maintenanceMode() ) {
     // work as AP in standard or maintennace cable was set
@@ -254,6 +256,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
   // Init ESP-NOW
   if (!SwOSStartCommunication( nvs.swarmSecret, nvs.swarmPIN )) {
     if (verbose) printf("Error initializing ESP-NOW\n");
+    setState( ERROR );
     return 0;
   }
 
@@ -261,8 +264,8 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
   registerMe( );
 
   // start the tasks
-  xTaskCreate( readTask, "ReadTask", 10000, NULL, 1, NULL );
-  xTaskCreate( recvTask, "RecvTask", 10000, NULL, 1, NULL );
+  xTaskCreatePinnedToCore( readTask, "ReadTask", 10000, NULL, 1, NULL, 0 );
+  xTaskCreatePinnedToCore( recvTask, "RecvTask", 10000, NULL, 1, NULL, 0 );
 
   // start web server
   SwOSStartWebServer();
@@ -499,7 +502,7 @@ uint16_t SwOSSwarm::apiServo( uint16_t token, char *id, int offset, int position
 
 void SwOSSwarm::setState( SwOSState_t state ) {
 
-  if (Ctrl[0]) Ctrl[0]->setState( state );
+  if (Ctrl[0]) Ctrl[0]->setState( state, members() );
 
 }
 
@@ -545,12 +548,16 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
   // check on join message
   if ( com->data.cmd == CMD_SWARMJOIN ) {
 
-    ESP_LOGD( LOGFTSWARM, "CMD_SWARMJOIN PIN %d swarmName %s", com->data.joinCmd.pin, com->data.joinCmd.swarmName );
+    #ifdef DEBUG_COMMUNICATION
+      ESP_LOGD( LOGFTSWARM, "CMD_SWARMJOIN PIN %d swarmName %s", com->data.joinCmd.pin, com->data.joinCmd.swarmName );
+    #endif
 
     // pin and swarm name ok?
     if ( ( nvs.swarmPIN == com->data.joinCmd.pin ) && ( strcmp( com->data.joinCmd.swarmName, nvs.swarmName ) == 0 ) ) {
       // send acknowledge
-      ESP_LOGD( LOGFTSWARM, "CMD_SWARMJOIN accepted" ); 
+      #ifdef DEBUG_COMMUNICATION
+        ESP_LOGD( LOGFTSWARM, "CMD_SWARMJOIN accepted" ); 
+      #endif
       SwOSCom ack( com->mac, Ctrl[0]->serialNumber, Ctrl[0]->getType(), CMD_SWARMJOINACK );
       ack.data.joinCmd.pin = nvs.swarmPIN;
       ack.data.joinCmd.swarmSecret = nvs.swarmSecret;
@@ -563,8 +570,11 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
 
   // acknowledge join?
   if ( com->data.cmd == CMD_SWARMJOINACK ) {
-    ESP_LOGD( LOGFTSWARM, "CMD_SWARMJOINACK new secret: %04X old pin %d new pin %d allowPairing %d\n", com->data.joinCmd.swarmSecret, nvs.swarmPIN, com->data.joinCmd.pin, allowPairing );
-
+    
+    #ifdef DEBUG_COMMUNICATION
+      ESP_LOGD( LOGFTSWARM, "CMD_SWARMJOINACK new secret: %04X old pin %d new pin %d allowPairing %d\n", com->data.joinCmd.swarmSecret, nvs.swarmPIN, com->data.joinCmd.pin, allowPairing );
+    #endif
+    
     // ack's PIN needs to be the same as my pin and I need to be in pairing mode
     // if ( ( com->data.registerCmd.pin == nvs.swarmPIN ) && allowPairing ) { 
     if ( allowPairing ) {
@@ -582,6 +592,7 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
       delete Ctrl[i];
       Ctrl[i] = NULL;
     }
+    setState( RUNNING );
     return;
   }
 
@@ -589,16 +600,23 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
   if ( ( com->data.cmd == CMD_ANYBODYOUTTHERE ) ||
        ( com->data.cmd == CMD_GOTYOU ) ) {
 
-    ESP_LOGD( LOGFTSWARM, "register msg %d i:%d maxCtrl %d\n", com->data.cmd, i, maxCtrl );
-
+    #ifdef DEBUG_COMMUNICATION
+      ESP_LOGD( LOGFTSWARM, "register msg %d i:%d maxCtrl %d\n", com->data.cmd, i, maxCtrl );
+    #endif
+    
     // check on unkown controler
     if ( !Ctrl[i] ) {
-      ESP_LOGD( LOGFTSWARM, "add a new controler type %d", com->data.ctrlType);
+      
+      #ifdef DEBUG_COMMUNICATION
+        ESP_LOGD( LOGFTSWARM, "add a new controler type %d", com->data.ctrlType);
+      #endif
+      
       switch (com->data.ctrlType) {
         case FTSWARM:        Ctrl[i] = new SwOSSwarmJST    ( com->data.serialNumber, com->mac, false, com->data.registerCmd.versionCPU, com->data.registerCmd.versionHAT, com->data.registerCmd.IAmAKelda ); break;
         case FTSWARMCONTROL: Ctrl[i] = new SwOSSwarmControl( com->data.serialNumber, com->mac, false, com->data.registerCmd.versionCPU, com->data.registerCmd.versionHAT, com->data.registerCmd.IAmAKelda, NULL ); break;
         default: ESP_LOGW( LOGFTSWARM, "Unknown controler type while adding a new controller to my swarm." ); return;
       }
+      setState( RUNNING );
     } else {
       // ToDO: controler rebooted unexpected, send his last state
     }

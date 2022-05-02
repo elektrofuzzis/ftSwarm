@@ -8,6 +8,9 @@
  * 
  */
 
+// inter swarm communication deep debugging 
+// #define DEBUG_COMMUNICATION
+    
 #pragma once
 
 #define LOGFTSWARM  "FTSWARM"

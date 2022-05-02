@@ -100,6 +100,7 @@ drawChar				KEYWORD2
 drawChar				KEYWORD2
 getTextBounds			KEYWORD2
 setTextSize				KEYWORD2
+getTextSize				KEYWORD2
 setFont					KEYWORD2
 setCursor				KEYWORD2
 setTextColor			KEYWORD2
