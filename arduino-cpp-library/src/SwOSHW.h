@@ -118,6 +118,7 @@ public:
 
   // administrative stuff
 	virtual FtSwarmIOType_t getIOType() { return FTSWARM_INPUT; };
+  virtual FtSwarmSensor_t getSensorType() { return _sensorType; };
   virtual char *getIcon();
 	virtual void jsonize( JSONize *json, uint8_t id);
 
@@ -163,12 +164,13 @@ public:
 	SwOSActor(const char *name, uint8_t port, SwOSCtrl *ctrl);
 
   // adminstrative stuff
-	virtual      FtSwarmIOType_t getIOType() { return FTSWARM_ACTOR; };
+	virtual      FtSwarmIOType_t  getIOType()  { return FTSWARM_ACTOR; };
+  virtual      FtSwarmActor_t getActorType() { return _actorType; };
   virtual char *getIcon();
 	virtual void jsonize( JSONize *json, uint8_t id); // serialize object to JSON
 
   // commands
-  virtual void            setActorType( FtSwarmActor_t actorType ) { _actorType = actorType; };    // set actor type
+  virtual void            setActorType( FtSwarmActor_t actorType );    // set actor type
   virtual void            setValue( FtSwarmMotion_t motionType, int16_t power ) { _motionType = motionType; _power = power; };  // set values
   virtual void            setPower( int16_t power );                   // set power
 	virtual int16_t         getPower() { return _power; };               // get power
@@ -200,7 +202,7 @@ public:
 	virtual FtSwarmIOType_t getIOType() { return FTSWARM_JOYSTICK; };
   virtual char *getIcon() { return (char *) "11_joystick.svg"; };
 	virtual void jsonize( JSONize *json, uint8_t id);
-
+  
   // read
 	virtual void read();
 
@@ -237,7 +239,7 @@ public:
 	virtual FtSwarmIOType_t getIOType() { return FTSWARM_LED; };
   virtual char *getIcon()   { return (char *) "15_rgbled.svg"; };
   virtual void jsonize( JSONize *json, uint8_t id);
-  
+    
   // commands
 	virtual uint32_t getColor()      { return _color; };
 	virtual uint8_t  getBrightness() { return _brightness; };
@@ -274,7 +276,7 @@ class SwOSServo : public SwOSIO {
 	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_SERVO; };
     virtual char *    getIcon() { return (char *) "14_servo.svg"; };
     virtual void jsonize( JSONize *json, uint8_t id);
-
+    
     // commands
 	  virtual int16_t getOffset( )   { return _offset; };
 	  virtual int16_t getPosition( ) { return _position; };
@@ -305,49 +307,36 @@ class SwOSOLED : public SwOSIO {
 	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_OLED; };
 
     void display(void);
-    void clearDisplay(void);
     void invertDisplay(bool i);
+    void fillScreen( bool white);    
     void dim(bool dim);
-    void drawPixel(int16_t x, int16_t y, uint16_t color);
-    void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);
-    void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
-    void startscrollright(uint8_t start, uint8_t stop);
-    void startscrollleft(uint8_t start, uint8_t stop);
-    void startscrolldiagright(uint8_t start, uint8_t stop);
-    void startscrolldiagleft(uint8_t start, uint8_t stop);
-    void stopscroll(void);   
-    void setRotation(uint8_t r);
-    void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
-    void fillScreen(uint16_t color);
-    void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
-    void drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
-    void drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
-    void fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
-    void drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
-    void fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
-    void drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, uint16_t color);
-    void fillRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, uint16_t color);
-    void drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t size);
-    void drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t size_x, uint8_t size_y);
-    void getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h);
-    void setTextSize(uint8_t s);
-    void setTextSize(uint8_t sx, uint8_t sy);
-    void setFont(const GFXfont *f = NULL);   
+    int16_t getWidth(void);
+    int16_t getHeight(void);
+    
+    void drawPixel(int16_t x, int16_t y, bool white);  
+    void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool white);
+    void drawRect(int16_t x, int16_t y, int16_t w, int16_t h, bool fill, bool white);
+    void drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, bool fill, bool white);
+    void drawCircle(int16_t x0, int16_t y0, int16_t r, bool fill, bool white);
+    void drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool fill, bool white);
+    void drawChar(int16_t x, int16_t y, unsigned char c, bool color, bool bg, uint8_t size_x, uint8_t size_y);
+    void write( char *str, int16_t x, int16_t y, FtSwarmAlign_t align , bool fill );
+    void write( char *str );
+   
     void setCursor(int16_t x, int16_t y);
-    void setTextColor(uint16_t c);
-    void setTextColor(uint16_t c, uint16_t bg);
+    void getCursor(int16_t *x, int16_t *y);
+
+    void setTextColor(bool c, bool bg);
     void setTextWrap(bool w);
-    void cp437(bool x = true);
-    void write(uint8_t ch);
-    void write(const char *str);
-    void write( char *str, int16_t x, int16_t y, FtSwarmAlign_t align = FTSWARM_ALIGNCENTER, bool fill = true );
-    int16_t width(void);
-    int16_t height(void);
+
+    void setRotation(uint8_t r);
     uint8_t getRotation(void);
-    int16_t getCursorX(void);
-    int16_t getCursorY(void);
-    uint8_t getTextSize( void );
+
+    void setTextSize(uint8_t sx, uint8_t sy);
     void getTextSize( uint8_t *sx, uint8_t *sy );
+    
+    void getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h);
+
 };
 
 /***************************************************
@@ -464,7 +453,7 @@ public:
 	virtual void               jsonize( JSONize *json, uint8_t id);        // send board & IO device information as a json string
   virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
   virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
-  virtual void setState( SwOSState_t state, uint8_t members );           // visualizes controler's state like booting, error,...
+  virtual void setState( SwOSState_t state, uint8_t members, char *SSID ); // visualizes controler's state like booting, error,...
   virtual void factorySettings( void );                                  // reset factory settings
     
   virtual void read(); // run measurements
@@ -472,15 +461,20 @@ public:
   // API commnds
 	virtual bool apiActorCmd( char *id, int cmd );                 // send an actor's command (from api)
   virtual bool apiActorPower( char *id, int power );             // send an actors's power (from api)
-	virtual bool apiLED( char *id, int brightness, int color );    // send a LED command (from api)
-	virtual bool apiServo( char *id, int offset, int position );   // send a Servo command (from api)
+	virtual bool apiLEDBrightness( char *id, int brightness );     // send a LED command (from api)
+	virtual bool apiLEDColor( char *id, int color );               // send a LED command (from api)
+  virtual bool apiServoOffset( char *id, int offset );           // send a Servo command (from api)
+  virtual bool apiServoPosition( char *id, int position );       // send a Servo command (from api)
 
   virtual bool maintenanceMode();
 
 
   // Communications
-  virtual bool OnDataRecv( SwOSCom *com );  // data via espnow revceived
-  virtual SwOSCom *state2Com( void );    // copy my state in a com struct
+  virtual bool OnDataRecv( SwOSCom *com );     // data via espnow revceived
+  virtual bool recvState( SwOSCom *com );      // receive state from another ftSwarmXX
+  virtual SwOSCom *state2Com( void );          // copy my state in a com struct
+  virtual void registerMe( SwOSCom *com );     // fill in my own data in registerCmd datagram
+  virtual void sendAlias( uint8_t *mac ) {};   // send my alias names
     
 };
 
@@ -495,11 +489,13 @@ public:
 class SwOSSwarmJST : public SwOSCtrl {
 public:
   // specific hardware
+  uint8_t   RGBLeds = 2;
 	SwOSLED   *led[MAXLED];
 	SwOSServo *servo;
 
   // constructor, destructor
-	SwOSSwarmJST( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda );
+	SwOSSwarmJST( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda, uint8_t xRGBLeds );
+  SwOSSwarmJST( SwOSCom *com ); // constructor
   ~SwOSSwarmJST();
   
   // administrative stuff
@@ -511,17 +507,19 @@ public:
 	virtual void jsonize( JSONize *json, uint8_t id);                      // send board & IO device information as a json string
   virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
   virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
-  virtual void setState( SwOSState_t state, uint8_t members );           // visualizes controler's state like booting, error,...
+  virtual void setState( SwOSState_t state, uint8_t members, char *SSID ); // visualizes controler's state like booting, error,...
   virtual void factorySettings( void );                                  // reset factory settings
 
   // API commands
-	virtual bool apiLED( char *id, int brightness, int color );    // send a LED command (from api)
-	virtual bool apiServo( char *id, int offset, int position );   // send a Servo command (from api)
+  virtual bool apiLEDBrightness( char *id, int brightness );     // send a LED command (from api)
+  virtual bool apiLEDColor( char *id, int color );               // send a LED command (from api)
+  virtual bool apiServoOffset( char *id, int offset );           // send a Servo command (from api)
+  virtual bool apiServoPosition( char *id, int position );       // send a Servo command (from api)
 
   // **** Communications *****
-  virtual bool recvState( SwOSCom *com );  // receive state from another ftSwarmControl
-  virtual SwOSCom *state2Com( void  );     // copy my state in a com struct
   virtual bool OnDataRecv( SwOSCom *com ); // data via espnow revceived
+  virtual void registerMe( SwOSCom *com );     // fill in my own data in registerCmd datagram
+  virtual void sendAlias( uint8_t *mac );
 
 };
 
@@ -540,6 +538,7 @@ public:
 	SwOSOLED     *oled;
 
 	SwOSSwarmControl(FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda, int16_t zero[2][2] ); // constructor
+  SwOSSwarmControl( SwOSCom *com ); // constructor
   ~SwOSSwarmControl(); // destructor
   
   // administrative stuff
@@ -551,7 +550,7 @@ public:
 	virtual void jsonize( JSONize *json, uint8_t id);                      // send board & IO device information as a json string
   virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
   virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
-  virtual void setState( SwOSState_t state, uint8_t members );           // visualizes controler's state like booting, error,...
+  virtual void setState( SwOSState_t state, uint8_t members, char *SSID ); // visualizes controler's state like booting, error,...
   virtual void factorySettings( void );                                  // reset factory settings
 
 	virtual void read();                       // run measurements
@@ -560,5 +559,7 @@ public:
   virtual bool recvState( SwOSCom *com );    // receive state from another FtSwarmControl
   virtual SwOSCom *state2Com( void );        // copy my state in a com struct
   virtual bool OnDataRecv( SwOSCom *com );   // data via espnow revceived
+  virtual void registerMe( SwOSCom *com );   // fill in my own data in registerCmd datagram
+  virtual void sendAlias( uint8_t *mac );    // send my alias names
 
 };

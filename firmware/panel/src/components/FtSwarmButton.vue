@@ -1,5 +1,5 @@
 <template>
-  <li>
+  <li class="li-button">
     <div class="horizontal-container">
       <img :class="input.state===1?'on':''" :src="'../assets/' + input.icon" alt="Icon">
       <div class="vertical-container">
@@ -7,7 +7,9 @@
         <span class="name">{{ input.name }} <span class="id">{{ input.id }}</span></span>
       </div>
     </div>
-    <span class="value">{{ input.state.toString().replace("Â", "") }}</span>
+    <div class="value-input-container">
+      <span class="value">{{ input.state.toString().replace("Â", "") }}</span>
+    </div>
   </li>
 </template>
 

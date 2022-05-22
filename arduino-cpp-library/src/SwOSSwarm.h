@@ -62,8 +62,10 @@ public:
   uint16_t apiIsAuthorized( uint16_t token );                               // check, if it's a correct token
   uint16_t apiActorCmd( uint16_t token, char *id, int cmd );                // send an actor's command (from api)
   uint16_t apiActorPower( uint16_t token, char *id, int power );            // send an actor's power (from api)
-	uint16_t apiLED( uint16_t token, char *id, int brightness, int color );   // send a LED command (from api)
-	uint16_t apiServo( uint16_t token, char *id, int offset, int position );  // send a Servo command (from api)
+	uint16_t apiLEDBrightness( uint16_t token, char *id, int brightness );    // send a LED command (from api)
+	uint16_t apiLEDColor( uint16_t token, char *id, int color);               // send a LED command (from api)
+  uint16_t apiServoOffset( uint16_t token, char *id, int offset );          // send a Servo command (from api)
+  uint16_t apiServoPosition( uint16_t token, char *id, int position);       // send a Servo command (from api)
 
   void setState( SwOSState_t state );
     // visualizes controler's state

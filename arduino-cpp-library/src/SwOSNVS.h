@@ -28,6 +28,7 @@ public:
     uint16_t              swarmSecret, swarmPIN;
     bool                  APMode;
     int16_t               joyZero[2][2];
+    uint8_t               RGBLeds;
 
 	  SwOSNVS();                             // constructor
 	  void begin();                          // read data from nvs & run an _initialSetup if needed

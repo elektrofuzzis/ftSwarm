@@ -15,6 +15,7 @@
 #include <freertos/task.h>
 #include <freertos/semphr.h>
 #include <driver/uart.h>
+#include "esp_task_wdt.h"
 
 #include "SwOSNVS.h"
 #include "SwOSHW.h"
@@ -26,6 +27,8 @@
 
 // There can only be once!
 SwOSSwarm myOSSwarm;
+
+//#define DEBUG_COMMUNICATION
 
 /***************************************************
  *
@@ -47,7 +50,7 @@ void recvTask( void *parameter ) {
       #ifdef DEBUG_COMMUNICATION
         if ( event.data.cmd != CMD_STATE ) {
           ESP_LOGD( LOGFTSWARM, "my friend sends some data...\nMAC: %02X:%02X:%02X:%02X:%02X:%02X secret %04X cmd %d valid %d", event.mac[0], event.mac[1], event.mac[2], event.mac[3], event.mac[4], event.mac[5], event.data.secret, event.data.cmd, event.isValid() );
-          // buffer->print();
+          event.print();
         }
       #endif
       
@@ -164,6 +167,13 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
     printf(SWOSVERSION);
     printf("\n\n(C) Christian Bergschneider & Stefan Fuss\n\nPress any key to enter bios settings.\n");
   }
+
+  // kill watchdog timer
+  // wdt_disable();
+  //esp_task_wdt_deinit();
+  
+  // initialize random
+  srand( time( NULL ) );
  
   // initialize nvs
   nvs.begin();
@@ -171,7 +181,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 	// create local controler
 	maxCtrl++;
 	if (nvs.controlerType == FTSWARM ) {
-		Ctrl[maxCtrl] = new SwOSSwarmJST(     nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda );
+		Ctrl[maxCtrl] = new SwOSSwarmJST(     nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda, nvs.RGBLeds );
 	} else {
 		Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda, nvs.joyZero );
 	}
@@ -462,7 +472,7 @@ uint16_t SwOSSwarm::apiActorPower( uint16_t token, char *id, int power ) {
   
 }
 
-uint16_t SwOSSwarm::apiLED( uint16_t token, char *id, int brightness, int color ) {
+uint16_t SwOSSwarm::apiLEDBrightness( uint16_t token, char *id, int brightness ) {
   // send a LED command (from api)
 
 	uint8_t i;
@@ -475,13 +485,32 @@ uint16_t SwOSSwarm::apiLED( uint16_t token, char *id, int brightness, int color 
 	if (!_splitId(id, &i, io, sizeof(io))) return 400;
 
 	// execute cmd
-	if ( ( Ctrl[i] ) && ( Ctrl[i]->apiLED( io, brightness, color ) ) ) return 200;
+	if ( ( Ctrl[i] ) && ( Ctrl[i]->apiLEDBrightness( io, brightness) ) ) return 200;
   
   return 400;
 
 }
 
-uint16_t SwOSSwarm::apiServo( uint16_t token, char *id, int offset, int position ) {
+uint16_t SwOSSwarm::apiLEDColor( uint16_t token, char *id, int color ) {
+  // send a LED command (from api)
+
+  uint8_t i;
+  char    io[20];
+
+  // Token error
+  if ( token != _nextToken() ) return 401;
+
+  // split ID to device and nr
+  if (!_splitId(id, &i, io, sizeof(io))) return 400;
+
+  // execute cmd
+  if ( ( Ctrl[i] ) && ( Ctrl[i]->apiLEDColor( io, color ) ) ) return 200;
+  
+  return 400;
+
+}
+
+uint16_t SwOSSwarm::apiServoOffset( uint16_t token, char *id, int offset ) {
   // send a Servo command (from api)
   
 	uint8_t i;
@@ -494,7 +523,26 @@ uint16_t SwOSSwarm::apiServo( uint16_t token, char *id, int offset, int position
 	if (!_splitId(id, &i, io, sizeof(io))) return 400;
 
 	// execute cmd
-	if ( ( Ctrl[i] ) && ( Ctrl[i]->apiServo( io, offset, position ) ) ) return 200;
+	if ( ( Ctrl[i] ) && ( Ctrl[i]->apiServoOffset( io, offset  ) ) ) return 200;
+
+  return 400;
+  
+}
+
+uint16_t SwOSSwarm::apiServoPosition( uint16_t token, char *id, int position) {
+  // send a Servo command (from api)
+  
+  uint8_t i;
+  char    io[20];
+
+  // Token error
+  if ( token != _nextToken() ) return 401;
+
+  // split ID to device and nr
+  if (!_splitId(id, &i, io, sizeof(io))) return 400;
+
+  // execute cmd
+  if ( ( Ctrl[i] ) && ( Ctrl[i]->apiServoPosition( io, position ) ) ) return 200;
 
   return 400;
   
@@ -502,7 +550,7 @@ uint16_t SwOSSwarm::apiServo( uint16_t token, char *id, int offset, int position
 
 void SwOSSwarm::setState( SwOSState_t state ) {
 
-  if (Ctrl[0]) Ctrl[0]->setState( state, members() );
+  if (Ctrl[0]) Ctrl[0]->setState( state, members(), nvs.wifiSSID );
 
 }
 
@@ -529,10 +577,8 @@ void SwOSSwarm::unlock() {
 
 void SwOSSwarm::registerMe( void ) {
 
-  SwOSCom com( broadcast, Ctrl[0]->serialNumber, Ctrl[0]->getType(), CMD_ANYBODYOUTTHERE);
-  com.data.registerCmd.versionCPU = Ctrl[0]->getCPU();
-  com.data.registerCmd.versionHAT = Ctrl[0]->getHAT();
-  com.data.registerCmd.IAmAKelda  = Ctrl[0]->AmIAKelda();
+  SwOSCom com( broadcast, Ctrl[0]->serialNumber, CMD_ANYBODYOUTTHERE);
+  Ctrl[0]->registerMe( &com );
   com.send();
 
 }
@@ -558,7 +604,7 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
       #ifdef DEBUG_COMMUNICATION
         ESP_LOGD( LOGFTSWARM, "CMD_SWARMJOIN accepted" ); 
       #endif
-      SwOSCom ack( com->mac, Ctrl[0]->serialNumber, Ctrl[0]->getType(), CMD_SWARMJOINACK );
+      SwOSCom ack( com->mac, Ctrl[0]->serialNumber, CMD_SWARMJOINACK );
       ack.data.joinCmd.pin = nvs.swarmPIN;
       ack.data.joinCmd.swarmSecret = nvs.swarmSecret;
       strcpy( ack.data.joinCmd.swarmName, nvs.swarmName );
@@ -608,27 +654,36 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
     if ( !Ctrl[i] ) {
       
       #ifdef DEBUG_COMMUNICATION
-        ESP_LOGD( LOGFTSWARM, "add a new controler type %d", com->data.ctrlType);
+        ESP_LOGD( LOGFTSWARM, "add a new controler type %d", com->data.registerCmd.ctrlType);
       #endif
-      
-      switch (com->data.ctrlType) {
-        case FTSWARM:        Ctrl[i] = new SwOSSwarmJST    ( com->data.serialNumber, com->mac, false, com->data.registerCmd.versionCPU, com->data.registerCmd.versionHAT, com->data.registerCmd.IAmAKelda ); break;
-        case FTSWARMCONTROL: Ctrl[i] = new SwOSSwarmControl( com->data.serialNumber, com->mac, false, com->data.registerCmd.versionCPU, com->data.registerCmd.versionHAT, com->data.registerCmd.IAmAKelda, NULL ); break;
+
+      // add to swarm
+      switch (com->data.registerCmd.ctrlType) {
+        case FTSWARM:        Ctrl[i] = new SwOSSwarmJST    ( com ); break;
+        case FTSWARMCONTROL: Ctrl[i] = new SwOSSwarmControl( com ); break;
         default: ESP_LOGW( LOGFTSWARM, "Unknown controler type while adding a new controller to my swarm." ); return;
       }
+
+      // update oled display
       setState( RUNNING );
+      
     } else {
-      // ToDO: controler rebooted unexpected, send his last state
+      // controler rebooted unexpected, send his last state
+      // if ( Ctrl[0]->AmIAKelda() ) Ctrl[i]->sendConfig(com->mac);
     }
 
     // reply GOTYOU, if needed
     if ( com->data.cmd == CMD_ANYBODYOUTTHERE ) {
-      SwOSCom reply( com->mac, Ctrl[0]->serialNumber, Ctrl[0]->getType(), CMD_GOTYOU);
-      reply.data.registerCmd.versionCPU = Ctrl[0]->getCPU();
-      reply.data.registerCmd.versionHAT = Ctrl[0]->getHAT();
-      reply.data.registerCmd.IAmAKelda  = Ctrl[0]->AmIAKelda();
+      SwOSCom reply( com->mac, Ctrl[0]->serialNumber, CMD_GOTYOU);
+      Ctrl[0]->registerMe( &reply );
       reply.send( );
+
+      // TODO send ALIAS names
+
     }
+
+  // send my alias names to requestor
+  Ctrl[0]->sendAlias( com->mac );
 
   return;
     
@@ -660,7 +715,7 @@ void SwOSSwarm::send(SwOSCom *com) {
 void SwOSSwarm::leaveSwarm( void ) {
 
   // Prepare a leave message
-  SwOSCom leaveMsg( NULL, Ctrl[0]->serialNumber, Ctrl[0]->getType(), CMD_SWARMLEAVE );
+  SwOSCom leaveMsg( NULL, Ctrl[0]->serialNumber, CMD_SWARMLEAVE );
 
   // send to all others
   for (uint8_t i=1;i<=maxCtrl;i++) {
@@ -688,7 +743,7 @@ void SwOSSwarm::joinSwarm( bool createNewSwarm, char * newName, uint16_t newPIN 
   SwOSSetSecret( DEFAULTSECRET, myOSSwarm.nvs.swarmPIN );
 
   // send CMD_SWARMJOIN
-  SwOSCom joinMsg( broadcast, Ctrl[0]->serialNumber, Ctrl[0]->getType(), CMD_SWARMJOIN);
+  SwOSCom joinMsg( broadcast, Ctrl[0]->serialNumber, CMD_SWARMJOIN);
   joinMsg.data.joinCmd.pin = newPIN;
   strcpy( joinMsg.data.joinCmd.swarmName, newName );
   joinMsg.send();

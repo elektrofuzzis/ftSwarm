@@ -84,26 +84,38 @@
       <div class="inputs" v-if="current === ftswarm['id']">
         <div class="descriptor">INPUTS</div>
         <ul>
-          <FtSwarmInput v-for="input in ftswarm['io'].filter(value => value['type'] === 'INPUT')" :input="input"
-                        :loggedin="!!localStorage.getItem('pin')"></FtSwarmInput>
-          <FtSwarmButton v-for="input in ftswarm['io'].filter(value => value['type'] === 'BUTTON')" :input="input"
-                         :loggedin="!!localStorage.getItem('pin')"></FtSwarmButton>
-          <FtSwarmJoystick v-for="input in ftswarm['io'].filter(value => value['type'] === 'JOYSTICK')" :input="input"
-                           :loggedin="!!localStorage.getItem('pin')"></FtSwarmJoystick>
+          <div class="wrap-container">
+            <FtSwarmInput v-for="input in ftswarm['io'].filter(value => value['type'] === 'INPUT')" :input="input"
+                          :loggedin="!!localStorage.getItem('pin')"></FtSwarmInput>
+            <FtSwarmButton v-for="input in ftswarm['io'].filter(value => value['type'] === 'BUTTON')" :input="input"
+                           :loggedin="!!localStorage.getItem('pin')"></FtSwarmButton>
+          </div>
+          <div class="center-container">
+            <FtSwarmJoystick v-for="input in ftswarm['io'].filter(value => value['type'] === 'JOYSTICK')" :input="input"
+                             :loggedin="!!localStorage.getItem('pin')"></FtSwarmJoystick>
+          </div>
         </ul>
       </div>
       <div class="outputs" v-if="current === ftswarm['id']">
         <div class="descriptor">OUTPUTS</div>
         <ul>
-          <FtSwarmMotor v-for="output in ftswarm['io'].filter(value => value['type'] === 'ACTOR')" :output="output"
-                        :loggedin="!!localStorage.getItem('pin')"></FtSwarmMotor>
-          <FtSwarmLED v-for="output in ftswarm['io'].filter(value => value['type'] === 'LED')" :output="output"
-                      :loggedin="!!localStorage.getItem('pin')"></FtSwarmLED>
-          <FtSwarmServo v-for="output in ftswarm['io'].filter(value => value['type'] === 'SERVO')" :output="output"
-                        :loggedin="!!localStorage.getItem('pin')"></FtSwarmServo>
+          <div class="wrap-container">
+            <FtSwarmMotor v-for="output in ftswarm['io'].filter(value => value['type'] === 'ACTOR')" :output="output"
+                          :loggedin="!!localStorage.getItem('pin')"></FtSwarmMotor>
+          </div>
+          <div class="wrap-container">
+            <FtSwarmLED v-for="output in ftswarm['io'].filter(value => value['type'] === 'LED')" :output="output"
+                        :loggedin="!!localStorage.getItem('pin')"></FtSwarmLED>
+          </div>
+            <FtSwarmServo v-for="output in ftswarm['io'].filter(value => value['type'] === 'SERVO')" :output="output"
+                          :loggedin="!!localStorage.getItem('pin')"></FtSwarmServo>
         </ul>
       </div>
     </div>
+  </div>
+  <div class="footer-container">
+    <span>Read the docs at <a href="https://elektrofuzzis.github.io/ftSwarm">https://elektrofuzzis.github.io/ftSwarm</a></span>
+    <span>(C) 2022 Christian Bergschneider & Stefan Fuss</span>
   </div>
 </template>
 
@@ -126,6 +138,7 @@ export default {
     return {
       console,
       hasLoaded: false,
+      blockReload: false,
       swarm,
       localStorage,
       current: 0,
@@ -137,6 +150,7 @@ export default {
         return "";
       },
       reload() {
+        if (this.blockReload) return;
         getSwarm().then(theswarm => {
           swarm.value = theswarm;
         });
@@ -165,6 +179,7 @@ html, body {
   margin: 0;
   background-color: #151517;
   z-index: -3;
+  font-size: 0.9em;
 }
 
 #app {
@@ -189,6 +204,10 @@ nav {
   overflow-x: auto;
   padding: 3px 0;
   z-index: 100;
+}
+
+a {
+  color: #9d0000;
 }
 
 ul {
@@ -249,11 +268,77 @@ li > * {
   margin: 2px 10px;
 }
 
+.li-input {
+  width: 18em;
+}
+
+.li-button {
+  width: 18em;
+}
+
+.li-joystick {
+  width: 27em;
+}
+
+.li-led {
+  width: 30em;
+}
+
+.li-motor {
+  width: 30em;
+}
+
+.li-servo {
+  width: 30em;
+}
+
+.wrap-container {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  justify-content: left;
+  z-index: 10;
+  max-width: 75em;
+}
+
+.center-container {
+  width: 35em;
+}
+
 .vertical-container {
   display: flex;
   flex-direction: column;
   justify-content: center;
   z-index: 10;
+  width: 6em;
+}
+
+.footer-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  margin-top: 10px;
+  row-gap: 10px;
+}
+
+.vertical-joystick-container {
+  display: flex;
+  flex-direction: column;
+  width: 8em;
+}
+
+.value-input-container {
+  text-align: left;
+}
+
+.value-output-container {
+  text-align: left;
+}
+
+.value-joystick-container {
+  width: 10em;
+  text-align: left;
 }
 
 div {
@@ -272,17 +357,15 @@ select {
   background-color: #34343b;
   color: white;
   font-size: 0.8em;
-  width: 120px;
+  width: 9em;
 }
 
 
 .text-muted {
   color: #bdc3c7;
-  width: 120px;
 }
 
 .name {
-  font-size: 1.2em;
   margin-left: 5px;
 }
 
@@ -315,6 +398,7 @@ input[type="range"] {
   border-radius: 5px;
   background-color: #a4a4a4;
   outline: none;
+  width: 8em;
 }
 
 input[type="color"] {
