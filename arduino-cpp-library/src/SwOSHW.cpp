@@ -35,6 +35,7 @@ const char SENSORICON[FTSWARM_MAXSENSOR][20] = {
   "01_analog.svg",
   "02_switch.svg",
   "03_reedswitch.svg",
+  "21_lightbarrier.svg",
   "04_voltage.svg",
   "05_resistor.svg",
   "06_ntc.svg",
@@ -44,20 +45,24 @@ const char SENSORICON[FTSWARM_MAXSENSOR][20] = {
   "10_ultrasonic.svg"
 };
 
-const char SENSORTYPE[FTSWARM_MAXSENSOR][20] = { "DIGITAL", "ANALOG", "SWITCH", "REEDSWITCH", "VOLTMETER", "OHMMETER", "THERMOMETER", "LDR", "TRAILSENSOR", "COLORSENSOR", "ULTRASONIC" };
+const char SENSORTYPE[FTSWARM_MAXSENSOR][20] = { "DIGITAL", "ANALOG", "SWITCH", "REEDSWITCH", "LIGHTBARRIER", "VOLTMETER", "OHMMETER", "THERMOMETER", "LDR", "TRAILSENSOR", "COLORSENSOR", "ULTRASONIC" };
 
 const char ACTORICON[FTSWARM_MAXACTOR][20] = {
   "16_xmotor.svg",
+  "20_xmmotor.svg",
   "17_tractor.svg",
   "18_encoder.svg",
-  "19_lamp.svg"
+  "19_lamp.svg",
+  "23_valve.svg",
+  "22_compressor.svg",
+  "24_buzzer.svg"
 };
 
-const char ACTORTYPE[FTSWARM_MAXACTOR][20] = { "XMOTOR", "TRACTORMOTOR", "ENCODERMOTOR", "LAMP" };
+const char ACTORTYPE[FTSWARM_MAXACTOR][20] = { "XMOTOR", "XMMOTOR", "TRACTORMOTOR", "ENCODERMOTOR", "LAMP", "VALVE", "COMPRESSOR", "BUZZER" };
 
-const uint32_t LEDCOLOR0[MAXSTATE] = { CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red };
-const uint32_t LEDCOLOR1[MAXSTATE] = { CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red };
-const char     OLEDMSG[MAXSTATE][20] = { "booting", "connecting wifi", "online", "ERROR - check logs" };
+const uint32_t LEDCOLOR0[MAXSTATE] = { CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red, CRGB::Cyan };
+const uint32_t LEDCOLOR1[MAXSTATE] = { CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red, CRGB::Cyan };
+const char     OLEDMSG[MAXSTATE][20] = { "booting", "connecting wifi", "online", "ERROR - check logs", "waiting on HW" };
 
 /***************************************************
  *
@@ -95,7 +100,16 @@ void SwOSObj::saveAliasToNVS( nvs_handle_t my_handle ) {
 
 void SwOSObj::setAlias( const char *alias ) {
 
-  if (_alias!=NULL) { free( (void*) _alias); }
+  // free memory?
+  if ( _alias != NULL ) { free( (void*) _alias ); }
+
+  // nothing?
+  if ( (!alias) || (alias[0]=='\0') ) {
+    _alias = NULL;
+    return;
+  }
+
+  // store
   _alias = (char *) malloc(strlen(alias)+1);
   strcpy( _alias, alias );
 }
@@ -315,6 +329,7 @@ bool SwOSInput::isDigitalSensor() {
   return ( ( _sensorType == FTSWARM_DIGITAL ) ||
            ( _sensorType == FTSWARM_SWITCH ) ||
            ( _sensorType == FTSWARM_REEDSWITCH ) ||
+           ( _sensorType == FTSWARM_LIGHTBARRIER ) ||
            ( _sensorType == FTSWARM_TRAILSENSOR ) );
 
 }
@@ -348,7 +363,7 @@ void SwOSInput::setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen ) {
   } else {
     
     // send SN, SETSENSORTYPE, _port, sensorType
-    SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, _ctrl->getType(), CMD_SETSENSORTYPE );
+    SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETSENSORTYPE );
     cmd.data.sensorCmd.index        = _port;
     cmd.data.sensorCmd.sensorType   = _sensorType;
     cmd.data.sensorCmd.normallyOpen = _normallyOpen;
@@ -604,6 +619,22 @@ void SwOSActor::setMotionType( FtSwarmMotion_t motionType ) {
   
 }
 
+void SwOSActor::setActorType( FtSwarmActor_t actorType ) { 
+
+  if (_ctrl->isLocal()) {
+    _actorType = actorType; 
+    
+  } else {    
+    // send SN, SETSENSORTYPE, _port, sensorType
+    SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETACTORTYPE );
+    cmd.data.actorTypeCmd.index     = _port;
+    cmd.data.actorTypeCmd.actorType = _actorType;
+    cmd.send( );
+
+  }
+  
+};   
+
 void SwOSActor::setPower( int16_t power ) {
 
   // XMotor: set COAST or ON automatically
@@ -622,7 +653,7 @@ void SwOSActor::setPower( int16_t power ) {
 
 void SwOSActor::_setRemote() {
   
-  SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, _ctrl->getType(), CMD_SETACTORPOWER );
+  SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETACTORPOWER );
   cmd.data.actorPowerCmd.index = _port;
   cmd.data.actorPowerCmd.motionType = _motionType;
   cmd.data.actorPowerCmd.power = _power;
@@ -672,6 +703,7 @@ void SwOSActor::_setLocal() {
 }
 
 void SwOSActor::jsonize( JSONize *json, uint8_t id) {
+
   json->startObject();
   SwOSIO::jsonize(json, id);
   json->variable("subType",    (char *) ACTORTYPE[ _actorType ] );
@@ -831,7 +863,7 @@ void SwOSJoystick::setValue( int16_t FB, int16_t LR ) {
  ***************************************************/
 
 // LED Representation in FastLED library
-CRGB leds[MAXPIXEL];
+CRGB leds[MAXLED];
 uint8_t usedPixels = 0;
 bool ledsInitialized = false;
 
@@ -847,9 +879,9 @@ void SwOSLED::_setupLocal() {
   if (!ledsInitialized) {
 
     if ( _ctrl->getCPU() != FTSWARM_1V15) {
-      FastLED.addLeds<WS2812, 32, GRB>(leds, MAXPIXEL).setCorrection( TypicalLEDStrip );  
+      FastLED.addLeds<WS2812, 32, GRB>(leds, MAXLED).setCorrection( TypicalLEDStrip );  
     } else {
-      FastLED.addLeds<WS2812, 26, GRB>(leds, MAXPIXEL).setCorrection( TypicalLEDStrip );  
+      FastLED.addLeds<WS2812, 26, GRB>(leds, MAXLED).setCorrection( TypicalLEDStrip );  
     }
     
     setBrightness( BRIGHTNESSDEFAULT );
@@ -857,7 +889,7 @@ void SwOSLED::_setupLocal() {
   }
 
   // initialize pixel
-  if ( _port < MAXPIXEL ) {
+  if ( _port < MAXLED ) {
     // leds[_port] = CRGB::Black;
     setColor( CRGB::Black );
   }
@@ -876,7 +908,7 @@ void SwOSLED::setColor(uint32_t color) {
 
 void SwOSLED::_setRemote() {
   
-  SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, _ctrl->getType(), CMD_SETLED );
+  SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETLED );
   cmd.data.ledCmd.index = _port;
   cmd.data.ledCmd.color = _color;
   cmd.data.ledCmd.brightness = _brightness;
@@ -886,7 +918,7 @@ void SwOSLED::_setRemote() {
 void SwOSLED::_setColorLocal() {
 
   // set color
-  if (_port < MAXPIXEL ) {
+  if (_port < MAXLED ) {
     leds[_port] = _color;
     FastLED.show();
   }
@@ -907,7 +939,7 @@ void SwOSLED::setBrightness(uint8_t brightness) {
 void SwOSLED::_setBrightnessLocal() {
 
   // set brightness
-  if (_port < MAXPIXEL ) {
+  if (_port < MAXLED ) {
     // TODO: brightness per pixel
     // leds[_port].fadeLightBy( brightness );
     FastLED.setBrightness( _brightness );
@@ -1004,7 +1036,7 @@ void SwOSServo::_setLocal() {
 
 void SwOSServo::_setRemote() {
   
-  SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, _ctrl->getType(), CMD_SETSERVO );
+  SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETSERVO );
   cmd.data.servoCmd.index = _port;
   cmd.data.servoCmd.position = _position;
   cmd.data.servoCmd.offset   = _offset;
@@ -1043,6 +1075,8 @@ void SwOSServo::setOffset( int16_t offset ) {
  *
  ***************************************************/
 
+#define YELLOWPIXELS 16
+
 void SwOSOLED::_setupLocal() {
   
   _display = new Adafruit_SSD1306 (128, 64, &Wire, -1);
@@ -1053,20 +1087,23 @@ void SwOSOLED::_setupLocal() {
     return;
   }
 
-  clearDisplay();
+  _display->clearDisplay();
+  _display->dim(true);
    
   // set useful default values
-  setTextColor(SSD1306_WHITE); // Draw white text
-  cp437(true);                 // Use full 256 char 'Code Page 437' font
+  setTextColor(true, false);   // Draw white text
+  _display->cp437(true);       // Use full 256 char 'Code Page 437' font
 
-  setTextSize(3);              // Logo
-  writeAligned("ftSwarm", width()/2, 32 );
+  setTextSize(3,3);            // Logo
+  write( (char *) "ftSwarm", getWidth()/2, 0, FTSWARM_ALIGNCENTER, true );
 
-  setTextSize(1);              // Version
-  writeAligned( SWOSVERSION, width()/2, 58 );
+  setTextSize(1,1);            // hostname & version
+  char line[100];
+  sprintf( line, "%s %s", _ctrl->getHostname(), SWOSVERSION );
+  write( line, getWidth()/2, 32, FTSWARM_ALIGNCENTER, true );
 
   // additional default values
-  setTextSize(1);              // Normal 1:1 pixel scale
+  setTextSize(1, 1);           // Normal 1:1 pixel scale
   setCursor(0, 0);             // Start at top-left corner
 
   display();
@@ -1080,191 +1117,149 @@ SwOSOLED::SwOSOLED(const char *name, SwOSCtrl *ctrl) : SwOSIO( name, ctrl ) {
 
 }
 
-void SwOSOLED::writeAligned( char *str, int16_t x, int16_t y, bool fill ) { 
-
-  // no display...
-  if (!_display) return;
-
-  int16_t x1, y1;
-  uint16_t w, h;
-  getTextBounds( str, 0, 0, &x1, &y1, &w, &h );
-
-  x -= w/2;
-  y -= h/2;
-
-  if (fill) fillRect( x, y, w, h, 0 );
-
-  setCursor( x, y );
-  write( str );
-  
-}
-
 void SwOSOLED::display(void) {
   if (_display) _display->display();
-}
-
-void SwOSOLED::clearDisplay(void) {
-  if (_display) _display->clearDisplay();
 }
 
 void SwOSOLED::invertDisplay(bool i) {
   if (_display) _display->invertDisplay( i );
 }
 
+void SwOSOLED::fillScreen(bool white) {
+  drawRect( 0, YELLOWPIXELS, getWidth(), getHeight()-YELLOWPIXELS, true, white );
+} 
+
 void SwOSOLED::dim(bool dim) {
   if (_display) _display->dim( dim );
 }
 
-void SwOSOLED::drawPixel(int16_t x, int16_t y, uint16_t color) {
-  if (_display) _display->drawPixel( x, y, color );
+void SwOSOLED::drawPixel(int16_t x, int16_t y, bool white ) {
+  if (_display) _display->drawPixel( x, y + YELLOWPIXELS, (white)?(SSD1306_WHITE):(0) );
 }
 
-void SwOSOLED::drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) {
-  if (_display) _display->drawFastHLine( x, y, w, color );
+void SwOSOLED::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool white) {
+  
+  if (_display) {
+    if      (x0==x1) _display->drawFastVLine( x0, y0 + YELLOWPIXELS, y1 - y0,               (white)?(SSD1306_WHITE):(0) ); 
+    else if (y0==y1) _display->drawFastHLine( x0, y0 + YELLOWPIXELS, x1 - x0,               (white)?(SSD1306_WHITE):(0) ); 
+    else             _display->drawLine(      x0, y0 + YELLOWPIXELS, x1, y1 + YELLOWPIXELS, (white)?(SSD1306_WHITE):(0) );
+  }
+} 
+
+void SwOSOLED::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, bool fill, bool white) {
+  if (_display) {
+    if (fill) _display->fillRect( x, y + YELLOWPIXELS, w, h, (white)?(SSD1306_WHITE):(0) );
+    else      _display->drawRect( x, y + YELLOWPIXELS, w, h, (white)?(SSD1306_WHITE):(0) );
+  }
 }
 
-void SwOSOLED::drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color) {
-  if (_display) _display->drawFastVLine( x, y, h, color );
-}
-
-void SwOSOLED::startscrollright(uint8_t start, uint8_t stop) {
-  if (_display) _display->startscrollright( start, stop );
-}
-
-void SwOSOLED::startscrollleft(uint8_t start, uint8_t stop) {
-  if (_display) _display->startscrollleft( start, stop );
-}
-
-void SwOSOLED::startscrolldiagright(uint8_t start, uint8_t stop) {
-  if (_display) _display->startscrolldiagright( start, stop );
-}
-
-void SwOSOLED::startscrolldiagleft(uint8_t start, uint8_t stop) {
-  if (_display) _display->startscrolldiagleft( start, stop );
-}
-
-void SwOSOLED::stopscroll(void) {
-  if (_display) _display->stopscroll( );
-}
-
-void SwOSOLED::setRotation(uint8_t r) {
-  if (_display) _display->stopscroll( );
-}
-
-void SwOSOLED::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
-  if (_display) _display->fillRect( x, y, w, h, color );
+void SwOSOLED::drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, bool fill, bool white) {
+  if (_display) {
+    if (fill) _display->fillRoundRect( x0, y0 + YELLOWPIXELS, w, h, radius, (white)?(SSD1306_WHITE):(0)); 
+    else      _display->drawRoundRect( x0, y0 + YELLOWPIXELS, w, h, radius, (white)?(SSD1306_WHITE):(0)); 
+  }
 } 
 
-void SwOSOLED::fillScreen(uint16_t color) {
-  if (_display) _display->fillScreen( color ); 
+
+void SwOSOLED::drawCircle(int16_t x0, int16_t y0, int16_t r, bool fill, bool white) {
+  if (_display) {
+    if (fill) _display->fillCircle( x0, y0 + YELLOWPIXELS, r, (white)?(SSD1306_WHITE):(0)); 
+    else      _display->drawCircle( x0, y0 + YELLOWPIXELS, r, (white)?(SSD1306_WHITE):(0)); 
+  }
 } 
 
-void SwOSOLED::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color) {
-  if (_display) _display->drawLine( x0, y0, x1, y1, color ); 
+void SwOSOLED::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool fill, bool white) {
+  if (_display) {
+    if (fill) _display->fillTriangle( x0, y0 + YELLOWPIXELS, x1, y1 + YELLOWPIXELS, x2, y2 + YELLOWPIXELS, (white)?(SSD1306_WHITE):(0)); 
+    else      _display->drawTriangle( x0, y0 + YELLOWPIXELS, x1, y1 + YELLOWPIXELS, x2, y2 + YELLOWPIXELS, (white)?(SSD1306_WHITE):(0)); 
+  }
 } 
-
-void SwOSOLED::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
-  if (_display) _display->drawRect( x, y, w, h, color );
-} 
-
-void SwOSOLED::drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) {
-  if (_display) _display->drawCircle( x0, y0, r, color); 
-} 
-
-void SwOSOLED::fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) {
-  if (_display) _display->fillCircle( x0, y0,r, color );
-} 
-
-void SwOSOLED::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color) {
-  if (_display) _display->drawTriangle( x0, y0, x1, y1, x2, y2, color );
-} 
-
-void SwOSOLED::fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color) {
-  if (_display) _display->fillTriangle( x0, y0, x1, y1, x2, y2, color );
-} 
-
-void SwOSOLED::drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, uint16_t color) {
-  if (_display) _display->drawRoundRect( x0, y0, w, h, radius, color ); 
-} 
-
-void SwOSOLED::fillRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, uint16_t color) {
-  if (_display) _display->fillRoundRect( x0, y0, w, h, radius, color );
-} 
-
-void SwOSOLED::drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t size) {
-  if (_display) _display->drawChar( x, y, c, color, bg, size);
-} 
-
-void SwOSOLED::drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t size_x, uint8_t size_y) {
-  if (_display) _display->drawChar( x, y, c, color, bg, size_x, size_y );
-} 
-
-void SwOSOLED::getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h) {
-  if (_display) _display->getTextBounds( string, x, y, x1, y1, w, h );
-} 
-
-void SwOSOLED::setTextSize(uint8_t s) {
-  if (_display) _display->setTextSize( s ); 
-} 
-
-void SwOSOLED::setTextSize(uint8_t sx, uint8_t sy) {
-  if (_display) _display->setTextSize( sx, sy );
-} 
-
-void SwOSOLED::setFont(const GFXfont *f ) {
-  if (_display) _display->setFont( f );
-}
 
 void SwOSOLED::setCursor(int16_t x, int16_t y) {
-  if (_display) _display->setCursor( x, y );
+  if (_display) _display->setCursor( x, y  + YELLOWPIXELS);
 }
 
-void SwOSOLED::setTextColor(uint16_t c) {
-  if (_display) _display->setTextColor( c );
+void SwOSOLED::getCursor(int16_t *x, int16_t *y) {
+  if (_display) {
+    *x = _display->getCursorX( );
+    *y = _display->getCursorY( );
+  }
 }
 
-void SwOSOLED::setTextColor(uint16_t c, uint16_t bg) {
-  if (_display) _display->setTextColor( c, bg );
+void SwOSOLED::setTextColor(bool c, bool bg) {
+  if (_display) _display->setTextColor( (c)?(SSD1306_WHITE):(0), (bg)?(SSD1306_WHITE):(0) );
 }
 
 void SwOSOLED::setTextWrap(bool w) {
   if (_display) _display->setTextWrap( w );
 }
 
-void SwOSOLED::cp437(bool x ) {
-  if (_display) _display->cp437( x );
-}
-
-void SwOSOLED::write(uint8_t ch) {
-  if (_display) _display->write( ch );
-}
-
-void SwOSOLED::write(const char *str) {
-  char *ptr = (char *) str;
-  while (*ptr != '\0') { write( *ptr ); ptr++; }
-}
-
-int16_t SwOSOLED::width(void)  {
-  if (_display) return _display->width( ); else return 0;
-}
-
-int16_t SwOSOLED::height(void) {
-  if (_display) return _display->height( ); else return 0;
+void SwOSOLED::setRotation(uint8_t r) {
+  if (_display) _display->stopscroll( );
 }
 
 uint8_t SwOSOLED::getRotation(void)  {
   if (_display) return _display->getRotation( ); else return 0;
 }
 
-int16_t SwOSOLED::getCursorX(void) {
-  if (_display) return _display->getCursorX( ); else return 0;
+void SwOSOLED::setTextSize(uint8_t sx, uint8_t sy) {
+  
+  _textSizeX = sx;
+  _textSizeY = sy;
+  
+  if (_display) _display->setTextSize( sx, sy );
+} 
+
+void SwOSOLED::getTextSize( uint8_t *sx, uint8_t *sy ) {
+  *sx = _textSizeX;
+  *sy = _textSizeY;
 }
 
-int16_t SwOSOLED::getCursorY(void) {
-  if (_display) return _display->getCursorY( ); else return 0;
+void SwOSOLED::drawChar(int16_t x, int16_t y, unsigned char c, bool color, bool bg, uint8_t size_x, uint8_t size_y) {
+  if (_display) _display->drawChar( x, y + YELLOWPIXELS, c, (color)?(SSD1306_WHITE):(0), (bg)?(SSD1306_WHITE):(0), size_x, size_y );
+} 
+
+void SwOSOLED::write( char *str ) {
+  if (_display) _display->write(str);
 }
 
+void SwOSOLED::write( char *str, int16_t x, int16_t y, FtSwarmAlign_t align, bool fill ) { 
 
+  // no display...
+  if (!_display) return;
+
+  int16_t x1, y1, x2, y2;
+  uint16_t w, h;
+  getTextBounds( str, 0, 0, &x1, &y1, &w, &h );
+
+  switch (align) {
+    case FTSWARM_ALIGNLEFT:   x2 = x;       y2 = y; break;
+    case FTSWARM_ALIGNCENTER: x2 = x - w/2; y2 = y; break;
+    case FTSWARM_ALIGNRIGHT:  x2 = x - w;   y2 = y; break;
+    default:                  x2 = x;       y2 = y; break;
+  }
+
+  if (fill) _display->fillRect( x2, y2 + YELLOWPIXELS, w, h, 0 );
+
+  setCursor( x2, y2 );
+  write( str );
+  
+}
+
+void SwOSOLED::getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h) {
+  if (_display) {
+    _display->getTextBounds( string, x, y + YELLOWPIXELS, x1, y1, w, h );
+    *y1 -=  + YELLOWPIXELS;
+  }
+} 
+
+int16_t SwOSOLED::getWidth(void)  {
+  if (_display) return _display->width( ); else return 0;
+}
+
+int16_t SwOSOLED::getHeight(void) {
+  if (_display) return _display->height( ) - YELLOWPIXELS; else return 0;
+}
 
 /***************************************************
  *
@@ -1452,7 +1447,7 @@ bool SwOSCtrl::cmdAlias( const char *obj, const char *alias) {
   device[i]='\0';
 
   // get port
-  port = atoi(&obj[pos]);
+  port = atoi(&obj[pos])-1;
 
   // check on trailing digits only
   while ( obj[pos]!='\0') {
@@ -1532,7 +1527,7 @@ const char *SwOSCtrl::getVersionCPU() {
 
 char *SwOSCtrl::getHostname( void ) {
 
-  if (_alias) {
+  if ( (_alias) && (_alias[0]!='\0') ) {
     return _alias ;
   } else {
     return _name;
@@ -1546,9 +1541,6 @@ void SwOSCtrl::jsonize( JSONize *json, uint8_t id) {
   json->variableUI8( "id", id);
   json->variableUI16( "serialNumber", serialNumber);
 
-  char hostinfo[250];
-  sprintf(hostinfo, "%s S/N: %u HAT%s CPU%s Kelda: %d", myType(), serialNumber, getVersionHAT(), getVersionCPU(), _IAmAKelda );
-  json->variable( "hostinfo", hostinfo);
   json->variable( "type", myType() );
 
 }
@@ -1585,7 +1577,7 @@ bool SwOSCtrl::apiActorPower( char *id, int power ) {
   return false;
 }
 
-bool SwOSCtrl::apiLED( char *id, int brightness, int color ) {
+bool SwOSCtrl::apiLEDBrightness( char *id, int brightness ) {
   // send a LED command (from api)
 
   // will be defined in SwOSSwarmJST
@@ -1593,7 +1585,23 @@ bool SwOSCtrl::apiLED( char *id, int brightness, int color ) {
 
 }
 
-bool SwOSCtrl::apiServo( char * id, int offset, int position ) {
+bool SwOSCtrl::apiLEDColor( char *id, int color ) {
+  // send a LED command (from api)
+
+  // will be defined in SwOSSwarmJST
+  return false;
+
+}
+
+bool SwOSCtrl::apiServoOffset( char * id, int offset ) {
+  // send a Servo command (from api)
+
+  // will be defined in SwOSSwarmJST
+  return false;
+
+}
+
+bool SwOSCtrl::apiServoPosition( char * id, int position ) {
   // send a Servo command (from api)
 
   // will be defined in SwOSSwarmJST
@@ -1605,7 +1613,7 @@ bool SwOSCtrl::maintenanceMode() {
   return false;
 }
 
-void SwOSCtrl::setState( SwOSState_t state ) {
+void SwOSCtrl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
   // visualizes controler's state like booting, error,...
   // no display, no led, no fun
 }
@@ -1621,6 +1629,24 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
     case CMD_SETACTORPOWER:
       actor[com->data.actorPowerCmd.index]->setValue( com->data.actorPowerCmd.motionType, com->data.actorPowerCmd.power );
       return true;
+    case CMD_SETACTORTYPE:
+      actor[com->data.actorTypeCmd.index]->setActorType( com->data.actorTypeCmd.actorType );
+      return true;
+    case CMD_ALIAS:
+      // get all entries in datagramm
+      for (uint8_t i=0; i<MAXALIAS; i++) {
+        if (com->data.aliasCmd.alias[i].name[0] != '\0') {
+          // entry isn't empty
+          if ( strcmp( com->data.aliasCmd.alias[i].name, "HOSTNAME" ) == 0 ) {
+            // hostname
+            setAlias( com->data.aliasCmd.alias[i].alias );
+          } else {
+            // an IO port?
+            cmdAlias( com->data.aliasCmd.alias[i].name, com->data.aliasCmd.alias[i].alias );
+          }
+        }
+      }
+      return true;
   }
 
   return false;
@@ -1631,31 +1657,47 @@ SwOSCom *SwOSCtrl::state2Com( void ) {
 
   uint8_t mac[] = {0,0,0,0,0,0}; // dummy mac
 
-  SwOSCom *com = new SwOSCom( mac, serialNumber, getType(), CMD_STATE );
+  SwOSCom *com = new SwOSCom( mac, serialNumber, CMD_STATE );
 
   int16_t FB, LR;
 
-  for (uint8_t i=0; i<4; i++ ) { com->data.stateCmdControl.input[i].rawValue   = input[i]->getValueUI32(); };
-  for (uint8_t i=0; i<2; i++ ) { com->data.stateCmdControl.actor[i].motionType = actor[i]->getMotionType(); com->data.stateCmdControl.actor[i].power = actor[i]->getPower(); };
+  for (uint8_t i=0; i<4; i++ ) { com->data.stateCmd.inputValue[i] = input[i]->getValueUI32(); };
 
   return com;
 
 }
 
-void SwOSCtrl::saveAliasToNVS( nvs_handle_t my_handle ) {
-
-  SwOSObj::saveAliasToNVS( my_handle );
-  for (uint8_t i=0; i<4; i++ ) input[i]->saveAliasToNVS( my_handle );
-  for (uint8_t i=0; i<2; i++ ) actor[i]->saveAliasToNVS( my_handle );
+bool SwOSCtrl::recvState( SwOSCom *com ) {
   
-}
+  for (uint8_t i=0; i<4; i++ ) { input[i]->setValue( com->data.stateCmd.inputValue[i] ); };
+      
+  return true;
+ 
+} 
 
-void SwOSCtrl::loadAliasFromNVS( nvs_handle_t my_handle ) {
+void SwOSCtrl::registerMe( SwOSCom *com ){
 
-  SwOSObj::loadAliasFromNVS( my_handle );
-  for (uint8_t i=0; i<4; i++ ) input[i]->loadAliasFromNVS( my_handle );
-  for (uint8_t i=0; i<2; i++ ) actor[i]->loadAliasFromNVS( my_handle );
-  
+  if (!com) return;
+
+  // meta data
+  com->data.registerCmd.ctrlType   = getType();
+  com->data.registerCmd.versionCPU = getCPU();
+  com->data.registerCmd.versionHAT = getHAT();
+  com->data.registerCmd.IAmAKelda  = AmIAKelda();
+
+  // inputs
+  for (uint8_t i=0; i<4; i++ ) { 
+    com->data.registerCmd.input[i].rawValue = input[i]->getValueUI32(); 
+    com->data.registerCmd.input[i].sensorType = input[i]->getSensorType();
+  };
+
+  // actors
+  for (uint8_t i=0; i<2; i++ ) { 
+    com->data.registerCmd.actor[i].motionType = actor[i]->getMotionType(); 
+    com->data.registerCmd.actor[i].power      = actor[i]->getPower(); 
+    com->data.registerCmd.actor[i].actorType  = actor[i]->getActorType();
+  };
+
 }
 
 /***************************************************
@@ -1664,21 +1706,46 @@ void SwOSCtrl::loadAliasFromNVS( nvs_handle_t my_handle ) {
  *
  ***************************************************/
 
-SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda ):SwOSCtrl( SN, macAddress, local, CPU, HAT, IAmAKelda ) {
+SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda, uint8_t xRGBLeds ):SwOSCtrl( SN, macAddress, local, CPU, HAT, IAmAKelda ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
   setName( buffer );
   
   // define specific hardware
-  for (uint8_t i=0; i<2; i++) { led[i] = new SwOSLED("LED", i, this); }
+  RGBLeds = xRGBLeds;
+  for (uint8_t i=0; i<RGBLeds; i++) { led[i] = new SwOSLED("LED", i, this); }
+  for (uint8_t i=RGBLeds; i<MAXLED; i++) { led[i] = NULL; }
   servo = new SwOSServo("SERVO", this);
 
 }
 
+SwOSSwarmJST::SwOSSwarmJST( SwOSCom *com ):SwOSSwarmJST( com->data.serialNumber, com->mac, false, com->data.registerCmd.versionCPU, com->data.registerCmd.versionHAT, com->data.registerCmd.IAmAKelda, com->data.registerCmd.jst.RGBLeds ) {
+
+  // inputs
+  for (uint8_t i=0; i<4; i++ ) {
+    input[i]->setSensorType( com->data.registerCmd.input[i].sensorType, true );
+    input[i]->setValue( com->data.registerCmd.input[i].rawValue );
+  }
+
+  // actors
+  for (uint8_t i=0; i<2; i++ ) {
+    actor[i]->setActorType( com->data.registerCmd.actor[i].actorType );
+    actor[i]->setValue( com->data.registerCmd.actor[i].motionType, com->data.registerCmd.actor[i].power );
+  }
+
+  // leds
+  for (uint8_t i=0; i<RGBLeds; i++ ) {
+    if (led[i]) {
+      led[i]->setValue( com->data.registerCmd.jst.led[i].brightness, com->data.registerCmd.jst.led[i].color );
+    }
+  }
+  
+}
+
 SwOSSwarmJST::~SwOSSwarmJST() {
   
-  for ( uint8_t i=0; i<2; i++ ) { if ( led[i] ) delete led[i]; }
+  for ( uint8_t i=0; i<RGBLeds; i++ ) { if ( led[i] ) delete led[i]; }
   if ( servo ) delete servo;
 
 }
@@ -1686,7 +1753,7 @@ SwOSSwarmJST::~SwOSSwarmJST() {
 void SwOSSwarmJST::factorySettings( void ) {
 
   SwOSCtrl::factorySettings();
-  for (uint8_t i=0; i<2; i++) { if ( led[i] ) led[i]->setAlias( "" ); }
+  for (uint8_t i=0; i<MAXLED; i++) { if ( led[i] ) led[i]->setAlias( "" ); }
   if (servo) servo->setAlias("");
   
 }
@@ -1694,8 +1761,8 @@ void SwOSSwarmJST::factorySettings( void ) {
 bool SwOSSwarmJST::cmdAlias( char *device, uint8_t port, const char *alias) {
 
   // test on my specific hardware
-  if ( ( strcmp(device, "LED") == 0 )   && (port < 2) )        { led[port]->setAlias(alias); return true; }
-  else if ( ( strcmp(device, "SERVO") == 0 ) && (port = 99) )  { servo->setAlias(alias);     return true; }
+  if ( ( strcmp(device, "LED") == 0 ) && (port < MAXLED) && (led[port] ) ) { led[port]->setAlias(alias); return true; }
+  else if ( ( strcmp(device, "SERVO") == 0 ) && (port = 99) )              { servo->setAlias(alias);     return true; }
   else return false;
 
 }
@@ -1707,7 +1774,7 @@ SwOSIO *SwOSSwarmJST::getIO( const char *name) {
   if ( IO != NULL ) { return IO; }
 
   // check on specific hardware
-  for (uint8_t i=0;i<2;i++) { if (led[i]->equals(name) ) { return led[i]; } }
+  for (uint8_t i=0;i<MAXLED;i++) { if ( (led[i]) && ( led[i]->equals(name) ) ) { return led[i]; } }
   if ( (servo) && servo->equals(name) ) { return servo; }
 
   return NULL;
@@ -1721,7 +1788,8 @@ SwOSIO *SwOSSwarmJST::getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port) {
   if ( IO != NULL ) { return IO; }
 
   switch (ioType) {
-    case FTSWARM_LED:   return ( (port<2)?led[port]:NULL);
+    case FTSWARM_LED:
+      return ( (port<MAXLED)?led[port]:NULL);
     case FTSWARM_SERVO: return servo; 
   }
 
@@ -1745,7 +1813,7 @@ void SwOSSwarmJST::jsonize( JSONize *json, uint8_t id) {
 
   for (uint8_t i=0; i<4; i++) { input[i]->jsonize( json, id ); }
   for (uint8_t i=0; i<2; i++) { actor[i]->jsonize( json, id ); }
-  for (uint8_t i=0; i<2; i++) { led[i]->jsonize( json, id ); }
+  for (uint8_t i=0; i<RGBLeds; i++) { if ( led[i] ) led[i]->jsonize( json, id ); }
   if (servo) { servo->jsonize( json, id ); }
   if (gyro)  { gyro->jsonize(json, id); }
 
@@ -1754,15 +1822,31 @@ void SwOSSwarmJST::jsonize( JSONize *json, uint8_t id) {
   
 }
 
-bool SwOSSwarmJST::apiLED( char *id, int brightness, int color ) {
+bool SwOSSwarmJST::apiLEDBrightness( char *id, int brightness ) {
   // send a LED command (from api)
 
   // search IO
-  for (uint8_t i=0; i<2; i++) {
+  for (uint8_t i=0; i<RGBLeds; i++) {
 
-    if ( led[i]->equals(id) ) {
+    if ( (led[i]) && ( led[i]->equals(id) ) ) {
       // found
       led[i]->setBrightness( brightness );
+      return true;
+    }
+  }
+
+  return false;
+
+}
+
+bool SwOSSwarmJST::apiLEDColor( char *id, int color ) {
+  // send a LED command (from api)
+
+  // search IO
+  for (uint8_t i=0; i<RGBLeds; i++) {
+
+    if ( (led[i]) && ( led[i]->equals(id) ) ) {
+      // found
       led[i]->setColor( color );
       return true;
     }
@@ -1772,7 +1856,7 @@ bool SwOSSwarmJST::apiLED( char *id, int brightness, int color ) {
 
 }
 
-bool SwOSSwarmJST::apiServo( char *id, int offset, int position ) {
+bool SwOSSwarmJST::apiServoOffset( char *id, int offset ) {
   // send a Servo command (from api)
 
   // do I have a servo and does the name/alias fit?
@@ -1781,36 +1865,32 @@ bool SwOSSwarmJST::apiServo( char *id, int offset, int position ) {
 
   // everything is fine, set values
   servo->setOffset( offset );
+
+  return true;
+
+}
+
+bool SwOSSwarmJST::apiServoPosition( char *id, int position ) {
+  // send a Servo command (from api)
+
+  // do I have a servo and does the name/alias fit?
+  if (!servo) { return false; }
+  if (!servo->equals(id)) { return false; }
+
+  // everything is fine, set values
   servo->setPosition( position );
 
   return true;
 
 }
 
-void SwOSSwarmJST::setState( SwOSState_t state ) {
+void SwOSSwarmJST::setState( SwOSState_t state, uint8_t members, char *SSID ) {
   // visualizes controler's state like booting, error,...
 
   if (led[0]) led[0]->setColor( LEDCOLOR0[state] );
   if (led[1]) led[1]->setColor( LEDCOLOR1[state] );
   
 }
-
-SwOSCom *SwOSSwarmJST::state2Com(void ) {
-
-  SwOSCom *com = SwOSCtrl::state2Com( ); 
-  for (uint8_t i=0; i<2; i++ ) { com->data.stateCmdJST.led[i].brightness   = led[i]->getBrightness();   com->data.stateCmdJST.led[i].color   = led[i]->getColor(); };
-  return com;
-}
-
-bool SwOSSwarmJST::recvState( SwOSCom *com ) {
-  
-  for (uint8_t i=0; i<4; i++ ) { input[i]->setValue( com->data.stateCmdJST.input[i].rawValue ); };
-  for (uint8_t i=0; i<2; i++ ) { actor[i]->setValue( com->data.stateCmdJST.actor[i].motionType, com->data.stateCmdJST.actor[i].power ); };
-  for (uint8_t i=0; i<2; i++ ) { led[i]->setValue( com->data.stateCmdJST.led[i].brightness,     com->data.stateCmdJST.led[i].color ); };
-      
-  return true;
- 
-} 
 
 bool SwOSSwarmJST::OnDataRecv(SwOSCom *com ) {
 
@@ -1823,7 +1903,7 @@ bool SwOSSwarmJST::OnDataRecv(SwOSCom *com ) {
     case CMD_STATE: 
       return recvState( com );
     case CMD_SETLED: 
-      led[com->data.ledCmd.index]->setValue( com->data.ledCmd.brightness, com->data.ledCmd.color );
+      if (led[com->data.ledCmd.index]) led[com->data.ledCmd.index]->setValue( com->data.ledCmd.brightness, com->data.ledCmd.color );
       return true;
     case CMD_SETSERVO:
       if (servo) { 
@@ -1837,12 +1917,80 @@ bool SwOSSwarmJST::OnDataRecv(SwOSCom *com ) {
 
 }
 
+void SwOSSwarmJST::registerMe( SwOSCom *com ){
+
+  if (!com) return;
+  
+  SwOSCtrl::registerMe( com );
+  com->data.registerCmd.jst.RGBLeds = RGBLeds;
+  for (uint8_t i=0;i<RGBLeds;i++) {
+    if (led[i] ) {
+      com->data.registerCmd.jst.led[i].brightness = led[i]->getBrightness();
+      com->data.registerCmd.jst.led[i].color = led[i]->getColor();
+    } else {
+      com->data.registerCmd.jst.led[i].brightness = 0;
+      com->data.registerCmd.jst.led[i].color = 0;
+    }
+  }
+
+  if (servo) {
+    com->data.registerCmd.jst.servo.offset   = servo->getOffset();
+    com->data.registerCmd.jst.servo.position = servo->getPosition();
+  } else {
+    com->data.registerCmd.jst.servo.offset   = 0;
+    com->data.registerCmd.jst.servo.position = 0;
+  }
+  
+}
+
+void SwOSSwarmJST::sendAlias( uint8_t *mac ) {
+
+  SwOSCom alias( mac, serialNumber, CMD_ALIAS );
+  
+  // hostname
+  alias.sendBuffered( (char *)"HOSTANME", getAlias() ); 
+
+  // input
+  for (uint8_t i=0; i<4;i++) alias.sendBuffered( input[i]->getName(), input[i]->getAlias() ); 
+  
+  // actor
+  for (uint8_t i=0; i<2;i++) alias.sendBuffered( actor[i]->getName(), actor[i]->getAlias() ); 
+
+  // led
+  for (uint8_t i=0; i<RGBLeds;i++) if (led[i]) alias.sendBuffered( led[i]->getName(), led[i]->getAlias() ); 
+
+  // servo
+  if (servo) alias.sendBuffered( servo->getName(), servo->getAlias() ); 
+
+  // gyro
+  if (gyro) alias.sendBuffered( gyro->getName(), gyro->getAlias() ); 
+
+  alias.flushBuffer( );
+  
+}
+
+void SwOSCtrl::saveAliasToNVS( nvs_handle_t my_handle ) {
+
+  SwOSObj::saveAliasToNVS( my_handle );
+  for (uint8_t i=0; i<4; i++ ) input[i]->saveAliasToNVS( my_handle );
+  for (uint8_t i=0; i<2; i++ ) actor[i]->saveAliasToNVS( my_handle );
+  
+}
+
+void SwOSCtrl::loadAliasFromNVS( nvs_handle_t my_handle ) {
+
+  SwOSObj::loadAliasFromNVS( my_handle );
+  for (uint8_t i=0; i<4; i++ ) input[i]->loadAliasFromNVS( my_handle );
+  for (uint8_t i=0; i<2; i++ ) actor[i]->loadAliasFromNVS( my_handle );
+  
+}
+
 void SwOSSwarmJST::saveAliasToNVS( nvs_handle_t my_handle ) {
 
   SwOSCtrl::saveAliasToNVS( my_handle );
 
   if (gyro) gyro->saveAliasToNVS( my_handle );
-  for (uint8_t i=0; i<2; i++ ) led[i]->saveAliasToNVS( my_handle );
+  for (uint8_t i=0; i<RGBLeds; i++ ) if (led[i]) led[i]->saveAliasToNVS( my_handle );
   
 }
 
@@ -1851,7 +1999,7 @@ void SwOSSwarmJST::loadAliasFromNVS( nvs_handle_t my_handle ) {
   SwOSCtrl::loadAliasFromNVS( my_handle );
 
   if (gyro) gyro->loadAliasFromNVS( my_handle );
-  for (uint8_t i=0; i<2; i++ ) led[i]->loadAliasFromNVS( my_handle );
+  for (uint8_t i=0; i<RGBLeds; i++ ) if (led[i]) led[i]->loadAliasFromNVS( my_handle );
   
 }
 
@@ -1871,11 +2019,39 @@ SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, const uint8_t *mac
   for (uint8_t i=0; i<4; i++) { button[i]   = new SwOSButton("S", i, this); }
   for (uint8_t i=0; i<2; i++) { button[4+i] = new SwOSButton("F", i, this); }
   for (uint8_t i=0; i<2; i++) { button[6+i] = new SwOSButton("J", i, this); }
-  for (uint8_t i=0; i<2; i++) { joystick[i] = new SwOSJoystick("JOY", i, this, zero[i][0], zero[i][1]); }
+  for (uint8_t i=0; i<2; i++) { 
+    if (zero) joystick[i] = new SwOSJoystick("JOY", i, this, zero[i][0], zero[i][1]); 
+    else      joystick[i] = new SwOSJoystick("JOY", i, this, 0, 0 ); 
+  }
   hc165 = new SwOSHC165("HC165", this);
   oled  = new SwOSOLED("OLED", this);
 }
 
+SwOSSwarmControl::SwOSSwarmControl( SwOSCom *com ):SwOSSwarmControl( com->data.serialNumber, com->mac, false, com->data.registerCmd.versionCPU, com->data.registerCmd.versionHAT, com->data.registerCmd.IAmAKelda, NULL ) {
+
+  // inputs
+  for (uint8_t i=0; i<4; i++ ) {
+    input[i]->setSensorType( com->data.registerCmd.input[i].sensorType, true );
+    input[i]->setValue( com->data.registerCmd.input[i].rawValue );
+  }
+
+  // actors
+  for (uint8_t i=0; i<2; i++ ) {
+    actor[i]->setActorType( com->data.registerCmd.actor[i].actorType );
+    actor[i]->setValue( com->data.registerCmd.actor[i].motionType, com->data.registerCmd.actor[i].power );
+  }
+
+  // joysticks
+  for (uint8_t i=0; i<2; i++ ) {
+    joystick[i]->setValue( com->data.registerCmd.control.joystick[i].FB, com->data.registerCmd.control.joystick[i].LR);
+  }
+
+  // hc165 & buttons
+  uint8_t hc = com->data.registerCmd.control.hc165;
+  hc165->setValue( hc );
+  for (uint8_t i=0; i<8; i++) { button[i]->setState( hc & (1<<i) ); }
+  
+}
 
 SwOSSwarmControl::~SwOSSwarmControl() {
   
@@ -1982,18 +2158,47 @@ void SwOSSwarmControl::read() {
 
 }
 
-void SwOSSwarmControl::setState( SwOSState_t state ) {
+void SwOSSwarmControl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
   // visualizes controler's state like booting, error,...
 
   if (!oled) return;
+
+  // rember old values
+  uint8_t sx, sy;
+  oled->getTextSize( &sx, &sy );
+  int16_t cx, cy;
+  oled->getCursor( &cx, &cy );
   
-  oled->fillRect( 0, 0, 128, 8, 0 );
+  int16_t w = oled->getWidth();
 
-  int16_t x1, y1;
-  uint16_t w, h;
-  oled->getTextBounds( OLEDMSG[state], 0, 0, &x1, &y1, &w, &h );
-  oled->setCursor( ( oled->width() - w ) / 2, 0 ); oled->write( OLEDMSG[state] );
+  // clear status bar
+  oled->drawRect( 0, -YELLOWPIXELS, w, YELLOWPIXELS, true, false );
 
+  // status message
+  if (state == RUNNING ) {
+    char _SSID[15];
+    strncpy( _SSID, SSID, 14 );
+    oled->write( _SSID, w/2, -YELLOWPIXELS, FTSWARM_ALIGNCENTER, false );
+  } else {
+    oled->write( (char *) OLEDMSG[state], w/2, -YELLOWPIXELS, FTSWARM_ALIGNCENTER, false );
+  }
+
+  // members
+  char m[10];
+  sprintf( m, "%d", members );
+  oled->write( m, w, -YELLOWPIXELS, FTSWARM_ALIGNRIGHT, false );
+
+  // Kelda
+  if (_IAmAKelda) oled->write( (char *) "K", 0, -YELLOWPIXELS, FTSWARM_ALIGNLEFT, false );
+
+  // cool line
+  oled->drawLine( 0, -5, w, -5, true );
+
+  // restore values
+  oled->setCursor( cx, cy );
+  oled->setTextSize( sx, sy );
+
+  // show on display
   oled->display();
  
 }
@@ -2005,25 +2210,25 @@ SwOSCom *SwOSSwarmControl::state2Com( void ) {
   int16_t FB, LR;
   for (uint8_t i=0; i<2; i++ ) { 
     joystick[i]->getValue( &FB, &LR );
-    com->data.stateCmdControl.joystick[i].FB = FB;
-    com->data.stateCmdControl.joystick[i].LR = LR;
+    com->data.stateCmd.FB[i] = FB;
+    com->data.stateCmd.LR[i] = LR;
   };
   
-  com->data.stateCmdControl.hc165 = hc165->getValue();
+  com->data.stateCmd.hc165 = hc165->getValue();
 
   return com;
 }
 
 bool SwOSSwarmControl::recvState( SwOSCom *com ) {
+
+  SwOSCtrl::recvState( com );
   
-  for (uint8_t i=0; i<4; i++ ) { input[i]->setValue( com->data.stateCmdControl.input[i].rawValue ); };
-  for (uint8_t i=0; i<2; i++ ) { actor[i]->setValue( com->data.stateCmdControl.actor[i].motionType, com->data.stateCmdControl.actor[i].power ); };
-  for (uint8_t i=0; i<2; i++ ) { joystick[i]->setValue( com->data.stateCmdControl.joystick[i].FB, com->data.stateCmdControl.joystick[i].LR ); };
+  for (uint8_t i=0; i<2; i++ ) { joystick[i]->setValue( com->data.stateCmd.FB[i], com->data.stateCmd.LR[i] ); };
       
   // set HC165 value & buttons
-  uint8_t hc = com->data.stateCmdControl.hc165;
+  uint8_t hc = com->data.stateCmd.hc165;
   hc165->setValue( hc );
-  for (uint8_t i=0; i<8; i++) { button[i]->setState( hc && 1<<i ); }
+  for (uint8_t i=0; i<8; i++) { button[i]->setState( hc & (1<<i) ); }
 
   return true;
  
@@ -2043,6 +2248,47 @@ bool SwOSSwarmControl::OnDataRecv(SwOSCom *com ) {
   return false;
 
 }
+
+void SwOSSwarmControl::registerMe( SwOSCom *com ){
+
+  if (!com) return;
+  
+  SwOSCtrl::registerMe( com );
+  for (uint8_t i=0;i<2;i++) joystick[i]->getValue( &com->data.registerCmd.control.joystick[i].FB, &com->data.registerCmd.control.joystick[i].LR); 
+
+  com->data.registerCmd.control.hc165 = hc165->getValue();
+  
+}
+
+void SwOSSwarmControl::sendAlias( uint8_t *mac ) {
+
+  SwOSCom alias( mac, serialNumber, CMD_ALIAS );
+
+  // hostname
+  alias.sendBuffered( (char *)"HOSTNAME", getAlias() ); 
+
+  // input
+  for (uint8_t i=0; i<4;i++) alias.sendBuffered( input[i]->getName(), input[i]->getAlias() ); 
+  
+  // actor
+  for (uint8_t i=0; i<2;i++) alias.sendBuffered( actor[i]->getName(), actor[i]->getAlias() ); 
+
+  // buttons
+  for (uint8_t i=0; i<8;i++) alias.sendBuffered( button[i]->getName(), button[i]->getAlias() ); 
+
+  // joystick
+  for (uint8_t i=0; i<2;i++) alias.sendBuffered( joystick[i]->getName(), joystick[i]->getAlias() ); 
+
+  // oled
+  if (oled) alias.sendBuffered( oled->getName(), oled->getAlias() ); 
+
+  // gyro
+  if (gyro) alias.sendBuffered( gyro->getName(), gyro->getAlias() ); 
+
+  alias.flushBuffer( );
+  
+}
+
 
 void SwOSSwarmControl::saveAliasToNVS( nvs_handle_t my_handle ) {
 

@@ -12,6 +12,9 @@
 #include <ctype.h>
 #include <string.h>
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #include "easykey.h"
 
 bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, int (*validChar)( int ch ) ) {
@@ -23,6 +26,8 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
   printf(prompt);
 
   while (1) {
+
+    // vTaskDelay( 25 / portTICK_PERIOD_MS );
     
     ch = getchar();
 

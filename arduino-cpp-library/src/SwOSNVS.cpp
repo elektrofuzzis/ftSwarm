@@ -10,7 +10,7 @@
 #include <nvs.h>
 #include <nvs_flash.h>
 #include <esp_err.h>
-#include "WiFi.h"
+#include <WiFi.h>
 
 #include "ftSwarm.h"
 #include "SwOSNVS.h"
@@ -131,12 +131,20 @@ bool SwOSNVS::load() {
     return false;
   }
 
-  // ftSwarmControl: get joystick calibration
+  // joystick zero position & # RGB Leds
+
+  // ftSwarmControl
   if ( controlerType == FTSWARMCONTROL ) {
     nvs_get_i16( my_handle, "joyZero00", &joyZero[0][0]);
     nvs_get_i16( my_handle, "joyZero01", &joyZero[0][1]);
     nvs_get_i16( my_handle, "joyZero10", &joyZero[1][0]);
     nvs_get_i16( my_handle, "joyZero11", &joyZero[1][1]);
+    RGBLeds = 0;
+
+  // ftSwarm
+  } else {
+    nvs_get_u8( my_handle, "RGBLeds", &RGBLeds );
+    if ( ( RGBLeds < 2 ) || ( RGBLeds > 16 ) ) RGBLeds = 2;
   }
   
   size_t dummy;
@@ -177,6 +185,9 @@ void SwOSNVS::save( bool writeAll ) {
     ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero01", joyZero[0][1]) );
     ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero10", joyZero[1][0]) );
     ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero11", joyZero[1][1]) );
+    
+  } else { // FtSwarm RGBLeds
+    ESP_ERROR_CHECK( nvs_set_u8( my_handle, "RGBLeds", RGBLeds ) );
   }
 
   // wifi
@@ -239,6 +250,7 @@ void SwOSNVS::printNVS() {
   printf( "swarmSecret: 0x%4X\n", swarmSecret );
   printf( "swarmPIN: %d\n", swarmPIN );
   printf( "swarmName: >%s<\n", swarmName );
+  printf( "RGBLeds: %d\n", RGBLeds );
  
  
 }

@@ -184,12 +184,12 @@ consoleloader.warn("Please be sure to provide the HTTP header 'Content-Encoding:
 consoleloader.succeed("Cleaned up")
 consoleloader = Halo("Integrating...")
 
-if os.path.exists("../../sfs_files.cpp"):
-    os.remove("../../sfs_files.cpp")
-if os.path.exists("../../sfs_files.h"):
-    os.remove("../../sfs_files.h")
+if os.path.exists("../../../arduino-cpp-library/src/sfs_files.cpp"):
+    os.remove("../../../arduino-cpp-library/src/sfs_files.cpp")
+if os.path.exists("../../../arduino-cpp-library/src/sfs_files.h"):
+    os.remove("../../../arduino-cpp-library/src/sfs_files.h")
 
-shutil.copy("../deployment/sfs_files.cpp", "../../")
-shutil.copy("../deployment/sfs_files.h", "../../")
+shutil.copy("../deployment/sfs_files.cpp", "../../../arduino-cpp-library/src/")
+shutil.copy("../deployment/sfs_files.h", "../../../arduino-cpp-library/src/")
 
 consoleloader.succeed("Integrated")

@@ -16,6 +16,9 @@
 
 #include "SwOS.h"
 
+// max LEDs ftSwarm
+#define MAXLED 18
+
 typedef uint16_t FtSwarmSerialNumber_t;
 typedef uint8_t  FtSwarmPort_t;
 
@@ -28,10 +31,10 @@ typedef enum { FTSWARM_UNDEF = -1, FTSWARM_INPUT, FTSWARM_ACTOR, FTSWARM_BUTTON,
 typedef enum { FTSWARM_NOCTRL = -1, FTSWARM = 0, FTSWARMCONTROL = 1 } FtSwarmControler_t;
 
 // sensor types
-typedef enum { FTSWARM_DIGITAL, FTSWARM_ANALOG, FTSWARM_SWITCH, FTSWARM_REEDSWITCH, FTSWARM_VOLTMETER, FTSWARM_OHMMETER, FTSWARM_THERMOMETER, FTSWARM_LDR, FTSWARM_TRAILSENSOR, FTSWARM_COLORSENSOR, FTSWARM_ULTRASONIC, FTSWARM_MAXSENSOR } FtSwarmSensor_t;
+typedef enum { FTSWARM_DIGITAL, FTSWARM_ANALOG, FTSWARM_SWITCH, FTSWARM_REEDSWITCH, FTSWARM_LIGHTBARRIER, FTSWARM_VOLTMETER, FTSWARM_OHMMETER, FTSWARM_THERMOMETER, FTSWARM_LDR, FTSWARM_TRAILSENSOR, FTSWARM_COLORSENSOR, FTSWARM_ULTRASONIC, FTSWARM_MAXSENSOR } FtSwarmSensor_t;
 
 // actor types
-typedef enum { FTSWARM_XMOTOR, FTSWARM_TRACTOR,  FTSWARM_ENCODER, FTSWARM_LAMP, FTSWARM_MAXACTOR } FtSwarmActor_t;
+typedef enum { FTSWARM_XMOTOR, FTSWARM_XMMOTOR, FTSWARM_TRACTOR,  FTSWARM_ENCODER, FTSWARM_LAMP, FTSWARM_VALVE, FTSWARM_COMPRESSOR, FTSWARM_BUZZER, FTSWARM_MAXACTOR } FtSwarmActor_t;
 
 // HW versions
 typedef enum { FTSWARM_NOVERSION = -1, FTSWARM_1V0, FTSWARM_1V3, FTSWARM_1V15 } FtSwarmVersion_t;
@@ -41,6 +44,9 @@ typedef enum { FTSWARM_COAST, FTSWARM_BRAKE, FTSWARM_ON } FtSwarmMotion_t;
 
 // toggles
 typedef enum { FTSWARM_NOTOGGLE, FTSWARM_TOGGLEUP, FTSWARM_TOGGLEDOWN } FtSwarmToggle_t;
+
+// alignment
+typedef enum { FTSWARM_ALIGNLEFT, FTSWARM_ALIGNCENTER, FTSWARM_ALIGNRIGHT } FtSwarmAlign_t;
 
 // **** port definitions ****
 
@@ -71,6 +77,20 @@ typedef enum { FTSWARM_NOTOGGLE, FTSWARM_TOGGLEUP, FTSWARM_TOGGLEDOWN } FtSwarmT
 // leds
 #define FTSWARM_LED1 0
 #define FTSWARM_LED2 1
+#define FTSWARM_LED3 2
+#define FTSWARM_LED4 3
+#define FTSWARM_LED5 4
+#define FTSWARM_LED6 5
+#define FTSWARM_LED7 6
+#define FTSWARM_LED8 7
+#define FTSWARM_LED9 8
+#define FTSWARM_LED10 9
+#define FTSWARM_LED11 10
+#define FTSWARM_LED12 11
+#define FTSWARM_LED13 12
+#define FTSWARM_LED14 13
+#define FTSWARM_LED15 14
+#define FTSWARM_LED16 15
 
 // **** some internal types & classes, don't use them at all ****
 
@@ -135,6 +155,13 @@ class FtSwarmReedSwitch : public FtSwarmDigitalInput {
   public:
     FtSwarmReedSwitch( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool normallyOpen = true);
     FtSwarmReedSwitch( const char *name, bool normallyOpen = true);
+};
+
+class FtSwarmLightBarrier: public FtSwarmDigitalInput {
+  // photo transistor as light barrier, A1..A4 all controlers
+  public:
+    FtSwarmLightBarrier( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool normallyOpen = true);
+    FtSwarmLightBarrier( const char *name, bool normallyOpen = true);
 };
 
 class FtSwarmButton : public FtSwarmIO {
@@ -223,7 +250,7 @@ class FtSwarmMotor : public FtSwarmActor {
 };
 
 class FtSwarmTractorMotor : public FtSwarmMotor {
-  // tractor motor
+  // tractor & XM motor
   // M1..M2 all contollers - keep power budget in mind!
   protected:
     FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType );
@@ -238,6 +265,14 @@ class FtSwarmTractorMotor : public FtSwarmMotor {
     FtSwarmMotion_t getMotionType();
     virtual void coast( void ) { setMotionType( FTSWARM_COAST ); };
     virtual void brake( void ) { setMotionType( FTSWARM_BRAKE ); };
+};
+
+class FtSwarmXMMotor : public FtSwarmTractorMotor {
+  // xm motor
+  // M1..M2 all contollers - keep power budget in mind!
+  public:
+    FtSwarmXMMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
+    FtSwarmXMMotor( const char * name );
 };
 
 class FtSwarmEncoderMotor : public FtSwarmTractorMotor {
@@ -259,6 +294,40 @@ class FtSwarmLamp : public FtSwarmActor {
     void on( uint8_t power = 255 );
     void off( void );
 };
+
+class FtSwarmValve : public FtSwarmActor {
+  // Valve
+  // M1..M2 all contollers - keep power budget in mind!
+  public:
+    FtSwarmValve( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
+    FtSwarmValve( const char *name );
+    
+    void on( void );
+    void off( void );
+};
+
+class FtSwarmCompressor : public FtSwarmActor {
+  // Compressor
+  // M1..M2 all contollers - keep power budget in mind!
+  public:
+    FtSwarmCompressor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
+    FtSwarmCompressor( const char *name );
+    
+    void on( void );
+    void off( void );
+};
+
+class FtSwarmBuzzer : public FtSwarmActor {
+  // Buzzer
+  // M1..M2 all contollers - keep power budget in mind!
+  public:
+    FtSwarmBuzzer( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
+    FtSwarmBuzzer( const char *name );
+    
+    void on( void );
+    void off( void );
+};
+
 
 class FtSwarmJoystick : public FtSwarmIO {
   protected:
@@ -310,46 +379,35 @@ class FtSwarmOLED : public FtSwarmIO {
   // TODO: add remote calls. Actually the display is limited to local displays.
   public:
     void display(void);
-    void clearDisplay(void);
     void invertDisplay(bool i);
+    void fillScreen( bool white=true);    
     void dim(bool dim);
-    void drawPixel(int16_t x, int16_t y, uint16_t color);
-    void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);
-    void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
-    void startscrollright(uint8_t start, uint8_t stop);
-    void startscrollleft(uint8_t start, uint8_t stop);
-    void startscrolldiagright(uint8_t start, uint8_t stop);
-    void startscrolldiagleft(uint8_t start, uint8_t stop);
-    void stopscroll(void);   
-    void setRotation(uint8_t r);
-    void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
-    void fillScreen(uint16_t color);
-    void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
-    void drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
-    void drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
-    void fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
-    void drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
-    void fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
-    void drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, uint16_t color);
-    void fillRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, uint16_t color);
-    void drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t size);
-    void drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t size_x, uint8_t size_y);
-    void getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h);
-    void setTextSize(uint8_t s);
-    void setTextSize(uint8_t sx, uint8_t sy);
-    void setFont(const GFXfont *f = NULL);   
+    int16_t getWidth(void);
+    int16_t getHeight(void);
+    
+    void drawPixel(int16_t x, int16_t y, bool white=true);  
+    void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool white=true);
+    void drawRect(int16_t x, int16_t y, int16_t w, int16_t h, bool fill=false, bool white=true);
+    void drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, bool fill=false, bool white=true);
+    void drawCircle(int16_t x0, int16_t y0, int16_t r, bool fill=false, bool white=true);
+    void drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool fill, bool white=true);
+    void drawChar(int16_t x, int16_t y, unsigned char c, bool color=true, bool bg=false, uint8_t size_x=1, uint8_t size_y=1);
+    void write( char *str, int16_t x, int16_t y, FtSwarmAlign_t align = FTSWARM_ALIGNCENTER, bool fill = true );
+    void write( char *str );
+   
     void setCursor(int16_t x, int16_t y);
-    void setTextColor(uint16_t c);
-    void setTextColor(uint16_t c, uint16_t bg);
+    void getCursor(int16_t *x, int16_t *y);
+
+    void setTextColor(bool c, bool bg=false);
     void setTextWrap(bool w);
-    void cp437(bool x = true);
-    void write(uint8_t ch);
-    void write(const char *str);
-    int16_t width(void);
-    int16_t height(void);
+
+    void setRotation(uint8_t r);
     uint8_t getRotation(void);
-    int16_t getCursorX(void);
-    int16_t getCursorY(void);
+
+    void setTextSize(uint8_t sx, uint8_t sy=1);
+    void getTextSize( uint8_t *sx, uint8_t *sy );
+    
+    void getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h);
 };
 
 class FtSwarm {

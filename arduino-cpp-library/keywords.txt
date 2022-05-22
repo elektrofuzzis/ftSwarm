@@ -36,12 +36,18 @@ FtSwarmLED 				KEYWORD1
 FtSwarmServo			KEYWORD1
 FtSwarmOLED				KEYWORD1
 FtSwarm					KEYWORD1
+FtSwarmLightBarrier		KEYWORD1
+FtSwarmValve			KEYWORD1
+FtSwarmCompressor		KEYWORD1
+FtSwarmBuzzer			KEYWORD1
 
 #######################################
 #Methods and Functions(KEYWORD2)
 #######################################
 
 isOnline				KEYWORD2
+
+# ftSwarm*Switch
 isPressed				KEYWORD2
 isReleased				KEYWORD2
 hasToggledUp			KEYWORD2
@@ -49,11 +55,19 @@ hasToggledDown			KEYWORD2
 getState				KEYWORD2
 getToggle				KEYWORD2
 getValue				KEYWORD2
+
+# ftSwarmVoltmeter
 getVoltage				KEYWORD2
+
+# ftSwarmOhmmeter
 getResistance			KEYWORD2
+
+# ftSwarmThermometer
 getCelcius				KEYWORD2
 getKelvin				KEYWORD2
 getFahrenheit			KEYWORD2
+
+# ftSwarm*Motor
 setSpeed				KEYWORD2
 getSpeed				KEYWORD2
 setMotionType			KEYWORD2
@@ -62,55 +76,50 @@ coast					KEYWORD2
 brake					KEYWORD2
 on						KEYWORD2
 off						KEYWORD2
+
+# ftSwarmJoystick
 getFB					KEYWORD2
 getLR					KEYWORD2
 getButtonState			KEYWORD2
+
+# ftSwarmLED
 getBrightness			KEYWORD2
 setBrightness			KEYWORD2
 getColor				KEYWORD2
 setColor				KEYWORD2
+
+# FtSwarmServo
 getPosition				KEYWORD2
 setPosition				KEYWORD2
 getOffset				KEYWORD2
 setOffset				KEYWORD2
+
+# ftSwarmOLED
 display					KEYWORD2
-clearDisplay			KEYWORD2
 invertDisplay			KEYWORD2
-dim						KEYWORD2
-drawPixel				KEYWORD2
-drawFastHLine			KEYWORD2
-drawFastVLine			KEYWORD2
-startScrollRight		KEYWORD2
-startScrollLeft			KEYWORD2
-startScrollDiagRight	KEYWORD2
-startScrollDiagLeft		KEYWORD2
-stopScroll				KEYWORD2
-setRotation				KEYWORD2
-fillRect				KEYWORD2
 fillScreen				KEYWORD2
+dim						KEYWORD2
+getWidth				KEYWORD2
+getHeight				KEYWORD2
+drawPixel				KEYWORD2
 drawLine				KEYWORD2
 drawRect				KEYWORD2
 drawCircle				KEYWORD2
-fillCircle				KEYWORD2
 drawTriangle			KEYWORD2
-fillTriangle			KEYWORD2
 drawRoundRect			KEYWORD2
-fillRoundRect			KEYWORD2
 drawChar				KEYWORD2
-drawChar				KEYWORD2
-getTextBounds			KEYWORD2
-setTextSize				KEYWORD2
-setFont					KEYWORD2
+write					KEYWORD2
 setCursor				KEYWORD2
+getCursor				KEYWORD2
 setTextColor			KEYWORD2
 setTextWrap				KEYWORD2
-cp437					KEYWORD2
-write					KEYWORD2
-width					KEYWORD2
-height					KEYWORD2
+setRotation				KEYWORD2
 getRotation				KEYWORD2
-getCursorX				KEYWORD2
-getCursorY				KEYWORD2
+setTextSize				KEYWORD2
+getTextSize				KEYWORD2
+getTextBounds			KEYWORD2
+
+# FtSwarm
 begin					KEYWORD2
 verbose					KEYWORD2
 setReadDelay			KEYWORD2
@@ -133,7 +142,7 @@ FTSWARM_GYRO			LITERAL1
 FTSWARM_HC165			LITERAL1
 FTSWARM_MAXIOTYPE		LITERAL1
 FTSWARM_NOCTRL			LITERAL1
-FTSWARM				LITERAL1
+FTSWARM				L	ITERAL1
 FTSWARMCONTROL			LITERAL1
 FTSWARM_DIGITAL			LITERAL1
 FTSWARM_ANALOG			LITERAL1
@@ -151,6 +160,9 @@ FTSWARM_XMOTOR			LITERAL1
 FTSWARM_TRACTOR			LITERAL1
 FTSWARM_ENCODER			LITERAL1
 FTSWARM_LAMP			LITERAL1
+FTSWARM_VALVE			LITRAAL1
+FTSWARM_COMPRESSOR		LITERAL1
+FTSWARM_BUZZER			LITERAL1
 FTSWARM_MAXACTOR		LITERAL1
 FTSWARM_NOVERSION		LITERAL1
 FTSWARM_1V0				LITERAL1
@@ -178,5 +190,21 @@ FTSWARM_M1				LITERAL1
 FTSWARM_M2				LITERAL1
 FTSWARM_JOY1			LITERAL1
 FTSWARM_JOY2			LITERAL1
-FTSWARM_LED				LITERAL1
-FTSWARM_LED				LITERAL1
+FTSWARM_LED1			LITERAL1
+FTSWARM_LED2			LITERAL1
+FTSWARM_LED3			LITERAL1
+FTSWARM_LED4			LITERAL1
+FTSWARM_LED5			LITERAL1
+FTSWARM_LED6			LITERAL1
+FTSWARM_LED7			LITERAL1
+FTSWARM_LED8			LITERAL1
+FTSWARM_LED9			LITERAL1
+FTSWARM_LED10			LITERAL1
+FTSWARM_LED11			LITERAL1
+FTSWARM_LED12			LITERAL1
+FTSWARM_LED13			LITERAL1
+FTSWARM_LED14			LITERAL1
+FTSWARM_LED15			LITERAL1
+FTSWARM_LED16			LITERAL1
+
+

@@ -27,7 +27,7 @@ class SwOSSwarm {
 protected:
   SemaphoreHandle_t _xAccessLock = xSemaphoreCreateMutex();
   uint16_t _lastToken = rand();
-  uint16_t _readDelay = 25;
+  uint16_t _readDelay = 2500;
 
   uint8_t _getIndex( FtSwarmSerialNumber_t serialNumber );               // return index of controler with this s/n or are free slot if not found
 	bool    _splitId( char *id, uint8_t *index, char *io, size_t sizeIO);  // split identifier
@@ -62,8 +62,10 @@ public:
   uint16_t apiIsAuthorized( uint16_t token );                               // check, if it's a correct token
   uint16_t apiActorCmd( uint16_t token, char *id, int cmd );                // send an actor's command (from api)
   uint16_t apiActorPower( uint16_t token, char *id, int power );            // send an actor's power (from api)
-	uint16_t apiLED( uint16_t token, char *id, int brightness, int color );   // send a LED command (from api)
-	uint16_t apiServo( uint16_t token, char *id, int offset, int position );  // send a Servo command (from api)
+	uint16_t apiLEDBrightness( uint16_t token, char *id, int brightness );    // send a LED command (from api)
+	uint16_t apiLEDColor( uint16_t token, char *id, int color);               // send a LED command (from api)
+  uint16_t apiServoOffset( uint16_t token, char *id, int offset );          // send a Servo command (from api)
+  uint16_t apiServoPosition( uint16_t token, char *id, int position);       // send a Servo command (from api)
 
   void setState( SwOSState_t state );
     // visualizes controler's state

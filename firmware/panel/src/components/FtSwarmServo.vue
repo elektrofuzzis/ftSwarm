@@ -1,5 +1,5 @@
 <template>
-  <li>
+  <li class="li-servo">
     <div class="horizontal-container">
       <img :src="'../assets/' + output.icon" alt="Icon">
       <div class="vertical-container">
@@ -7,12 +7,19 @@
         <span class="name">{{ output.name }}</span>
       </div>
     </div>
-    <input :disabled="!loggedin" :value="output['position']" class="value" max="255" min="-255" style="float: left"
+    <input :disabled="!loggedin"
+           :value="output['position']" 
+           @input="(e) => {servoPosition(e, output)}"  
+           class="value" 
+           max="255" min="-255" style="float: left"
            type="range">
   </li>
 </template>
 
 <script lang="ts">
+
+import { FtSwarmServo, apiServoPosition } from "../loader/ApiLoader"
+
 export default {
   name: "FtSwarmServo",
   props: {
@@ -24,7 +31,16 @@ export default {
       type: Boolean,
       required: true
     }
-  }
+  },
+  methods: {
+    servoPosition(event: any, output: any) {
+      let servo: FtSwarmServo = {
+        id: output.id,
+        position: event.target.value
+      }
+
+      apiServoPosition(servo)
+    }}
 }
 </script>
 

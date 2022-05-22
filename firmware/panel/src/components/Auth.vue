@@ -55,12 +55,14 @@ export default {
 
             // Check pin on backend
             const accessToken = await obtainAccessToken()
-            localStorage.setItem("accessToken", String(accessToken))
+            localStorage.setItem("token", String(accessToken))
             localStorage.setItem("pin", pin)
+            // Wait a few milliseconds
+            await new Promise(resolve => setTimeout(resolve, 10))
             performTokenMod()
             localStorage.removeItem("pin")
 
-            if (await isAuthenticated()) {
+            if (!await isAuthenticated()) {
               Swal.showValidationMessage(`ftSwarm refused PIN`)
               return {pin: undefined}
             }
