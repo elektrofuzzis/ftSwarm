@@ -13,6 +13,25 @@
 
 #include "ftSwarm.h"
 
+#define MAXNVSEVENT 36
+
+class NVSEvent {
+  public:
+    char sensor[ MAXIDENTIFIER];
+    uint8_t LR; // 0=none, 1=LR, 2=FB
+    char actor[ MAXIDENTIFIER];
+    FtSwarmTrigger_t triggerEvent;
+    bool             usePortValue;
+    int32_t          parameter;
+    NVSEvent();
+};
+
+class NVSEventList {
+  public:
+    NVSEvent event[MAXNVSEVENT];
+};
+
+
 class SwOSNVS {
   protected:
     void _initialSetup();   // ask user for HW details
@@ -29,6 +48,7 @@ public:
     bool                  APMode;
     int16_t               joyZero[2][2];
     uint8_t               RGBLeds;
+    NVSEventList          eventList;
 
 	  SwOSNVS();                             // constructor
 	  void begin();                          // read data from nvs & run an _initialSetup if needed

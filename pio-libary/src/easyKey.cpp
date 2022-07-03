@@ -12,6 +12,9 @@
 #include <ctype.h>
 #include <string.h>
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #include "easykey.h"
 
 bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, int (*validChar)( int ch ) ) {
@@ -23,6 +26,8 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
   printf(prompt);
 
   while (1) {
+
+    // vTaskDelay( 25 / portTICK_PERIOD_MS );
     
     ch = getchar();
 
@@ -85,6 +90,27 @@ uint16_t enterNumber( const char *prompt, uint16_t defaultValue, uint16_t minVal
 
     // get number and check on defaults
     if ( ( !enterSomething( prompt, str, 6, false, isdigit ) ) || ( str[0] == '\0' ) ) {
+      i = defaultValue;
+    } else {
+      i = atoi( str );
+    }
+
+    // in range?
+    if ( ( i >= minValue ) && ( i <= maxValue ) ) return i;
+
+  }
+
+}
+
+int32_t enterNumberI32( const char *prompt, uint16_t defaultValue, int32_t minValue, int32_t maxValue ) {
+
+  char str[6];
+  int32_t i;
+
+  while (1) {
+
+    // get number and check on defaults
+    if ( ( !enterSomething( prompt, str, 10, false, isdigit ) ) || ( str[0] == '\0' ) ) {
       i = defaultValue;
     } else {
       i = atoi( str );

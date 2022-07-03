@@ -16,6 +16,11 @@
 #include "SwOSNVS.h"
 #include "easykey.h"
 
+NVSEvent::NVSEvent() {
+  sensor[0] = '\0';
+  actor[0]  = '\0';
+}
+
 uint16_t generateSecret( FtSwarmSerialNumber_t serialNumber ) {
   return ( ( ( ( uint16_t) serialNumber ) & 0xFF ) << 8 ) | ( rand() & 0xFF ) ;
 }
@@ -160,6 +165,9 @@ bool SwOSNVS::load() {
   nvs_get_u16( my_handle, "swarmPIN",                  &swarmPIN );
   dummy = sizeof( swarmName );  nvs_get_str( my_handle, "swarmName", swarmName, &dummy );
 
+  // events
+  dummy = sizeof( eventList );  nvs_get_blob( my_handle, "eventList", &eventList, &dummy );
+
   return true;
 
 }
@@ -200,6 +208,9 @@ void SwOSNVS::save( bool writeAll ) {
   ESP_ERROR_CHECK( nvs_set_u16( my_handle, "swarmSecret", swarmSecret ) );
   ESP_ERROR_CHECK( nvs_set_u16( my_handle, "swarmPIN",    swarmPIN ) );
   ESP_ERROR_CHECK( nvs_set_str( my_handle, "swarmName",   swarmName ) );
+
+  // events
+  ESP_ERROR_CHECK( nvs_set_blob( my_handle, "eventList",  (void *)&eventList, sizeof( eventList ) ) );
    
   // commit
   ESP_ERROR_CHECK( nvs_commit( my_handle ) );

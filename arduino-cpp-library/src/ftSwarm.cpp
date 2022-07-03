@@ -30,10 +30,9 @@ FtSwarmIO::FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, Ft
     // no success, wait 25 ms
     if ( (!me) && ( firstTry ) ) {
       ESP_LOGD( LOGFTSWARM, "waiting on device" );
-      //myOSSwarm.setState( WAITING );
+      myOSSwarm.setState( WAITING );
       firstTry = false;
     }
-    
     
     if (!me) vTaskDelay( 25 / portTICK_PERIOD_MS );
   }
@@ -96,6 +95,29 @@ FtSwarmInput::FtSwarmInput( const char *name, FtSwarmSensor_t sensorType, bool n
 
 };
 
+void FtSwarmInput::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 ) {
+
+  // set trigger using static values
+  if ( (me) && (actor) ) {
+    myOSSwarm.lock();
+    static_cast<SwOSInput *>(me)->registerEvent( triggerEvent, (SwOSIO *)actor->me, false, p1 );
+    myOSSwarm.unlock();
+  }
+
+};
+
+void FtSwarmInput::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor )  {
+
+  // set trigger using port's value
+  if ( (me) && (actor) ) {
+    myOSSwarm.lock();
+    static_cast<SwOSInput *>(me)->registerEvent( triggerEvent, (SwOSIO *)actor->me, true, 0 );
+    myOSSwarm.unlock();
+  }
+
+};
+
+
 // **** FtSwarmDigitalInput ****
 
 FtSwarmDigitalInput::FtSwarmDigitalInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmSensor_t sensorType, bool normallyOpen):FtSwarmInput( serialNumber, port, sensorType ) {};
@@ -154,6 +176,29 @@ FtSwarmButton::FtSwarmButton( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t 
 FtSwarmButton::FtSwarmButton( const char *name):FtSwarmIO( name ) {};
 
 // real stuff
+
+void FtSwarmButton::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 ) {
+
+  // set trigger using static values
+  if ( (me) && (actor) ) {
+    myOSSwarm.lock();
+    static_cast<SwOSInput *>(me)->registerEvent( triggerEvent, (SwOSIO *)actor->me, false, p1 );
+    myOSSwarm.unlock();
+  }
+
+};
+
+void FtSwarmButton::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor )  {
+
+  // set trigger using port's value
+  if ( (me) && (actor) ) {
+    myOSSwarm.lock();
+    static_cast<SwOSInput *>(me)->registerEvent( triggerEvent, (SwOSIO *)actor->me, true, 0 );
+    myOSSwarm.unlock();
+  }
+
+};
+
 FtSwarmToggle_t FtSwarmButton::FtSwarmButton::getToggle() { 
 
   if (!me) return FTSWARM_NOTOGGLE;
@@ -486,6 +531,50 @@ void FtSwarmJoystick::getValue( int16_t *FB, int16_t *LR, boolean *buttonState )
   if (button) *buttonState = static_cast<SwOSButton *>(button)->getState();
   myOSSwarm.unlock();
 }
+
+void FtSwarmJoystick::onTriggerLR( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 ) {
+
+  // set trigger using static values
+  if ( (me) && (actor) ) {
+    myOSSwarm.lock();
+    static_cast<SwOSJoystick *>(me)->triggerLR.registerEvent( triggerEvent, (SwOSIO *)actor->me, false, p1 );
+    myOSSwarm.unlock();
+  }
+
+};
+
+void FtSwarmJoystick::onTriggerLR( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor )  {
+
+  // set trigger using port's value
+  if ( (me) && (actor) ) {
+    myOSSwarm.lock();
+    static_cast<SwOSJoystick *>(me)->triggerLR.registerEvent( triggerEvent, (SwOSIO *)actor->me, true, 0 );
+    myOSSwarm.unlock();
+  }
+
+};
+
+void FtSwarmJoystick::onTriggerFB( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 ) {
+
+  // set trigger using static values
+  if ( (me) && (actor) ) {
+    myOSSwarm.lock();
+    static_cast<SwOSJoystick *>(me)->triggerFB.registerEvent( triggerEvent, (SwOSIO *)actor->me, false, p1 );
+    myOSSwarm.unlock();
+  }
+
+};
+
+void FtSwarmJoystick::onTriggerFB( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor )  {
+
+  // set trigger using port's value
+  if ( (me) && (actor) ) {
+    myOSSwarm.lock();
+    static_cast<SwOSJoystick *>(me)->triggerFB.registerEvent( triggerEvent, (SwOSIO *)actor->me, true, 0 );
+    myOSSwarm.unlock();
+  }
+
+};
 
 // **** FtSwarmLED ****
 
@@ -835,7 +924,7 @@ void localMenu( void ) {
       sprintf( prompt, "%s(X) RGBLeds:  0\n(6) Calibrate Joysticks\n\n(0) exit\nwifi>", wifi );      
     }
     
-    switch( enterNumber( prompt, 0, 0, 5) ) {
+    switch( enterNumber( prompt, 0, 0, 6) ) {
       
       case 0: // exit
         if ( ( anythingChanged) && ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) ) {
@@ -1129,19 +1218,263 @@ void factorySettings( void ) {
   }
 }
 
+bool changeEvent( NVSEvent *event ) {
+
+  char actor[MAXIDENTIFIER];
+  char sensor[MAXIDENTIFIER];
+
+  SwOSIO *newSensor = NULL;
+  SwOSIO *newActor = NULL;
+
+  FtSwarmTrigger_t trigger;
+  int32_t parameter;
+  bool    usePortValue;
+  uint8_t LR;
+
+  // enter sensor
+  while (true) {
+    enterString( "sensor: ", sensor, sizeof(sensor) );
+    newSensor = myOSSwarm.getIO( sensor );
+    
+    if (sensor[0] == '\0' ) 
+      return false;
+    
+    else if (!newSensor) 
+      printf("sensor %s doesn't exist in the swarm.\n", sensor);
+    
+    else if ( !( (newSensor->getIOType() == FTSWARM_INPUT ) || (newSensor->getIOType() == FTSWARM_BUTTON ) || (newSensor->getIOType() == FTSWARM_JOYSTICK ) ) )
+      printf("%s needs to be an input, a button or a joystick.\n", sensor);
+
+    else
+      // now, I'm fine
+      break;
+  }
+
+  // which poti?
+  if ( newSensor->getIOType() == FTSWARM_JOYSTICK ) 
+    LR = enterNumber( "joystick direction: (1) left/right (2) forward/backward", 1, 1, 2 );
+  else
+    LR = 0;
+  
+  // enter trigger event
+  trigger = (FtSwarmTrigger_t) enterNumber( "Trigger event: (0) TriggerUp (1) TriggerDown (2) ChangeValue: ", 0, 0, 2 );
+  
+  // enter actor
+  while (true) {
+    enterString( "actor: ", actor, sizeof(actor) );
+    newActor = myOSSwarm.getIO( actor);
+    
+    if (actor[0] == '\0' ) 
+      return false;
+      
+    else if (!newActor) 
+      printf("actor %s doesn't exist in the swarm.\n", actor);
+
+    else if ( !( (newActor->getIOType() == FTSWARM_ACTOR ) || (newActor->getIOType() == FTSWARM_LED ) || (newActor->getIOType() == FTSWARM_SERVO ) ) )
+      printf("%s needs to be an actor, a LED or a servo.\n", actor);
+    
+    else
+      // now, I'm fine
+      break;
+  }
+
+  // enter parameter
+  usePortValue = enterNumber( "(0) set a static value OR (1) use the sensors value? ", 0, 0, 1 );
+  if (!usePortValue) parameter = enterNumberI32( "Which value should be set? ", 0, 0, 0xFFFFFF );
+
+  // delete old trigger
+  SwOSIO *oldSensor = myOSSwarm.getIO( event->sensor );
+  
+  if ( oldSensor != NULL ) {
+  
+    switch ( oldSensor->getIOType() ) {
+    
+      case FTSWARM_INPUT: 
+        static_cast<SwOSInput *>(oldSensor)->unregisterEvent( trigger ); 
+        break;
+      
+      case FTSWARM_BUTTON: 
+        static_cast<SwOSButton *>(oldSensor)->unregisterEvent( trigger ); 
+        break;
+        
+      case FTSWARM_JOYSTICK: 
+        if ( LR == 1 ) static_cast<SwOSJoystick *>(oldSensor)->triggerLR.unregisterEvent( trigger );
+        else           static_cast<SwOSJoystick *>(oldSensor)->triggerFB.unregisterEvent( trigger );
+        break; 
+        
+      default: 
+        printf("error saving your event.\n"); 
+        return false;
+
+    }
+
+  }
+
+  // modify trigger
+  switch ( newSensor->getIOType() ) {
+    
+    case FTSWARM_INPUT: 
+      static_cast<SwOSInput *>(newSensor)->registerEvent( trigger, newActor, usePortValue, parameter ); 
+      break;
+    
+    case FTSWARM_BUTTON: 
+      static_cast<SwOSButton *>(newSensor)->registerEvent( trigger, newActor, usePortValue, parameter ); 
+      break;
+    
+    case FTSWARM_JOYSTICK: 
+      if ( LR == 1 ) static_cast<SwOSJoystick *>(newSensor)->triggerLR.registerEvent( trigger, newActor, usePortValue, parameter );
+      else           static_cast<SwOSJoystick *>(newSensor)->triggerFB.registerEvent( trigger, newActor, usePortValue, parameter );
+      break;
+
+    default: 
+      printf("error saving your event.\n"); 
+      return false;
+  }
+
+  // change event
+  strcpy( event->sensor, sensor ); 
+  event->LR = LR; 
+  strcpy( event->actor, actor);  
+  event->triggerEvent = trigger;
+  event->usePortValue = usePortValue;
+  event->parameter = parameter;
+
+  return true;
+  
+}
+
+void printX( char *str, uint8_t fill ) {
+
+  char line[255];
+
+  // copy string with max fill chars
+  strncpy( line, str, fill );
+
+  // fill training blanks
+  for (uint8_t i=strlen(line); i<fill; i++) line[i] = ' ';
+
+  // print
+  printf( "%s ", line );
+  
+}
+
+void remoteControl( void ) {
+
+  uint8_t choise, maxChoise;
+  uint8_t item;
+  uint8_t eventPtr[MAXNVSEVENT+1];
+  bool anythingChanged = false;
+
+  while ( 1 ) {
+
+    // clear eventPtr
+    memset( eventPtr, 255, sizeof( eventPtr ) );
+
+    // reset item
+    item = 0;
+    eventPtr[0] = 255;
+
+    // list events
+    printf("remote control menu:\n\n");
+    printf("     sensor             event       actor           value\n");
+
+    for ( uint8_t i=0; i<MAXNVSEVENT; i++ ) {
+      
+      if ( myOSSwarm.nvs.eventList.event[i].sensor[0] != '\0' ) {
+        // used event
+        item++;
+        eventPtr[item] = i;
+
+        printf("(%2d) ", item);
+        
+        printX( myOSSwarm.nvs.eventList.event[i].sensor, 15 );
+
+        switch ( myOSSwarm.nvs.eventList.event[i].LR ) {
+          case 0: printf( "   "); break;
+          case 1: printf( "LR "); break;
+          case 2: printf( "FB "); break;          
+        }
+        
+        switch( myOSSwarm.nvs.eventList.event[i].triggerEvent ) {
+          case FTSWARM_TRIGGERUP:    printf("TriggerUp   "); break;
+          case FTSWARM_TRIGGERDOWN:  printf("TriggerDown "); break;
+          case FTSWARM_TRIGGERVALUE: printf("ChangeValue "); break;
+          default:                   printf("?           "); break;
+        }
+        
+        printX( myOSSwarm.nvs.eventList.event[i].actor, 15 );
+
+        if (myOSSwarm.nvs.eventList.event[i].usePortValue)
+          printf("SENSORVALUE\n");
+        else
+          printf("%" PRId32 "\n", myOSSwarm.nvs.eventList.event[i].parameter );
+        
+      } else if ( eventPtr[0] == 255 ){
+        eventPtr[0] = i;
+      }
+    }
+
+    // additional commands
+    printf("\n(%d) add event\n", item + 1 );
+    maxChoise = item + 1;
+
+    if ( item > 0 ) {
+      printf("(%d) delete event\n", item + 2 );
+      maxChoise = item + 2;
+    }
+    
+    printf("\n(%d) exit\n", 0 );
+
+    // get user's choise
+    choise = enterNumber("\nremote control>", 0, 0, maxChoise );     
+
+    // do what the user wants
+    if ( choise == 0 ) {
+     if ( ( anythingChanged ) && yesNo( "Save changes to nvs [Y/N]? " ) ) myOSSwarm.nvs.save();
+     return;
+      
+    }  else if ( choise == ( item + 1 ) ) {
+      // add
+      if ( changeEvent( &myOSSwarm.nvs.eventList.event[eventPtr[0]] ) ) anythingChanged = true;
+      
+    } else if ( choise == ( item + 2 ) ) {
+      // delete
+      choise = enterNumber( "Which event should be deleted? ", 1, 1, item );
+      myOSSwarm.nvs.eventList.event[eventPtr[choise]].actor[0] = '\0';
+      myOSSwarm.nvs.eventList.event[eventPtr[choise]].sensor[0] = '\0';
+      anythingChanged = true;
+      
+    } else {
+      // modify item
+      if ( changeEvent( &myOSSwarm.nvs.eventList.event[eventPtr[choise]] ) ) anythingChanged = true;
+    }
+
+  }
+
+}
 
 void FtSwarm::setup( void ) {
+
+  uint8_t choise;
 
   printf("\n\nftSwarmOS %s\n\n(C) Christian Bergschneider & Stefan Fuss\n", SWOSVERSION );
 
   while (1) {
+
+    // FTSWARMCONTROL special HW
+    if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
+      choise = enterNumber("\nMain menu\n\n(1) local settings\n(2) swarm settings\n(3) alias names\n(4) reset to factory settings\n(5) remote control\n\n(0) exit\nmain>", 0, 0, 5);
+    } else {
+      choise = enterNumber("\nMain menu\n\n(1) local settings\n(2) swarm settings\n(3) alias names\n(4) reset to factory settings\n\n(0) exit\nmain>", 0, 0, 4);     
+    }
     
-    switch( enterNumber("\nMain menu\n\n(1) local settings\n(2) swarm settings\n(3) alias names\n(4) reset to factory settings\n\n(0) exit\nmain>", 0, 0, 4) ) {
+    switch( choise  ) {
       case 0: return;
       case 1: localMenu(); break;
       case 2: swarmMenu(); break;
       case 3: aliasMenu(); break;
       case 4: factorySettings(); break;
+      case 5: remoteControl(); break;
     }
     
   }

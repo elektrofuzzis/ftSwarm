@@ -48,6 +48,9 @@ typedef enum { FTSWARM_NOTOGGLE, FTSWARM_TOGGLEUP, FTSWARM_TOGGLEDOWN } FtSwarmT
 // alignment
 typedef enum { FTSWARM_ALIGNLEFT, FTSWARM_ALIGNCENTER, FTSWARM_ALIGNRIGHT } FtSwarmAlign_t;
 
+// trigger events
+typedef enum { FTSWARM_TRIGGERUP, FTSWARM_TRIGGERDOWN, FTSWARM_TRIGGERVALUE, FTSWARM_MAXTRIGGER } FtSwarmTrigger_t;
+
 // **** port definitions ****
 
 // switches
@@ -101,7 +104,6 @@ class FtSwarmIO {
   // base class for all ftSwarm interfaces, don't use this class at all
   
   protected:
-    SwOSIOHandle_t me = NULL; // pointer to my swarm HW
     
     // constructors
     FtSwarmIO() {};
@@ -109,8 +111,8 @@ class FtSwarmIO {
     FtSwarmIO( const char *name );
 
   public:
-    // check, if I'm online
-    bool isOnline();
+    bool isOnline();          // check, if I'm online
+    SwOSIOHandle_t me = NULL; // pointer to my swarm HW, don't use!
 };
 
 class FtSwarmInput : public FtSwarmIO {
@@ -119,6 +121,10 @@ class FtSwarmInput : public FtSwarmIO {
   protected:
     FtSwarmInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmSensor_t sensorType, bool normallyOpen = true);
     FtSwarmInput( const char *name, FtSwarmSensor_t sensorType, bool normallyOpen = true );
+
+  public:
+    void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 ); 
+    void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor ); 
 };
 
 // **** input / actor classes to use in your sketch ****
@@ -176,6 +182,8 @@ class FtSwarmButton : public FtSwarmIO {
     bool hasToggledDown();                // was the last toggle event from up to down, since a hasToggled* method called last time?
     virtual bool getState();              // true, if the button is pressed
     virtual FtSwarmToggle_t getToggle();  // last toggle event since a hasToggled* method called last time
+    void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 ); 
+    void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor ); 
 };
 
 class FtSwarmAnalogInput : public FtSwarmInput { 
@@ -340,6 +348,11 @@ class FtSwarmJoystick : public FtSwarmIO {
     int16_t getLR();         // left/right position
     bool getButtonState();   // button pressed/released
     void getValue( int16_t *FB, int16_t *LR, bool *buttonState );
+    void onTriggerLR( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 ); 
+    void onTriggerLR( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor ); 
+    void onTriggerFB( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 ); 
+    void onTriggerFB( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor ); 
+
 };
 
 class FtSwarmLED : public FtSwarmIO {
