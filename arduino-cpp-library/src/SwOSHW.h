@@ -90,6 +90,46 @@ public:
   virtual char*           getIcon() { return (char *) "UNDEFINED"; };
 	virtual void            jsonize( JSONize *json, uint8_t id);
 
+  virtual void onTrigger( int32_t value );
+
+};
+
+/***************************************************
+ *
+ *   SwOSEventHandler
+ *
+ ***************************************************/
+
+class SwOSEventHandler {
+  protected:
+    SwOSIO           *_actor;
+    boolean          _usePortValue;
+    int32_t          _parameter;
+  public:
+    SwOSEventHandler( );
+    SwOSEventHandler( SwOSIO *actor, boolean usePortValue, int32_t parameter );
+    void trigger( int32_t portValue );
+};
+
+class SwOSEventHandlers {
+  protected:
+    SwOSEventHandler *_event[FTSWARM_MAXTRIGGER];
+  public:
+    SwOSEventHandlers( );
+    ~SwOSEventHandlers();
+    void registerEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, boolean usePortValue, int32_t parameter );
+    void unregisterEvent( FtSwarmTrigger_t triggerEvent );
+    void trigger( FtSwarmTrigger_t triggerEvent, int32_t portValue );
+};
+
+class SwOSEventInput {
+  protected:
+    SwOSEventHandlers *_events = NULL;
+  public:
+   ~SwOSEventInput();
+    void registerEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, boolean usePortValue, int32_t p1 );
+    void unregisterEvent( FtSwarmTrigger_t triggerEvent );
+    void trigger( FtSwarmTrigger_t triggerEvent, int32_t portValue );
 };
 
 /***************************************************
@@ -98,14 +138,14 @@ public:
  *
  ***************************************************/
 
-class SwOSInput : public SwOSIO {
+class SwOSInput : public SwOSIO, public SwOSEventInput {
 protected:
-	gpio_num_t      _GPIO, _PUA2, _USTX;
-	adc1_channel_t  _ADCChannel;
-	FtSwarmSensor_t _sensorType;
-	uint32_t        _lastRawValue;
-  FtSwarmToggle_t _toggle;
-  bool            _normallyOpen = true;
+  gpio_num_t        _GPIO, _PUA2, _USTX;
+	adc1_channel_t    _ADCChannel;
+	FtSwarmSensor_t   _sensorType;
+	uint32_t          _lastRawValue;
+  FtSwarmToggle_t   _toggle;
+  bool              _normallyOpen = true;
   esp_adc_cal_characteristics_t *_adc_chars = NULL;
 	
 	bool isDigitalSensor();
@@ -115,7 +155,7 @@ protected:
 public:
  
 	SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl );
-
+  
   // administrative stuff
 	virtual FtSwarmIOType_t getIOType() { return FTSWARM_INPUT; };
   virtual FtSwarmSensor_t getSensorType() { return _sensorType; };
@@ -136,6 +176,7 @@ public:
   virtual float           getFahrenheit();                              // get temerature reading
   virtual void            setValue( uint32_t value );                   // set value by an external call
   virtual FtSwarmToggle_t getToggle();                                  // check, on toggling signals
+
 };
 
 /***************************************************
@@ -168,6 +209,7 @@ public:
   virtual      FtSwarmActor_t getActorType() { return _actorType; };
   virtual char *getIcon();
 	virtual void jsonize( JSONize *json, uint8_t id); // serialize object to JSON
+  virtual void onTrigger( int32_t value );
 
   // commands
   virtual void            setActorType( FtSwarmActor_t actorType );    // set actor type
@@ -176,6 +218,7 @@ public:
 	virtual int16_t         getPower() { return _power; };               // get power
   virtual void            setMotionType( FtSwarmMotion_t motionType ); // set motion type
 	virtual FtSwarmMotion_t getMotionType() { return _motionType; };     // get motion type
+
 };
 
 /***************************************************
@@ -184,7 +227,7 @@ public:
  *
  ***************************************************/
 
-class SwOSJoystick : public SwOSIO {
+class SwOSJoystick : public SwOSIO, SwOSEventInput {
 protected:
 	adc1_channel_t _ADCChannelLR, _ADCChannelFB;
 	int16_t        _lastLR, _lastFB;
@@ -195,6 +238,8 @@ protected:
   virtual void _setupLocal(); // initializes local HW
   
 public:
+  SwOSEventInput triggerLR, triggerFB;
+  
   // constructors
 	SwOSJoystick(const char *name, uint8_t port, SwOSCtrl *ctrl, int16_t zeroLR, int16_t zeroFB );
 
@@ -239,6 +284,7 @@ public:
 	virtual FtSwarmIOType_t getIOType() { return FTSWARM_LED; };
   virtual char *getIcon()   { return (char *) "15_rgbled.svg"; };
   virtual void jsonize( JSONize *json, uint8_t id);
+  virtual void onTrigger( int32_t value );
     
   // commands
 	virtual uint32_t getColor()      { return _color; };
@@ -276,6 +322,7 @@ class SwOSServo : public SwOSIO {
 	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_SERVO; };
     virtual char *    getIcon() { return (char *) "14_servo.svg"; };
     virtual void jsonize( JSONize *json, uint8_t id);
+    virtual void onTrigger( int32_t value );
     
     // commands
 	  virtual int16_t getOffset( )   { return _offset; };
@@ -361,13 +408,13 @@ public:
  *
  ***************************************************/
 
-class SwOSButton : public SwOSIO {
-	bool            _lastState;
-  FtSwarmToggle_t _toggle;
+class SwOSButton : public SwOSIO, public SwOSEventInput {
+	bool              _lastState;
+  FtSwarmToggle_t   _toggle;
 public:
   // constructor
 	SwOSButton(const char *name, uint8_t port, SwOSCtrl *ctrl);
-	
+  
   // administrative stuff
   virtual FtSwarmIOType_t getIOType() { return FTSWARM_BUTTON; };
   virtual char *    getIcon()   { return (char *) "12_button.svg"; };
@@ -484,8 +531,6 @@ public:
  *
  ***************************************************/
 
-#define MAXLED 16
-
 class SwOSSwarmJST : public SwOSCtrl {
 public:
   // specific hardware
@@ -530,6 +575,8 @@ public:
  ***************************************************/
 
 class SwOSSwarmControl : public SwOSCtrl {
+protected:
+  boolean _remoteControl = false;
 public:
   // specific hardware
 	SwOSButton   *button[8];
@@ -552,6 +599,8 @@ public:
   virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
   virtual void setState( SwOSState_t state, uint8_t members, char *SSID ); // visualizes controler's state like booting, error,...
   virtual void factorySettings( void );                                  // reset factory settings
+  virtual boolean getRemoteControl( void );                              // get remote control setting
+  virtual void setRemoteControl( boolean remoteControl );                // set remote control setting
 
 	virtual void read();                       // run measurements
 

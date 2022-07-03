@@ -102,6 +102,27 @@ uint16_t enterNumber( const char *prompt, uint16_t defaultValue, uint16_t minVal
 
 }
 
+int32_t enterNumberI32( const char *prompt, uint16_t defaultValue, int32_t minValue, int32_t maxValue ) {
+
+  char str[6];
+  int32_t i;
+
+  while (1) {
+
+    // get number and check on defaults
+    if ( ( !enterSomething( prompt, str, 10, false, isdigit ) ) || ( str[0] == '\0' ) ) {
+      i = defaultValue;
+    } else {
+      i = atoi( str );
+    }
+
+    // in range?
+    if ( ( i >= minValue ) && ( i <= maxValue ) ) return i;
+
+  }
+
+}
+
 int YN( int ch ) {
   return ( ch == 'Y' ) || ( ch == 'y' ) || ( ch == 'N' ) || ( ch == 'n' ) ;
 }

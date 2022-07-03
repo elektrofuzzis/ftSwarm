@@ -27,11 +27,13 @@ class SwOSSwarm {
 protected:
   SemaphoreHandle_t _xAccessLock = xSemaphoreCreateMutex();
   uint16_t _lastToken = rand();
-  uint16_t _readDelay = 2500;
+  uint16_t _readDelay = 25;
 
   uint8_t _getIndex( FtSwarmSerialNumber_t serialNumber );               // return index of controler with this s/n or are free slot if not found
 	bool    _splitId( char *id, uint8_t *index, char *io, size_t sizeIO);  // split identifier
   uint16_t _nextToken( void );
+  SwOSIO *_waitFor( char *alias );
+  bool    _startEvents( void );
   
 public:
   SwOSNVS  nvs;

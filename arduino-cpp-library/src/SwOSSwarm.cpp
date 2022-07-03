@@ -87,7 +87,11 @@ void readTask( void *parameter ) {
     delete com;
 
     // calc delay time
-    xDelay = myOSSwarm.getReadDelay() / portTICK_PERIOD_MS;
+    #ifdef DEBUG_READTASK
+      xDelay = 2500 / portTICK_PERIOD_MS;
+    #else
+      xDelay = myOSSwarm.getReadDelay() / portTICK_PERIOD_MS;
+    #endif
     
     myOSSwarm.unlock();
     
@@ -160,6 +164,76 @@ uint16_t SwOSSwarm::_nextToken( ) {
   
 }
 
+SwOSIO *SwOSSwarm::_waitFor( char *alias ) {
+
+  SwOSIO *me = NULL;
+  bool   firstTry = true;
+  int    keys = 0;
+
+  while (!me) {
+
+    me = getIO( alias );
+
+    // no success, wait 25 ms
+    if ( (!me) && ( firstTry ) ) {
+      printf( "Waiting on device %s. Press anykey to enter setup and change remote control settings.\n", alias );
+      setState( WAITING );
+      firstTry = false;
+    }
+    
+    if (!me) vTaskDelay( 25 / portTICK_PERIOD_MS );
+    
+    // any key pressed?
+    uart_get_buffered_data_len( UART_NUM_0, (size_t*)&keys);
+    if ( keys > 0 ) return NULL;
+
+  }
+
+  return me;
+  
+}
+
+bool SwOSSwarm::_startEvents( void ) {
+
+  SwOSIO *sensor;
+  SwOSIO *actor;
+  NVSEvent *event;
+
+  for (uint8_t i=0; i<MAXNVSEVENT; i++ ) {
+
+    event = &nvs.eventList.event[i];
+    
+    if ( ( event->sensor[0] != '\0' ) && ( event->actor[0] != '\0' ) ) {
+
+      // get IOs and stop on error
+      sensor = _waitFor( event->sensor ); if (!sensor) return false;
+      actor  = _waitFor( event->actor );  if (!actor)  return false;
+
+      switch ( sensor->getIOType() ) {
+    
+        case FTSWARM_INPUT: 
+          static_cast<SwOSInput *>(sensor)->registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter ); 
+          break;
+    
+        case FTSWARM_BUTTON: 
+          static_cast<SwOSButton *>(sensor)->registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter ); 
+          break;
+    
+        case FTSWARM_JOYSTICK: 
+          if ( event->LR == 1 ) static_cast<SwOSJoystick *>(sensor)->triggerLR.registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter );
+          else                  static_cast<SwOSJoystick *>(sensor)->triggerFB.registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter );
+          break;
+        
+      }
+    
+    }
+    
+  }
+
+  return true;
+
+}
+
 FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 
   if (verbose) {
@@ -167,16 +241,16 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
     printf(SWOSVERSION);
     printf("\n\n(C) Christian Bergschneider & Stefan Fuss\n\nPress any key to enter bios settings.\n");
   }
-
-  // kill watchdog timer
-  // wdt_disable();
-  //esp_task_wdt_deinit();
   
   // initialize random
   srand( time( NULL ) );
  
   // initialize nvs
   nvs.begin();
+
+  // initialize I2C
+  if ( nvs.CPU == FTSWARM_1V0 ) Wire.begin( 13, 12 );
+  else Wire.begin();
 
 	// create local controler
 	maxCtrl++;
@@ -185,6 +259,9 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 	} else {
 		Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda, nvs.joyZero );
 	}
+
+  // Who I am?
+  printf("Boot %s (SN:%d).\n", Ctrl[maxCtrl]->getHostname(), Ctrl[maxCtrl]->serialNumber );
 
   // Open NVS again & load alias names
   nvs_handle_t my_handle;
@@ -279,6 +356,13 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 
   // start web server
   SwOSStartWebServer();
+
+  // firmware events?
+  if ( !_startEvents( ) ) {
+      printf( "\nStarting setup..\n" );
+      ftSwarm.setup();
+      ESP.restart();
+    }
 
   setState( RUNNING );
 

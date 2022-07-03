@@ -9,6 +9,7 @@ shutil.rmtree("src/")
 os.mkdir("include")
 shutil.copytree("../arduino-cpp-library/src", "src")
 shutil.move("src/ftSwarm.h", "include/")
+os.remove("src/src.ino")
 
 lib = json.load(open("library.json"))
 version = lib["version"]

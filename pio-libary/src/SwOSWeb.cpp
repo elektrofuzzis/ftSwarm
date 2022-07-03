@@ -123,23 +123,44 @@ bool getParameter( httpd_req_t *req, cJSON * root, const char *parameter, int *v
   cJSON *p = cJSON_GetObjectItem(root, parameter );
 
   // check if everything is ok
-  if ( ( p != NULL ) && ( p->type == cJSON_Number ) ) {
-    *value = p->valueint;
-    return true;
+  if ( p != NULL ) {
+
+    if ( p->type == cJSON_Number ) {
+      *value = p->valueint;
+      return true;
+
+    } else if ( p->type == cJSON_String ) {
+
+      char *ptr = p->valuestring;
+
+      // quoted string?
+      if ( ( ptr[0] == '"' ) && ( ptr[strlen(ptr)] == '"' ) ) { ptr[strlen(ptr)] = '\0'; ptr++; }
+      if ( ptr[0] == '\0' ) return false;
+
+      // start with #?
+      int base = 10;
+      if ( ptr[0] == '#' ) { base = 16; ptr++; }
+
+      *value = (int) strtol( ptr, NULL, base );
+      return true;
+
+    } else {
+
+      ESP_LOGE( LOGFTSWARM, "%s has wrong type", parameter );
+      httpd_resp_set_status( req, HTTPD_400 );
+      return false;
+    }
   }
 
-  // missing mandatory parameter?
-  if ( ( p == NULL ) && ( mandatory ) ) {
+  // mandatory
+  if ( mandatory ){
     ESP_LOGE( LOGFTSWARM, "Missing parameter %s.", parameter );
     httpd_resp_set_status( req, HTTPD_400 );
-
-  // wrong type?
-  } else if ( p != NULL )  {
-    ESP_LOGE( LOGFTSWARM, "%s has wrong type", parameter );
-    httpd_resp_set_status( req, HTTPD_400 );
+    return false;
   }
-
-  return false;    
+  
+  // optional
+  return false;
 
 }
 
@@ -242,8 +263,6 @@ esp_err_t indexHandler(httpd_req_t *req ) {
   
   char line[512];
 
-  ESP_LOGD( LOGFTSWARM, "/index.html");
-
   httpd_resp_set_hdr( req, "Content-Encoding", "gzip" );
   httpd_resp_set_type( req, "text/html" ); 
 
@@ -334,27 +353,26 @@ esp_err_t apiActor( httpd_req_t *req ) {
   uint16_t token;
   uint16_t status = 200;
 
-  if ( !getParameter( req, root, "id", id, true ) ) return sendResponse( req, 400 );
-  if ( !getParameter( req, root, "token", &token, true ) ) return sendResponse( req, 400 );
+  if ( ( !getParameter( req, root, "id", id, true ) ) ||
+       ( !getParameter( req, root, "token", &token, true ) ) ) {
+    cJSON_Delete( root );
+    return sendResponse( req, 400 );
+  }
 
   // optional parameters
-  hasCmd   = ( req, getParameter( req, root, "cmd", &cmd, false ) );
-  hasPower = ( req, getParameter( req, root, "power", &power, false ) );
+  boolean c = ( req, getParameter( req, root, "cmd", &cmd, false ) );
+  boolean p = ( req, getParameter( req, root, "power", &power, false ) );
 
   // cleanup
   cJSON_Delete( root );
 
-  // let's do it
-  myOSSwarm.lock();
-  
-  if ( hasCmd ) {
-    status = myOSSwarm.apiActorCmd( token, id, cmd );
-  } else if ( hasPower ) {
-    status = myOSSwarm.apiActorPower( token, id, power); 
-  } else {
-    status = 400;
-  }
+  // none
+  if (! (p || c) ) return sendResponse( req, 400 );
 
+  // let's do it
+  myOSSwarm.lock();  
+  if ( c ) status = myOSSwarm.apiActorCmd( token, id, cmd );
+  if ( p ) status = myOSSwarm.apiActorPower( token, id, power); 
   myOSSwarm.unlock();
 
   return sendResponse( req, status );
@@ -372,17 +390,27 @@ esp_err_t apiLED( httpd_req_t *req ) {
   uint16_t status = 200;
   uint16_t token;
 
-  if (!getParameter( req, root, "id", id, true ) )                  return sendResponse( req, 400 );
-  if (!getParameter( req, root, "token", &token, true ) )           return sendResponse( req, 400 );
-  if (!getParameter( req, root, "brightness", &brightness, true ) ) return sendResponse( req, 400 );
-  if (!getParameter( req, root, "color", &color, true ) )           return sendResponse( req, 400 );
+  // mandatory
+  if ( (!getParameter( req, root, "id", id, true ) ) ||
+       (!getParameter( req, root, "token", &token, true ) ) ) { 
+    cJSON_Delete(root); 
+    return sendResponse( req, 400 );
+  }
+
+  // one of both?
+  boolean b = getParameter( req, root, "brightness", &brightness, false );
+  boolean c = getParameter( req, root, "color", &color, false );
 
   // cleanup
   cJSON_Delete(root);
 
+  // none
+  if (! (b || c) ) return sendResponse( req, 400 );
+
   // let's do it
   myOSSwarm.lock();
-  status = myOSSwarm.apiLED( token, id, brightness, color );
+  if ( b ) status = myOSSwarm.apiLEDBrightness( token, id, brightness );
+  if ( c ) status = myOSSwarm.apiLEDColor( token, id, color );
   myOSSwarm.unlock();
   
   return sendResponse( req, status );
@@ -400,17 +428,27 @@ esp_err_t apiServo(httpd_req_t *req ) {
   uint16_t token;
   uint16_t status;
 
-  if ( !getParameter( req, root, "id", id, true ) )              return sendResponse( req, 400 );
-  if ( !getParameter( req, root, "token", &token, true ) )       return sendResponse( req, 400 );
-  if ( !getParameter( req, root, "offset", &offset, true ) )     return sendResponse( req, 400 );
-  if ( !getParameter( req, root, "position", &position, true ) ) return sendResponse( req, 400 );
+  // mandatory
+  if ( ( !getParameter( req, root, "id", id, true ) ) ||
+       ( !getParameter( req, root, "token", &token, true ) ) ) {
+    cJSON_Delete(root);
+    return sendResponse( req, 400 );
+  }
+
+  // optional
+  boolean o = getParameter( req, root, "offset", &offset, false);
+  boolean p = getParameter( req, root, "position", &position, false);
 
   // cleanup
   cJSON_Delete(root);
+  
+  // none
+  if (!( o || p) ) return sendResponse( req, 400 );
 
   // let's do it
   myOSSwarm.lock();
-  status = myOSSwarm.apiServo( token, id, offset, position );
+  if (o) status = myOSSwarm.apiServoOffset( token, id, offset);
+  if (p) status = myOSSwarm.apiServoPosition( token, id, position );
   myOSSwarm.unlock();
 
   return sendResponse( req, status );
@@ -458,7 +496,8 @@ bool SwOSStartWebServer( void ) {
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
   config.uri_match_fn = httpd_uri_match_wildcard;
   config.max_uri_handlers = 10;
-  config.stack_size = 50000;
+  config.stack_size = 100000;
+  config.core_id = 0;
 
   httpd_handle_t server = NULL;
 

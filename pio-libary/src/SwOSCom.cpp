@@ -46,14 +46,17 @@ SwOSCom::SwOSCom( const uint8_t *mac_addr, const uint8_t *buffer, int length) {
   bool isJoin    = ( ( data.secret == DEFAULTSECRET ) && ( data.cmd == CMD_SWARMJOIN )    && ( data.joinCmd.pin == pin ) && ( pin != 0 ) ) ;
   bool isJoinAck = ( ( data.secret == DEFAULTSECRET ) && ( data.cmd == CMD_SWARMJOINACK ) && ( data.joinCmd.pin == pin ) && ( pin != 0 ) ) ;
 
+  // sendBuffered
+  bufferIndex = 0;
+
   _isValid = ( ( ( data.secret == secret ) || isJoin || isJoinAck ) &&
-               ( length >= 5 ) &&
+               ( length == _size( ) ) &&
                ( data.cmd < CMD_MAX ) &&
                ( data.version == VERSIONDATA ) );
 
 }
 
-SwOSCom::SwOSCom( const uint8_t *mac_addr, FtSwarmSerialNumber_t serialNumber, FtSwarmControler_t ctrlType, SwOSCommand_t cmd ) {
+SwOSCom::SwOSCom( const uint8_t *mac_addr, FtSwarmSerialNumber_t serialNumber, SwOSCommand_t cmd ) {
 
   // clear data
   memset(&data, 0, sizeof(data));
@@ -64,12 +67,65 @@ SwOSCom::SwOSCom( const uint8_t *mac_addr, FtSwarmSerialNumber_t serialNumber, F
   data.secret       = secret;
   data.version      = VERSIONDATA;
   data.serialNumber = serialNumber;
-  data.ctrlType     = ctrlType;
   data.cmd          = cmd;
+
+  // sendBuffered
+  bufferIndex = 0;
   
   // valid data
   _isValid = true;
 }
+
+size_t SwOSCom::_size( void ) {
+
+  size_t len = sizeof( data.secret ) + sizeof( data.version ) + sizeof( data.serialNumber ) + sizeof( data.cmd );
+
+  switch ( data.cmd ) {  
+    case CMD_SWARMJOIN:       return len + sizeof( data.joinCmd );
+    case CMD_SWARMJOINACK:    return len + sizeof( data.joinCmd );
+    case CMD_SWARMLEAVE:      return len;
+    case CMD_ANYBODYOUTTHERE: return len + sizeof( data.registerCmd );
+    case CMD_GOTYOU:          return len + sizeof( data.registerCmd );
+    case CMD_SETLED:          return len + sizeof( data.ledCmd );
+    case CMD_SETACTORPOWER:   return len + sizeof( data.actorPowerCmd );
+    case CMD_SETSERVO:        return len + sizeof( data.servoCmd );
+    case CMD_STATE:           return len + sizeof( data.stateCmd );
+    case CMD_SETSENSORTYPE:   return len + sizeof( data.sensorCmd );
+    case CMD_SETACTORTYPE:    return len + sizeof( data.registerCmd );
+    case CMD_ALIAS:           return len + sizeof( data.aliasCmd );
+  }
+
+  // broom wagon: Did I forget something? send the maximum datagram
+  return sizeof( data );
+  
+}
+
+void SwOSCom::sendBuffered(char *name, char *alias ) {
+
+  // anyting ToDo?
+  if ( (!alias) || (alias[0]=='\0') ) return;
+
+  // copy data to buffer
+  strcpy( data.aliasCmd.alias[bufferIndex].name, name );
+  strcpy( data.aliasCmd.alias[bufferIndex].alias, alias );
+  (bufferIndex)++;
+
+  // buffer full?
+  if (bufferIndex>=MAXALIAS) flushBuffer( );
+  
+}
+
+void SwOSCom::flushBuffer( ) {
+
+  // send data
+  send();
+
+  // cleanup
+  bufferIndex = 0;
+  memset( &data.aliasCmd, 0, sizeof( data.aliasCmd ) );
+  
+}
+
 
 void SwOSCom::setMAC( const uint8_t *mac_addr ) {
 
@@ -88,15 +144,14 @@ void SwOSCom::print() {
   printf("mac: %02x:%02x:%02x:%02x:%02x:%02x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], mac[6] );
   printf("secret: %04X\n", data.secret);
   printf("serialNumber: %d\n", data.serialNumber);
-  printf("ctrlType: %d\n", data.ctrlType);
   printf("command: %d\n", data.cmd);
 
   uint8_t *ptr = (uint8_t *) &data;
-
   for (uint8_t i=0; i<sizeof(data); i++) {
     printf("%02X ", *ptr++ );
     if ( ( i % 16 ) == 15) printf("\n");
   }
+
   printf("\n");
 
 }
@@ -129,7 +184,7 @@ esp_err_t SwOSCom::send( void ) {
   xQueueReceive( sendNotification, &event, ESPNOW_MAXDELAY );
 
   // now we could send the data
-  return esp_now_send( mac, (uint8_t *) &data, sizeof(data) );
+  return esp_now_send( mac, (uint8_t *) &data, _size() );
   
 }
 

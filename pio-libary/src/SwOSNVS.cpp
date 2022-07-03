@@ -10,11 +10,16 @@
 #include <nvs.h>
 #include <nvs_flash.h>
 #include <esp_err.h>
-#include "WiFi.h"
+#include <WiFi.h>
 
 #include "ftSwarm.h"
 #include "SwOSNVS.h"
 #include "easykey.h"
+
+NVSEvent::NVSEvent() {
+  sensor[0] = '\0';
+  actor[0]  = '\0';
+}
 
 uint16_t generateSecret( FtSwarmSerialNumber_t serialNumber ) {
   return ( ( ( ( uint16_t) serialNumber ) & 0xFF ) << 8 ) | ( rand() & 0xFF ) ;
@@ -131,12 +136,20 @@ bool SwOSNVS::load() {
     return false;
   }
 
-  // ftSwarmControl: get joystick calibration
+  // joystick zero position & # RGB Leds
+
+  // ftSwarmControl
   if ( controlerType == FTSWARMCONTROL ) {
     nvs_get_i16( my_handle, "joyZero00", &joyZero[0][0]);
     nvs_get_i16( my_handle, "joyZero01", &joyZero[0][1]);
     nvs_get_i16( my_handle, "joyZero10", &joyZero[1][0]);
     nvs_get_i16( my_handle, "joyZero11", &joyZero[1][1]);
+    RGBLeds = 0;
+
+  // ftSwarm
+  } else {
+    nvs_get_u8( my_handle, "RGBLeds", &RGBLeds );
+    if ( ( RGBLeds < 2 ) || ( RGBLeds > 16 ) ) RGBLeds = 2;
   }
   
   size_t dummy;
@@ -151,6 +164,9 @@ bool SwOSNVS::load() {
   nvs_get_u16( my_handle, "swarmSecret",               &swarmSecret );
   nvs_get_u16( my_handle, "swarmPIN",                  &swarmPIN );
   dummy = sizeof( swarmName );  nvs_get_str( my_handle, "swarmName", swarmName, &dummy );
+
+  // events
+  dummy = sizeof( eventList );  nvs_get_blob( my_handle, "eventList", &eventList, &dummy );
 
   return true;
 
@@ -177,6 +193,9 @@ void SwOSNVS::save( bool writeAll ) {
     ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero01", joyZero[0][1]) );
     ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero10", joyZero[1][0]) );
     ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero11", joyZero[1][1]) );
+    
+  } else { // FtSwarm RGBLeds
+    ESP_ERROR_CHECK( nvs_set_u8( my_handle, "RGBLeds", RGBLeds ) );
   }
 
   // wifi
@@ -189,6 +208,9 @@ void SwOSNVS::save( bool writeAll ) {
   ESP_ERROR_CHECK( nvs_set_u16( my_handle, "swarmSecret", swarmSecret ) );
   ESP_ERROR_CHECK( nvs_set_u16( my_handle, "swarmPIN",    swarmPIN ) );
   ESP_ERROR_CHECK( nvs_set_str( my_handle, "swarmName",   swarmName ) );
+
+  // events
+  ESP_ERROR_CHECK( nvs_set_blob( my_handle, "eventList",  (void *)&eventList, sizeof( eventList ) ) );
    
   // commit
   ESP_ERROR_CHECK( nvs_commit( my_handle ) );
@@ -239,6 +261,7 @@ void SwOSNVS::printNVS() {
   printf( "swarmSecret: 0x%4X\n", swarmSecret );
   printf( "swarmPIN: %d\n", swarmPIN );
   printf( "swarmName: >%s<\n", swarmName );
+  printf( "RGBLeds: %d\n", RGBLeds );
  
  
 }

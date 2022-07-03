@@ -190,6 +190,113 @@ void SwOSIO::jsonize( JSONize *json, uint8_t id) {
   json->variable("icon", (char *) getIcon() );
 }
 
+void SwOSIO::onTrigger( int32_t value ) {
+  ESP_LOGE( LOGFTSWARM, "IO is unable to handle trigger events." );
+}
+
+/***************************************************
+ *
+ *   SwOSEventHandler
+ *
+ ***************************************************/
+
+SwOSEventHandler::SwOSEventHandler( ) {
+  _actor        = NULL;
+  _parameter    = 0;
+  _usePortValue = true;
+}
+
+SwOSEventHandler::SwOSEventHandler( SwOSIO *actor, boolean usePortValue, int32_t parameter ) {
+  _actor        = actor;
+  _usePortValue = usePortValue;
+  _parameter    = parameter;
+}
+
+void SwOSEventHandler::trigger( int32_t portValue ) {
+
+  if ( _actor ) {
+    if (_usePortValue) _actor->onTrigger( portValue );
+    else               _actor->onTrigger( _parameter );
+  }
+}
+
+/***************************************************
+ *
+ *   SwOSEventHandlers
+ *
+ ***************************************************/
+
+SwOSEventHandlers::SwOSEventHandlers( ) {
+
+  for (uint8_t i=0; i<FTSWARM_MAXTRIGGER; i++ ) _event[i] = NULL;
+
+};
+
+SwOSEventHandlers::~SwOSEventHandlers() {
+
+  for (uint8_t i=0; i<FTSWARM_MAXTRIGGER; i++ ) {
+    if (_event[i]) delete _event[i];
+  }
+  
+}
+
+void SwOSEventHandlers::registerEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, boolean usePortValue, int32_t parameter ) {
+
+  // if there is already a registered event, delete it
+  if (_event[triggerEvent]) delete _event[triggerEvent];
+
+  _event[triggerEvent] = new SwOSEventHandler( actor, usePortValue, parameter );
+  
+};
+
+void SwOSEventHandlers::unregisterEvent( FtSwarmTrigger_t triggerEvent ) {
+
+  // if there is already a registered event, delete it
+  if (_event[triggerEvent]) delete _event[triggerEvent];
+
+  _event[triggerEvent] = NULL;
+  
+};
+
+void SwOSEventHandlers::trigger( FtSwarmTrigger_t triggerEvent, int32_t portValue ) {
+
+  if ( _event[triggerEvent] ) {
+    _event[triggerEvent]->trigger( portValue );
+  }
+}
+
+/***************************************************
+ *
+ *   SwOSEventInpit
+ *
+ ***************************************************/
+
+SwOSEventInput::~SwOSEventInput() {
+  if (!_events) delete _events;
+}
+
+void SwOSEventInput::registerEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, boolean usePortValue, int32_t p1 ) {
+
+  if (!_events) _events = new SwOSEventHandlers( );
+
+  _events->registerEvent( triggerEvent, actor, usePortValue, p1 );
+  
+}
+
+void SwOSEventInput::unregisterEvent( FtSwarmTrigger_t triggerEvent ) {
+
+  if (!_events) return;
+
+  _events->unregisterEvent( triggerEvent );
+  
+}
+
+void SwOSEventInput::trigger( FtSwarmTrigger_t triggerEvent, int32_t portValue ) {
+
+  if ( _events ) _events->trigger( triggerEvent, portValue );
+
+}
+
 /***************************************************
  *
  *   SwOSInput
@@ -203,7 +310,8 @@ void SwOSIO::jsonize( JSONize *json, uint8_t id) {
  *
  ***************************************************/
 
-SwOSInput::SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSIO( name, port, ctrl ) {
+
+SwOSInput::SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSIO( name, port, ctrl ), SwOSEventInput( ) {
   
   // initialize some vars to undefined
   _lastRawValue = 0;
@@ -378,34 +486,62 @@ void SwOSInput::read() {
   // nothing todo on remote sensors
   if (!_ctrl->isLocal()) return;
 
+  uint32_t newValue;
+
   // local reading
   if ( ( !isDigitalSensor() ) && ( _ADCChannel != ADC1_CHANNEL_MAX) ) {
     
-    _lastRawValue = adc1_get_raw( _ADCChannel );
+    newValue = adc1_get_raw( _ADCChannel );
 
     if ( isXMeter() ) {
       // XMeter: cast to mV
-      _lastRawValue = esp_adc_cal_raw_to_voltage( _lastRawValue, _adc_chars ); 
-    }    
+      newValue = esp_adc_cal_raw_to_voltage( _lastRawValue, _adc_chars ); 
+    }
     
   } else {
     
     // read new data
-    uint32_t newValue = gpio_get_level( _GPIO );
+    newValue = gpio_get_level( _GPIO );
     
     // normally open: change logic
     if (_normallyOpen) newValue = 1-newValue;
     
     // check if it's toggled?
     if ( _lastRawValue != newValue ) { 
-      if (newValue) _toggle = FTSWARM_TOGGLEUP;
-      else          _toggle = FTSWARM_TOGGLEDOWN;
+      if (newValue) { _toggle = FTSWARM_TOGGLEUP;   trigger( FTSWARM_TRIGGERUP, newValue ); }
+      else          { _toggle = FTSWARM_TOGGLEDOWN; trigger( FTSWARM_TRIGGERDOWN, newValue ); }
     }
     
-    // store new data
-    _lastRawValue = newValue;  
+  }
+
+  // send changed value event?
+  if ( (_events) && ( _lastRawValue != newValue ) ) trigger( FTSWARM_TRIGGERVALUE, newValue );
+
+  // store new data
+  _lastRawValue = newValue;  
+
+}
+
+void SwOSInput::setValue( uint32_t value ) {
+
+  // nothing ToDo on local HW
+  if (_ctrl->isLocal()) return;
+
+  // check if it's toggled?
+  if ( _lastRawValue != value) { 
+
+    // Toggles with digtal sensors only
+    if ( isDigitalSensor() ) {
+      if   (value) { _toggle = FTSWARM_TOGGLEUP;   trigger( FTSWARM_TRIGGERUP, value ); }
+      else         { _toggle = FTSWARM_TOGGLEDOWN; trigger( FTSWARM_TRIGGERDOWN, value ); }
+    }
+
+    // trigger value event
+    trigger( FTSWARM_TRIGGERVALUE, value );
     
   }
+  
+  _lastRawValue = value;
 
 }
 
@@ -509,22 +645,6 @@ void SwOSInput::jsonize( JSONize *json, uint8_t id) {
   
   json->endObject();
 }
-
-void SwOSInput::setValue( uint32_t value ) {
-
-  // nothing ToDo on local HW
-  if (_ctrl->isLocal()) return;
-
-  // check if it's toggled?
-  if ( _lastRawValue != value) { 
-    if   (value) _toggle = FTSWARM_TOGGLEUP;
-    else         _toggle = FTSWARM_TOGGLEDOWN;
-  }
-  
-  _lastRawValue = value;
-
-}
-
 
 /***************************************************
  *
@@ -712,6 +832,13 @@ void SwOSActor::jsonize( JSONize *json, uint8_t id) {
   json->endObject();
 }
 
+void SwOSActor::onTrigger( int32_t value ) {
+
+  setPower( (int16_t) value );
+
+}
+
+
 /***************************************************
  *
  *   SwOSJoystick
@@ -814,13 +941,31 @@ int16_t readChannel( adc1_channel_t channel, int16_t zero, int16_t *lastRaw, uin
 
 void SwOSJoystick::read() {
 
+  int16_t x;
+
   // nothing ToDO with remote HW
   if (!_ctrl->isLocal()) return;
 
-  _lastLR = readChannel( _ADCChannelLR, _zeroLR, &_lastRawLR, _port );
-  _lastFB = readChannel( _ADCChannelFB, _zeroFB, &_lastRawFB, _port );
+    x = readChannel( _ADCChannelLR, _zeroLR, &_lastRawLR, _port );
+    if ( x != _lastLR ) triggerLR.trigger( FTSWARM_TRIGGERVALUE, x );
+    _lastLR = x;
+
+    x = readChannel( _ADCChannelFB, _zeroFB, &_lastRawFB, _port );
+    if ( x != _lastFB ) triggerFB.trigger( FTSWARM_TRIGGERVALUE, x );
+    _lastFB = x;
 
 }
+
+void SwOSJoystick::setValue( int16_t FB, int16_t LR ) {
+
+  if ( _lastLR != LR )  triggerLR.trigger( FTSWARM_TRIGGERVALUE, LR );
+  if ( _lastFB != FB )  triggerFB.trigger( FTSWARM_TRIGGERVALUE, FB );
+
+  _lastLR = LR;
+  _lastFB = FB;
+  
+}
+
 
 void SwOSJoystick::calibrate( int16_t *zeroLR, int16_t *zeroFB ) {
   
@@ -849,11 +994,6 @@ void SwOSJoystick::jsonize( JSONize *json, uint8_t id) {
   json->variableI16("valueFb", _lastFB );
   json->variableB("button", static_cast<SwOSSwarmControl *>(_ctrl)->button[6+_port]->getState());
   json->endObject();
-}
-
-void SwOSJoystick::setValue( int16_t FB, int16_t LR ) {
-  _lastLR = LR;
-  _lastFB = FB;
 }
 
 /***************************************************
@@ -954,6 +1094,12 @@ void SwOSLED::jsonize( JSONize *json, uint8_t id) {
   json->variableUI8  ("brightness", _brightness);
   json->variableUI32X("color",     _color);
   json->endObject();
+}
+
+void SwOSLED::onTrigger( int32_t value ) {
+
+  setColor( (uint32_t) value );
+  
 }
 
 /***************************************************
@@ -1066,6 +1212,12 @@ void SwOSServo::setOffset( int16_t offset ) {
   // apply local or remote
   if (_ctrl->isLocal()) _setLocal();
   else                  _setRemote();
+
+}
+
+void SwOSServo::onTrigger( int32_t value ) {
+
+  setPosition( (int16_t) value );
 
 }
 
@@ -1277,7 +1429,7 @@ SwOSGyro::SwOSGyro(const char *name, SwOSCtrl *ctrl) : SwOSIO( name, ctrl ) {
  *
  ***************************************************/
 
-SwOSButton::SwOSButton(const char *name, uint8_t port, SwOSCtrl *ctrl) : SwOSIO( name, port, ctrl ) {
+SwOSButton::SwOSButton(const char *name, uint8_t port, SwOSCtrl *ctrl) : SwOSIO( name, port, ctrl ), SwOSEventInput( ) {
 
   _toggle = FTSWARM_NOTOGGLE;
 
@@ -1289,11 +1441,19 @@ void SwOSButton::jsonize( JSONize *json, uint8_t id) {
   json->variableB("state", _lastState );
   json->endObject();
 }
+
 void SwOSButton::setState( bool state ) {
   
   if ( state != _lastState ) {
-    if (state) _toggle = FTSWARM_TOGGLEUP;
-    else       _toggle = FTSWARM_TOGGLEDOWN;
+
+    if (state) { 
+      _toggle = FTSWARM_TOGGLEUP; 
+      if ( _ctrl->isLocal() ) trigger( FTSWARM_TRIGGERUP, state );
+    
+    } else {
+      _toggle = FTSWARM_TOGGLEDOWN;
+      if ( _ctrl->isLocal() ) trigger( FTSWARM_TRIGGERDOWN, state );
+    }
   }
   
   _lastState = state; 
@@ -1326,16 +1486,20 @@ SwOSHC165::SwOSHC165(const char *name, SwOSCtrl *ctrl) : SwOSIO(name, ctrl) {
 void SwOSHC165::_setupLocal() {
   // initialize local HW
 
-  if ( _ctrl->getCPU() != FTSWARM_1V3 ) {
-    _CS = _LD = _CLK = _MISO = GPIO_NUM_NC;
-    return;
+  switch ( _ctrl->getCPU() ) {
+    case FTSWARM_1V0: _CS   = GPIO_NUM_19;
+                      _LD   = GPIO_NUM_18;
+                      _CLK  = GPIO_NUM_14;
+                      _MISO = GPIO_NUM_12;
+                      break; 
+    case FTSWARM_1V3: _CS   = GPIO_NUM_14;
+                      _LD   = GPIO_NUM_15;
+                      _CLK  = GPIO_NUM_12;
+                      _MISO = GPIO_NUM_35;
+                      break;
+    default:          _CS = _LD = _CLK = _MISO = GPIO_NUM_NC;
+                      return;
   }
-
-  // Port Mapping
-  _CS   = GPIO_NUM_14;
-  _LD   = GPIO_NUM_15;
-  _CLK  = GPIO_NUM_12;
-  _MISO = GPIO_NUM_35;
 
   // initialize ports
   gpio_config_t io_conf = {};
@@ -1388,6 +1552,7 @@ void SwOSHC165::read( ) {
   }
 
 }
+
 
 /***************************************************
  *
@@ -2309,4 +2474,12 @@ void SwOSSwarmControl::loadAliasFromNVS( nvs_handle_t my_handle ) {
   for (uint8_t i=0; i<8; i++ ) button[i]->loadAliasFromNVS( my_handle );
   for (uint8_t i=0; i<2; i++ ) joystick[i]->loadAliasFromNVS( my_handle );
   
+}
+
+boolean SwOSSwarmControl::getRemoteControl( void ) {
+  return _remoteControl;
+}
+
+void SwOSSwarmControl::setRemoteControl( boolean remoteControl ) {
+  _remoteControl = remoteControl;
 }
