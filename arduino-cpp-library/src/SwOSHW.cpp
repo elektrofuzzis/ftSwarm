@@ -799,7 +799,7 @@ void SwOSActor::_setLocal() {
   case FTSWARM_ON:
     if ( _power <  0) {
       // SLEEP HIGH, IN1 PWM, IN2 HIGH
-      duty1 = _power;
+      duty1 = abs(_power);
       duty2 = 0;
     } else {
       // SLEEP HIGH, IN1 HIGH, IN2 PWM
@@ -2154,6 +2154,7 @@ void SwOSSwarmJST::saveAliasToNVS( nvs_handle_t my_handle ) {
 
   SwOSCtrl::saveAliasToNVS( my_handle );
 
+  if (servo) servo->saveAliasToNVS( my_handle );
   if (gyro) gyro->saveAliasToNVS( my_handle );
   for (uint8_t i=0; i<RGBLeds; i++ ) if (led[i]) led[i]->saveAliasToNVS( my_handle );
   
