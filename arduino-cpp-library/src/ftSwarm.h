@@ -94,6 +94,8 @@ typedef enum { FTSWARM_TRIGGERUP, FTSWARM_TRIGGERDOWN, FTSWARM_TRIGGERVALUE, FTS
 #define FTSWARM_LED14 13
 #define FTSWARM_LED15 14
 #define FTSWARM_LED16 15
+#define FTSWARM_LED17 16
+#define FTSWARM_LED18 17
 
 // **** some internal types & classes, don't use them at all ****
 

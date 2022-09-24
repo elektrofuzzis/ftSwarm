@@ -962,7 +962,7 @@ void localMenu( void ) {
       case 5: // RGBLeds
         if ( myOSSwarm.Ctrl[0]->getType() == FTSWARM ) {
           anythingChanged = true;
-          myOSSwarm.nvs.RGBLeds = enterNumber( "enter channel [2..16]: ", myOSSwarm.nvs.RGBLeds, 2, 16 );
+          myOSSwarm.nvs.RGBLeds = enterNumber( "enter channel [2..18]: ", myOSSwarm.nvs.RGBLeds, 2, MAXLED );
         }
         break;
 
