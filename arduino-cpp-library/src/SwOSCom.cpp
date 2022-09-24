@@ -184,6 +184,8 @@ esp_err_t SwOSCom::send( void ) {
   xQueueReceive( sendNotification, &event, ESPNOW_MAXDELAY );
 
   // now we could send the data
+  printf("sendung data\n");
+  print();
   return esp_now_send( mac, (uint8_t *) &data, _size() );
   
 }

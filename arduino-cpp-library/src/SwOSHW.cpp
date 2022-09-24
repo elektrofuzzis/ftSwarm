@@ -1792,7 +1792,8 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
       input[com->data.sensorCmd.index]->setSensorType( com->data.sensorCmd.sensorType, com->data.sensorCmd.normallyOpen );
       return true;
     case CMD_SETACTORPOWER:
-      actor[com->data.actorPowerCmd.index]->setValue( com->data.actorPowerCmd.motionType, com->data.actorPowerCmd.power );
+      actor[com->data.actorPowerCmd.index]->setMotionType( com->data.actorPowerCmd.motionType );
+      actor[com->data.actorPowerCmd.index]->setPower( com->data.actorPowerCmd.power );
       return true;
     case CMD_SETACTORTYPE:
       actor[com->data.actorTypeCmd.index]->setActorType( com->data.actorTypeCmd.actorType );
