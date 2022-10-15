@@ -301,12 +301,12 @@ void SwOSEventInput::trigger( FtSwarmTrigger_t triggerEvent, int32_t portValue )
  *
  *   SwOSInput
  *
- *    ftSwarm13/ftSwarmControl  ftSwarm15
+ *    ftSwarm13/ftSwarmControl  ftSwarm15               ftSwarmCAM
  *
- * A1 GPIO39/ADC1_CHANNEL_3   GPIO39/ADC1_CHANNEL_3
- * A2 GPIO25/           GPIO32/ADC1_CHANNEL_4
- * A3 GPIO26/           GPIO33/ADC1_CHANNEL_5
- * A4 GPIO27/           GPIO34/ADC1_CHANNEL_6
+ * A1 GPIO39/ADC1_CHANNEL_3     GPIO39/ADC1_CHANNEL_3   GPIO02
+ * A2 GPIO25/                   GPIO32/ADC1_CHANNEL_4   GPIO16
+ * A3 GPIO26/                   GPIO33/ADC1_CHANNEL_5   NC
+ * A4 GPIO27/                   GPIO34/ADC1_CHANNEL_6   NC
  *
  ***************************************************/
 
@@ -330,9 +330,21 @@ void SwOSInput::_setupLocal() {
   _ADCChannel   = ADC1_CHANNEL_MAX;
   _PUA2         = GPIO_NUM_NC;
   _USTX         = GPIO_NUM_NC;
+  _GPIO         = GPIO_NUM_NC;
 
   // assign port to GPIO
-  if (_ctrl->getCPU()==FTSWARM_1V15) { // 1v5
+  if (_ctrl->getCPU()==FTSWARM_1V4) { // ftSwarmCAM only
+    switch (_port) {
+    case 0:
+      _GPIO = GPIO_NUM_2;
+      break;
+    case 1:
+      _GPIO = GPIO_NUM_0;
+      break;
+    default:
+      break;
+    }
+  } else if (_ctrl->getCPU()==FTSWARM_1V15) { // 1v5
     switch (_port) {
     case 0:
       _GPIO = GPIO_NUM_39;
@@ -401,15 +413,20 @@ void SwOSInput::_setupLocal() {
     // adc1_config_channel_atten( _ADCChannel, ADC_ATTEN_DB_11);
   }
 
-  // initialize digital  port
   gpio_config_t io_conf = {};
-  io_conf.intr_type = GPIO_INTR_DISABLE;
-  io_conf.mode = GPIO_MODE_INPUT;
-  io_conf.pin_bit_mask = 1ULL << _GPIO;
-  io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-  io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-  gpio_config(&io_conf);
 
+  if ( _GPIO != GPIO_NUM_NC) {
+
+    // initialize digital  port
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    io_conf.mode = GPIO_MODE_INPUT;
+    io_conf.pin_bit_mask = 1ULL << _GPIO;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+    gpio_config(&io_conf);
+
+  }
+  
   // initialize A2 pullup
   if (_PUA2 != GPIO_NUM_NC) {
     io_conf.mode = GPIO_MODE_OUTPUT;
@@ -485,6 +502,9 @@ void SwOSInput::read() {
 
   // nothing todo on remote sensors
   if (!_ctrl->isLocal()) return;
+
+  // existing port?
+  if (_GPIO == GPIO_NUM_NC ) return;
 
   uint32_t newValue;
 
@@ -671,20 +691,38 @@ char * SwOSActor::getIcon() {
 void SwOSActor::_setupLocal() {
   // initialize local HW
 
-  // assign port to GPIO. All CPU versions use same ports.
-  switch (_port) {
-  case 0:
-    _IN1 = GPIO_NUM_13;
-    _IN2 = GPIO_NUM_4;
-    break;
-  case 1:
-    _IN1 = GPIO_NUM_2;
-    _IN2 = GPIO_NUM_0;
-    break;
-  default:
-    break;
-  }
 
+  if ( _ctrl->getCPU()==FTSWARM_1V4) {
+    // assign port to GPIO. All CPU versions of ftSwarmCAM use same ports.
+    switch (_port) {
+    case 0:
+      _IN1 = GPIO_NUM_14;
+      _IN2 = GPIO_NUM_12;
+      break;
+    case 1:
+      _IN1 = GPIO_NUM_15;
+      _IN2 = GPIO_NUM_13;
+      break;
+    default:
+      break;
+    }
+    
+  } else {
+    // assign port to GPIO. All CPU versions of ftSwarm & ftSwarmControl use same ports.
+    switch (_port) {
+    case 0:
+      _IN1 = GPIO_NUM_13;
+      _IN2 = GPIO_NUM_4;
+      break;
+    case 1:
+      _IN1 = GPIO_NUM_2;
+      _IN2 = GPIO_NUM_0;
+      break;
+    default:
+      break;
+    }
+  }
+  
   // set digital ports _in1 & in2 to output
   gpio_config_t io_conf = {};
   io_conf.intr_type = GPIO_INTR_DISABLE;
@@ -1792,7 +1830,8 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
       input[com->data.sensorCmd.index]->setSensorType( com->data.sensorCmd.sensorType, com->data.sensorCmd.normallyOpen );
       return true;
     case CMD_SETACTORPOWER:
-      actor[com->data.actorPowerCmd.index]->setValue( com->data.actorPowerCmd.motionType, com->data.actorPowerCmd.power );
+      actor[com->data.actorPowerCmd.index]->setMotionType( com->data.actorPowerCmd.motionType );
+      actor[com->data.actorPowerCmd.index]->setPower( com->data.actorPowerCmd.power );
       return true;
     case CMD_SETACTORTYPE:
       actor[com->data.actorTypeCmd.index]->setActorType( com->data.actorTypeCmd.actorType );
@@ -2482,5 +2521,180 @@ boolean SwOSSwarmControl::getRemoteControl( void ) {
 }
 
 void SwOSSwarmControl::setRemoteControl( boolean remoteControl ) {
+  _remoteControl = remoteControl;
+}
+
+
+/***************************************************
+ *
+ *   SwOSSwarmCAM
+ *
+ ***************************************************/
+
+SwOSSwarmCAM::SwOSSwarmCAM( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda ):SwOSCtrl( SN, macAddress, local, CPU, HAT, IAmAKelda ) {
+
+  char buffer[32];
+  sprintf( buffer, "ftSwarm%d", SN);
+  setName( buffer );
+
+}
+
+SwOSSwarmCAM::SwOSSwarmCAM( SwOSCom *com ):SwOSSwarmCAM( com->data.serialNumber, com->mac, false, com->data.registerCmd.versionCPU, com->data.registerCmd.versionHAT, com->data.registerCmd.IAmAKelda ) {
+
+  // inputs
+  for (uint8_t i=0; i<4; i++ ) {
+    input[i]->setSensorType( com->data.registerCmd.input[i].sensorType, true );
+    input[i]->setValue( com->data.registerCmd.input[i].rawValue );
+  }
+
+  // actors
+  for (uint8_t i=0; i<2; i++ ) {
+    actor[i]->setActorType( com->data.registerCmd.actor[i].actorType );
+    actor[i]->setValue( com->data.registerCmd.actor[i].motionType, com->data.registerCmd.actor[i].power );
+  }
+ 
+}
+
+SwOSSwarmCAM::~SwOSSwarmCAM() {
+  
+}
+
+void SwOSSwarmCAM::factorySettings( void ) {
+
+  SwOSCtrl::factorySettings();
+  
+}
+
+bool SwOSSwarmCAM::cmdAlias( char *device, uint8_t port, const char *alias) {
+
+  return false;
+
+}
+
+SwOSIO *SwOSSwarmCAM::getIO( const char *name ) {
+
+  // check on base base class hardware
+  SwOSIO *IO = SwOSCtrl::getIO(name);
+  if ( IO != NULL ) { return IO; }
+
+  return NULL;
+
+}
+
+SwOSIO *SwOSSwarmCAM::getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port) {
+
+  // check on base base class hardware
+  SwOSIO *IO = SwOSCtrl::getIO(ioType, port);
+  if ( IO != NULL ) { return IO; }
+
+  return NULL;
+  
+}
+
+char* SwOSSwarmCAM::myType() {
+  return (char *) "ftSwarmCAM";
+}
+
+FtSwarmControler_t SwOSSwarmCAM::getType() {
+  return FTSWARMCAM;
+}
+
+void SwOSSwarmCAM::jsonize( JSONize *json, uint8_t id) {
+
+  json->startObject();
+  SwOSCtrl::jsonize(json, id);
+  json->startArray( "io" );
+
+  for (uint8_t i=0; i<4; i++) { input[i]->jsonize( json, id ); }
+  for (uint8_t i=0; i<2; i++) { actor[i]->jsonize( json, id ); }
+
+  json->endArray();
+  json->endObject();
+}
+
+
+void SwOSSwarmCAM::read() {
+
+  SwOSCtrl::read();
+
+}
+
+void SwOSSwarmCAM::setState( SwOSState_t state, uint8_t members, char *SSID ) {
+  // visualizes controler's state like booting, error,...
+   
+}
+
+SwOSCom *SwOSSwarmCAM::state2Com( void ) {
+
+  SwOSCom *com = SwOSCtrl::state2Com();
+
+  return com;
+}
+
+bool SwOSSwarmCAM::recvState( SwOSCom *com ) {
+
+  SwOSCtrl::recvState( com );
+
+  return true;
+ 
+} 
+
+bool SwOSSwarmCAM::OnDataRecv(SwOSCom *com ) {
+
+  if (!com) return false;
+
+  // check if SwOSCrtl knows the cmd
+  if ( SwOSCtrl::OnDataRecv( com ) ) return true;
+
+  switch ( com->data.cmd ) {
+    case CMD_STATE: return recvState( com );
+  }
+
+  return false;
+
+}
+
+void SwOSSwarmCAM::registerMe( SwOSCom *com ){
+
+  SwOSCtrl::registerMe( com );
+  
+}
+
+void SwOSSwarmCAM::sendAlias( uint8_t *mac ) {
+
+  SwOSCom alias( mac, serialNumber, CMD_ALIAS );
+
+  // hostname
+  alias.sendBuffered( (char *)"HOSTNAME", getAlias() ); 
+
+  // input
+  for (uint8_t i=0; i<4;i++) alias.sendBuffered( input[i]->getName(), input[i]->getAlias() ); 
+  
+  // actor
+  for (uint8_t i=0; i<2;i++) alias.sendBuffered( actor[i]->getName(), actor[i]->getAlias() ); 
+
+  alias.flushBuffer( );
+  
+}
+
+
+void SwOSSwarmCAM::saveAliasToNVS( nvs_handle_t my_handle ) {
+
+  SwOSCtrl::saveAliasToNVS( my_handle );
+  
+}
+
+
+void SwOSSwarmCAM::loadAliasFromNVS( nvs_handle_t my_handle ) {
+
+  SwOSCtrl::loadAliasFromNVS( my_handle );
+  
+}
+
+boolean SwOSSwarmCAM::getRemoteControl( void ) {
+  return _remoteControl;
+}
+
+void SwOSSwarmCAM::setRemoteControl( boolean remoteControl ) {
   _remoteControl = remoteControl;
 }

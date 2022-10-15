@@ -23,6 +23,9 @@
 #define VERSIONDATA     2
 #define MAXALIAS        5
 
+
+
+
 typedef enum {
   CMD_SWARMJOIN,         // I want to join a swarm
   CMD_SWARMJOINACK,      // Acknowledge on join swarm

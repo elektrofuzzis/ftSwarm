@@ -256,6 +256,7 @@ bool SwOSStartCommunication( uint16_t swarmSecret, uint16_t swarmPIN ) {
 
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
+    printf("ERROR: couldn't initialize esp_now\n");
     return false;
   }
 
