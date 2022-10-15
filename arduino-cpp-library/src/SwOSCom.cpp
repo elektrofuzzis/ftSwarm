@@ -184,8 +184,6 @@ esp_err_t SwOSCom::send( void ) {
   xQueueReceive( sendNotification, &event, ESPNOW_MAXDELAY );
 
   // now we could send the data
-  printf("sendung data\n");
-  print();
   return esp_now_send( mac, (uint8_t *) &data, _size() );
   
 }
@@ -258,6 +256,7 @@ bool SwOSStartCommunication( uint16_t swarmSecret, uint16_t swarmPIN ) {
 
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
+    printf("ERROR: couldn't initialize esp_now\n");
     return false;
   }
 
