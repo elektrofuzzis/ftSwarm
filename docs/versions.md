@@ -4,6 +4,17 @@ nav_order: 91
 ---
 ## Version History
 
+### Version 0.4.0 07/2022
+
+Please use ESP32 Board definition V2.0.4. New 2.0.5 isn't stable with ftSwarm.
+
+- Servo's alias name is now saved in NVS.
+- Support of 2 internal and 16 external RGB LEDs.
+- Showing the IP address correctly.
+- Negative speed switches rotation movement.
+- wifi won't go to sleep mode
+- Changed AP mode parameters
+
 ### Version 0.3.0 07/2022
 
 - [Remote control:](../setup/configure_your_device/remote_control) Use your swarm without any line of code.
