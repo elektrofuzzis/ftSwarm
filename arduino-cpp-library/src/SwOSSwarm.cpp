@@ -306,6 +306,8 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
     //WiFi.mode(WIFI_STA);  // station mode, in the past we used WIFI_AP_STA
     
     WiFi.setHostname(Ctrl[0]->getHostname() );
+    WiFi.mode(WIFI_AP_STA);  // station mode, in the past we used WIFI_AP_STA
+
     WiFi.begin(nvs.wifiSSID, nvs.wifiPwd);
     
     // try 10 seconds to join my wifi
