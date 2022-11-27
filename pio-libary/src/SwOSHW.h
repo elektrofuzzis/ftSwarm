@@ -423,7 +423,7 @@ public:
   // commands
 	virtual FtSwarmToggle_t getToggle();
 	virtual bool getState();
-  virtual void setState( bool state );
+  virtual void setState( bool state, bool clearToggle = false );
 };
 
 /***************************************************
@@ -577,6 +577,7 @@ public:
 class SwOSSwarmControl : public SwOSCtrl {
 protected:
   boolean _remoteControl = false;
+  boolean _firstRead     = true;
 public:
   // specific hardware
 	SwOSButton   *button[8];
@@ -603,6 +604,47 @@ public:
   virtual void setRemoteControl( boolean remoteControl );                // set remote control setting
 
 	virtual void read();                       // run measurements
+
+  // **** Communications *****
+  virtual bool recvState( SwOSCom *com );    // receive state from another FtSwarmControl
+  virtual SwOSCom *state2Com( void );        // copy my state in a com struct
+  virtual bool OnDataRecv( SwOSCom *com );   // data via espnow revceived
+  virtual void registerMe( SwOSCom *com );   // fill in my own data in registerCmd datagram
+  virtual void sendAlias( uint8_t *mac );    // send my alias names
+
+};
+
+/***************************************************
+ *
+ *   SwOSSwarmCAM
+ *
+ ***************************************************/
+
+class SwOSSwarmCAM : public SwOSCtrl {
+protected:
+  boolean _remoteControl = false;
+public:
+  // specific hardware
+
+  SwOSSwarmCAM(FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda ); // constructor
+  SwOSSwarmCAM( SwOSCom *com ); // constructor
+  ~SwOSSwarmCAM(); // destructor
+  
+  // administrative stuff
+  virtual bool cmdAlias( char *device, uint8_t port, const char *alias); // set an alias for a IO device
+  virtual SwOSIO *getIO( FtSwarmIOType_t ioType,  FtSwarmPort_t port);   // get a pointer to the requested IO Device via type & port
+  virtual SwOSIO *getIO( const char *name);                              // get a pointer to the requested IO Device via name or alias
+  virtual char* myType();                                                // what I am?
+  virtual FtSwarmControler_t getType();                                  // what I am?
+  virtual void jsonize( JSONize *json, uint8_t id);                      // send board & IO device information as a json string
+  virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
+  virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
+  virtual void setState( SwOSState_t state, uint8_t members, char *SSID ); // visualizes controler's state like booting, error,...
+  virtual void factorySettings( void );                                  // reset factory settings
+  virtual boolean getRemoteControl( void );                              // get remote control setting
+  virtual void setRemoteControl( boolean remoteControl );                // set remote control setting
+
+  virtual void read();                       // run measurements
 
   // **** Communications *****
   virtual bool recvState( SwOSCom *com );    // receive state from another FtSwarmControl

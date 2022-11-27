@@ -1480,7 +1480,7 @@ void SwOSButton::jsonize( JSONize *json, uint8_t id) {
   json->endObject();
 }
 
-void SwOSButton::setState( bool state ) {
+void SwOSButton::setState( bool state, bool clearToggle ) {
   
   if ( state != _lastState ) {
 
@@ -1493,6 +1493,8 @@ void SwOSButton::setState( bool state ) {
       if ( _ctrl->isLocal() ) trigger( FTSWARM_TRIGGERDOWN, state );
     }
   }
+
+  if (clearToggle) _toggle = FTSWARM_NOTOGGLE;
   
   _lastState = state; 
 
@@ -2107,7 +2109,10 @@ bool SwOSSwarmJST::OnDataRecv(SwOSCom *com ) {
     case CMD_STATE: 
       return recvState( com );
     case CMD_SETLED: 
-      if (led[com->data.ledCmd.index]) led[com->data.ledCmd.index]->setValue( com->data.ledCmd.brightness, com->data.ledCmd.color );
+      if (led[com->data.ledCmd.index]) {
+        led[com->data.ledCmd.index]->setBrightness( com->data.ledCmd.brightness );
+        led[com->data.ledCmd.index]->setColor( com->data.ledCmd.color );
+      }
       return true;
     case CMD_SETSERVO:
       if (servo) { 
@@ -2254,7 +2259,7 @@ SwOSSwarmControl::SwOSSwarmControl( SwOSCom *com ):SwOSSwarmControl( com->data.s
   // hc165 & buttons
   uint8_t hc = com->data.registerCmd.control.hc165;
   hc165->setValue( hc );
-  for (uint8_t i=0; i<8; i++) { button[i]->setState( hc & (1<<i) ); }
+  for (uint8_t i=0; i<8; i++) { button[i]->setState( hc & (1<<i), true ); }
   
 }
 
@@ -2359,7 +2364,10 @@ void SwOSSwarmControl::read() {
   // transfer result to buttons
   uint8_t v;
   v = hc165->getValue( );
-  for (uint8_t i=0; i<8; i++) { button[i]->setState( v & (1<<i) ); }
+  for (uint8_t i=0; i<8; i++) { button[i]->setState( v & (1<<i), _firstRead ); }
+
+  // _firstRead allows to suppress a toggle event on buttons during startup
+  _firstRead = false;
 
 }
 

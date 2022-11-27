@@ -423,7 +423,7 @@ public:
   // commands
 	virtual FtSwarmToggle_t getToggle();
 	virtual bool getState();
-  virtual void setState( bool state );
+  virtual void setState( bool state, bool clearToggle = false );
 };
 
 /***************************************************
@@ -577,6 +577,7 @@ public:
 class SwOSSwarmControl : public SwOSCtrl {
 protected:
   boolean _remoteControl = false;
+  boolean _firstRead     = true;
 public:
   // specific hardware
 	SwOSButton   *button[8];
