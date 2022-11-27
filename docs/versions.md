@@ -4,6 +4,14 @@ nav_order: 91
 ---
 ## Version History
 
+### Version 0.4.1 11/2022
+
+- remote motors couldn't handle negative speed values
+- remote led's didn't work properly
+- supress "ghost" toggles on ftSwarmControl buttons during startup
+- ESP Board defintion V2.0.5 is stable now. Future development will be based on 2.0.5.
+- Arduino IDE 2.0.2 is stable now.
+
 ### Version 0.4.0 07/2022
 
 Please use ESP32 Board definition V2.0.4. New 2.0.5 isn't stable with ftSwarm.

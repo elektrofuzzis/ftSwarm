@@ -78,26 +78,18 @@ SwOSCom::SwOSCom( const uint8_t *mac_addr, FtSwarmSerialNumber_t serialNumber, S
 
 size_t SwOSCom::_size( void ) {
 
-  size_t len = sizeof( data.secret ) + sizeof( data.version ) + sizeof( data.serialNumber ) + sizeof( data.cmd );
+  // size is everything with non-zero values
+  uint8_t *ptr = (uint8_t *) (&data) + sizeof(data)-1;
+  size_t len = sizeof(data);
 
-  switch ( data.cmd ) {  
-    case CMD_SWARMJOIN:       return len + sizeof( data.joinCmd );
-    case CMD_SWARMJOINACK:    return len + sizeof( data.joinCmd );
-    case CMD_SWARMLEAVE:      return len;
-    case CMD_ANYBODYOUTTHERE: return len + sizeof( data.registerCmd );
-    case CMD_GOTYOU:          return len + sizeof( data.registerCmd );
-    case CMD_SETLED:          return len + sizeof( data.ledCmd );
-    case CMD_SETACTORPOWER:   return len + sizeof( data.actorPowerCmd );
-    case CMD_SETSERVO:        return len + sizeof( data.servoCmd );
-    case CMD_STATE:           return len + sizeof( data.stateCmd );
-    case CMD_SETSENSORTYPE:   return len + sizeof( data.sensorCmd );
-    case CMD_SETACTORTYPE:    return len + sizeof( data.registerCmd );
-    case CMD_ALIAS:           return len + sizeof( data.aliasCmd );
+  while (len > 0) {
+    if (*ptr != 0 ) break;
+    *ptr--;
+    len--;
   }
 
-  // broom wagon: Did I forget something? send the maximum datagram
-  return sizeof( data );
-  
+  return len;
+
 }
 
 void SwOSCom::sendBuffered(char *name, char *alias ) {
@@ -147,8 +139,10 @@ void SwOSCom::print() {
   printf("command: %d\n", data.cmd);
 
   uint8_t *ptr = (uint8_t *) &data;
-  for (uint8_t i=0; i<sizeof(data); i++) {
-    printf("%02X ", *ptr++ );
+  size_t len = _size();
+  //for (uint8_t i=0; i<sizeof(data); i++) {
+  for (uint8_t i=0; i<len; i++) {
+      printf("%02X ", *ptr++ );
     if ( ( i % 16 ) == 15) printf("\n");
   }
 

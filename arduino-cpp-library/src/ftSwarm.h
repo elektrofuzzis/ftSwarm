@@ -175,7 +175,7 @@ class FtSwarmLightBarrier: public FtSwarmDigitalInput {
 class FtSwarmButton : public FtSwarmIO {
   // onboard buttons, FtSwarmControl only
   public:
-    FtSwarmButton( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
+    FtSwarmButton( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
     FtSwarmButton( const char *name );
     
     bool isPressed();                     // button is pressed

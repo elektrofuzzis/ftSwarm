@@ -962,7 +962,7 @@ void localMenu( void ) {
       case 5: // RGBLeds
         if ( myOSSwarm.Ctrl[0]->getType() == FTSWARM ) {
           anythingChanged = true;
-          myOSSwarm.nvs.RGBLeds = enterNumber( "enter channel [2..16]: ", myOSSwarm.nvs.RGBLeds, 2, 16 );
+          myOSSwarm.nvs.RGBLeds = enterNumber( "enter channel [2..18]: ", myOSSwarm.nvs.RGBLeds, 2, MAXLED );
         }
         break;
 
@@ -1096,7 +1096,7 @@ void aliasMenu( void ) {
   while (1) {
 
     uint8_t item = 0;
-    printf("local controler menu:\n\n");
+    printf("alias controler menu:\n\n");
     
     OSObj[item++] = myOSSwarm.Ctrl[0]; 
     printf("(%2d) hostname %s - %s\n", item, myOSSwarm.Ctrl[0]->getName(), myOSSwarm.Ctrl[0]->getAlias() );
@@ -1168,11 +1168,11 @@ void aliasMenu( void ) {
             
     }
 
-    // User's choise
-    uint8_t choise = enterNumber("\n(0) exit\nlocal controler>", 0, 0, item );
+    // User's choice
+    uint8_t choice = enterNumber("\n(0) exit\nalias>", 0, 0, item );
 
     // exit?
-    if ( choise == 0 ) {
+    if ( choice == 0 ) {
       if ( ( anythingChanged )  &&  yesNo( "Save changes? (Y/N)?" ) ) {
 
         // Open
@@ -1192,9 +1192,9 @@ void aliasMenu( void ) {
     } else {
       char alias[MAXIDENTIFIER];
       char prompt[250];
-      sprintf( prompt, "%s - please enter new alias: ", OSObj[choise-1]->getName() );
+      sprintf( prompt, "%s - please enter new alias: ", OSObj[choice-1]->getName() );
       enterIdentifier( prompt, alias, MAXIDENTIFIER );
-      OSObj[choise-1]->setAlias( alias );
+      OSObj[choice-1]->setAlias( alias );
       anythingChanged = true;
     }
     
@@ -1360,7 +1360,7 @@ void printX( char *str, uint8_t fill ) {
 
 void remoteControl( void ) {
 
-  uint8_t choise, maxChoise;
+  uint8_t choice, maxChoice;
   uint8_t item;
   uint8_t eventPtr[MAXNVSEVENT+1];
   bool anythingChanged = false;
@@ -1416,37 +1416,37 @@ void remoteControl( void ) {
 
     // additional commands
     printf("\n(%d) add event\n", item + 1 );
-    maxChoise = item + 1;
+    maxChoice = item + 1;
 
     if ( item > 0 ) {
       printf("(%d) delete event\n", item + 2 );
-      maxChoise = item + 2;
+      maxChoice = item + 2;
     }
     
     printf("\n(%d) exit\n", 0 );
 
-    // get user's choise
-    choise = enterNumber("\nremote control>", 0, 0, maxChoise );     
+    // get user's choice
+    choice = enterNumber("\nremote control>", 0, 0, maxChoice );     
 
     // do what the user wants
-    if ( choise == 0 ) {
+    if ( choice == 0 ) {
      if ( ( anythingChanged ) && yesNo( "Save changes to nvs [Y/N]? " ) ) myOSSwarm.nvs.save();
      return;
       
-    }  else if ( choise == ( item + 1 ) ) {
+    }  else if ( choice == ( item + 1 ) ) {
       // add
       if ( changeEvent( &myOSSwarm.nvs.eventList.event[eventPtr[0]] ) ) anythingChanged = true;
       
-    } else if ( choise == ( item + 2 ) ) {
+    } else if ( choice == ( item + 2 ) ) {
       // delete
-      choise = enterNumber( "Which event should be deleted? ", 1, 1, item );
-      myOSSwarm.nvs.eventList.event[eventPtr[choise]].actor[0] = '\0';
-      myOSSwarm.nvs.eventList.event[eventPtr[choise]].sensor[0] = '\0';
+      choice = enterNumber( "Which event should be deleted? ", 1, 1, item );
+      myOSSwarm.nvs.eventList.event[eventPtr[choice]].actor[0] = '\0';
+      myOSSwarm.nvs.eventList.event[eventPtr[choice]].sensor[0] = '\0';
       anythingChanged = true;
       
     } else {
       // modify item
-      if ( changeEvent( &myOSSwarm.nvs.eventList.event[eventPtr[choise]] ) ) anythingChanged = true;
+      if ( changeEvent( &myOSSwarm.nvs.eventList.event[eventPtr[choice]] ) ) anythingChanged = true;
     }
 
   }
@@ -1455,7 +1455,7 @@ void remoteControl( void ) {
 
 void FtSwarm::setup( void ) {
 
-  uint8_t choise;
+  uint8_t choice;
 
   printf("\n\nftSwarmOS %s\n\n(C) Christian Bergschneider & Stefan Fuss\n", SWOSVERSION );
 
@@ -1463,12 +1463,12 @@ void FtSwarm::setup( void ) {
 
     // FTSWARMCONTROL special HW
     if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
-      choise = enterNumber("\nMain menu\n\n(1) local settings\n(2) swarm settings\n(3) alias names\n(4) reset to factory settings\n(5) remote control\n\n(0) exit\nmain>", 0, 0, 5);
+      choice = enterNumber("\nMain menu\n\n(1) local settings\n(2) swarm settings\n(3) alias names\n(4) reset to factory settings\n(5) remote control\n\n(0) exit\nmain>", 0, 0, 5);
     } else {
-      choise = enterNumber("\nMain menu\n\n(1) local settings\n(2) swarm settings\n(3) alias names\n(4) reset to factory settings\n\n(0) exit\nmain>", 0, 0, 4);     
+      choice = enterNumber("\nMain menu\n\n(1) local settings\n(2) swarm settings\n(3) alias names\n(4) reset to factory settings\n\n(0) exit\nmain>", 0, 0, 4);     
     }
     
-    switch( choise  ) {
+    switch( choice  ) {
       case 0: return;
       case 1: localMenu(); break;
       case 2: swarmMenu(); break;

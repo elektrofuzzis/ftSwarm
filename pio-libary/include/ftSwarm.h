@@ -28,7 +28,7 @@ typedef uint8_t  FtSwarmPort_t;
 typedef enum { FTSWARM_UNDEF = -1, FTSWARM_INPUT, FTSWARM_ACTOR, FTSWARM_BUTTON, FTSWARM_JOYSTICK, FTSWARM_LED, FTSWARM_SERVO,  FTSWARM_OLED, FTSWARM_GYRO, FTSWARM_HC165, FTSWARM_MAXIOTYPE } FtSwarmIOType_t;
 
 // controler types
-typedef enum { FTSWARM_NOCTRL = -1, FTSWARM = 0, FTSWARMCONTROL = 1 } FtSwarmControler_t;
+typedef enum { FTSWARM_NOCTRL = -1, FTSWARM = 0, FTSWARMCONTROL = 1, FTSWARMCAM = 2 } FtSwarmControler_t;
 
 // sensor types
 typedef enum { FTSWARM_DIGITAL, FTSWARM_ANALOG, FTSWARM_SWITCH, FTSWARM_REEDSWITCH, FTSWARM_LIGHTBARRIER, FTSWARM_VOLTMETER, FTSWARM_OHMMETER, FTSWARM_THERMOMETER, FTSWARM_LDR, FTSWARM_TRAILSENSOR, FTSWARM_COLORSENSOR, FTSWARM_ULTRASONIC, FTSWARM_MAXSENSOR } FtSwarmSensor_t;
@@ -37,7 +37,7 @@ typedef enum { FTSWARM_DIGITAL, FTSWARM_ANALOG, FTSWARM_SWITCH, FTSWARM_REEDSWIT
 typedef enum { FTSWARM_XMOTOR, FTSWARM_XMMOTOR, FTSWARM_TRACTOR,  FTSWARM_ENCODER, FTSWARM_LAMP, FTSWARM_VALVE, FTSWARM_COMPRESSOR, FTSWARM_BUZZER, FTSWARM_MAXACTOR } FtSwarmActor_t;
 
 // HW versions
-typedef enum { FTSWARM_NOVERSION = -1, FTSWARM_1V0, FTSWARM_1V3, FTSWARM_1V15 } FtSwarmVersion_t;
+typedef enum { FTSWARM_NOVERSION = -1, FTSWARM_1V0, FTSWARM_1V3, FTSWARM_1V15, FTSWARM_1V4 } FtSwarmVersion_t;
 
 // how to move
 typedef enum { FTSWARM_COAST, FTSWARM_BRAKE, FTSWARM_ON } FtSwarmMotion_t;
@@ -94,6 +94,8 @@ typedef enum { FTSWARM_TRIGGERUP, FTSWARM_TRIGGERDOWN, FTSWARM_TRIGGERVALUE, FTS
 #define FTSWARM_LED14 13
 #define FTSWARM_LED15 14
 #define FTSWARM_LED16 15
+#define FTSWARM_LED17 16
+#define FTSWARM_LED18 17
 
 // **** some internal types & classes, don't use them at all ****
 
@@ -173,7 +175,7 @@ class FtSwarmLightBarrier: public FtSwarmDigitalInput {
 class FtSwarmButton : public FtSwarmIO {
   // onboard buttons, FtSwarmControl only
   public:
-    FtSwarmButton( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
+    FtSwarmButton( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
     FtSwarmButton( const char *name );
     
     bool isPressed();                     // button is pressed

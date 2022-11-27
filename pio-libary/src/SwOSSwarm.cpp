@@ -6,7 +6,7 @@
  * (C) 2021/22 Christian Bergschneider & Stefan Fuss
  * 
  */
- 
+
 #include <WiFi.h>
 #include <esp_now.h>
 #include <esp_wifi.h>
@@ -241,6 +241,9 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
     printf(SWOSVERSION);
     printf("\n\n(C) Christian Bergschneider & Stefan Fuss\n\nPress any key to enter bios settings.\n");
   }
+
+  // set watchdog to 30s
+  esp_task_wdt_init(30, false);
   
   // initialize random
   srand( time( NULL ) );
@@ -256,10 +259,12 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 	maxCtrl++;
 	if (nvs.controlerType == FTSWARM ) {
 		Ctrl[maxCtrl] = new SwOSSwarmJST(     nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda, nvs.RGBLeds );
-	} else {
+	} else if (nvs.controlerType == FTSWARMCONTROL ) {
 		Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda, nvs.joyZero );
-	}
-
+	} else {
+    Ctrl[maxCtrl] = new SwOSSwarmCAM( nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda );
+  } 
+  
   // Who I am?
   printf("Boot %s (SN:%d).\n", Ctrl[maxCtrl]->getHostname(), Ctrl[maxCtrl]->serialNumber );
 
@@ -280,11 +285,14 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 
   // Start wifi
   setState( STARTWIFI  );
+
+  // best practise to throw away anything during a soft reboot
+  WiFi.disconnect();
   
   if ( ( nvs.APMode ) || Ctrl[0]->maintenanceMode() ) {
     // work as AP in standard or maintennace cable was set
     if (verbose) printf("Create own SSID: %s\n", Ctrl[0]->getHostname());
-    WiFi.mode(WIFI_MODE_AP);
+    WiFi.mode(WIFI_AP_STA);
     esp_wifi_set_ps(WIFI_PS_NONE);
     WiFi.softAPsetHostname(Ctrl[0]->getHostname());
     WiFi.softAP( nvs.wifiSSID, "", nvs.channel); // passphrase not allowed on ESP32WROOM
@@ -293,8 +301,13 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
   } else {
     // normal operation
     if (verbose) printf("Attempting to connect to SSID: %s", nvs.wifiSSID);
+
+    WiFi.mode(WIFI_AP_STA);  // station mode, in the past we used WIFI_AP_STA
+    //WiFi.mode(WIFI_STA);  // station mode, in the past we used WIFI_AP_STA
+    
     WiFi.setHostname(Ctrl[0]->getHostname() );
-    WiFi.mode(WIFI_AP_STA);
+    WiFi.mode(WIFI_AP_STA);  // station mode, in the past we used WIFI_AP_STA
+
     WiFi.begin(nvs.wifiSSID, nvs.wifiPwd);
     
     // try 10 seconds to join my wifi
@@ -333,12 +346,14 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
       ftSwarm.setup();
       ESP.restart();
     }
+
+    esp_wifi_set_ps(WIFI_PS_NONE);
     
     if (verbose) printf("connected!\n");
     Ctrl[0]->IP = WiFi.localIP();
   }
 
-  if (verbose) printf("hostname: %s\nip-address: %s\n", Ctrl[0]->getHostname(), Ctrl[0]->IP.toString() );
+  if (verbose) printf("hostname: %s\nip-address: %d.%d.%d.%d\n", Ctrl[0]->getHostname(), Ctrl[0]->IP[0],  Ctrl[0]->IP[1], Ctrl[0]->IP[2], Ctrl[0]->IP[3]);
 
   // Init ESP-NOW
   if (!SwOSStartCommunication( nvs.swarmSecret, nvs.swarmPIN )) {
@@ -745,6 +760,7 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
       switch (com->data.registerCmd.ctrlType) {
         case FTSWARM:        Ctrl[i] = new SwOSSwarmJST    ( com ); break;
         case FTSWARMCONTROL: Ctrl[i] = new SwOSSwarmControl( com ); break;
+        case FTSWARMCAM:     Ctrl[i] = new SwOSSwarmCAM    ( com ); break;
         default: ESP_LOGW( LOGFTSWARM, "Unknown controler type while adding a new controller to my swarm." ); return;
       }
 

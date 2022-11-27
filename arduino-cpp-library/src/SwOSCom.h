@@ -92,7 +92,7 @@ struct SwOSDatagram_t {
     struct { uint32_t inputValue[4]; int16_t LR[2]; int16_t FB[2]; uint8_t hc165;} stateCmd;
     struct { uint8_t index; FtSwarmSensor_t sensorType; bool normallyOpen; } sensorCmd;
     struct { uint8_t index; int16_t offset; int16_t position; } servoCmd;
-    struct { uint8_t index; FtSwarmMotion_t motionType; uint16_t power; } actorPowerCmd;
+    struct { uint8_t index; FtSwarmMotion_t motionType; int16_t power; } actorPowerCmd;
     struct { uint8_t index; FtSwarmActor_t actorType; } actorTypeCmd;
     struct { uint8_t index; uint8_t brightness; uint32_t color; } ledCmd;
     struct { Alias_t alias[MAXALIAS]; } aliasCmd;
