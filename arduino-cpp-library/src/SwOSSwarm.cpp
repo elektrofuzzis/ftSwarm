@@ -252,8 +252,9 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
   nvs.begin();
 
   // initialize I2C
+  
   if ( nvs.CPU == FTSWARM_1V0 ) Wire.begin( 13, 12 );
-  else Wire.begin();
+  else Wire.begin( 21, 22 );
 
 	// create local controler
 	maxCtrl++;

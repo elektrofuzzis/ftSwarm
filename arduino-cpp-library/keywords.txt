@@ -97,28 +97,29 @@ setOffset			KEYWORD2
 
 # ftSwarmOLED
 display				KEYWORD2
-invertDisplay			KEYWORD2
+invertDisplay		KEYWORD2
 fillScreen			KEYWORD2
-dim				KEYWORD2
+dim					KEYWORD2
+setContrast			KEYWORD2
 getWidth			KEYWORD2
 getHeight			KEYWORD2
 drawPixel			KEYWORD2
 drawLine			KEYWORD2
 drawRect			KEYWORD2
 drawCircle			KEYWORD2
-drawTriangle			KEYWORD2
-drawRoundRect			KEYWORD2
+drawTriangle		KEYWORD2
+drawRoundRect		KEYWORD2
 drawChar			KEYWORD2
 write				KEYWORD2
 setCursor			KEYWORD2
 getCursor			KEYWORD2
-setTextColor			KEYWORD2
+setTextColor		KEYWORD2
 setTextWrap			KEYWORD2
 setRotation			KEYWORD2
 getRotation			KEYWORD2
 setTextSize			KEYWORD2
 getTextSize			KEYWORD2
-getTextBounds			KEYWORD2
+getTextBounds		KEYWORD2
 
 # FtSwarm
 begin				KEYWORD2

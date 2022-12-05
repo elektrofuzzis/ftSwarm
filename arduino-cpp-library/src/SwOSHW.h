@@ -357,6 +357,7 @@ class SwOSOLED : public SwOSIO {
     void invertDisplay(bool i);
     void fillScreen( bool white);    
     void dim(bool dim);
+    void setContrast(uint8_t contrast = 0x8F );
     int16_t getWidth(void);
     int16_t getHeight(void);
     

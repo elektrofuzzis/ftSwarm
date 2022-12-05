@@ -4,6 +4,10 @@ nav_order: 91
 ---
 ## Version History
 
+### Version 0.4.2 11/2022
+
+- new OLED type support
+
 ### Version 0.4.1 11/2022
 
 - remote motors couldn't handle negative speed values
