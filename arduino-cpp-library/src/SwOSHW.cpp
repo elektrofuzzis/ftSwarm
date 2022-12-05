@@ -1278,26 +1278,27 @@ void SwOSOLED::_setupLocal() {
   }
 
   _display->clearDisplay();
-  _display->dim(true);
-   
+  // _display->dim(true);
+     
   // set useful default values
-  setTextColor(true, false);   // Draw white text
+  _display->setTextColor(true, false);   // Draw white text
   _display->cp437(true);       // Use full 256 char 'Code Page 437' font
 
-  setTextSize(3,3);            // Logo
+  _display->setTextSize(3,3);            // Logo
   write( (char *) "ftSwarm", getWidth()/2, 0, FTSWARM_ALIGNCENTER, true );
 
-  setTextSize(1,1);            // hostname & version
+  _display->setTextSize(1,1);            // hostname & version
   char line[100];
   sprintf( line, "%s %s", _ctrl->getHostname(), SWOSVERSION );
   write( line, getWidth()/2, 32, FTSWARM_ALIGNCENTER, true );
 
   // additional default values
-  setTextSize(1, 1);           // Normal 1:1 pixel scale
-  setCursor(0, 0);             // Start at top-left corner
+  _display->setTextSize(1, 1);           // Normal 1:1 pixel scale
+  _display->setCursor(0, 0);             // Start at top-left corner
+
+  dim(true);
 
   display();
-   
 
 }
 
@@ -1320,7 +1321,27 @@ void SwOSOLED::fillScreen(bool white) {
 } 
 
 void SwOSOLED::dim(bool dim) {
-  if (_display) _display->dim( dim );
+
+  // origin adafruit code fails with some displays
+  // if (_display) _display->dim( dim );
+  setContrast( dim ? 1 : 0x8F );
+
+}
+
+void SwOSOLED::setContrast(uint8_t contrast) {
+
+  // send set contrast
+  Wire.beginTransmission( 0x3C );
+  Wire.write( (uint8_t) 0 );
+  Wire.write( 0x81 );
+  Wire.endTransmission();
+
+  // send contast value
+  Wire.beginTransmission( 0x3C );
+  Wire.write( (uint8_t) 0 );
+  Wire.write( contrast );
+  Wire.endTransmission();
+  
 }
 
 void SwOSOLED::drawPixel(int16_t x, int16_t y, bool white ) {
@@ -2235,6 +2256,7 @@ SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, const uint8_t *mac
   }
   hc165 = new SwOSHC165("HC165", this);
   oled  = new SwOSOLED("OLED", this);
+
 }
 
 SwOSSwarmControl::SwOSSwarmControl( SwOSCom *com ):SwOSSwarmControl( com->data.serialNumber, com->mac, false, com->data.registerCmd.versionCPU, com->data.registerCmd.versionHAT, com->data.registerCmd.IAmAKelda, NULL ) {
