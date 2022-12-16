@@ -19,7 +19,7 @@ To install and configure your arduino IDE, please use the following steps:
 `https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`
 
 
-3. Now open `Tools/Boards Manager` and install `esp32 by espressif systems` You need at least version 2.02. Check Boards Manager URL abobe, if only 1.x versions are listed.
+3. Now open `Tools/Boards Manager` and install `esp32 by espressif systems` You need at least version 2.02. Check Boards Manager URL above, if only 1.x versions are listed.
 
 4. Our ftSwarm firmware and library has some dependencies. Please install the following libraries using `Tools\Manage Libraries`:
     - `Adafruit GFX Library`, at least version 1.10.12
