@@ -22,7 +22,7 @@ td, th {
 |---|---|
 | As a control panel, the ftSwarmControl has, in addition to 2 joysticks, 8 buttons and an LCD display, the ability to control 2 DC motors and read 4 digital sensors.| ![ftSwarmControl](assets/img/ftSwarmControl_small.png) | 
 
-Since building this hardware on your own is a little bit tricky, we offer ready to use devices at [www.gundermann.org](www.gundermann.org).
+Since building this hardware on your own is a little bit tricky, we offer ready to use devices at [gundermann-software.de](https://gundermann-software.de/).
 For all who want's to build their own pcb, we provide the needed schematic files at github as well.
 
 [Let's start!](../ftSwarm/startReading){: .btn .float-right } 
