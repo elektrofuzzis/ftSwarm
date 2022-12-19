@@ -10,7 +10,7 @@ nav_order: 1
 In this menu you could setup the wifi connection and some other options of your locally connected controller.
 
 Use the first options to configute of your ftSwarm's wifi connection. After resetting a device to factory settings, it provides it's own SSID.
-This SSID is ftSwarm<SerialNumber> and has no password. You could connect your PC to the device's SSID and connect to the device's status page [http://192.168.4.1](http://192.168.4.1).
+This SSID is ftSwarm&lt;SerialNumber&gt; and has no password. You could connect your PC to the device's SSID and connect to the device's status page [http://192.168.4.1/](http://192.168.4.1i/).
 
 The other options are used to set the number of RGBLeds and to calibrate ftSwarmControl's joysticks.
 
