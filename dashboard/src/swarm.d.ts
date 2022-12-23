@@ -8,12 +8,27 @@ export type BaseIo = {
 export type InputIo = BaseIo & {
     type: "INPUT";
     sensorType: number;
-    subType: number;
+    subType: string;
+    value: string;
+}
+
+export type ButtonIo = BaseIo & {
+    type: "BUTTON";
+    state: number;
+}
+
+export type JoystickIo = BaseIo & {
+    type: "JOYSTICK";
+    valueLr: number;
+    valueFb: number;
+    button: number;
 }
 
 export type ActorIo = BaseIo & {
     type: "ACTOR";
-    subType: "TRACTORMOTOR" | "XMOTOR" | "XMMOTOR" | "ENCODERMOTOR" | "LAMP"
+    subType: "TRACTORMOTOR" | "XMOTOR" | "XMMOTOR" | "ENCODERMOTOR" | "LAMP";
+    motiontype: number;
+    power: number;
 }
 
 export type LedIo = BaseIo & {
@@ -34,7 +49,7 @@ export type Swarm = {
     serialNumber: string;
     hostInfo: string;
     type: "ftSwarm" | "ftSwarmControl"
-    io: [InputIo | ActorIo | LedIo | ServoIo];
+    io: [InputIo | ActorIo | LedIo | ServoIo | ButtonIo | JoystickIo];
 }
 
 export type GetSwarmResponse = {

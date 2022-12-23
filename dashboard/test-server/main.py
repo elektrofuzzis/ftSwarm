@@ -1,6 +1,8 @@
 import flask
+import flask_cors
 
 app = flask.Flask(__name__)
+flask_cors.CORS(app)
 
 
 @app.route('/api/getSwarm')
@@ -46,7 +48,7 @@ def index():
         "icon": "06_ntc.svg",
         "sensorType": 6,
         "subType": "THERMOMETER",
-        "value": "15.5 Â°C"
+        "value": "15.5 °C"
       },
       {
         "name": "Alias5",
@@ -133,7 +135,7 @@ def index():
           "icon": "06_ntc.svg",
           "sensorType": 6,
           "subType": "THERMOMETER",
-          "value": "15.5 Â°C"
+          "value": "15.5 °C"
         },
         {
           "name": "Alias5",
@@ -214,8 +216,8 @@ def index():
           "id": "0-JOYSTICK1",
           "type": "JOYSTICK",
           "icon": "11_joystick.svg",
-          "valueLr": 50,
-          "valueFb": 50,
+          "valueLr": 30,
+          "valueFb": 70,
           "button": 1
         }
       ]
@@ -227,6 +229,18 @@ def index():
 
 @app.route('/api/getToken')
 def get_token():
+    return flask.Response(response="""{"Token": "0000"}""", mimetype='application/json', headers={'Access-Control-Allow-Origin': '*'})
+
+@app.route('/api/actor', methods=['POST'])
+def actor():
+    return flask.Response(response="""{"Token": "0000"}""", mimetype='application/json', headers={'Access-Control-Allow-Origin': '*'})
+
+@app.route('/api/led', methods=['POST'])
+def led():
+    return flask.Response(response="""{"Token": "0000"}""", mimetype='application/json', headers={'Access-Control-Allow-Origin': '*'})
+
+@app.route('/api/servo', methods=['POST'])
+def servo():
     return flask.Response(response="""{"Token": "0000"}""", mimetype='application/json', headers={'Access-Control-Allow-Origin': '*'})
 
 

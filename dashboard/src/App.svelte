@@ -3,8 +3,11 @@
     import Loader from "./lib/Loader.svelte";
     import {ftSwarm} from "./api/FtSwarm";
     import {onDestroy, onMount} from "svelte";
+    import Swarm from "./lib/Swarm.svelte";
+    import Login from "./lib/Login.svelte";
 
-    let swarmLoadingPromise = new Promise(() => {});
+    let swarmLoadingPromise = new Promise(() => {
+    });
 
     onMount(() => {
         swarmLoadingPromise = ftSwarm.load();
@@ -16,12 +19,26 @@
 </script>
 
 {#await swarmLoadingPromise}
-    <Loader />
-{:then swarm}
+    <Loader/>
+{:then _}
     <Navigation>
-        INPUTS
+        <Swarm/>
+        <Login />
+        <p class="center">
+            Read the docs at <a
+                href="https://elektrofuzzis.github.io/ftSwarm">https://elektrofuzzis.github.io/ftSwarm</a><br/>
+            © 2022 Christian Bergschneider & Stefan Fuss
+        </p>
     </Navigation>
 {/await}
 
 <style>
+  .center {
+    margin-top: 8em;
+    text-align: center;
+  }
+
+  .center a {
+    color: var(--color-primary);
+  }
 </style>
