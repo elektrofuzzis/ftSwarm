@@ -26,7 +26,7 @@
         <input bind:this={inputRef} type="color" on:input={() => {
             ftSwarm.debouncedUpdateLed(input.id, inputRef.value.substring(1), input.brightness);
         }}/>
-        <Slider bind:value={input.brightness} max={255} min={-255} oninput={() => {
+        <Slider bind:value={input.brightness} max={255} min={0} oninput={() => {
             ftSwarm.debouncedUpdateLed(input.id, inputRef.value.substring(1), input.brightness);
         }}/>
     </div>

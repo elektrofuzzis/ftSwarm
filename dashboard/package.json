@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "dist": "vite build && python3 builder/build.py",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json"
   },
