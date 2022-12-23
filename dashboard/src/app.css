@@ -1,0 +1,24 @@
+:root {
+  --color-primary: #A6DA95;
+  --color-secondary: #EE99A077;
+  --color-disabled: #eee;
+
+  --background: #181926;
+  --background-nav: #363A4F;
+  --background-selection: #363A4F;
+  --background-card: #24273A;
+  --color-text: #FFF;
+  --color-text-muted: #A0A0A0;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  background: var(--background);
+  color: var(--color-text);
+  font-family: 'Roboto', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+}

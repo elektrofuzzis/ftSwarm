@@ -1,0 +1,33 @@
+<svg width="49" height="48" viewBox="0 0 49 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M40 44H8C5.79086 44 4 42.2091 4 40V8C4 5.79086 5.79086 4 8 4H40C42.2091 4 44 5.79086 44 8V40C44 42.2091 42.2091 44 40 44Z"
+          fill="currentColor"/>
+    <circle cx="9" cy="9" r="2" fill="#363A4F"/>
+    <rect x="8" y="45" width="3" height="3" fill="currentColor"/>
+    <rect x="13" y="45" width="3" height="3" fill="currentColor"/>
+    <rect x="18" y="45" width="3" height="3" fill="currentColor"/>
+    <rect x="23" y="45" width="3" height="3" fill="currentColor"/>
+    <rect x="28" y="45" width="3" height="3" fill="currentColor"/>
+    <rect x="33" y="45" width="3" height="3" fill="currentColor"/>
+    <rect x="38" y="45" width="3" height="3" fill="currentColor"/>
+    <rect x="7" width="3" height="3" fill="currentColor"/>
+    <rect x="12" width="3" height="3" fill="currentColor"/>
+    <rect x="17" width="3" height="3" fill="currentColor"/>
+    <rect x="22" width="3" height="3" fill="currentColor"/>
+    <rect x="27" width="3" height="3" fill="currentColor"/>
+    <rect x="32" width="3" height="3" fill="currentColor"/>
+    <rect x="37" width="3" height="3" fill="currentColor"/>
+    <rect y="40" width="3" height="3" transform="rotate(-90 0 40)" fill="currentColor"/>
+    <rect x="0.00109863" y="35" width="3" height="3" transform="rotate(-90 0.00109863 35)" fill="currentColor"/>
+    <rect x="0.00213623" y="30" width="3" height="3" transform="rotate(-90 0.00213623 30)" fill="currentColor"/>
+    <rect x="0.00323486" y="25" width="3" height="3" transform="rotate(-90 0.00323486 25)" fill="currentColor"/>
+    <rect x="0.00427246" y="20" width="3" height="3" transform="rotate(-90 0.00427246 20)" fill="currentColor"/>
+    <rect x="0.00537109" y="15" width="3" height="3" transform="rotate(-90 0.00537109 15)" fill="currentColor"/>
+    <rect x="0.00646973" y="10" width="3" height="3" transform="rotate(-90 0.00646973 10)" fill="currentColor"/>
+    <rect x="45" y="40" width="3" height="3" transform="rotate(-90 45 40)" fill="currentColor"/>
+    <rect x="45.0011" y="35" width="3" height="3" transform="rotate(-90 45.0011 35)" fill="currentColor"/>
+    <rect x="45.0021" y="30" width="3" height="3" transform="rotate(-90 45.0021 30)" fill="currentColor"/>
+    <rect x="45.0032" y="25" width="3" height="3" transform="rotate(-90 45.0032 25)" fill="currentColor"/>
+    <rect x="45.0043" y="20" width="3" height="3" transform="rotate(-90 45.0043 20)" fill="currentColor"/>
+    <rect x="45.0054" y="15" width="3" height="3" transform="rotate(-90 45.0054 15)" fill="currentColor"/>
+    <rect x="45.0065" y="10" width="3" height="3" transform="rotate(-90 45.0065 10)" fill="currentColor"/>
+</svg>
