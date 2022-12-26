@@ -31,11 +31,11 @@ void SwOSNVS::_initialSetup( void ) {
 
   controlerType = (FtSwarmControler_t) (enterNumber(("Controler Type\n (1) ftSwarm\n (2) ftSwarmControl\n (3) ftSwarmCAM\n>"), 0, 1, 3 ) - 1 );
 
-  switch( enterNumber("CPU Version\n (1) 1V0\n (2) 1V3\n (3) 1V15\n (4) 1V4\n>", 0, 1, 4) ) {
+  switch( enterNumber("CPU Version\n (1) 1.0\n (2) 1.3\n (3) 1.15\n (4) 2.0\n>", 0, 1, 4) ) {
     case 1:  CPU = FTSWARM_1V0;  break;
     case 2:  CPU = FTSWARM_1V3;  break;
     case 3:  CPU = FTSWARM_1V15;  break;
-    case 4:  CPU = FTSWARM_1V4;  break;
+    case 4:  CPU = FTSWARM_2V0;  break;
     default: CPU = FTSWARM_1V0;  break;
   }
 
