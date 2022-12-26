@@ -16,4 +16,6 @@
 
 #define LOGFTSWARM  "FTSWARM"
 #define MAXIDENTIFIER 32
-#define SWOSVERSION "0.4.2"
+#define MAXACTORS 2
+#define MAXINPUTS 6
+#define SWOSVERSION "0.5.0"

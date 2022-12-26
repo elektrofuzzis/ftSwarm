@@ -140,8 +140,7 @@ class SwOSEventInput {
 
 class SwOSInput : public SwOSIO, public SwOSEventInput {
 protected:
-  gpio_num_t        _GPIO, _PUA2, _USTX;
-	adc1_channel_t    _ADCChannel;
+  int8_t            _GPIO, _PUA2, _USTX, _ADCChannel, _ADCUnit;
 	FtSwarmSensor_t   _sensorType;
 	uint32_t          _lastRawValue;
   FtSwarmToggle_t   _toggle;
@@ -476,9 +475,10 @@ public:
   uint8_t mac[ESP_NOW_ETH_ALEN] = {0,0,0,0,0,0};
   
   // common hardware
-	SwOSInput    *input[4];
-	SwOSActor    *actor[2]; 
+	SwOSInput    *input[MAXINPUTS];
+	SwOSActor    *actor[MAXACTORS]; 
 	SwOSGyro     *gyro;
+  uint8_t      inputs, actors;
 	
   // constructor, destructor
   SwOSCtrl( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda );
