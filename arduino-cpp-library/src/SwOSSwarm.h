@@ -62,6 +62,7 @@ public:
 	void jsonize( JSONize *json);                                             // transfer my swarm to a JSON structure
   void getToken( JSONize *json);                                            // get a new token
   uint16_t apiIsAuthorized( uint16_t token );                               // check, if it's a correct token
+  bool apiPeekIsAuthorized( uint16_t token );
   uint16_t apiActorCmd( uint16_t token, char *id, int cmd );                // send an actor's command (from api)
   uint16_t apiActorPower( uint16_t token, char *id, int power );            // send an actor's power (from api)
 	uint16_t apiLEDBrightness( uint16_t token, char *id, int brightness );    // send a LED command (from api)

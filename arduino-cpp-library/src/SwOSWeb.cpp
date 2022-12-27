@@ -1,3 +1,4 @@
+#include "esp_err.h"
 /*
  * SwOSWEB.h
  *
@@ -258,10 +259,24 @@ char * findlast( char *str, char ch) {
 
 }
 
+bool hasAuth( httpd_req_t *req ) {
+  char authBuffer[50];
+  if (httpd_req_get_hdr_value_str(req, "Authorization", authBuffer, sizeof(authBuffer)) == ESP_OK) {
+    char *tokenStr = authBuffer + 7; // sizeof("Bearer ") == 7
+    uint16_t token = atol(tokenStr);
+
+    myOSSwarm.lock();
+    uint16_t status = myOSSwarm.apiIsAuthorized(token);
+    myOSSwarm.unlock();
+
+    return status == 200;
+  }
+
+  return false;
+}
+
 esp_err_t indexHandler(httpd_req_t *req ) {
   // reply on /index.html
-  
-  char line[512];
 
   httpd_resp_set_hdr( req, "Content-Encoding", "gzip" );
   httpd_resp_set_type( req, "text/html" ); 
@@ -302,9 +317,33 @@ esp_err_t apiGetSwarm(httpd_req_t *req ) {
 
   JSONize json(req);
 
+  json.startObject();
+  //json.startObjectNamed("auth");
+
+  char authBuffer[50];
+
+  bool provided = httpd_req_get_hdr_value_str(req, "Authorization", authBuffer, sizeof(authBuffer)) == ESP_OK;
+  bool status = false;
+
   myOSSwarm.lock();
+
+  if (provided) {
+    char *tokenStr = authBuffer + 7;
+    uint16_t token = atol(tokenStr);
+    status = myOSSwarm.apiPeekIsAuthorized(token);    
+  }
+
+  json.variableB("provided", provided);
+  json.variableB("status", status);
+
+  json.endObject();
+  json.text2string("swarms");
+  json.assign();
+
   myOSSwarm.jsonize(&json);
   myOSSwarm.unlock();
+
+  json.endObject();
 
   httpd_resp_sendstr_chunk(req, NULL);
   
@@ -354,7 +393,7 @@ esp_err_t apiActor( httpd_req_t *req ) {
   uint16_t status = 200;
 
   if ( ( !getParameter( req, root, "id", id, true ) ) ||
-       ( !getParameter( req, root, "token", &token, true ) ) ) {
+       ( !hasAuth( req ) ) ) {
     cJSON_Delete( root );
     return sendResponse( req, 400 );
   }
@@ -392,7 +431,7 @@ esp_err_t apiLED( httpd_req_t *req ) {
 
   // mandatory
   if ( (!getParameter( req, root, "id", id, true ) ) ||
-       (!getParameter( req, root, "token", &token, true ) ) ) { 
+       (!hasAuth( req ) ) ) { 
     cJSON_Delete(root); 
     return sendResponse( req, 400 );
   }
@@ -430,7 +469,7 @@ esp_err_t apiServo(httpd_req_t *req ) {
 
   // mandatory
   if ( ( !getParameter( req, root, "id", id, true ) ) ||
-       ( !getParameter( req, root, "token", &token, true ) ) ) {
+       ( !hasAuth( req ) ) ) {
     cJSON_Delete(root);
     return sendResponse( req, 400 );
   }

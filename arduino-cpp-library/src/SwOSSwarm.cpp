@@ -542,6 +542,10 @@ uint16_t SwOSSwarm::apiIsAuthorized( uint16_t token ) {
   return 200;
 }
 
+bool SwOSSwarm::apiPeekIsAuthorized( uint16_t token ) {
+  return token == _lastToken;
+}
+
 uint16_t SwOSSwarm::apiActorCmd( uint16_t token, char *id, int cmd ) {
 // send an actor's command (from api)
 
