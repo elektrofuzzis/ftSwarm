@@ -16,6 +16,7 @@
 #include <freertos/task.h>
 
 #include "easykey.h"
+#include <HardwareSerial.h>
 
 bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, int (*validChar)( int ch ) ) {
 
@@ -27,34 +28,35 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
 
   while (1) {
 
-    // vTaskDelay( 25 / portTICK_PERIOD_MS );
-    
-    ch = getchar();
+    if ( Serial.available()>0 ) {
+      ch = Serial.read();
 
-    switch (ch) {
+      switch (ch) {
       
-      case '\n': strcpy( s, str );
-                 free(str);
-                 putchar('\n');
-                 return true;        
+        case '\n': strcpy( s, str );
+                   free(str);
+                   putchar('\n');
+                   return true;        
       
-      case '\b': 
-      case 127:  if (i>0) { 
-                   str[--i] = '\0'; 
-                   putchar( 127 ); 
-                 }
-                 break;
+        case '\b': 
+        case 127:  if (i>0) { 
+                     str[--i] = '\0'; 
+                     putchar( 127 ); 
+                   }
+                   break;
       
-      case '\e': free(str);
-                 putchar('\n');
-                 return false;
+        case '\e': free(str);
+                   putchar('\n');
+                   return false;
       
-      default:   if ( ( ch < 255 ) && ( validChar( ch ) ) && ( i<size-1) ) {
-                   // add printable char
-                   (hidden)?putchar( '*' ):putchar( ch );
-                   str[i++] = ch;
-                 }
-                 break;
+        default:   if ( ( ch < 255 ) && ( validChar( ch ) ) && ( i<size-1) ) {
+                     // add printable char
+                     (hidden)?putchar( '*' ):putchar( ch );
+                     str[i++] = ch;
+                   }
+                   break;
+      }
+
     }
 
   }

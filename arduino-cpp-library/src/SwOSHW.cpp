@@ -566,7 +566,11 @@ void SwOSInput::read() {
     if ((adc_unit_t)_ADCUnit == ADC_UNIT_1) newValue = adc1_get_raw( (adc1_channel_t )_ADCChannel );
 
     #if CONFIG_IDF_TARGET_ESP32S3
-    if ((adc_unit_t)_ADCUnit == ADC_UNIT_1) adc2_get_raw( (adc2_channel_t )_ADCChannel, ADC_WIDTH_12Bit, &newValue );
+    if ((adc_unit_t)_ADCUnit == ADC_UNIT_2) {
+      int raw;
+      adc2_get_raw( (adc2_channel_t )_ADCChannel, ADC_WIDTH_12Bit, &raw );
+      newValue = raw;
+    }
     #endif
 
     if ( isXMeter() ) {
@@ -1113,13 +1117,14 @@ void SwOSLED::_setupLocal() {
   if (!ledsInitialized) {
 
     // assign port to GPIO.
-    uint8_t gpio;
     switch ( _ctrl->getCPU() ) {
-      case FTSWARM_2V0:  gpio = GPIO_NUM_48; break;
-      case FTSWARM_1V15: gpio = GPIO_NUM_26; break;
-      default:           gpio = GPIO_NUM_33; break;
+      #if CONFIG_IDF_TARGET_ESP32S3
+        case FTSWARM_2V0:  FastLED.addLeds<WS2812, GPIO_NUM_48, GRB>(leds, MAXLED).setCorrection( TypicalLEDStrip ); break;
+      #endif
+      case FTSWARM_1V15: FastLED.addLeds<WS2812, GPIO_NUM_26, GRB>(leds, MAXLED).setCorrection( TypicalLEDStrip ); break;
+      default:           FastLED.addLeds<WS2812, GPIO_NUM_33, GRB>(leds, MAXLED).setCorrection( TypicalLEDStrip ); break;
     }
-    FastLED.addLeds<WS2812, gpio, GRB>(leds, MAXLED).setCorrection( TypicalLEDStrip );  
+      
 
     setBrightness( BRIGHTNESSDEFAULT );
     ledsInitialized = true;
