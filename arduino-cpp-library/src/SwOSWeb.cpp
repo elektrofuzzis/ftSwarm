@@ -2,7 +2,7 @@
 /*
  * SwOSWEB.h
  *
- * fTSwarm buildin WebServer
+ * fTSwarm builtin WebServer
  * 
  * (C) 2021/22 Christian Bergschneider & Stefan Fuss
  * 
@@ -318,11 +318,18 @@ esp_err_t apiGetSwarm(httpd_req_t *req ) {
   JSONize json(req);
 
   json.startObject();
-  //json.startObjectNamed("auth");
+  
+  json.text2string("a"); json.assign(); json.text2string("b");
+  
+  json.startObjectNamed("auth");
 
   char authBuffer[50];
 
-  bool provided = httpd_req_get_hdr_value_str(req, "Authorization", authBuffer, sizeof(authBuffer)) == ESP_OK;
+  ESP_LOGD(LOGFTSWARM, "len: %d", httpd_req_get_hdr_value_len(req, "Host"));
+  bool provided = httpd_req_get_hdr_value_str(req, "Host:", authBuffer, sizeof(authBuffer)) == ESP_OK;
+  //ESP_ERROR_CHECK(httpd_req_get_hdr_value_str(req, "Host:", authBuffer, sizeof(authBuffer)) );
+  ESP_LOGD(LOGFTSWARM, "authBuffer: %s", authBuffer);
+  
   bool status = false;
 
   myOSSwarm.lock();
@@ -337,6 +344,7 @@ esp_err_t apiGetSwarm(httpd_req_t *req ) {
   json.variableB("status", status);
 
   json.endObject();
+  json.newObject(JSONObject);
   json.text2string("swarms");
   json.assign();
 
@@ -550,7 +558,7 @@ bool SwOSStartWebServer( void ) {
   httpd_register_uri_handler(server, &index);
 
   // /api/* HTTP_GET
-  httpd_uri_t apiGet = { .uri = "/api/*", .method = HTTP_GET, .handler = &apiGetHandler, .user_ctx = NULL };
+  httpd_uri_t apiGet = { .uri = "/api/*", .method = HTTP_GET, .handler = &apiGetHandler, .user_ctx = http_context };
   httpd_register_uri_handler(server, &apiGet);
 
   // /api/* HTTP_POST

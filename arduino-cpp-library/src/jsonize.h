@@ -25,7 +25,6 @@ class JSONize {
 protected:
 	httpd_req_t *_req;                      // esp-idf's http-request
 	JSONObject_t lastObject = JSONNone;     // which type I'm processing
-	void newObject( JSONObject_t object );  // start a new object and decide to write a "," 
   
 public:
 	JSONize( httpd_req_t *req );
@@ -42,6 +41,7 @@ public:
   // internal
   void assign();                          // write ":"
 	void text2string( char *t);             // write a sting in quotes: "t"
+  void newObject( JSONObject_t object );  // start a new object and decide to write a "," 
 
   // write variables
 	void variable( const char *identifier, char *value);
