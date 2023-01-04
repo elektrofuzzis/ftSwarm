@@ -24,7 +24,7 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
   char *str = (char *) calloc( size, sizeof(char) );
   uint8_t i = 0;
   
-  printf(prompt);
+  Serial.write(prompt);
 
   while (1) {
 
@@ -35,23 +35,23 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
       
         case '\n': strcpy( s, str );
                    free(str);
-                   putchar('\n');
+                   Serial.write('\n');
                    return true;        
       
         case '\b': 
         case 127:  if (i>0) { 
                      str[--i] = '\0'; 
-                     putchar( 127 ); 
+                     Serial.write( 127 ); 
                    }
                    break;
       
         case '\e': free(str);
-                   putchar('\n');
+                   Serial.write('\n');
                    return false;
       
         default:   if ( ( ch < 255 ) && ( validChar( ch ) ) && ( i<size-1) ) {
                      // add printable char
-                     (hidden)?putchar( '*' ):putchar( ch );
+                     (hidden)?Serial.write( '*' ):Serial.write( ch );
                      str[i++] = ch;
                    }
                    break;

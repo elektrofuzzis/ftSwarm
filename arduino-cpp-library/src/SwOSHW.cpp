@@ -1698,11 +1698,11 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool lo
 
   // # of inputs
   inputs = 4;
-  if ( ( _CPU == FTSWARM ) && ( HAT >= FTSWARM_2V0 ) ) inputs = 6;
-  if ( _CPU == FTSWARMCAM )                            inputs = 2;
+  if ( CPU == FTSWARM_2V0 ) inputs = 6;
+  
   // # of actors
   actors = 2;
-
+  
   // define common hardware
   for (uint8_t i=0; i<MAXINPUTS; i++) { 
     if ( i < inputs ) input[i] = new SwOSInput("A", i, this );
@@ -2016,6 +2016,8 @@ void SwOSCtrl::registerMe( SwOSCom *com ){
 
 SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda, uint8_t xRGBLeds ):SwOSCtrl( SN, macAddress, local, CPU, HAT, IAmAKelda ) {
 
+  ESP_LOGD( LOGFTSWARM, "erster Konstruktur %d", inputs );
+
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
   setName( buffer );
@@ -2029,6 +2031,11 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, const uint8_t *macAddress,
 }
 
 SwOSSwarmJST::SwOSSwarmJST( SwOSCom *com ):SwOSSwarmJST( com->data.serialNumber, com->mac, false, com->data.registerCmd.versionCPU, com->data.registerCmd.versionHAT, com->data.registerCmd.IAmAKelda, com->data.registerCmd.jst.RGBLeds ) {
+
+
+ESP_LOGD( LOGFTSWARM, "zweiter Konstruktur");
+
+while(1) delay(500);
 
   // inputs
   for (uint8_t i=0; i<inputs; i++ ) {
@@ -2291,8 +2298,8 @@ void SwOSCtrl::saveAliasToNVS( nvs_handle_t my_handle ) {
 void SwOSCtrl::loadAliasFromNVS( nvs_handle_t my_handle ) {
 
   SwOSObj::loadAliasFromNVS( my_handle );
-  for (uint8_t i=0; i<actors; i++ ) input[i]->loadAliasFromNVS( my_handle );
-  for (uint8_t i=0; i<inputs; i++ ) actor[i]->loadAliasFromNVS( my_handle );
+  for (uint8_t i=0; i<inputs; i++ ) input[i]->loadAliasFromNVS( my_handle );
+  for (uint8_t i=0; i<actors; i++ ) actor[i]->loadAliasFromNVS( my_handle );
   
 }
 

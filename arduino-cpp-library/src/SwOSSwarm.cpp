@@ -242,20 +242,16 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
     printf("\n\n(C) Christian Bergschneider & Stefan Fuss\n\nPress any key to enter bios settings.\n");
   }
 
-ESP_LOGD( LOGFTSWARM, "vor Watchdog");
-
   // set watchdog to 30s
   esp_task_wdt_init(30, false);
   
-ESP_LOGD( LOGFTSWARM, "vor SRAND");
   // initialize random
   srand( time( NULL ) );
 
-ESP_LOGD( LOGFTSWARM, "vor nvs");
   // initialize nvs
   nvs.begin();
+  nvs.printNVS();
 
-ESP_LOGD( LOGFTSWARM, "vor I2C");
   // initialize I2C
   switch ( nvs.CPU ) {
     case FTSWARM_2V0: Wire.begin(  5,  4); break;
