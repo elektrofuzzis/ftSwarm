@@ -250,7 +250,6 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 
   // initialize nvs
   nvs.begin();
-  nvs.printNVS();
 
   // initialize I2C
   switch ( nvs.CPU ) {
@@ -259,7 +258,6 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
     default:          Wire.begin( 21, 22 ); break;
   }
 
-ESP_LOGD( LOGFTSWARM, "vor local controller");
 	// create local controler
 	maxCtrl++;
 	if (nvs.controlerType == FTSWARM ) {
