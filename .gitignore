@@ -347,6 +347,8 @@ old/
 3D
 release/
 arduino-cpp-library/src/src.ino
+arduino-cpp-library/src/debug.cfg
+
 
 # Build Files
 deployment/
