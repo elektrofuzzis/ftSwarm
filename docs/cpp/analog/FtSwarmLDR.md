@@ -5,7 +5,7 @@ grand_parent: Writing C++ Applications
 nav_order: 1
 ---
 
-<div class="ftimgdetail"> <img src="../../../../assets/img/analog/ldr.png"><div>Image source: fischertechnik</div></div>
+<div class="ftimgdetail"> <img src="../../../assets/img/analog/ldr.png"><div>Image source: fischertechnik</div></div>
 
 ## FtSwarmLDR
 
@@ -30,4 +30,4 @@ Constructor to create a FtSwarmLDR object. If the referenced controller isn't co
 
 #### int32_t getValue()
 
-Returns the the raw reading of the LDR. The lower the measured value is, the higher the light intensity is.
+Returns the raw reading of the LDR. The lower the measured value is, the higher the light intensity is.

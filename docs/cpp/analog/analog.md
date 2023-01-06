@@ -9,7 +9,7 @@ has_toc: no
 
 The firmware supports a bunch of analog sensors.
 
-In standard, technically the analaog sensor is a resistor. These sensors could be connected to every of ftSwarm's inputs. At ftSwarmControl you could just use `FTSWARM_A1`.
+In standard, technically the analog sensor is a resistor. These sensors could be connected to every of ftSwarm's inputs. At ftSwarmControl you could just use `FTSWARM_A1`.
 
 ftSwarm is able to measure voltages at input `FTSWARM_A2` as well. 
 

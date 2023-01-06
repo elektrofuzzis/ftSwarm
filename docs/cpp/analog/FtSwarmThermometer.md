@@ -5,7 +5,7 @@ grand_parent: Writing C++ Applications
 nav_order: 2
 ---
 
-<div class="ftimgdetail"> <img src="../../../../assets/img/analog/sensor-ntc.png"><div>Image source: fischertechnik</div></div>
+<div class="ftimgdetail"> <img src="../../../assets/img/analog/sensor-ntc.png"><div>Image source: fischertechnik</div></div>
 
 ## FtSwarmThermometer
 
@@ -47,4 +47,4 @@ Returns the measured resistance in °Kelvin.
 
 #### int32_t getValue()
 
-Returns the the raw reading of the ADC.
+Returns the raw reading of the ADC.

@@ -5,7 +5,7 @@ grand_parent: Writing C++ Applications
 nav_order: 1
 ---
 
-<div class="ftimgdetail"> <img src="../../../../assets/img/analog/joystick.png"><div>Image source: fischertechnik</div></div>
+<div class="ftimgdetail"> <img src="../../../assets/img/analog/joystick.png"><div>Image source: fischertechnik</div></div>
 
 ## FtSwarmJoystick
 
