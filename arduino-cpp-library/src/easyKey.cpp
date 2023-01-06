@@ -15,8 +15,18 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-#include "easykey.h"
+#include "easyKey.h"
 #include <HardwareSerial.h>
+
+bool anyKey( void ) {
+
+  bool result = Serial.available();
+  
+  while( Serial.available() ) { Serial.read(); delay(25); }
+
+  return result;
+  
+}
 
 bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, int (*validChar)( int ch ) ) {
 
@@ -31,13 +41,15 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
     if ( Serial.available()>0 ) {
       ch = Serial.read();
 
+      // CR/LF
+      if ( ( ch == '\n' ) || ( ch == '\r' ) ) {
+        strcpy( s, str );
+        free(str);
+        Serial.write('\n');
+        return true;
+      }
+      
       switch (ch) {
-      
-        case '\n': strcpy( s, str );
-                   free(str);
-                   Serial.write('\n');
-                   return true;        
-      
         case '\b': 
         case 127:  if (i>0) { 
                      str[--i] = '\0'; 

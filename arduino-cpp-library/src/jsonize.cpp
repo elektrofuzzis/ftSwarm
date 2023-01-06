@@ -17,10 +17,14 @@ void JSONize::newObject( JSONObject_t object ) {
 
   char line[50];
 
-  if ( (lastObject == object) ||
+  // need a spacer?
+  if ( ( lastObject == object ) ||
      ( ( lastObject == JSONVariable) && (object = JSONArray) )
      ) {
-    httpd_resp_sendstr_chunk( _req, "," );
+
+    // spacer is not needed, if supress Flag is set and last object is an object
+    if ( !( (noSpacer) && ( object == JSONObject) ) ) httpd_resp_sendstr_chunk( _req, "," );
+    noSpacer = false;
   }
 
   lastObject = object;
@@ -43,20 +47,16 @@ void JSONize::endArray( ) {
 
 }
 
-void JSONize::startObject( ) {
+void JSONize::startObject( const char *identifier ) {
 
-  newObject(JSONObject);
-
-  httpd_resp_sendstr_chunk( _req, "{" );
-}
-
-void JSONize::startObjectNamed( const char *identifier ) {
   newObject(JSONObject);
 
   if (identifier) {
     text2string( (char *) identifier );
     assign();
+    noSpacer = true;
   }
+
   httpd_resp_sendstr_chunk( _req, "{" );
 }
 

@@ -9,7 +9,7 @@
  
 #include "ftSwarm.h"
 #include "SwOSSwarm.h"
-#include "easykey.h"
+#include "easyKey.h"
 
 FtSwarm ftSwarm;
 

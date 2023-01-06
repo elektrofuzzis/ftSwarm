@@ -10,11 +10,11 @@
 #include <WiFi.h>
 #include <esp_now.h>
 #include <esp_wifi.h>
+#include <ESPmDNS.h>
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
-#include <driver/uart.h>
 #include "esp_task_wdt.h"
 
 #include "SwOSNVS.h"
@@ -23,7 +23,7 @@
 #include "SwOSSwarm.h"
 #include "SwOSWeb.h"
 #include "ftSwarm.h"
-#include "easykey.h"
+#include "easyKey.h"
 
 // There can only be once!
 SwOSSwarm myOSSwarm;
@@ -107,60 +107,14 @@ void readTask( void *parameter ) {
  *
  ***************************************************/
 
-/*
- export default function (prevAccessToken: number, pin: number) {
-    let pinCodeTokenMix = 0
-    let prevAccessTokenBinaryString = prevAccessToken.toString(2)
+uint16_t SwOSSwarm::_nextToken( bool rotateToken ) {
 
-    for (let i = 0; i < prevAccessTokenBinaryString.length; i++) {
-        pinCodeTokenMix += (prevAccessTokenBinaryString.charAt(i) == "0" ? 0 : 1)^pin << i^pin;
-    }
+  uint32_t pin      = nvs.swarmPIN;
+  uint16_t newToken = ( 2 + ( _lastToken ^ pin ) ) & 0xFFFF;
 
-    pinCodeTokenMix ^= pin << pinCodeTokenMix&prevAccessToken
-    pinCodeTokenMix = (~pin) ^ pinCodeTokenMix
+  if ( rotateToken ) _lastToken = newToken;
 
-    pinCodeTokenMix *= pinCodeTokenMix
-
-    // Get the first 16 bits out of this
-    let pinCodeTokenMixBinaryString = pinCodeTokenMix.toString(2)
-    let first16bits = 0
-    for (let i = 0; i < Math.min(pinCodeTokenMixBinaryString.length, 16); i++) {
-        first16bits += (pinCodeTokenMixBinaryString.charAt(i) == "0" ? 0 : 1) << i;
-    }
-
-    return first16bits
-}
-
-
-uint16_t SwOSSwarm::_nextToken( ) {
-
-  uint32_t pin              = nvs.swarmPIN;
-  uint32_t prevAccessToken  = _lastToken;
-  uint32_t pinCodeTokenMix  = 0;
-
-  uint32_t flag = 1<<15;
-  for ( uint8_t i=0; i<16; i++ ) {
-    pinCodeTokenMix += ( ( prevAccessToken & flag ) ^ pin ) << (i ^ pin );
-  }
-
-  pinCodeTokenMix ^= pin << ( pinCodeTokenMix & prevAccessToken );
-  pinCodeTokenMix = (~pin) ^ pinCodeTokenMix;
-
-  pinCodeTokenMix *= pinCodeTokenMix;
-
-  _lastToken = ( ( pinCodeTokenMix >> 16) & 0xFFFF );
-
-  return _lastToken;
-  
-}
-*/
-
-uint16_t SwOSSwarm::_nextToken( ) {
-
-  uint32_t pin = nvs.swarmPIN;
-  _lastToken = ( 2 + ( _lastToken ^ pin ) ) & 0xFFFF;
-
-  return _lastToken;
+  return newToken;
   
 }
 
@@ -168,7 +122,6 @@ SwOSIO *SwOSSwarm::_waitFor( char *alias ) {
 
   SwOSIO *me = NULL;
   bool   firstTry = true;
-  int    keys = 0;
 
   while (!me) {
 
@@ -184,8 +137,7 @@ SwOSIO *SwOSSwarm::_waitFor( char *alias ) {
     if (!me) vTaskDelay( 25 / portTICK_PERIOD_MS );
     
     // any key pressed?
-    uart_get_buffered_data_len( UART_NUM_0, (size_t*)&keys);
-    if ( keys > 0 ) return NULL;
+    if ( anyKey() ) return NULL;
 
   }
 
@@ -305,24 +257,23 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
     // normal operation
     if (verbose) printf("Attempting to connect to SSID: %s", nvs.wifiSSID);
 
-    WiFi.mode(WIFI_AP_STA);  // station mode, in the past we used WIFI_AP_STA
-    //WiFi.mode(WIFI_STA);  // station mode, in the past we used WIFI_AP_STA
+    WiFi.mode(WIFI_AP_STA);  // AP_STA needed to get espnow running
     
     WiFi.setHostname(Ctrl[0]->getHostname() );
-    WiFi.mode(WIFI_AP_STA);  // station mode, in the past we used WIFI_AP_STA
 
     WiFi.begin(nvs.wifiSSID, nvs.wifiPwd);
+
+    bool keyBreak = false;
     
     // try 10 seconds to join my wifi
-    int keys = 0;
     for (uint8_t i=0; i<20; i++ ) {
 
       // connected?
       if (WiFi.status() == WL_CONNECTED) break;
 
       // any key ?
-      uart_get_buffered_data_len( UART_NUM_0, (size_t*)&keys);
-      if ( keys > 0 ) break;
+      keyBreak = anyKey();
+      if ( keyBreak ) break;
 
       // user entertainment
       if (verbose) { 
@@ -336,7 +287,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
     }
 
     // any key?
-    if ( keys > 0 ) {
+    if ( keyBreak ) {
       printf( "\nStarting setup..\n" );
       ftSwarm.setup();
       ESP.restart();
@@ -349,6 +300,9 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
       ftSwarm.setup();
       ESP.restart();
     }
+
+    // register hostname
+    MDNS.begin(Ctrl[0]->getHostname());
 
     esp_wifi_set_ps(WIFI_PS_NONE);
     
@@ -527,9 +481,9 @@ bool SwOSSwarm::_splitId( char *id, uint8_t *index, char *io, size_t sizeIO) {
 	return true;
 } 
 
-uint16_t SwOSSwarm::apiIsAuthorized( uint16_t token ) {
+uint16_t SwOSSwarm::apiIsAuthorized( uint16_t token, bool rotateToken ) {
 
-  uint16_t n = _nextToken();
+  uint16_t n = _nextToken(rotateToken);
 
   if ( token != n ) return 401;
 
@@ -540,14 +494,14 @@ bool SwOSSwarm::apiPeekIsAuthorized( uint16_t token ) {
   return token == _lastToken;
 }
 
-uint16_t SwOSSwarm::apiActorCmd( uint16_t token, char *id, int cmd ) {
+uint16_t SwOSSwarm::apiActorCmd( uint16_t token, char *id, int cmd, bool rotateToken ) {
 // send an actor's command (from api)
 
 	uint8_t i;
 	char    io[20];
 
   // Token error
-  if ( token != _nextToken() ) return 401;
+  if ( token != _nextToken(rotateToken) ) return 401;
 
 	// split ID to device and nr
 	if (!_splitId(id, &i, io, sizeof(io))) return 400;
@@ -559,14 +513,14 @@ uint16_t SwOSSwarm::apiActorCmd( uint16_t token, char *id, int cmd ) {
 
 }
 
-uint16_t SwOSSwarm::apiActorPower( uint16_t token, char *id, int power ) {
+uint16_t SwOSSwarm::apiActorPower( uint16_t token, char *id, int power, bool rotateToken ) {
 // send an actor's power(from api)
 
   uint8_t i;
   char    io[20];
 
   // Token error
-  if ( token != _nextToken() ) return 401;
+  if ( token != _nextToken(rotateToken) ) return 401;
 
   // split ID to device and nr
   if (!_splitId(id, &i, io, sizeof(io))) return 400;
@@ -578,14 +532,14 @@ uint16_t SwOSSwarm::apiActorPower( uint16_t token, char *id, int power ) {
   
 }
 
-uint16_t SwOSSwarm::apiLEDBrightness( uint16_t token, char *id, int brightness ) {
+uint16_t SwOSSwarm::apiLEDBrightness( uint16_t token, char *id, int brightness, bool rotateToken ) {
   // send a LED command (from api)
 
 	uint8_t i;
 	char    io[20];
 
   // Token error
-  if ( token != _nextToken() ) return 401;
+  if ( token != _nextToken(rotateToken) ) return 401;
 
 	// split ID to device and nr
 	if (!_splitId(id, &i, io, sizeof(io))) return 400;
@@ -597,14 +551,14 @@ uint16_t SwOSSwarm::apiLEDBrightness( uint16_t token, char *id, int brightness )
 
 }
 
-uint16_t SwOSSwarm::apiLEDColor( uint16_t token, char *id, int color ) {
+uint16_t SwOSSwarm::apiLEDColor( uint16_t token, char *id, int color, bool rotateToken ) {
   // send a LED command (from api)
 
   uint8_t i;
   char    io[20];
 
   // Token error
-  if ( token != _nextToken() ) return 401;
+  if ( token != _nextToken(rotateToken) ) return 401;
 
   // split ID to device and nr
   if (!_splitId(id, &i, io, sizeof(io))) return 400;
@@ -616,14 +570,14 @@ uint16_t SwOSSwarm::apiLEDColor( uint16_t token, char *id, int color ) {
 
 }
 
-uint16_t SwOSSwarm::apiServoOffset( uint16_t token, char *id, int offset ) {
+uint16_t SwOSSwarm::apiServoOffset( uint16_t token, char *id, int offset, bool rotateToken ) {
   // send a Servo command (from api)
   
 	uint8_t i;
 	char    io[20];
 
   // Token error
-  if ( token != _nextToken() ) return 401;
+  if ( token != _nextToken(rotateToken) ) return 401;
 
 	// split ID to device and nr
 	if (!_splitId(id, &i, io, sizeof(io))) return 400;
@@ -635,14 +589,14 @@ uint16_t SwOSSwarm::apiServoOffset( uint16_t token, char *id, int offset ) {
   
 }
 
-uint16_t SwOSSwarm::apiServoPosition( uint16_t token, char *id, int position) {
+uint16_t SwOSSwarm::apiServoPosition( uint16_t token, char *id, int position, bool rotateToken) {
   // send a Servo command (from api)
   
   uint8_t i;
   char    io[20];
 
   // Token error
-  if ( token != _nextToken() ) return 401;
+  if ( token != _nextToken(rotateToken) ) return 401;
 
   // split ID to device and nr
   if (!_splitId(id, &i, io, sizeof(io))) return 400;

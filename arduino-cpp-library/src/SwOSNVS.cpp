@@ -14,7 +14,7 @@
 
 #include "ftSwarm.h"
 #include "SwOSNVS.h"
-#include "easykey.h"
+#include "easyKey.h"
 
 NVSEvent::NVSEvent() {
   sensor[0] = '\0';

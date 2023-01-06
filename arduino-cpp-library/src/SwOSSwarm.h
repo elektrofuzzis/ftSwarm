@@ -31,7 +31,7 @@ protected:
 
   uint8_t _getIndex( FtSwarmSerialNumber_t serialNumber );               // return index of controler with this s/n or are free slot if not found
 	bool    _splitId( char *id, uint8_t *index, char *io, size_t sizeIO);  // split identifier
-  uint16_t _nextToken( void );
+  uint16_t _nextToken( bool rotateToken);
   SwOSIO *_waitFor( char *alias );
   bool    _startEvents( void );
   
@@ -59,16 +59,16 @@ public:
   virtual SwOSIO* getIO( const char *name );
 
   // **** REST API ****
-	void jsonize( JSONize *json);                                             // transfer my swarm to a JSON structure
-  void getToken( JSONize *json);                                            // get a new token
-  uint16_t apiIsAuthorized( uint16_t token );                               // check, if it's a correct token
+	void jsonize( JSONize *json);                                                               // transfer my swarm to a JSON structure
+  void getToken( JSONize *json);                                                              // get a new token
+  uint16_t apiIsAuthorized( uint16_t token, bool rotateToken );                               // check, if it's a correct token
   bool apiPeekIsAuthorized( uint16_t token );
-  uint16_t apiActorCmd( uint16_t token, char *id, int cmd );                // send an actor's command (from api)
-  uint16_t apiActorPower( uint16_t token, char *id, int power );            // send an actor's power (from api)
-	uint16_t apiLEDBrightness( uint16_t token, char *id, int brightness );    // send a LED command (from api)
-	uint16_t apiLEDColor( uint16_t token, char *id, int color);               // send a LED command (from api)
-  uint16_t apiServoOffset( uint16_t token, char *id, int offset );          // send a Servo command (from api)
-  uint16_t apiServoPosition( uint16_t token, char *id, int position);       // send a Servo command (from api)
+  uint16_t apiActorCmd( uint16_t token, char *id, int cmd, bool rotateToken );                // send an actor's command (from api)
+  uint16_t apiActorPower( uint16_t token, char *id, int power, bool rotateToken );            // send an actor's power (from api)
+	uint16_t apiLEDBrightness( uint16_t token, char *id, int brightness, bool rotateToken );    // send a LED command (from api)
+	uint16_t apiLEDColor( uint16_t token, char *id, int color, bool rotateToken);               // send a LED command (from api)
+  uint16_t apiServoOffset( uint16_t token, char *id, int offset, bool rotateToken );          // send a Servo command (from api)
+  uint16_t apiServoPosition( uint16_t token, char *id, int position, bool rotateToken);       // send a Servo command (from api)
 
   void setState( SwOSState_t state );
     // visualizes controler's state

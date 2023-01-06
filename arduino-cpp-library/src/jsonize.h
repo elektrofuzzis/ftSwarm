@@ -25,16 +25,16 @@ class JSONize {
 protected:
 	httpd_req_t *_req;                      // esp-idf's http-request
 	JSONObject_t lastObject = JSONNone;     // which type I'm processing
+  bool noSpacer = true;                   // supress first ,
   
 public:
 	JSONize( httpd_req_t *req );
 
   // start and end a new object
-  void startObject();
-  void startObjectNamed( const char *identifier );
+  void startObject(const char *identifier = NULL );
   void endObject();
 
-  // start and end a ne array
+  // start and end a new array
 	void startArray( const char* identifier);
 	void endArray();
 
