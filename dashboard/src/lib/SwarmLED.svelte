@@ -4,15 +4,17 @@
     import Slider from "./Slider.svelte";
     import {onDestroy, onMount} from "svelte";
     import {ftSwarm} from "../api/FtSwarm";
+    import {isLoggedIn} from "../stores";
 
     export let input: LedIo;
     let inputRef;
     let timeout: NodeJS.Timeout;
+    let disabled: boolean = !$isLoggedIn;
 
     onMount(() => {
         clearTimeout(timeout);
         timeout = setInterval(() => {
-            inputRef.value = "#" + input.color;
+            inputRef.value = input.color;
         }, 100);
     });
 
@@ -23,11 +25,11 @@
 
 <SwarmCtrlBase colspan={2} descriptor="LED" io={input}>
     <div class="container">
-        <input bind:this={inputRef} type="color" on:input={() => {
-            ftSwarm.debouncedUpdateLed(input.id, inputRef.value.substring(1), input.brightness);
+        <input bind:this={inputRef} type="color" {disabled} on:input={() => {
+            ftSwarm.debouncedUpdateLed(input.id, inputRef.value, input.brightness);
         }}/>
         <Slider bind:value={input.brightness} max={255} min={0} oninput={() => {
-            ftSwarm.debouncedUpdateLed(input.id, inputRef.value.substring(1), input.brightness);
+            ftSwarm.debouncedUpdateLed(input.id, inputRef.value, input.brightness);
         }}/>
     </div>
 </SwarmCtrlBase>

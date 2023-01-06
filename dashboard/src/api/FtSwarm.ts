@@ -1,4 +1,4 @@
-import {swarmApiData} from "../stores";
+import {isLoggedIn, swarmApiData} from "../stores";
 import {nextToken} from "./auth";
 import Swal from "sweetalert2";
 
@@ -117,6 +117,28 @@ class FtSwarm {
     }
 
     async fetchWithAuth(url: string, options: RequestInit = {}) {
+        let state = false
+
+        isLoggedIn.update((v) => {
+            state = v
+            return v
+        })
+
+        if (!state) {
+            await Swal.fire({
+                title: 'Error',
+                text: 'You are not logged in',
+                icon: 'error',
+                toast: true,
+                position: 'top-end',
+                timer: 3000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+                showCancelButton: false
+            })
+            throw new Error('Not logged in')
+        }
+
         await this.performTokenMod()
         return this.fetch(url, options)
     }

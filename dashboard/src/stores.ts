@@ -9,4 +9,10 @@ export const swarmApiData = writable<GetSwarmResponse>({
     swarms: []
 });
 
+export const isLoggedIn = writable(false);
+
+swarmApiData.subscribe((data) => {
+    isLoggedIn.set(!!data.auth.status);
+});
+
 export const currentSwarm = writable(0);

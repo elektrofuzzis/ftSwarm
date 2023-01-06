@@ -1,11 +1,17 @@
 <script lang="ts">
+    import {isLoggedIn} from "../stores.js";
+
     export let min: number = 0;
     export let max: number = 100;
     export let value: number = 50;
     export let oninput: (event: Event) => void;
+
+    let disabled: boolean = !$isLoggedIn;
+
+    console.log($isLoggedIn);
 </script>
 
-<input bind:value max={max} min={min} type="range" on:input={oninput}/>
+<input bind:value max={max} min={min} type="range" on:input={oninput} {disabled} />
 
 <style>
   input {

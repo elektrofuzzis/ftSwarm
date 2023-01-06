@@ -3,13 +3,15 @@
     import SwarmCtrlBase from "./SwarmCtrlBase.svelte";
     import Slider from "./Slider.svelte";
     import {ftSwarm} from "../api/FtSwarm";
+    import {isLoggedIn} from "../stores";
 
     export let input: ActorIo;
+    let disabled: boolean = !$isLoggedIn;
 </script>
 
 <SwarmCtrlBase colspan={2} descriptor={input.subType} io={input}>
     <div class="container">
-        <select bind:value={input.motiontype} on:change={(_) => {
+        <select bind:value={input.motiontype} {disabled} on:change={(_) => {
             ftSwarm.debouncedUpdateMotor(input.id, input.motiontype, input.power);
         }}>
             <option value={0}>COAST</option>
