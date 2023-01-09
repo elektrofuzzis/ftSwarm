@@ -9,7 +9,7 @@ nav_order: 4
 ## FtSwarmEncoderMotor
 
 `setSpeed(speed)` is used to start & stop your motor. A positive speed value will run the motor clockwise, a negative one will run the motor counterclockwise. 
-Depenend on you mechanical load, the motor needs a minimum speed to turn. 
+Depenend on the mechanical load, the motor needs a minimum speed to turn. 
 
 `setSpeed(0)` will stop the motor. The output will be released and you could turn the motor manualy. 
 
@@ -30,20 +30,20 @@ In a future release, the encoder could be connected to any input to control dist
 
 #### FtSwarmEncoderMotor(FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port)
 
-Constructor to create a FtSwarmEncoderMotor object. If the referenced controller isn't connected to the swarm yet, the firmware will waits until the controller gets online.
+Constructor to create a FtSwarmEncoderMotor object. If the referenced controller isn't connected to the swarm yet, the firmware will wait until the controller gets online.
 
 - serialNumber: Serial number of the used ftSwarm controller.
 - port: Port number, `FTSWARM_M1` or `FTSWARM_M2`
 
 #### FtSwarmEncoderMotor( const char *name )
 
-Constructor to create a FtSwarmEncoderMotor object. If the referenced controller isn't connected to the swarm yet, the firmware will waits until the controller gets online.
+Constructor to create a FtSwarmEncoderMotor object. If the referenced controller isn't connected to the swarm yet, the firmware will wait until the controller gets online.
 
 - name: Alias name of the IO port.
 
 #### void setSpeed( int16_t speed )
 
-Sets the motors speed.
+Sets the motor's speed.
 
 - speed: speed value in the range from -256 to 256
 

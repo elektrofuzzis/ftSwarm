@@ -17,14 +17,14 @@ The red marked pin of the photo transistor needs to be connected to the inputs r
 
 #### FtSwarmLDR(FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port)
 
-Constructor to create a FtSwarmLDR object. If the referenced controller isn't connected to the swarm yet, the firmware will waits until the controller gets online.
+Constructor to create a FtSwarmLDR object. If the referenced controller isn't connected to the swarm yet, the firmware will wait until the controller gets online.
 
 - serialNumber: Serial number of the used ftSwarm controller.
 - port: Port number, `FTSWARM_A1`, `FTSWARM_A2`, `FTSWARM_A3` or `FTSWARM_A4`. ftSwarmControl supports `FTSWARM_A1` only.
 
 #### FtSwarmLDR(const char *name)
 
-Constructor to create a FtSwarmLDR object. If the referenced controller isn't connected to the swarm yet, the firmware will waits until the controller gets online.
+Constructor to create a FtSwarmLDR object. If the referenced controller isn't connected to the swarm yet, the firmware will wait until the controller gets online.
 
 - name: Alias name of the IO port.
 

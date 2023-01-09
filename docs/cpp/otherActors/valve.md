@@ -14,14 +14,14 @@ Using a *fischertechnik* valve you could control a pneumatic cylinder.
 
 #### FtSwarmValve(FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port)
 
-Constructor to create a FtSwarmValve object. If the referenced controller isn't conected to the swarm, the firmware will waits until the controller gets online.
+Constructor to create a FtSwarmValve object. If the referenced controller isn't conected to the swarm, the firmware will wait until the controller gets online.
 
 - serialNumber: Serial number of the used ftSwarm controller.
 - port: Port number, `FTSWARM_M1` or `FTSWARM_M2`
 
 #### FtSwarmValve( const char *name )
 
-Constructor to create a FtSwarmValve object. If the referenced controller isn't conected to the swarm, the firmware will waits until the controller gets online.
+Constructor to create a FtSwarmValve object. If the referenced controller isn't conected to the swarm, the firmware will wait until the controller gets online.
 
 - name: Alias name of the IO port.
 

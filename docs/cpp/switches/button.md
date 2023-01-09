@@ -21,7 +21,7 @@ ftSwarmControl
 
 #### FtSwarmButton(FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port)
 
-Constructor to create a FtSwarmButton object. If the referenced controller isn't connected to the swarm yet, the firmware will waits until the controller gets online.
+Constructor to create a FtSwarmButton object. If the referenced controller isn't connected to the swarm yet, the firmware will wait until the controller gets online.
 
 - serialNumber: Serial number of the used ftSwarm controller.
 - port: Use `FTSWARM_S1`, `FTSWARM_S2`, `FTSWARM_S3`, `FTSWARM_S4` for standard buttons, `FTSWARM_J1` & `FTSWARM_J2` for joystick buttons 
@@ -29,7 +29,7 @@ Constructor to create a FtSwarmButton object. If the referenced controller isn't
   
 #### FtSwarmButton(const char *name)
 
-Constructor to create a FtSwarmButton object. If the referenced controller isn't conected to the swarm, the firmware will waits until the controller gets online.
+Constructor to create a FtSwarmButton object. If the referenced controller isn't conected to the swarm, the firmware will wait until the controller gets online.
 
 - name: Alias name of the IO port.
 

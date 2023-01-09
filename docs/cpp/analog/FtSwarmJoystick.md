@@ -15,7 +15,7 @@ fTSwarmControl has two builtin joysticks.
 
 #### FtSwarmJoystick(FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port)
 
-Constructor to create a FtSwarmJoystick object. If the referenced controller isn't connected to the swarm yet, the firmware will waits until the controller gets online.
+Constructor to create a FtSwarmJoystick object. If the referenced controller isn't connected to the swarm yet, the firmware will wait until the controller gets online.
 
 - serialNumber: Serial number of the used ftSwarm controller.
 - port: Port number, `FTSWARM_JOY1` or `FTSWARM_JOY2`. f
@@ -40,4 +40,4 @@ Gets the joystick's button sate.
 
 #### void getValue( int16_t *FB, int16_t *LR, bool *buttonState )
 
-Get all jostick parameters in in statement.
+Get all joystick parameters in one statement.

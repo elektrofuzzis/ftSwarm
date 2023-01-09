@@ -8,7 +8,7 @@ ftSwarm
 {: .label .label-blue .float-right}
 ## ftSwarmLED
 
-The *ftSwarm* controller has two builtin RGB Leds. The firmware uses this Leds during startup. Later on your can use them as needed.
+The *ftSwarm* controller has two builtin RGB Leds. The firmware uses these leds during startup. Later on your can use them as needed.
 
 The hardware setup is easy: you just need a ftSwarm controller connected with a USB cable to your PC and a ftSwarm power supply.
 
@@ -74,14 +74,14 @@ the power consumption will be reduced to 6%..25%.*
 
 #### FtSwarmLED(FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port)
 
-Constructor to create a FtSwarmLED object. If the referenced controller isn't connected to the swarm yet, the firmware will waits until the controller gets online.
+Constructor to create a FtSwarmLED object. If the referenced controller isn't connected to the swarm yet, the firmware will wait until the controller gets online.
 
 - serialNumber: Serial number of the used ftSwarm controller.
 - port: Port number, `FTSWARM_LED1` or `FTSWARM_LED2`
 
 #### FtSwarmLED( const char *name )
 
-Constructor to create a FtSwarmLED object. If the referenced controller isn't connected to the swarm yet, the firmware will waits until the controller gets online.
+Constructor to create a FtSwarmLED object. If the referenced controller isn't connected to the swarm yet, the firmware will wait until the controller gets online.
 
 - name: Alias name of the IO port.
 

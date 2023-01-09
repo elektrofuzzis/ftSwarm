@@ -16,14 +16,14 @@ Connect the marked pin of your LED to the red cable.
 
 #### FtSwarmLamp(FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port)
 
-Constructor to create a FtSwarmLamp object. If the referenced controller isn't connected to the swarm yet, the firmware will waits until the controller gets online.
+Constructor to create a FtSwarmLamp object. If the referenced controller isn't connected to the swarm yet, the firmware will wait until the controller gets online.
 
 - serialNumber: Serial number of the used ftSwarm controller.
 - port: Port number, `FTSWARM_M1` or `FTSWARM_M2`
 
 #### FtSwarmLamp( const char *name )
 
-Constructor to create a FtSwarmLamp object. If the referenced controller isn't connected to the swarm yet, the firmware will waits until the controller gets online.
+Constructor to create a FtSwarmLamp object. If the referenced controller isn't connected to the swarm yet, the firmware will wait until the controller gets online.
 
 - name: Alias name of the IO port.
 

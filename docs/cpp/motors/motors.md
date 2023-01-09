@@ -8,7 +8,7 @@ has_toc: false
 ## Motor Types
 
 Both controllers have two independend motor drivers (M1 & M2). They could drive all type of *fischertechnik* 9V black DC motors. 
-Old grey fischertechnik DC motors or other industrial 9V DC motors could be used, to.
+Old grey fischertechnik DC motors or other industrial 9V DC motors could be used, too.
 
 ### Speed
 

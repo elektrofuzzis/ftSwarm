@@ -19,14 +19,14 @@ BETA
 
 #### FtSwarmVoltmeter(FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port)
 
-Constructor to create a FtSwarmVoltmeter object. If the referenced controller isn't connected to the swarm yet, the firmware will waits until the controller gets online.
+Constructor to create a FtSwarmVoltmeter object. If the referenced controller isn't connected to the swarm yet, the firmware will wait until the controller gets online.
 
 - serialNumber: Serial number of the used ftSwarm controller.
 - port: Port number, `FTSWARM_A2`
 
 #### FtSwarmVoltmeter(const char *name)
 
-Constructor to create a FtSwarmVoltmeter object. If the referenced controller isn't connected to the swarm yet, the firmware will waits until the controller gets online.
+Constructor to create a FtSwarmVoltmeter object. If the referenced controller isn't connected to the swarm yet, the firmware will wait until the controller gets online.
 
 - name: Alias name of the IO port.
 
