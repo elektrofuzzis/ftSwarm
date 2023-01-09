@@ -8,7 +8,7 @@ ftSwarm
 {: .label .label-blue .float-right}
 ## ftSwarmLED
 
-The *ftSwarm* controller has two builtin RGB Leds. The firmware uses these leds during startup. Later on your can use them as needed.
+The *ftSwarm* controller has two builtin RGB LEDs. The firmware uses these LEDs during startup. Later on your can use them as needed.
 
 The hardware setup is easy: you just need a ftSwarm controller connected with a USB cable to your PC and a ftSwarm power supply.
 
