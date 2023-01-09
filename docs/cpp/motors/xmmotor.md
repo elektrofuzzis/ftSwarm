@@ -9,7 +9,7 @@ nav_order: 2
 ## FtSwarmXMMotor
 
 `setSpeed(speed)` is used to start & stop your motor. A positive speed value will run the motor clockwise, a negative one will run the motor counterclockwise. 
-Depenend on you mechanical load, the motor needs a minimum speed to turn. 
+Dependent on the mechanical load, the motor needs a minimum speed to turn. 
 
 `setSpeed(0)` will stop the motor. The output will be released and you could turn the motor manualy. 
 
