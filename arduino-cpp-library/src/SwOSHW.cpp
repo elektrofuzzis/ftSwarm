@@ -329,7 +329,7 @@ const int8_t GPIO_INPUT[4][6][3] =
   { /* FTSWARM1V0 */  { { GPIO_NUM_33, ADC_UNIT_1, ADC1_CHANNEL_5}, { GPIO_NUM_25, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_26, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_27, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} },
     /* FTSWARM1V3 */  { { GPIO_NUM_39, ADC_UNIT_1, ADC1_CHANNEL_3}, { GPIO_NUM_25, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_26, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_27, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} },
     /* FTSWARM1V15 */ { { GPIO_NUM_39, ADC_UNIT_1, ADC1_CHANNEL_3}, { GPIO_NUM_32, ADC_UNIT_1, ADC1_CHANNEL_4},   { GPIO_NUM_33, ADC_UNIT_1, ADC1_CHANNEL_5},   { GPIO_NUM_34, ADC_UNIT_1, ADC1_CHANNEL_6},   { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} },
-    /* FTSWARM2V0 */  { { GPIO_NUM_1,  ADC_UNIT_1, ADC1_CHANNEL_0}, { GPIO_NUM_2,  ADC_UNIT_1, ADC1_CHANNEL_1},   { GPIO_NUM_8,  ADC_UNIT_1, ADC1_CHANNEL_7},   { GPIO_NUM_9,  ADC_UNIT_1, ADC1_CHANNEL_8},   { GPIO_NUM_11, ADC_UNIT_2, ADC2_CHANNEL_0},   { GPIO_NUM_13, ADC_UNIT_2, ADC2_CHANNEL_2} }
+    /* FTSWARM2V0 */  { { GPIO_NUM_1,  ADC_UNIT_1, ADC1_CHANNEL_0}, { GPIO_NUM_2,  ADC_UNIT_1, ADC1_CHANNEL_1},   { GPIO_NUM_19, ADC_UNIT_2, ADC1_CHANNEL_8},   { GPIO_NUM_20, ADC_UNIT_2, ADC1_CHANNEL_9},   { GPIO_NUM_11, ADC_UNIT_2, ADC2_CHANNEL_0},   { GPIO_NUM_13, ADC_UNIT_2, ADC2_CHANNEL_2} }
   };
 
 SwOSInput::SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSIO( name, port, ctrl ), SwOSEventInput( ) {
@@ -1367,9 +1367,12 @@ void SwOSOLED::_setupLocal() {
 
 }
 
-SwOSOLED::SwOSOLED(const char *name, SwOSCtrl *ctrl) : SwOSIO( name, ctrl ) {
+SwOSOLED::SwOSOLED(const char *name, SwOSCtrl *ctrl, uint8_t displayType) : SwOSIO( name, ctrl ) {
 
-  if ( _ctrl->isLocal() ) _setupLocal();
+  if ( _ctrl->isLocal() ) { 
+    displayType = displayType; 
+    _setupLocal(); 
+  }
 
 }
 
@@ -1394,6 +1397,9 @@ void SwOSOLED::dim(bool dim) {
 }
 
 void SwOSOLED::setContrast(uint8_t contrast) {
+
+  // avoid problemns with setContrast and Display Types != 1
+  if (_displayType != 1 ) return;
 
   // send set contrast
   Wire.beginTransmission( 0x3C );
@@ -1545,6 +1551,47 @@ int16_t SwOSOLED::getHeight(void) {
 
 SwOSGyro::SwOSGyro(const char *name, SwOSCtrl *ctrl) : SwOSIO( name, ctrl ) {
 
+  if (ctrl->isLocal()) _setupLocal();
+
+}
+
+void SwOSGyro::_setupLocal() {
+
+  // need an internal I²C interface
+  TwoWire internalI2C = TwoWire(1);
+  internalI2C.begin( 4, 5 );
+
+  // create gyro object
+  _gyro = new LSM6DSRSensor(&internalI2C, LSM6DSR_I2C_ADD_H);
+
+  // pull INT1 to low to enable I2C
+  gpio_config_t io_conf = {};
+  io_conf.intr_type = GPIO_INTR_DISABLE;
+  io_conf.mode = GPIO_MODE_OUTPUT;
+  io_conf.pin_bit_mask = (1ULL << GPIO_NUM_16);
+  io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+  io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+  gpio_config(&io_conf);
+  gpio_set_level( GPIO_NUM_16, 0 );
+  delay(200);
+
+  // start gyro
+  _gyro->begin();
+  _gyro->Enable_X();
+  _gyro->Enable_G();
+
+}
+
+void SwOSGyro::jsonize( JSONize *json, uint8_t id) {
+  
+}
+
+void SwOSGyro::read() {
+
+  _gyro->Get_X_Axes(_accelerometer);
+  _gyro->Get_G_Axes(_gyroscope);
+
+  
 }
 
 /***************************************************
@@ -2022,8 +2069,8 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, const uint8_t *macAddress,
   
   // define specific hardware
   RGBLeds = xRGBLeds;
-  for (uint8_t i=0; i<RGBLeds; i++) { led[i] = new SwOSLED("LED", i, this); }
-  for (uint8_t i=RGBLeds; i<MAXLED; i++) { led[i] = NULL; }
+  for (uint8_t i=0; i<MAXLED; i++) { led[i] = new SwOSLED("LED", i, this); }
+  //for (uint8_t i=RGBLeds; i<MAXLED; i++) { led[i] = NULL; }
   servo = new SwOSServo("SERVO", this);
 
 }
@@ -2043,7 +2090,7 @@ SwOSSwarmJST::SwOSSwarmJST( SwOSCom *com ):SwOSSwarmJST( com->data.serialNumber,
   }
 
   // leds
-  for (uint8_t i=0; i<RGBLeds; i++ ) {
+  for (uint8_t i=0; i<MAXLED; i++ ) {
     if (led[i]) {
       led[i]->setValue( com->data.registerCmd.jst.led[i].brightness, com->data.registerCmd.jst.led[i].color );
     }
@@ -2053,7 +2100,7 @@ SwOSSwarmJST::SwOSSwarmJST( SwOSCom *com ):SwOSSwarmJST( com->data.serialNumber,
 
 SwOSSwarmJST::~SwOSSwarmJST() {
   
-  for ( uint8_t i=0; i<RGBLeds; i++ ) { if ( led[i] ) delete led[i]; }
+  for ( uint8_t i=0; i<MAXLED; i++ ) { if ( led[i] ) delete led[i]; }
   if ( servo ) delete servo;
 
 }
@@ -2121,7 +2168,7 @@ void SwOSSwarmJST::jsonize( JSONize *json, uint8_t id) {
 
   for (uint8_t i=0; i<inputs; i++) { input[i]->jsonize( json, id ); }
   for (uint8_t i=0; i<actors; i++) { actor[i]->jsonize( json, id ); }
-  for (uint8_t i=0; i<RGBLeds; i++) { if ( led[i] ) led[i]->jsonize( json, id ); }
+  for (uint8_t i=0; i<RGBLeds; i++) { if ( led[i] ) led[i]->jsonize( json, id ); } // reduce LEDs in UI
   if (servo) { servo->jsonize( json, id ); }
   if (gyro)  { gyro->jsonize(json, id); }
 
@@ -2134,7 +2181,7 @@ bool SwOSSwarmJST::apiLEDBrightness( char *id, int brightness ) {
   // send a LED command (from api)
 
   // search IO
-  for (uint8_t i=0; i<RGBLeds; i++) {
+  for (uint8_t i=0; i<MAXLED; i++) {
 
     if ( (led[i]) && ( led[i]->equals(id) ) ) {
       // found
@@ -2151,7 +2198,7 @@ bool SwOSSwarmJST::apiLEDColor( char *id, int color ) {
   // send a LED command (from api)
 
   // search IO
-  for (uint8_t i=0; i<RGBLeds; i++) {
+  for (uint8_t i=0; i<MAXLED; i++) {
 
     if ( (led[i]) && ( led[i]->equals(id) ) ) {
       // found
@@ -2234,7 +2281,7 @@ void SwOSSwarmJST::registerMe( SwOSCom *com ){
   
   SwOSCtrl::registerMe( com );
   com->data.registerCmd.jst.RGBLeds = RGBLeds;
-  for (uint8_t i=0;i<RGBLeds;i++) {
+  for (uint8_t i=0;i<MAXLED;i++) {
     if (led[i] ) {
       com->data.registerCmd.jst.led[i].brightness = led[i]->getBrightness();
       com->data.registerCmd.jst.led[i].color = led[i]->getColor();
@@ -2268,7 +2315,7 @@ void SwOSSwarmJST::sendAlias( uint8_t *mac ) {
   for (uint8_t i=0; i<actors;i++) alias.sendBuffered( actor[i]->getName(), actor[i]->getAlias() ); 
 
   // led
-  for (uint8_t i=0; i<RGBLeds;i++) if (led[i]) alias.sendBuffered( led[i]->getName(), led[i]->getAlias() ); 
+  for (uint8_t i=0; i<MAXLED;i++) if (led[i]) alias.sendBuffered( led[i]->getName(), led[i]->getAlias() ); 
 
   // servo
   if (servo) alias.sendBuffered( servo->getName(), servo->getAlias() ); 
@@ -2302,7 +2349,7 @@ void SwOSSwarmJST::saveAliasToNVS( nvs_handle_t my_handle ) {
 
   if (servo) servo->saveAliasToNVS( my_handle );
   if (gyro) gyro->saveAliasToNVS( my_handle );
-  for (uint8_t i=0; i<RGBLeds; i++ ) if (led[i]) led[i]->saveAliasToNVS( my_handle );
+  for (uint8_t i=0; i<MAXLED; i++ ) if (led[i]) led[i]->saveAliasToNVS( my_handle );
   
 }
 
@@ -2311,7 +2358,7 @@ void SwOSSwarmJST::loadAliasFromNVS( nvs_handle_t my_handle ) {
   SwOSCtrl::loadAliasFromNVS( my_handle );
 
   if (gyro) gyro->loadAliasFromNVS( my_handle );
-  for (uint8_t i=0; i<RGBLeds; i++ ) if (led[i]) led[i]->loadAliasFromNVS( my_handle );
+  for (uint8_t i=0; i<MAXLED; i++ ) if (led[i]) led[i]->loadAliasFromNVS( my_handle );
   
 }
 
@@ -2321,7 +2368,7 @@ void SwOSSwarmJST::loadAliasFromNVS( nvs_handle_t my_handle ) {
  *
  ***************************************************/
 
-SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda, int16_t zero[2][2] ):SwOSCtrl( SN, macAddress, local, CPU, HAT, IAmAKelda ) {
+SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda, int16_t zero[2][2], uint8_t displayType ):SwOSCtrl( SN, macAddress, local, CPU, HAT, IAmAKelda ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
@@ -2336,11 +2383,11 @@ SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, const uint8_t *mac
     else      joystick[i] = new SwOSJoystick("JOY", i, this, 0, 0 ); 
   }
   hc165 = new SwOSHC165("HC165", this);
-  oled  = new SwOSOLED("OLED", this);
+  oled  = new SwOSOLED("OLED", this, displayType);
 
 }
 
-SwOSSwarmControl::SwOSSwarmControl( SwOSCom *com ):SwOSSwarmControl( com->data.serialNumber, com->mac, false, com->data.registerCmd.versionCPU, com->data.registerCmd.versionHAT, com->data.registerCmd.IAmAKelda, NULL ) {
+SwOSSwarmControl::SwOSSwarmControl( SwOSCom *com ):SwOSSwarmControl( com->data.serialNumber, com->mac, false, com->data.registerCmd.versionCPU, com->data.registerCmd.versionHAT, com->data.registerCmd.IAmAKelda, NULL, 1 ) {
 
   // inputs
   for (uint8_t i=0; i<inputs; i++ ) {

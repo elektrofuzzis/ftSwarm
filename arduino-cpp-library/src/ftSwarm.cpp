@@ -907,6 +907,7 @@ void localMenu( void ) {
 
   char     wifi[250], prompt[250];
   bool     anythingChanged = false;
+  uint8_t  maxChoise;
 
   while(1) {
 
@@ -919,12 +920,14 @@ void localMenu( void ) {
     }
 
     if ( myOSSwarm.Ctrl[0]->getType() == FTSWARM ) {
-      sprintf( prompt, "%s(5) RGBLeds:  %d\n(X) Calibrate Joysticks\n\n(0) exit\nwifi>", wifi, myOSSwarm.nvs.RGBLeds );
+      sprintf( prompt, "%s(5) RGBLeds:  %d\n\n(0) exit\nwifi>", wifi, myOSSwarm.nvs.RGBLeds );
+      maxChoise=5;
     } else {
-      sprintf( prompt, "%s(X) RGBLeds:  0\n(6) Calibrate Joysticks\n\n(0) exit\nwifi>", wifi );      
+      sprintf( prompt, "%s(5) Display:  type %d\n (6) Calibrate Joysticks\n\n(0) exit\nwifi>", wifi, myOSSwarm.nvs.displayType );
+      maxChoise=6;
     }
     
-    switch( enterNumber( prompt, 0, 0, 6) ) {
+    switch( enterNumber( prompt, 0, 0, maxChoise) ) {
       
       case 0: // exit
         if ( ( anythingChanged) && ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) ) {
@@ -959,10 +962,13 @@ void localMenu( void ) {
         }
         break;
 
-      case 5: // RGBLeds
+      case 5: // RGBLeds / DisplayType
         if ( myOSSwarm.Ctrl[0]->getType() == FTSWARM ) {
           anythingChanged = true;
           myOSSwarm.nvs.RGBLeds = enterNumber( "enter channel [2..18]: ", myOSSwarm.nvs.RGBLeds, 2, MAXLED );
+        } else {
+          anythingChanged = true;
+          myOSSwarm.nvs.displayType = 1 + ( !( myOSSwarm.nvs.displayType - 1 ) );
         }
         break;
 

@@ -205,7 +205,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 
   // initialize I2C
   switch ( nvs.CPU ) {
-    case FTSWARM_2V0: Wire.begin(  5,  4); break;
+    case FTSWARM_2V0: Wire.begin( 8, 9 );   break;
     case FTSWARM_1V0: Wire.begin( 13, 12 ); break;
     default:          Wire.begin( 21, 22 ); break;
   }
@@ -215,7 +215,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 	if (nvs.controlerType == FTSWARM ) {
 		Ctrl[maxCtrl] = new SwOSSwarmJST(     nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda, nvs.RGBLeds );
 	} else if (nvs.controlerType == FTSWARMCONTROL ) {
-		Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda, nvs.joyZero );
+		Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda, nvs.joyZero, nvs.displayType );
 	} else {
     Ctrl[maxCtrl] = new SwOSSwarmCAM( nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda );
   } 

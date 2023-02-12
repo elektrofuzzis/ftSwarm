@@ -21,6 +21,7 @@
 #include <WiFi.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <LSM6DSRSensor.h>
 
 #include "ftSwarm.h"
 #include "jsonize.h"
@@ -341,13 +342,14 @@ class SwOSOLED : public SwOSIO {
     Adafruit_SSD1306 *_display = NULL;
     uint8_t _textSizeX = 0;
     uint8_t _textSizeY = 0;
+    uint8_t _displayType = 0;
     
     // local HW procedures
     virtual void _setupLocal(); // initializes local HW
     
   public:
     // constructor
-	  SwOSOLED(const char *name, SwOSCtrl *ctrl);
+	  SwOSOLED(const char *name, SwOSCtrl *ctrl, uint8_t displayType);
 
     // administrative stuff
 	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_OLED; };
@@ -393,12 +395,25 @@ class SwOSOLED : public SwOSIO {
  ***************************************************/
 
 class SwOSGyro : public SwOSIO {
-public:
-  // constructor
-	SwOSGyro(const char *name, SwOSCtrl *ctrl);
+  private:
+    LSM6DSRSensor *_gyro = NULL;
+    int32_t       _accelerometer[3];
+    int32_t       _gyroscope[3];
+    
+    // local HW procedures
+    virtual void _setupLocal(); // initializes local HW
+    
+  public:
+    // constructor
+	  SwOSGyro(const char *name, SwOSCtrl *ctrl);
 
-  // administrative stuff
-	virtual FtSwarmIOType_t getIOType() { return FTSWARM_GYRO; };
+    // administrative stuff
+	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_GYRO; };
+    virtual char *getIcon() { return (char *) "25_gyro.svg"; };
+    virtual void jsonize( JSONize *json, uint8_t id);
+
+    // read sensor
+    virtual void     read();
 
 };
 
@@ -586,7 +601,7 @@ public:
 	SwOSJoystick *joystick[2];
 	SwOSOLED     *oled;
 
-	SwOSSwarmControl(FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda, int16_t zero[2][2] ); // constructor
+	SwOSSwarmControl(FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda, int16_t zero[2][2], uint8_t displayType ); // constructor
   SwOSSwarmControl( SwOSCom *com ); // constructor
   ~SwOSSwarmControl(); // destructor
   
