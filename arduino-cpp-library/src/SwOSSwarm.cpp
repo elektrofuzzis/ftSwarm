@@ -7,6 +7,8 @@
  * 
  */
 
+ #include "SwOS.h"
+
 #include <WiFi.h>
 #include <esp_now.h>
 #include <esp_wifi.h>
@@ -15,7 +17,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
-#include "esp_task_wdt.h"
+#include <esp_task_wdt.h>
 
 #include "SwOSNVS.h"
 #include "SwOSHW.h"
@@ -41,6 +43,7 @@ void recvTask( void *parameter ) {
   // This tasks waits for such events and process them vai myOSSwarm.OnDataRecv.
 
   SwOSCom event( broadcast, NULL, 0 );
+  
   // forever
   while (1) {
 
@@ -186,56 +189,13 @@ bool SwOSSwarm::_startEvents( void ) {
 
 }
 
-FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
-
-  if (verbose) {
-    printf("\n\nftSwarmOS " ); 
-    printf(SWOSVERSION);
-    printf("\n\n(C) Christian Bergschneider & Stefan Fuss\n\nPress any key to enter bios settings.\n");
-  }
-
-  // set watchdog to 30s
-  esp_task_wdt_init(30, false);
-  
-  // initialize random
-  srand( time( NULL ) );
-
-  // initialize nvs
-  nvs.begin();
-
-  // initialize I2C
-  switch ( nvs.CPU ) {
-    case FTSWARM_2V0: Wire.begin( 8, 9 );   break;
-    case FTSWARM_1V0: Wire.begin( 13, 12 ); break;
-    default:          Wire.begin( 21, 22 ); break;
-  }
-
-	// create local controler
-	maxCtrl++;
-	if (nvs.controlerType == FTSWARM ) {
-		Ctrl[maxCtrl] = new SwOSSwarmJST(     nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda, nvs.RGBLeds );
-	} else if (nvs.controlerType == FTSWARMCONTROL ) {
-		Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda, nvs.joyZero, nvs.displayType );
-	} else {
-    Ctrl[maxCtrl] = new SwOSSwarmCAM( nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda );
-  } 
-  
-  // Who I am?
-  printf("Boot %s (SN:%d).\n", Ctrl[maxCtrl]->getHostname(), Ctrl[maxCtrl]->serialNumber );
-
-  // Open NVS again & load alias names
-  nvs_handle_t my_handle;
-  ESP_ERROR_CHECK( nvs_open("ftSwarm", NVS_READWRITE, &my_handle) );
-  myOSSwarm.Ctrl[0]->loadAliasFromNVS( my_handle );
-
-  // now I can visualize my state
-  setState( BOOTING );
+void SwOSSwarm::_startWifi( bool verbose ) {
 
   // no wifi config?
   if (nvs.wifiSSID[0]=='\0') {
     if (verbose) printf("Invalid wifi configuration found. Starting AP mode.\n");
     strcpy( nvs.wifiSSID, Ctrl[0]->getHostname() );
-    nvs.APMode = true;
+    nvs.wifiMode = wifiAP;
   }
 
   // Start wifi
@@ -244,7 +204,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
   // best practise to throw away anything during a soft reboot
   WiFi.disconnect();
   
-  if ( ( nvs.APMode ) || Ctrl[0]->maintenanceMode() ) {
+  if ( ( nvs.wifiMode == wifiAP ) || Ctrl[0]->maintenanceMode() ) {
     // work as AP in standard or maintennace cable was set
     if (verbose) printf("Create own SSID: %s\n", Ctrl[0]->getHostname());
     WiFi.mode(WIFI_AP_STA);
@@ -312,9 +272,59 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 
   if (verbose) printf("hostname: %s\nip-address: %d.%d.%d.%d\n", Ctrl[0]->getHostname(), Ctrl[0]->IP[0],  Ctrl[0]->IP[1], Ctrl[0]->IP[2], Ctrl[0]->IP[3]);
 
-  // Init ESP-NOW
+}
+
+FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
+
+  if (verbose) {
+    printf("\n\nftSwarmOS " ); 
+    printf(SWOSVERSION);
+    printf("\n\n(C) Christian Bergschneider & Stefan Fuss\n\nPress any key to enter bios settings.\n");
+  }
+
+  // set watchdog to 30s
+  esp_task_wdt_init(30, false);
+  
+  // initialize random
+  srand( time( NULL ) );
+
+  // initialize nvs
+  nvs.begin();
+
+  // initialize I2C
+  switch ( nvs.CPU ) {
+    case FTSWARM_2V0: Wire.begin( 8, 9 );   break;
+    case FTSWARM_1V0: Wire.begin( 13, 12 ); break;
+    default:          Wire.begin( 21, 22 ); break;
+  }
+
+	// create local controler
+	maxCtrl++;
+	if (nvs.controlerType == FTSWARM ) {
+		Ctrl[maxCtrl] = new SwOSSwarmJST(     nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda, nvs.RGBLeds );
+	} else if (nvs.controlerType == FTSWARMCONTROL ) {
+		Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda, nvs.joyZero, nvs.displayType );
+	} else {
+    Ctrl[maxCtrl] = new SwOSSwarmCAM( nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda );
+  } 
+  
+  // Who I am?
+  printf("Boot %s (SN:%d).\n", Ctrl[maxCtrl]->getHostname(), Ctrl[maxCtrl]->serialNumber );
+
+  // Open NVS again & load alias names
+  nvs_handle_t my_handle;
+  ESP_ERROR_CHECK( nvs_open("ftSwarm", NVS_READWRITE, &my_handle) );
+  myOSSwarm.Ctrl[0]->loadAliasFromNVS( my_handle );
+
+  // now I can visualize my state
+  setState( BOOTING );
+
+  // wifi
+  if ( nvs.wifiMode != wifiOFF ) _startWifi( verbose );
+
+  // Init Communication
   if (!SwOSStartCommunication( nvs.swarmSecret, nvs.swarmPIN )) {
-    if (verbose) printf("Error initializing ESP-NOW\n");
+    if (verbose) printf("Error initializing swarm communication.\n");
     setState( ERROR );
     return 0;
   }
@@ -327,7 +337,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
   xTaskCreatePinnedToCore( recvTask, "RecvTask", 10000, NULL, 1, NULL, 0 );
 
   // start web server
-  SwOSStartWebServer();
+  if ( ( nvs.webUI ) && ( nvs.wifiMode != wifiOFF ) ) SwOSStartWebServer();
 
   // firmware events?
   if ( !_startEvents( ) ) {
@@ -637,7 +647,7 @@ void SwOSSwarm::unlock() {
 
 void SwOSSwarm::registerMe( void ) {
 
-  SwOSCom com( broadcast, Ctrl[0]->serialNumber, CMD_ANYBODYOUTTHERE);
+  SwOSCom com( broadcast, broadcastSN, CMD_ANYBODYOUTTHERE);
   Ctrl[0]->registerMe( &com );
   com.send();
 
@@ -649,7 +659,7 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
   // ignore invalid data
   if (!com) return;
 
-  uint8_t i = _getIndex( com->data.serialNumber );
+  uint8_t i = _getIndex( com->data.sourceSN );
 
   // check on join message
   if ( com->data.cmd == CMD_SWARMJOIN ) {
@@ -664,7 +674,7 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
       #ifdef DEBUG_COMMUNICATION
         ESP_LOGD( LOGFTSWARM, "CMD_SWARMJOIN accepted" ); 
       #endif
-      SwOSCom ack( com->mac, Ctrl[0]->serialNumber, CMD_SWARMJOINACK );
+      SwOSCom ack( com->mac, com->data.sourceSN, CMD_SWARMJOINACK );
       ack.data.joinCmd.pin = nvs.swarmPIN;
       ack.data.joinCmd.swarmSecret = nvs.swarmSecret;
       strcpy( ack.data.joinCmd.swarmName, nvs.swarmName );
@@ -735,7 +745,7 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
 
     // reply GOTYOU, if needed
     if ( com->data.cmd == CMD_ANYBODYOUTTHERE ) {
-      SwOSCom reply( com->mac, Ctrl[0]->serialNumber, CMD_GOTYOU);
+      SwOSCom reply( com->mac, com->data.sourceSN, CMD_GOTYOU);
       Ctrl[0]->registerMe( &reply );
       reply.send( );
 
@@ -744,7 +754,7 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
     }
 
   // send my alias names to requestor
-  Ctrl[0]->sendAlias( com->mac );
+  Ctrl[0]->sendAlias( com->mac, com->data.sourceSN );
 
   return;
     
@@ -765,7 +775,8 @@ void SwOSSwarm::send(SwOSCom *com) {
   for (uint8_t i=1;i<=maxCtrl;i++) {
     
     if ( ( Ctrl[i] ) && ( Ctrl[i]->AmIAKelda() ) ) { 
-      com->setMAC( Ctrl[i]->mac );
+      com->setMAC( Ctrl[i]->mac, Ctrl[i]->serialNumber );
+      com->data.sourceSN = nvs.serialNumber;
       com->send( ); 
     }
     
@@ -776,14 +787,14 @@ void SwOSSwarm::send(SwOSCom *com) {
 void SwOSSwarm::leaveSwarm( void ) {
 
   // Prepare a leave message
-  SwOSCom leaveMsg( NULL, Ctrl[0]->serialNumber, CMD_SWARMLEAVE );
+  SwOSCom leaveMsg( NULL, broadcastSN, CMD_SWARMLEAVE );
 
   // send to all others
   for (uint8_t i=1;i<=maxCtrl;i++) {
  
     if ( Ctrl[i] ) {
       // set remote controllers mac & send leave msg
-      leaveMsg.setMAC( Ctrl[i]->mac );
+      leaveMsg.setMAC( Ctrl[i]->mac, Ctrl[i]->serialNumber );
       leaveMsg.send( );
 
       // cleanup
@@ -801,10 +812,10 @@ void SwOSSwarm::joinSwarm( bool createNewSwarm, char * newName, uint16_t newPIN 
 
   // setup new swarm
   nvs.createSwarm( newName, newPIN );
-  SwOSSetSecret( DEFAULTSECRET, myOSSwarm.nvs.swarmPIN );
+  SwOSSetSecret( DEFAULTSECRET, nvs.swarmPIN );
 
   // send CMD_SWARMJOIN
-  SwOSCom joinMsg( broadcast, Ctrl[0]->serialNumber, CMD_SWARMJOIN);
+  SwOSCom joinMsg( broadcast, broadcastSN, CMD_SWARMJOIN);
   joinMsg.data.joinCmd.pin = newPIN;
   strcpy( joinMsg.data.joinCmd.swarmName, newName );
   joinMsg.send();

@@ -903,87 +903,165 @@ void FtSwarm::setReadDelay( uint16_t readDelay ) {
 
 }
 
-void localMenu( void ) {
+void SwarmControlMenu() {
 
-  char     wifi[250], prompt[250];
-  bool     anythingChanged = false;
-  uint8_t  maxChoise;
+  bool    anythingChanged = false;
+  char    prompt[255];
 
-  while(1) {
-
-    printf("Local controller menu\n\n");
-
-    if ( myOSSwarm.nvs.APMode ) {
-      sprintf( wifi, "(1) AP-Mode:  AP-MODE\n(2) SSID:     %s\n(X) Password: NOPASSWORD\n(4) Channel:  %d\n", myOSSwarm.nvs.wifiSSID, myOSSwarm.nvs.channel );
-    } else {
-      sprintf( wifi, "(1) AP-Mode:  CLIENT-MODE\n(2) SSID:     %s\n(3) Password: ******\n(X) Channel:  use SSID settings\n", myOSSwarm.nvs.wifiSSID );
-    }
-
-    if ( myOSSwarm.Ctrl[0]->getType() == FTSWARM ) {
-      sprintf( prompt, "%s(5) RGBLeds:  %d\n\n(0) exit\nwifi>", wifi, myOSSwarm.nvs.RGBLeds );
-      maxChoise=5;
-    } else {
-      sprintf( prompt, "%s(5) Display:  type %d\n (6) Calibrate Joysticks\n\n(0) exit\nwifi>", wifi, myOSSwarm.nvs.displayType );
-      maxChoise=6;
-    }
+  while (1) {
     
-    switch( enterNumber( prompt, 0, 0, maxChoise) ) {
+    printf("ftSwarmControl settings\n\n");
+    sprintf( prompt, "(1) Display:  type %d\n (2) Calibrate Joysticks\n\n(0) exit\nftSwarmControl>", nvs.displayType );
+    switch( enterNumber( prompt, 0, 0, 2) ) {
       
       case 0: // exit
         if ( ( anythingChanged) && ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) ) {
           // save config
-          myOSSwarm.nvs.saveAndRestart();
+          nvs.saveAndRestart();
+        } else {
+          return;
+        }
+        
+      case 1: // DisplayType
+        anythingChanged = true;
+        nvs.displayType = 1 + ( !( nvs.displayType - 1 ) );
+        break;
+
+      case 2: // calibrate joysticks
+        if  ( yesNo( "Start calibration (Y/N)?" ) ) {
+          anythingChanged = true;
+          static_cast<SwOSSwarmControl *>(myOSSwarm.Ctrl[0])->joystick[0]->calibrate( &nvs.joyZero[0][0], &nvs.joyZero[0][1] );
+          static_cast<SwOSSwarmControl *>(myOSSwarm.Ctrl[0])->joystick[1]->calibrate( &nvs.joyZero[1][0], &nvs.joyZero[1][1] );
+        }
+        break;
+        
+    }
+  }
+
+}
+
+void WebServerMenu() {
+
+  uint8_t maxChoice;
+  bool    anythingChanged = false;
+  char    prompt[255];
+  char    onOff[10];
+  
+  while(1) {
+
+    printf("web server settings\n\n");
+
+    if ( nvs.webUI ) {
+      strcpy( onOff, "on" );
+    } else {
+      strcpy( onOff, "off" );
+    }
+    
+    if ( ( myOSSwarm.Ctrl[0]->getType() == FTSWARM ) && ( nvs.webUI ) ) {
+      sprintf(prompt, "(1) WebUI: %s\n(2) Show %d ftPixels in UI\n\n(0) exit\nweb server>", onOff, nvs.RGBLeds );
+      maxChoice = 2;
+    } else {
+      sprintf(prompt, "(1) WebUI: %s\n\n(0) exit\nweb server>", onOff );
+      maxChoice = 1;
+    }
+
+    switch( enterNumber( prompt, 0, 0, maxChoice) ) {
+      
+      case 0: // exit
+        if ( ( anythingChanged) && ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) ) {
+          // save config
+          nvs.saveAndRestart();
+        } else {
+          return;
+        }
+        
+      case 1: // WebServer on/off
+        anythingChanged = true;
+        nvs.webUI = !nvs.webUI;
+        break;
+        
+      case 2: // # of ftPixel
+        anythingChanged = true;
+        nvs.RGBLeds = enterNumber( "enter number of ftPixel in WebUI [2..18]: ", nvs.RGBLeds, 2, MAXLED );
+        break;
+    }
+
+  }
+  
+}
+
+void wifiMenu( void ) {
+
+  char          prompt[250];
+  bool          anythingChanged = false;
+  uint8_t       maxChoice;
+  FtSwarmWifi_t wifiMode;
+  
+  while(1) {
+
+    printf("wifi settings\n\n");
+
+    switch( nvs.wifiMode ) {
+
+      case wifiOFF:
+        sprintf( prompt, "(1) wifi: off\n\n(0) exit\nwifi>" );
+        maxChoice = 1;
+        break;
+        
+      case wifiAP:
+        sprintf( prompt, "(1) wifi:     AP-MODE\n(2) SSID:     %s\n(X) Password: NOPASSWORD\n(4) Channel:  %d\n\n(0) exit\nwifi>", nvs.wifiSSID, nvs.channel );
+        maxChoice = 4;
+        break;
+        
+      case wifiClient:
+        sprintf( prompt, "(1) wifi:     CLIENT-MODE\n(2) SSID:     %s\n(3) Password: ******\n\n(0) exit\nwifi>", nvs.wifiSSID );
+        maxChoice = 3;
+        break;
+
+      default:
+        printf( "ERROR: invalid wifi mode %d\n", nvs.wifiMode );
+        return;
+    }
+    
+    switch( enterNumber( prompt, 0, 0, maxChoice) ) {
+      
+      case 0: // exit
+        if ( ( anythingChanged) && ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) ) {
+          // save config
+          nvs.saveAndRestart();
         } else {
           return;
         }
         
       case 1: // AP-Mode/Client-Mode
-        anythingChanged = true;
-        myOSSwarm.nvs.APMode = !myOSSwarm.nvs.APMode;
-        if ( ( myOSSwarm.nvs.APMode ) && ( ( myOSSwarm.nvs.channel < 1 ) || ( myOSSwarm.nvs.channel > 13 ) ) ) myOSSwarm.nvs.channel = 1; // to avoid invalid channel settings
+        wifiMode = (FtSwarmWifi_t) enterNumber( "enter wifi mode [ 0-off , 1-AP-Mode, 2-Client-Mode]: ", nvs.wifiMode, 0, 2 );
+        if ( nvs.wifiMode != wifiMode ) {
+          if ( ( wifiMode == wifiOFF ) && ( nvs.swarmCommunication & 0x1 ) ) {
+            printf("Error: please deactivate wifi in swarm communication first.\n");
+          } else {
+            nvs.wifiMode = wifiMode;
+            if ( ( nvs.wifiMode == wifiAP ) && ( ( nvs.channel < 1 ) || ( nvs.channel > 13 ) ) ) nvs.channel = 1; // to avoid invalid channel settings
+            anythingChanged = true;
+          } 
+        }
         break;
         
       case 2: // SSID
         anythingChanged = true;
-        enterString("Please enter new SSID: ", myOSSwarm.nvs.wifiSSID, 64);
+        enterString("Please enter new SSID: ", nvs.wifiSSID, 64);
         break;
         
       case 3: // Password
-        if (!myOSSwarm.nvs.APMode) {
-          anythingChanged = true;
-          enterString("Please enter new Password: ", myOSSwarm.nvs.wifiPwd, 64, true);
-        }
+        anythingChanged = true;
+        enterString("Please enter new Password: ", nvs.wifiPwd, 64, true);
         break;
 
       case 4: // Channel
-        if (myOSSwarm.nvs.APMode) {
-          anythingChanged = true;
-          myOSSwarm.nvs.channel = enterNumber( "enter channel [1..13] - use 1,6 or 11 if possible: ", myOSSwarm.nvs.channel, 1, 13 );
-        }
+        anythingChanged = true;
+        nvs.channel = enterNumber( "enter channel [1..13] - use 1,6 or 11 if possible: ", nvs.channel, 1, 13 );
         break;
-
-      case 5: // RGBLeds / DisplayType
-        if ( myOSSwarm.Ctrl[0]->getType() == FTSWARM ) {
-          anythingChanged = true;
-          myOSSwarm.nvs.RGBLeds = enterNumber( "enter channel [2..18]: ", myOSSwarm.nvs.RGBLeds, 2, MAXLED );
-        } else {
-          anythingChanged = true;
-          myOSSwarm.nvs.displayType = 1 + ( !( myOSSwarm.nvs.displayType - 1 ) );
-        }
-        break;
-
-      case 6: //
-        if  ( ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) && yesNo( "Start calibration (Y/N)?" ) ) {
-          anythingChanged = true;
-          static_cast<SwOSSwarmControl *>(myOSSwarm.Ctrl[0])->joystick[0]->calibrate( &myOSSwarm.nvs.joyZero[0][0], &myOSSwarm.nvs.joyZero[0][1] );
-          static_cast<SwOSSwarmControl *>(myOSSwarm.Ctrl[0])->joystick[1]->calibrate( &myOSSwarm.nvs.joyZero[1][0], &myOSSwarm.nvs.joyZero[1][1] );
-        }
-        break;
-        
     }
-    
   }
-  
 }
 
 void joinSwarm( bool createNewSwarm ) {
@@ -998,7 +1076,7 @@ void joinSwarm( bool createNewSwarm ) {
     enterString( "Please enter new swarm's name [minimum 5 chars]: ", name, MAXIDENTIFIER);
 
     // different names, at least 5 chars
-    if ( ( strcmp( myOSSwarm.nvs.swarmName, name ) != 0 ) && ( strlen( name ) > 4 ) ) {
+    if ( ( strcmp( nvs.swarmName, name ) != 0 ) && ( strlen( name ) > 4 ) ) {
       break;
     }
 
@@ -1009,9 +1087,9 @@ void joinSwarm( bool createNewSwarm ) {
 
   // build swarm
   if ( createNewSwarm ) {
-    sprintf( prompt, "Do you really want to quit swarm \"%s\" and create new swarm \"%s\" with pin %d (Y/N) ?", myOSSwarm.nvs.swarmName, name, pin );
+    sprintf( prompt, "Do you really want to quit swarm \"%s\" and create new swarm \"%s\" with pin %d (Y/N) ?", nvs.swarmName, name, pin );
   } else {
-    sprintf( prompt, "Do you really want to quit swarm \"%s\" and join swarm \"%s\" with pin %d (Y/N) ?", myOSSwarm.nvs.swarmName, name, pin );
+    sprintf( prompt, "Do you really want to quit swarm \"%s\" and join swarm \"%s\" with pin %d (Y/N) ?", nvs.swarmName, name, pin );
   }
 
   // stop, if NO
@@ -1040,7 +1118,7 @@ void joinSwarm( bool createNewSwarm ) {
 
   // in case of a new swarm save nvs & quit.
   if ( ( createNewSwarm ) && ( myOSSwarm.members() <= 1 ) ) {
-    myOSSwarm.nvs.save();
+    nvs.save();
     printf("Swarm \"%s\" created sucessfully.\n", name );
     return;
   }
@@ -1051,37 +1129,60 @@ void joinSwarm( bool createNewSwarm ) {
     myOSSwarm.lock();
     myOSSwarm.reload();
     myOSSwarm.unlock();
-    printf("ERROR: swarm \"%s\" not found. Rejoined old swarm %s\n", name, myOSSwarm.nvs.swarmName );
+    printf("ERROR: swarm \"%s\" not found. Rejoined old swarm %s\n", name, nvs.swarmName );
     return;
   }
 
   // the CMD_GOTYOU-Message catched the new SECRET
   // so just store all changes
-  myOSSwarm.nvs.save();
+  nvs.save();
   
   printf("Swarm \"%s\" joined sucessfully.\n", name );
 
 }
 
+const char SWARMCOMMUNICATION[4][13] = { "none", "wifi", "RS485", "wifi & RS485" };
+
 void swarmMenu( void ) {
+
+  char prompt[250];
+  char item1[2][2] = { "X", "1" };
+  FtSwarmCommunication_t swarmCommunication;
   
   while (1) {
 
-    printf( "\nSwarm menu\n\nThis device is connected to swarm \"%s\" with %d member(s) online.\nSwarm PIN is %d.\n", myOSSwarm.nvs.swarmName, myOSSwarm.members(), myOSSwarm.nvs.swarmPIN );
+    printf( "\nSwarm menu\n\nThis device is connected to swarm \"%s\" with %d member(s) online.\nSwarm PIN is %d.\n", nvs.swarmName, myOSSwarm.members(), nvs.swarmPIN );
+    sprintf( prompt, "(%s) swarm communication: %s\n(2) create a new swarm\n(3) join another swarm\n(4) list swarm members\n\n(0) main\nswarm>", item1[nvs.RS485Available()], SWARMCOMMUNICATION[nvs.swarmCommunication]);
     
-    switch( enterNumber("(1) create a new swarm\n(2) join another swarm\n(3) list swarm members\n\n(0) main\nswarm>", 0, 0, 3) ) {
+    switch( enterNumber(prompt, 0, 0, 4) ) {
       case 0: // main
         return;
+
+      case 1: // swarm communication
+        if ( nvs.RS485Available() ) {
+          swarmCommunication = (FtSwarmCommunication_t) enterNumber( "enter swarm communication [1-wifi, 2-RS485, 3-both]:", nvs.swarmCommunication, 1, 3 );
+          if (nvs.swarmCommunication != swarmCommunication) {
+            // test if wifiMode is OFF and swarm should use wifi
+            if ( ( nvs.wifiMode == wifiOFF ) && ( swarmCommunication & 0x1 ) ) {
+              printf("Error: please activate wifi first.\n");
+            } else {
+              // let's save data
+              nvs.swarmCommunication = swarmCommunication;
+              if ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) nvs.saveAndRestart();
+            }
+          }
+        }
+        break;
         
-      case 1: // create new swarm
+      case 2: // create new swarm
         joinSwarm( true ); 
         break;
         
-      case 2: // join a swarm
+      case 3: // join a swarm
         joinSwarm( false ); 
         break;
         
-      case 3: // list swarm members
+      case 4: // list swarm members
         printf("\nSwarm members:\n" );
         for (uint8_t i=0; i<=myOSSwarm.maxCtrl; i++ ) {
           if ( myOSSwarm.Ctrl[i] )
@@ -1127,7 +1228,7 @@ void aliasMenu( void ) {
       SwOSSwarmJST *ftSwarm = static_cast<SwOSSwarmJST *>(myOSSwarm.Ctrl[0]);
 
       // list LEDs
-      for (uint8_t i=0; i<myOSSwarm.nvs.RGBLeds; i++ ) {
+      for (uint8_t i=0; i<nvs.RGBLeds; i++ ) {
         if (ftSwarm->led[i]) {
           OSObj[item++] = ftSwarm->led[i];
           printf("(%2d) %-4s - %-32s\n", 
@@ -1212,7 +1313,7 @@ void factorySettings( void ) {
   // reset controller to factory settings
 
   if (yesNo("Do you want to reset this device to it's factory settings (Y/N)?" ) ) {
-    myOSSwarm.nvs.factorySettings();
+    nvs.factorySettings();
     myOSSwarm.Ctrl[0]->factorySettings();
     printf("device will restart now.\n");
     delay(2000);
@@ -1220,7 +1321,7 @@ void factorySettings( void ) {
     ESP_ERROR_CHECK( nvs_open("ftSwarm", NVS_READWRITE, &my_handle) );
     myOSSwarm.Ctrl[0]->saveAliasToNVS( my_handle );
     ESP_ERROR_CHECK( nvs_commit( my_handle ) );
-    myOSSwarm.nvs.saveAndRestart();
+    nvs.saveAndRestart();
   }
 }
 
@@ -1386,34 +1487,34 @@ void remoteControl( void ) {
 
     for ( uint8_t i=0; i<MAXNVSEVENT; i++ ) {
       
-      if ( myOSSwarm.nvs.eventList.event[i].sensor[0] != '\0' ) {
+      if ( nvs.eventList.event[i].sensor[0] != '\0' ) {
         // used event
         item++;
         eventPtr[item] = i;
 
         printf("(%2d) ", item);
         
-        printX( myOSSwarm.nvs.eventList.event[i].sensor, 15 );
+        printX( nvs.eventList.event[i].sensor, 15 );
 
-        switch ( myOSSwarm.nvs.eventList.event[i].LR ) {
+        switch ( nvs.eventList.event[i].LR ) {
           case 0: printf( "   "); break;
           case 1: printf( "LR "); break;
           case 2: printf( "FB "); break;          
         }
         
-        switch( myOSSwarm.nvs.eventList.event[i].triggerEvent ) {
+        switch( nvs.eventList.event[i].triggerEvent ) {
           case FTSWARM_TRIGGERUP:    printf("TriggerUp   "); break;
           case FTSWARM_TRIGGERDOWN:  printf("TriggerDown "); break;
           case FTSWARM_TRIGGERVALUE: printf("ChangeValue "); break;
           default:                   printf("?           "); break;
         }
         
-        printX( myOSSwarm.nvs.eventList.event[i].actor, 15 );
+        printX( nvs.eventList.event[i].actor, 15 );
 
-        if (myOSSwarm.nvs.eventList.event[i].usePortValue)
+        if (nvs.eventList.event[i].usePortValue)
           printf("SENSORVALUE\n");
         else
-          printf("%" PRId32 "\n", myOSSwarm.nvs.eventList.event[i].parameter );
+          printf("%" PRId32 "\n", nvs.eventList.event[i].parameter );
         
       } else if ( eventPtr[0] == 255 ){
         eventPtr[0] = i;
@@ -1436,23 +1537,23 @@ void remoteControl( void ) {
 
     // do what the user wants
     if ( choice == 0 ) {
-     if ( ( anythingChanged ) && yesNo( "Save changes to nvs [Y/N]? " ) ) myOSSwarm.nvs.save();
+     if ( ( anythingChanged ) && yesNo( "Save changes to nvs [Y/N]? " ) ) nvs.save();
      return;
       
     }  else if ( choice == ( item + 1 ) ) {
       // add
-      if ( changeEvent( &myOSSwarm.nvs.eventList.event[eventPtr[0]] ) ) anythingChanged = true;
+      if ( changeEvent( &nvs.eventList.event[eventPtr[0]] ) ) anythingChanged = true;
       
     } else if ( choice == ( item + 2 ) ) {
       // delete
       choice = enterNumber( "Which event should be deleted? ", 1, 1, item );
-      myOSSwarm.nvs.eventList.event[eventPtr[choice]].actor[0] = '\0';
-      myOSSwarm.nvs.eventList.event[eventPtr[choice]].sensor[0] = '\0';
+      nvs.eventList.event[eventPtr[choice]].actor[0] = '\0';
+      nvs.eventList.event[eventPtr[choice]].sensor[0] = '\0';
       anythingChanged = true;
       
     } else {
       // modify item
-      if ( changeEvent( &myOSSwarm.nvs.eventList.event[eventPtr[choice]] ) ) anythingChanged = true;
+      if ( changeEvent( &nvs.eventList.event[eventPtr[choice]] ) ) anythingChanged = true;
     }
 
   }
@@ -1461,26 +1562,33 @@ void remoteControl( void ) {
 
 void FtSwarm::setup( void ) {
 
-  uint8_t choice;
+  uint8_t choice, maxChoice;
+  char prompt[255];
 
   printf("\n\nftSwarmOS %s\n\n(C) Christian Bergschneider & Stefan Fuss\n", SWOSVERSION );
-
+  
+  // FTSWARMCONTROL special HW
+  if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
+    sprintf( prompt, "\nMain Menu\n\n(1) wifi settings\n(2) webserver settings\n(3) swarm settings\n(4) alias names\n(5) factory settings\n(6) ftSwarmControl\n(7) remoteControl\n\n(0) exit\nmain>" );
+    maxChoice = 7;
+  } else {
+    sprintf( prompt, "\nMain Menu\n\n(1) wifi settings\n(2) webserver settings\n(3) swarm settings\n(4) alias names\n(5) factory settings\n\n(0) exit\nmain>" );
+    maxChoice = 5;
+  }
+ 
   while (1) {
 
-    // FTSWARMCONTROL special HW
-    if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
-      choice = enterNumber("\nMain menu\n\n(1) local settings\n(2) swarm settings\n(3) alias names\n(4) reset to factory settings\n(5) remote control\n\n(0) exit\nmain>", 0, 0, 5);
-    } else {
-      choice = enterNumber("\nMain menu\n\n(1) local settings\n(2) swarm settings\n(3) alias names\n(4) reset to factory settings\n\n(0) exit\nmain>", 0, 0, 4);     
-    }
-    
+    choice = enterNumber( prompt, 0, 0, maxChoice );
+
     switch( choice  ) {
       case 0: return;
-      case 1: localMenu(); break;
-      case 2: swarmMenu(); break;
-      case 3: aliasMenu(); break;
-      case 4: factorySettings(); break;
-      case 5: remoteControl(); break;
+      case 1: wifiMenu(); break;
+      case 2: WebServerMenu(); break;
+      case 3: swarmMenu(); break;
+      case 4: aliasMenu(); break;
+      case 5: factorySettings(); break;
+      case 6: SwarmControlMenu(); break;
+      case 7: remoteControl(); break;
     }
     
   }

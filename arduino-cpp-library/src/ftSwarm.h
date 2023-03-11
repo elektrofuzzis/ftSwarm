@@ -9,19 +9,19 @@
  
 #pragma once
 
+#include "SwOS.h"
+
 #include <stdint.h>
 #include <cstddef>
-
 #include <Adafruit_GFX.h>
 
-#include "SwOS.h"
 
 // max LEDs ftSwarm
 #define MAXLED 18
 
 typedef uint16_t FtSwarmSerialNumber_t;
 typedef uint8_t  FtSwarmPort_t;
-
+ 
 // **** enumerations ****
 
 // IO types
@@ -37,7 +37,7 @@ typedef enum { FTSWARM_DIGITAL, FTSWARM_ANALOG, FTSWARM_SWITCH, FTSWARM_REEDSWIT
 typedef enum { FTSWARM_XMOTOR, FTSWARM_XMMOTOR, FTSWARM_TRACTOR,  FTSWARM_ENCODER, FTSWARM_LAMP, FTSWARM_VALVE, FTSWARM_COMPRESSOR, FTSWARM_BUZZER, FTSWARM_MAXACTOR } FtSwarmActor_t;
 
 // HW versions
-typedef enum { FTSWARM_NOVERSION = -1, FTSWARM_1V0, FTSWARM_1V3, FTSWARM_1V15, FTSWARM_2V0 } FtSwarmVersion_t;
+typedef enum { FTSWARM_NOVERSION = -1, FTSWARM_1V0, FTSWARM_1V3, FTSWARM_1V15, FTSWARM_2V0, FTSWARM_2V1 } FtSwarmVersion_t;
 
 // how to move
 typedef enum { FTSWARM_COAST, FTSWARM_BRAKE, FTSWARM_ON } FtSwarmMotion_t;

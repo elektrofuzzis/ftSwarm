@@ -8,12 +8,12 @@
  * 
  */
 
+#pragma once
+
 // inter swarm communication deep debugging 
 // #define DEBUG_COMMUNICATION
 //#define DEBUG_READTASK
     
-#pragma once
-
 #define LOGFTSWARM  "FTSWARM"
 #define MAXIDENTIFIER 32
 #define MAXACTORS 2

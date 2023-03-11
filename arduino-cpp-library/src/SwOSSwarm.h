@@ -9,6 +9,8 @@
  
 #pragma once
 
+#include "SwOS.h"
+
 #include <stdint.h>
 #include <esp_now.h>
 
@@ -34,9 +36,9 @@ protected:
   uint16_t _nextToken( bool rotateToken);
   SwOSIO *_waitFor( char *alias );
   bool    _startEvents( void );
+  void    _startWifi( bool verbose );
   
 public:
-  SwOSNVS  nvs;
 	int8_t   maxCtrl = -1;
 	SwOSCtrl *Ctrl[MAXCTRL];
   bool     allowPairing = false;

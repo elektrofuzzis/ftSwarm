@@ -20,11 +20,8 @@
 
 #define ESPNOW_MAXDELAY 512
 #define DEFAULTSECRET   0x2506
-#define VERSIONDATA     2
+#define VERSIONDATA     4
 #define MAXALIAS        5
-
-
-
 
 typedef enum {
   CMD_SWARMJOIN,         // I want to join a swarm
@@ -44,6 +41,7 @@ typedef enum {
 
 // broadcast address
 const uint8_t broadcast[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+const FtSwarmSerialNumber_t broadcastSN = 0xFFFF;
 
 extern QueueHandle_t sendNotification;
 extern QueueHandle_t recvNotification;
@@ -83,13 +81,13 @@ struct registerCmd_t {
 struct SwOSDatagram_t {
   uint16_t              secret;
   uint8_t               version;
-  FtSwarmSerialNumber_t serialNumber;
+  FtSwarmSerialNumber_t sourceSN, destinationSN;
   SwOSCommand_t         cmd;
   union {
     // struct { FtSwarmControler_t ctrlType; FtSwarmVersion_t versionCPU; FtSwarmVersion_t versionHAT; bool IAmAKelda; uint16_t pin; } registerCmd;
     registerCmd_t registerCmd;
     struct { uint16_t pin; uint16_t swarmSecret; char swarmName[MAXIDENTIFIER]; } joinCmd;
-    struct { uint32_t inputValue[4]; int16_t LR[2]; int16_t FB[2]; uint8_t hc165;} stateCmd;
+    struct { uint32_t inputValue[6]; int16_t LR[2]; int16_t FB[2]; uint8_t hc165;} stateCmd;
     struct { uint8_t index; FtSwarmSensor_t sensorType; bool normallyOpen; } sensorCmd;
     struct { uint8_t index; int16_t offset; int16_t position; } servoCmd;
     struct { uint8_t index; FtSwarmMotion_t motionType; int16_t power; } actorPowerCmd;
@@ -104,15 +102,17 @@ protected:
   bool    _isValid;
   uint8_t bufferIndex;
   size_t  _size( void );
+  esp_err_t _sendWiFi( void );
+  esp_err_t _sendRS485( void );
 
 public:
   uint8_t        mac[ESP_NOW_ETH_ALEN];
   SwOSDatagram_t data;
 
   SwOSCom( const uint8_t *mac_addr, const uint8_t *buffer, int length);
-  SwOSCom( const uint8_t *mac_addr, FtSwarmSerialNumber_t serialNumber, SwOSCommand_t cmd );
+  SwOSCom( const uint8_t *mac_addr, FtSwarmSerialNumber_t destinationSN, SwOSCommand_t cmd );
 
-  void setMAC( const uint8_t *mac_addr );
+  void setMAC( const uint8_t *mac_addr, FtSwarmSerialNumber_t destinationSN );
 
   // send my alias names buffered
   void sendBuffered( char *name, char *alias );

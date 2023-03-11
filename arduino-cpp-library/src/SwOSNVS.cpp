@@ -6,7 +6,9 @@
  * (C) 2021/22 Christian Bergschneider & Stefan Fuss
  * 
  */
- 
+
+#include "SwOS.h"
+
 #include <nvs.h>
 #include <nvs_flash.h>
 #include <esp_err.h>
@@ -15,6 +17,8 @@
 #include "ftSwarm.h"
 #include "SwOSNVS.h"
 #include "easyKey.h"
+
+SwOSNVS nvs;
 
 NVSEvent::NVSEvent() {
   sensor[0] = '\0';
@@ -31,11 +35,12 @@ void SwOSNVS::_initialSetup( void ) {
 
   controlerType = (FtSwarmControler_t) (enterNumber(("Controler Type\n (1) ftSwarm\n (2) ftSwarmControl\n (3) ftSwarmCAM\n>"), 0, 1, 3 ) - 1 );
 
-  switch( enterNumber("CPU Version\n (1) 1.0\n (2) 1.3\n (3) 1.15\n (4) 2.0\n>", 0, 1, 4) ) {
+  switch( enterNumber("CPU Version\n (1) 1.0\n (2) 1.3\n (3) 1.15\n (4) 2.0\n (5) 2.1\n>", 0, 1, 5) ) {
     case 1:  CPU = FTSWARM_1V0;  break;
     case 2:  CPU = FTSWARM_1V3;  break;
     case 3:  CPU = FTSWARM_1V15;  break;
     case 4:  CPU = FTSWARM_2V0;  break;
+    case 5:  CPU = FTSWARM_2V1;  break;
     default: CPU = FTSWARM_1V0;  break;
   }
 
@@ -43,7 +48,7 @@ void SwOSNVS::_initialSetup( void ) {
 
   serialNumber = enterNumber("Serial number [1..65535]>", 0, 1, 65535 );
 
-  APMode = true;
+  wifiMode = wifiAP;
   sprintf( wifiSSID, "ftSwarm%d", serialNumber );
   wifiPwd[0]  = '\0';
 
@@ -70,17 +75,21 @@ void SwOSNVS::_initialSetup( void ) {
 SwOSNVS::SwOSNVS() {
 
 	// initialize to undefined
-	version       = -1;
-	controlerType = FTSWARM_NOCTRL;
-	serialNumber  = 0;
-	CPU           = FTSWARM_NOVERSION;
-	HAT           = FTSWARM_NOVERSION;
-	wifiSSID[0]   = '\0';
-	wifiPwd[0]    = '\0';
-  APMode        = false;
-  swarmSecret   = 0xFFFF;
-  swarmPIN      = 9999;
-  swarmName[0]  = '\0';
+	version            = -1;
+	controlerType      = FTSWARM_NOCTRL;
+	serialNumber       = 0;
+	CPU                = FTSWARM_NOVERSION;
+	HAT                = FTSWARM_NOVERSION;
+	wifiSSID[0]        = '\0';
+	wifiPwd[0]         = '\0';
+  wifiMode           = wifiAP;
+  swarmSecret        = 0xFFFF;
+  swarmPIN           = 9999;
+  swarmName[0]       = '\0';
+  webUI              = true;
+  swarmCommunication = swarmComWifi;
+  IAmKelda           = false;
+  memset( &swarmMembers, 0, sizeof( swarmMembers ) );
 
   // initialize zero positions
   for (uint8_t i=0;i<2;i++)
@@ -157,8 +166,8 @@ bool SwOSNVS::load() {
   size_t dummy;
        
   // wifi
-  nvs_get_u8 ( my_handle, "APMode",        (uint8_t *) &APMode );
-  nvs_get_u8 ( my_handle, "Channel",                   &channel );
+  nvs_get_u32( my_handle, "wifiMode", (uint32_t *) &wifiMode );
+  nvs_get_u8 ( my_handle, "Channel",  &channel );
   dummy = sizeof( wifiSSID ); nvs_get_str( my_handle, "wifiSSID", wifiSSID, &dummy );
   dummy = sizeof( wifiPwd );  nvs_get_str( my_handle, "wifiPwd",  wifiPwd,  &dummy );
 
@@ -169,6 +178,14 @@ bool SwOSNVS::load() {
 
   // events
   dummy = sizeof( eventList );  nvs_get_blob( my_handle, "eventList", &eventList, &dummy );
+
+  // Kelda & swarmMembers
+  nvs_get_u8 ( my_handle, "IAmKelda", (uint8_t *) &IAmKelda );
+  nvs_get_u32( my_handle, "swarmCom", (uint32_t *) &swarmCommunication);
+  dummy = sizeof( swarmMembers );  nvs_get_blob( my_handle, "swarmMembers", &swarmMembers, &dummy );
+
+  // webUI
+  nvs_get_u8 ( my_handle, "webUI", (uint8_t *) &webUI );
 
   return true;
 
@@ -202,7 +219,7 @@ void SwOSNVS::save( bool writeAll ) {
   }
 
   // wifi
-  ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "APMode",   (uint8_t) APMode ) );
+  ESP_ERROR_CHECK( nvs_set_u32( my_handle, "wifiMode", wifiMode ) );
   ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "Channel",  (uint8_t) channel ) );
   ESP_ERROR_CHECK( nvs_set_str( my_handle, "wifiSSID",           wifiSSID)  );
   ESP_ERROR_CHECK( nvs_set_str( my_handle, "wifiPwd",            wifiPwd)  );
@@ -215,6 +232,14 @@ void SwOSNVS::save( bool writeAll ) {
   // events
   ESP_ERROR_CHECK( nvs_set_blob( my_handle, "eventList",  (void *)&eventList, sizeof( eventList ) ) );
    
+  // Kelda & swarmMembers
+  ESP_ERROR_CHECK( nvs_set_u8 ( my_handle,  "IAmKelda",     (uint8_t) IAmKelda ) );
+  ESP_ERROR_CHECK( nvs_set_u32( my_handle,  "swarmCom",     swarmCommunication ) );
+  ESP_ERROR_CHECK( nvs_set_blob( my_handle, "swarmMembers", (void *)&swarmMembers, sizeof( swarmMembers ) ) );
+
+  // webUI
+  ESP_ERROR_CHECK( nvs_set_u8 ( my_handle,  "webUI",   (uint8_t) webUI ) );
+
   // commit
   ESP_ERROR_CHECK( nvs_commit( my_handle ) );
 
@@ -225,6 +250,9 @@ void SwOSNVS::saveAndRestart( void ) {
   ESP.restart();
 }
 
+bool SwOSNVS::RS485Available( void ) {
+  return ( CPU == FTSWARM_2V0 ) || ( CPU == FTSWARM_2V1 );
+}
 
 void SwOSNVS::factorySettings( void ) {
 
@@ -233,7 +261,7 @@ void SwOSNVS::factorySettings( void ) {
   memset( wifiSSID, '\0', 64 );
   memset( wifiPwd,  '\0', 128 );
   
-  APMode = true;
+  wifiMode = wifiAP;
   sprintf( wifiSSID, "ftSwarm%d", serialNumber );
 
   strcpy( swarmName, wifiSSID );
@@ -261,12 +289,14 @@ void SwOSNVS::printNVS() {
   printf( "HAT: %d\n", HAT );
   printf( "controlerType: %d\n", controlerType );
   printf( "serialNumber: %d\n", serialNumber );
-  printf( "APMode: %d\n", APMode );
+  printf( "wifiMode: %d\n", wifiMode );
   printf( "wifiSSID: >%s<\n", wifiSSID );
   printf( "wifiPwd: >%s<\n", wifiPwd );
   printf( "swarmSecret: 0x%4X\n", swarmSecret );
   printf( "swarmPIN: %d\n", swarmPIN );
   printf( "swarmName: >%s<\n", swarmName );
+  printf( "IAmKelda: %d\n", IAmKelda );
+  printf( "swarmCommunication %d\n", swarmCommunication );
   printf( "RGBLeds: %d\n", RGBLeds );
   printf( "displayType: %d\n", displayType );
  
