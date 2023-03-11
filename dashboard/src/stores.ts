@@ -9,6 +9,8 @@ export const swarmApiData = writable<GetSwarmResponse>({
     swarms: []
 });
 
+export const sendTimeout = writable<number>(0);
+
 export const isLoggedIn = writable(false);
 
 swarmApiData.subscribe((data) => {

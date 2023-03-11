@@ -3,10 +3,11 @@
     import SwarmCtrlBase from "./SwarmCtrlBase.svelte";
     import Slider from "./Slider.svelte";
     import {ftSwarm} from "../api/FtSwarm";
-    import {isLoggedIn} from "../stores";
+    import {swarmApiData} from "../stores.ts";
 
     export let input: ActorIo;
-    let disabled: boolean = !$isLoggedIn;
+    let disabled: boolean;
+    $: disabled = !$swarmApiData.auth.status;
 </script>
 
 <SwarmCtrlBase colspan={2} descriptor={input.subType} io={input}>

@@ -1,6 +1,7 @@
-import {isLoggedIn, swarmApiData} from "../stores";
+import {isLoggedIn, swarmApiData, sendTimeout} from "../stores";
 import {nextToken} from "./auth";
 import Swal from "sweetalert2";
+import {get} from "svelte/store";
 
 const SWARM_API_BASE = window.location.origin === 'http://127.0.0.1:5173' ? 'http://127.0.0.1:5000/api/' : window.location.origin + '/api/'
 let mouseDown = false;
@@ -18,6 +19,7 @@ function debounce(func, wait, immediate = false) {
     let lastCall = 0;
     return function (...args) {
         const context = this;
+        sendTimeout.set(Date.now() + 1500);
         const later = function () {
             timeout = null;
             if (!immediate) func.apply(context, args);
@@ -87,7 +89,13 @@ class FtSwarm {
 
         const req = await this.fetch('getSwarm')
         const res = await req.json()
-        swarmApiData.set(res)
+
+        if (get(sendTimeout) <= Date.now()) {
+            swarmApiData.set(res)
+        } else {
+            console.log("FtSwarm: Skipping update, because we are in sendTimeout")
+        }
+
         lastRequest = Date.now()
     }
 

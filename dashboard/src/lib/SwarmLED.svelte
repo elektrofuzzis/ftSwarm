@@ -4,12 +4,13 @@
     import Slider from "./Slider.svelte";
     import {onDestroy, onMount} from "svelte";
     import {ftSwarm} from "../api/FtSwarm";
-    import {isLoggedIn} from "../stores";
+    import {swarmApiData} from "../stores.ts";
 
     export let input: LedIo;
     let inputRef;
     let timeout: NodeJS.Timeout;
-    let disabled: boolean = !$isLoggedIn;
+    let disabled: boolean;
+    $: disabled = !$swarmApiData.auth.status;
 
     onMount(() => {
         clearTimeout(timeout);
