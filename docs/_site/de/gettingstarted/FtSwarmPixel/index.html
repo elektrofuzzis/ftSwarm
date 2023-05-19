@@ -1,0 +1,388 @@
+<!doctype html>
+<!--
+  Minimal Mistakes Jekyll Theme 4.24.0 by Michael Rose
+  Copyright 2013-2020 Michael Rose - mademistakes.com | @mmistakes
+  Free for personal and commercial use under the MIT license
+  https://github.com/mmistakes/minimal-mistakes/blob/master/LICENSE
+-->
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+
+<!-- begin _includes/seo.html --><title>RGB LEDs &amp; ftPixel -</title>
+<meta name="description" content="">
+
+
+  <meta name="author" content="//The ftSwarm Project">
+  
+
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="">
+<meta property="og:title" content="RGB LEDs &amp; ftPixel">
+<meta property="og:url" content="http://localhost:4000/de/gettingstarted/FtSwarmPixel/">
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<link rel="canonical" href="http://localhost:4000/de/gettingstarted/FtSwarmPixel/">
+
+
+
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    
+      "@type": "Person",
+      "name": "The ftSwarm Project",
+      "url": "http://localhost:4000/"
+    
+  }
+</script>
+
+
+
+
+
+
+
+<!-- end _includes/seo.html -->
+
+
+
+  <link href="/feed.xml" type="application/atom+xml" rel="alternate" title=" Feed">
+
+
+<!-- https://t.co/dKP3o1e -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+  document.documentElement.className = document.documentElement.className.replace(/\bno-js\b/g, '') + ' js ';
+</script>
+
+<!-- For all browsers -->
+<link rel="stylesheet" href="/assets/css/main.css">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css"></noscript>
+
+
+
+    <!-- start custom head snippets -->
+
+<!-- insert favicons. use https://realfavicongenerator.net/ -->
+
+<!-- end custom head snippets -->
+
+  </head>
+
+  <body class="layout--category wide">
+    <nav class="skip-links">
+  <ul>
+    <li><a href="#site-nav" class="screen-reader-shortcut">Skip to primary navigation</a></li>
+    <li><a href="#main" class="screen-reader-shortcut">Skip to content</a></li>
+    <li><a href="#footer" class="screen-reader-shortcut">Skip to footer</a></li>
+  </ul>
+</nav>
+
+    
+<div class="masthead">
+  <div class="masthead__inner-wrap">
+    <div class="masthead__menu">
+      <nav id="site-nav" class="greedy-nav">
+        
+          <a class="site-logo" href="/"><img src="/assets/img/ftSwarm.svg" alt=""></a>
+        
+        <a class="site-title" href="/">
+          
+          
+        </a>
+
+        <!-- original stuff 
+        <ul class="visible-links"></ul>
+        end original stuff-->
+
+        <script>
+          function callRef( url ) {
+            if ( location.pathname.startsWith('/en/') ) {
+              location.href='/en/'+url;
+            } else {
+              location.href='/de/'+url;
+            }
+          }
+        </script>
+
+        <ul class="visible-links">
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('gettingstarted/gettingstarted')" title="Tutorial">Tutorial</a>
+          </li>
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('advanced/Configuration')" title="Advanced">Advanced</a>
+          </li>
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('cpp-api/index')" title="api">api</a>
+          </li>
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('faq')" title="FAQ">FAQ</a>
+          </li>
+        </ul>
+
+
+        <!-- language picker -->
+
+        <a class="alang" href="#" onclick="location.href=location.href.replace('/de/', '/en/')"><img class="language-picker" src="/assets/img/uk.png"></a>
+        <a class="alang" href="#" onclick="location.href=location.href.replace('/en/', '/de/')"><img class="language-picker" src="/assets/img/germany.png"></a>
+        
+        <!-- language picker -->
+
+        
+        <button class="search__toggle" type="button">
+          <span class="visually-hidden">Toggle search</span>
+          <i class="fas fa-search"></i>
+        </button>
+        
+        <button class="greedy-nav__toggle hidden" type="button">
+          <span class="visually-hidden">Toggle menu</span>
+          <div class="navicon"></div>
+        </button>
+        <ul class="hidden-links hidden"></ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+
+    <div class="initial-content">
+      
+
+
+
+<div id="main" role="main">
+  
+  <div class="sidebar sticky">
+  
+  
+    
+      
+      
+      
+      
+    
+    
+      
+
+<nav class="nav__list">
+  
+  <input id="ac-toc" name="accordion-toc" type="checkbox" />
+  <label for="ac-toc">Toggle menu</label>
+  <ul class="nav__items">
+    
+      <li>
+        
+          <span class="nav__sub-title">Tutorial</span>
+        
+
+        
+        <ul>
+          
+            <li><a href="/de/gettingstarted/1stftSwarm">ftSwarm</a></li>
+          
+            <li><a href="/de/gettingstarted/1stftSwarmControl">ftSwarmControl</a></li>
+          
+            <li><a href="/de/gettingstarted/serial">USB Anschluss</a></li>
+          
+            <li><a href="/de/gettingstarted/WebUI">WLAN & Statusseite</a></li>
+          
+            <li><a href="/de/gettingstarted/ide">Installation IDE</a></li>
+          
+            <li><a href="/de/gettingstarted/MotorSwitch">Das erste Programm</a></li>
+          
+            <li><a href="/de/gettingstarted/kelda">Das Kelda Prinzip</a></li>
+          
+            <li><a href="/de/gettingstarted/MotorSwitchSwarm">Ein erster Schwarm</a></li>
+          
+            <li><a href="/de/gettingstarted/switches">Switches & Buttons</a></li>
+          
+            <li><a href="/de/gettingstarted/MotorSwitchAlias">Alias Namen</a></li>
+          
+            <li><a href="/de/gettingstarted/RemoteControl">Fernbedienung</a></li>
+          
+            <li><a href="/de/gettingstarted/EventControlled">Events</a></li>
+          
+            <li><a href="/de/gettingstarted/FtSwarmPixel">RGB LEDs & FtSwarmPixel</a></li>
+          
+            <li><a href="/de/gettingstarted/FtSwarmOLED">OLED Display</a></li>
+          
+        </ul>
+        
+      </li>
+    
+  </ul>
+</nav>
+
+    
+  
+  </div>
+
+
+
+  <div class="archive">
+    
+      <h1 id="page-title" class="page__title">RGB LEDs & ftPixel</h1>
+    
+    <p>Der ftSwarm hat zwei eingebaute RGB-LEDs, um den Betriebszustand anzeigen. Die LEDs können aber auch über das Steuerprogramm geschaltet werden. Bis zu 1 ftPixels können  zusätzliche extern an den LED-Port angeschlossen werden.</p>
+
+<p>Die Einrichtung der Hardware ist einfach: Sie benötigen lediglich einen ftSwarm-Controller, der mit einem USB-Kabel an Ihren PC angeschlossen ist, und ein ftSwarm-Netzteil.</p>
+
+<p class="notice--info">ftPixel kann nur mit ftSwarm und ftSwarmRS verwendet werden.</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#include &lt;ftSwarm.h&gt;
+#include &lt;FastLED.h&gt;
+</span>
+<span class="n">FtSwarmLED</span> <span class="o">*</span><span class="n">led1</span><span class="p">;</span>
+<span class="n">FtSwarmLED</span> <span class="o">*</span><span class="n">led2</span><span class="p">;</span>
+
+<span class="kt">void</span> <span class="nf">setup</span><span class="p">(</span> <span class="p">)</span> <span class="p">{</span>
+
+  <span class="n">Serial</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="mi">115200</span><span class="p">);</span>
+
+  <span class="c1">// start the swarm</span>
+  <span class="n">FtSwarmSerialNumber_t</span> <span class="n">local</span> <span class="o">=</span> <span class="n">ftSwarm</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span> <span class="p">);</span>
+  
+  <span class="c1">// get led instances</span>
+  <span class="n">led1</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FtSwarmLED</span><span class="p">(</span> <span class="n">local</span><span class="p">,</span> <span class="n">FTSWARM_LED1</span> <span class="p">);</span>
+  <span class="n">led2</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FtSwarmLED</span><span class="p">(</span> <span class="n">local</span><span class="p">,</span> <span class="n">FTSWARM_LED2</span> <span class="p">);</span>
+  
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">loop</span><span class="p">(</span> <span class="p">)</span> <span class="p">{</span>
+
+  <span class="n">Serial</span><span class="p">.</span><span class="n">println</span><span class="p">(</span><span class="s">"colors..."</span><span class="p">);</span>
+  <span class="n">led1</span><span class="o">-&gt;</span><span class="n">setColor</span><span class="p">(</span> <span class="n">CRGB</span><span class="o">::</span><span class="n">Blue</span> <span class="p">);</span>
+  <span class="n">led2</span><span class="o">-&gt;</span><span class="n">setColor</span><span class="p">(</span> <span class="n">CRGB</span><span class="o">::</span><span class="n">Cyan</span><span class="p">);</span>
+  <span class="n">delay</span><span class="p">(</span><span class="mi">500</span><span class="p">);</span>
+  <span class="n">led1</span><span class="o">-&gt;</span><span class="n">setColor</span><span class="p">(</span> <span class="n">CRGB</span><span class="o">::</span><span class="n">Red</span><span class="p">);</span>
+  <span class="n">led2</span><span class="o">-&gt;</span><span class="n">setColor</span><span class="p">(</span> <span class="n">CRGB</span><span class="o">::</span><span class="n">Orange</span><span class="p">);</span>
+  <span class="n">delay</span><span class="p">(</span><span class="mi">500</span><span class="p">);</span>
+  <span class="n">led1</span><span class="o">-&gt;</span><span class="n">setColor</span><span class="p">(</span> <span class="n">CRGB</span><span class="o">::</span><span class="n">Green</span><span class="p">);</span>
+  <span class="n">led2</span><span class="o">-&gt;</span><span class="n">setColor</span><span class="p">(</span> <span class="n">CRGB</span><span class="o">::</span><span class="n">Yellow</span><span class="p">);</span>
+  <span class="n">delay</span><span class="p">(</span><span class="mi">500</span><span class="p">);</span>
+
+  <span class="n">Serial</span><span class="p">.</span><span class="n">println</span><span class="p">(</span><span class="s">"brightness"</span><span class="p">);</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kt">uint8_t</span> <span class="n">i</span><span class="o">=</span><span class="mi">64</span><span class="p">;</span> <span class="n">i</span><span class="o">!=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">-=</span><span class="mi">16</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">led1</span><span class="o">-&gt;</span><span class="n">setBrightness</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+    <span class="n">delay</span><span class="p">(</span><span class="mi">500</span><span class="p">);</span>
+  <span class="p">}</span>
+  
+  <span class="n">led1</span><span class="o">-&gt;</span><span class="n">setBrightness</span><span class="p">(</span><span class="mi">64</span><span class="p">);</span>
+
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Die Firmware verwendet intern die FastLED-Bibliothek. Der Import <strong>#include “FastLED.h “</strong> wird benötigt, um auf die FastLED Farbdefinitionen wie <strong>CRGB::Blue</strong> zuzugreifen. Die LEDs werden mit den Funktionne  <strong>setColor</strong> und <strong>setBrightness</strong> gesteuert. setColor erwartet eine uint32_t als Farbe [0..0xFFFFFF] und setBrightness setz die Hellingkeit von 0 bis 255.</p>
+
+<p class="notice--info">Bekanntes Problem: Aufgrund eines Fehlers in der FastLED-Bibliothek kann die Helligkeit einer LED nicht einzeln eingestellt werden. Ein setBrightness Befehl setzt die Helligkeit aller Leds.</p>
+
+<p class="notice--info">Gut zu wissen: RGB-LEDs benötigen viel Strom. Wenn Sie eine LED auf CRGB::White und maximale Helligkeit einstellen, so hat diese LED einen Stromverbrauch von 60 mA. Zwei LEDs mit maximaler Helligkeit benötigen genauso viel Strom wie der ESP32 Chip mit aktivem WLAN. Reduziert man die Helligkeit auf einen Wert zwischen 16 und 64, so sinkt der Stromverbrauch auf 6%..25%.</p>
+
+
+
+<div class="entries-list">
+  
+</div>
+
+  </div>
+</div>
+    </div>
+
+    
+      <div class="search-content">
+        <div class="search-content__inner-wrap"><form class="search-content__form" onkeydown="return event.key != 'Enter';" role="search">
+    <label class="sr-only" for="search">
+      Enter your search term...
+    </label>
+    <input type="search" id="search" class="search-input" tabindex="-1" placeholder="Enter your search term..." />
+  </form>
+  <div id="results" class="results"></div></div>
+
+      </div>
+    
+
+    <div id="footer" class="page__footer">
+      <footer>
+        <!-- start custom footer snippets -->
+
+<!-- end custom footer snippets -->
+        <div class="page__footer-follow">
+  <ul class="social-icons">
+    
+      <li><strong>Follow:</strong></li>
+    
+
+    
+      
+        
+      
+        
+      
+        
+          <li><a href="https://github.com/elektrofuzzis" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-github" aria-hidden="true"></i> GitHub</a></li>
+        
+      
+        
+      
+        
+      
+        
+          <li><a href="https://instagram.com/elektrofuzzies" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-instagram" aria-hidden="true"></i> Instagram</a></li>
+        
+      
+        
+          <li><a href="mailto:ftpi@gmx.de" rel="nofollow noopener noreferrer"><i class="fas fa-fw fa-envelope-square" aria-hidden="true"></i> Email</a></li>
+        
+      
+    
+
+    
+      <li><a href="/feed.xml"><i class="fas fa-fw fa-rss-square" aria-hidden="true"></i> Feed</a></li>
+    
+  </ul>
+</div>
+
+<div class="page__footer-copyright">&copy; 2023 The ftSwarm Project. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div>
+
+      </footer>
+    </div>
+
+    
+  <script src="/assets/js/main.min.js"></script>
+
+
+
+
+<script src="/assets/js/lunr/lunr.min.js"></script>
+<script src="/assets/js/lunr/lunr-store.js"></script>
+<script src="/assets/js/lunr/lunr-en.js"></script>
+
+
+
+
+
+
+
+  </body>
+</html>

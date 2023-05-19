@@ -1,0 +1,448 @@
+<!doctype html>
+<!--
+  Minimal Mistakes Jekyll Theme 4.24.0 by Michael Rose
+  Copyright 2013-2020 Michael Rose - mademistakes.com | @mmistakes
+  Free for personal and commercial use under the MIT license
+  https://github.com/mmistakes/minimal-mistakes/blob/master/LICENSE
+-->
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+
+<!-- begin _includes/seo.html --><title>Ein erster Schwarm -</title>
+<meta name="description" content="">
+
+
+  <meta name="author" content="//The ftSwarm Project">
+  
+
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="">
+<meta property="og:title" content="Ein erster Schwarm">
+<meta property="og:url" content="http://localhost:4000/de/gettingstarted/MotorSwitchSwarm/">
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<link rel="canonical" href="http://localhost:4000/de/gettingstarted/MotorSwitchSwarm/">
+
+
+
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    
+      "@type": "Person",
+      "name": "The ftSwarm Project",
+      "url": "http://localhost:4000/"
+    
+  }
+</script>
+
+
+
+
+
+
+
+<!-- end _includes/seo.html -->
+
+
+
+  <link href="/feed.xml" type="application/atom+xml" rel="alternate" title=" Feed">
+
+
+<!-- https://t.co/dKP3o1e -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+  document.documentElement.className = document.documentElement.className.replace(/\bno-js\b/g, '') + ' js ';
+</script>
+
+<!-- For all browsers -->
+<link rel="stylesheet" href="/assets/css/main.css">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css"></noscript>
+
+
+
+    <!-- start custom head snippets -->
+
+<!-- insert favicons. use https://realfavicongenerator.net/ -->
+
+<!-- end custom head snippets -->
+
+  </head>
+
+  <body class="layout--category wide">
+    <nav class="skip-links">
+  <ul>
+    <li><a href="#site-nav" class="screen-reader-shortcut">Skip to primary navigation</a></li>
+    <li><a href="#main" class="screen-reader-shortcut">Skip to content</a></li>
+    <li><a href="#footer" class="screen-reader-shortcut">Skip to footer</a></li>
+  </ul>
+</nav>
+
+    
+<div class="masthead">
+  <div class="masthead__inner-wrap">
+    <div class="masthead__menu">
+      <nav id="site-nav" class="greedy-nav">
+        
+          <a class="site-logo" href="/"><img src="/assets/img/ftSwarm.svg" alt=""></a>
+        
+        <a class="site-title" href="/">
+          
+          
+        </a>
+
+        <!-- original stuff 
+        <ul class="visible-links"></ul>
+        end original stuff-->
+
+        <script>
+          function callRef( url ) {
+            if ( location.pathname.startsWith('/en/') ) {
+              location.href='/en/'+url;
+            } else {
+              location.href='/de/'+url;
+            }
+          }
+        </script>
+
+        <ul class="visible-links">
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('gettingstarted/gettingstarted')" title="Tutorial">Tutorial</a>
+          </li>
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('advanced/Configuration')" title="Advanced">Advanced</a>
+          </li>
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('cpp-api/index')" title="api">api</a>
+          </li>
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('faq')" title="FAQ">FAQ</a>
+          </li>
+        </ul>
+
+
+        <!-- language picker -->
+
+        <a class="alang" href="#" onclick="location.href=location.href.replace('/de/', '/en/')"><img class="language-picker" src="/assets/img/uk.png"></a>
+        <a class="alang" href="#" onclick="location.href=location.href.replace('/en/', '/de/')"><img class="language-picker" src="/assets/img/germany.png"></a>
+        
+        <!-- language picker -->
+
+        
+        <button class="search__toggle" type="button">
+          <span class="visually-hidden">Toggle search</span>
+          <i class="fas fa-search"></i>
+        </button>
+        
+        <button class="greedy-nav__toggle hidden" type="button">
+          <span class="visually-hidden">Toggle menu</span>
+          <div class="navicon"></div>
+        </button>
+        <ul class="hidden-links hidden"></ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+
+    <div class="initial-content">
+      
+
+
+
+<div id="main" role="main">
+  
+  <div class="sidebar sticky">
+  
+  
+    
+      
+      
+      
+      
+    
+    
+      
+
+<nav class="nav__list">
+  
+  <input id="ac-toc" name="accordion-toc" type="checkbox" />
+  <label for="ac-toc">Toggle menu</label>
+  <ul class="nav__items">
+    
+      <li>
+        
+          <span class="nav__sub-title">Tutorial</span>
+        
+
+        
+        <ul>
+          
+            <li><a href="/de/gettingstarted/1stftSwarm">ftSwarm</a></li>
+          
+            <li><a href="/de/gettingstarted/1stftSwarmControl">ftSwarmControl</a></li>
+          
+            <li><a href="/de/gettingstarted/serial">USB Anschluss</a></li>
+          
+            <li><a href="/de/gettingstarted/WebUI">WLAN & Statusseite</a></li>
+          
+            <li><a href="/de/gettingstarted/ide">Installation IDE</a></li>
+          
+            <li><a href="/de/gettingstarted/MotorSwitch">Das erste Programm</a></li>
+          
+            <li><a href="/de/gettingstarted/kelda">Das Kelda Prinzip</a></li>
+          
+            <li><a href="/de/gettingstarted/MotorSwitchSwarm">Ein erster Schwarm</a></li>
+          
+            <li><a href="/de/gettingstarted/switches">Switches & Buttons</a></li>
+          
+            <li><a href="/de/gettingstarted/MotorSwitchAlias">Alias Namen</a></li>
+          
+            <li><a href="/de/gettingstarted/RemoteControl">Fernbedienung</a></li>
+          
+            <li><a href="/de/gettingstarted/EventControlled">Events</a></li>
+          
+            <li><a href="/de/gettingstarted/FtSwarmPixel">RGB LEDs & FtSwarmPixel</a></li>
+          
+            <li><a href="/de/gettingstarted/FtSwarmOLED">OLED Display</a></li>
+          
+        </ul>
+        
+      </li>
+    
+  </ul>
+</nav>
+
+    
+  
+  </div>
+
+
+
+  <div class="archive">
+    
+      <h1 id="page-title" class="page__title">Ein erster Schwarm</h1>
+    
+    <p><a href="../MotorSwitch">Your First Application</a> zeigt wie eine ftSwarm-Applikation aussieht. Aber es ist auch nur eine einfache “Ein-Controller-Applikation”.</p>
+
+<p>Es soll nun ein Schwarm aus zwei COntrollern genutzt werden. Die Idee der Anwendung ist die gleiche - die Steuerung eines Motors durch einen Taster. Aber in dieser Anwendung sind Taster und Motor an verschiedene Controller angeschlossen.</p>
+
+<p>Erster Controller:</p>
+<ul>
+  <li>Der Taster wird am Eingang A1 angeschlossen.</li>
+  <li>Ein 9V Netzteil wird an PWR angeschlossen.</li>
+</ul>
+
+<p>Zweiter Controller:</p>
+<ul>
+  <li>Ein Motor oder eine Lampe werden am Ausgang M2 angeschlossen.</li>
+  <li>Ein 9V Netzteil wird an PWR angeschlossen.</li>
+</ul>
+
+<h3 id="einen-schwarm-bilden">Einen Schwarm bilden</h3>
+
+<p>Um das Beispielprogramm auf dem ersten Controller zu starten, müssen zunächst beide Controller zu einem Schwarm verbunden werden. Auf dem zweiten Controller wird nur die Standardfirmware benötigt.</p>
+
+<p>Auf dem ersten Controller muss für die Konfiguration die Standardfirmware <strong>Examples\ftSwarm\firmware</strong> geflashed werden**.</p>
+
+<p>Nun wird ein Terminalprogramm gestartet und der Reset-Taster gedrückt. Drücken Sie eine Taste, um in das Firmwaremenü zu wechseln:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ftSwarmOS 0.5.0
+
+(C) Christian Bergschneider &amp; Stefan Fuss
+
+Main Menu
+
+(1) wifi settings
+(2) webserver settings
+(3) swarm settings
+(4) alias names
+(5) factory settings
+
+(0) exit
+main&gt;
+</code></pre></div></div>
+
+<p>Die WLAN-Einstellungen sind bereits erledigt, somit müssen nur Schwarmeinstellungen gemacht werden. Verwenden Sie <strong>(3)</strong>, um das Schwarmmenü aufzurufen:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>swarm menu
+
+This device is connected to swarm "ftSwarm1" with 1 member(s) online.
+Swarm PIN is 1.
+(1) swarm communication: wifi
+(2) create a new swarm
+(3) join another swarm
+(4) list swarm members
+
+(0) main
+swarm&gt;
+</code></pre></div></div>
+
+<p>Mit <strong>(2)</strong> können sie einen neuen Schwarm mit eigenem Namen und neuer Pin erzeigen. Sie können aber auch die Standardeinstelungen verwenden (Schwarmname ftSwarm1 mit Pin 1 im obigen Beispiel).</p>
+
+<p>Verbinden sie sich nun mit dem zweiten Controller. Stellen Sie seine WLAN Einstellungen, so dass er auch in ihrem lokalen WLAN arbeitet. Nun können sie ihn mit dem ersten Controller mit <strong>(3) join another swarm</strong> zu einem Schwarm zusammenschalten. Dabei werden Sie nach dem Schwarmnamen und dem Pin gefragt.</p>
+
+<h3 id="eine-verteilte-anwendung">Eine verteilte Anwendung</h3>
+
+<p>Sobald beide COntroller einen Schwarm gebildet haben, kann das Biespiel <strong>Examples\ftSwarm\MotorSwitchSwarm</strong> gestartet werden:</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#include &lt;ftSwarm.h&gt;
+</span>
+<span class="c1">// serial number of the second controller - change it to your 2nd device serial number</span>
+<span class="cp">#define remote 2
+</span>
+<span class="n">FtSwarmSwitch</span> <span class="o">*</span><span class="n">sw</span><span class="p">;</span>
+<span class="n">FtSwarmMotor</span>  <span class="o">*</span><span class="n">mot</span><span class="p">;</span>
+
+<span class="kt">void</span> <span class="nf">setup</span><span class="p">(</span> <span class="p">)</span> <span class="p">{</span>
+
+  <span class="n">Serial</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="mi">115200</span><span class="p">);</span>
+
+  <span class="c1">// start the swarm</span>
+  <span class="n">FtSwarmSerialNumber_t</span> <span class="n">local</span> <span class="o">=</span> <span class="n">ftSwarm</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span> <span class="p">);</span>
+	
+  <span class="c1">// get switch and motor instances</span>
+  <span class="n">sw</span>  <span class="o">=</span> <span class="k">new</span> <span class="n">FtSwarmSwitch</span><span class="p">(</span> <span class="n">local</span><span class="p">,</span> <span class="n">FTSWARM_A1</span> <span class="p">);</span>
+  <span class="n">mot</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FtSwarmMotor</span><span class="p">(</span> <span class="n">remote</span><span class="p">,</span> <span class="n">FTSWARM_M2</span> <span class="p">);</span>
+
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">loop</span><span class="p">(</span> <span class="p">)</span> <span class="p">{</span>
+
+  <span class="c1">// check if switch is pressed or released</span>
+  <span class="k">if</span> <span class="p">(</span> <span class="n">sw</span><span class="o">-&gt;</span><span class="n">isPressed</span><span class="p">()</span> <span class="p">)</span>
+    <span class="n">mot</span><span class="o">-&gt;</span><span class="n">setSpeed</span><span class="p">(</span><span class="mi">255</span><span class="p">);</span>
+  <span class="k">else</span>
+    <span class="n">mot</span><span class="o">-&gt;</span><span class="n">setSpeed</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+	
+  <span class="c1">// wait some time</span>
+  <span class="n">delay</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Das Programm unterscheidet sich kaum vom <a href="../MotorSwitch">ersten Programm</a>. Es gibt nur zwei kleine Änderungen:</p>
+
+<ul>
+  <li><strong>#define remote 2</strong> definiert die Seriennummer des zweiten Controllers. Ändern Sie diese entsprechend Ihrer Controller ab.</li>
+  <li><strong>FtSwarmMotor( remote, FTSWARM_M2 );</strong> nutzt nun die Sieriennummer des zweiten Controllers.</li>
+</ul>
+
+<p>Auf der Statusseite werden nun beide COntroller angezeigt.</p>
+
+<h3 id="was-passiert-wenn-der-zweite-controller-nicht-online-ist">Was passiert, wenn der zweite Controller nicht online ist?</h3>
+
+<p>Verbinden sie ein Terminalprogramm mit dem ersten Controller und trennen Sie am zweiten Controller die Stromversorgung. Starten Sie nun den ersten Controller. Bei <strong>FtSwarmMotor( remote, FTSWARM_M2 );</strong> kommt es nun zu einer Warning: <strong><em>Waiting on device</em></strong>. Beider onboard RGB Leds werden blau. Die Firmware wartet darauf, dass der zweite Controller mit dem Motor online geht.</p>
+
+<p>Schalten Sie am zweiten Controller die Stromversorgung jetzt wieder ein. Sobald das zweite Device gestartet ist, registriet es sich bei der Kelda und das Prgramm kann fortgesetzt werden.</p>
+
+<p>Dieses Feature vereinfacht den Start Ihres Roboters. Es ist völlig egal, in welche Reihenfolge de Controller gestartet werden</p>
+
+
+
+<div class="entries-list">
+  
+</div>
+
+  </div>
+</div>
+    </div>
+
+    
+      <div class="search-content">
+        <div class="search-content__inner-wrap"><form class="search-content__form" onkeydown="return event.key != 'Enter';" role="search">
+    <label class="sr-only" for="search">
+      Enter your search term...
+    </label>
+    <input type="search" id="search" class="search-input" tabindex="-1" placeholder="Enter your search term..." />
+  </form>
+  <div id="results" class="results"></div></div>
+
+      </div>
+    
+
+    <div id="footer" class="page__footer">
+      <footer>
+        <!-- start custom footer snippets -->
+
+<!-- end custom footer snippets -->
+        <div class="page__footer-follow">
+  <ul class="social-icons">
+    
+      <li><strong>Follow:</strong></li>
+    
+
+    
+      
+        
+      
+        
+      
+        
+          <li><a href="https://github.com/elektrofuzzis" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-github" aria-hidden="true"></i> GitHub</a></li>
+        
+      
+        
+      
+        
+      
+        
+          <li><a href="https://instagram.com/elektrofuzzies" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-instagram" aria-hidden="true"></i> Instagram</a></li>
+        
+      
+        
+          <li><a href="mailto:ftpi@gmx.de" rel="nofollow noopener noreferrer"><i class="fas fa-fw fa-envelope-square" aria-hidden="true"></i> Email</a></li>
+        
+      
+    
+
+    
+      <li><a href="/feed.xml"><i class="fas fa-fw fa-rss-square" aria-hidden="true"></i> Feed</a></li>
+    
+  </ul>
+</div>
+
+<div class="page__footer-copyright">&copy; 2023 The ftSwarm Project. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div>
+
+      </footer>
+    </div>
+
+    
+  <script src="/assets/js/main.min.js"></script>
+
+
+
+
+<script src="/assets/js/lunr/lunr.min.js"></script>
+<script src="/assets/js/lunr/lunr-store.js"></script>
+<script src="/assets/js/lunr/lunr-en.js"></script>
+
+
+
+
+
+
+
+  </body>
+</html>
