@@ -1,0 +1,425 @@
+<!doctype html>
+<!--
+  Minimal Mistakes Jekyll Theme 4.24.0 by Michael Rose
+  Copyright 2013-2020 Michael Rose - mademistakes.com | @mmistakes
+  Free for personal and commercial use under the MIT license
+  https://github.com/mmistakes/minimal-mistakes/blob/master/LICENSE
+-->
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+
+<!-- begin _includes/seo.html --><title>ftSwarm -</title>
+<meta name="description" content="">
+
+
+  <meta name="author" content="//The ftSwarm Project">
+  
+
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="">
+<meta property="og:title" content="ftSwarm">
+<meta property="og:url" content="http://localhost:4000/de/gettingstarted/1stftSwarm/">
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<link rel="canonical" href="http://localhost:4000/de/gettingstarted/1stftSwarm/">
+
+
+
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    
+      "@type": "Person",
+      "name": "The ftSwarm Project",
+      "url": "http://localhost:4000/"
+    
+  }
+</script>
+
+
+
+
+
+
+
+<!-- end _includes/seo.html -->
+
+
+
+  <link href="/feed.xml" type="application/atom+xml" rel="alternate" title=" Feed">
+
+
+<!-- https://t.co/dKP3o1e -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+  document.documentElement.className = document.documentElement.className.replace(/\bno-js\b/g, '') + ' js ';
+</script>
+
+<!-- For all browsers -->
+<link rel="stylesheet" href="/assets/css/main.css">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css"></noscript>
+
+
+
+    <!-- start custom head snippets -->
+
+<!-- insert favicons. use https://realfavicongenerator.net/ -->
+
+<!-- end custom head snippets -->
+
+  </head>
+
+  <body class="layout--category wide">
+    <nav class="skip-links">
+  <ul>
+    <li><a href="#site-nav" class="screen-reader-shortcut">Skip to primary navigation</a></li>
+    <li><a href="#main" class="screen-reader-shortcut">Skip to content</a></li>
+    <li><a href="#footer" class="screen-reader-shortcut">Skip to footer</a></li>
+  </ul>
+</nav>
+
+    
+<div class="masthead">
+  <div class="masthead__inner-wrap">
+    <div class="masthead__menu">
+      <nav id="site-nav" class="greedy-nav">
+        
+          <a class="site-logo" href="/"><img src="/assets/img/ftSwarm.svg" alt=""></a>
+        
+        <a class="site-title" href="/">
+          
+          
+        </a>
+
+        <!-- original stuff 
+        <ul class="visible-links"></ul>
+        end original stuff-->
+
+        <script>
+          function callRef( url ) {
+            if ( location.pathname.startsWith('/en/') ) {
+              location.href='/en/'+url;
+            } else {
+              location.href='/de/'+url;
+            }
+          }
+        </script>
+
+        <ul class="visible-links">
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('gettingstarted/gettingstarted')" title="Tutorial">Tutorial</a>
+          </li>
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('advanced/Configuration')" title="Advanced">Advanced</a>
+          </li>
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('cpp-api/index')" title="api">api</a>
+          </li>
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('faq')" title="FAQ">FAQ</a>
+          </li>
+        </ul>
+
+
+        <!-- language picker -->
+
+        <a class="alang" href="#" onclick="location.href=location.href.replace('/de/', '/en/')"><img class="language-picker" src="/assets/img/uk.png"></a>
+        <a class="alang" href="#" onclick="location.href=location.href.replace('/en/', '/de/')"><img class="language-picker" src="/assets/img/germany.png"></a>
+        
+        <!-- language picker -->
+
+        
+        <button class="search__toggle" type="button">
+          <span class="visually-hidden">Toggle search</span>
+          <i class="fas fa-search"></i>
+        </button>
+        
+        <button class="greedy-nav__toggle hidden" type="button">
+          <span class="visually-hidden">Toggle menu</span>
+          <div class="navicon"></div>
+        </button>
+        <ul class="hidden-links hidden"></ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+
+    <div class="initial-content">
+      
+
+
+
+<div id="main" role="main">
+  
+  <div class="sidebar sticky">
+  
+  
+    
+      
+      
+      
+      
+    
+    
+      
+
+<nav class="nav__list">
+  
+  <input id="ac-toc" name="accordion-toc" type="checkbox" />
+  <label for="ac-toc">Toggle menu</label>
+  <ul class="nav__items">
+    
+      <li>
+        
+          <span class="nav__sub-title">Tutorial</span>
+        
+
+        
+        <ul>
+          
+            <li><a href="/de/gettingstarted/1stftSwarm">ftSwarm</a></li>
+          
+            <li><a href="/de/gettingstarted/1stftSwarmControl">ftSwarmControl</a></li>
+          
+            <li><a href="/de/gettingstarted/serial">USB Anschluss</a></li>
+          
+            <li><a href="/de/gettingstarted/WebUI">WLAN & Statusseite</a></li>
+          
+            <li><a href="/de/gettingstarted/ide">Installation IDE</a></li>
+          
+            <li><a href="/de/gettingstarted/MotorSwitch">Das erste Programm</a></li>
+          
+            <li><a href="/de/gettingstarted/kelda">Das Kelda Prinzip</a></li>
+          
+            <li><a href="/de/gettingstarted/MotorSwitchSwarm">Ein erster Schwarm</a></li>
+          
+            <li><a href="/de/gettingstarted/switches">Switches & Buttons</a></li>
+          
+            <li><a href="/de/gettingstarted/MotorSwitchAlias">Alias Namen</a></li>
+          
+            <li><a href="/de/gettingstarted/RemoteControl">Fernbedienung</a></li>
+          
+            <li><a href="/de/gettingstarted/EventControlled">Events</a></li>
+          
+            <li><a href="/de/gettingstarted/FtSwarmPixel">RGB LEDs & FtSwarmPixel</a></li>
+          
+            <li><a href="/de/gettingstarted/FtSwarmOLED">OLED Display</a></li>
+          
+        </ul>
+        
+      </li>
+    
+  </ul>
+</nav>
+
+    
+  
+  </div>
+
+
+
+  <div class="archive">
+    
+      <h1 id="page-title" class="page__title">ftSwarm</h1>
+    
+    <p>Von diesem Controller gibt es zwei Varianten: ftSwarm und ftSwarmRS. Der ftSwarmRS ist etwas leistungsfähiger und kann zusätzlich die Kommunikation im Swarm über eine RS485 Schnittstelle.</p>
+
+<p>Beide Typen sind gegen Verpolung an den JST- und Schraubklemmen geschützt. Ein Verpolungsschutz ist bei den Signalen an den Stiftleisten nicht möglich.</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td><strong>ftSwarm</strong></td>
+      <td><strong>ftSwarmRS</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Pinout</strong></td>
+      <td><img alt="ftSwarm Pinout" src="/assets/img/ftSwarmPinout.png" width="250" /></td>
+      <td><img alt="ftSwarm Pinout" src="/assets/img/ftSwarmRSPinout.png" width="250" /></td>
+    </tr>
+    <tr>
+      <td><strong>CPU</strong></td>
+      <td>esp32-Wrover</td>
+      <td>esp32-S3</td>
+    </tr>
+    <tr>
+      <td><strong>Speicher</strong></td>
+      <td>2 MB RAM, 4MB Flash</td>
+      <td>2 MB RAM, 8MB Flash</td>
+    </tr>
+    <tr>
+      <td><strong>Anschlüsse</strong></td>
+      <td>JST</td>
+      <td>Schraubklemmen</td>
+    </tr>
+    <tr>
+      <td><strong>Motor Ausgänge</strong></td>
+      <td>2 DC Motoren or Lampen, 9V, max. 1A pro Ausgang</td>
+      <td>2 DC Motoren or Lampen, 9V, max. 1A pro Ausgang</td>
+    </tr>
+    <tr>
+      <td><strong>Sensor Eingänge</strong></td>
+      <td>4 analoge oder digitale Sensoren</td>
+      <td>6 x analoge oder digitale Sensoren</td>
+    </tr>
+    <tr>
+      <td><strong>Servo Ausgänge</strong></td>
+      <td>1 x 6V Servo</td>
+      <td>2 x 6V Servo</td>
+    </tr>
+    <tr>
+      <td><strong>RGB LEDs</strong></td>
+      <td>2 onboard LEDs<br />bis zu 16 externe ftPixel</td>
+      <td>2 2 onboard LEDs<br />bis zu 16 externe ftPixel</td>
+    </tr>
+    <tr>
+      <td><strong>Gyro</strong></td>
+      <td>optional MPU6040 Gyro</td>
+      <td>onboard LSM6 Gyro</td>
+    </tr>
+    <tr>
+      <td><strong>I²C Interface</strong></td>
+      <td>3.3V Interface, sofern kein Gyro angeschlossen.</td>
+      <td>3.3V Interface</td>
+    </tr>
+    <tr>
+      <td><strong>Kommunikation</strong></td>
+      <td>wifi</td>
+      <td>wifi oder RS485</td>
+    </tr>
+    <tr>
+      <td><strong>USB Anschluß</strong></td>
+      <td>Micro-USB</td>
+      <td>USB-C</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Der Controller benötigt eine externe 9V Stromversorgung. Wird nur die USB-Buchse verwendet, so können nur die Firmware oder Programme geflashed werden; die Ein- und Ausgänge funktionen dann nicht.</p>
+
+<p class="notice--info">Der Controller wird durch eine 2A Sicherung geschützt. Der maximale Stromverbrauch eines Controllers ist so auf 2A begrenzt. Wenn alle Ausgänge benutzt werden, muss der Gesamtverbrauch berechnet werden.</p>
+
+<ul>
+  <li><em>ftSwarm</em> Controller, max. 270mA</li>
+  <li><em>fischertechnik</em> XM Motor / 135485, max. 950mA</li>
+  <li><em>fischertechnik</em> XS Motor / 137096, max. 265mA</li>
+  <li><em>fischertechnik</em> Mini Motor / 32293, max. 300 mA</li>
+  <li><em>fischertechnik</em> Encoder Motor / 153422, max. 465 mA</li>
+  <li><em>fischertechnik</em> Encoder Motor Competition / 186175, max. 1.200mA</li>
+  <li><em>fischertechnik</em> alle LED-Varianten, max. 10mA</li>
+  <li><em>fischertechnik</em> Linsenlampe / 37875, max. 150mA</li>
+  <li><em>fischertechnik</em> Compressor / 121470, max. 200mA</li>
+  <li><em>fischertechnik</em> 3/2-Weg Ventil / 35327, max. 133mA</li>
+  <li><em>fischertechnik</em> Micro Servo 4.8/6V / 132292, max. 250mA</li>
+</ul>
+
+
+
+<div class="entries-list">
+  
+</div>
+
+  </div>
+</div>
+    </div>
+
+    
+      <div class="search-content">
+        <div class="search-content__inner-wrap"><form class="search-content__form" onkeydown="return event.key != 'Enter';" role="search">
+    <label class="sr-only" for="search">
+      Enter your search term...
+    </label>
+    <input type="search" id="search" class="search-input" tabindex="-1" placeholder="Enter your search term..." />
+  </form>
+  <div id="results" class="results"></div></div>
+
+      </div>
+    
+
+    <div id="footer" class="page__footer">
+      <footer>
+        <!-- start custom footer snippets -->
+
+<!-- end custom footer snippets -->
+        <div class="page__footer-follow">
+  <ul class="social-icons">
+    
+      <li><strong>Follow:</strong></li>
+    
+
+    
+      
+        
+      
+        
+      
+        
+          <li><a href="https://github.com/elektrofuzzis" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-github" aria-hidden="true"></i> GitHub</a></li>
+        
+      
+        
+      
+        
+      
+        
+          <li><a href="https://instagram.com/elektrofuzzies" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-instagram" aria-hidden="true"></i> Instagram</a></li>
+        
+      
+        
+          <li><a href="mailto:ftpi@gmx.de" rel="nofollow noopener noreferrer"><i class="fas fa-fw fa-envelope-square" aria-hidden="true"></i> Email</a></li>
+        
+      
+    
+
+    
+      <li><a href="/feed.xml"><i class="fas fa-fw fa-rss-square" aria-hidden="true"></i> Feed</a></li>
+    
+  </ul>
+</div>
+
+<div class="page__footer-copyright">&copy; 2023 The ftSwarm Project. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div>
+
+      </footer>
+    </div>
+
+    
+  <script src="/assets/js/main.min.js"></script>
+
+
+
+
+<script src="/assets/js/lunr/lunr.min.js"></script>
+<script src="/assets/js/lunr/lunr-store.js"></script>
+<script src="/assets/js/lunr/lunr-en.js"></script>
+
+
+
+
+
+
+
+  </body>
+</html>

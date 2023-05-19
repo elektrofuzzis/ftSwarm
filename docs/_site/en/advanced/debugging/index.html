@@ -1,0 +1,366 @@
+<!doctype html>
+<!--
+  Minimal Mistakes Jekyll Theme 4.24.0 by Michael Rose
+  Copyright 2013-2020 Michael Rose - mademistakes.com | @mmistakes
+  Free for personal and commercial use under the MIT license
+  https://github.com/mmistakes/minimal-mistakes/blob/master/LICENSE
+-->
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+
+<!-- begin _includes/seo.html --><title>Debugging -</title>
+<meta name="description" content="">
+
+
+  <meta name="author" content="//The ftSwarm Project">
+  
+
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="">
+<meta property="og:title" content="Debugging">
+<meta property="og:url" content="http://localhost:4000/en/advanced/debugging/">
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<link rel="canonical" href="http://localhost:4000/en/advanced/debugging/">
+
+
+
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    
+      "@type": "Person",
+      "name": "The ftSwarm Project",
+      "url": "http://localhost:4000/"
+    
+  }
+</script>
+
+
+
+
+
+
+
+<!-- end _includes/seo.html -->
+
+
+
+  <link href="/feed.xml" type="application/atom+xml" rel="alternate" title=" Feed">
+
+
+<!-- https://t.co/dKP3o1e -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+  document.documentElement.className = document.documentElement.className.replace(/\bno-js\b/g, '') + ' js ';
+</script>
+
+<!-- For all browsers -->
+<link rel="stylesheet" href="/assets/css/main.css">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css"></noscript>
+
+
+
+    <!-- start custom head snippets -->
+
+<!-- insert favicons. use https://realfavicongenerator.net/ -->
+
+<!-- end custom head snippets -->
+
+  </head>
+
+  <body class="layout--category wide">
+    <nav class="skip-links">
+  <ul>
+    <li><a href="#site-nav" class="screen-reader-shortcut">Skip to primary navigation</a></li>
+    <li><a href="#main" class="screen-reader-shortcut">Skip to content</a></li>
+    <li><a href="#footer" class="screen-reader-shortcut">Skip to footer</a></li>
+  </ul>
+</nav>
+
+    
+<div class="masthead">
+  <div class="masthead__inner-wrap">
+    <div class="masthead__menu">
+      <nav id="site-nav" class="greedy-nav">
+        
+          <a class="site-logo" href="/"><img src="/assets/img/ftSwarm.svg" alt=""></a>
+        
+        <a class="site-title" href="/">
+          
+          
+        </a>
+
+        <!-- original stuff 
+        <ul class="visible-links"></ul>
+        end original stuff-->
+
+        <script>
+          function callRef( url ) {
+            if ( location.pathname.startsWith('/en/') ) {
+              location.href='/en/'+url;
+            } else {
+              location.href='/de/'+url;
+            }
+          }
+        </script>
+
+        <ul class="visible-links">
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('gettingstarted/gettingstarted')" title="Tutorial">Tutorial</a>
+          </li>
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('advanced/Configuration')" title="Advanced">Advanced</a>
+          </li>
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('cpp-api/index')" title="api">api</a>
+          </li>
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('faq')" title="FAQ">FAQ</a>
+          </li>
+        </ul>
+
+
+        <!-- language picker -->
+
+        <a class="alang" href="#" onclick="location.href=location.href.replace('/de/', '/en/')"><img class="language-picker" src="/assets/img/uk.png"></a>
+        <a class="alang" href="#" onclick="location.href=location.href.replace('/en/', '/de/')"><img class="language-picker" src="/assets/img/germany.png"></a>
+        
+        <!-- language picker -->
+
+        
+        <button class="search__toggle" type="button">
+          <span class="visually-hidden">Toggle search</span>
+          <i class="fas fa-search"></i>
+        </button>
+        
+        <button class="greedy-nav__toggle hidden" type="button">
+          <span class="visually-hidden">Toggle menu</span>
+          <div class="navicon"></div>
+        </button>
+        <ul class="hidden-links hidden"></ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+
+    <div class="initial-content">
+      
+
+
+
+<div id="main" role="main">
+  
+  <div class="sidebar sticky">
+  
+  
+    
+      
+      
+      
+      
+    
+    
+      
+
+<nav class="nav__list">
+  
+  <input id="ac-toc" name="accordion-toc" type="checkbox" />
+  <label for="ac-toc">Toggle menu</label>
+  <ul class="nav__items">
+    
+      <li>
+        
+          <span class="nav__sub-title">Advanced</span>
+        
+
+        
+        <ul>
+          
+            <li><a href="/en/advanced/Configuration">Configuration</a></li>
+          
+            <li><a href="/en/advanced/PlatformIO">PlatformIO & VSCode</a></li>
+          
+            <li><a href="/en/advanced/rs485">RS485</a></li>
+          
+            <li><a href="/en/advanced/debugging">Debugging</a></li>
+          
+            <li><a href="/en/advanced/versions">Version history</a></li>
+          
+        </ul>
+        
+      </li>
+    
+  </ul>
+</nav>
+
+    
+  
+  </div>
+
+
+
+  <div class="archive">
+    
+      <h1 id="page-title" class="page__title">Debugging</h1>
+    
+    <p>There are multiple options to debug your application. One option is the  controller’s <a href="/en/gettingstarted/WebUI">status page</a>. It shows the state of all inputs and outputs, you could manipulate the outputs as well.</p>
+
+<p>Another option is to send some debug messages to your serial console / terminal program. Therefore you need to change your code, but debug output is more effective.</p>
+
+<h3 id="arduino-serial">Arduino Serial</h3>
+
+<p>The Arduino environment implements two simple functions to send some output using the serial console. 
+<strong>Serial.print</strong> prints the argument, <strong>Serial.println</strong>prints the argument followed by a CR/LF.
+If you like to format your output, printf is much more feasible.</p>
+
+<h3 id="stdout--printf">stdout &amp; printf</h3>
+
+<p>printf sends stdout to the serial console. So you could just use <strong>printf</strong> commands to get some formatted output. Please keep in mind, the serial console is a buffered device. <strong>printf(“Hello world”);</strong> doesn’t show the string immediatly.
+The data is transferred using <strong>fflush( stdout );</strong> or by writing a new line <strong>/n</strong>.</p>
+
+<h3 id="esp_logx">ESP_LOGx</h3>
+
+<p>You could use espressif’s logging macro <a href="https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/log.html">ESP_LOGx</a>. Using the Arduino IDE, you could set the logging level during compile time <strong>Tools\Core Debug Level</strong>. 
+At PlatformIO you set the debug level in your projects ini-file: <strong>build_flags = -DCORE_DEBUG_LEVEL=5</strong></p>
+
+<h3 id="example">Example</h3>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#include &lt;ftSwarm.h&gt;
+#include &lt;esp_log.h&gt;
+</span>
+<span class="kt">void</span> <span class="nf">setup</span><span class="p">(</span>  <span class="p">)</span> <span class="p">{</span>
+
+	<span class="n">Serial</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span> <span class="mi">115200</span> <span class="p">);</span>
+	<span class="n">ftSwarm</span><span class="p">.</span><span class="n">begin</span><span class="p">();</span>
+	
+	<span class="kt">int</span> <span class="n">p1</span> <span class="o">=</span> <span class="mi">17</span><span class="p">;</span>
+	<span class="kt">int</span> <span class="n">p2</span> <span class="o">=</span> <span class="mi">42</span><span class="p">;</span>
+	
+	<span class="c1">// Serial</span>
+	<span class="n">Serial</span><span class="p">.</span><span class="n">print</span><span class="p">(</span><span class="s">"p1="</span><span class="p">);</span>   <span class="n">Serial</span><span class="p">.</span><span class="n">print</span><span class="p">(</span><span class="n">p1</span><span class="p">);</span>
+	<span class="n">Serial</span><span class="p">.</span><span class="n">print</span><span class="p">(</span><span class="s">", p2="</span><span class="p">);</span> <span class="n">Serial</span><span class="p">.</span><span class="n">println</span><span class="p">(</span><span class="n">p2</span><span class="p">);</span>
+	
+	<span class="c1">// printf</span>
+	<span class="n">printf</span><span class="p">(</span> <span class="s">"p1=%d p2=%s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span> <span class="p">);</span>
+
+	<span class="c1">// debug message</span>
+	<span class="n">ESP_LOGD</span><span class="p">(</span> <span class="s">"MYTAG"</span><span class="p">,</span> <span class="s">"p1=%d p2=%s"</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span> <span class="p">);</span>
+	
+	<span class="c1">// error message</span>
+	<span class="n">ESP_LOGE</span><span class="p">(</span> <span class="s">"MYTAG"</span><span class="p">,</span> <span class="s">"unexpected behaviour"</span> <span class="p">);</span>
+
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">loop</span><span class="p">()</span> <span class="p">{}</span>
+</code></pre></div></div>
+
+
+
+<div class="entries-list">
+  
+</div>
+
+  </div>
+</div>
+    </div>
+
+    
+      <div class="search-content">
+        <div class="search-content__inner-wrap"><form class="search-content__form" onkeydown="return event.key != 'Enter';" role="search">
+    <label class="sr-only" for="search">
+      Enter your search term...
+    </label>
+    <input type="search" id="search" class="search-input" tabindex="-1" placeholder="Enter your search term..." />
+  </form>
+  <div id="results" class="results"></div></div>
+
+      </div>
+    
+
+    <div id="footer" class="page__footer">
+      <footer>
+        <!-- start custom footer snippets -->
+
+<!-- end custom footer snippets -->
+        <div class="page__footer-follow">
+  <ul class="social-icons">
+    
+      <li><strong>Follow:</strong></li>
+    
+
+    
+      
+        
+      
+        
+      
+        
+          <li><a href="https://github.com/elektrofuzzis" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-github" aria-hidden="true"></i> GitHub</a></li>
+        
+      
+        
+      
+        
+      
+        
+          <li><a href="https://instagram.com/elektrofuzzies" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-instagram" aria-hidden="true"></i> Instagram</a></li>
+        
+      
+        
+          <li><a href="mailto:ftpi@gmx.de" rel="nofollow noopener noreferrer"><i class="fas fa-fw fa-envelope-square" aria-hidden="true"></i> Email</a></li>
+        
+      
+    
+
+    
+      <li><a href="/feed.xml"><i class="fas fa-fw fa-rss-square" aria-hidden="true"></i> Feed</a></li>
+    
+  </ul>
+</div>
+
+<div class="page__footer-copyright">&copy; 2023 The ftSwarm Project. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div>
+
+      </footer>
+    </div>
+
+    
+  <script src="/assets/js/main.min.js"></script>
+
+
+
+
+<script src="/assets/js/lunr/lunr.min.js"></script>
+<script src="/assets/js/lunr/lunr-store.js"></script>
+<script src="/assets/js/lunr/lunr-en.js"></script>
+
+
+
+
+
+
+
+  </body>
+</html>

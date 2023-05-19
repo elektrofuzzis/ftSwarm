@@ -1,0 +1,376 @@
+<!doctype html>
+<!--
+  Minimal Mistakes Jekyll Theme 4.24.0 by Michael Rose
+  Copyright 2013-2020 Michael Rose - mademistakes.com | @mmistakes
+  Free for personal and commercial use under the MIT license
+  https://github.com/mmistakes/minimal-mistakes/blob/master/LICENSE
+-->
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+
+<!-- begin _includes/seo.html --><title>FAQ -</title>
+<meta name="description" content="">
+
+
+  <meta name="author" content="//The ftSwarm Project">
+  
+
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="">
+<meta property="og:title" content="FAQ">
+<meta property="og:url" content="http://localhost:4000/de/faq/">
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<link rel="canonical" href="http://localhost:4000/de/faq/">
+
+
+
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    
+      "@type": "Person",
+      "name": "The ftSwarm Project",
+      "url": "http://localhost:4000/"
+    
+  }
+</script>
+
+
+
+
+
+
+
+<!-- end _includes/seo.html -->
+
+
+
+  <link href="/feed.xml" type="application/atom+xml" rel="alternate" title=" Feed">
+
+
+<!-- https://t.co/dKP3o1e -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+  document.documentElement.className = document.documentElement.className.replace(/\bno-js\b/g, '') + ' js ';
+</script>
+
+<!-- For all browsers -->
+<link rel="stylesheet" href="/assets/css/main.css">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css"></noscript>
+
+
+
+    <!-- start custom head snippets -->
+
+<!-- insert favicons. use https://realfavicongenerator.net/ -->
+
+<!-- end custom head snippets -->
+
+  </head>
+
+  <body class="layout--category wide">
+    <nav class="skip-links">
+  <ul>
+    <li><a href="#site-nav" class="screen-reader-shortcut">Skip to primary navigation</a></li>
+    <li><a href="#main" class="screen-reader-shortcut">Skip to content</a></li>
+    <li><a href="#footer" class="screen-reader-shortcut">Skip to footer</a></li>
+  </ul>
+</nav>
+
+    
+<div class="masthead">
+  <div class="masthead__inner-wrap">
+    <div class="masthead__menu">
+      <nav id="site-nav" class="greedy-nav">
+        
+          <a class="site-logo" href="/"><img src="/assets/img/ftSwarm.svg" alt=""></a>
+        
+        <a class="site-title" href="/">
+          
+          
+        </a>
+
+        <!-- original stuff 
+        <ul class="visible-links"></ul>
+        end original stuff-->
+
+        <script>
+          function callRef( url ) {
+            if ( location.pathname.startsWith('/en/') ) {
+              location.href='/en/'+url;
+            } else {
+              location.href='/de/'+url;
+            }
+          }
+        </script>
+
+        <ul class="visible-links">
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('gettingstarted/gettingstarted')" title="Tutorial">Tutorial</a>
+          </li>
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('advanced/Configuration')" title="Advanced">Advanced</a>
+          </li>
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('cpp-api/index')" title="api">api</a>
+          </li>
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('faq')" title="FAQ">FAQ</a>
+          </li>
+        </ul>
+
+
+        <!-- language picker -->
+
+        <a class="alang" href="#" onclick="location.href=location.href.replace('/de/', '/en/')"><img class="language-picker" src="/assets/img/uk.png"></a>
+        <a class="alang" href="#" onclick="location.href=location.href.replace('/en/', '/de/')"><img class="language-picker" src="/assets/img/germany.png"></a>
+        
+        <!-- language picker -->
+
+        
+        <button class="search__toggle" type="button">
+          <span class="visually-hidden">Toggle search</span>
+          <i class="fas fa-search"></i>
+        </button>
+        
+        <button class="greedy-nav__toggle hidden" type="button">
+          <span class="visually-hidden">Toggle menu</span>
+          <div class="navicon"></div>
+        </button>
+        <ul class="hidden-links hidden"></ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+
+    <div class="initial-content">
+      
+
+
+
+<div id="main" role="main">
+  
+
+
+  <div class="archive">
+    
+      <h1 id="page-title" class="page__title">FAQ</h1>
+    
+    <h3 id="firmware">Firmware</h3>
+
+<details>
+<summary>Ich habe auf meinem Controller ein eigenes Programm laufen und möchte nun die Standard-Firmware einspielen.</summary>
+<p>Spielen Sie einfach das letzte &lt;href="../update"&gt;firmware update&lt;/a&gt; ein.</p>
+</details>
+
+<hr />
+
+<details>
+<summary>Nach einem Update funktioniert mein Controller nicht mehr.</summary>
+<p>Schließen Sie ein Terminalprogramm wie putty an. Starten Sie den Controller über die Reset-Taste. Der Controller startet ein Initialsetup.</p>
+<p>Geben Sie die Daten vom Typenschild Ihres Controllers ein. Anschließend bootet der Controller neu.</p>
+<p>In der NVS Partition ihres Controllers sind einige Einstellungen wie die Seriennummer hinterlegt. Wird diese Partition gelöscht oder ist für die Firmware nicht lesbar, so fragt die Firmware die Daten einmalig ab.</p>
+</details>
+
+<hr />
+
+<details>
+<summary>Mein Controller lässt sich nicht in den Schwarm einbinden.</summary>
+<p>Kontrollieren Sie zunächst, dass der Controller und der Schwarm mit dem selben wifi-Netzwerk verbunden sind:</p>
+<ul>
+<li>Ist WLAN eingeschaltet?</li>
+<li>Stimmen SSID und Passwort?</li>
+<li>Können die Statusseiten der Controller vom PC aufgerufen werden?</li>
+</ul>
+<p>Verwenden Sie beim ftSwarmRS die RS485-Schnittstelle?</p>
+<ul>
+<li>Steht die Schwarmkommunikation bei allen Controllern auf RS485?</li>
+<li>Ist die Verkabelung zwischen den Controllern in Ordnung? Sind alle Kabel angeschlossen? Haben Sie A/B vertauscht? Haben sie eine Schleife gebaut?</li>
+<li>Haben Sie am ersten und letzten Controller den Jumper für den Abschlusswiderstand gesetzt?</li>
+</ul>
+<p>Bei einigen älteren Firmwareversionen hatten manche User Probleme mit der Arduino IDE 2.0.</p>
+</details>
+
+<hr />
+
+<details>
+<summary>Mein Controller erzeugt ein eigenes WLAN, obwohl er auf Client-Modus eingestellt wurde.</summary>
+<p>Wenn Sie einen SSID-Scan am PC laufen lassen, sehen Sie für jeden Controller eine eigene SSID, z.B. ftSwarm4711.<br />
+Ignorieren Sie diese SSID. Es ist ein Bug von espressif.</p>
+</details>
+
+<h3 id="programmierung">Programmierung</h3>
+
+<details>
+<summary>Mein Programm crashed mit einer Watchdog-Fehlermeldung</summary>
+
+<p>Die ESP32-Prozessoren verwenden einen Watchdog, um (fast-)Endlosschleifen zu erkennen und abzubrechen.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>while (switch-&gt;isReleased());
+motor-&gt;setSpeed(200);</code></pre></div></div>
+
+<p>blockiert einen Core bis der Taster geschlossen wird, der Watchdog erkennt dies und bricht das Programm ab. Es ist besser in der <strong>loop</strong>-Funktion</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>if (switch-&gt;ToggleUp()) motor-&gt;setSpeed(200);</code></pre></div></div>
+
+<p>zu verwenden. Da die Loop-Funktion immer wieder neu gestartet wird, wird auch das if-Statement regelmäßig ausgeführt. Damit wird der Motor ebenfalls eingeschaltet, wenn der Taster geschlossen wird. Der Watchdog bricht nicht ab, da die <strong>loop</strong>-Funktion komplett durchlaufen wurde. Die <strong>delay</strong>-Funktion sorgt ebenfalls dafür, dass der Watchdog das Programm nicht unterbricht.</p>
+
+</details>
+
+<hr />
+
+<details>
+<summary>Die Motoren am Remote-Controller arbeiten nicht korrekt.</summary>
+<p>Die Statusseite zegt den Motor korrekt an, aber der Motor läuft nicht.<br />Dies ist ein bekanntes Problem, das mit Firmware 0.4.1 gefixt wurde.</p>
+</details>
+
+<hr />
+
+<details>
+<summary>Die Eingänge funktionieren nicht</summary>
+<p>Überprüfen Sie die 9V-Stromversorgung. Um die Eingänge zu nutzen, reicht die USB-Stromversorgung nicht aus.</p>
+</details>
+
+<hr />
+
+<details>
+<summary>Der Kelda-Controller "hängt" nach dem Flashen oder Reboot des Controllers.</summary>
+<p>Sie verwenden den Kelda-Controller im AP-Modus und alle anderen Controller im Schwarm verbinden sich auf die Kelda über wifi.</p>
+<p>Prüfen Sie, ob die Kelda "waiting on hardware" meldet. (Beim ftSwarmControl sehen Sie dies im Display, beim ftSwarm sind beide LEDs blau.)</p>
+<p>Beim Flashen bzw. beim Restart des Controllers, wird der WLAN-Stack neu initialisiert. Wird der Controller neu gestartet, der den AP stellt, so verlieren alle damit verbundenen Controller die Verbindung und können nicht mehr kommunizieren. Die Kelda versucht auf Remote-Hardware zuzugreifen und kann sie nicht mehr ansprechen. Alle Controller im Swarm müssen neu gestartet werden.</p>
+<p>Es ist jedoch sinnlos immer alle Controller nach dem Flashen der Kelda zu resetten. Verwenden Sie ein extern bereitgestelltes WLAN oder nutzen Sie einen anderen Controller als Access Point.</p>
+</details>
+
+<hr />
+
+<details>
+<summary>Ungewöhnliches toggle-Verhalten</summary>
+<p>Schauen Sie sich folgenden Code an (er funktioniert mit jedem Eingangstyp):</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>void loop() {
+
+  switch ( local_S1-&gt;getToggle() ) {
+    case FTSWARM_TOGGLEDOWN:  Serial.println("S1 released."); break;
+    case FTSWARM_TOGGLEUP:    Serial.println("S1 pressed."); break;
+  }
+  
+  delay(250);
+
+}</code></pre></div></div>
+<p>Wenn das Programm läuft, erhalten Sie mit dem Drücken und Loslassen der Taster <strong>S1 pressed.</strong> und <strong>S1 released.</strong> Nachrichten. In manchen Fällen, kommt es aber zu zwei aufeinander folgenden <strong>S1 pressed.</strong> Meldungen, die zugehörige <strong>S1 released.</strong> Nachricht fehlt.</p>
+<p>Der Schwarm prüft aller 25ms die Eingänge. Beim Auslesen von S1 vergleicht die Firmwae den neuen Stand (z.B. gedrückt) mit dem vorherigen Zustand (z.B. nicht gerdückt). Dadurch wird der Toggle-Zustand auf <strong>FTSWARM_TOGGLEUP</strong> gesetzt.</p>
+<p>Bleibt der Taster gedrückt, so prüft die <strong>loop</strong>-Funktion spätestens nach 250ms den Zustand und gibt auf der seriellen Konsole <strong>S1 pressed</strong> aus. <strong>local_S1-&gt;getToggle()</strong> setzt dabei den Status des Eingangs auf <strong>FTSWARM_NOTOGGLE</strong>. Beim nächsten Durchlauf der loop ist der Zustand <strong>local_S1-&gt;getToggle()</strong> und es wird nichts ausgegeben.</p>
+<p>Nachdem der Taster losgelassen wurde, ändert sich der Zustand zu <strong>FTSWARM_TOGGLEDOWN</strong>. Auf der Konsole wird <strong>S1 released</strong> ausgegeben.</p>
+<p>Wird der Taster, nachdem er gedrückt wurde (Ausgabe <strong>S1 pressed.</strong>), innerhalb der 250ms losgelassen und erneut gedrückt, so ändert sich der Zustand des Tasters während dem <strong>delay</strong> zweimal. Am Ende der 250ms steht der Taster auf <strong>FTSWARM_TOGGLEUP</strong>.</p>
+<p>Damit wird zum zweitem Mal in Folge <strong>S1 pressed.</strong> ausgegeben.</p>
+</details>
+
+
+
+<div class="entries-list">
+  
+</div>
+
+  </div>
+</div>
+    </div>
+
+    
+      <div class="search-content">
+        <div class="search-content__inner-wrap"><form class="search-content__form" onkeydown="return event.key != 'Enter';" role="search">
+    <label class="sr-only" for="search">
+      Enter your search term...
+    </label>
+    <input type="search" id="search" class="search-input" tabindex="-1" placeholder="Enter your search term..." />
+  </form>
+  <div id="results" class="results"></div></div>
+
+      </div>
+    
+
+    <div id="footer" class="page__footer">
+      <footer>
+        <!-- start custom footer snippets -->
+
+<!-- end custom footer snippets -->
+        <div class="page__footer-follow">
+  <ul class="social-icons">
+    
+      <li><strong>Follow:</strong></li>
+    
+
+    
+      
+        
+      
+        
+      
+        
+          <li><a href="https://github.com/elektrofuzzis" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-github" aria-hidden="true"></i> GitHub</a></li>
+        
+      
+        
+      
+        
+      
+        
+          <li><a href="https://instagram.com/elektrofuzzies" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-instagram" aria-hidden="true"></i> Instagram</a></li>
+        
+      
+        
+          <li><a href="mailto:ftpi@gmx.de" rel="nofollow noopener noreferrer"><i class="fas fa-fw fa-envelope-square" aria-hidden="true"></i> Email</a></li>
+        
+      
+    
+
+    
+      <li><a href="/feed.xml"><i class="fas fa-fw fa-rss-square" aria-hidden="true"></i> Feed</a></li>
+    
+  </ul>
+</div>
+
+<div class="page__footer-copyright">&copy; 2023 The ftSwarm Project. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div>
+
+      </footer>
+    </div>
+
+    
+  <script src="/assets/js/main.min.js"></script>
+
+
+
+
+<script src="/assets/js/lunr/lunr.min.js"></script>
+<script src="/assets/js/lunr/lunr-store.js"></script>
+<script src="/assets/js/lunr/lunr-en.js"></script>
+
+
+
+
+
+
+
+  </body>
+</html>

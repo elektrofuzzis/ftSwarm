@@ -1,0 +1,443 @@
+<!doctype html>
+<!--
+  Minimal Mistakes Jekyll Theme 4.24.0 by Michael Rose
+  Copyright 2013-2020 Michael Rose - mademistakes.com | @mmistakes
+  Free for personal and commercial use under the MIT license
+  https://github.com/mmistakes/minimal-mistakes/blob/master/LICENSE
+-->
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+
+<!-- begin _includes/seo.html --><title>Konfiguration -</title>
+<meta name="description" content="">
+
+
+  <meta name="author" content="//The ftSwarm Project">
+  
+
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="">
+<meta property="og:title" content="Konfiguration">
+<meta property="og:url" content="http://localhost:4000/de/advanced/Configuration/">
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<link rel="canonical" href="http://localhost:4000/de/advanced/Configuration/">
+
+
+
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    
+      "@type": "Person",
+      "name": "The ftSwarm Project",
+      "url": "http://localhost:4000/"
+    
+  }
+</script>
+
+
+
+
+
+
+
+<!-- end _includes/seo.html -->
+
+
+
+  <link href="/feed.xml" type="application/atom+xml" rel="alternate" title=" Feed">
+
+
+<!-- https://t.co/dKP3o1e -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+  document.documentElement.className = document.documentElement.className.replace(/\bno-js\b/g, '') + ' js ';
+</script>
+
+<!-- For all browsers -->
+<link rel="stylesheet" href="/assets/css/main.css">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css"></noscript>
+
+
+
+    <!-- start custom head snippets -->
+
+<!-- insert favicons. use https://realfavicongenerator.net/ -->
+
+<!-- end custom head snippets -->
+
+  </head>
+
+  <body class="layout--category wide">
+    <nav class="skip-links">
+  <ul>
+    <li><a href="#site-nav" class="screen-reader-shortcut">Skip to primary navigation</a></li>
+    <li><a href="#main" class="screen-reader-shortcut">Skip to content</a></li>
+    <li><a href="#footer" class="screen-reader-shortcut">Skip to footer</a></li>
+  </ul>
+</nav>
+
+    
+<div class="masthead">
+  <div class="masthead__inner-wrap">
+    <div class="masthead__menu">
+      <nav id="site-nav" class="greedy-nav">
+        
+          <a class="site-logo" href="/"><img src="/assets/img/ftSwarm.svg" alt=""></a>
+        
+        <a class="site-title" href="/">
+          
+          
+        </a>
+
+        <!-- original stuff 
+        <ul class="visible-links"></ul>
+        end original stuff-->
+
+        <script>
+          function callRef( url ) {
+            if ( location.pathname.startsWith('/en/') ) {
+              location.href='/en/'+url;
+            } else {
+              location.href='/de/'+url;
+            }
+          }
+        </script>
+
+        <ul class="visible-links">
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('gettingstarted/gettingstarted')" title="Tutorial">Tutorial</a>
+          </li>
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('advanced/Configuration')" title="Advanced">Advanced</a>
+          </li>
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('cpp-api/index')" title="api">api</a>
+          </li>
+          <li class="masthead__menu-item">
+            <a href="#" onclick="callRef('faq')" title="FAQ">FAQ</a>
+          </li>
+        </ul>
+
+
+        <!-- language picker -->
+
+        <a class="alang" href="#" onclick="location.href=location.href.replace('/de/', '/en/')"><img class="language-picker" src="/assets/img/uk.png"></a>
+        <a class="alang" href="#" onclick="location.href=location.href.replace('/en/', '/de/')"><img class="language-picker" src="/assets/img/germany.png"></a>
+        
+        <!-- language picker -->
+
+        
+        <button class="search__toggle" type="button">
+          <span class="visually-hidden">Toggle search</span>
+          <i class="fas fa-search"></i>
+        </button>
+        
+        <button class="greedy-nav__toggle hidden" type="button">
+          <span class="visually-hidden">Toggle menu</span>
+          <div class="navicon"></div>
+        </button>
+        <ul class="hidden-links hidden"></ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+
+    <div class="initial-content">
+      
+
+
+
+<div id="main" role="main">
+  
+  <div class="sidebar sticky">
+  
+  
+    
+      
+      
+      
+      
+    
+    
+      
+
+<nav class="nav__list">
+  
+  <input id="ac-toc" name="accordion-toc" type="checkbox" />
+  <label for="ac-toc">Toggle menu</label>
+  <ul class="nav__items">
+    
+      <li>
+        
+          <span class="nav__sub-title">Advanced</span>
+        
+
+        
+        <ul>
+          
+            <li><a href="/de/advanced/Configuration">Konfiguration</a></li>
+          
+            <li><a href="/de/advanced/PlatformIO">PlatformIO & VSCode</a></li>
+          
+            <li><a href="/de/advanced/rs485">RS485</a></li>
+          
+            <li><a href="/de/advanced/debugging">Debugging</a></li>
+          
+            <li><a href="/de/advanced/versions">Versionen</a></li>
+          
+        </ul>
+        
+      </li>
+    
+  </ul>
+</nav>
+
+    
+  
+  </div>
+
+
+
+  <div class="archive">
+    
+      <h1 id="page-title" class="page__title">Konfiguration</h1>
+    
+    <p>Die Controller benötigen einige Einstellungen, wie z.B. ein WLAN-Profil oder auch die Konfiguration des Schwarms. Einige Einstellungen wurden bereits im Tutorial verwendet. Dieses Kapitel beschreibt alle Konfigurationsmöglichkeiten im Detail.</p>
+
+<p>Zur Konfiguration des Controllers kann in der Standardfirmware jederzeit das “Configuration Menu” gestartet werden. Dazu muss nur ein Terminal Programm verbunden werden nur eine Taste gedrückt werden. Das Configuration Menu kann mit</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ftSwarm</span><span class="p">.</span><span class="n">setup</span><span class="p">();</span>
+</code></pre></div></div>
+
+<p>jederzeit aufgerufen werden.</p>
+
+<hr />
+
+<h3 id="main-menu">Main Menu</h3>
+
+<p>Das <strong>Main Menu</strong> ist die oberste Ebene der Konfigurationsmenüs.  <strong>(0) exit</strong> beendet den Konfigurationsmodus, in der Standardfirmware bootet danach der Controller neu. Wurde das <strong>Main Menu</strong> mit <strong>ftSwarm.setup();</strong> aus einem Programm heraus aufgerufen, so werden nun die nächsten Kommandos im Programm ausgeführt.</p>
+
+<hr />
+
+<h3 id="wifi-settings">Wifi Settings</h3>
+
+<p>Um einen Schwarm zu bilden, müssen die einzelnen Controller miteinander über WLAN oder RS485 kommunizieren. In der Regel kommunizieren sie über WLAN - nur die ftSwarmRS können zusätzlich kabelgebunden über RS485 kommunizieren.</p>
+
+<p>Außerdem kann über WLAN die Statusseite der Controller aufgerufen werden.</p>
+
+<p>Mit der Option <strong>(1) wifi</strong> wird der WLAN-Typ festgelegt:</p>
+<ul>
+  <li>CLIENT-MODE nutzt ein vorhandenes WLAN. Im Regelfall ist dies das WLAN Ihres Internetrouters.</li>
+  <li>AP-MODE benötigt keinen Router, der ftSwarm-Controller erzeugt ein eigenes WLAN Netzwerk.</li>
+  <li>OFF schaltet WLAN aus (nur ftSwarmRS) und reduziert deutlich den Stromverbrauch.</li>
+</ul>
+
+<p>Ist ein WLAN bereits vorhanden, so sollten Sie dieses unbedingt verwenden. Wählen Sie dazu CLIENT-MODE und setzen Sie mit <strong>SSID</strong> und <strong>password</strong> die Zugangsdaten zu Ihrem WLAN. Mit <strong>exit</strong> speichern Sie die Daten im NVS des Controllers und er verbindet sich mit Ihrem WLAN indem er neu startet.</p>
+
+<p>Der <strong>AP-MODE</strong> ist ein wenig tricky:</p>
+<ul>
+  <li>Wählen Sie einen Controller im geplanten Swarm aus und schalten Sie dort auf AP-MODE. Mit <strong>SSID</strong> geben Sie dem WLAN einen Namen. Aufgrund von Einschränkungen von espressif, sind WLANs im AP-MODE immer offene WLANs und es wird kein Passwort benötigt.</li>
+  <li>Zusätzlich müssen Sie mit Option <strong>wifi channel</strong> den Kanal auswählen, auf dem Ihre SSID arbeitet.</li>
+  <li>Alle anderen Controller werden auf CLIENT-MODE gestellt. Die SSID ist die des obigen Controllers; setzen Sie ein leeres Password.</li>
+  <li>Setzen Sie nie die Kelda in den AP-MODE. Wie im Tutorial beschrieben, führt dies zu einigen Problemen beim flushen Ihres Programms.</li>
+  <li>Der AP-MODE hat einen hohen Stromverbrauch, das Netzwerk ist für jeden offen (es hat kein Password) und der Sendebereich ist sehr beschränkt.</li>
+</ul>
+
+<p>Die Option <strong>off</strong> kann nur am ftSwarmRS gesetzt werden. In diesem Fall muss Ihr Schwarm komplett über RS485 kommunizieren.</p>
+
+<p class="notice--info">Die WLAN-Kanäle teilen Sie mit anderen WLANs. Deshalb ist es wichtig, den “richtigen” Kanal auszuwählen. Die ESP32-Prozessoren verwenden das 2.4 GHz-Band. Dieser Bereich ist in 11 Kanäle aufgeteilt, dabei überlappen sich benachbarte Kanäle. Werden zwei benachbarte Kanäle durch ein WLAN verwendet, so stören diese sich gegenseitig. Deshalb ist es im 2.4GHz-Band am Besten, wenn alle WLANs nur die Kanäle 1, 6 und 11 verwenden. Optimalerweise gibt es einen nicht verwendeten Kanal. Ist dieser nicht verfügbar, so nutzen Sie einen bereits verwendeten Kanal dessen Nachbarkanäle nicht in Verwendung sind. Welche Kanäle bereits verwendet sind, können Sie sich auf dem meisten Internetroutern anzeigen lassen. Mit der App <a href="https://play.google.com/store/apps/details?id=com.ubnt.usurvey&amp;hl=de&amp;gl=US&amp;pli=1">wifiman</a> können Sie das auch über Ihr Smartphone analysieren.</p>
+
+<hr />
+
+<h3 id="web-server-settings">Web Server Settings</h3>
+
+<p>Dieses Menü hat nur zwei Optionen:</p>
+<ul>
+  <li><strong>WebUI: on/off</strong> schaltet den WEB-Server für die Statuspage ein bzw aus.</li>
+  <li><strong>Show X ftPixels in UI</strong> legt die Anzahl der ftPixel fest, die auf der Statuspage angezeigt werden, bzw. die im Menu “Alias Names” einen Namen zugewiesen bekommen können. Für die Programmierung von ftPixel über die Port-Nummer hat dieser Wert keinen Einfluss, es können immer alle Ports <strong>FTSWARM_LED1</strong> bis <strong>FTSWARM_LED18</strong> angesprochen werden.</li>
+</ul>
+
+<hr />
+
+<h3 id="swarm-settings">Swarm Settings</h3>
+
+<p>In diesem Menü wird der Schwarm gebildet. Bevor Sie einen Schwarm bilden können, müssen alle Controller untereinander kommunizieren können. Dazu müssen entweder alle Controller im gleichen WLAN angemeldet sein, oder über RS485 verbunden sein.</p>
+
+<p>Im Menü wird die der Name des Schwarms, die Schwarm-Pin und die Anzahl der angemeldeten Controller im Schwarm angezeigt:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>This device is connected to swarm "MeinLieberSchwan" with 10 member(s) online. Swarm PIN is 999.
+</code></pre></div></div>
+
+<p><strong>swarm communication</strong>: Stellt ein, über welches Medium die ftSwarm miteinander kommunizieren.</p>
+<ul>
+  <li><strong>wifi</strong>: die Controller nutzen WLAN.</li>
+  <li><strong>RS485</strong>: die Controller nutzen die RS485-Schnittstelle. Diese Option steht nur am fTSwarmRS zur Verfügung. Ein Mixed-Mode mit WLAN und RS485 ist nicht möglich.</li>
+</ul>
+
+<p><strong>create a new swarm</strong>: Erzeugt einen neuen Schwarm. Es werden der Name für den Schwarm und die PIN abgefragt. Anschließend ist dieser Controller der erste und einzige Controller im Schwarm.</p>
+
+<p><strong>join another swarm</strong>: Fügt den Controller zu einem Schwarm hinzu. Es werden der Name des Schwarms und die PIN abgefragt. Der Controller versucht sich dann mit dem Schwarm zu verbinden, dazu muss mind. ein weiterer Controller des Schwarms online sein.</p>
+
+<p><strong>list swarm members</strong>: Listet die Mitglieder des Schwarms auf, die online sind.</p>
+
+<p class="notice--info">Jeder Controller hat den Namen des Schwarms und die Schwarm-PIN in seinem NVS gespeichert. Die Namen der anderen Controller im Schwarm werden nicht gespeichert, jeder der den Namen des Schwarms und die PIN kennt kann jederzeit dem Schwarm beitreten. Deshalb ist keine Option für das Verlassen eines Schwarms notwendig.</p>
+
+<hr />
+
+<h3 id="alias-names-settings">Alias Names Settings</h3>
+
+<p>Mit diesem Menü können Aliasnamen für die Ports eingestellt werden. Anschließend können die IO-Ports über den logischen Namen anstatt der Portnummer angesprochen werden. Im Tutorial ist dies im Kapitel <a href="../gettingstarted/MotorSwitchAlias/">Alias Names</a> näher erklärt.</p>
+
+<p>Um einen Aliasnamen für einen IO Port zu vergeben, wählen Sie die Nummer des gewüschten IOs aus. Der Name darf bis zu 30 Zeichen lang sein und darf keine Leerzeichen enthalten.</p>
+
+<p class="notice--info">In einem Schwarm muss ein Aliasname eindeutig sein. Dies wird bei der Konfiguration nicht geprüft - es müssen nicht alle Controller im Schwarm online sein. Wird ein Name mehrfach vergeben, so ist es Zufall welcher IO-Port beim Benutzen des Aliasnamens angesprochen wird.</p>
+
+<hr />
+
+<h3 id="factory-settings">Factory Settings</h3>
+
+<p>Dieser Menüpunkt stellt den Controller auf Werkseinstellungen zurück. Da im NVS evtl. vertrauliche Informationen wie die wifi-Parameter gespeichert sind, sollten Sie einen Controller auf Werkseinstellungen zurücksetzten, bevor sie ihn an Dritte weitergeben.</p>
+
+<hr />
+
+<h3 id="i2c-settings">I2C Settings</h3>
+
+<p>In diesem Menü wird das Verhalten des I²C-Busses festgelegt.</p>
+
+<p><strong>Mode</strong> legt fest, ob der Controller im Slave- oder Mastermodus arbeiten soll. Werden I²C-Sensoren am Bus angeschlossen, so ist MASTER der richtige Modus.</p>
+
+<p class="notice--info">Nur wenn ein TXT-Controller (s. Seilbahnprojekt) mit dem ftSwarm Daten austauschen soll, ist SLAVE-Modus zu wählen. Da beim <strong>ftSwarm</strong> und <strong>ftSwarmControl</strong> am I²C-Bus auch der optionale Gyro angeschlossen ist, muss der Controller im MASTER-Modus arbeiten wenn der Gyro genutzt werden soll. Der <strong>ftSwarmRS</strong> spricht den internen Gyro über einem zweiten I²C-Bus an, so dass dieser gleichzeitig den Gyro und den SLAVE-Modus verwenden kann.</p>
+
+<p><strong>Gyro</strong> schaltet die Verwendung des Gyros ein bzw. aus. Schalten Sie den Gyro nur ein, wenn Sie ihn in der Anwendung auch nutzen wollen. Ungenutzte Gyros haben einen unnötigen Stromverbrauch und im Schwarm einen hohen Kommunikationsbearf.</p>
+
+<p><strong>I2C Address</strong> legt die I²C-Adresse des Controllers im SLAVE-Modus fest. Diese Option steht im MASTER-Modus nicht zur Verfügung.</p>
+
+<hr />
+
+<h3 id="ftswarmcontrol">ftSwarmControl</h3>
+
+<p>Der ftSwarmControl hat zwei spezifische Einstellungen.</p>
+
+<p><strong>Display Type</strong>: Je nach verwendetem OLED-Display unterscheidet sich die Ansteuerung der OLEDs auf Firmwareebene ein wenig. Die ersten ftSwarmControl benötigen den Display Typ 0, die neueren Typ 1. Sollte das Display des ftSwarmControl nicht funktionieren, stellen Sie hier einen anderen Wert ein.</p>
+
+<p><strong>Calibrate Joysticks</strong>: Die Joysticks liefern ein analoges Signal. Mit Calibrate Joysticks kann die mittlere Stellung des Joysticks kalibriert werden.</p>
+
+<hr />
+
+<h3 id="remote-control-settings">Remote Control Settings</h3>
+
+<p>Mit diesem Menü kann ein Schwarm ohne eine Zeile Code programmiert werden. Dazu bekommen die einzelnen IO-Ports Aliasnamen, die dann über den ftSwarmControl angesprochen werden. Dazu werden auf den Buttons und Joysticks des ftSwarmControl EVents definiert, die die IO Ports steuern.</p>
+
+<p>Eine detaillierte Beschreibung ist im Tutorial unter <a href="../gettingstarted/RemoteControl/">Fernbedieung</a> zu finden.</p>
+
+
+
+<div class="entries-list">
+  
+</div>
+
+  </div>
+</div>
+    </div>
+
+    
+      <div class="search-content">
+        <div class="search-content__inner-wrap"><form class="search-content__form" onkeydown="return event.key != 'Enter';" role="search">
+    <label class="sr-only" for="search">
+      Enter your search term...
+    </label>
+    <input type="search" id="search" class="search-input" tabindex="-1" placeholder="Enter your search term..." />
+  </form>
+  <div id="results" class="results"></div></div>
+
+      </div>
+    
+
+    <div id="footer" class="page__footer">
+      <footer>
+        <!-- start custom footer snippets -->
+
+<!-- end custom footer snippets -->
+        <div class="page__footer-follow">
+  <ul class="social-icons">
+    
+      <li><strong>Follow:</strong></li>
+    
+
+    
+      
+        
+      
+        
+      
+        
+          <li><a href="https://github.com/elektrofuzzis" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-github" aria-hidden="true"></i> GitHub</a></li>
+        
+      
+        
+      
+        
+      
+        
+          <li><a href="https://instagram.com/elektrofuzzies" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-instagram" aria-hidden="true"></i> Instagram</a></li>
+        
+      
+        
+          <li><a href="mailto:ftpi@gmx.de" rel="nofollow noopener noreferrer"><i class="fas fa-fw fa-envelope-square" aria-hidden="true"></i> Email</a></li>
+        
+      
+    
+
+    
+      <li><a href="/feed.xml"><i class="fas fa-fw fa-rss-square" aria-hidden="true"></i> Feed</a></li>
+    
+  </ul>
+</div>
+
+<div class="page__footer-copyright">&copy; 2023 The ftSwarm Project. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div>
+
+      </footer>
+    </div>
+
+    
+  <script src="/assets/js/main.min.js"></script>
+
+
+
+
+<script src="/assets/js/lunr/lunr.min.js"></script>
+<script src="/assets/js/lunr/lunr-store.js"></script>
+<script src="/assets/js/lunr/lunr-en.js"></script>
+
+
+
+
+
+
+
+  </body>
+</html>
