@@ -1,0 +1,32 @@
+{% if include.id %}
+  {% assign gallery = page[include.id] %}
+{% else %}
+  {% assign gallery = page.gallery %}
+{% endif %}
+
+{% if include.layout %}
+  {% assign gallery_layout = include.layout %}
+{% else %}
+  {% if gallery.size == 2 %}
+    {% assign gallery_layout = 'half' %}
+  {% elsif gallery.size >= 3 %}
+    {% assign gallery_layout = 'third' %}
+  {% else %}
+    {% assign gallery_layout = '' %}
+  {% endif %}
+{% endif %}
+
+<div class="galleryflex">
+  {% for img in gallery %}
+	<div class="galleryblock">
+		<a href="{{ img.url | relative_url }}">
+			<img class="galleryimg" src="{{ img.image_path | relative_url }}">
+			<p class="gallerytext">{{ img.title }}</p>
+		</a>
+	</div>
+  {% endfor %}
+</div>
+
+{% if include.caption %}
+<p>{{ include.caption | markdownify | remove: "<p>" | remove: "</p>" }}</p>
+{% endif %}

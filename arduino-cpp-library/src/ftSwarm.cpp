@@ -1209,14 +1209,14 @@ void aliasMenu( void ) {
     printf("(%2d) hostname %s - %s\n", item, myOSSwarm.Ctrl[0]->getName(), myOSSwarm.Ctrl[0]->getAlias() );
 
     // list inputs
-    for (uint8_t i=0; i<4; i++ ) { 
+    for (uint8_t i=0; i<myOSSwarm.Ctrl[0]->inputs; i++ ) { 
       OSObj[item++] = myOSSwarm.Ctrl[0]->input[i];
       printf("(%2d) %-4s - %-32s\n", 
               item, myOSSwarm.Ctrl[0]->input[i]->getName(), myOSSwarm.Ctrl[0]->input[i]->getAlias());
     }
 
     // list actors
-    for (uint8_t i=0; i<2; i++ ) {
+    for (uint8_t i=0; i<myOSSwarm.Ctrl[0]->actors; i++ ) {
       OSObj[item++] = myOSSwarm.Ctrl[0]->actor[i];
       printf("(%2d) %-4s - %-32s\n", 
              item, myOSSwarm.Ctrl[0]->actor[i]->getName(), myOSSwarm.Ctrl[0]->actor[i]->getAlias());

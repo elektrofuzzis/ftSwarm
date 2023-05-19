@@ -1,0 +1,248 @@
+# main links
+main:
+  #- title: "Tutorial"
+  #  url: /en/gettingstarted/gettingstarted
+  #- title: "API"
+  #  url: /en/cpp-api/index
+  #- title: "FAQ"
+  #  url: /en/faq/faq
+  # - title: "About"
+  #   url: https://mmistakes.github.io/minimal-mistakes/about/
+  # - title: "Sample Posts"
+  #   url: /year-archive/
+  # - title: "Sample Collections"
+  #   url: /collection-archive/
+  # - title: "Sitemap"
+  #   url: /sitemap/
+
+gettingstarted-en:
+  - title: "Tutorial"
+    children:
+      - title: "ftSwarm"
+        url: /en/gettingstarted/1stftSwarm
+      - title: "ftSwarmControl"
+        url: /en/gettingstarted/1stftSwarmControl
+      - title: "USB/Serial Connection"
+        url: /en/gettingstarted/serial
+      - title: "wifi & status page"
+        url: /en/gettingstarted/WebUI
+      - title: "Install IDE"
+        url: /en/gettingstarted/ide
+      - title: "My First Application"
+        url: /en/gettingstarted/MotorSwitch
+      - title: "The Kelda Principle"
+        url: /en/gettingstarted/kelda
+      - title: "A first Swarm"
+        url: /en/gettingstarted/MotorSwitchSwarm
+      - title: "Switches & Buttons"
+        url: /en/gettingstarted/switches
+      - title: "Alias Names"
+        url: /en/gettingstarted/MotorSwitchAlias
+      - title: "Remote Control"
+        url: /en/gettingstarted/RemoteControl
+      - title: "Events"
+        url: /en/gettingstarted/EventControlled
+      - title: "RGB LEDs & FtSwarmPixel"
+        url: /en/gettingstarted/FtSwarmPixel
+      - title: "OLED Display"
+        url: /en/gettingstarted/FtSwarmOLED
+
+gettingstarted-de:
+  - title: "Tutorial"
+    children:
+      - title: "ftSwarm"
+        url: /de/gettingstarted/1stftSwarm
+      - title: "ftSwarmControl"
+        url: /de/gettingstarted/1stftSwarmControl
+      - title: "USB Anschluss"
+        url: /de/gettingstarted/serial
+      - title: "WLAN & Statusseite"
+        url: /de/gettingstarted/WebUI
+      - title: "Installation IDE"
+        url: /de/gettingstarted/ide
+      - title: "Das erste Programm"
+        url: /de/gettingstarted/MotorSwitch
+      - title: "Das Kelda Prinzip"
+        url: /de/gettingstarted/kelda
+      - title: "Ein erster Schwarm"
+        url: /de/gettingstarted/MotorSwitchSwarm
+      - title: "Switches & Buttons"
+        url: /de/gettingstarted/switches
+      - title: "Alias Namen"
+        url: /de/gettingstarted/MotorSwitchAlias
+      - title: "Fernbedienung"
+        url: /de/gettingstarted/RemoteControl
+      - title: "Events"
+        url: /de/gettingstarted/EventControlled
+      - title: "RGB LEDs & FtSwarmPixel"
+        url: /de/gettingstarted/FtSwarmPixel
+      - title: "OLED Display"
+        url: /de/gettingstarted/FtSwarmOLED
+
+advanced-en:
+  - title: "Advanced"
+    children:
+      - title: "Configuration"
+        url: /en/advanced/Configuration
+      - title: "PlatformIO & VSCode"
+        url: /en/advanced/PlatformIO
+      - title: "RS485"
+        url: /en/advanced/rs485
+      - title: "Debugging"
+        url: /en/advanced/debugging
+      - title: "Version history"
+        url: /en/advanced/versions
+
+advanced-de:
+  - title: "Advanced"
+    children:
+      - title: "Konfiguration"
+        url: /de/advanced/Configuration
+      - title: "PlatformIO & VSCode"
+        url: /de/advanced/PlatformIO
+      - title: "RS485"
+        url: /de/advanced/rs485
+      - title: "Debugging"
+        url: /de/advanced/debugging
+      - title: "Versionen"
+        url: /de/advanced/versions
+
+cppapi-en:
+  - title: "C++ API"
+    children:
+      - title: "API Overview"
+        url: /en/cpp-api/sensors
+  - title: "Analog Sensors"
+    children:
+      - title: "Overview"
+        url: /en/cpp-api/analogSensors
+      - title: "Joystick"
+        url: /en/cpp-api/FtSwarmJoystick
+      - title: "Phototransistor/Resistor"
+        url: /en/cpp-api/FtSwarmLDR
+      - title: "Ohmmeter"
+        url: /en/cpp-api/FtSwarmOhmmeter
+      - title: "Thermometer"
+        url: /en/cpp-api/FtSwarmThermometer
+      - title: "Voltmeter"
+        url: /en/cpp-api/FtSwarmVoltmeter
+  - title: "Digital Sensors"
+    children:
+      - title: "Overview"
+        url: /en/cpp-api/digitalSensors
+      - title: "ftSwarmControl Button"
+        url: /en/cpp-api/FtSwarmButton
+      - title: "Light Barrier / Photo Transistor"
+        url: /en/cpp-api/FtSwarmLightBarrier
+      - title: "Reed Switch"
+        url: /en/cpp-api/FtSwarmReedSwitch
+      - title: "Switch"
+        url: /en/cpp-api/FtSwarmSwitch
+  - title: "LEDs, Lamps & Displays"
+    children:
+      - title: "Overview"
+        url: /en/cpp-api/leds
+      - title: "ftPixel"
+        url: /en/cpp-api/FtSwarmPixel
+      - title: "Lamp"
+        url: /en/cpp-api/FtSwarmLamp
+      - title: "OLED"
+        url: /en/cpp-api/FtSwarmOLED
+      - title: "RGB LED"
+        url: /en/cpp-api/FtSwarmPixel
+  - title: "Motors"
+    children:
+      - title: "Overview"
+        url: /en/cpp-api/motors
+      - title: "Encoder Motor"
+        url: /en/cpp-api/FtSwarmEncoderMotor
+      - title: "Mini-Motor"
+        url: /en/cpp-api/FtSwarmXMotor
+      - title: "Tractor Motor"
+        url: /en/cpp-api/FtSwarmTractorMotor
+      - title: "XM-Motor"
+        url: /en/cpp-api/FtSwarmXMMotor
+      - title: "XS-Motor"
+        url: /en/cpp-api/FtSwarmXMotor
+  - title: "Other Actors"
+    children:
+      - title: "Overview"
+        url: /en/cpp-api/otherActors
+      - title: "Buzzer"
+        url: /en/cpp-api/FtSwarmBuzzer
+      - title: "Compressor"
+        url: /en/cpp-api/FtSwarmCompressor
+      - title: "Servo"
+        url: /en/cpp-api/FtSwarmServo
+      - title: "Valve"
+        url: /en/cpp-api/FtSwarmValve
+
+cppapi-de:
+  - title: "C++ API"
+    children:
+      - title: "API Übersicht"
+        url: /de/cpp-api/sensors
+  - title: "Analoge Sensoren"
+    children:
+      - title: "Übersicht"
+        url: /de/cpp-api/analogSensors
+      - title: "Joystick"
+        url: /de/cpp-api/FtSwarmJoystick
+      - title: "Fototransistor/Widerstand"
+        url: /de/cpp-api/FtSwarmLDR
+      - title: "Ohmmeter"
+        url: /de/cpp-api/FtSwarmOhmmeter
+      - title: "Thermometer"
+        url: /de/cpp-api/FtSwarmThermometer
+      - title: "Voltmeter"
+        url: /de/cpp-api/FtSwarmVoltmeter
+  - title: "Digitale Sensoren"
+    children:
+      - title: "Übersicht"
+        url: /de/cpp-api/digitalSensors
+      - title: "ftSwarmControl Button"
+        url: /de/cpp-api/FtSwarmButton
+      - title: "Lichtschranke / Fototransistor"
+        url: /de/cpp-api/FtSwarmLightBarrier
+      - title: "Reedkontakt"
+        url: /de/cpp-api/FtSwarmReedSwitch
+      - title: "Taster"
+        url: /de/cpp-api/FtSwarmSwitch
+  - title: "LEDs, Lampen & Displays"
+    children:
+      - title: "Übersicht"
+        url: /de/cpp-api/leds
+      - title: "ftPixel"
+        url: /de/cpp-api/FtSwarmPixel
+      - title: "Lampen"
+        url: /de/cpp-api/FtSwarmLamp
+      - title: "OLED"
+        url: /de/cpp-api/FtSwarmOLED
+      - title: "RGB LED"
+        url: /de/cpp-api/FtSwarmPixel
+  - title: "Motoren"
+    children:
+      - title: "Übersicht"
+        url: /de/cpp-api/motors
+      - title: "Encoder Motor"
+        url: /de/cpp-api/FtSwarmEncoderMotor
+      - title: "Mini-Motor"
+        url: /de/cpp-api/FtSwarmXMotor
+      - title: "Traktor Motor"
+        url: /de/cpp-api/FtSwarmTractorMotor
+      - title: "XM-Motor"
+        url: /de/cpp-api/FtSwarmXMMotor
+      - title: "XS-Motor"
+        url: /de/cpp-api/FtSwarmXMotor
+  - title: "Sonstige Aktoren"
+    children:
+      - title: "Übersicht"
+        url: /de/cpp-api/otherActors
+      - title: "Summer"
+        url: /de/cpp-api/FtSwarmBuzzer
+      - title: "Kompressor"
+        url: /de/cpp-api/FtSwarmCompressor
+      - title: "Servo"
+        url: /de/cpp-api/FtSwarmServo
+      - title: "Ventil"
+        url: /de/cpp-api/FtSwarmValve
