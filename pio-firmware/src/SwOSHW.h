@@ -167,7 +167,7 @@ public:
 	virtual void     read();
 
   // external commands
-	virtual void            setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen = true );  // set sensor type
+	virtual void            setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote );  // set sensor type
 	virtual uint32_t        getValueUI32();                               // get raw reading
 	virtual float           getValueF();                                  // get float reading
   virtual float           getVoltage();                                 // get voltage reading
@@ -213,7 +213,7 @@ public:
   virtual void onTrigger( int32_t value );
 
   // commands
-  virtual void            setActorType( FtSwarmActor_t actorType );    // set actor type
+  virtual void            setActorType( FtSwarmActor_t actorType, bool dontSendToRemote );    // set actor type
   virtual void            setValue( FtSwarmMotion_t motionType, int16_t power ) { _motionType = motionType; _power = power; };  // set values
   virtual void            setPower( int16_t power );                   // set power
 	virtual int16_t         getPower() { return _power; };               // get power
@@ -328,8 +328,8 @@ class SwOSServo : public SwOSIO {
     // commands
 	  virtual int16_t getOffset( )   { return _offset; };
 	  virtual int16_t getPosition( ) { return _position; };
-	  virtual void setOffset( int16_t offset );
-	  virtual void setPosition( int16_t position );
+	  virtual void setOffset( int16_t offset, bool dontSendToRemote );
+	  virtual void setPosition( int16_t position, bool dontSendToRemote );
 };
 
 /***************************************************

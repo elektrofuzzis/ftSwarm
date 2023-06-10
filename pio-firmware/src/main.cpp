@@ -31,6 +31,8 @@ Serial.begin(115200);
 
 }
 
+int i=0; int j=0;
+
 void loop() {
 
   if (anyKey() ) {
@@ -39,6 +41,18 @@ void loop() {
   }
 
   delay(250);
+
+  i++;
+  j=i/4;
+
+  if (i%4 == 0) {
+  switch (j%10) {
+    case 0: printf("\n0");
+    case 5: printf("5");
+    default: printf(".");
+  }
+  fflush(stdout);
+  }
 }
 
 #else // no Firmware

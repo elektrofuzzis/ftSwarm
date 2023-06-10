@@ -78,7 +78,7 @@ FtSwarmInput::FtSwarmInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t po
   // set sensor type
   if (me) {
     myOSSwarm.lock();
-    static_cast<SwOSInput *>(me)->setSensorType( sensorType, normallyOpen );
+    static_cast<SwOSInput *>(me)->setSensorType( sensorType, normallyOpen, true );
     myOSSwarm.unlock();
   }
 
@@ -89,7 +89,7 @@ FtSwarmInput::FtSwarmInput( const char *name, FtSwarmSensor_t sensorType, bool n
   // set sensor type
   if (me) {
     myOSSwarm.lock();
-    static_cast<SwOSInput *>(me)->setSensorType( sensorType, normallyOpen );
+    static_cast<SwOSInput *>(me)->setSensorType( sensorType, normallyOpen, true );
     myOSSwarm.unlock();
   }
 
@@ -327,7 +327,7 @@ FtSwarmActor::FtSwarmActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t po
   // set sensor type
   if (me) {
     myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setActorType( actorType );
+    static_cast<SwOSActor *>(me)->setActorType( actorType, false );
     myOSSwarm.unlock();
   }
 
@@ -339,7 +339,7 @@ FtSwarmActor::FtSwarmActor( const char *name, FtSwarmActor_t actorType):FtSwarmI
   // set sensor type
   if (me) {
     myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setActorType( actorType );
+    static_cast<SwOSActor *>(me)->setActorType( actorType, false );
     myOSSwarm.unlock();
   }
 
@@ -681,7 +681,7 @@ void FtSwarmServo::setPosition(int16_t position) {
   if (!me) return;
   
   myOSSwarm.lock();
-  static_cast<SwOSServo *>(me)->setPosition(position);
+  static_cast<SwOSServo *>(me)->setPosition(position, false);
   myOSSwarm.unlock();
 }
 
@@ -701,7 +701,7 @@ void FtSwarmServo::setOffset(int16_t offset) {
   if (!me) return;
   
   myOSSwarm.lock();
-  static_cast<SwOSServo *>(me)->setOffset(offset);
+  static_cast<SwOSServo *>(me)->setOffset(offset, false);
   myOSSwarm.unlock();
 }
 

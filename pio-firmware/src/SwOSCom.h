@@ -80,9 +80,10 @@ struct registerCmd_t {
   };
 } __attribute__((packed));
 
+
 struct SwOSDatagram_t {
   uint32_t              header;
-  uint16_t              size;
+  uint8_t               size;
   uint16_t              secret;
   uint32_t              crc;
   uint8_t               version;
@@ -92,7 +93,7 @@ struct SwOSDatagram_t {
     registerCmd_t registerCmd;
     struct { uint16_t pin; uint16_t swarmSecret; char swarmName[MAXIDENTIFIER]; } joinCmd;
     struct { uint32_t inputValue[MAXINPUTS]; int16_t LR[2]; int16_t FB[2]; uint8_t hc165;} stateCmd;
-    struct { uint8_t index; FtSwarmSensor_t sensorType; bool normallyOpen; } sensorCmd;
+    struct { uint8_t index; FtSwarmSensor_t sensorType; bool normallyOpen; } sensorCmd __attribute__((packed));
     struct { uint8_t index; int16_t offset; int16_t position; } servoCmd;
     struct { uint8_t index; FtSwarmMotion_t motionType; int16_t power; } actorPowerCmd;
     struct { uint8_t index; FtSwarmActor_t actorType; } actorTypeCmd;
@@ -114,7 +115,8 @@ public:
   uint8_t        mac[ESP_NOW_ETH_ALEN];
   SwOSDatagram_t data;
 
-  SwOSCom( const uint8_t *mac_addr, const uint8_t *buffer, int length);
+  SwOSCom( const uint8_t *buffer, int length); // RS485
+  SwOSCom( const uint8_t *mac_addr, const uint8_t *buffer, int length); // wifi
   SwOSCom( const uint8_t *mac_addr, FtSwarmSerialNumber_t destinationSN, SwOSCommand_t cmd );
 
   void setMAC( const uint8_t *mac_addr, FtSwarmSerialNumber_t destinationSN );

@@ -444,7 +444,7 @@ bool SwOSInput::isXMeter() {
 
 }
 
-void SwOSInput::setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen ) {
+void SwOSInput::setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote ) {
 
   _sensorType   = sensorType;
   _normallyOpen = normallyOpen;
@@ -462,7 +462,7 @@ void SwOSInput::setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen ) {
       gpio_set_level( (gpio_num_t) _PUA2, true );
     }
   
-  } else {
+  } else if ( !dontSendToRemote ) {
     
     // send SN, SETSENSORTYPE, _port, sensorType
     SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETSENSORTYPE );
@@ -762,12 +762,12 @@ void SwOSActor::setMotionType( FtSwarmMotion_t motionType ) {
   
 }
 
-void SwOSActor::setActorType( FtSwarmActor_t actorType ) { 
+void SwOSActor::setActorType( FtSwarmActor_t actorType, bool dontSendToRemote ) { 
 
   if (_ctrl->isLocal()) {
     _actorType = actorType; 
     
-  } else {    
+  } else if (!dontSendToRemote) {    
     // send SN, SETSENSORTYPE, _port, sensorType
     SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETACTORTYPE );
     cmd.data.actorTypeCmd.index     = _port;
@@ -1231,27 +1231,27 @@ void SwOSServo::jsonize( JSONize *json, uint8_t id) {
   json->endObject();
 }
 
-void SwOSServo::setPosition( int16_t position ) {
+void SwOSServo::setPosition( int16_t position, bool dontSendToRemote ) {
   _position = position;
 
   // apply local or remote
-  if (_ctrl->isLocal()) _setLocal();
-  else                  _setRemote();
+  if (_ctrl->isLocal())       _setLocal();
+  else if (!dontSendToRemote) _setRemote();
 
 }
 
-void SwOSServo::setOffset( int16_t offset ) {
+void SwOSServo::setOffset( int16_t offset, bool dontSendToRemote ) {
   _offset = offset;
  
   // apply local or remote
-  if (_ctrl->isLocal()) _setLocal();
-  else                  _setRemote();
+  if (_ctrl->isLocal())       _setLocal();
+  else if (!dontSendToRemote) _setRemote();
 
 }
 
 void SwOSServo::onTrigger( int32_t value ) {
 
-  setPosition( (int16_t) value );
+  setPosition( (int16_t) value, false );
 
 }
 
@@ -2054,14 +2054,14 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
 
   switch (com->data.cmd) {
     case CMD_SETSENSORTYPE:
-      input[com->data.sensorCmd.index]->setSensorType( com->data.sensorCmd.sensorType, com->data.sensorCmd.normallyOpen );
+      input[com->data.sensorCmd.index]->setSensorType( com->data.sensorCmd.sensorType, com->data.sensorCmd.normallyOpen, true );
       return true;
     case CMD_SETACTORPOWER:
       actor[com->data.actorPowerCmd.index]->setMotionType( com->data.actorPowerCmd.motionType );
       actor[com->data.actorPowerCmd.index]->setPower( com->data.actorPowerCmd.power );
       return true;
     case CMD_SETACTORTYPE:
-      actor[com->data.actorTypeCmd.index]->setActorType( com->data.actorTypeCmd.actorType );
+      actor[com->data.actorTypeCmd.index]->setActorType( com->data.actorTypeCmd.actorType, true );
       return true;
     case CMD_ALIAS:
       // get all entries in datagramm
@@ -2210,10 +2210,11 @@ bool SwOSSwarmXX::OnDataRecv(SwOSCom *com ) {
 
   if ( ( com->data.cmd == CMD_I2CREGISTER ) && (I2C) ) {
       I2C->setRegister( com->data.I2CRegisterCmd.reg, com->data.I2CRegisterCmd.value );
-      return true;
   } else {
       SwOSCtrl::OnDataRecv(com);
   }
+
+  return true;
 
 }
 
@@ -2247,13 +2248,13 @@ SwOSSwarmJST::SwOSSwarmJST( SwOSCom *com ):SwOSSwarmJST( com->data.sourceSN, com
 
   // inputs
   for (uint8_t i=0; i<inputs; i++ ) {
-    input[i]->setSensorType( com->data.registerCmd.input[i].sensorType, true );
+    input[i]->setSensorType( com->data.registerCmd.input[i].sensorType, true, true );
     input[i]->setValue( com->data.registerCmd.input[i].rawValue );
   }
 
   // actors
   for (uint8_t i=0; i<actors; i++ ) {
-    actor[i]->setActorType( com->data.registerCmd.actor[i].actorType );
+    actor[i]->setActorType( com->data.registerCmd.actor[i].actorType, true );
     actor[i]->setValue( com->data.registerCmd.actor[i].motionType, com->data.registerCmd.actor[i].power );
   }
 
@@ -2266,8 +2267,8 @@ SwOSSwarmJST::SwOSSwarmJST( SwOSCom *com ):SwOSSwarmJST( com->data.sourceSN, com
 
   // servos
   for (uint8_t i=0; i<servos; i++ ) {
-    servo[i]->setOffset( com->data.registerCmd.jst.servo[i].offset);
-    servo[i]->setPosition(com->data.registerCmd.jst.servo[i].offset);
+    servo[i]->setOffset( com->data.registerCmd.jst.servo[i].offset, true);
+    servo[i]->setPosition(com->data.registerCmd.jst.servo[i].offset, true);
   }
   
 }
@@ -2395,7 +2396,7 @@ bool SwOSSwarmJST::apiServoOffset( char *id, int offset ) {
 
     if ( (servo[i]) && ( servo[i]->equals(id) ) ) {
       // found
-      servo[i]->setOffset( offset );
+      servo[i]->setOffset( offset, false );
       return true;
     }
   }
@@ -2412,7 +2413,7 @@ bool SwOSSwarmJST::apiServoPosition( char *id, int position ) {
 
     if ( (servo[i]) && ( servo[i]->equals(id) ) ) {
       // found
-      servo[i]->setPosition( position );
+      servo[i]->setPosition( position, false );
       return true;
     }
   }
@@ -2447,8 +2448,8 @@ bool SwOSSwarmJST::OnDataRecv(SwOSCom *com ) {
       return true;
     case CMD_SETSERVO:
       if (servo[com->data.servoCmd.index]) {
-        servo[com->data.servoCmd.index]->setOffset( com->data.servoCmd.offset );
-        servo[com->data.servoCmd.index]->setPosition( com->data.servoCmd.position );
+        servo[com->data.servoCmd.index]->setOffset( com->data.servoCmd.offset, true );
+        servo[com->data.servoCmd.index]->setPosition( com->data.servoCmd.position, true );
       }
       return true;
   }
@@ -2561,13 +2562,13 @@ SwOSSwarmControl::SwOSSwarmControl( SwOSCom *com ):SwOSSwarmControl( com->data.s
 
   // inputs
   for (uint8_t i=0; i<inputs; i++ ) {
-    input[i]->setSensorType( com->data.registerCmd.input[i].sensorType, true );
+    input[i]->setSensorType( com->data.registerCmd.input[i].sensorType, true, true );
     input[i]->setValue( com->data.registerCmd.input[i].rawValue );
   }
 
   // actors
   for (uint8_t i=0; i<actors; i++ ) {
-    actor[i]->setActorType( com->data.registerCmd.actor[i].actorType );
+    actor[i]->setActorType( com->data.registerCmd.actor[i].actorType, true );
     actor[i]->setValue( com->data.registerCmd.actor[i].motionType, com->data.registerCmd.actor[i].power );
   }
 
@@ -2879,13 +2880,13 @@ SwOSSwarmCAM::SwOSSwarmCAM( SwOSCom *com ):SwOSSwarmCAM( com->data.sourceSN, com
 
   // inputs
   for (uint8_t i=0; i<inputs; i++ ) {
-    input[i]->setSensorType( com->data.registerCmd.input[i].sensorType, true );
+    input[i]->setSensorType( com->data.registerCmd.input[i].sensorType, true, true );
     input[i]->setValue( com->data.registerCmd.input[i].rawValue );
   }
 
   // actors
   for (uint8_t i=0; i<actors; i++ ) {
-    actor[i]->setActorType( com->data.registerCmd.actor[i].actorType );
+    actor[i]->setActorType( com->data.registerCmd.actor[i].actorType, true );
     actor[i]->setValue( com->data.registerCmd.actor[i].motionType, com->data.registerCmd.actor[i].power );
   }
  

@@ -31,6 +31,8 @@ SwOSSwarm myOSSwarm;
 
 //#define DEBUG_COMMUNICATION
 
+//#define DEBUG_READTASK
+
 /***************************************************
  *
  *   Backgrund tasks
@@ -90,7 +92,7 @@ void readTask( void *parameter ) {
 
     // calc delay time
     #ifdef DEBUG_READTASK
-      xDelay = 2500 / portTICK_PERIOD_MS;
+      xDelay = 25000 / portTICK_PERIOD_MS;
     #else
       xDelay = myOSSwarm.getReadDelay() / portTICK_PERIOD_MS;
     #endif
