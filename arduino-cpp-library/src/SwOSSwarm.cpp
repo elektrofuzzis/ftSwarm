@@ -7,8 +7,7 @@
  * 
  */
 
- #include "SwOS.h"
- 
+#include "SwOS.h"
 
 #include <WiFi.h>
 #include <esp_now.h>
@@ -25,13 +24,14 @@
 #include "SwOSCom.h"
 #include "SwOSSwarm.h"
 #include "SwOSWeb.h"
-#include "ftSwarm.h"
 #include "easyKey.h"
 
 // There can only be once!
 SwOSSwarm myOSSwarm;
 
 //#define DEBUG_COMMUNICATION
+
+//#define DEBUG_READTASK
 
 /***************************************************
  *
@@ -92,7 +92,7 @@ void readTask( void *parameter ) {
 
     // calc delay time
     #ifdef DEBUG_READTASK
-      xDelay = 2500 / portTICK_PERIOD_MS;
+      xDelay = 25000 / portTICK_PERIOD_MS;
     #else
       xDelay = myOSSwarm.getReadDelay() / portTICK_PERIOD_MS;
     #endif
@@ -294,6 +294,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 
   // initialize I2C
   switch ( nvs.CPU ) {
+    case FTSWARM_2V1: 
     case FTSWARM_2V0: Wire.begin( 8, 9 );   break;
     case FTSWARM_1V0: Wire.begin( 13, 12 ); break;
     default:          Wire.begin( 21, 22 ); break;

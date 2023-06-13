@@ -9,11 +9,12 @@
  
 #pragma once
 
+#include "SwOS.h"
+
 #include <stdint.h>
 
-#include "ftSwarm.h"
-
 #define MAXNVSEVENT 36
+#define MAXSWARM    32
 
 class NVSEvent {
   public:
@@ -31,6 +32,12 @@ class NVSEventList {
     NVSEvent event[MAXNVSEVENT];
 };
 
+// wifi types
+typedef enum { wifiOFF, wifiAP, wifiClient } FtSwarmWifi_t;
+
+// swarm communication
+typedef enum { swarmComWifi = 1, swarmComRS485 = 2, swarmComBoth= 3 } FtSwarmCommunication_t;
+
 
 class SwOSNVS {
   protected:
@@ -45,10 +52,18 @@ public:
 	  char                  wifiSSID[64], wifiPwd[128];
     char                  swarmName[MAXIDENTIFIER];
     uint16_t              swarmSecret, swarmPIN;
-    bool                  APMode;
+    FtSwarmWifi_t         wifiMode;
     int16_t               joyZero[2][2];
     uint8_t               RGBLeds;
+    uint8_t               displayType = 1;
     NVSEventList          eventList;
+    bool                  webUI;
+    bool                  IAmKelda;
+    FtSwarmCommunication_t swarmCommunication;
+    FtSwarmSerialNumber_t swarmMembers[MAXSWARM];
+    FtSwarmI2CMode_t      I2CMode;
+    bool                  gyro;
+    uint8_t               I2CAddr;
 
 	  SwOSNVS();                             // constructor
 	  void begin();                          // read data from nvs & run an _initialSetup if needed
@@ -57,5 +72,8 @@ public:
     void saveAndRestart();                 // save config & restart
     void createSwarm( char *name, uint16_t pin ); // create a new swarm
     void factorySettings( void );          // reset to factory settings
+    bool RS485Available( void );           // true if board has RS485
     void printNVS();                       // print settings for debugging only  
 };
+
+extern SwOSNVS nvs;

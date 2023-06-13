@@ -1,7 +1,8 @@
+#include "esp_err.h"
 /*
  * SwOSWEB.h
  *
- * fTSwarm buildin WebServer
+ * fTSwarm builtin WebServer
  * 
  * (C) 2021/22 Christian Bergschneider & Stefan Fuss
  * 
@@ -258,10 +259,32 @@ char * findlast( char *str, char ch) {
 
 }
 
+bool getAuthorization( httpd_req_t *req, uint16_t *token ) {
+  // needs to be called before start building a request's response
+
+  bool result = false;
+  char *authBuffer;
+
+  // get the value of Authorisation, expected value is "Bearer <number>"
+  size_t len = httpd_req_get_hdr_value_len(req, "Authorization" )+1;
+  authBuffer = (char *) malloc( len );
+  result = httpd_req_get_hdr_value_str(req, "Authorization", authBuffer, len) == ESP_OK;
+
+  // Authorisation found, check on token
+  if ( result && ( strlen( authBuffer ) > 7 ) ) {
+    char *tokenStr = authBuffer + 7; // sizeof("Bearer ") == 7
+    *token = (uint16_t) atol(tokenStr);
+  }
+
+  // cleanup
+  free(authBuffer);
+
+  return result;
+  
+}
+
 esp_err_t indexHandler(httpd_req_t *req ) {
   // reply on /index.html
-  
-  char line[512];
 
   httpd_resp_set_hdr( req, "Content-Encoding", "gzip" );
   httpd_resp_set_type( req, "text/html" ); 
@@ -298,13 +321,36 @@ esp_err_t fileHandler(httpd_req_t *req ) {
 esp_err_t apiGetSwarm(httpd_req_t *req ) {
   // reply on /api/getSwarm
 
+  uint16_t token;
+  bool provided = getAuthorization( req, &token);  
+  bool status = false;
+
   sendResponse( req, 200, true );
 
   JSONize json(req);
 
+  json.startObject();
+  
+  json.startObject("auth");
+  
   myOSSwarm.lock();
+
+  if (provided) {
+    status = myOSSwarm.apiPeekIsAuthorized(token);    
+  }
+
+  json.variableB("provided", provided);
+  json.variableB("status", status);
+
+  json.endObject();
+  json.newObject(JSONObject);
+  json.text2string((char *)"swarms");
+  json.assign();
+
   myOSSwarm.jsonize(&json);
   myOSSwarm.unlock();
+
+  json.endObject();
 
   httpd_resp_sendstr_chunk(req, NULL);
   
@@ -348,31 +394,29 @@ esp_err_t apiActor( httpd_req_t *req ) {
   char id[64];
   int  cmd = 0;
   int  power = 0;
-  bool hasCmd   = false;
-  bool hasPower = false;
   uint16_t token;
-  uint16_t status = 200;
+  uint16_t status = 400;
 
-  if ( ( !getParameter( req, root, "id", id, true ) ) ||
-       ( !getParameter( req, root, "token", &token, true ) ) ) {
+  // mandatory parameters
+  bool hasID = getParameter( req, root, "id", id, true );
+  bool hasAuthorization = getAuthorization( req, &token );
+
+  if ( !( hasID && hasAuthorization ) ) {
     cJSON_Delete( root );
     return sendResponse( req, 400 );
   }
-
+  
   // optional parameters
-  boolean c = ( req, getParameter( req, root, "cmd", &cmd, false ) );
-  boolean p = ( req, getParameter( req, root, "power", &power, false ) );
+  boolean hasCmd = ( req, getParameter( req, root, "cmd", &cmd, false ) );
+  boolean hasPower = ( req, getParameter( req, root, "power", &power, false ) );
 
   // cleanup
   cJSON_Delete( root );
 
-  // none
-  if (! (p || c) ) return sendResponse( req, 400 );
-
   // let's do it
   myOSSwarm.lock();  
-  if ( c ) status = myOSSwarm.apiActorCmd( token, id, cmd );
-  if ( p ) status = myOSSwarm.apiActorPower( token, id, power); 
+  if ( hasCmd )   status = myOSSwarm.apiActorCmd( token, id, cmd, !hasPower );
+  if ( hasPower ) status = myOSSwarm.apiActorPower( token, id, power, true); 
   myOSSwarm.unlock();
 
   return sendResponse( req, status );
@@ -387,30 +431,31 @@ esp_err_t apiLED( httpd_req_t *req ) {
 
   char     id[64];
   int      brightness, color;
-  uint16_t status = 200;
+  uint16_t status = 400;
   uint16_t token;
 
-  // mandatory
-  if ( (!getParameter( req, root, "id", id, true ) ) ||
-       (!getParameter( req, root, "token", &token, true ) ) ) { 
-    cJSON_Delete(root); 
+  // mandatory parameters
+  bool hasID = getParameter( req, root, "id", id, true );
+  bool hasAuthorization = getAuthorization( req, &token );
+  
+  if ( !( hasID && hasAuthorization ) ) {
+    cJSON_Delete( root );
     return sendResponse( req, 400 );
   }
 
   // one of both?
-  boolean b = getParameter( req, root, "brightness", &brightness, false );
-  boolean c = getParameter( req, root, "color", &color, false );
+  bool hasBrightness = getParameter( req, root, "brightness", &brightness, false );
+  bool hasColor      = getParameter( req, root, "color", &color, false );
+
+  ESP_LOGD( LOGFTSWARM, "hasColor=%d color=%x", hasColor, color );
 
   // cleanup
   cJSON_Delete(root);
 
-  // none
-  if (! (b || c) ) return sendResponse( req, 400 );
-
   // let's do it
   myOSSwarm.lock();
-  if ( b ) status = myOSSwarm.apiLEDBrightness( token, id, brightness );
-  if ( c ) status = myOSSwarm.apiLEDColor( token, id, color );
+  if ( hasBrightness ) status = myOSSwarm.apiLEDBrightness( token, id, brightness, !hasColor );
+  if ( hasColor )      status = myOSSwarm.apiLEDColor( token, id, color, true );
   myOSSwarm.unlock();
   
   return sendResponse( req, status );
@@ -426,29 +471,28 @@ esp_err_t apiServo(httpd_req_t *req ) {
   char     id[64];
   int      offset, position;
   uint16_t token;
-  uint16_t status;
+  uint16_t status = 400;
 
-  // mandatory
-  if ( ( !getParameter( req, root, "id", id, true ) ) ||
-       ( !getParameter( req, root, "token", &token, true ) ) ) {
-    cJSON_Delete(root);
+  // mandatory parameters
+  bool hasID = getParameter( req, root, "id", id, true );
+  bool hasAuthorization = getAuthorization( req, &token );
+
+  if ( !( hasID && hasAuthorization ) ) {
+    cJSON_Delete( root );
     return sendResponse( req, 400 );
   }
 
   // optional
-  boolean o = getParameter( req, root, "offset", &offset, false);
-  boolean p = getParameter( req, root, "position", &position, false);
+  boolean hasOffset   = getParameter( req, root, "offset", &offset, false);
+  boolean hasPosition = getParameter( req, root, "position", &position, false);
 
   // cleanup
   cJSON_Delete(root);
   
-  // none
-  if (!( o || p) ) return sendResponse( req, 400 );
-
   // let's do it
   myOSSwarm.lock();
-  if (o) status = myOSSwarm.apiServoOffset( token, id, offset);
-  if (p) status = myOSSwarm.apiServoPosition( token, id, position );
+  if (hasOffset)   status = myOSSwarm.apiServoOffset( token, id, offset, !hasPosition);
+  if (hasPosition) status = myOSSwarm.apiServoPosition( token, id, position, true );
   myOSSwarm.unlock();
 
   return sendResponse( req, status );
@@ -461,14 +505,20 @@ esp_err_t apiIsAuthorized( httpd_req_t *req ) {
   // check on valid json 
   cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400 );
 
+  // get Token
   uint16_t token;
-  if (!getParameter( req, root, "token", &token ) ) return sendResponse( req, 400 );
+  bool hasAuthorization = getAuthorization( req, &token );
+
+  // cleanup
+  cJSON_Delete(root);
+
+  if (!hasAuthorization ) return sendResponse( req, 400 );
 
   // cleanup
   cJSON_Delete(root);
 
   myOSSwarm.lock();
-  uint16_t status = myOSSwarm.apiIsAuthorized( token );
+  uint16_t status = myOSSwarm.apiIsAuthorized( token, true );
   myOSSwarm.unlock();
 
   return sendResponse( req, status );
@@ -511,7 +561,7 @@ bool SwOSStartWebServer( void ) {
   httpd_register_uri_handler(server, &index);
 
   // /api/* HTTP_GET
-  httpd_uri_t apiGet = { .uri = "/api/*", .method = HTTP_GET, .handler = &apiGetHandler, .user_ctx = NULL };
+  httpd_uri_t apiGet = { .uri = "/api/*", .method = HTTP_GET, .handler = &apiGetHandler, .user_ctx = http_context };
   httpd_register_uri_handler(server, &apiGet);
 
   // /api/* HTTP_POST

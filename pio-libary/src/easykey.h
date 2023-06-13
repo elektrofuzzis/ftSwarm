@@ -1,5 +1,5 @@
 /*
- * easykey.h
+ * easyKey.h
  *
  * simple keyboard input commands
  * 
@@ -10,6 +10,9 @@
 #pragma once
 
 #include <stdint.h>
+
+bool anyKey( void );
+// true, if a char was sent
 
 bool yesNo( const char *prompt, bool defaultValue = false );
 // write prompt and check on y/n keys. true, if Y pressed

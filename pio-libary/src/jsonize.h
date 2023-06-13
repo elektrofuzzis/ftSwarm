@@ -25,20 +25,23 @@ class JSONize {
 protected:
 	httpd_req_t *_req;                      // esp-idf's http-request
 	JSONObject_t lastObject = JSONNone;     // which type I'm processing
-	void assign();                          // write ":"
-	void text2string( char *t);             // write a sting in quotes: "t"
-	void newObject( JSONObject_t object );  // start a new object and decide to write a "," 
+  bool noSpacer = true;                   // supress first ,
   
 public:
 	JSONize( httpd_req_t *req );
 
   // start and end a new object
-  void startObject();
+  void startObject(const char *identifier = NULL );
   void endObject();
 
-  // start and end a ne array
+  // start and end a new array
 	void startArray( const char* identifier);
 	void endArray();
+
+  // internal
+  void assign();                          // write ":"
+	void text2string( char *t);             // write a sting in quotes: "t"
+  void newObject( JSONObject_t object );  // start a new object and decide to write a "," 
 
   // write variables
 	void variable( const char *identifier, char *value);

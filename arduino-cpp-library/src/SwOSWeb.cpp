@@ -344,7 +344,7 @@ esp_err_t apiGetSwarm(httpd_req_t *req ) {
 
   json.endObject();
   json.newObject(JSONObject);
-  json.text2string("swarms");
+  json.text2string((char *)"swarms");
   json.assign();
 
   myOSSwarm.jsonize(&json);

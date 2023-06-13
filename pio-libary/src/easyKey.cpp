@@ -15,7 +15,18 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-#include "easykey.h"
+#include "easyKey.h"
+#include <HardwareSerial.h>
+
+bool anyKey( void ) {
+
+  bool result = Serial.available();
+  
+  while( Serial.available() ) { Serial.read(); delay(25); }
+
+  return result;
+  
+}
 
 bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, int (*validChar)( int ch ) ) {
 
@@ -23,38 +34,40 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
   char *str = (char *) calloc( size, sizeof(char) );
   uint8_t i = 0;
   
-  printf(prompt);
+  printf (prompt); fflush(stdout); 
 
   while (1) {
 
-    // vTaskDelay( 25 / portTICK_PERIOD_MS );
-    
-    ch = getchar();
+    delay(100);
 
-    switch (ch) {
+    if ( Serial.available()>0 ) {
+      ch = Serial.read();
       
-      case '\n': strcpy( s, str );
-                 free(str);
-                 putchar('\n');
-                 return true;        
+      switch (ch) {
+        case '\n': strcpy( s, str );
+                   free(str);
+                   Serial.write('\n');
+                   return true;
+        case '\r': break;
+        case '\b': 
+        case 127:  if (i>0) { 
+                     str[--i] = '\0'; 
+                     Serial.write( 127 ); 
+                   }
+                   break;
       
-      case '\b': 
-      case 127:  if (i>0) { 
-                   str[--i] = '\0'; 
-                   putchar( 127 ); 
-                 }
-                 break;
+        case '\e': free(str);
+                   Serial.write('\n');
+                   return false;
       
-      case '\e': free(str);
-                 putchar('\n');
-                 return false;
-      
-      default:   if ( ( ch < 255 ) && ( validChar( ch ) ) && ( i<size-1) ) {
-                   // add printable char
-                   (hidden)?putchar( '*' ):putchar( ch );
-                   str[i++] = ch;
-                 }
-                 break;
+        default:   if ( ( ch < 255 ) && ( validChar( ch ) ) && ( i<size-1) ) {
+                     // add printable char
+                     (hidden)?Serial.write( '*' ):Serial.write( ch );
+                     str[i++] = ch;
+                   }
+                   break;
+      }
+
     }
 
   }

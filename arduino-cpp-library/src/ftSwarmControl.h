@@ -1,5 +1,5 @@
 /*
- * ftSwarm.h
+ * ftSwarmRS.h
  *
  * framework to build a ftSwarm application
  * 
@@ -9,8 +9,10 @@
  
 #pragma once
 
+#define __FTSWARMCONTROL__
+
 #if !defined(CONFIG_IDF_TARGET_ESP32)
-    #error "Project configration error: please use an ESP32 board definition"
+     #error "Project configration error: please use an ESP32 board definition"
 #endif
 
 #include "SwOS.h"

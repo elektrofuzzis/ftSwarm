@@ -7,7 +7,6 @@
  * 
  */
 
-#include "SwOS.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,13 +15,14 @@
 #include <driver/ledc.h>
 #include <driver/gpio.h>
 #include <driver/adc.h>
+#include <driver/i2c.h>
 #include <esp_now.h>
 #include <esp_log.h>
 #include <FastLED.h>
 
+#include "SwOS.h"
 #include "SwOSHW.h"
 #include "SwOSCom.h"
-#include "ftSwarm.h"
 
 const char IOTYPE[FTSWARM_MAXIOTYPE][10] = { "INPUT", "ACTOR", "BUTTON", "JOYSTICK", "LED", "SERVO", "OLED", "GYRO", "HC165" };
 
@@ -313,6 +313,7 @@ void SwOSEventInput::trigger( FtSwarmTrigger_t triggerEvent, int32_t portValue )
 
 
 #if CONFIG_IDF_TARGET_ESP32S3
+  #define xGPIO_NUM_22    GPIO_NUM_NC
   #define xGPIO_NUM_25    GPIO_NUM_NC
   #define xADC1_CHANNEL_8 ADC1_CHANNEL_8
   #define xGPIO_NUM_41    GPIO_NUM_41
@@ -322,6 +323,7 @@ void SwOSEventInput::trigger( FtSwarmTrigger_t triggerEvent, int32_t portValue )
   #define xGPIO_NUM_47    GPIO_NUM_47
   #define xGPIO_NUM_48    GPIO_NUM_48
 #else
+  #define xGPIO_NUM_22    GPIO_NUM_22
   #define xGPIO_NUM_25    GPIO_NUM_25
   #define xADC1_CHANNEL_8 ADC1_CHANNEL_MAX
   #define xGPIO_NUM_41    GPIO_NUM_NC
@@ -442,7 +444,7 @@ bool SwOSInput::isXMeter() {
 
 }
 
-void SwOSInput::setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen ) {
+void SwOSInput::setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote ) {
 
   _sensorType   = sensorType;
   _normallyOpen = normallyOpen;
@@ -460,7 +462,7 @@ void SwOSInput::setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen ) {
       gpio_set_level( (gpio_num_t) _PUA2, true );
     }
   
-  } else {
+  } else if ( !dontSendToRemote ) {
     
     // send SN, SETSENSORTYPE, _port, sensorType
     SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETSENSORTYPE );
@@ -760,12 +762,12 @@ void SwOSActor::setMotionType( FtSwarmMotion_t motionType ) {
   
 }
 
-void SwOSActor::setActorType( FtSwarmActor_t actorType ) { 
+void SwOSActor::setActorType( FtSwarmActor_t actorType, bool dontSendToRemote ) { 
 
   if (_ctrl->isLocal()) {
     _actorType = actorType; 
     
-  } else {    
+  } else if (!dontSendToRemote) {    
     // send SN, SETSENSORTYPE, _port, sensorType
     SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETACTORTYPE );
     cmd.data.actorTypeCmd.index     = _port;
@@ -1133,7 +1135,7 @@ void SwOSLED::onTrigger( int32_t value ) {
  *
  ***************************************************/
 
-SwOSServo::SwOSServo(const char *name, SwOSCtrl *ctrl) : SwOSIO( name, ctrl ) {
+SwOSServo::SwOSServo(const char *name, uint8_t port, SwOSCtrl *ctrl) : SwOSIO( name, port, ctrl ) {
 
   // initialize local HW
   if (ctrl->isLocal()) _setupLocal();
@@ -1144,9 +1146,14 @@ void SwOSServo::_setupLocal() {
 
   // assign port to GPIO. All CPU versions use same ports.
   switch ( _ctrl->getCPU() ) {
-    case FTSWARM_2V1: _SERVO = xGPIO_NUM_47; break;
+    case FTSWARM_2V1: if (_port == 0 ) _SERVO = xGPIO_NUM_47;
+                      else             _SERVO = GPIO_NUM_15;
+                      break;
+
     case FTSWARM_2V0: _SERVO = xGPIO_NUM_47; break;
+
     case FTSWARM_1V3: _SERVO = GPIO_NUM_33; break;
+
     default:          _SERVO = xGPIO_NUM_25; break;
   }
 
@@ -1160,7 +1167,7 @@ void SwOSServo::_setupLocal() {
   gpio_config(&io_conf);
 
   // ledc channels
-  _channelSERVO = (ledc_channel_t) 4;
+  _channelSERVO = (ledc_channel_t) (4 + _port);
 
   // use Timer 1
     ledc_timer_config_t ledc_timer = {
@@ -1224,27 +1231,27 @@ void SwOSServo::jsonize( JSONize *json, uint8_t id) {
   json->endObject();
 }
 
-void SwOSServo::setPosition( int16_t position ) {
+void SwOSServo::setPosition( int16_t position, bool dontSendToRemote ) {
   _position = position;
 
   // apply local or remote
-  if (_ctrl->isLocal()) _setLocal();
-  else                  _setRemote();
+  if (_ctrl->isLocal())       _setLocal();
+  else if (!dontSendToRemote) _setRemote();
 
 }
 
-void SwOSServo::setOffset( int16_t offset ) {
+void SwOSServo::setOffset( int16_t offset, bool dontSendToRemote ) {
   _offset = offset;
  
   // apply local or remote
-  if (_ctrl->isLocal()) _setLocal();
-  else                  _setRemote();
+  if (_ctrl->isLocal())       _setLocal();
+  else if (!dontSendToRemote) _setRemote();
 
 }
 
 void SwOSServo::onTrigger( int32_t value ) {
 
-  setPosition( (int16_t) value );
+  setPosition( (int16_t) value, false );
 
 }
 
@@ -1433,10 +1440,121 @@ void SwOSHC165::read( ) {
 
 /***************************************************
  *
- *   SwOSOLED
+ *   I2C Slave
  *
  ***************************************************/
 
+#define I2C_DATA_LENGTH 512                        /*!< Data buffer length of test buffer */
+#define I2C_SLAVE_TX_BUF_LEN (2 * I2C_DATA_LENGTH)  /*!< I2C slave tx buffer size */
+#define I2C_SLAVE_RX_BUF_LEN (2 * I2C_DATA_LENGTH)  /*!< I2C slave rx buffer size */
+#define I2C_SLAVE_NUM I2C_NUM_1
+
+void SwOSI2C::read(  ) {
+ 
+  int bytes_read = 0;
+  uint8_t data[4];
+  
+  bytes_read = i2c_slave_read_buffer(I2C_SLAVE_NUM, data, 4, portMAX_DELAY);
+
+  if ( bytes_read == 1 ) {
+    // read a register
+    uint8_t result = 0;
+    if (data[0]<MAXI2CREGISTER) result = _myRegister[data[0]];
+    i2c_reset_tx_fifo(I2C_SLAVE_NUM);
+    i2c_slave_write_buffer(I2C_SLAVE_NUM, &result, 1, portMAX_DELAY);
+      
+  } else if ( bytes_read == 2 ) {
+    // write a register
+    if (data[0]<MAXI2CREGISTER) {
+      _myRegister[data[0]] = data[1];
+    }
+  }
+
+  if ( bytes_read > 0 ) {
+    trigger( FTSWARM_TRIGGERI2CREAD, 0 );
+  }
+
+}
+
+void SwOSI2C::_setupLocal(uint8_t I2CAddress) {
+
+    int i2c_slave_port = I2C_SLAVE_NUM;
+    i2c_config_t conf_slave;
+
+    switch ( _ctrl->getCPU() ) {
+      case FTSWARM_2V1:
+        // ftSwarmRS final
+        conf_slave.sda_io_num = GPIO_NUM_8;
+        conf_slave.scl_io_num = GPIO_NUM_9;
+        break;
+      case FTSWARM_2V0:
+        // ftSwarmRS 
+        conf_slave.sda_io_num = GPIO_NUM_4;
+        conf_slave.scl_io_num = GPIO_NUM_5;
+        break;
+      default:
+        // ftSwarm & ftSwarmControl 
+        conf_slave.sda_io_num = GPIO_NUM_21;
+        conf_slave.scl_io_num = xGPIO_NUM_22;
+        break;
+    }
+    
+    conf_slave.sda_pullup_en = GPIO_PULLUP_ENABLE;
+    conf_slave.scl_pullup_en = GPIO_PULLUP_ENABLE;
+    conf_slave.mode = I2C_MODE_SLAVE;
+    conf_slave.slave.addr_10bit_en = 0;
+    conf_slave.slave.slave_addr = I2CAddress;
+    i2c_param_config(i2c_slave_port, &conf_slave);
+    i2c_driver_install(i2c_slave_port,  I2C_MODE_SLAVE, I2C_SLAVE_RX_BUF_LEN, I2C_SLAVE_TX_BUF_LEN, 0);
+
+}
+
+
+SwOSI2C::SwOSI2C( const char *name, SwOSCtrl *ctrl, uint8_t I2CAddress):SwOSIO( name, ctrl ) {
+
+  memset(&_myRegister, 0, sizeof(_myRegister));
+  
+  if (ctrl->isLocal()) _setupLocal(I2CAddress);
+
+}
+
+void SwOSI2C::setRegister( uint8_t reg, uint8_t value ) {
+
+  // check on boundaries
+  if (reg>=MAXI2CREGISTER) return;
+  
+  _myRegister[reg] = value;
+
+  if (_ctrl->isLocal()) _setLocal( reg, value );
+  else                  _setRemote( reg, value );
+
+}
+
+void SwOSI2C::_setRemote( uint8_t reg, uint8_t value ) {
+  
+  SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_I2CREGISTER );
+  cmd.data.I2CRegisterCmd.reg   = reg;
+  cmd.data.I2CRegisterCmd.value = value;
+  cmd.send( );
+}
+
+void SwOSI2C::_setLocal( uint8_t reg, uint8_t value ) {
+  _myRegister[reg] = value;
+  trigger( FTSWARM_TRIGGERI2CWRITE, 0 );
+}
+
+uint8_t SwOSI2C::getRegister( uint8_t reg ) {
+
+  if (reg>=MAXI2CREGISTER) return 0;
+  else return _myRegister[reg];
+
+}
+
+/***************************************************
+ *
+ *   SwOSOLED
+ *
+ ***************************************************/
 
 #define YELLOWPIXELS 16
 
@@ -1725,15 +1843,12 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool lo
     else             actor[i] = NULL;
   }
 
-  gyro  = NULL;
-
 }
 
 SwOSCtrl::~SwOSCtrl() {
   
   for (uint8_t i=0; i<MAXINPUTS; i++) { if ( input[i] ) delete( input[i] ); }
   for (uint8_t i=0; i<MAXACTORS; i++) { if ( actor[i] ) delete( actor[i] ); }
-  if (gyro) delete( gyro );
   
 }
 
@@ -1742,8 +1857,7 @@ void SwOSCtrl::factorySettings( void ) {
   setAlias("");
   for (uint8_t i=0; i<MAXINPUTS; i++) { if ( input[i] ) input[i]->setAlias( "" ); }
   for (uint8_t i=0; i<MAXACTORS; i++) { if ( actor[i] ) actor[i]->setAlias( "" ); }
-  if (gyro) gyro->setAlias("");
-  
+
 }
 
 bool SwOSCtrl::cmdAlias( const char *obj, const char *alias) {
@@ -1776,7 +1890,6 @@ bool SwOSCtrl::cmdAlias( const char *obj, const char *alias) {
   if (strcmp( "FTSWARM", device) == 0)                                  { setAlias( alias );            return true; }
   else if ( ( strcmp(device, "A") == 0 )     && (port < inputs) )       { input[port]->setAlias(alias); return true; }
   else if ( ( strcmp(device, "M") == 0 )     && (port < actors) )       { actor[port]->setAlias(alias); return true; }
-  else if ( ( strcmp(device, "GYRO") == 0 )  && (port = 99) && (gyro) ) { gyro->setAlias(alias);        return true; }
 
   // specific hardware?
   return cmdAlias( device, port, alias );
@@ -1794,7 +1907,6 @@ SwOSIO *SwOSCtrl::getIO( const char *name) {
 
   for (uint8_t i=0;i<inputs;i++) { if (input[i]->equals(name) ) { return input[i]; } }
   for (uint8_t i=0;i<actors;i++) { if (actor[i]->equals(name) ) { return actor[i]; } }
-  if ((gyro) && (gyro->equals(name) ) ) { return gyro; }
 
   return NULL;
 }
@@ -1804,7 +1916,6 @@ SwOSIO *SwOSCtrl::getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port) {
   switch (ioType) {
     case FTSWARM_INPUT: return ( (port<inputs)?input[ port ]:NULL);
     case FTSWARM_ACTOR: return ( (port<actors)?actor[ port ]:NULL);
-    case FTSWARM_GYRO:  return gyro;
     default: return NULL;   
   }
 
@@ -1943,14 +2054,14 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
 
   switch (com->data.cmd) {
     case CMD_SETSENSORTYPE:
-      input[com->data.sensorCmd.index]->setSensorType( com->data.sensorCmd.sensorType, com->data.sensorCmd.normallyOpen );
+      input[com->data.sensorCmd.index]->setSensorType( com->data.sensorCmd.sensorType, com->data.sensorCmd.normallyOpen, true );
       return true;
     case CMD_SETACTORPOWER:
       actor[com->data.actorPowerCmd.index]->setMotionType( com->data.actorPowerCmd.motionType );
       actor[com->data.actorPowerCmd.index]->setPower( com->data.actorPowerCmd.power );
       return true;
     case CMD_SETACTORTYPE:
-      actor[com->data.actorTypeCmd.index]->setActorType( com->data.actorTypeCmd.actorType );
+      actor[com->data.actorTypeCmd.index]->setActorType( com->data.actorTypeCmd.actorType, true );
       return true;
     case CMD_ALIAS:
       // get all entries in datagramm
@@ -2020,13 +2131,100 @@ void SwOSCtrl::registerMe( SwOSCom *com ){
 
 }
 
+void SwOSCtrl::saveAliasToNVS( nvs_handle_t my_handle ) {
+
+  SwOSObj::saveAliasToNVS( my_handle );
+  for (uint8_t i=0; i<inputs; i++ ) input[i]->saveAliasToNVS( my_handle );
+  for (uint8_t i=0; i<actors; i++ ) actor[i]->saveAliasToNVS( my_handle );
+  
+}
+
+void SwOSCtrl::loadAliasFromNVS( nvs_handle_t my_handle ) {
+
+  SwOSObj::loadAliasFromNVS( my_handle );
+  for (uint8_t i=0; i<inputs; i++ ) input[i]->loadAliasFromNVS( my_handle );
+  for (uint8_t i=0; i<actors; i++ ) actor[i]->loadAliasFromNVS( my_handle );
+}
+
+/***************************************************
+ *
+ *   SwOSSwarmXX
+ *
+ ***************************************************/
+
+SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda ) : SwOSCtrl (SN, macAddress, local, CPU, HAT, IAmAKelda ) {
+
+  gyro = NULL;
+  I2C  = NULL;
+  if ( nvs.I2CMode == FTSWARM_I2C_SLAVE ) I2C = new SwOSI2C ( "I2C", this, nvs.I2CAddr );
+
+
+}
+
+SwOSSwarmXX::~SwOSSwarmXX() {
+
+  if (gyro) delete( gyro );
+  if (I2C)  delete( I2C );
+
+}
+
+void SwOSSwarmXX::factorySettings( void ) {
+
+  SwOSCtrl::factorySettings();
+  if (gyro) gyro->setAlias("");
+  
+}
+
+SwOSIO *SwOSSwarmXX::getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port) {
+
+  SwOSIO *result = SwOSCtrl::getIO( ioType, port );
+  if (result) return result;
+
+  if (ioType == FTSWARM_GYRO ) return gyro;
+  else                         return NULL;
+
+}
+
+
+SwOSIO *SwOSSwarmXX::getIO( const char *name ) {
+
+  SwOSIO *result = SwOSCtrl::getIO( name );
+  if (result) return result;
+
+  if (gyro->equals(name) ) return gyro;
+  else                     return NULL;
+
+}
+
+void SwOSSwarmXX::read() {
+
+  SwOSCtrl::read();
+
+  if( I2C ) I2C->read();
+
+}
+
+bool SwOSSwarmXX::OnDataRecv(SwOSCom *com ) {
+
+  if (!com) return false;
+
+  if ( ( com->data.cmd == CMD_I2CREGISTER ) && (I2C) ) {
+      I2C->setRegister( com->data.I2CRegisterCmd.reg, com->data.I2CRegisterCmd.value );
+  } else {
+      SwOSCtrl::OnDataRecv(com);
+  }
+
+  return true;
+
+}
+
 /***************************************************
  *
  *   SwOSSwarmJST
  *
  ***************************************************/
 
-SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda, uint8_t xRGBLeds ):SwOSCtrl( SN, macAddress, local, CPU, HAT, IAmAKelda ) {
+SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda, uint8_t xRGBLeds ):SwOSSwarmXX( SN, macAddress, local, CPU, HAT, IAmAKelda ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
@@ -2036,7 +2234,14 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, const uint8_t *macAddress,
   RGBLeds = xRGBLeds;
   for (uint8_t i=0; i<MAXLED; i++) { led[i] = new SwOSLED("LED", i, this); }
   //for (uint8_t i=RGBLeds; i<MAXLED; i++) { led[i] = NULL; }
-  servo = new SwOSServo("SERVO", this);
+  servo[0] = new SwOSServo("SERVO", 0, this);
+  if ( CPU == FTSWARM_2V1 ) {
+    servo[1] = new SwOSServo("SERVO", 1, this);
+    servos = 2;
+  } else { 
+    servo[1] = NULL;
+    servos = 1;
+  }
 
 }
 
@@ -2044,13 +2249,13 @@ SwOSSwarmJST::SwOSSwarmJST( SwOSCom *com ):SwOSSwarmJST( com->data.sourceSN, com
 
   // inputs
   for (uint8_t i=0; i<inputs; i++ ) {
-    input[i]->setSensorType( com->data.registerCmd.input[i].sensorType, true );
+    input[i]->setSensorType( com->data.registerCmd.input[i].sensorType, true, true );
     input[i]->setValue( com->data.registerCmd.input[i].rawValue );
   }
 
   // actors
   for (uint8_t i=0; i<actors; i++ ) {
-    actor[i]->setActorType( com->data.registerCmd.actor[i].actorType );
+    actor[i]->setActorType( com->data.registerCmd.actor[i].actorType, true );
     actor[i]->setValue( com->data.registerCmd.actor[i].motionType, com->data.registerCmd.actor[i].power );
   }
 
@@ -2060,29 +2265,36 @@ SwOSSwarmJST::SwOSSwarmJST( SwOSCom *com ):SwOSSwarmJST( com->data.sourceSN, com
       led[i]->setValue( com->data.registerCmd.jst.led[i].brightness, com->data.registerCmd.jst.led[i].color );
     }
   }
+
+  // servos
+  for (uint8_t i=0; i<servos; i++ ) {
+    servo[i]->setOffset( com->data.registerCmd.jst.servo[i].offset, true);
+    servo[i]->setPosition(com->data.registerCmd.jst.servo[i].offset, true);
+  }
   
 }
 
 SwOSSwarmJST::~SwOSSwarmJST() {
   
   for ( uint8_t i=0; i<MAXLED; i++ ) { if ( led[i] ) delete led[i]; }
-  if ( servo ) delete servo;
+  for ( uint8_t i=0; i<MAXSERVO; i++ ) { if ( servo[i] ) delete servo[i]; }
 
 }
 
 void SwOSSwarmJST::factorySettings( void ) {
 
-  SwOSCtrl::factorySettings();
-  for (uint8_t i=0; i<MAXLED; i++) { if ( led[i] ) led[i]->setAlias( "" ); }
-  if (servo) servo->setAlias("");
+  SwOSSwarmXX::factorySettings();
+  for (uint8_t i=0; i<MAXLED; i++)   { if ( led[i] )   led[i]->setAlias( "" ); }
+  for (uint8_t i=0; i<MAXSERVO; i++) { if ( servo[i] ) servo[i]->setAlias( "" ); }
   
 }
 
 bool SwOSSwarmJST::cmdAlias( char *device, uint8_t port, const char *alias) {
 
   // test on my specific hardware
-  if ( ( strcmp(device, "LED") == 0 ) && (port < MAXLED) && (led[port] ) ) { led[port]->setAlias(alias); return true; }
-  else if ( ( strcmp(device, "SERVO") == 0 ) && (port = 99) )              { servo->setAlias(alias);     return true; }
+  if ( ( strcmp(device, "LED") == 0 ) && (port < MAXLED) && (led[port] ) )            { led[port]->setAlias(alias);   return true; }
+  else if ( ( strcmp(device, "SERVO") == 0 ) && (port < MAXSERVO ) && (servo[port]))  { servo[port]->setAlias(alias); return true; }
+  else if ( ( strcmp(device, "GYRO") == 0 )  && (port = 99) && (gyro) )               { gyro->setAlias(alias);        return true; }
   else return false;
 
 }
@@ -2090,12 +2302,12 @@ bool SwOSSwarmJST::cmdAlias( char *device, uint8_t port, const char *alias) {
 SwOSIO *SwOSSwarmJST::getIO( const char *name) {
 
   // check on base class hardware
-  SwOSIO *IO = SwOSCtrl::getIO(name);
+  SwOSIO *IO = SwOSSwarmXX::getIO(name);
   if ( IO != NULL ) { return IO; }
 
   // check on specific hardware
-  for (uint8_t i=0;i<MAXLED;i++) { if ( (led[i]) && ( led[i]->equals(name) ) ) { return led[i]; } }
-  if ( (servo) && servo->equals(name) ) { return servo; }
+  for (uint8_t i=0;i<MAXLED;i++)   { if ( (led[i]) && ( led[i]->equals(name) ) ) { return led[i]; } }
+  for (uint8_t i=0;i<MAXSERVO;i++) { if ( (servo[i]) && ( servo[i]->equals(name) ) ) { return servo[i]; } }
 
   return NULL;
 
@@ -2104,13 +2316,14 @@ SwOSIO *SwOSSwarmJST::getIO( const char *name) {
 SwOSIO *SwOSSwarmJST::getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port) {
 
   // check on base class hardware
-  SwOSIO *IO = SwOSCtrl::getIO(ioType, port);
+  SwOSIO *IO = SwOSSwarmXX::getIO(ioType, port);
   if ( IO != NULL ) { return IO; }
 
   switch (ioType) {
     case FTSWARM_LED:
       return ( (port<MAXLED)?led[port]:NULL);
-    case FTSWARM_SERVO: return servo; 
+    case FTSWARM_SERVO:
+      return ( (port<MAXSERVO)?servo[port]:NULL);
   }
 
   return NULL;
@@ -2128,13 +2341,13 @@ FtSwarmControler_t SwOSSwarmJST::getType() {
 void SwOSSwarmJST::jsonize( JSONize *json, uint8_t id) {
 
   json->startObject();
-  SwOSCtrl::jsonize(json, id);
+  SwOSSwarmXX::jsonize(json, id);
   json->startArray( "io" );
 
   for (uint8_t i=0; i<inputs; i++) { input[i]->jsonize( json, id ); }
   for (uint8_t i=0; i<actors; i++) { actor[i]->jsonize( json, id ); }
   for (uint8_t i=0; i<RGBLeds; i++) { if ( led[i] ) led[i]->jsonize( json, id ); } // reduce LEDs in UI
-  if (servo) { servo->jsonize( json, id ); }
+  for (uint8_t i=0; i<servos; i++)  { if ( servo[i] ) servo[i]->jsonize( json, id ); } // reduce LEDs in UI
   if (gyro)  { gyro->jsonize(json, id); }
 
   json->endArray();
@@ -2179,28 +2392,34 @@ bool SwOSSwarmJST::apiLEDColor( char *id, int color ) {
 bool SwOSSwarmJST::apiServoOffset( char *id, int offset ) {
   // send a Servo command (from api)
 
-  // do I have a servo and does the name/alias fit?
-  if (!servo) { return false; }
-  if (!servo->equals(id)) { return false; }
+  // search IO
+  for (uint8_t i=0; i<MAXSERVO; i++) {
 
-  // everything is fine, set values
-  servo->setOffset( offset );
+    if ( (servo[i]) && ( servo[i]->equals(id) ) ) {
+      // found
+      servo[i]->setOffset( offset, false );
+      return true;
+    }
+  }
 
-  return true;
+  return false;
 
 }
 
 bool SwOSSwarmJST::apiServoPosition( char *id, int position ) {
   // send a Servo command (from api)
 
-  // do I have a servo and does the name/alias fit?
-  if (!servo) { return false; }
-  if (!servo->equals(id)) { return false; }
+  // search IO
+  for (uint8_t i=0; i<MAXSERVO; i++) {
 
-  // everything is fine, set values
-  servo->setPosition( position );
+    if ( (servo[i]) && ( servo[i]->equals(id) ) ) {
+      // found
+      servo[i]->setPosition( position, false );
+      return true;
+    }
+  }
 
-  return true;
+  return false;
 
 }
 
@@ -2217,7 +2436,7 @@ bool SwOSSwarmJST::OnDataRecv(SwOSCom *com ) {
   if (!com) return false;
 
   // check if SwOSCrtl knows the cmd
-  if ( SwOSCtrl::OnDataRecv( com ) ) return true;
+  if ( SwOSSwarmXX::OnDataRecv( com ) ) return true;
 
   switch ( com->data.cmd ) {
     case CMD_STATE: 
@@ -2229,9 +2448,9 @@ bool SwOSSwarmJST::OnDataRecv(SwOSCom *com ) {
       }
       return true;
     case CMD_SETSERVO:
-      if (servo) { 
-          servo->setOffset( com->data.servoCmd.offset);
-          servo->setPosition( com->data.servoCmd.position );
+      if (servo[com->data.servoCmd.index]) {
+        servo[com->data.servoCmd.index]->setOffset( com->data.servoCmd.offset, true );
+        servo[com->data.servoCmd.index]->setPosition( com->data.servoCmd.position, true );
       }
       return true;
   }
@@ -2244,7 +2463,7 @@ void SwOSSwarmJST::registerMe( SwOSCom *com ){
 
   if (!com) return;
   
-  SwOSCtrl::registerMe( com );
+  SwOSSwarmXX::registerMe( com );
   com->data.registerCmd.jst.RGBLeds = RGBLeds;
   for (uint8_t i=0;i<MAXLED;i++) {
     if (led[i] ) {
@@ -2256,12 +2475,14 @@ void SwOSSwarmJST::registerMe( SwOSCom *com ){
     }
   }
 
-  if (servo) {
-    com->data.registerCmd.jst.servo.offset   = servo->getOffset();
-    com->data.registerCmd.jst.servo.position = servo->getPosition();
-  } else {
-    com->data.registerCmd.jst.servo.offset   = 0;
-    com->data.registerCmd.jst.servo.position = 0;
+  for (uint8_t i=0;i<MAXSERVO;i++) {
+    if (servo[i] ) {
+      com->data.registerCmd.jst.servo[i].offset = servo[i]->getOffset();
+      com->data.registerCmd.jst.servo[i].position = servo[i]->getPosition();
+    } else {
+      com->data.registerCmd.jst.servo[i].offset = 0;
+      com->data.registerCmd.jst.servo[i].position = 0;
+    }
   }
   
 }
@@ -2283,7 +2504,7 @@ void SwOSSwarmJST::sendAlias( uint8_t *mac, FtSwarmSerialNumber_t destinationSN 
   for (uint8_t i=0; i<MAXLED;i++) if (led[i]) alias.sendBuffered( led[i]->getName(), led[i]->getAlias() ); 
 
   // servo
-  if (servo) alias.sendBuffered( servo->getName(), servo->getAlias() ); 
+  for (uint8_t i=0; i<MAXSERVO;i++) if (servo[i]) alias.sendBuffered( servo[i]->getName(), servo[i]->getAlias() ); 
 
   // gyro
   if (gyro) alias.sendBuffered( gyro->getName(), gyro->getAlias() ); 
@@ -2292,38 +2513,22 @@ void SwOSSwarmJST::sendAlias( uint8_t *mac, FtSwarmSerialNumber_t destinationSN 
   
 }
 
-void SwOSCtrl::saveAliasToNVS( nvs_handle_t my_handle ) {
-
-  SwOSObj::saveAliasToNVS( my_handle );
-  for (uint8_t i=0; i<inputs; i++ ) input[i]->saveAliasToNVS( my_handle );
-  for (uint8_t i=0; i<actors; i++ ) actor[i]->saveAliasToNVS( my_handle );
-  
-}
-
-void SwOSCtrl::loadAliasFromNVS( nvs_handle_t my_handle ) {
-
-  SwOSObj::loadAliasFromNVS( my_handle );
-  for (uint8_t i=0; i<inputs; i++ ) input[i]->loadAliasFromNVS( my_handle );
-  for (uint8_t i=0; i<actors; i++ ) actor[i]->loadAliasFromNVS( my_handle );
-  
-}
-
 void SwOSSwarmJST::saveAliasToNVS( nvs_handle_t my_handle ) {
 
-  SwOSCtrl::saveAliasToNVS( my_handle );
+  SwOSSwarmXX::saveAliasToNVS( my_handle );
 
-  if (servo) servo->saveAliasToNVS( my_handle );
   if (gyro) gyro->saveAliasToNVS( my_handle );
-  for (uint8_t i=0; i<MAXLED; i++ ) if (led[i]) led[i]->saveAliasToNVS( my_handle );
+  for (uint8_t i=0; i<MAXLED; i++ )   if (led[i]) led[i]->saveAliasToNVS( my_handle );
   
 }
 
 void SwOSSwarmJST::loadAliasFromNVS( nvs_handle_t my_handle ) {
 
-  SwOSCtrl::loadAliasFromNVS( my_handle );
+  SwOSSwarmXX::loadAliasFromNVS( my_handle );
 
   if (gyro) gyro->loadAliasFromNVS( my_handle );
-  for (uint8_t i=0; i<MAXLED; i++ ) if (led[i]) led[i]->loadAliasFromNVS( my_handle );
+  for (uint8_t i=0; i<MAXLED; i++ )   if (led[i])   led[i]->loadAliasFromNVS( my_handle );
+  for (uint8_t i=0; i<MAXSERVO; i++ ) if (servo[i]) servo[i]->loadAliasFromNVS( my_handle );
   
 }
 
@@ -2333,7 +2538,7 @@ void SwOSSwarmJST::loadAliasFromNVS( nvs_handle_t my_handle ) {
  *
  ***************************************************/
 
-SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda, int16_t zero[2][2], uint8_t displayType ):SwOSCtrl( SN, macAddress, local, CPU, HAT, IAmAKelda ) {
+SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda, int16_t zero[2][2], uint8_t displayType ):SwOSSwarmXX( SN, macAddress, local, CPU, HAT, IAmAKelda ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
@@ -2348,6 +2553,8 @@ SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, const uint8_t *mac
     else      joystick[i] = new SwOSJoystick("JOY", i, this, 0, 0 ); 
   }
   hc165 = new SwOSHC165("HC165", this);
+
+
   oled  = new SwOSOLED("OLED", this, displayType);
 
 }
@@ -2356,13 +2563,13 @@ SwOSSwarmControl::SwOSSwarmControl( SwOSCom *com ):SwOSSwarmControl( com->data.s
 
   // inputs
   for (uint8_t i=0; i<inputs; i++ ) {
-    input[i]->setSensorType( com->data.registerCmd.input[i].sensorType, true );
+    input[i]->setSensorType( com->data.registerCmd.input[i].sensorType, true, true );
     input[i]->setValue( com->data.registerCmd.input[i].rawValue );
   }
 
   // actors
   for (uint8_t i=0; i<actors; i++ ) {
-    actor[i]->setActorType( com->data.registerCmd.actor[i].actorType );
+    actor[i]->setActorType( com->data.registerCmd.actor[i].actorType, true );
     actor[i]->setValue( com->data.registerCmd.actor[i].motionType, com->data.registerCmd.actor[i].power );
   }
 
@@ -2383,17 +2590,19 @@ SwOSSwarmControl::~SwOSSwarmControl() {
   for ( uint8_t i=0; i<8; i++ ) { if ( button[i] ) delete button[i]; }
   for ( uint8_t i=0; i<2; i++ ) { if ( joystick[i] ) delete joystick[i]; }
   if ( hc165 ) delete hc165;
+
   if ( oled  ) delete oled;
-  
+
 }
 
 void SwOSSwarmControl::factorySettings( void ) {
 
-  SwOSCtrl::factorySettings();
+  SwOSSwarmXX::factorySettings();
   for (uint8_t i=0; i<8; i++) { if ( button[i] ) button[i]->setAlias( "" ); }
   if (hc165) hc165->setAlias("");
+
   if (oled)  oled->setAlias("");
-  
+
 }
 
 bool SwOSSwarmControl::cmdAlias( char *device, uint8_t port, const char *alias) {
@@ -2403,7 +2612,9 @@ bool SwOSSwarmControl::cmdAlias( char *device, uint8_t port, const char *alias) 
   else if ( ( strcmp(device, "F") == 0 )    && (port < 2) )  { button[port+4]->setAlias(alias); return true; }
   else if ( ( strcmp(device, "J") == 0 )    && (port < 2) )  { button[port+6]->setAlias(alias); return true; }
   else if ( ( strcmp(device, "JOY") == 0 )  && (port < 2) )  { joystick[port]->setAlias(alias); return true; }
+
   else if ( ( strcmp(device, "OLED") == 0 ) && (port = 99) ) { oled->setAlias(alias);           return true; }
+
   else return false;
 
 }
@@ -2411,13 +2622,14 @@ bool SwOSSwarmControl::cmdAlias( char *device, uint8_t port, const char *alias) 
 SwOSIO *SwOSSwarmControl::getIO( const char *name ) {
 
   // check on base base class hardware
-  SwOSIO *IO = SwOSCtrl::getIO(name);
+  SwOSIO *IO = SwOSSwarmXX::getIO(name);
   if ( IO != NULL ) { return IO; }
 
   // check on specific hardware
   for (uint8_t i=0;i<8;i++) { if (button[i]->equals(name) )   { return button[i]; } }
   for (uint8_t i=0;i<2;i++) { if (joystick[i]->equals(name) ) { return joystick[i]; } }
-  if ( (oled) && ( oled->equals(name) ) ) { return oled; }
+
+   if ( (oled) && ( oled->equals(name) ) ) { return oled; }
 
   return NULL;
 
@@ -2426,7 +2638,7 @@ SwOSIO *SwOSSwarmControl::getIO( const char *name ) {
 SwOSIO *SwOSSwarmControl::getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port) {
 
   // check on base base class hardware
-  SwOSIO *IO = SwOSCtrl::getIO(ioType, port);
+  SwOSIO *IO = SwOSSwarmXX::getIO(ioType, port);
   if ( IO != NULL ) { return IO; }
   
   switch (ioType) {
@@ -2450,7 +2662,7 @@ FtSwarmControler_t SwOSSwarmControl::getType() {
 void SwOSSwarmControl::jsonize( JSONize *json, uint8_t id) {
 
   json->startObject();
-  SwOSCtrl::jsonize(json, id);
+  SwOSSwarmXX::jsonize(json, id);
   json->startArray( "io" );
 
   for (uint8_t i=0; i<4; i++) { input[i]->jsonize( json, id ); }
@@ -2466,7 +2678,7 @@ void SwOSSwarmControl::jsonize( JSONize *json, uint8_t id) {
 
 void SwOSSwarmControl::read() {
 
-  SwOSCtrl::read();
+  SwOSSwarmXX::read();
 
   // get joystick readings
   for (uint8_t i=0; i<2; i++) {
@@ -2488,6 +2700,7 @@ void SwOSSwarmControl::read() {
 
 void SwOSSwarmControl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
   // visualizes controler's state like booting, error,...
+
 
   if (!oled) return;
 
@@ -2528,12 +2741,12 @@ void SwOSSwarmControl::setState( SwOSState_t state, uint8_t members, char *SSID 
 
   // show on display
   oled->display();
- 
+   
 }
 
 SwOSCom *SwOSSwarmControl::state2Com( void ) {
 
-  SwOSCom *com = SwOSCtrl::state2Com();
+  SwOSCom *com = SwOSSwarmXX::state2Com();
 
   int16_t FB, LR;
   for (uint8_t i=0; i<2; i++ ) { 
@@ -2549,7 +2762,7 @@ SwOSCom *SwOSSwarmControl::state2Com( void ) {
 
 bool SwOSSwarmControl::recvState( SwOSCom *com ) {
 
-  SwOSCtrl::recvState( com );
+  SwOSSwarmXX::recvState( com );
   
   for (uint8_t i=0; i<2; i++ ) { joystick[i]->setValue( com->data.stateCmd.FB[i], com->data.stateCmd.LR[i] ); };
       
@@ -2567,7 +2780,7 @@ bool SwOSSwarmControl::OnDataRecv(SwOSCom *com ) {
   if (!com) return false;
 
   // check if SwOSCrtl knows the cmd
-  if ( SwOSCtrl::OnDataRecv( com ) ) return true;
+  if ( SwOSSwarmXX::OnDataRecv( com ) ) return true;
 
   switch ( com->data.cmd ) {
     case CMD_STATE: return recvState( com );
@@ -2581,7 +2794,7 @@ void SwOSSwarmControl::registerMe( SwOSCom *com ){
 
   if (!com) return;
   
-  SwOSCtrl::registerMe( com );
+  SwOSSwarmXX::registerMe( com );
   for (uint8_t i=0;i<2;i++) joystick[i]->getValue( &com->data.registerCmd.control.joystick[i].FB, &com->data.registerCmd.control.joystick[i].LR); 
 
   com->data.registerCmd.control.hc165 = hc165->getValue();
@@ -2620,9 +2833,10 @@ void SwOSSwarmControl::sendAlias( uint8_t *mac, FtSwarmSerialNumber_t destinatio
 
 void SwOSSwarmControl::saveAliasToNVS( nvs_handle_t my_handle ) {
 
-  SwOSCtrl::saveAliasToNVS( my_handle );
+  SwOSSwarmXX::saveAliasToNVS( my_handle );
 
   if (oled) oled->saveAliasToNVS( my_handle );
+
   for (uint8_t i=0; i<8; i++ ) button[i]->saveAliasToNVS( my_handle );
   for (uint8_t i=0; i<2; i++ ) joystick[i]->saveAliasToNVS( my_handle );
   
@@ -2631,9 +2845,10 @@ void SwOSSwarmControl::saveAliasToNVS( nvs_handle_t my_handle ) {
 
 void SwOSSwarmControl::loadAliasFromNVS( nvs_handle_t my_handle ) {
 
-  SwOSCtrl::loadAliasFromNVS( my_handle );
+  SwOSSwarmXX::loadAliasFromNVS( my_handle );
 
   if (oled) oled->loadAliasFromNVS( my_handle );
+  
   for (uint8_t i=0; i<8; i++ ) button[i]->loadAliasFromNVS( my_handle );
   for (uint8_t i=0; i<2; i++ ) joystick[i]->loadAliasFromNVS( my_handle );
   
@@ -2654,7 +2869,7 @@ void SwOSSwarmControl::setRemoteControl( boolean remoteControl ) {
  *
  ***************************************************/
 
-SwOSSwarmCAM::SwOSSwarmCAM( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda ):SwOSCtrl( SN, macAddress, local, CPU, HAT, IAmAKelda ) {
+SwOSSwarmCAM::SwOSSwarmCAM( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda ):SwOSSwarmXX( SN, macAddress, local, CPU, HAT, IAmAKelda ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
@@ -2666,13 +2881,13 @@ SwOSSwarmCAM::SwOSSwarmCAM( SwOSCom *com ):SwOSSwarmCAM( com->data.sourceSN, com
 
   // inputs
   for (uint8_t i=0; i<inputs; i++ ) {
-    input[i]->setSensorType( com->data.registerCmd.input[i].sensorType, true );
+    input[i]->setSensorType( com->data.registerCmd.input[i].sensorType, true, true );
     input[i]->setValue( com->data.registerCmd.input[i].rawValue );
   }
 
   // actors
   for (uint8_t i=0; i<actors; i++ ) {
-    actor[i]->setActorType( com->data.registerCmd.actor[i].actorType );
+    actor[i]->setActorType( com->data.registerCmd.actor[i].actorType, true );
     actor[i]->setValue( com->data.registerCmd.actor[i].motionType, com->data.registerCmd.actor[i].power );
   }
  
@@ -2684,7 +2899,7 @@ SwOSSwarmCAM::~SwOSSwarmCAM() {
 
 void SwOSSwarmCAM::factorySettings( void ) {
 
-  SwOSCtrl::factorySettings();
+  SwOSSwarmXX::factorySettings();
   
 }
 
@@ -2697,7 +2912,7 @@ bool SwOSSwarmCAM::cmdAlias( char *device, uint8_t port, const char *alias) {
 SwOSIO *SwOSSwarmCAM::getIO( const char *name ) {
 
   // check on base base class hardware
-  SwOSIO *IO = SwOSCtrl::getIO(name);
+  SwOSIO *IO = SwOSSwarmXX::getIO(name);
   if ( IO != NULL ) { return IO; }
 
   return NULL;
@@ -2707,7 +2922,7 @@ SwOSIO *SwOSSwarmCAM::getIO( const char *name ) {
 SwOSIO *SwOSSwarmCAM::getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port) {
 
   // check on base base class hardware
-  SwOSIO *IO = SwOSCtrl::getIO(ioType, port);
+  SwOSIO *IO = SwOSSwarmXX::getIO(ioType, port);
   if ( IO != NULL ) { return IO; }
 
   return NULL;
@@ -2725,7 +2940,7 @@ FtSwarmControler_t SwOSSwarmCAM::getType() {
 void SwOSSwarmCAM::jsonize( JSONize *json, uint8_t id) {
 
   json->startObject();
-  SwOSCtrl::jsonize(json, id);
+  SwOSSwarmXX::jsonize(json, id);
   json->startArray( "io" );
 
   for (uint8_t i=0; i<inputs; i++) { input[i]->jsonize( json, id ); }
@@ -2738,7 +2953,7 @@ void SwOSSwarmCAM::jsonize( JSONize *json, uint8_t id) {
 
 void SwOSSwarmCAM::read() {
 
-  SwOSCtrl::read();
+  SwOSSwarmXX::read();
 
 }
 
@@ -2749,14 +2964,14 @@ void SwOSSwarmCAM::setState( SwOSState_t state, uint8_t members, char *SSID ) {
 
 SwOSCom *SwOSSwarmCAM::state2Com( void ) {
 
-  SwOSCom *com = SwOSCtrl::state2Com();
+  SwOSCom *com = SwOSSwarmXX::state2Com();
 
   return com;
 }
 
 bool SwOSSwarmCAM::recvState( SwOSCom *com ) {
 
-  SwOSCtrl::recvState( com );
+  SwOSSwarmXX::recvState( com );
 
   return true;
  
@@ -2767,7 +2982,7 @@ bool SwOSSwarmCAM::OnDataRecv(SwOSCom *com ) {
   if (!com) return false;
 
   // check if SwOSCrtl knows the cmd
-  if ( SwOSCtrl::OnDataRecv( com ) ) return true;
+  if ( SwOSSwarmXX::OnDataRecv( com ) ) return true;
 
   switch ( com->data.cmd ) {
     case CMD_STATE: return recvState( com );
@@ -2779,7 +2994,7 @@ bool SwOSSwarmCAM::OnDataRecv(SwOSCom *com ) {
 
 void SwOSSwarmCAM::registerMe( SwOSCom *com ){
 
-  SwOSCtrl::registerMe( com );
+  SwOSSwarmXX::registerMe( com );
   
 }
 
@@ -2803,14 +3018,14 @@ void SwOSSwarmCAM::sendAlias( uint8_t *mac, FtSwarmSerialNumber_t destinationSN 
 
 void SwOSSwarmCAM::saveAliasToNVS( nvs_handle_t my_handle ) {
 
-  SwOSCtrl::saveAliasToNVS( my_handle );
+  SwOSSwarmXX::saveAliasToNVS( my_handle );
   
 }
 
 
 void SwOSSwarmCAM::loadAliasFromNVS( nvs_handle_t my_handle ) {
 
-  SwOSCtrl::loadAliasFromNVS( my_handle );
+  SwOSSwarmXX::loadAliasFromNVS( my_handle );
   
 }
 

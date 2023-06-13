@@ -13,8 +13,6 @@
 
 #include <stdint.h>
 
-#include "ftSwarm.h"
-
 #define MAXNVSEVENT 36
 #define MAXSWARM    32
 
@@ -63,6 +61,9 @@ public:
     bool                  IAmKelda;
     FtSwarmCommunication_t swarmCommunication;
     FtSwarmSerialNumber_t swarmMembers[MAXSWARM];
+    FtSwarmI2CMode_t      I2CMode;
+    bool                  gyro;
+    uint8_t               I2CAddr;
 
 	  SwOSNVS();                             // constructor
 	  void begin();                          // read data from nvs & run an _initialSetup if needed

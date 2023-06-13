@@ -7,14 +7,14 @@
  * 
  */
 
-#include "SwOS.h"
+
 
 #include <nvs.h>
 #include <nvs_flash.h>
 #include <esp_err.h>
 #include <WiFi.h>
 
-#include "ftSwarm.h"
+#include "SwOS.h"
 #include "SwOSNVS.h"
 #include "easyKey.h"
 
@@ -90,6 +90,9 @@ SwOSNVS::SwOSNVS() {
   swarmCommunication = swarmComWifi;
   IAmKelda           = false;
   memset( &swarmMembers, 0, sizeof( swarmMembers ) );
+  I2CMode            = FTSWARM_I2C_OFF;
+  I2CAddr            = 0x66;
+  gyro               = false;
 
   // initialize zero positions
   for (uint8_t i=0;i<2;i++)
@@ -161,6 +164,7 @@ bool SwOSNVS::load() {
   } else {
     nvs_get_u8( my_handle, "RGBLeds", &RGBLeds );
     if ( ( RGBLeds < 2 ) || ( RGBLeds > MAXLED ) ) RGBLeds = 2;
+
   }
   
   size_t dummy;
@@ -186,6 +190,11 @@ bool SwOSNVS::load() {
 
   // webUI
   nvs_get_u8 ( my_handle, "webUI", (uint8_t *) &webUI );
+
+  // I2C
+  nvs_get_u8 ( my_handle, "I2CAddr", &I2CAddr );
+  nvs_get_u32( my_handle, "I2CMode", (uint32_t *) &I2CMode);
+  nvs_get_u8 ( my_handle, "Gyro",    (uint8_t *) &gyro);
 
   return true;
 
@@ -239,6 +248,12 @@ void SwOSNVS::save( bool writeAll ) {
 
   // webUI
   ESP_ERROR_CHECK( nvs_set_u8 ( my_handle,  "webUI",   (uint8_t) webUI ) );
+
+  // I2C
+  ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "I2CAddr", I2CAddr ) );
+  ESP_ERROR_CHECK( nvs_set_u32( my_handle, "I2CMode", (uint32_t) I2CMode) );
+  ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "Gyro",    (uint8_t)  gyro) );
+
 
   // commit
   ESP_ERROR_CHECK( nvs_commit( my_handle ) );

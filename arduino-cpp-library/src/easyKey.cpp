@@ -34,22 +34,21 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
   char *str = (char *) calloc( size, sizeof(char) );
   uint8_t i = 0;
   
-  Serial.write(prompt);
+  printf (prompt); fflush(stdout); 
 
   while (1) {
 
+    delay(100);
+
     if ( Serial.available()>0 ) {
       ch = Serial.read();
-
-      // CR/LF
-      if ( ( ch == '\n' ) || ( ch == '\r' ) ) {
-        strcpy( s, str );
-        free(str);
-        Serial.write('\n');
-        return true;
-      }
       
       switch (ch) {
+        case '\n': strcpy( s, str );
+                   free(str);
+                   Serial.write('\n');
+                   return true;
+        case '\r': break;
         case '\b': 
         case 127:  if (i>0) { 
                      str[--i] = '\0'; 
