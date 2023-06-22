@@ -63,6 +63,24 @@ const uint32_t LEDCOLOR1[MAXSTATE] = { CRGB::Blue, CRGB::Yellow, CRGB::Green, CR
 
 const char     OLEDMSG[MAXSTATE][20] = { "booting", "connecting wifi", "online", "ERROR - check logs", "waiting on HW" };
 
+
+/***************************************************
+ *
+ *   some helpers
+ *
+ ***************************************************/
+
+// Test, if an "execute"-parameter is in Range or not
+bool inRange( const char *parameter, int value, int minValue, int maxValue ) {
+  if ( (value<minValue) || (value>maxValue) ) {
+    printf("Error: parameter %s needs to be between %d and %d, but %d found.\n", parameter, minValue, maxValue, value);
+    return false;
+  }
+
+  return true;
+
+}
+
 /***************************************************
  *
  *   SwOSObj - Base class for all SwOS objects.
@@ -192,6 +210,29 @@ void SwOSIO::jsonize( JSONize *json, uint8_t id) {
 void SwOSIO::onTrigger( int32_t value ) {
   ESP_LOGE( LOGFTSWARM, "IO is unable to handle trigger events." );
 }
+
+void SwOSIO::execute( IOCmd_t cmd, int maxParameters, int parameter[] )
+{
+  switch( cmd ) {
+    case IOCMD_getIOType: printf("R: %d\n", getIOType() ); return;
+    default: printf("Error: invalid command.\n");
+  }
+}
+
+void SwOSIO::subscribe( char *IOName, uint32_t hysteresis ) {
+  _hysteresis = hysteresis;
+  _isSubscribed = true;
+  if (_subscribedIOName) free( _subscribedIOName );
+  _subscribedIOName = (char *)malloc( strlen(IOName) );
+  strcpy( _subscribedIOName, IOName );
+} 
+
+void SwOSIO::unsubscribe() {
+  _isSubscribed = false;
+  if (_subscribedIOName) free( _subscribedIOName );
+  _subscribedIOName = NULL;
+}
+
 
 /***************************************************
  *
@@ -475,6 +516,18 @@ void SwOSInput::setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen, bo
 
 }
 
+void SwOSInput::subscription() {
+
+  // test, if input is subscribed
+  if (!_isSubscribed) return;
+
+  if ( ( (_lastRawValue > _lastsubscribedValue) && (_lastRawValue-_lastsubscribedValue) > _hysteresis ) ||
+       ( (_lastsubscribedValue > _lastRawValue ) && (_lastsubscribedValue-_lastRawValue) > _hysteresis ) ) {
+       printf("S: %s %d\n", _subscribedIOName, _lastRawValue);
+       _lastsubscribedValue = _lastRawValue;
+  }
+}
+
 void SwOSInput::read() {
 
   // nothing todo on remote sensors
@@ -525,6 +578,8 @@ void SwOSInput::read() {
   // store new data
   _lastRawValue = newValue;  
 
+  subscription();
+
 }
 
 void SwOSInput::setValue( uint32_t value ) {
@@ -547,6 +602,8 @@ void SwOSInput::setValue( uint32_t value ) {
   }
   
   _lastRawValue = value;
+
+  subscription();
 
 }
 
@@ -649,6 +706,26 @@ void SwOSInput::jsonize( JSONize *json, uint8_t id) {
   }
   
   json->endObject();
+}
+
+void SwOSInput::execute( IOCmd_t cmd, int maxParameters, int parameter[] ) {
+  
+  switch ( cmd ) {
+    case IOCMD_getSensorType: printf("R: %d\n", getSensorType() ); return;
+    case IOCMD_setSensorType: if ( ( inRange( "sensorType", parameter[0], 0, FTSWARM_MAXSENSOR-1 ) ) && 
+                                   ( inRange( "normallyOpen", parameter[1], 0, 1 ) ) ) {
+                                printf("R: ok\n"); setSensorType( (FtSwarmSensor_t)parameter[0], (bool)parameter[1] , false ); }
+                              return;
+    case IOCMD_getValueUI32:  printf("R: %d\n", getValueUI32() ); return;
+    case IOCMD_getValueF:     printf("R: %f\n", getValueF()); return;
+    case IOCMD_getVoltage:    printf("R: %f\n", getVoltage()); return;
+    case IOCMD_getResistance: printf("R: %f\n", getResistance()); return;
+    case IOCMD_getKelvin:     printf("R: %f\n", getKelvin()); return;
+    case IOCMD_getCelcius:    printf("R: %f\n", getCelcius()); return;
+    case IOCMD_getFahrenheit: printf("R: %f\n", getFahrenheit()); return;
+    case IOCMD_getToggle:     printf("R: %d\n", getToggle()); return;
+    default: SwOSIO::execute( cmd, maxParameters, parameter );
+  }
 }
 
 /***************************************************
@@ -858,9 +935,30 @@ void SwOSActor::jsonize( JSONize *json, uint8_t id) {
 void SwOSActor::onTrigger( int32_t value ) {
 
   setPower( (int16_t) value );
-
 }
 
+void SwOSActor::execute( IOCmd_t cmd, int maxParameters, int parameter[] ) {
+  
+  switch ( cmd ) {
+    case IOCMD_setActorType:    if (inRange( "actorType", parameter[0], 0, (int)FTSWARM_MAXACTOR-1 ) ) { printf("R: ok\n"); setActorType( (FtSwarmActor_t) parameter[0], false ); }
+                                return;
+
+    case IOCMD_getActorType:    printf("R: %d\n", (int) getActorType() ); return;
+
+    case IOCMD_setSpeed:        if (inRange( "speed", parameter[0], -255, 255 ) ) { printf("R: ok\n"); setPower( parameter[0] ); }
+                                return;
+
+    case IOCMD_getSpeed:        printf("R: %d\n", getPower() ); return;
+
+    case IOCMD_setMotionType:   if (inRange( "motionType", parameter[0], 0, FTSWARM_MAXMOTION-1) ) { printf("R: ok\n"); setMotionType( (FtSwarmMotion_t) parameter[0] ); }
+                                return;
+
+    case IOCMD_getMotionType:   printf("R: %d\n", (int) getMotionType() ); return;
+
+    default: SwOSIO::execute( cmd, maxParameters, parameter );
+  }
+
+}
 
 /***************************************************
  *
@@ -2191,8 +2289,9 @@ SwOSIO *SwOSSwarmXX::getIO( const char *name ) {
   SwOSIO *result = SwOSCtrl::getIO( name );
   if (result) return result;
 
-  if (gyro->equals(name) ) return gyro;
-  else                     return NULL;
+  if      (!gyro)               return NULL;
+  else if (gyro->equals(name) ) return gyro;
+  else                          return NULL;
 
 }
 

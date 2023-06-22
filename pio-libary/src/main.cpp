@@ -1,8 +1,7 @@
 #include <Arduino.h>
 #include "ftSwarmRS.h"
-#include "easyKey.h"
 
-#include "SwOSCom.h"
+#include "SwOSFirmware.h"
 
 #define FIRMWARE
 
@@ -26,22 +25,15 @@ Serial.begin(115200);
    // start the swarm
    ftSwarm.verbose(true);
    FtSwarmSerialNumber_t local = ftSwarm.begin( false );
-   printf("Press any key to start setup...\n");
-   
+  
+  firmware();
+  ESP.restart();
 
 }
 
-int i=0; int j=0;
-
 void loop() {
 
-  if (anyKey() ) {
-   ftSwarm.setup();
-   ESP.restart();    
-  }
-
   delay(250);
-
 
 }
 

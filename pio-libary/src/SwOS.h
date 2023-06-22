@@ -57,7 +57,7 @@ typedef enum { FTSWARM_XMOTOR, FTSWARM_XMMOTOR, FTSWARM_TRACTOR,  FTSWARM_ENCODE
 typedef enum { FTSWARM_NOVERSION = -1, FTSWARM_1V0, FTSWARM_1V3, FTSWARM_1V15, FTSWARM_2V0, FTSWARM_2V1 } FtSwarmVersion_t;
 
 // how to move
-typedef enum { FTSWARM_COAST, FTSWARM_BRAKE, FTSWARM_ON } FtSwarmMotion_t;
+typedef enum { FTSWARM_COAST, FTSWARM_BRAKE, FTSWARM_ON, FTSWARM_MAXMOTION } FtSwarmMotion_t;
 
 // toggles
 typedef enum { FTSWARM_NOTOGGLE, FTSWARM_TOGGLEUP, FTSWARM_TOGGLEDOWN } FtSwarmToggle_t;
@@ -475,7 +475,6 @@ class FtSwarm {
     FtSwarmSerialNumber_t begin( bool IAmAKelda = true );  // start my swarm
     void verbose( bool on );                               // be chatty
     void setReadDelay( uint16_t readDelay );               // set delay between two measures
-    void setup( void );                                    // setup
 };
 
 // There is one only

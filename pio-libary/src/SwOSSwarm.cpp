@@ -250,7 +250,7 @@ void SwOSSwarm::_startWifi( bool verbose ) {
     // any key?
     if ( keyBreak ) {
       printf( "\nStarting setup..\n" );
-      ftSwarm.setup();
+      mainMenu();
       ESP.restart();
     }
 
@@ -258,7 +258,7 @@ void SwOSSwarm::_startWifi( bool verbose ) {
     if (WiFi.status() != WL_CONNECTED) {
       printf( "ERROR: Can't connect to SSID %s\n\nstarting setup...\n", nvs.wifiSSID );
       setState( ERROR );
-      ftSwarm.setup();
+      mainMenu();
       ESP.restart();
     }
 
@@ -344,7 +344,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
   // firmware events?
   if ( !_startEvents( ) ) {
       printf( "\nStarting setup..\n" );
-      ftSwarm.setup();
+      mainMenu();
       ESP.restart();
     }
 

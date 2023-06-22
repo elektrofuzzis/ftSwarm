@@ -51,8 +51,10 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
         case '\r': break;
         case '\b': 
         case 127:  if (i>0) { 
-                     str[--i] = '\0'; 
-                     Serial.write( 127 ); 
+                     str[--i] = '\0';
+                     Serial.write(0x8); 
+                     Serial.write(' '); 
+                     Serial.write(0x8); 
                    }
                    break;
       

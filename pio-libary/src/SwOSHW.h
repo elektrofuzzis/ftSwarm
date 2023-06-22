@@ -37,6 +37,28 @@ class SwOSCtrl; // forward declaration
 // state
 typedef enum { BOOTING, STARTWIFI, RUNNING, ERROR, WAITING, MAXSTATE } SwOSState_t;
 
+typedef enum {
+  IOCMD_subscribe,
+  IOCMD_getIOType,
+  IOCMD_getSensorType,
+  IOCMD_setSensorType,
+  IOCMD_getValueUI32,
+  IOCMD_getValueF,
+  IOCMD_getVoltage,
+  IOCMD_getResistance,
+  IOCMD_getKelvin,
+  IOCMD_getCelcius,
+  IOCMD_getFahrenheit,
+  IOCMD_getToggle,
+  IOCMD_setActorType,
+  IOCMD_getActorType,
+  IOCMD_setSpeed,
+  IOCMD_getSpeed,
+  IOCMD_setMotionType,
+  IOCMD_getMotionType,
+  IOCMD_MAX
+} IOCmd_t;
+
 /***************************************************
  *
  *   SwOSObj - Base class for all SwOS objects.
@@ -76,6 +98,10 @@ class SwOSIO : public SwOSObj {
 protected:
 	uint8_t   _port;  // local port
   SwOSCtrl *_ctrl;  // pointer to my Controller
+  bool      _isSubscribed = false;
+  uint32_t  _lastsubscribedValue = 0;
+  uint32_t  _hysteresis = 0;
+  char     *_subscribedIOName = NULL;
 
   // local HW 
   virtual void _setupLocal() {};
@@ -86,6 +112,8 @@ public:
 	SwOSIO(const char *name, uint8_t port, SwOSCtrl *ctrl);   // constructor name, port, pointer to overlying controler
 
   // Administrative stuff
+  virtual void            subscribe( char *IOName, uint32_t hysteresis ); // subscribe sensor to display value changes as console outputs 
+	virtual void            unsubscribe();                                  // clear subscription
   virtual uint8_t         getPort() { return _port; };
   virtual SwOSCtrl*       getCtrl() { return _ctrl; };
 	virtual FtSwarmIOType_t getIOType() { return FTSWARM_UNDEF; };
@@ -93,6 +121,8 @@ public:
 	virtual void            jsonize( JSONize *json, uint8_t id);
 
   virtual void onTrigger( int32_t value );
+
+  virtual void execute( IOCmd_t cmd, int maxParameters, int parameter[] );
 
 };
 
@@ -152,6 +182,7 @@ protected:
 	bool isDigitalSensor();
   bool isXMeter();
   virtual void _setupLocal();
+  virtual void subscription();
 
 public:
  
@@ -167,16 +198,18 @@ public:
 	virtual void     read();
 
   // external commands
-	virtual void            setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote );  // set sensor type
+  virtual void            setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote );  // set sensor type
 	virtual uint32_t        getValueUI32();                               // get raw reading
 	virtual float           getValueF();                                  // get float reading
   virtual float           getVoltage();                                 // get voltage reading
   virtual float           getResistance();                              // get resistance reading
-  virtual float           getKelvin();                                  // get temerature reading
-  virtual float           getCelcius();                                 // get temerature reading
-  virtual float           getFahrenheit();                              // get temerature reading
+  virtual float           getKelvin();                                  // get temperature reading
+  virtual float           getCelcius();                                 // get temperature reading
+  virtual float           getFahrenheit();                              // get temperature reading
   virtual void            setValue( uint32_t value );                   // set value by an external call
   virtual FtSwarmToggle_t getToggle();                                  // check, on toggling signals
+
+  virtual void execute( IOCmd_t cmd, int maxParameters, int parameter[] );
 
 };
 
@@ -219,6 +252,8 @@ public:
 	virtual int16_t         getPower() { return _power; };               // get power
   virtual void            setMotionType( FtSwarmMotion_t motionType ); // set motion type
 	virtual FtSwarmMotion_t getMotionType() { return _motionType; };     // get motion type
+
+  virtual void execute( IOCmd_t cmd, int maxParameters, int parameter[] );
 
 };
 

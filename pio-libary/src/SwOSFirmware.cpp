@@ -691,14 +691,14 @@ void remoteControl( void ) {
     printf("\n(%d) exit\n", 0 );
 
     // get user's choice
-    choice = enterNumber("\nremote control>", 0, 0, maxChoice );     
+    choice = enterNumber("\nremote control>", 0, 0, maxChoice );    
 
     // do what the user wants
     if ( choice == 0 ) {
      if ( ( anythingChanged ) && yesNo( "Save changes to nvs [Y/N]? " ) ) nvs.save();
      return;
       
-    }  else if ( choice == ( item + 1 ) ) {
+    } else if ( choice == ( item + 1 ) ) {
       // add
       if ( changeEvent( &nvs.eventList.event[eventPtr[0]] ) ) anythingChanged = true;
       
@@ -718,20 +718,18 @@ void remoteControl( void ) {
 
 }
 
-void firmware( void ) {
+void mainMenu( void ) {
 
   uint8_t choice, maxChoice;
   char prompt[255];
-
-  printf("\n\nftSwarmOS %s\n\n(C) Christian Bergschneider & Stefan Fuss\n", SWOSVERSION );
   
   // FTSWARMCONTROL special HW
   if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
-    sprintf( prompt, "\nMain Menu\n\n(1) wifi settings\n(2) webserver settings\n(3) swarm settings\n(4) alias names\n(5) factory settings\n(6) I2C\n(7) ftSwarmControl\n(8) remoteControl\n\n(0) exit\nmain>" );
+    sprintf( prompt, "\nMain Menu\n\n(1) wifi settings\n(2) webserver settings\n(3) swarm settings\n(4) alias names\n(5) factory settings\n(6) I2C\n(7) remoteControl\n(8) ftSwarmControl\n\n(0) exit\nmain>" );
     maxChoice = 8;
   } else {
-    sprintf( prompt, "\nMain Menu\n\n(1) wifi settings\n(2) webserver settings\n(3) swarm settings\n(4) alias names\n(5) factory settings\n(6) I2C\n\n(0) exit\nmain>" );
-    maxChoice = 6;
+    sprintf( prompt, "\nMain Menu\n\n(1) wifi settings\n(2) webserver settings\n(3) swarm settings\n(4) alias names\n(5) factory settings\n(6) I2C\n(7) remoteControl\n\n(0) exit\nmain>" );
+    maxChoice = 7;
   }
  
   while (1) {
@@ -746,10 +744,428 @@ void firmware( void ) {
       case 4: aliasMenu(); break;
       case 5: factorySettings(); break;
       case 6: I2CMenu(); break;
-      case 7: SwarmControlMenu(); break;
-      case 8: remoteControl(); break;
+      case 7: remoteControl(); break;
+      case 8: SwarmControlMenu(); break;
     }
     
   }
+
+}
+
+/*----------------------------------------*/
+
+#define CLIMAXLINE 255
+#define MAXPARAM   20
+
+typedef enum { 
+  EVAL_INVALIDCMD = -2,
+  EVAL_SYNTAXERROR = -1, 
+  EVAL_OK, 
+  EVAL_EOL, 
+  EVAL_DOT, 
+  EVAL_COMMA, 
+  EVAL_LPARANTHESIS, 
+  EVAL_RPARANTHESIS, 
+  EVAL_NUMBER, 
+  EVAL_LITERAL
+} EvalResult_t;
+
+typedef enum { 
+  CMD_ERROR = -2, 
+  CMD_UNKONWN = -1, 
+  CMD_HELP, 
+  CMD_SETUP, 
+  CMD_EXIT 
+} Cmd_t;
+
+typedef enum { 
+  ERROR_OK = -1, 
+  ERROR_SYNTAXERROR, 
+  ERROR_DOTEXPECTED, 
+  ERROR_LITERALEXPECTED, 
+  ERROR_IOEXPECTED,
+  ERROR_NUMBEREXPECTED,
+  ERROR_LPARANTHESISEXPECTED,
+  ERROR_RPARANTHESISEXPECTED,
+  ERROR_UNKOWNCMD,
+  ERROR_WRONGNUMBEROFARGUMENTS
+} Error_t;
+
+const char IOCMD[IOCMD_MAX][20] = {
+  "subscribe",
+  "getIOType",
+  "getSensorType",
+  "setSensorType",
+  "getValueUI32",
+  "getValueF",
+  "getVoltage",
+  "getResistance",
+  "getKelvin",
+  "getCelcius",
+  "getFahrenheit",
+  "getToggle",
+  "setActorType",
+  "getActorType",
+  "setSpeed",
+  "getSpeed",
+  "setMotionType",
+  "getMotionType"
+};
+
+const uint8_t IOCMD_Parameters[IOCMD_MAX] = {
+  1, // subscribe
+  0, // getIOType
+  0, // getSensorType
+  2, // setSensorType
+  0, // getValueUI32
+  0, // getValueF
+  0, // getVoltage
+  0, // getResistance
+  0, // getKelvin
+  0, // getCelcius
+  0, // getFahrenheit
+  0, // getToggle  
+  1, // setActorType  
+  0, // getActorType
+  1, // setSpeed
+  0, // getSpeed
+  1, // setMotionType
+  0 // getMotionType
+};
+
+class CLI {
+  protected:
+
+    // user input    
+    char _line[CLIMAXLINE];
+
+    char   *_evalPtr;
+    char   *_start;
+    IOCmd_t _cmd;
+    int     _maxParam;
+    int     _param[MAXPARAM];
+
+    void Error( Error_t error, int expected = 0, int found = 0 );
+
+    // some simple char tests    
+    bool isDigit(char ch);
+    bool isAlpha(char ch);
+    bool isLiteral(char ch);
+
+    EvalResult_t getNumber( void );
+    EvalResult_t getLiteral( void );
+    EvalResult_t getNextToken( char* token );
+
+    bool tokenizeCmd( char *cmd );
+    Cmd_t evalSimpleCommand( char *token );  // tests, if token is a simple command
+    void evalIOCommand( char *token );       // evals an IO command, token is already first token  
+    void executeIOCommand( void );
+    bool eval( void );
+
+  public:
+    CLI();
+    void run(void);
+};
+
+CLI::CLI() {
+  _line[0] = '\0';
+  _evalPtr = NULL;
+  _start   = NULL;
+}
+
+void CLI::Error( Error_t error, int expected, int found ) {
+
+  int pos = 0;
+
+  // calc error postion
+  if ( (_start) && (_line) && ( _start > _line ) ) pos = _start - _line; 
+
+  // print marker
+  for (int i=0; i<pos; i++) printf(" ");
+  printf( "^ Error: " );
+
+  // print error
+  switch ( error ) {
+    case ERROR_SYNTAXERROR:             printf("Syntax error.\n"); break;
+    case ERROR_DOTEXPECTED:             printf("\".\" expected.\n"); break;  
+    case ERROR_LITERALEXPECTED:         printf("Literal expected.\n"); break; 
+    case ERROR_IOEXPECTED:              printf("Not a valid IO port or IO port is offline.\n"); break;
+    case ERROR_NUMBEREXPECTED:          printf("Number expected.\n"); break;
+    case ERROR_LPARANTHESISEXPECTED:    printf("\"(\" expected.\n"); break;
+    case ERROR_RPARANTHESISEXPECTED:    printf("\")\" expected.\n"); break;
+    case ERROR_UNKOWNCMD:               printf("unkown command\n"); break;
+    case ERROR_WRONGNUMBEROFARGUMENTS:  printf("%d parameters expected, %d found.\n", expected, found ); break;
+    default:                          printf("Syntax error.\n"); break;
+  }
+  
+}
+
+bool CLI::isDigit( char ch) {
+  return ( (ch >= '0') &&  (ch <= '9' ) );
+}
+
+bool CLI::isAlpha( char ch ) {
+  return ( (ch >= 'A') && (ch <= 'Z' ) ) ||
+         ( (ch >= 'a') && (ch <= 'z' ) ) ||
+         (ch == '_');
+}
+
+bool CLI::isLiteral( char ch) {
+  return (isDigit(ch) ) || isAlpha(ch);
+}
+
+EvalResult_t CLI::getNumber( void ) {
+  // _evalPtr is already on the first char
+
+  // if the number starts with + or -, the next char needs to be a digit
+  if ( ( (*_evalPtr=='+') || (*_evalPtr=='-') ) && 
+       ( !isDigit(_evalPtr[1]) ) )
+    return EVAL_SYNTAXERROR;
+
+  // now loop until end of digits
+  while (isDigit(*++_evalPtr));
+
+  return EVAL_NUMBER;
+
+}
+
+EvalResult_t CLI::getLiteral( void ) {
+  // _evalPtr is already on the first char
+
+  // now loop until end of literals
+  while (isLiteral(*_evalPtr)) _evalPtr++;
+
+  return EVAL_LITERAL;
+
+}
+
+EvalResult_t CLI::getNextToken( char *token ) {
+
+  // kill white spaces
+  while (*_evalPtr==' ') _evalPtr++;
+
+  // remember where we started
+  _start = _evalPtr;  
+
+  // different behaviour based on first char
+  EvalResult_t eval = EVAL_OK;
+  switch (*_evalPtr) {
+    case '\0':        eval = EVAL_EOL; break; // no _evalPtr++, so we can't skip EOL
+    
+    case '.':         eval = EVAL_DOT; _evalPtr++; break;
+    
+    case ',':         eval = EVAL_COMMA; _evalPtr++; break;
+
+    case '(':         eval = EVAL_LPARANTHESIS; _evalPtr++; break;
+    
+    case ')':         eval = EVAL_RPARANTHESIS; _evalPtr++; break;
+    
+    case '+':
+    case '-':  
+    case '0' ... '9': eval = getNumber( ); break;
+    
+    case 'a' ... 'z':
+    case 'A' ... 'Z': eval = getLiteral( ); break;
+    
+    default:          eval = EVAL_SYNTAXERROR; break;
+
+  }
+
+   // valid data? copy token or clear it
+  if ( eval >= EVAL_OK ) {
+    strncpy( token, _start, (_evalPtr - _start) );
+    token[_evalPtr - _start]='\0';
+    
+  } else {
+    token[0] = '\0';
+  }
+
+  // return evaluation result
+  return eval;
+}
+
+Cmd_t CLI::evalSimpleCommand( char *token ) {
+
+  Cmd_t cmd = CMD_UNKONWN;
+
+   // did I found a command?
+  if      ( strcmp( token, "help"  ) == 0 ) cmd = CMD_HELP;
+  else if ( strcmp( token, "setup" ) == 0 ) cmd = CMD_SETUP;
+  else if ( strcmp( token, "exit" ) == 0 )  cmd = CMD_EXIT;
+  
+  // command found?
+  if ( cmd >= 0 ) {
+
+    // all commands don't have parameters
+    if ( getNextToken( token ) != EVAL_EOL ) {
+      Error( ERROR_SYNTAXERROR );
+      return CMD_ERROR;
+    }
+
+    // execute 
+    switch (cmd) {
+      case CMD_HELP:  printf("help\n"); break;
+      case CMD_SETUP: mainMenu();       break;
+    }
+
+  }
+
+  return cmd;
+
+}
+
+bool CLI::eval( void ) {
+  // returns false on command exit
+
+  char token[CLIMAXLINE];
+  
+  // rest variables to run the evaluation
+  _evalPtr = _line;
+
+  // every line must start with a literal
+  switch ( getNextToken( token ) ) {
+    case EVAL_LITERAL: break;         // everything ok
+    case EVAL_EOL:     return true;   // just an emoty line, ignore
+    default:           Error( ERROR_LITERALEXPECTED ); return true;
+  }
+
+  // interpret as a simple command
+  switch ( evalSimpleCommand( token ) ) {
+    case CMD_EXIT:    return false;   // exit: stop CLI
+    case CMD_UNKONWN: break;          // not a command: continue
+    default:          return true;    // error, setup, help: stop evaluation
+  }
+
+  // if it's not a command, it should be a host or an io.
+  evalIOCommand( token );
+  return true;
+
+}
+
+void CLI::executeIOCommand( void ) {
+
+}
+
+bool CLI::tokenizeCmd( char *cmd ) {
+
+  for (uint8_t i=0; i<=IOCMD_MAX; i++) {
+    if ( strcmp( IOCMD[i], cmd ) == 0 ) {
+      _cmd = (IOCmd_t) i;
+      return true;
+    }
+  }
+
+  return false;
+
+}
+
+void CLI::evalIOCommand( char *token ) {
+  // token is already the first literal. Could be a host or an IO
+
+  SwOSCtrl *ctrl;
+  SwOSIO   *io;
+  char     cmd[CLIMAXLINE];
+  char     IOName[CLIMAXLINE];
+  
+  // check, if the token is a controller or an io
+  ctrl = (SwOSCtrl *)myOSSwarm.getControler( token );
+  if (ctrl) { 
+    // it's a controller, now we need the io port
+    strcpy( IOName, token);
+    if ( getNextToken( token ) != EVAL_DOT ) { Error( ERROR_DOTEXPECTED ); return; }
+    if ( getNextToken( token ) != EVAL_LITERAL ) { Error( ERROR_LITERALEXPECTED ); return; }
+    io = ctrl->getIO( token );
+    strcat(IOName, ".");
+    strcat(IOName, token);
+  } else {
+    io = myOSSwarm.getIO( IOName );
+  }
+
+  // check, if it's an IO
+  if (!io) { Error( ERROR_IOEXPECTED ); return; }
+
+  // now we need another "." and a method
+  if ( getNextToken( token ) != EVAL_DOT ) { Error( ERROR_DOTEXPECTED ); return; }
+
+  // next token should be a command
+  if ( getNextToken( cmd ) != EVAL_LITERAL ) { Error( ERROR_LITERALEXPECTED ); return; }
+
+  // let's tokenize the cmd
+  if ( !tokenizeCmd( cmd ) ) { Error( ERROR_UNKOWNCMD ); return; }
+
+  // optional parameters
+  _maxParam = -1;
+  switch ( getNextToken( token ) ) {
+    case EVAL_EOL: break;
+    case EVAL_LPARANTHESIS: {
+      bool cont = true;
+      while (cont) {
+        
+        // get a parameter
+        switch ( getNextToken( token ) ) {
+          case EVAL_NUMBER:         _maxParam++;
+                                    _param[_maxParam] = atoi(token);
+                                    break;
+          case EVAL_RPARANTHESIS:   cont=false;
+                                    break;
+          default:                  Error( ERROR_NUMBEREXPECTED ); 
+                                    return;
+        }
+        
+        // if first token was ), stop the loop
+        if (!cont) break;
+
+        // now we're looking for , and )
+        switch ( getNextToken( token ) ) {
+          case EVAL_RPARANTHESIS: cont = false;
+                                  break;
+          case EVAL_COMMA:        break;
+          default:                Error( ERROR_RPARANTHESISEXPECTED ); return;
+        }
+      }
+      break; }
+    default:
+      Error( ERROR_LPARANTHESISEXPECTED );
+      return;
+  }
+
+  if ( _maxParam+1 != IOCMD_Parameters[ _cmd ] ) { Error( ERROR_WRONGNUMBEROFARGUMENTS, IOCMD_Parameters[ _cmd ], _maxParam+1 ); return; } 
+
+  // nothing should be left
+  if ( getNextToken( token ) != EVAL_EOL ) { Error( ERROR_SYNTAXERROR ); return; }
+
+  // subscribe needs non-int-parameters
+  if (_cmd==IOCMD_subscribe) {
+    io->subscribe( IOName, _param[0] );
+  } else 
+    io->execute( _cmd, _maxParam, _param );
+
+  return;
+
+}
+
+void CLI::run( void ) {
+
+  printf("\n\nftSwarmOS %s\n\n(C) Christian Bergschneider & Stefan Fuss\n", SWOSVERSION );
+  printf("\n\nsetup - start configuration menus\nexit - end CLI mode\nhelp - show commands\n\n");
+
+  while (true) {
+
+    // wait on user
+    enterString(">", _line, CLIMAXLINE-1 );
+
+    // eval string
+    if (!eval() ) break;
+  
+  }
+
+}
+
+
+void firmware( void ) {
+
+  CLI cli;
+
+  cli.run();
 
 }

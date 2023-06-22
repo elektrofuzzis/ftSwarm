@@ -941,7 +941,3 @@ void FtSwarm::setReadDelay( uint16_t readDelay ) {
   myOSSwarm.unlock();
 
 }
-
-void FtSwarm::setup( void ) {
-  firmware();
-}
