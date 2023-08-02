@@ -18,6 +18,12 @@
 #include "easyKey.h"
 #include <HardwareSerial.h>
 
+bool easyKeyEcho = true;
+
+void keyboardEcho( bool on ) {
+  easyKeyEcho = false;
+}
+
 bool anyKey( void ) {
 
   bool result = Serial.available();
@@ -38,7 +44,8 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
 
   while (1) {
 
-    delay(100);
+    // I'm alive
+    delay(1);
 
     if ( Serial.available()>0 ) {
       ch = Serial.read();
@@ -46,25 +53,29 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
       switch (ch) {
         case '\n': strcpy( s, str );
                    free(str);
-                   Serial.write('\n');
+                   if ( easyKeyEcho ) Serial.write('\n');
                    return true;
         case '\r': break;
         case '\b': 
         case 127:  if (i>0) { 
                      str[--i] = '\0';
-                     Serial.write(0x8); 
-                     Serial.write(' '); 
-                     Serial.write(0x8); 
+                     if ( easyKeyEcho ) {
+                      Serial.write(0x8); 
+                      Serial.write(' '); 
+                      Serial.write(0x8);
+                     } 
                    }
                    break;
       
         case '\e': free(str);
-                   Serial.write('\n');
+                   if ( easyKeyEcho ) Serial.write('\n');
                    return false;
       
         default:   if ( ( ch < 255 ) && ( validChar( ch ) ) && ( i<size-1) ) {
                      // add printable char
-                     (hidden)?Serial.write( '*' ):Serial.write( ch );
+                     if ( easyKeyEcho ) {
+                      (hidden)?Serial.write( '*' ):Serial.write( ch );
+                     }
                      str[i++] = ch;
                    }
                    break;

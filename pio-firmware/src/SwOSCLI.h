@@ -58,6 +58,7 @@ class SwOSCLI {
 
     // user input    
     char _line[CLIMAXLINE];
+    char prompt[2] = ">";
 
     char   *_evalPtr;
     char   *_start;
@@ -92,7 +93,7 @@ class SwOSCLI {
     void executeIOCommand( void );
     bool eval( void );
     void help( void );
-    void startCLI( void );
+    void startCLI( bool noEcho );
     void halt( void );
 
   public:

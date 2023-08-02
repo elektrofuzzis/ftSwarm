@@ -11,6 +11,9 @@
 
 #include <stdint.h>
 
+void keyboardEcho( bool on );
+// set on to false to disable all keyboard echo
+
 bool anyKey( void );
 // true, if a char was sent
 

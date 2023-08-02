@@ -538,7 +538,7 @@ void SwOSInput::read() {
 
     if ( isXMeter() ) {
       // XMeter: cast to mV
-      newValue = esp_adc_cal_raw_to_voltage( _lastRawValue, _adc_chars ); 
+      newValue = esp_adc_cal_raw_to_voltage( newValue, _adc_chars ); 
     }
     
   } else {

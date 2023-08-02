@@ -31,7 +31,7 @@ const IOCmdList_t IOCmdList [IOCMD_MAX] = {
   { "getCelcius", 0, 0},
   { "getFahrenheit", 0, 0},
   { "getToggle", 0, 0},
-  { "setActorType", 0, 0},  
+  { "setActorType", 1, 1},  
   { "getActorType", 0, 0},
   { "setSpeed", 1, 1},
   { "getSpeed", 0, 0},
@@ -189,9 +189,15 @@ EvalResult_t SwOSCLI::getNextToken( char *token ) {
   return eval;
 }
 
-void SwOSCLI::startCLI( void ) {
+void SwOSCLI::startCLI( bool noEcho ) {
 
   printf("@@@ ftSwarmOS CLI started\n");
+  
+  if ( noEcho ) {
+    keyboardEcho( false );
+    prompt[0] = '\0';
+  }
+
   myOSSwarm.lock();
   myOSSwarm.unsubscribe();
   myOSSwarm.unlock();
@@ -285,10 +291,10 @@ Cmd_t SwOSCLI::evalSimpleCommand( char *token ) {
 
     // execute 
     switch (cmd) {
-      case CMD_HELP:      help();     break;
-      case CMD_SETUP:     mainMenu(); break;
-      case CMD_STARTCLI:  startCLI(); break;
-      case CMD_HALT:      halt();     break;
+      case CMD_HELP:      help();           break;
+      case CMD_SETUP:     mainMenu();       break;
+      case CMD_STARTCLI:  startCLI( true ); break;
+      case CMD_HALT:      halt();           break;
     }
 
   }
@@ -321,6 +327,7 @@ bool SwOSCLI::eval( void ) {
 
   // if it's not a command, it should be a host or an io.
   evalIOCommand( token );
+ 
   return true;
 
 }
@@ -764,15 +771,13 @@ void SwOSCLI::evalIOCommand( char *token ) {
 
   // subscribe needs non-int-parameters
   if (_cmd==IOCMD_subscribe) {
-    printf("vor subscribe\n");
     myOSSwarm.lock();
     int a = _parameter[0].getValue();
-    printf("vor subscribe a %d\n", a);
     _io->subscribe( IOName, a);
     myOSSwarm.unlock();
-  } else 
-    printf("vorExecuteIOCommand\n");
+  } else {
     executeIOCommand();
+  }
 
 }
 
@@ -781,13 +786,13 @@ void SwOSCLI::run( void ) {
   printf("\n\nftSwarmOS %s\n\n(C) Christian Bergschneider & Stefan Fuss\n", SWOSVERSION );
   printf("\n\nsetup - start configuration menus\nexit - end CLI mode\nhelp - show commands\n\n");
 
-  startCLI();
+  startCLI( false );
 
   while (true) {
 
     // wait on user
-    enterString(">", _line, CLIMAXLINE-1 );
-
+    enterString( prompt, _line, CLIMAXLINE-1 );
+    
     // eval string
     if (!eval() ) break;
   
