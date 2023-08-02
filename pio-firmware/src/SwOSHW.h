@@ -37,6 +37,8 @@ class SwOSCtrl; // forward declaration
 // state
 typedef enum { BOOTING, STARTWIFI, RUNNING, ERROR, WAITING, MAXSTATE } SwOSState_t;
 
+
+
 /***************************************************
  *
  *   SwOSObj - Base class for all SwOS objects.
@@ -76,6 +78,10 @@ class SwOSIO : public SwOSObj {
 protected:
 	uint8_t   _port;  // local port
   SwOSCtrl *_ctrl;  // pointer to my Controller
+  bool      _isSubscribed = false;
+  uint32_t  _lastsubscribedValue = 0;
+  uint32_t  _hysteresis = 0;
+  char     *_subscribedIOName = NULL;
 
   // local HW 
   virtual void _setupLocal() {};
@@ -86,6 +92,8 @@ public:
 	SwOSIO(const char *name, uint8_t port, SwOSCtrl *ctrl);   // constructor name, port, pointer to overlying controler
 
   // Administrative stuff
+  virtual char*           subscribe( char *IOName, uint32_t hysteresis ); // subscribe sensor to display value changes as console outputs 
+	virtual void            unsubscribe();                                  // clear subscription
   virtual uint8_t         getPort() { return _port; };
   virtual SwOSCtrl*       getCtrl() { return _ctrl; };
 	virtual FtSwarmIOType_t getIOType() { return FTSWARM_UNDEF; };
@@ -152,6 +160,7 @@ protected:
 	bool isDigitalSensor();
   bool isXMeter();
   virtual void _setupLocal();
+  virtual void subscription();
 
 public:
  
@@ -167,14 +176,14 @@ public:
 	virtual void     read();
 
   // external commands
-	virtual void            setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote );  // set sensor type
+  virtual void            setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote );  // set sensor type
 	virtual uint32_t        getValueUI32();                               // get raw reading
 	virtual float           getValueF();                                  // get float reading
   virtual float           getVoltage();                                 // get voltage reading
   virtual float           getResistance();                              // get resistance reading
-  virtual float           getKelvin();                                  // get temerature reading
-  virtual float           getCelcius();                                 // get temerature reading
-  virtual float           getFahrenheit();                              // get temerature reading
+  virtual float           getKelvin();                                  // get temperature reading
+  virtual float           getCelcius();                                 // get temperature reading
+  virtual float           getFahrenheit();                              // get temperature reading
   virtual void            setValue( uint32_t value );                   // set value by an external call
   virtual FtSwarmToggle_t getToggle();                                  // check, on toggling signals
 
@@ -232,6 +241,7 @@ class SwOSJoystick : public SwOSIO, SwOSEventInput {
 protected:
 	adc1_channel_t _ADCChannelLR, _ADCChannelFB;
 	int16_t        _lastLR, _lastFB;
+	int16_t        _lastSubscribedLR, _lastSubscribedFB;
   int16_t        _zeroLR, _zeroFB;
   int16_t        _lastRawLR, _lastRawFB;
 
@@ -250,6 +260,7 @@ public:
 	virtual void jsonize( JSONize *json, uint8_t id);
   
   // read
+  virtual void subscription();
 	virtual void read();
 
   // commands
@@ -260,11 +271,11 @@ public:
 
 /***************************************************
  *
- *   SwOSLED
+ *   SwOSPixel
  *
  ***************************************************/
 
-class SwOSLED : public SwOSIO {
+class SwOSPixel : public SwOSIO {
 protected:
 	uint32_t _color = 0;
 	uint8_t  _brightness = BRIGHTNESSDEFAULT;
@@ -279,10 +290,10 @@ protected:
   
 public:
   // constructor
-	SwOSLED(const char *name, uint8_t port, SwOSCtrl *ctrl);
+	SwOSPixel(const char *name, uint8_t port, SwOSCtrl *ctrl);
 
   // administrative stuff
-	virtual FtSwarmIOType_t getIOType() { return FTSWARM_LED; };
+	virtual FtSwarmIOType_t getIOType() { return FTSWARM_PIXEL; };
   virtual char *getIcon()   { return (char *) "15_rgbled.svg"; };
   virtual void jsonize( JSONize *json, uint8_t id);
   virtual void onTrigger( int32_t value );
@@ -546,7 +557,9 @@ public:
   virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
   virtual void setState( SwOSState_t state, uint8_t members, char *SSID ); // visualizes controler's state like booting, error,...
   virtual void factorySettings( void );                                  // reset factory settings
-    
+  virtual void halt( void );                                             // stop all actors
+  virtual void unsubscribe(void );                                       // unsubscribe all IOs
+
   virtual void read(); // run measurements
 
   // API commnds
@@ -558,7 +571,6 @@ public:
   virtual bool apiServoPosition( char *id, int position );       // send a Servo command (from api)
 
   virtual bool maintenanceMode();
-
 
   // Communications
   virtual bool OnDataRecv( SwOSCom *com );     // data via espnow revceived
@@ -652,6 +664,7 @@ class SwOSSwarmXX : public SwOSCtrl {
 	  virtual SwOSIO *getIO( const char *name);                              // get a pointer to an IO port via name or alias
     virtual void factorySettings( void );                                  // reset factory settings  
     virtual void read(); // run measurements
+    virtual void unsubscribe(void );                                       // unsubscribe all IOs
 
     virtual bool OnDataRecv( SwOSCom *com );     // data via espnow revceived
 
@@ -668,7 +681,7 @@ public:
   // specific hardware
   uint8_t   servos  = 1;
   uint8_t   RGBLeds = 2;
-	SwOSLED   *led[MAXLED];
+	SwOSPixel *led[MAXLED];
 	SwOSServo *servo[MAXSERVO];
 
   // constructor, destructor
@@ -687,6 +700,7 @@ public:
   virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
   virtual void setState( SwOSState_t state, uint8_t members, char *SSID ); // visualizes controler's state like booting, error,...
   virtual void factorySettings( void );                                  // reset factory settings
+  virtual void unsubscribe(void );                                       // unsubscribe all IOs
 
   // API commands
   virtual bool apiLEDBrightness( char *id, int brightness );     // send a LED command (from api)
@@ -736,6 +750,7 @@ public:
   virtual void factorySettings( void );                                  // reset factory settings
   virtual boolean getRemoteControl( void );                              // get remote control setting
   virtual void setRemoteControl( boolean remoteControl );                // set remote control setting
+  virtual void unsubscribe(void );                                       // unsubscribe all IOs
 
 	virtual void read();                       // run measurements
 

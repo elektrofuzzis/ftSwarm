@@ -9,4 +9,5 @@
  
 #pragma once
 
+extern void mainMenu( void );
 extern void firmware( void );

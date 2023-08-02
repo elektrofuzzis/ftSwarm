@@ -42,7 +42,7 @@ typedef uint8_t  FtSwarmPort_t;
 // **** enumerations ****
 
 // IO types
-typedef enum { FTSWARM_UNDEF = -1, FTSWARM_INPUT, FTSWARM_ACTOR, FTSWARM_BUTTON, FTSWARM_JOYSTICK, FTSWARM_LED, FTSWARM_SERVO,  FTSWARM_OLED, FTSWARM_GYRO, FTSWARM_HC165, FTSWARM_I2C, FTSWARM_MAXIOTYPE } FtSwarmIOType_t ;
+typedef enum { FTSWARM_UNDEF = -1, FTSWARM_INPUT, FTSWARM_ACTOR, FTSWARM_BUTTON, FTSWARM_JOYSTICK, FTSWARM_PIXEL, FTSWARM_SERVO,  FTSWARM_OLED, FTSWARM_GYRO, FTSWARM_HC165, FTSWARM_I2C, FTSWARM_MAXIOTYPE } FtSwarmIOType_t ;
 
 // controler types
 typedef enum { FTSWARM_NOCTRL = -1, FTSWARM = 0, FTSWARMCONTROL = 1, FTSWARMCAM = 2, FTSWARMSOUNDBAR, FTSWARMPWRDRIVE, FTSWARMTXT, FTSWARMDUINO } FtSwarmControler_t;
@@ -57,7 +57,7 @@ typedef enum { FTSWARM_XMOTOR, FTSWARM_XMMOTOR, FTSWARM_TRACTOR,  FTSWARM_ENCODE
 typedef enum { FTSWARM_NOVERSION = -1, FTSWARM_1V0, FTSWARM_1V3, FTSWARM_1V15, FTSWARM_2V0, FTSWARM_2V1 } FtSwarmVersion_t;
 
 // how to move
-typedef enum { FTSWARM_COAST, FTSWARM_BRAKE, FTSWARM_ON } FtSwarmMotion_t;
+typedef enum { FTSWARM_COAST, FTSWARM_BRAKE, FTSWARM_ON, FTSWARM_MAXMOTION } FtSwarmMotion_t;
 
 // toggles
 typedef enum { FTSWARM_NOTOGGLE, FTSWARM_TOGGLEUP, FTSWARM_TOGGLEDOWN } FtSwarmToggle_t;
@@ -383,12 +383,12 @@ class FtSwarmJoystick : public FtSwarmIO {
 
 };
 
-class FtSwarmLED : public FtSwarmIO {
+class FtSwarmPixel : public FtSwarmIO {
   // RGB LEDs, ftSwarm only
   // one LED takes up to 60mA, keep power budget in mind!
   public:
-    FtSwarmLED( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
-    FtSwarmLED( const char *name );
+    FtSwarmPixel( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
+    FtSwarmPixel( const char *name );
 
     // brightness 0..255
     uint8_t getBrightness();
@@ -475,7 +475,7 @@ class FtSwarm {
     FtSwarmSerialNumber_t begin( bool IAmAKelda = true );  // start my swarm
     void verbose( bool on );                               // be chatty
     void setReadDelay( uint16_t readDelay );               // set delay between two measures
-    void setup( void );                                    // setup
+    void halt( void );                                     // stop all actors
 };
 
 // There is one only

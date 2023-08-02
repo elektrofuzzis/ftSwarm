@@ -44,7 +44,10 @@ public:
   bool     allowPairing = false;
 
   SwOSSwarm( ) { for ( uint8_t i=0; i<MAXCTRL; i++ ) { Ctrl[i] = NULL; } }; // constructor
-	FtSwarmSerialNumber_t begin( bool IAmAKelda, bool verbose );                               // start my swarm
+	FtSwarmSerialNumber_t begin( bool IAmAKelda, bool verbose );              // start my swarm
+
+  void halt( void );        // stop all motors
+  void unsubscribe( void ); // unsubscribe all io's
 
   // set/get time etween two reads
   void     setReadDelay( uint16_t readDelay ) { _readDelay = readDelay; };

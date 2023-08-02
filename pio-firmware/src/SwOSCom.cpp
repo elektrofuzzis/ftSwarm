@@ -27,7 +27,7 @@
 
 #include <esp_debug_helpers.h>
 
-// #define DEBUG_COMMUNICATION
+//#define DEBUG_COMMUNICATION
 
 uint16_t secret = DEFAULTSECRET;
 uint16_t pin    = 0;
@@ -90,6 +90,11 @@ SwOSCom::SwOSCom( const uint8_t *mac_addr, const uint8_t *buffer, int length) {
 
   // sendBuffered
   bufferIndex = 0;
+
+  #ifdef DEBUG_COMMUNICATION
+    printf("isvalid: isJoin = %d, isJoinAck = %d, length = %d, size = %d, cmd = %d, crcOK = %d, version = %d\n",
+            isJoin, isJoinAck, length, _size(), data.cmd, crcOK, data.version);
+  #endif
 
   _isValid = ( ( ( data.secret == secret ) || isJoin || isJoinAck ) &&
                ( length == _size( ) ) &&
@@ -186,6 +191,7 @@ void SwOSCom::print() {
   printf("source: %d\n", data.sourceSN);
   printf("destination: %d\n", data.destinationSN);
   printf("command: %d\n", data.cmd);
+  printf("isValid: %d _isvalid:%d\n", isValid(), _isValid);
 
   uint8_t *ptr = (uint8_t *) &data;
   size_t len = _size();
@@ -238,10 +244,6 @@ esp_err_t SwOSCom::_sendRS485( void ) {
 
   while ( true ) {
 
-    #ifdef DEBUG_COMMUNICATION
-      if (data.cmd == 0x09) esp_backtrace_print(10);
-    #endif
-
     // send data
     digitalWrite( RS485_DE, 1 );  // sender
     uart_write_bytes(RS485_UART, (void *)&data, _size() );
@@ -274,6 +276,9 @@ esp_err_t SwOSCom::_sendRS485( void ) {
 
 esp_err_t SwOSCom::send( void ) {
 
+  esp_err_t errWifi  = ESP_OK;
+  esp_err_t errRS485 = ESP_OK;
+
   data.header  = 0xFEFEFEFE;
   data.size    = _size();
   data.crc     = 0;
@@ -281,11 +286,18 @@ esp_err_t SwOSCom::send( void ) {
   uint32_t crc = (~crc32_le((uint32_t)~(0xffffffff), (const uint8_t*)&data, data.size))^0xffffffff;
   data.crc     = crc;
 
-  if ( nvs.wifiMode & 0x1 ) { // use wifi
-    return _sendWiFi();
-  } else { // RS485
-    return _sendRS485();
+  if ( nvs.swarmCommunication & swarmComWifi ) { // use wifi
+    errWifi = _sendWiFi();
   }
+  
+  if (nvs.swarmCommunication & swarmComRS485 ) { // RS485
+    errRS485 = _sendRS485();
+  }
+
+  // return error code
+  if (errWifi != ESP_OK) return errWifi;
+  return errRS485;
+
 }
 
 /******************************************************************************
@@ -324,7 +336,7 @@ bool _OnDataRecv( const uint8_t *mac, const uint8_t *incomingData, int len ) {
   // Did a ftSwarm sent this data?
   if ( ( !buffer.isValid() ) || ( !recvNotification ) ) {
     ESP_LOGI( LOGFTSWARM, "_OnDataRecv: invalid buffer");
-    // buffer.print();
+    buffer.print();
     return false;
   }
 
@@ -332,7 +344,7 @@ bool _OnDataRecv( const uint8_t *mac, const uint8_t *incomingData, int len ) {
   if ( buffer.data.sourceSN == nvs.serialNumber ) {
     // Check on transmittion failures
     if ( xQueueSend( sendNotificationRS485, &buffer.data, ESPNOW_MAXDELAY ) != pdTRUE ) {
-      ESP_LOGW( LOGFTSWARM, "sendNotification queue fail" );
+      ESP_LOGW( LOGFTSWARM, "sendNotificationRS485 queue fail" );
     }  
     return true;
   } 
@@ -442,7 +454,7 @@ static int _RS485_ReadData( uint8_t *buffer, int *used) {
     if (i>=0) {
       // header found, shift left, all done
       bufPtr = bufPtr - i;
-      if (i>0) memcpy( &buffer, &buffer[i], bufPtr);
+      if (i>0) memcpy( buffer, &buffer[i], bufPtr);
       bzero( &buffer[bufPtr], RS485_BUF_SIZE - bufPtr);
       *used = bufPtr;
       return RS485_HEADERFOUND;
@@ -459,7 +471,7 @@ static int _RS485_ReadData( uint8_t *buffer, int *used) {
       len = bufPtr;
     }
 
-    memcpy( &buffer, &buffer[start], len);
+    memcpy( buffer, &buffer[start], len);
 
     logBuffer( buffer, len );
 
@@ -515,7 +527,7 @@ static void _RS485_event_task(void *pvParameters) {
         if ( _OnDataRecvRS485( buffer, size ) ) {
           // valid packet     
           // cleanup: move training data to buffer[0]
-          memmove( &buffer, &buffer[size], bufPtr-size);
+          memmove( buffer, &buffer[size], bufPtr-size);
           bzero( &buffer[size], RS485_BUF_SIZE - size );
           bufPtr = bufPtr - size;
         } else {
@@ -527,7 +539,7 @@ static void _RS485_event_task(void *pvParameters) {
             bzero( buffer, RS485_BUF_SIZE);
             bufPtr = 0;
           } else {
-            memmove( &buffer, &buffer[i], bufPtr-i);
+            memmove( buffer, &buffer[i], bufPtr-i);
             bzero( &buffer[i], RS485_BUF_SIZE - i );
             bufPtr = bufPtr - i;
           }
@@ -619,14 +631,15 @@ bool SwOSStartCommunication( uint16_t swarmSecret, uint16_t swarmPIN ) {
   // create Receive queue
   recvNotification = xQueueCreate(100, sizeof( SwOSCom ) );
 
-  if ( nvs.wifiMode & 0x1 ) { // use wifi
+  bool ok = true;
 
-    return _StartWifi( );
-
-  } else { // RS485
-
-    return _StartRS485( );
+  if ( nvs.swarmCommunication & swarmComWifi ) { // use wifi
+    ok = ok && _StartWifi( );
+  } 
+  
+  if ( nvs.swarmCommunication & swarmComRS485 ) { // RS485
+    ok = ok && _StartRS485( );
   }
 
-  return true;
+  return ok;
 }

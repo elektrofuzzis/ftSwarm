@@ -439,7 +439,11 @@ void FtSwarmValve::on( void ) {
 }
 
 void FtSwarmValve::off( void ) {
-  on();
+  if (me) {
+    myOSSwarm.lock();
+    static_cast<SwOSActor *>(me)->setPower( 0);
+    myOSSwarm.unlock();
+  };
 }
 
 // **** FtSwarmCompressor ****
@@ -456,7 +460,11 @@ void FtSwarmCompressor::on( void ) {
 }
 
 void FtSwarmCompressor::off( void ) {
-  on();
+  if (me) {
+    myOSSwarm.lock();
+    static_cast<SwOSActor *>(me)->setPower( 0);
+    myOSSwarm.unlock();
+  };
 }
 
 // **** FtSwarmBuzzer ****
@@ -473,7 +481,11 @@ void FtSwarmBuzzer::on( void ) {
 }
 
 void FtSwarmBuzzer::off( void ) {
-  on();
+  if (me) {
+    myOSSwarm.lock();
+    static_cast<SwOSActor *>(me)->setPower( 0);
+    myOSSwarm.unlock();
+  };
 }
 
 // **** FtSwarmJoystick ****
@@ -576,48 +588,48 @@ void FtSwarmJoystick::onTriggerFB( FtSwarmTrigger_t triggerEvent, FtSwarmIO *act
 
 };
 
-// **** FtSwarmLED ****
+// **** FtSwarmPixel ****
 
-FtSwarmLED::FtSwarmLED( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmIO( serialNumber, port, FTSWARM_LED) {};
-FtSwarmLED::FtSwarmLED( const char *name ):FtSwarmIO( name ) {};
+FtSwarmPixel::FtSwarmPixel( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmIO( serialNumber, port, FTSWARM_PIXEL) {};
+FtSwarmPixel::FtSwarmPixel( const char *name ):FtSwarmIO( name ) {};
 
-uint8_t FtSwarmLED::getBrightness() {
+uint8_t FtSwarmPixel::getBrightness() {
 
   if (!me) return 0;
   
   myOSSwarm.lock();
-  uint8_t xReturn = (static_cast<SwOSLED *>(me)->getBrightness());
+  uint8_t xReturn = (static_cast<SwOSPixel *>(me)->getBrightness());
   myOSSwarm.unlock();
 
   return xReturn;
 };
 
-void FtSwarmLED::setBrightness(uint8_t brightness) {
+void FtSwarmPixel::setBrightness(uint8_t brightness) {
 
   if (!me) return;
 
   myOSSwarm.lock();
-  static_cast<SwOSLED *>(me)->setBrightness(brightness);
+  static_cast<SwOSPixel *>(me)->setBrightness(brightness);
   myOSSwarm.unlock();
 }
 
-uint32_t FtSwarmLED::getColor() {
+uint32_t FtSwarmPixel::getColor() {
 
   if (!me) return 0;
   
   myOSSwarm.lock();
-  uint32_t xReturn = (static_cast<SwOSLED *>(me)->getColor());
+  uint32_t xReturn = (static_cast<SwOSPixel *>(me)->getColor());
   myOSSwarm.unlock();
 
   return xReturn;
 };
 
-void FtSwarmLED::setColor(uint32_t color) {
+void FtSwarmPixel::setColor(uint32_t color) {
 
   if (!me) return;
 
   myOSSwarm.lock();
-  static_cast<SwOSLED *>(me)->setColor(color);
+  static_cast<SwOSPixel *>(me)->setColor(color);
   myOSSwarm.unlock();
 }
 
@@ -942,6 +954,10 @@ void FtSwarm::setReadDelay( uint16_t readDelay ) {
 
 }
 
-void FtSwarm::setup( void ) {
-  firmware();
+void FtSwarm::halt( void ) {
+
+  myOSSwarm.lock();
+  myOSSwarm.halt( );
+  myOSSwarm.unlock();
+
 }

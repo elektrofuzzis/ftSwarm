@@ -7,7 +7,7 @@
  * 
  */
 
- #include "SwOS.h"
+#include "SwOS.h"
 
 #include <WiFi.h>
 #include <esp_now.h>
@@ -29,9 +29,9 @@
 // There can only be once!
 SwOSSwarm myOSSwarm;
 
-//#define DEBUG_COMMUNICATION
+// #define DEBUG_COMMUNICATION
 
-//#define DEBUG_READTASK
+// #define DEBUG_READTASK
 
 /***************************************************
  *
@@ -250,7 +250,7 @@ void SwOSSwarm::_startWifi( bool verbose ) {
     // any key?
     if ( keyBreak ) {
       printf( "\nStarting setup..\n" );
-      ftSwarm.setup();
+      mainMenu();
       ESP.restart();
     }
 
@@ -258,7 +258,7 @@ void SwOSSwarm::_startWifi( bool verbose ) {
     if (WiFi.status() != WL_CONNECTED) {
       printf( "ERROR: Can't connect to SSID %s\n\nstarting setup...\n", nvs.wifiSSID );
       setState( ERROR );
-      ftSwarm.setup();
+      mainMenu();
       ESP.restart();
     }
 
@@ -303,7 +303,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 	// create local controler
 	maxCtrl++;
 	if (nvs.controlerType == FTSWARM ) {
-		Ctrl[maxCtrl] = new SwOSSwarmJST(     nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda, nvs.RGBLeds );
+    Ctrl[maxCtrl] = new SwOSSwarmJST( nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda, nvs.RGBLeds );
 	} else if (nvs.controlerType == FTSWARMCONTROL ) {
 		Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda, nvs.joyZero, nvs.displayType );
 	} else {
@@ -331,12 +331,12 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
     return 0;
   }
 
+  // start the tasks
+  xTaskCreatePinnedToCore( recvTask, "RecvTask", 10000, NULL, 1, NULL, 0 );
+  xTaskCreatePinnedToCore( readTask, "ReadTask", 20000, NULL, 1, NULL, 0 );
+  
   // now I need to find some friends
   registerMe( );
-
-  // start the tasks
-  xTaskCreatePinnedToCore( readTask, "ReadTask", 10000, NULL, 1, NULL, 0 );
-  xTaskCreatePinnedToCore( recvTask, "RecvTask", 10000, NULL, 1, NULL, 0 );
 
   // start web server
   if ( ( nvs.webUI ) && ( nvs.wifiMode != wifiOFF ) ) SwOSStartWebServer();
@@ -344,11 +344,14 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
   // firmware events?
   if ( !_startEvents( ) ) {
       printf( "\nStarting setup..\n" );
-      ftSwarm.setup();
+      mainMenu();
       ESP.restart();
     }
 
+  delay(1000);
+  myOSSwarm.lock();
   setState( RUNNING );
+  myOSSwarm.unlock();
 
   if (verbose) printf("Start normal operation.\n");
 
@@ -356,7 +359,18 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 
 }
 
+void SwOSSwarm::halt( void ) {
 
+  for (uint8_t i=0; i<maxCtrl; i++)
+    Ctrl[i]->halt();
+}
+
+void SwOSSwarm::unsubscribe( void ) {
+
+  for (uint8_t i=0; i<maxCtrl; i++)
+    Ctrl[i]->unsubscribe();
+
+}
 
 uint8_t SwOSSwarm::_getIndex( FtSwarmSerialNumber_t serialNumber ) {
 
@@ -632,7 +646,7 @@ void SwOSSwarm::setState( SwOSState_t state ) {
  *
  ***************************************************/
 
-void SwOSSwarm::lock() { 
+void SwOSSwarm::lock() {
   xSemaphoreTake( _xAccessLock, portMAX_DELAY );
 };
 

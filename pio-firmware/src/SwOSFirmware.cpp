@@ -12,6 +12,7 @@
 #include "SwOSSwarm.h"
 #include "SwOSNVS.h"
 #include "easyKey.h"
+#include "SwOSCLI.h"
 
 const char I2CMODE[7][12] = { "off", "Master", "Slave", "ftcSoundbar", "ftPwrDrive", "TXT", "ftDuino" };
 const char ONOFF[2][5]    = { "off", "on" };
@@ -256,7 +257,7 @@ void joinSwarm( bool createNewSwarm ) {
   myOSSwarm.allowPairing = true;
   myOSSwarm.joinSwarm( createNewSwarm, name, pin );
   myOSSwarm.unlock();
-
+  
   // wait some ticks to catch a response
   vTaskDelay( 250 / portTICK_PERIOD_MS );
 
@@ -535,7 +536,7 @@ bool changeEvent( NVSEvent *event ) {
     else if (!newActor) 
       printf("actor %s doesn't exist in the swarm.\n", actor);
 
-    else if ( !( (newActor->getIOType() == FTSWARM_ACTOR ) || (newActor->getIOType() == FTSWARM_LED ) || (newActor->getIOType() == FTSWARM_SERVO ) ) )
+    else if ( !( (newActor->getIOType() == FTSWARM_ACTOR ) || (newActor->getIOType() == FTSWARM_PIXEL ) || (newActor->getIOType() == FTSWARM_SERVO ) ) )
       printf("%s needs to be an actor, a LED or a servo.\n", actor);
     
     else
@@ -691,14 +692,14 @@ void remoteControl( void ) {
     printf("\n(%d) exit\n", 0 );
 
     // get user's choice
-    choice = enterNumber("\nremote control>", 0, 0, maxChoice );     
+    choice = enterNumber("\nremote control>", 0, 0, maxChoice );    
 
     // do what the user wants
     if ( choice == 0 ) {
      if ( ( anythingChanged ) && yesNo( "Save changes to nvs [Y/N]? " ) ) nvs.save();
      return;
       
-    }  else if ( choice == ( item + 1 ) ) {
+    } else if ( choice == ( item + 1 ) ) {
       // add
       if ( changeEvent( &nvs.eventList.event[eventPtr[0]] ) ) anythingChanged = true;
       
@@ -718,20 +719,18 @@ void remoteControl( void ) {
 
 }
 
-void firmware( void ) {
+void mainMenu( void ) {
 
   uint8_t choice, maxChoice;
   char prompt[255];
-
-  printf("\n\nftSwarmOS %s\n\n(C) Christian Bergschneider & Stefan Fuss\n", SWOSVERSION );
   
   // FTSWARMCONTROL special HW
   if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
-    sprintf( prompt, "\nMain Menu\n\n(1) wifi settings\n(2) webserver settings\n(3) swarm settings\n(4) alias names\n(5) factory settings\n(6) I2C\n(7) ftSwarmControl\n(8) remoteControl\n\n(0) exit\nmain>" );
+    sprintf( prompt, "\nMain Menu\n\n(1) wifi settings\n(2) webserver settings\n(3) swarm settings\n(4) alias names\n(5) factory settings\n(6) I2C\n(7) remoteControl\n(8) ftSwarmControl\n\n(0) exit\nmain>" );
     maxChoice = 8;
   } else {
-    sprintf( prompt, "\nMain Menu\n\n(1) wifi settings\n(2) webserver settings\n(3) swarm settings\n(4) alias names\n(5) factory settings\n(6) I2C\n\n(0) exit\nmain>" );
-    maxChoice = 6;
+    sprintf( prompt, "\nMain Menu\n\n(1) wifi settings\n(2) webserver settings\n(3) swarm settings\n(4) alias names\n(5) factory settings\n(6) I2C\n(7) remoteControl\n\n(0) exit\nmain>" );
+    maxChoice = 7;
   }
  
   while (1) {
@@ -746,10 +745,23 @@ void firmware( void ) {
       case 4: aliasMenu(); break;
       case 5: factorySettings(); break;
       case 6: I2CMenu(); break;
-      case 7: SwarmControlMenu(); break;
-      case 8: remoteControl(); break;
+      case 7: remoteControl(); break;
+      case 8: SwarmControlMenu(); break;
     }
     
   }
+
+}
+
+/*----------------------------------------*/
+
+
+
+
+void firmware( void ) {
+
+  SwOSCLI cli;
+
+  cli.run();
 
 }
