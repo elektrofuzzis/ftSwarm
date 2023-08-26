@@ -559,7 +559,12 @@ static void _RS485_event_task(void *pvParameters) {
 
 bool _StartRS485( void ) {
   
-    // Initialize RS485 communication stack
+  // Initialize RS485 communication stack
+
+  # if !defined(CONFIG_IDF_TARGET_ESP32S3)
+    return false; // ftSwarmRS only
+
+  #else
 
     sendNotificationRS485 = xQueueCreate( 10, sizeof( SwOSDatagram_t ) );
 
@@ -593,6 +598,8 @@ bool _StartRS485( void ) {
 
     return true;
   
+  #endif
+
 }
 
 bool _StartWifi( void ) {

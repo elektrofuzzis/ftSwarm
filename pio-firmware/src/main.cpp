@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "ftSwarmRS.h"
+#include "ftSwarmDuino.h"
 
 #include "SwOSFirmware.h"
 

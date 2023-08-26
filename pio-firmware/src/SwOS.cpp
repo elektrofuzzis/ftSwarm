@@ -408,6 +408,21 @@ FtSwarmXMMotor::FtSwarmXMMotor( const char *name ):FtSwarmTractorMotor( name, FT
 FtSwarmEncoderMotor::FtSwarmEncoderMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmTractorMotor( serialNumber, port, FTSWARM_ENCODER ) {};
 FtSwarmEncoderMotor::FtSwarmEncoderMotor( const char *name ):FtSwarmTractorMotor( name, FTSWARM_ENCODER ) {};
 
+// **** FtSwarmStepperMotor
+
+FtSwarmStepperMotor::FtSwarmStepperMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmTractorMotor( serialNumber, port, FTSWARM_STEPPER ) {};
+FtSwarmStepperMotor::FtSwarmStepperMotor( const char * name ):FtSwarmTractorMotor( name, FTSWARM_STEPPER ) {};
+
+void FtSwarmStepperMotor::setDistance( long distance, bool relative ) {
+
+  if (me) {
+    myOSSwarm.lock();
+    static_cast<SwOSActor *>(me)->setDistance( distance, relative );
+    myOSSwarm.unlock();
+  }
+
+}
+
 // **** FtSwarmLamp ****
 
 FtSwarmLamp::FtSwarmLamp( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmActor( serialNumber, port, FTSWARM_LAMP ) {};

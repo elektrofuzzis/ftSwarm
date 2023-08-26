@@ -14,7 +14,7 @@
 #include "easyKey.h"
 #include "SwOSCLI.h"
 
-const char I2CMODE[7][12] = { "off", "Master", "Slave", "ftcSoundbar", "ftPwrDrive", "TXT", "ftDuino" };
+const char I2CMODE[3][12] = { "off", "Master", "Slave" };
 const char ONOFF[2][5]    = { "off", "on" };
 
 void I2CMenu() {
@@ -25,13 +25,13 @@ void I2CMenu() {
   while (1) {
 
     /*
-    (1) Mode: Master/Slave/TXT/ftDuino
+    (1) Mode: Master/Slave/TXT
     (2) Gyro: LM6/MCU/OFF
     (3) Slave Address: x
     (0) exit
     */
 
-   printf( "I2C mode: %d\ngyro: %d\n", nvs.I2CMode, nvs.gyro);
+    printf( "I2C mode: %d\ngyro: %d\n", nvs.I2CMode, nvs.gyro);
 
     printf("\n\nI2C Settings\n\n");
     sprintf(prompt, "(1) Mode: %s\n(2) Gyro: %s\n(3) I2C Address: %d\n\n(0) exit\nI2C>", I2CMODE[ nvs.I2CMode], ONOFF[nvs.gyro], nvs.I2CAddr );
@@ -48,7 +48,7 @@ void I2CMenu() {
         
       case 1: // I2cMode
         anythingChanged = true;
-        nvs.I2CMode = (FtSwarmI2CMode_t) enterNumber( "(0) off (1) Master (2) Slave (3) ftcSoundBar (4) ftPwrDrive  (5) TXT (6) FTDUINO: ", nvs.I2CMode, 0, 6 );
+        nvs.I2CMode = (FtSwarmI2CMode_t) enterNumber( "(0) off (1) Master (2) Slave: ", nvs.I2CMode, 0, 2 );
         break;
 
       case 2: // Gyro
@@ -56,7 +56,7 @@ void I2CMenu() {
         nvs.gyro = (bool) enterNumber( "(0) off (1) on: ", nvs.gyro, 0, 1 );
         break;
 
-      case 3: // Gyro
+      case 3: // I2C Addr
         anythingChanged = true;
         nvs.I2CAddr = (uint8_t) enterNumber( "[16..127]: ", nvs.I2CAddr, 16, 127 );
         break;
@@ -725,14 +725,24 @@ void mainMenu( void ) {
   char prompt[255];
   
   // FTSWARMCONTROL special HW
-  if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
-    sprintf( prompt, "\nMain Menu\n\n(1) wifi settings\n(2) webserver settings\n(3) swarm settings\n(4) alias names\n(5) factory settings\n(6) I2C\n(7) remoteControl\n(8) ftSwarmControl\n\n(0) exit\nmain>" );
-    maxChoice = 8;
-  } else {
-    sprintf( prompt, "\nMain Menu\n\n(1) wifi settings\n(2) webserver settings\n(3) swarm settings\n(4) alias names\n(5) factory settings\n(6) I2C\n(7) remoteControl\n\n(0) exit\nmain>" );
-    maxChoice = 7;
+  switch (myOSSwarm.Ctrl[0]->getType()) {
+
+    case FTSWARM:         sprintf( prompt, "\nMain Menu\n\n(1) wifi settings\n(2) webserver settings\n(3) swarm settings\n(4) alias names\n(5) factory settings\n(6) remoteControl\n(7) I2C\n\n(0) exit\nmain>" );
+                          maxChoice = 7;
+                          break;
+
+    case FTSWARMCONTROL:  sprintf( prompt, "\nMain Menu\n\n(1) wifi settings\n(2) webserver settings\n(3) swarm settings\n(4) alias names\n(5) factory settings\n(6) remoteControl\n(7) I2C\n(8) ftSwarmControl\n\n(0) exit\nmain>" );
+                          maxChoice = 8;
+                          break;
+
+    case FTSWARMCAM:    
+    case FTSWARMPWRDRIVE:
+    case FTSWARMDUINO:    sprintf( prompt, "\nMain Menu\n\n(1) wifi settings\n(2) webserver settings\n(3) swarm settings\n(4) alias names\n(5) factory settings\n(6) remoteControl\n\n(0) exit\nmain>" );
+                          maxChoice = 6;
+                          break;
+
   }
- 
+
   while (1) {
 
     choice = enterNumber( prompt, 0, 0, maxChoice );
@@ -744,8 +754,8 @@ void mainMenu( void ) {
       case 3: swarmMenu(); break;
       case 4: aliasMenu(); break;
       case 5: factorySettings(); break;
-      case 6: I2CMenu(); break;
-      case 7: remoteControl(); break;
+      case 6: remoteControl(); break;
+      case 7: I2CMenu(); break;
       case 8: SwarmControlMenu(); break;
     }
     
@@ -754,9 +764,6 @@ void mainMenu( void ) {
 }
 
 /*----------------------------------------*/
-
-
-
 
 void firmware( void ) {
 

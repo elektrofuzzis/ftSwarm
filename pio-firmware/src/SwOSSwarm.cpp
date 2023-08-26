@@ -294,20 +294,26 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 
   // initialize I2C
   switch ( nvs.CPU ) {
-    case FTSWARM_2V1: 
-    case FTSWARM_2V0: Wire.begin( 8, 9 );   break;
-    case FTSWARM_1V0: Wire.begin( 13, 12 ); break;
+    case FTSWARMRS_2V1: 
+    case FTSWARMRS_2V0: Wire.begin( 8, 9 );   break;
+    case FTSWARMJST_1V0: Wire.begin( 13, 12 ); break;
     default:          Wire.begin( 21, 22 ); break;
   }
 
 	// create local controler
 	maxCtrl++;
-	if (nvs.controlerType == FTSWARM ) {
-    Ctrl[maxCtrl] = new SwOSSwarmJST( nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda, nvs.RGBLeds );
-	} else if (nvs.controlerType == FTSWARMCONTROL ) {
-		Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda, nvs.joyZero, nvs.displayType );
-	} else {
-    Ctrl[maxCtrl] = new SwOSSwarmCAM( nvs.serialNumber, NULL, true, nvs.CPU, nvs.HAT, IAmAKelda );
+  switch (nvs.controlerType) {
+  case FTSWARM:         Ctrl[maxCtrl] = new SwOSSwarmJST( nvs.serialNumber, NULL, true, nvs.CPU, IAmAKelda, nvs.RGBLeds );
+                        break;
+	case FTSWARMCONTROL:  Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, NULL, true, nvs.CPU, IAmAKelda, nvs.joyZero, nvs.displayType );
+                        break;
+	case FTSWARMCAM:      Ctrl[maxCtrl] =new SwOSSwarmCAM( nvs.serialNumber, NULL, true, nvs.CPU, IAmAKelda );
+                        break;
+	case FTSWARMDUINO:    Ctrl[maxCtrl] = new SwOSSwarmDuino( nvs.serialNumber, NULL, true, nvs.CPU, IAmAKelda );
+                        break;
+  default:              // wrong setup
+                        nvs.initialSetup();
+                        break;
   } 
   
   // Who I am?

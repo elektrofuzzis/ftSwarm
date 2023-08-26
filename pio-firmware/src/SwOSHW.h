@@ -21,6 +21,7 @@
 #include <Adafruit_SSD1306.h>
 #include <FastLED.h>
 #include <LSM6DSRSensor.h>
+#include <ftPwrDrive/ftPwrDrive.h>
 
 #include <WiFi.h>
 
@@ -36,8 +37,6 @@ class SwOSCtrl; // forward declaration
 
 // state
 typedef enum { BOOTING, STARTWIFI, RUNNING, ERROR, WAITING, MAXSTATE } SwOSState_t;
-
-
 
 /***************************************************
  *
@@ -160,6 +159,9 @@ protected:
 	bool isDigitalSensor();
   bool isXMeter();
   virtual void _setupLocal();
+  virtual void _setupI2CSensor();
+  virtual void _setSensorTypeI2C( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote );  // set sensor type
+  virtual void _setSensorTypeLHW( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote );  // set sensor type
   virtual void subscription();
 
 public:
@@ -203,9 +205,13 @@ protected:
 	FtSwarmMotion_t _motionType = FTSWARM_COAST;
 	int16_t         _power = 0;
 
+  virtual uint8_t _PwrDriveMotor();
+
   // local HW procedures
+  virtual void _setupI2C(); // initializes local HW
   virtual void _setupLocal(); // initializes local HW
-  virtual void _setLocal();   // start moving locally
+  virtual void _setLocalI2C();   // start moving locally
+  virtual void _setLocalLHW();   // start moving locally
 
   // remote HW procedures
   virtual void _setRemote();  // start moving remotely 
@@ -224,12 +230,25 @@ public:
   // commands
   virtual void            setActorType( FtSwarmActor_t actorType, bool dontSendToRemote );    // set actor type
   virtual void            setValue( FtSwarmMotion_t motionType, int16_t power ) { _motionType = motionType; _power = power; };  // set values
-  virtual void            setPower( int16_t power );                   // set power
-	virtual int16_t         getPower() { return _power; };               // get power
+	virtual void            setPower( int16_t power );                   // set power
+  virtual int16_t         getPower() { return _power; };               // get power
   virtual void            setMotionType( FtSwarmMotion_t motionType ); // set motion type
 	virtual FtSwarmMotion_t getMotionType() { return _motionType; };     // get motion type
 
+  // steppers only
+  virtual void setDistance( long distance, bool relative );  // set a distance to go
+  
+  /*virtual void setAbsDistance(long distance );            // set a absolute distance to go
+  virtual long getStepsToGo( void );                        // number of needed steps to go to distance
+  virtual void setMaxSpeed( long speed );                   // set a max speed
+  virtual long getMaxSpeed(void );                          // get max speed
+  virtual void startMoving( boolean disableOnStop = true ); // start motor moving, disableOnStop disables the motor driver at the end of the movement
+  virtual void stopMoving( void );                          // stop motor moving immediately
+  virtual boolean isMoving( void );                         // check, if a motor is moving
+  */
+
 };
+
 
 /***************************************************
  *
@@ -520,7 +539,7 @@ class SwOSOLED : public SwOSIO {
 
 class SwOSCtrl : public SwOSObj {
 protected:
-	FtSwarmVersion_t _CPU, _HAT;
+	FtSwarmVersion_t _CPU;
   bool             _IAmAKelda;
   bool             _local;
 	const char *     version( FtSwarmVersion_t v);
@@ -535,7 +554,7 @@ public:
   uint8_t      inputs, actors;
 	
   // constructor, destructor
-  SwOSCtrl( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda );
+  SwOSCtrl( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
   ~SwOSCtrl();
 
   // administrative stuff
@@ -548,8 +567,6 @@ public:
 	virtual char*              myType();                                   // what I am?
   virtual FtSwarmVersion_t   getCPU() { return _CPU; };                  // my CPU type
 	virtual const char *       getVersionCPU();                            // my CPU type as string
-  virtual FtSwarmVersion_t   getHAT() { return _HAT; };                  // my HAT type
-	virtual const char *       getVersionHAT();                            // my CPU type as string
   virtual bool               isLocal() { return _local; };               // local or remote?
 	virtual char *             getHostname( );                             // hostname
 	virtual void               jsonize( JSONize *json, uint8_t id);        // send board & IO device information as a json string
@@ -559,6 +576,7 @@ public:
   virtual void factorySettings( void );                                  // reset factory settings
   virtual void halt( void );                                             // stop all actors
   virtual void unsubscribe(void );                                       // unsubscribe all IOs
+  virtual bool isI2CSwarmCtrl( void ) { return false; };                 // is a ftSwarmI2C-Board 
 
   virtual void read(); // run measurements
 
@@ -581,69 +599,65 @@ public:
     
 };
 
+
 /***************************************************
  *
- *   SwOSSwarmSoundBar - ftSoundBar implementation as I2C Slave
+ *   SwOSSwarmI2CCtrl
  *
  ***************************************************/
 
-/*
-class SwOSSwarmSoundBar : public SwOSCtrl {
+class SwOSSwarmI2CCtrl : public SwOSCtrl {
   public:
+  	SwOSPixel *led[2];
+
     // constructor, destructor
-    SwOSSwarmTXT( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda );
-    ~SwOSSwarmTXT();
+    SwOSSwarmI2CCtrl( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
+    ~SwOSSwarmI2CCtrl();
+
+    virtual void read(); // run measurements
+    virtual bool isI2CSwarmCtrl( void ) { return true; };                 // is a ftSwarmI2C-Board 
 
 };
-*/
 
 /***************************************************
  *
- *   SwOSSwarmPwrDrive - ftPwrDrive implementation as I2C Slave
+ *   SwOSSwarmPwrDrive - ftPwrDrive using FtSwarmI2C-Board
  *
  ***************************************************/
 
-/*
-class SwOSSwarmPwrDrive : public SwOSCtrl {
+class SwOSSwarmPwrDrive : public SwOSSwarmI2CCtrl {
   public:
     // constructor, destructor
-    SwOSSwarmPwrDrive( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda );
+    SwOSSwarmPwrDrive( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
     ~SwOSSwarmPwrDrive();
 
+    virtual void read(); // run measurements
+
+    virtual void setMicrostepMode( uint8_t mode );
+      // set microstep mode
+      // FILLSTEP, HALFSTEP, QUARTERSTEP, EIGTHSTEP, SIXTEENTHSTEP
+      
+    virtual uint8_t getMicrostepMode( void );
+      // get microstep mode
+      // FILLSTEP, HALFSTEP, QUARTERSTEP, EIGTHSTEP, SIXTEENTHSTEP
+
 };
-*/
 
 /***************************************************
  *
- *   SwOSSwarmTXT - TXT implementation as I2C Slave
+ *   SwOSSwarmDuino - ftDuino using FtSwarmI2C-Board
  *
  ***************************************************/
 
-/*
-
-class SwOSSwarmTXT : public SwOSCtrl {
+class SwOSSwarmDuino : public SwOSSwarmI2CCtrl {
   public:
     // constructor, destructor
-    SwOSSwarmTXT( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda );
-    ~SwOSSwarmTXT();
-
-};
-*/
-
-/***************************************************
- *
- *   SwOSSwarmDuino - ftDuino implementation as I2C Slave
- *
- ***************************************************/
-/*
-class SwOSSwarmDuino : public SwOSCtrl {
-  public:
-    // constructor, destructor
-    SwOSSwarmDuino( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda );
+    SwOSSwarmDuino( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
     ~SwOSSwarmDuino();
 
+    virtual void read(); // run measurements
+
 };
-*/
 
 /***************************************************
  *
@@ -657,7 +671,7 @@ class SwOSSwarmXX : public SwOSCtrl {
     SwOSI2C      *I2C;
     
     // constructor, destructor
-    SwOSSwarmXX( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda );
+    SwOSSwarmXX( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
     ~SwOSSwarmXX();
     
     virtual SwOSIO *getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port);    // get a pointer to an IO port via address
@@ -685,7 +699,7 @@ public:
 	SwOSServo *servo[MAXSERVO];
 
   // constructor, destructor
-	SwOSSwarmJST( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda, uint8_t xRGBLeds );
+	SwOSSwarmJST( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, uint8_t xRGBLeds );
   SwOSSwarmJST( SwOSCom *com ); // constructor
   ~SwOSSwarmJST();
   
@@ -733,7 +747,7 @@ public:
 
   SwOSOLED     *oled;
  
-	SwOSSwarmControl(FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda, int16_t zero[2][2], uint8_t displayType ); // constructor
+	SwOSSwarmControl(FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, int16_t zero[2][2], uint8_t displayType ); // constructor
   SwOSSwarmControl( SwOSCom *com ); // constructor
   ~SwOSSwarmControl(); // destructor
   
@@ -775,7 +789,7 @@ protected:
 public:
   // specific hardware
 
-  SwOSSwarmCAM(FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, FtSwarmVersion_t HAT, bool IAmAKelda ); // constructor
+  SwOSSwarmCAM(FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda ); // constructor
   SwOSSwarmCAM( SwOSCom *com ); // constructor
   ~SwOSSwarmCAM(); // destructor
   

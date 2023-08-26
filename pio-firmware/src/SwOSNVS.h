@@ -40,13 +40,11 @@ typedef enum { swarmComWifi = 1, swarmComRS485 = 2, swarmComBoth= 3 } FtSwarmCom
 
 
 class SwOSNVS {
-  protected:
-    void _initialSetup();   // ask user for HW details
-public:
+  public:
+    void initialSetup();   // ask user for HW details
 	  int32_t               version;
 	  FtSwarmControler_t    controlerType;
 	  FtSwarmVersion_t      CPU;
-	  FtSwarmVersion_t      HAT;
 	  FtSwarmSerialNumber_t serialNumber;
     uint8_t               channel;
 	  char                  wifiSSID[64], wifiPwd[128];

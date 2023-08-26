@@ -29,22 +29,21 @@ uint16_t generateSecret( FtSwarmSerialNumber_t serialNumber ) {
   return ( ( ( ( uint16_t) serialNumber ) & 0xFF ) << 8 ) | ( rand() & 0xFF ) ;
 }
 
-void SwOSNVS::_initialSetup( void ) {
+void SwOSNVS::initialSetup( void ) {
 
   version = 2;
 
-  controlerType = (FtSwarmControler_t) (enterNumber(("Controler Type\n (1) ftSwarm\n (2) ftSwarmControl\n (3) ftSwarmCAM\n>"), 0, 1, 3 ) - 1 );
-
-  switch( enterNumber("CPU Version\n (1) 1.0\n (2) 1.3\n (3) 1.15\n (4) 2.0\n (5) 2.1\n>", 0, 1, 5) ) {
-    case 1:  CPU = FTSWARM_1V0;  break;
-    case 2:  CPU = FTSWARM_1V3;  break;
-    case 3:  CPU = FTSWARM_1V15;  break;
-    case 4:  CPU = FTSWARM_2V0;  break;
-    case 5:  CPU = FTSWARM_2V1;  break;
-    default: CPU = FTSWARM_1V0;  break;
+  switch ( enterNumber(("Controler Type\n (1) ftSwarm\n (2) ftSwarmRS (3) ftSwarmControl\n (4) ftSwarmCAM (5) ftSwarmPwrDrive (6) ftSwarmDuino (7) special config\n>"), 0, 1, 6 ) ) {
+    case 1:  controlerType = FTSWARM;         CPU = FTSWARMJST_1V15;       break;
+    case 2:  controlerType = FTSWARM;         CPU = FTSWARMRS_2V1;         break;
+    case 3:  controlerType = FTSWARMCONTROL;  CPU = FTSWARMCONTROL_1V3;    break;
+    case 4:  controlerType = FTSWARMCAM;      CPU = FTSWARMCAM_2V11;       break;
+    case 5:  controlerType = FTSWARMPWRDRIVE; CPU = FTSWARMPWRDRIVE_1V141; break;
+    case 6:  controlerType = FTSWARMDUINO;    CPU = FTSWARMDUINO_1V141;    break;
+    default: // manual configuration
+             controlerType = (FtSwarmControler_t) (enterNumber(("Controler Type\n (1) ftSwarm\n (2) ftSwarmControl\n (3) ftSwarmCAM (4) ftSwarmPwrDrive (5) ftSwarmDuino\n>"), 0, 1, 5 ) - 1 );
+             CPU = ( FtSwarmVersion_t ) ( enterNumber(("CPU Version\n (1) FTSWARMJST_1V0\n (2) FTSWARMCONTROL_1V3\n (3) FTSWARMJST_1V15\n (4) FTSWARMRS_2V0\n (5) FTSWARMRS_2V1\n (6) FTSWARMCAM_1V0\n (7) FTSWARMI2C_1V1"), 0, 1, 7 ) -1 );
   }
-
-  HAT = FTSWARM_1V0;
 
   serialNumber = enterNumber("Serial number [1..65535]>", 0, 1, 65535 );
 
@@ -79,7 +78,6 @@ SwOSNVS::SwOSNVS() {
 	controlerType      = FTSWARM_NOCTRL;
 	serialNumber       = 0;
 	CPU                = FTSWARM_NOVERSION;
-	HAT                = FTSWARM_NOVERSION;
 	wifiSSID[0]        = '\0';
 	wifiPwd[0]         = '\0';
   wifiMode           = wifiAP;
@@ -115,7 +113,7 @@ void SwOSNVS::begin() {
   ESP_ERROR_CHECK( err );
 
    if (!load() ) {
-    _initialSetup();
+    initialSetup();
    }
 
 }
@@ -139,13 +137,11 @@ bool SwOSNVS::load() {
   uint32_t ui32;
   nvs_get_u16( my_handle, "serialNumber",  (uint16_t *) &serialNumber );
   nvs_get_u32( my_handle, "CPU",           (uint32_t *) &CPU );
-  nvs_get_u32( my_handle, "HAT",           (uint32_t *) &HAT );
 
   // check on valid hw data
   if ( ( controlerType == FTSWARM_NOCTRL ) ||
        ( serialNumber == 0 ) ||
-       ( CPU == FTSWARM_NOVERSION ) ||
-       ( HAT == FTSWARM_NOVERSION ) ) {
+       ( CPU == FTSWARM_NOVERSION ) ) {
     return false;
   }
 
@@ -212,7 +208,6 @@ void SwOSNVS::save( bool writeAll ) {
     ESP_ERROR_CHECK( nvs_set_u32( my_handle, "controlerType", (uint32_t) controlerType ) );
     ESP_ERROR_CHECK( nvs_set_u16( my_handle, "serialNumber", (FtSwarmSerialNumber_t) serialNumber ) );
     ESP_ERROR_CHECK( nvs_set_u32( my_handle, "CPU", (uint32_t) CPU ) );
-    ESP_ERROR_CHECK( nvs_set_u32( my_handle, "HAT", (uint32_t) HAT )  );
   }
 
   // ftSwarmControl: set joystick calibration
@@ -266,7 +261,7 @@ void SwOSNVS::saveAndRestart( void ) {
 }
 
 bool SwOSNVS::RS485Available( void ) {
-  return ( CPU == FTSWARM_2V0 ) || ( CPU == FTSWARM_2V1 );
+  return ( CPU == FTSWARMRS_2V0 ) || ( CPU == FTSWARMRS_2V1 );
 }
 
 void SwOSNVS::factorySettings( void ) {
@@ -301,7 +296,6 @@ void SwOSNVS::printNVS() {
 
   printf( "NVSVersion: %d\n", version );
   printf( "CPU: %d\n", CPU );
-  printf( "HAT: %d\n", HAT );
   printf( "controlerType: %d\n", controlerType );
   printf( "serialNumber: %d\n", serialNumber );
   printf( "wifiMode: %d\n", wifiMode );

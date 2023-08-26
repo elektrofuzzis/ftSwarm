@@ -20,7 +20,7 @@
 
 #define ESPNOW_MAXDELAY 512
 #define DEFAULTSECRET   0x2506
-#define VERSIONDATA     4
+#define VERSIONDATA     5
 #define MAXALIAS        5
 
 typedef enum {
@@ -37,6 +37,7 @@ typedef enum {
   CMD_SETACTORTYPE,      // set an actors's actor type
   CMD_ALIAS,             // send some alias names
   CMD_I2CREGISTER,       // set an I2C register
+  CMD_SETACTORDISTANCE,  // set distace to go
   CMD_MAX
 } SwOSCommand_t;
 
@@ -69,7 +70,6 @@ struct registerControl_t {
 struct registerCmd_t { 
   FtSwarmControler_t ctrlType; 
   FtSwarmVersion_t versionCPU; 
-  FtSwarmVersion_t versionHAT; 
   bool IAmAKelda; 
   uint16_t pin; 
   Input_t input[4];
@@ -96,6 +96,7 @@ struct SwOSDatagram_t {
     struct { uint8_t index; FtSwarmSensor_t sensorType; bool normallyOpen; } sensorCmd __attribute__((packed));
     struct { uint8_t index; int16_t offset; int16_t position; } servoCmd;
     struct { uint8_t index; FtSwarmMotion_t motionType; int16_t power; } actorPowerCmd;
+    struct { uint8_t index; long distance; bool relative; } actorDistanceCmd;
     struct { uint8_t index; FtSwarmActor_t actorType; } actorTypeCmd;
     struct { uint8_t index; uint8_t brightness; uint32_t color; } ledCmd;
     struct { Alias_t alias[MAXALIAS]; } aliasCmd;
