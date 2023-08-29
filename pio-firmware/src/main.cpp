@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "ftSwarmDuino.h"
+#include "ftSwarmRS.h"
 
 #include "SwOSFirmware.h"
 
@@ -25,7 +25,15 @@ Serial.begin(115200);
    // start the swarm
    ftSwarm.verbose(true);
    FtSwarmSerialNumber_t local = ftSwarm.begin( false );
-  
+/*
+   while (1) {
+    if ( Serial.available()>0 ) {
+      printf("%d\n", Serial.read() );
+    }
+    delay(1);
+   }
+  */
+
   firmware();
   ESP.restart();
 

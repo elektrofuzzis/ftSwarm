@@ -492,7 +492,9 @@ void SwOSInput::setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen, bo
     if ( _ctrl->isI2CSwarmCtrl() ) _setSensorTypeI2C( sensorType, normallyOpen, dontSendToRemote );
     else                           _setSensorTypeLHW( sensorType, normallyOpen, dontSendToRemote );
   
-  } else if ( !dontSendToRemote ) {
+  }
+  
+  if ( !dontSendToRemote ) {
     
     // send SN, SETSENSORTYPE, _port, sensorType
     SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETSENSORTYPE );
@@ -725,6 +727,7 @@ void SwOSInput::jsonize( JSONize *json, uint8_t id) {
   json->endObject();
 }
 
+
 /***************************************************
  *
  *   SwOSActor
@@ -956,6 +959,10 @@ uint8_t SwOSActor::_PwrDriveMotor() {
     case 2: return M3;
     case 3: return M4;
   }
+
+  // dead code, but to supress compiler warning about funtion without return 
+  return 0;
+
 }
 
 void SwOSActor::setDistance( long distance, bool relative ) {
@@ -2261,7 +2268,7 @@ SwOSCom *SwOSCtrl::state2Com( void ) {
 
   uint8_t mac[] = {0,0,0,0,0,0}; // dummy mac
 
-  SwOSCom *com = new SwOSCom( mac, broadcastSN, CMD_STATE );
+  SwOSCom *com = new SwOSCom( mac, serialNumber, CMD_STATE );
 
   int16_t FB, LR;
 
@@ -2476,8 +2483,9 @@ bool SwOSSwarmXX::OnDataRecv(SwOSCom *com ) {
 
   if ( ( com->data.cmd == CMD_I2CREGISTER ) && (I2C) ) {
       I2C->setRegister( com->data.I2CRegisterCmd.reg, com->data.I2CRegisterCmd.value );
+      return true;
   } else {
-      SwOSCtrl::OnDataRecv(com);
+      return SwOSCtrl::OnDataRecv(com);
   }
 
   return true;

@@ -84,8 +84,9 @@ void readTask( void *parameter ) {
     // copy my state to a datagram
     SwOSCom *com = myOSSwarm.Ctrl[0]->state2Com( );
     
-    // send data to all Keldas
-    myOSSwarm.send( com );
+    // send data to all members
+    com->send();
+    //myOSSwarm.send( com );
     
     // cleanup
     delete com;
@@ -457,7 +458,7 @@ void SwOSSwarm::jsonize( JSONize *json) {
     if ( Ctrl[i] ) Ctrl[i]->jsonize( json, i );
 
     // visualize others, if I'm a Kelda only
-    if (!Ctrl[0]->AmIAKelda()) break;
+    // if (!Ctrl[0]->AmIAKelda()) break;
     
 	}
 
@@ -646,6 +647,7 @@ void SwOSSwarm::setState( SwOSState_t state ) {
 
 }
 
+
 /***************************************************
  *
  *   Locking...
@@ -681,7 +683,8 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
   // ignore invalid data
   if (!com) return;
 
-  uint8_t i = _getIndex( com->data.sourceSN );
+  uint8_t source   = _getIndex( com->data.sourceSN );
+  uint8_t affected = _getIndex( com->data.affectedSN );
 
   // check on join message
   if ( com->data.cmd == CMD_SWARMJOIN ) {
@@ -704,7 +707,8 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
       ack.send();
       return;
     }
-  }
+
+  } // end CMD_SWARMJOIN
 
   // acknowledge join?
   if ( com->data.cmd == CMD_SWARMJOINACK ) {
@@ -721,29 +725,29 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
     }
     
     return;
-  }
+  } // end CMD_SWARMJOINACK
 
   if ( com->data.cmd == CMD_SWARMLEAVE ) {
     // someone leaves the swarm
-    if ( Ctrl[i] ) { 
+    if ( Ctrl[source] ) { 
       // I know this controler and kill it
-      delete Ctrl[i];
-      Ctrl[i] = NULL;
+      delete Ctrl[source];
+      Ctrl[source] = NULL;
     }
     setState( RUNNING );
     return;
-  }
+  } // end CMD_SWARMLEAVE
 
   // check, on welcome messages
   if ( ( com->data.cmd == CMD_ANYBODYOUTTHERE ) ||
        ( com->data.cmd == CMD_GOTYOU ) ) {
 
     #ifdef DEBUG_COMMUNICATION
-      ESP_LOGD( LOGFTSWARM, "register msg %d i:%d maxCtrl %d\n", com->data.cmd, i, maxCtrl );
+      ESP_LOGD( LOGFTSWARM, "register msg %d source:%d affected: %dmaxCtrl %d\n", com->data.cmd, source, affected, maxCtrl );
     #endif
     
     // check on unkown controler
-    if ( !Ctrl[i] ) {
+    if ( !Ctrl[source] ) {
       
       #ifdef DEBUG_COMMUNICATION
         ESP_LOGD( LOGFTSWARM, "add a new controler type %d", com->data.registerCmd.ctrlType);
@@ -751,9 +755,9 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
 
       // add to swarm
       switch (com->data.registerCmd.ctrlType) {
-        case FTSWARM:        Ctrl[i] = new SwOSSwarmJST    ( com ); break;
-        case FTSWARMCONTROL: Ctrl[i] = new SwOSSwarmControl( com ); break;
-        case FTSWARMCAM:     Ctrl[i] = new SwOSSwarmCAM    ( com ); break;
+        case FTSWARM:        Ctrl[source] = new SwOSSwarmJST    ( com ); break;
+        case FTSWARMCONTROL: Ctrl[source] = new SwOSSwarmControl( com ); break;
+        case FTSWARMCAM:     Ctrl[source] = new SwOSSwarmCAM    ( com ); break;
         default: ESP_LOGW( LOGFTSWARM, "Unknown controler type while adding a new controller to my swarm." ); return;
       }
 
@@ -775,35 +779,18 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
 
     }
 
-  // send my alias names to requestor
-  Ctrl[0]->sendAlias( com->mac, com->data.sourceSN );
+    // send my alias names to requestor
+    Ctrl[0]->sendAlias( com->mac, com->data.sourceSN );
 
-  return;
+    return;
     
-  } 
+  } // end welcome messages
 
   // any other type of msg will be processed on controler level
-  if ( Ctrl[i] ) {
-    Ctrl[i]->OnDataRecv( com );
+  if ( Ctrl[affected] ) {
+    Ctrl[affected]->OnDataRecv( com );
   } 
 
-}
-
-void SwOSSwarm::send(SwOSCom *com) {
-
-  if (!com) return;
-
-  // send to all Keldas in swarm
-  for (uint8_t i=1;i<=maxCtrl;i++) {
-    
-    if ( ( Ctrl[i] ) && ( Ctrl[i]->AmIAKelda() ) ) { 
-      com->setMAC( Ctrl[i]->mac, Ctrl[i]->serialNumber );
-      com->data.sourceSN = nvs.serialNumber;
-      com->send( ); 
-    }
-    
-  }
-  
 }
 
 void SwOSSwarm::leaveSwarm( void ) {

@@ -34,6 +34,7 @@ typedef enum {
   CMD_ERROR = -2, 
   CMD_UNKONWN = -1, 
   CMD_HELP, 
+  CMD_WHOAMI,
   CMD_SETUP, 
   CMD_HALT, 
   CMD_STARTCLI, 

@@ -40,7 +40,7 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
   char *str = (char *) calloc( size, sizeof(char) );
   uint8_t i = 0;
   
-  printf (prompt); fflush(stdout); 
+  printf(prompt); fflush(stdout); 
 
   while (1) {
 
@@ -51,21 +51,21 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
       ch = Serial.read();
       
       switch (ch) {
-        case '\n': strcpy( s, str );
-                   free(str);
-                   if ( easyKeyEcho ) Serial.write('\n');
-                   return true;
-        case '\r': break;
+        case '\n':  break;
+        case '\r':  strcpy( s, str );
+                    free(str);
+                    if ( easyKeyEcho ) Serial.write('\n');
+                    return true;
         case '\b': 
-        case 127:  if (i>0) { 
-                     str[--i] = '\0';
-                     if ( easyKeyEcho ) {
-                      Serial.write(0x8); 
-                      Serial.write(' '); 
-                      Serial.write(0x8);
-                     } 
-                   }
-                   break;
+        case 127:   if (i>0) { 
+                      str[--i] = '\0';
+                      if ( easyKeyEcho ) {
+                        Serial.write(0x8); 
+                        Serial.write(' '); 
+                        Serial.write(0x8);
+                      } 
+                    }
+                    break;
       
         case '\e': free(str);
                    if ( easyKeyEcho ) Serial.write('\n');

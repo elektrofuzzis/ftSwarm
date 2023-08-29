@@ -98,7 +98,7 @@ public:
 	virtual FtSwarmIOType_t getIOType() { return FTSWARM_UNDEF; };
   virtual char*           getIcon() { return (char *) "UNDEFINED"; };
 	virtual void            jsonize( JSONize *json, uint8_t id);
-
+  
   virtual void onTrigger( int32_t value );
 
 };

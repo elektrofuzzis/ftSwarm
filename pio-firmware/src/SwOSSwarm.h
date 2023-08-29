@@ -75,12 +75,10 @@ public:
   uint16_t apiServoOffset( uint16_t token, char *id, int offset, bool rotateToken );          // send a Servo command (from api)
   uint16_t apiServoPosition( uint16_t token, char *id, int position, bool rotateToken);       // send a Servo command (from api)
 
-  void setState( SwOSState_t state );
-    // visualizes controler's state
+  void setState( SwOSState_t state ); // visualizes controler's state
 
   // **** inter swarm communication ****
   void OnDataRecv( SwOSCom *buffer ); // receiving data from other controllers
-  void send(SwOSCom *com);            // send a datagram to all Keldas
   void registerMe( void );                                                // register myself in a swarm
   void leaveSwarm( void );                                                // send a leave swarm msg to all others and delete them
   void joinSwarm( bool createNewSwarm, char * newName, uint16_t newPIN ); // join a new swarm

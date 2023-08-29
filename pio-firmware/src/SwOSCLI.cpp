@@ -213,6 +213,7 @@ void SwOSCLI::halt( void ) {
 void SwOSCLI::help( void ) {
 
     printf("help - list all commands\n");
+    printf("whoami - show myself\n");
     printf("setup - start setup mode\n");
     printf("halt - stop all motors\n");
     printf("exit - end command line interface.\n\n");
@@ -275,6 +276,7 @@ Cmd_t SwOSCLI::evalSimpleCommand( char *token ) {
 
    // did I found a command?
   if      ( strcmp( token, "help"  ) == 0 ) cmd = CMD_HELP;
+  else if ( strcmp( token, "whoami" ) == 0 ) cmd = CMD_WHOAMI;
   else if ( strcmp( token, "setup" ) == 0 ) cmd = CMD_SETUP;
   else if ( strcmp( token, "startCLI" ) == 0 ) cmd = CMD_STARTCLI;
   else if ( strcmp( token, "halt" ) == 0 ) cmd = CMD_HALT;
@@ -292,6 +294,10 @@ Cmd_t SwOSCLI::evalSimpleCommand( char *token ) {
     // execute 
     switch (cmd) {
       case CMD_HELP:      help();           break;
+      case CMD_WHOAMI:    myOSSwarm.lock();
+                          printf("%s\n", myOSSwarm.Ctrl[0]->getHostname() );         
+                          myOSSwarm.unlock();
+                          break;
       case CMD_SETUP:     mainMenu();       break;
       case CMD_STARTCLI:  startCLI( true ); break;
       case CMD_HALT:      halt();           break;

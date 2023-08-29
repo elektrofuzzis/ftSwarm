@@ -27,7 +27,7 @@
 
 #include <esp_debug_helpers.h>
 
-//#define DEBUG_COMMUNICATION
+// #define DEBUG_COMMUNICATION
 
 uint16_t secret = DEFAULTSECRET;
 uint16_t pin    = 0;
@@ -104,13 +104,13 @@ SwOSCom::SwOSCom( const uint8_t *mac_addr, const uint8_t *buffer, int length) {
 
 }
 
-SwOSCom::SwOSCom( const uint8_t *mac_addr, FtSwarmSerialNumber_t destinationSN, SwOSCommand_t cmd ) {
+SwOSCom::SwOSCom( const uint8_t *mac_addr, FtSwarmSerialNumber_t affectedSN, SwOSCommand_t cmd ) {
 
   // clear data
   memset(&data, 0, sizeof(data));
 
   // store mac
-  setMAC( mac_addr, destinationSN );
+  setMAC( mac_addr, affectedSN );
   data.sourceSN      = nvs.serialNumber;
   
   // set header
@@ -168,7 +168,7 @@ void SwOSCom::flushBuffer( ) {
 }
 
 
-void SwOSCom::setMAC( const uint8_t *mac_addr, FtSwarmSerialNumber_t destinationSN ) {
+void SwOSCom::setMAC( const uint8_t *mac_addr, FtSwarmSerialNumber_t affectedSN ) {
 
   if (mac_addr) {
     // valid mac
@@ -179,7 +179,7 @@ void SwOSCom::setMAC( const uint8_t *mac_addr, FtSwarmSerialNumber_t destination
   }
 
   data.sourceSN = nvs.serialNumber; // allways myself
-  data.destinationSN = destinationSN;
+  data.affectedSN = affectedSN;
 
 }
 
@@ -189,7 +189,8 @@ void SwOSCom::print() {
   printf("size: %d\n", _size() );
   printf("secret: %04X\n", data.secret);
   printf("source: %d\n", data.sourceSN);
-  printf("destination: %d\n", data.destinationSN);
+  printf("affected: %d\n", data.affectedSN);
+  printf("broadcast: %d\n", data.broadcast );
   printf("command: %d\n", data.cmd);
   printf("isValid: %d _isvalid:%d\n", isValid(), _isValid);
 
@@ -279,12 +280,23 @@ esp_err_t SwOSCom::send( void ) {
   esp_err_t errWifi  = ESP_OK;
   esp_err_t errRS485 = ESP_OK;
 
+  // header
   data.header  = 0xFEFEFEFE;
   data.size    = _size();
-  data.crc     = 0;
+  
+  // broadcast?
+  data.broadcast = ( data.cmd != CMD_GOTYOU );
+  if (data.broadcast) memcpy( mac, broadcast, ESP_NOW_ETH_ALEN );
 
+  // crc
+  data.crc     = 0;
   uint32_t crc = (~crc32_le((uint32_t)~(0xffffffff), (const uint8_t*)&data, data.size))^0xffffffff;
   data.crc     = crc;
+
+  #ifdef DEBUG_COMMUNICATION
+    printf("SwOSCom.send\n");
+    print();
+  #endif
 
   if ( nvs.swarmCommunication & swarmComWifi ) { // use wifi
     errWifi = _sendWiFi();
@@ -335,8 +347,10 @@ bool _OnDataRecv( const uint8_t *mac, const uint8_t *incomingData, int len ) {
 
   // Did a ftSwarm sent this data?
   if ( ( !buffer.isValid() ) || ( !recvNotification ) ) {
-    ESP_LOGI( LOGFTSWARM, "_OnDataRecv: invalid buffer");
-    buffer.print();
+    #ifdef DEBUG_COMMUNICATION
+      ESP_LOGI( LOGFTSWARM, "_OnDataRecv: invalid buffer");
+      buffer.print();
+    #endif
     return false;
   }
 
@@ -350,7 +364,7 @@ bool _OnDataRecv( const uint8_t *mac, const uint8_t *incomingData, int len ) {
   } 
 
   // Is it's not for me?
-  if ( ( buffer.data.destinationSN != nvs.serialNumber ) && ( buffer.data.destinationSN != 0xFFFF ) ) {
+  if ( ( buffer.data.affectedSN != nvs.serialNumber ) && ( !buffer.data.broadcast ) ) {
     ESP_LOGI( LOGFTSWARM, "_onDataRecv: packet is for someone else.");
     return true;
   } 
@@ -609,7 +623,7 @@ bool _StartWifi( void ) {
   // create dummy event
   sendNotificationEvent_t event;
   event.status = ESP_NOW_SEND_SUCCESS ;
-  memcpy( &event.mac_addr, broadcast, ESP_NOW_ETH_ALEN );
+  memcpy( event.mac_addr, broadcast, ESP_NOW_ETH_ALEN );
 
   // send a dummy event, so the first com->send assumes a perfect communication before
   if ( xQueueSend( sendNotificationWifi, &event, ESPNOW_MAXDELAY ) != pdTRUE ) {

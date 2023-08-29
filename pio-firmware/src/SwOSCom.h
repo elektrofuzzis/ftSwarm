@@ -20,7 +20,7 @@
 
 #define ESPNOW_MAXDELAY 512
 #define DEFAULTSECRET   0x2506
-#define VERSIONDATA     5
+#define VERSIONDATA     6
 #define MAXALIAS        5
 
 typedef enum {
@@ -87,7 +87,9 @@ struct SwOSDatagram_t {
   uint16_t              secret;
   uint32_t              crc;
   uint8_t               version;
-  FtSwarmSerialNumber_t sourceSN, destinationSN;
+  FtSwarmSerialNumber_t sourceSN;      // who is sending this information?
+  FtSwarmSerialNumber_t affectedSN;    // who will receive this information?
+  bool                  broadcast;
   SwOSCommand_t         cmd;
   union {
     registerCmd_t registerCmd;
@@ -118,9 +120,9 @@ public:
 
   SwOSCom( const uint8_t *buffer, int length); // RS485
   SwOSCom( const uint8_t *mac_addr, const uint8_t *buffer, int length); // wifi
-  SwOSCom( const uint8_t *mac_addr, FtSwarmSerialNumber_t destinationSN, SwOSCommand_t cmd );
+  SwOSCom( const uint8_t *mac_addr, FtSwarmSerialNumber_t affectedSN, SwOSCommand_t cmd );
 
-  void setMAC( const uint8_t *mac_addr, FtSwarmSerialNumber_t destinationSN );
+  void setMAC( const uint8_t *mac_addr, FtSwarmSerialNumber_t affectedSN );
 
   // send my alias names buffered
   void sendBuffered( char *name, char *alias );
