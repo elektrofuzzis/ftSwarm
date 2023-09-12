@@ -120,7 +120,7 @@ public:
 
   SwOSCom( const uint8_t *buffer, int length); // RS485
   SwOSCom( const uint8_t *mac_addr, const uint8_t *buffer, int length); // wifi
-  SwOSCom( const uint8_t *mac_addr, FtSwarmSerialNumber_t affectedSN, SwOSCommand_t cmd );
+  SwOSCom( const uint8_t *mac_addr, FtSwarmSerialNumber_t affectedSN, SwOSCommand_t cmd, boolean broadcast );
 
   void setMAC( const uint8_t *mac_addr, FtSwarmSerialNumber_t affectedSN );
 
@@ -135,6 +135,20 @@ public:
 
 };
 
-extern bool SwOSStartCommunication( uint16_t swarmSecret, uint16_t swarmPIN ) ;
+class SwOSNetwork {
 
-extern void SwOSSetSecret( uint16_t swarmSecret, uint16_t swarmPIN ) ;
+  private:
+    bool _StartWifi( void );
+    bool _StartRS485( void );
+
+  public:
+    uint16_t secret = DEFAULTSECRET;
+    uint16_t pin    = 0;
+
+    bool begin( uint16_t swarmSecret, uint16_t swarmPIN );
+    void setSecret( uint16_t swarmSecret, uint16_t swarmPIN );
+    bool hasJoinedASwarm( void );
+
+};
+
+extern SwOSNetwork myOSNetwork;

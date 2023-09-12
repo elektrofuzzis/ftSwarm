@@ -542,6 +542,7 @@ protected:
 	FtSwarmVersion_t _CPU;
   bool             _IAmAKelda;
   bool             _local;
+  unsigned long    _lastContact = 0;
 	const char *     version( FtSwarmVersion_t v);
 public:
   IPAddress IP;
@@ -577,6 +578,7 @@ public:
   virtual void halt( void );                                             // stop all actors
   virtual void unsubscribe(void );                                       // unsubscribe all IOs
   virtual bool isI2CSwarmCtrl( void ) { return false; };                 // is a ftSwarmI2C-Board 
+  virtual unsigned long networkAge( void );                              // ms since last received package
 
   virtual void read(); // run measurements
 

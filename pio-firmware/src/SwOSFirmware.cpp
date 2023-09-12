@@ -220,7 +220,7 @@ void wifiMenu( void ) {
   }
 }
 
-void joinSwarm( bool createNewSwarm ) {
+void joinSwarm( boolean createNewSwarm ) {
 
   // create a new swarm
   char name[64];
@@ -254,46 +254,76 @@ void joinSwarm( bool createNewSwarm ) {
   // now build/join swarm
   myOSSwarm.lock();
   myOSSwarm.leaveSwarm( );
-  myOSSwarm.allowPairing = true;
-  myOSSwarm.joinSwarm( createNewSwarm, name, pin );
-  myOSSwarm.unlock();
-  
-  // wait some ticks to catch a response
-  vTaskDelay( 250 / portTICK_PERIOD_MS );
-
-  // stop pairing
-  myOSSwarm.allowPairing = false;
-
-  // now I need to register again
-  myOSSwarm.lock();
-  myOSSwarm.registerMe();
   myOSSwarm.unlock();
 
-  // wait some ticks to catch a response
-  vTaskDelay( 250 / portTICK_PERIOD_MS );
-
-  // in case of a new swarm save nvs & quit.
-  if ( ( createNewSwarm ) && ( myOSSwarm.members() <= 1 ) ) {
+  // new swarm?
+  if ( createNewSwarm ) {
+    nvs.createSwarm( name, pin );
+    myOSNetwork.setSecret( nvs.swarmSecret, nvs.swarmPIN );
     nvs.save();
     printf("Swarm \"%s\" created sucessfully.\n", name );
     return;
   }
 
-  // in case of joining a swarm, check on other devices and get new swarm's secret
-  if ( myOSSwarm.members() <= 1 ) { // no other device out there
-    // restore old settings
+  // existing swarm?
+  myOSSwarm.lock();
+  myOSSwarm.allowPairing = true;
+  myOSSwarm.unlock();
+
+  // try to join the swarm 3 times
+  for (uint8_t i=0; i<3; i++) {
+
+    myOSSwarm.lock();
+    myOSSwarm.joinSwarm( createNewSwarm, name, pin );
+    myOSSwarm.unlock();
+  
+    // wait some ticks to catch a response
+    for (uint8_t j=0; j<10; j++) {
+      vTaskDelay( 25 / portTICK_PERIOD_MS );
+    
+      // got an ack? -> break inner loop;
+      if ( !myOSNetwork.hasJoinedASwarm() ) break;
+
+    }
+
+    // got an ack? -> break outer loop;
+    if ( !myOSNetwork.hasJoinedASwarm() ) break;
+
+  }
+
+  // stop pairing
+  myOSSwarm.lock();
+  myOSSwarm.allowPairing = false;
+  myOSSwarm.unlock();
+
+  // Now check, if a swarm was found
+  if ( myOSNetwork.hasJoinedASwarm() ) {
+
+    // no swarm found, restore old settings
     myOSSwarm.lock();
     myOSSwarm.reload();
     myOSSwarm.unlock();
     printf("ERROR: swarm \"%s\" not found. Rejoined old swarm %s\n", name, nvs.swarmName );
     return;
-  }
 
-  // the CMD_GOTYOU-Message catched the new SECRET
-  // so just store all changes
-  nvs.save();
-  
-  printf("Swarm \"%s\" joined sucessfully.\n", name );
+  } else {
+
+    // swarm found
+    
+    // send my configuration to the swarm
+    myOSSwarm.lock();
+    myOSSwarm.registerMe();
+    myOSSwarm.unlock();
+
+    // some delay to get all swarm members
+    vTaskDelay( 250 / portTICK_PERIOD_MS );
+
+    // save new secret, pin & swarm name
+    nvs.save();
+    
+    printf("Swarm \"%s\" joined sucessfully.\n", name );
+
+  }
 
 }
 
@@ -342,7 +372,7 @@ void swarmMenu( void ) {
         printf("\nSwarm members:\n" );
         for (uint8_t i=0; i<=myOSSwarm.maxCtrl; i++ ) {
           if ( myOSSwarm.Ctrl[i] )
-            printf("#%d %s\n", i, myOSSwarm.Ctrl[i]->getHostname() );
+            printf("#%d name: %s - last contact %lu ms ago\n", i, myOSSwarm.Ctrl[i]->getHostname(), myOSSwarm.Ctrl[i]->networkAge() );
         }
         break;
     }

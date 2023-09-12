@@ -53,7 +53,7 @@ void recvTask( void *parameter ) {
 
       #ifdef DEBUG_COMMUNICATION
         if ( event.data.cmd != CMD_STATE ) {
-          ESP_LOGD( LOGFTSWARM, "my friend sends some data...\nMAC: %02X:%02X:%02X:%02X:%02X:%02X secret %04X cmd %d valid %d", event.mac[0], event.mac[1], event.mac[2], event.mac[3], event.mac[4], event.mac[5], event.data.secret, event.data.cmd, event.isValid() );
+          printf("my friend sends some data...\nMAC: %02X:%02X:%02X:%02X:%02X:%02X secret %04X cmd %d valid %d\n", event.mac[0], event.mac[1], event.mac[2], event.mac[3], event.mac[4], event.mac[5], event.data.secret, event.data.cmd, event.isValid() );
           event.print();
         }
       #endif
@@ -85,7 +85,7 @@ void readTask( void *parameter ) {
     SwOSCom *com = myOSSwarm.Ctrl[0]->state2Com( );
     
     // send data to all members
-    com->send();
+    if ( myOSSwarm.members() > 1 ) com->send();
     //myOSSwarm.send( com );
     
     // cleanup
@@ -332,7 +332,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
   if ( nvs.wifiMode != wifiOFF ) _startWifi( verbose );
 
   // Init Communication
-  if (!SwOSStartCommunication( nvs.swarmSecret, nvs.swarmPIN )) {
+  if (!myOSNetwork.begin( nvs.swarmSecret, nvs.swarmPIN )) {
     if (verbose) printf("Error initializing swarm communication.\n");
     setState( ERROR );
     return 0;
@@ -671,7 +671,7 @@ void SwOSSwarm::unlock() {
 
 void SwOSSwarm::registerMe( void ) {
 
-  SwOSCom com( broadcast, broadcastSN, CMD_ANYBODYOUTTHERE);
+  SwOSCom com( broadcast, broadcastSN, CMD_ANYBODYOUTTHERE, true);
   Ctrl[0]->registerMe( &com );
   com.send();
 
@@ -690,16 +690,16 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
   if ( com->data.cmd == CMD_SWARMJOIN ) {
 
     #ifdef DEBUG_COMMUNICATION
-      ESP_LOGD( LOGFTSWARM, "CMD_SWARMJOIN PIN %d swarmName %s", com->data.joinCmd.pin, com->data.joinCmd.swarmName );
+      printf( "CMD_SWARMJOIN PIN %d swarmName %s\n", com->data.joinCmd.pin, com->data.joinCmd.swarmName );
     #endif
 
     // pin and swarm name ok?
     if ( ( nvs.swarmPIN == com->data.joinCmd.pin ) && ( strcmp( com->data.joinCmd.swarmName, nvs.swarmName ) == 0 ) ) {
       // send acknowledge
       #ifdef DEBUG_COMMUNICATION
-        ESP_LOGD( LOGFTSWARM, "CMD_SWARMJOIN accepted" ); 
+        printf( "CMD_SWARMJOIN accepted.\n" ); 
       #endif
-      SwOSCom ack( com->mac, com->data.sourceSN, CMD_SWARMJOINACK );
+      SwOSCom ack( com->mac, com->data.sourceSN, CMD_SWARMJOINACK, false );
       ack.data.joinCmd.pin = nvs.swarmPIN;
       ack.data.joinCmd.swarmSecret = nvs.swarmSecret;
       strcpy( ack.data.joinCmd.swarmName, nvs.swarmName );
@@ -714,14 +714,14 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
   if ( com->data.cmd == CMD_SWARMJOINACK ) {
     
     #ifdef DEBUG_COMMUNICATION
-      ESP_LOGD( LOGFTSWARM, "CMD_SWARMJOINACK new secret: %04X old pin %d new pin %d allowPairing %d\n", com->data.joinCmd.swarmSecret, nvs.swarmPIN, com->data.joinCmd.pin, allowPairing );
+      printf( "CMD_SWARMJOINACK new secret: %04X old pin %d new pin %d allowPairing %d\n", com->data.joinCmd.swarmSecret, nvs.swarmPIN, com->data.joinCmd.pin, allowPairing );
     #endif
     
     // ack's PIN needs to be the same as my pin and I need to be in pairing mode
     // if ( ( com->data.registerCmd.pin == nvs.swarmPIN ) && allowPairing ) { 
     if ( allowPairing ) {
       nvs.swarmSecret = com->data.joinCmd.swarmSecret;
-      SwOSSetSecret( nvs.swarmSecret, nvs.swarmPIN );
+      myOSNetwork.setSecret( nvs.swarmSecret, nvs.swarmPIN );
     }
     
     return;
@@ -743,14 +743,14 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
        ( com->data.cmd == CMD_GOTYOU ) ) {
 
     #ifdef DEBUG_COMMUNICATION
-      ESP_LOGD( LOGFTSWARM, "register msg %d source:%d affected: %dmaxCtrl %d\n", com->data.cmd, source, affected, maxCtrl );
+      printf( "register msg %d source:%d affected: %dmaxCtrl %d\n", com->data.cmd, source, affected, maxCtrl );
     #endif
     
     // check on unkown controler
     if ( !Ctrl[source] ) {
       
       #ifdef DEBUG_COMMUNICATION
-        ESP_LOGD( LOGFTSWARM, "add a new controler type %d", com->data.registerCmd.ctrlType);
+        printf( "add a new controler type %d\n", com->data.registerCmd.ctrlType);
       #endif
 
       // add to swarm
@@ -771,7 +771,7 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
 
     // reply GOTYOU, if needed
     if ( com->data.cmd == CMD_ANYBODYOUTTHERE ) {
-      SwOSCom reply( com->mac, com->data.sourceSN, CMD_GOTYOU);
+      SwOSCom reply( com->mac, com->data.sourceSN, CMD_GOTYOU, false);
       Ctrl[0]->registerMe( &reply );
       reply.send( );
 
@@ -786,6 +786,9 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
     
   } // end welcome messages
 
+  // if I don't know the source, say hello
+  if ( !Ctrl[source] ) { registerMe(); }
+ 
   // any other type of msg will be processed on controler level
   if ( Ctrl[affected] ) {
     Ctrl[affected]->OnDataRecv( com );
@@ -796,7 +799,7 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
 void SwOSSwarm::leaveSwarm( void ) {
 
   // Prepare a leave message
-  SwOSCom leaveMsg( NULL, broadcastSN, CMD_SWARMLEAVE );
+  SwOSCom leaveMsg( NULL, broadcastSN, CMD_SWARMLEAVE, true );
 
   // send to all others
   for (uint8_t i=1;i<=maxCtrl;i++) {
@@ -821,10 +824,10 @@ void SwOSSwarm::joinSwarm( bool createNewSwarm, char * newName, uint16_t newPIN 
 
   // setup new swarm
   nvs.createSwarm( newName, newPIN );
-  SwOSSetSecret( DEFAULTSECRET, nvs.swarmPIN );
+  myOSNetwork.setSecret( DEFAULTSECRET, nvs.swarmPIN );
 
   // send CMD_SWARMJOIN
-  SwOSCom joinMsg( broadcast, broadcastSN, CMD_SWARMJOIN);
+  SwOSCom joinMsg( broadcast, broadcastSN, CMD_SWARMJOIN, true );
   joinMsg.data.joinCmd.pin = newPIN;
   strcpy( joinMsg.data.joinCmd.swarmName, newName );
   joinMsg.send();
@@ -835,7 +838,7 @@ void SwOSSwarm::reload( void ) {
 
   leaveSwarm();
   nvs.load();
-  SwOSSetSecret( nvs.swarmSecret, nvs.swarmPIN );
+  myOSNetwork.setSecret( nvs.swarmSecret, nvs.swarmPIN );
   registerMe( );
 
 }

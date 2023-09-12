@@ -497,7 +497,7 @@ void SwOSInput::setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen, bo
   if ( !dontSendToRemote ) {
     
     // send SN, SETSENSORTYPE, _port, sensorType
-    SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETSENSORTYPE );
+    SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETSENSORTYPE, true );
     cmd.data.sensorCmd.index        = _port;
     cmd.data.sensorCmd.sensorType   = _sensorType;
     cmd.data.sensorCmd.normallyOpen = _normallyOpen;
@@ -864,7 +864,7 @@ void SwOSActor::setActorType( FtSwarmActor_t actorType, bool dontSendToRemote ) 
     
   } else if (!dontSendToRemote) {    
     // send SN, SETSENSORTYPE, _port, sensorType
-    SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETACTORTYPE );
+    SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETACTORTYPE,true );
     cmd.data.actorTypeCmd.index     = _port;
     cmd.data.actorTypeCmd.actorType = _actorType;
     cmd.send( );
@@ -892,7 +892,7 @@ void SwOSActor::setPower( int16_t power ) {
 
 void SwOSActor::_setRemote() {
   
-  SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETACTORPOWER );
+  SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETACTORPOWER, true );
   cmd.data.actorPowerCmd.index = _port;
   cmd.data.actorPowerCmd.motionType = _motionType;
   cmd.data.actorPowerCmd.power = _power;
@@ -969,7 +969,7 @@ void SwOSActor::setDistance( long distance, bool relative ) {
 
   if   (!_ctrl->isLocal()) {
     // send remote
-    SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETACTORDISTANCE );
+    SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETACTORDISTANCE, true );
     cmd.data.actorDistanceCmd.index = _port;
     cmd.data.actorDistanceCmd.distance = distance;
     cmd.data.actorDistanceCmd.relative = relative;
@@ -1237,7 +1237,7 @@ void SwOSPixel::setColor(uint32_t color) {
 
 void SwOSPixel::_setRemote() {
   
-  SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETLED );
+  SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETLED, true );
   cmd.data.ledCmd.index = _port;
   cmd.data.ledCmd.color = _color;
   cmd.data.ledCmd.brightness = _brightness;
@@ -1378,7 +1378,7 @@ void SwOSServo::_setLocal() {
 
 void SwOSServo::_setRemote( ) {
   
-  SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETSERVO );
+  SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETSERVO,true );
   cmd.data.servoCmd.index = _port;
   cmd.data.servoCmd.position = _position;
   cmd.data.servoCmd.offset   = _offset;
@@ -1695,7 +1695,7 @@ void SwOSI2C::setRegister( uint8_t reg, uint8_t value ) {
 
 void SwOSI2C::_setRemote( uint8_t reg, uint8_t value ) {
   
-  SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_I2CREGISTER );
+  SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_I2CREGISTER, true );
   cmd.data.I2CRegisterCmd.reg   = reg;
   cmd.data.I2CRegisterCmd.value = value;
   cmd.send( );
@@ -2109,6 +2109,9 @@ FtSwarmControler_t SwOSCtrl::getType() {
 
 void SwOSCtrl::read() {
 
+  // don't send packets to myself, so I need to now last reading time
+  _lastContact = millis();
+
   for (uint8_t i=0; i<inputs; i++) { input[i]->read(); }
 
 }
@@ -2225,9 +2228,19 @@ void SwOSCtrl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
   // no display, no led, no fun
 }
 
+unsigned long SwOSCtrl::networkAge( void ) { 
+
+  unsigned long age = millis() - _lastContact;
+
+  return age;
+
+}
+
 bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
 
   if (!com) return false;
+
+  _lastContact = millis();
 
   switch (com->data.cmd) {
     case CMD_SETSENSORTYPE:
@@ -2268,7 +2281,7 @@ SwOSCom *SwOSCtrl::state2Com( void ) {
 
   uint8_t mac[] = {0,0,0,0,0,0}; // dummy mac
 
-  SwOSCom *com = new SwOSCom( mac, serialNumber, CMD_STATE );
+  SwOSCom *com = new SwOSCom( mac, serialNumber, CMD_STATE, true );
 
   int16_t FB, LR;
 
@@ -2770,7 +2783,7 @@ void SwOSSwarmJST::registerMe( SwOSCom *com ){
 
 void SwOSSwarmJST::sendAlias( uint8_t *mac, FtSwarmSerialNumber_t destinationSN  ) {
 
-  SwOSCom alias( mac,  destinationSN, CMD_ALIAS );
+  SwOSCom alias( mac,  destinationSN, CMD_ALIAS, true );
   
   // hostname
   alias.sendBuffered( (char *)"HOSTANME", getAlias() ); 
@@ -3092,7 +3105,7 @@ void SwOSSwarmControl::registerMe( SwOSCom *com ){
 
 void SwOSSwarmControl::sendAlias( uint8_t *mac, FtSwarmSerialNumber_t destinationSN  ) {
 
-  SwOSCom alias( mac, destinationSN, CMD_ALIAS );
+  SwOSCom alias( mac, destinationSN, CMD_ALIAS, true );
 
   // hostname
   alias.sendBuffered( (char *)"HOSTNAME", getAlias() ); 
@@ -3289,7 +3302,7 @@ void SwOSSwarmCAM::registerMe( SwOSCom *com ){
 
 void SwOSSwarmCAM::sendAlias( uint8_t *mac, FtSwarmSerialNumber_t destinationSN  ) {
 
-  SwOSCom alias( mac, destinationSN, CMD_ALIAS );
+  SwOSCom alias( mac, destinationSN, CMD_ALIAS, true );
 
   // hostname
   alias.sendBuffered( (char *)"HOSTNAME", getAlias() ); 

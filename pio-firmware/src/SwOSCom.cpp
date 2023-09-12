@@ -29,9 +29,6 @@
 
 // #define DEBUG_COMMUNICATION
 
-uint16_t secret = DEFAULTSECRET;
-uint16_t pin    = 0;
-
 #define min(a,b) ((a)<(b)?(a):(b))
 #define max(a,b) ((a)>(b)?(a):(b))
 
@@ -61,6 +58,22 @@ typedef struct {
     esp_now_send_status_t status;
 } sendNotificationEvent_t;
 
+void dumpBuffer( uint8_t *buf, uint16_t len ) {
+  
+  uint8_t *ptr = buf;
+
+  for (uint8_t i=0; i<len; i++) {
+    switch ( i % 16 ) {
+      case 0:  printf("%02X - %02X ", i, *ptr++); break;
+      case 15: printf("%02X\n", *ptr++ );break;
+      default: printf("%02X ", *ptr++ ); break;
+    }
+  }
+
+  printf("\n");
+
+}
+
 SwOSCom::SwOSCom( const uint8_t *buffer, int length) {
   SwOSCom( NULL, buffer, length );
 }
@@ -69,6 +82,7 @@ SwOSCom::SwOSCom( const uint8_t *mac_addr, const uint8_t *buffer, int length) {
 
   if (length>sizeof(data)) {
     ESP_LOGE( LOGFTSWARM, "SwOSCOM: max. packet size exceeded.");
+    dumpBuffer( (uint8_t *) buffer, length );
   }
 
   // clear data
@@ -78,8 +92,8 @@ SwOSCom::SwOSCom( const uint8_t *mac_addr, const uint8_t *buffer, int length) {
   setMAC( mac_addr, broadcastSN ); // don't mind about source & destination, they are set by the next line
   memcpy( &data, buffer, min( length, sizeof(data) ) );
 
-  bool isJoin    = ( ( data.secret == DEFAULTSECRET ) && ( data.cmd == CMD_SWARMJOIN )    && ( data.joinCmd.pin == pin ) && ( pin != 0 ) ) ;
-  bool isJoinAck = ( ( data.secret == DEFAULTSECRET ) && ( data.cmd == CMD_SWARMJOINACK ) && ( data.joinCmd.pin == pin ) && ( pin != 0 ) ) ;
+  bool isJoin    = ( ( data.secret == DEFAULTSECRET ) && ( data.cmd == CMD_SWARMJOIN )    && ( data.joinCmd.pin == myOSNetwork.pin ) && ( myOSNetwork.pin != 0 ) ) ;
+  bool isJoinAck = ( ( data.secret == DEFAULTSECRET ) && ( data.cmd == CMD_SWARMJOINACK ) && ( data.joinCmd.pin == myOSNetwork.pin ) && ( myOSNetwork.pin != 0 ) ) ;
 
   // check crc
   uint32_t crcReceived = data.crc;
@@ -96,7 +110,7 @@ SwOSCom::SwOSCom( const uint8_t *mac_addr, const uint8_t *buffer, int length) {
             isJoin, isJoinAck, length, _size(), data.cmd, crcOK, data.version);
   #endif
 
-  _isValid = ( ( ( data.secret == secret ) || isJoin || isJoinAck ) &&
+  _isValid = ( ( ( data.secret == myOSNetwork.secret ) || isJoin || isJoinAck ) &&
                ( length == _size( ) ) &&
                ( data.cmd < CMD_MAX ) &&
                ( crcOK ) &&
@@ -104,19 +118,19 @@ SwOSCom::SwOSCom( const uint8_t *mac_addr, const uint8_t *buffer, int length) {
 
 }
 
-SwOSCom::SwOSCom( const uint8_t *mac_addr, FtSwarmSerialNumber_t affectedSN, SwOSCommand_t cmd ) {
+SwOSCom::SwOSCom( const uint8_t *mac_addr, FtSwarmSerialNumber_t affectedSN, SwOSCommand_t cmd, boolean broadcast  ) {
 
   // clear data
   memset(&data, 0, sizeof(data));
 
-  // store mac
+  // set MAC, source & affected SNs
   setMAC( mac_addr, affectedSN );
-  data.sourceSN      = nvs.serialNumber;
   
   // set header
-  data.secret        = secret;
-  data.version       = VERSIONDATA;
-  data.cmd           = cmd;
+  data.secret    = myOSNetwork.secret;
+  data.version   = VERSIONDATA;
+  data.cmd       = cmd;
+  data.broadcast = broadcast;
 
   // sendBuffered
   bufferIndex = 0;
@@ -223,6 +237,8 @@ esp_err_t SwOSCom::_sendWiFi( void ) {
     esp_err_t err = esp_now_add_peer( peerInfo );
     if ( err != ESP_OK ){
       ESP_LOGE(LOGFTSWARM, "Failed to add broadcast peer\n");
+
+      while(1) delay(100);
       return err;
     }
 
@@ -285,7 +301,6 @@ esp_err_t SwOSCom::send( void ) {
   data.size    = _size();
   
   // broadcast?
-  data.broadcast = ( data.cmd != CMD_GOTYOU );
   if (data.broadcast) memcpy( mac, broadcast, ESP_NOW_ETH_ALEN );
 
   // crc
@@ -348,7 +363,7 @@ bool _OnDataRecv( const uint8_t *mac, const uint8_t *incomingData, int len ) {
   // Did a ftSwarm sent this data?
   if ( ( !buffer.isValid() ) || ( !recvNotification ) ) {
     #ifdef DEBUG_COMMUNICATION
-      ESP_LOGI( LOGFTSWARM, "_OnDataRecv: invalid buffer");
+      printf( "_OnDataRecv: invalid buffer\n");
       buffer.print();
     #endif
     return false;
@@ -364,8 +379,11 @@ bool _OnDataRecv( const uint8_t *mac, const uint8_t *incomingData, int len ) {
   } 
 
   // Is it's not for me?
-  if ( ( buffer.data.affectedSN != nvs.serialNumber ) && ( !buffer.data.broadcast ) ) {
-    ESP_LOGI( LOGFTSWARM, "_onDataRecv: packet is for someone else.");
+  if ( ! ( ( buffer.data.affectedSN == nvs.serialNumber ) || ( buffer.data.broadcast ) ) ) {
+    #ifdef DEBUG_COMMUNICATION
+      printf( "_onDataRecv: packet is for someone else.\n");
+      buffer.print();
+    #endif
     return true;
   } 
 
@@ -390,14 +408,6 @@ bool _OnDataRecvRS485(const uint8_t *incomingData, int len ) {
 
 }
 
-void SwOSSetSecret( uint16_t swarmSecret, uint16_t swarmPIN ) {
-
-  // set swarmSecret
-  secret = swarmSecret;
-  pin    = swarmPIN;
-
-}
-
 static QueueHandle_t RS485_queue;
 
 static void logBuffer( uint8_t *buffer, int bufPtr ) {
@@ -415,13 +425,13 @@ static void logBuffer( uint8_t *buffer, int bufPtr ) {
 
 }
 
-static int _RS485_FindHeader( uint8_t *buffer, int bufPtr ) {
+static int _RS485_FindHeader( uint8_t *buffer, int startAt, int bufLen ) {
   // scans for a header FEFEFEFE
   // return position if found, -1 if not 
 
-  for (int i=0; i<=bufPtr-3; i++) {
+  for (int i=startAt; i<=bufLen-4; i++) {
 
-    if ( ( buffer[i] == 0xFE ) && ( buffer[i+1] == 0xFE ) && ( buffer[i+2] == 0xFE ) && ( buffer[i+3] == 0xFE ) ) {
+    if ( ( buffer[i] == 0xFE ) && ( buffer[i+1] == 0xFE ) && ( buffer[i+2] == 0xFE ) && ( buffer[i+3] == 0xFE ) && ( buffer[i+4] != 0xFE ) ) {
       return i;
     }
   
@@ -439,23 +449,29 @@ static int _RS485_ReadData( uint8_t *buffer, int *used) {
   // wait for data
   if(xQueueReceive(RS485_queue, (void * )&event, 10000 )) { // (TickType_t)portMAX_DELAY)) {
 
-    if (event.type == UART_FIFO_OVF) {
-      // data loss
-      ESP_LOGW(LOGFTSWARM, "RS485 Overflow");
-      bzero( buffer, RS485_BUF_SIZE);
-      *used=0;
-      uart_flush(RS485_UART);
-      return RS485_GOON;
-    }
+    switch (event.type) {
+      case UART_BUFFER_FULL:
+      case UART_FIFO_OVF:   // data loss
+                            ESP_LOGW(LOGFTSWARM, "RS485 Overflow");
+                            bzero( buffer, RS485_BUF_SIZE);
+                            *used=0;
+                            uart_flush(RS485_UART);
+                            return RS485_GOON;
 
-    // anythinh else than data?
-    if (event.type != UART_DATA) {
-      ESP_LOGW(LOGFTSWARM, "event.type = %d", event.type );
-      return RS485_WRONGEVENT;
+      case UART_BREAK:      // end of transmission, work with data
+      case UART_DATA:       // data, go on
+                            break;
+
+      default:              // anything else?
+                            ESP_LOGE(LOGFTSWARM, "event.type = %d", event.type );
+                            return RS485_WRONGEVENT;
     }
 
     // to much data?
     if (bufPtr+event.size>RS485_BUF_SIZE) return RS485_BUFFEROVERFLOW;
+
+    // no data in buffer
+    if ( event.size == 0 ) return RS485_GOON;
 
     // read data
     if ( uart_read_bytes(RS485_UART, &buffer[bufPtr], event.size, portMAX_DELAY) <= 0 ) return RS485_NODATA;
@@ -464,11 +480,28 @@ static int _RS485_ReadData( uint8_t *buffer, int *used) {
     bufPtr = bufPtr + event.size;
 
     // test on header
-    int i=_RS485_FindHeader( buffer, bufPtr );
-    if (i>=0) {
+    int firstHeader  = _RS485_FindHeader( buffer, 0, bufPtr );                // first 0xFEFEFEFE in buffer
+    int secondHeader = _RS485_FindHeader( buffer, firstHeader + 4, bufPtr );  // is there a 2nd 0xFEFEFEFE in buffer?
+    int validHeader  = firstHeader;                                           // most time there is only one header in my buffer
+
+    /* now check, if the first header is obviously corrupted:
+        - a second header is found AND
+        - the size of the first packet exceeds the position of the second header AND
+        - the second packet is completly in my buffer */
+    if ( secondHeader > 0 ) {
+
+      if ( ( buffer[firstHeader+4] > ( secondHeader - firstHeader ) ) &&     
+           ( secondHeader + buffer[secondHeader+5] <= bufPtr ) ) {
+        validHeader = secondHeader;
+      }
+
+    }
+
+    // move validHeader to start of buffer
+    if (validHeader>=0) {
       // header found, shift left, all done
-      bufPtr = bufPtr - i;
-      if (i>0) memcpy( buffer, &buffer[i], bufPtr);
+      bufPtr = bufPtr - validHeader;
+      if (validHeader>0) memcpy( buffer, &buffer[validHeader], bufPtr);
       bzero( &buffer[bufPtr], RS485_BUF_SIZE - bufPtr);
       *used = bufPtr;
       return RS485_HEADERFOUND;
@@ -513,11 +546,14 @@ static void _RS485_event_task(void *pvParameters) {
     status = _RS485_ReadData( buffer, &bufPtr);
 
     if ( status < 0) {
-      ESP_LOGW(LOGFTSWARM, "error %d receiving RS485 data", status);
+      // got some invalid data, flush buffer
+      bzero( buffer, RS485_BUF_SIZE);
+      bufPtr = 0;
+      ESP_LOGE(LOGFTSWARM, "error %d receiving RS485 data", status);
     
     } else if ( ( status == RS485_HEADERFOUND ) && ( bufPtr > 5 ) ) {
-      // Test if it's a valid packet
 
+      // Test if it's a valid packet
       if ( buffer[0] != 0xFE ) {
         ESP_LOGE(LOGFTSWARM, "RS485_event_task: packet recognition error.");
         logBuffer(buffer,bufPtr);
@@ -547,7 +583,7 @@ static void _RS485_event_task(void *pvParameters) {
         } else {
           // corrupted packet
           // cleanup: all up to next FEFEFE is stuff
-          int i = _RS485_FindHeader( buffer, size );
+          int i = _RS485_FindHeader( buffer, 0, size );
           if ( i < 0 ) {
             // no header, clean all
             bzero( buffer, RS485_BUF_SIZE);
@@ -571,7 +607,7 @@ static void _RS485_event_task(void *pvParameters) {
 
 }
 
-bool _StartRS485( void ) {
+bool SwOSNetwork::_StartRS485( void ) {
   
   // Initialize RS485 communication stack
 
@@ -602,7 +638,8 @@ bool _StartRS485( void ) {
     ESP_ERROR_CHECK(uart_driver_install(RS485_UART, RS485_BUF_SIZE * 2,  0, 20, &RS485_queue, 0));
 
     uart_set_mode(RS485_UART, UART_MODE_RS485_APP_CTRL);
-    UART1.rs485_conf.rs485rxby_tx_en = 1;  
+    // UART1.rs485_conf.rs485rxby_tx_en = 1; // send data even if receiver is busy
+    // UART1.rs485_conf.rs485rxby_tx_en = 0; // don't send data if receiver is busy - reduce collitions
     UART1.rs485_conf.rs485tx_rx_en = 1; // to see my own data
 
     //uart_enable_pattern_det_baud_intr(RS485_UART, '@', 3, 9, 0, 0);
@@ -616,14 +653,14 @@ bool _StartRS485( void ) {
 
 }
 
-bool _StartWifi( void ) {
+bool SwOSNetwork::_StartWifi( void ) {
 
   sendNotificationWifi = xQueueCreate(100, sizeof( sendNotificationWifi ) );
 
   // create dummy event
   sendNotificationEvent_t event;
   event.status = ESP_NOW_SEND_SUCCESS ;
-  memcpy( event.mac_addr, broadcast, ESP_NOW_ETH_ALEN );
+  memcpy( &event.mac_addr, broadcast, ESP_NOW_ETH_ALEN );
 
   // send a dummy event, so the first com->send assumes a perfect communication before
   if ( xQueueSend( sendNotificationWifi, &event, ESPNOW_MAXDELAY ) != pdTRUE ) {
@@ -644,23 +681,37 @@ bool _StartWifi( void ) {
 
 }
 
-bool SwOSStartCommunication( uint16_t swarmSecret, uint16_t swarmPIN ) {
+bool SwOSNetwork::begin( uint16_t swarmSecret, uint16_t swarmPIN ) {
   // initialize all stuff
 
-  SwOSSetSecret( swarmSecret, swarmPIN );
+  myOSNetwork.setSecret( swarmSecret, swarmPIN );
 
   // create Receive queue
   recvNotification = xQueueCreate(100, sizeof( SwOSCom ) );
 
   bool ok = true;
 
-  if ( nvs.swarmCommunication & swarmComWifi ) { // use wifi
+  if ( nvs.wifiMode != wifiOFF ) { 
+    // if wifi is on, initialize wifi
     ok = ok && _StartWifi( );
   } 
   
-  if ( nvs.swarmCommunication & swarmComRS485 ) { // RS485
-    ok = ok && _StartRS485( );
-  }
-
+  // always initialize RS485
+  ok = ok && _StartRS485( );
+  
   return ok;
 }
+
+void SwOSNetwork::setSecret( uint16_t swarmSecret, uint16_t swarmPIN ) {
+
+  // set swarmSecret
+  secret = swarmSecret;
+  pin    = swarmPIN;
+
+}
+
+bool SwOSNetwork::hasJoinedASwarm( void ) {
+  return secret == DEFAULTSECRET;
+}
+
+SwOSNetwork myOSNetwork;
