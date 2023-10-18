@@ -64,7 +64,8 @@ class SwOSCLI {
     char   *_evalPtr;
     char   *_start;
     SwOSIO *_io = NULL;
-    IOCmd_t _cmd;
+    SwOSCtrl *_ctrl = NULL;
+    CLICmd_t _cmd;
     int     _maxParameter;
     SwOSCLIParameter _parameter[MAXPARAM];
 
@@ -78,7 +79,7 @@ class SwOSCLI {
     EvalResult_t getNumber( void );
     EvalResult_t getLiteral( void );
     EvalResult_t getNextToken( char* token );
-    SwOSIO *getIO( char *token, char *IOName );
+    bool getIO( char *token, char *IOName, SwOSCtrl **ctrl, SwOSIO **io);
 
     bool tokenizeConstant( char *token, int param); 
     bool tokenizeCmd( char *cmd );
@@ -92,6 +93,7 @@ class SwOSCLI {
     void executePixelCmd( void );
     void executeI2CCmd( void );
     void executeIOCommand( void );
+    void executeControlerCmd( void );
     bool eval( void );
     void help( void );
     void startCLI( bool noEcho );

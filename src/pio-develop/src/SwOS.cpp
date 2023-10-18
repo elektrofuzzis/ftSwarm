@@ -1179,6 +1179,44 @@ void FtSwarm::halt( void ) {
 
 }
 
+bool FtSwarm::waitOnUserEvent( int parameter[10], TickType_t xTicksToWait ) {
+
+  SwOSCom userEvent;
+
+  // queue exists?
+  if ( !myOSNetwork.userEvent ) return false;
+  
+  // wait for new event
+  if ( xQueueReceive( myOSNetwork.userEvent, &userEvent, xTicksToWait ) == pdTRUE ) {
+    for ( uint8_t i=0; i<10; i++ ) {
+      memcpy( &parameter[i], &userEvent.data.userEventCmd.payload[ i * sizeof (int ) ], sizeof( int ) );
+    }
+    return true;
+  }
+
+  return false;
+
+}
+
+bool FtSwarm::sendEventData( uint8_t *buffer, size_t size ){
+
+  // error, if size is to big
+  if (size > MAXUSEREVENTPAYLOAD ) return false;
+
+  // create packet
+  SwOSCom eventData( MacAddr( noMac ), myOSSwarm.Ctrl[0]->serialNumber, CMD_USEREVENT, true );
+
+  // copy payload
+  eventData.data.userEventCmd.trigger = false;
+  eventData.data.userEventCmd.size = size;
+  memcpy( eventData.data.userEventCmd.payload, buffer, size );
+
+  // send
+  return true;
+
+}
+
+
 void forever( char *prompt) {
   printf("%s\n", prompt); while(1) delay(500);
 }

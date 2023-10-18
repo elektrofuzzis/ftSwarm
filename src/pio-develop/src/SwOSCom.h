@@ -18,10 +18,11 @@
 
 #include "SwOS.h"
 
-#define ESPNOW_MAXDELAY 512
-#define DEFAULTSECRET   0x2506
-#define VERSIONDATA     6
-#define MAXALIAS        5
+#define ESPNOW_MAXDELAY     128
+#define DEFAULTSECRET       0x2506
+#define VERSIONDATA         6
+#define MAXALIAS            5
+#define MAXUSEREVENTPAYLOAD 128
 
 typedef enum {
   CMD_SWARMJOIN,         // I want to join a swarm
@@ -42,11 +43,12 @@ typedef enum {
   CMD_SETSTEPPERPOSITION, // set stepper position
   CMD_STEPPERHOMING,      // start stepper homing procedure
   CMD_SETSTEPPERHOMINGOFFSET, // set homing offset
+  CMD_USEREVENT,              // send data from user exit back to Kelda
+  CMD_IDENTIFY,               // 
   CMD_MAX
 } SwOSCommand_t;
 
-// broadcast address
-const uint8_t broadcast[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+// broadcastSN
 const FtSwarmSerialNumber_t broadcastSN = 0xFFFF;
 
 extern QueueHandle_t sendNotificationWifi;
@@ -91,7 +93,7 @@ struct SwOSDatagram_t {
   uint8_t               version;
   FtSwarmSerialNumber_t sourceSN;      // who is sending this information?
   FtSwarmSerialNumber_t affectedSN;    // who will receive this information?
-  bool                  broadcast;
+  bool                  multicast;
   SwOSCommand_t         cmd;
   union {
     registerCmd_t registerCmd;
@@ -106,30 +108,50 @@ struct SwOSDatagram_t {
     struct { uint8_t index; uint8_t brightness; uint32_t color; } ledCmd;
     struct { Alias_t alias[MAXALIAS]; } aliasCmd;
     struct { uint8_t reg; uint8_t value; } I2CRegisterCmd;
+    struct { bool trigger; uint8_t size; uint8_t payload[MAXUSEREVENTPAYLOAD]; } userEventCmd;
   };
 } __attribute__((packed));
+
+const uint8_t broadcast[ESP_NOW_ETH_ALEN] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+const uint8_t noMac[ESP_NOW_ETH_ALEN]     = {0, 0, 0, 0, 0, 0 };    
+
+class MacAddr {
+  public:
+    
+    uint8_t addr[ESP_NOW_ETH_ALEN];
+    
+    MacAddr();
+    MacAddr( uint8_t addr[ESP_NOW_ETH_ALEN] );
+    MacAddr( const uint8_t *addr );
+    
+    void set( MacAddr macAddr );
+    bool isEqual( uint8_t addr[ESP_NOW_ETH_ALEN]);
+    bool isBroadcast(void);
+    bool isNull(void);
+    void print(void);
+};
 
 class SwOSCom {
 protected:
   bool    _isValid;
   uint8_t bufferIndex;
   size_t  _size( void );
-  esp_err_t _sendWiFi( void );
-  esp_err_t _sendRS485( void );
+  void _sendWiFi( void );
+  void _sendRS485( void );
 
 public:
-  uint8_t        mac[ESP_NOW_ETH_ALEN];
+  MacAddr        macAddr;
   SwOSDatagram_t data;
 
   SwOSCom();
-  SwOSCom( const uint8_t *mac_addr, const uint8_t *buffer, int length); 
-  SwOSCom( const uint8_t *mac_addr, FtSwarmSerialNumber_t affectedSN, SwOSCommand_t cmd, bool broadcast );
+  SwOSCom( MacAddr macAddr, const uint8_t *buffer, int length); 
+  SwOSCom( MacAddr macAddr, FtSwarmSerialNumber_t affectedSN, SwOSCommand_t cmd, bool multicast );
 
   // send my alias names buffered
   void sendBuffered( char *name, char *alias );
   void flushBuffer( );
   
-  esp_err_t send( void );
+  void send( void );
 
   bool isValid() { return _isValid; };  // true, if a ftSwarm sent this data
   void print(); // debugging
@@ -147,6 +169,7 @@ class SwOSNetwork {
     QueueHandle_t RS485_rx_queue = NULL;
     QueueHandle_t sendNotificationWifi = NULL;
     QueueHandle_t recvNotification = NULL;
+    QueueHandle_t userEvent = NULL;
 
     uint16_t      secret = DEFAULTSECRET;
     uint16_t      pin    = 0;

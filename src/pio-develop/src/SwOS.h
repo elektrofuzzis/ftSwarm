@@ -35,6 +35,9 @@
 // max I2C Register
 #define MAXI2CREGISTERS 8
 
+// max # of controlers in swarm
+#define MAXCTRL 32
+
 typedef uint16_t FtSwarmSerialNumber_t;
 typedef uint8_t  FtSwarmPort_t;
 
@@ -533,6 +536,8 @@ class FtSwarm {
     void verbose( bool on );                               // be chatty
     void setReadDelay( uint16_t readDelay );               // set delay between two measures
     void halt( void );                                     // stop all actors
+    bool waitOnUserEvent( int parameter[10], TickType_t xTicksToWait = 512 );
+    bool sendEventData( uint8_t *buffer, size_t size );
 };
 
 // There is one only

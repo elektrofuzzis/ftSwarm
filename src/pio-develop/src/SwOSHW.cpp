@@ -499,7 +499,7 @@ void SwOSInput::setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen, bo
   if ( !dontSendToRemote ) {
 
     // send SN, SETSENSORTYPE, _port, sensorType
-    SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETSENSORTYPE, true );
+    SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_SETSENSORTYPE, true );
     cmd.data.sensorCmd.index        = _port;
     cmd.data.sensorCmd.sensorType   = _sensorType;
     cmd.data.sensorCmd.normallyOpen = _normallyOpen;
@@ -881,7 +881,7 @@ void SwOSActor::setActorType( FtSwarmActor_t actorType, bool dontSendToRemote ) 
     
   } else if (!dontSendToRemote) {    
     // send SN, SETSENSORTYPE, _port, sensorType
-    SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETACTORTYPE,true );
+    SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_SETACTORTYPE,true );
     cmd.data.actorTypeCmd.index     = _port;
     cmd.data.actorTypeCmd.actorType = _actorType;
     cmd.send( );
@@ -914,7 +914,7 @@ void SwOSActor::setPower( int16_t power ) {
 
 void SwOSActor::_setRemote() {
   
-  SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETACTORPOWER, true );
+  SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_SETACTORPOWER, true );
   cmd.data.actorPowerCmd.index = _port;
   cmd.data.actorPowerCmd.motionType = _motionType;
   cmd.data.actorPowerCmd.power = _power;
@@ -979,7 +979,7 @@ void SwOSActor::setDistance( long distance, bool relative, bool dontSendToRemote
 
     if (!dontSendToRemote) {
       // send remote
-      SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETSTEPPERDISTANCE, true );
+      SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_SETSTEPPERDISTANCE, true );
       cmd.data.actorStepperCmd.index = _port;
       cmd.data.actorStepperCmd.paraml = distance;
       cmd.data.actorStepperCmd.paramb = relative;
@@ -1005,7 +1005,7 @@ void SwOSActor::startStop( bool start ) {
 
   if (!_ctrl->isLocal() )  {
     // send remote
-    SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_STEPPERSTARTSTOP, true );
+    SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_STEPPERSTARTSTOP, true );
     cmd.data.actorStepperCmd.index  = _port;
     cmd.data.actorStepperCmd.paramb = start;
     cmd.send( );
@@ -1028,7 +1028,7 @@ void SwOSActor::setPosition( long position, bool dontSendToRemote ) {
     if (!dontSendToRemote) {
     
       // send remote
-      SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETSTEPPERPOSITION, true );
+      SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_SETSTEPPERPOSITION, true );
       cmd.data.actorStepperCmd.index = _port;
       cmd.data.actorStepperCmd.paraml = position;
       cmd.send( );
@@ -1050,7 +1050,7 @@ void SwOSActor::homing( long maxDistance ) {
 
   if   (!_ctrl->isLocal()) {
     // send remote
-    SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_STEPPERHOMING, true );
+    SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_STEPPERHOMING, true );
     cmd.data.actorStepperCmd.index = _port;
     cmd.data.actorStepperCmd.paraml = maxDistance;
     cmd.send( );
@@ -1066,7 +1066,7 @@ void SwOSActor::setHomingOffset( long offset ) {
 
   if   (!_ctrl->isLocal()) {
     // send remote
-    SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETSTEPPERHOMINGOFFSET, true );
+    SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_SETSTEPPERHOMINGOFFSET, true );
     cmd.data.actorStepperCmd.index = _port;
     cmd.data.actorStepperCmd.paraml = offset;
     cmd.send( );
@@ -1361,7 +1361,7 @@ void SwOSPixel::setColor(uint32_t color) {
 
 void SwOSPixel::_setRemote() {
   
-  SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETLED, true );
+  SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_SETLED, true );
   cmd.data.ledCmd.index = _port;
   cmd.data.ledCmd.color = _color;
   cmd.data.ledCmd.brightness = _brightness;
@@ -1502,7 +1502,7 @@ void SwOSServo::_setLocal() {
 
 void SwOSServo::_setRemote( ) {
   
-  SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_SETSERVO,true );
+  SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_SETSERVO,true );
   cmd.data.servoCmd.index = _port;
   cmd.data.servoCmd.position = _position;
   cmd.data.servoCmd.offset   = _offset;
@@ -1819,7 +1819,7 @@ void SwOSI2C::setRegister( uint8_t reg, uint8_t value ) {
 
 void SwOSI2C::_setRemote( uint8_t reg, uint8_t value ) {
   
-  SwOSCom cmd( _ctrl->mac, _ctrl->serialNumber, CMD_I2CREGISTER, true );
+  SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_I2CREGISTER, true );
   cmd.data.I2CRegisterCmd.reg   = reg;
   cmd.data.I2CRegisterCmd.value = value;
   cmd.send( );
@@ -2314,12 +2314,12 @@ void SwOSCAM::setHMirror( bool hMirror, bool dontSendToRemote ) {
  *
  ***************************************************/
 
-SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda  ):SwOSObj() {
+SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda  ):SwOSObj() {
 
   // copy master data
   _IAmAKelda = IAmAKelda;
   serialNumber = SN;
-  if (macAddress) { memcpy( &mac, macAddress, 6 ); }
+  this->macAddr.set( macAddr );
   _local = local;
   _CPU = CPU;
 
@@ -2355,6 +2355,7 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool lo
     } else {
       input[i] = NULL;
     }
+
   }
 
   for (uint8_t i=0; i<MAXACTORS; i++) { 
@@ -2379,11 +2380,13 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool lo
   for (uint8_t i=0; i<MAXLEDS; i++) { 
     if ( i < leds ) led[i] = new SwOSPixel("LED", i, this);
     else            led[i] = NULL;
-   }
+  }
 
 }
 
 SwOSCtrl::~SwOSCtrl() {
+  
+  if ( _subscribedCtrlName ) delete _subscribedCtrlName;
   
   for (uint8_t i=0; i<MAXINPUTS; i++) { if ( input[i] ) delete( input[i] ); }
   for (uint8_t i=0; i<MAXACTORS; i++) { if ( actor[i] ) delete( actor[i] ); }
@@ -2397,7 +2400,27 @@ void SwOSCtrl::halt( void ) {
 
 }
 
-void SwOSCtrl::unsubscribe( void ) {
+char *SwOSCtrl::subscribe( char *ctrlName  ) {
+  
+  _isSubscribed = true;
+
+  if (_subscribedCtrlName) delete _subscribedCtrlName;
+
+  // only if I don't know my external name, store it
+  if (!_subscribedCtrlName) {
+    _subscribedCtrlName = (char *)malloc( strlen(ctrlName)+1 );
+    strcpy( _subscribedCtrlName, ctrlName );
+  }
+
+  return _subscribedCtrlName;
+
+}
+
+void SwOSCtrl::unsubscribe( bool cascade ) {
+
+  _isSubscribed = false;
+
+  if (!cascade) return;
 
   for (uint8_t i=0; i<MAXINPUTS; i++) { if ( input[i] ) input[i]->unsubscribe(); }
   for (uint8_t i=0; i<MAXACTORS; i++) { if ( actor[i] ) actor[i]->unsubscribe(); }
@@ -2550,9 +2573,9 @@ void SwOSCtrl::jsonize( JSONize *json, uint8_t id) {
 
 void SwOSCtrl::jsonizeIO( JSONize *json, uint8_t id ) {
   
-  for (uint8_t i=0; i<inputs; i++) { input[i]->jsonize( json, id ); }
-  for (uint8_t i=0; i<actors; i++) { actor[i]->jsonize( json, id ); }
-  for (uint8_t i=0; i<leds;   i++) { led[i]->jsonize( json, id ); }
+  for (uint8_t i=0; i<inputs; i++) { if (input[i] ) input[i]->jsonize( json, id ); }
+  for (uint8_t i=0; i<actors; i++) { if ( actor[i] ) actor[i]->jsonize( json, id ); }
+  for (uint8_t i=0; i<leds;   i++) { if ( led[i] ) led[i]->jsonize( json, id ); else printf("XX %d %d\n", i, leds); }
 
 }
 
@@ -2732,7 +2755,16 @@ void SwOSCtrl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
 }
 
 void SwOSCtrl::identify( void ) {
-  setState( IDENTIFY );
+  
+  if (_local) {
+    setState( IDENTIFY );
+  
+  } else {
+    SwOSCom identify( macAddr, serialNumber, CMD_IDENTIFY, false );
+    identify.send();
+
+  }
+
 }
 
 unsigned long SwOSCtrl::networkAge( void ) { 
@@ -2752,37 +2784,71 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
   switch (com->data.cmd) {
     case CMD_STATE: 
       return recvState( com );
+
     case CMD_SETLED: 
       if (led[com->data.ledCmd.index]) {
         led[com->data.ledCmd.index]->setBrightness( com->data.ledCmd.brightness );
         led[com->data.ledCmd.index]->setColor( com->data.ledCmd.color );
       }
       return true;
+
     case CMD_SETSENSORTYPE:
       input[com->data.sensorCmd.index]->setSensorType( com->data.sensorCmd.sensorType, com->data.sensorCmd.normallyOpen, true );
       return true;
+
     case CMD_SETACTORPOWER:
       actor[com->data.actorPowerCmd.index]->setMotionType( com->data.actorPowerCmd.motionType );
       actor[com->data.actorPowerCmd.index]->setPower( com->data.actorPowerCmd.power );
       return true;
+
     case CMD_SETSTEPPERDISTANCE:
       actor[com->data.actorStepperCmd.index]->setDistance( com->data.actorStepperCmd.paraml, com->data.actorStepperCmd.paramb, true );
       return true;
+
     case CMD_SETSTEPPERPOSITION:
       actor[com->data.actorStepperCmd.index]->setPosition( com->data.actorStepperCmd.paraml, true );
       return true;
+
     case CMD_STEPPERHOMING:
       actor[com->data.actorStepperCmd.index]->homing( com->data.actorStepperCmd.paraml );
       return true;
+
     case CMD_SETSTEPPERHOMINGOFFSET:
       actor[com->data.actorStepperCmd.index]->setHomingOffset( com->data.actorStepperCmd.paraml );
       return true;
+
     case CMD_STEPPERSTARTSTOP:
       actor[com->data.actorStepperCmd.index]->startStop( com->data.actorStepperCmd.paramb );
       return true;
-    CMD_SETACTORTYPE:
+
+    case CMD_SETACTORTYPE:
       actor[com->data.actorTypeCmd.index]->setActorType( com->data.actorTypeCmd.actorType, true );
       return true;
+
+    case CMD_IDENTIFY:
+      identify();
+      return true;
+
+    case CMD_USEREVENT:
+      if ( com->data.userEventCmd.trigger ) {
+
+        // send trigger event to local procedure
+        if ( xQueueSend( myOSNetwork.userEvent, com, ESPNOW_MAXDELAY ) != pdTRUE ) {
+          ESP_LOGE( LOGFTSWARM, "Can't send data to user event." );
+        }
+
+      } else {
+        
+        // got some user event data
+        if (_isSubscribed) {
+          printf("S: %s", _subscribedCtrlName );
+          for ( uint8_t i=0; i<com->data.userEventCmd.size; i++ ) printf(" %02X", com->data.userEventCmd.payload[i]);
+          printf("\n");
+        }
+      }
+      
+      return true;
+
     case CMD_ALIAS:
       // get all entries in datagramm
       for (uint8_t i=0; i<MAXALIAS; i++) {
@@ -2806,9 +2872,7 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
 
 SwOSCom *SwOSCtrl::state2Com( void ) {
 
-  uint8_t mac[] = {0,0,0,0,0,0}; // dummy mac
-
-  SwOSCom *com = new SwOSCom( mac, serialNumber, CMD_STATE, true );
+  SwOSCom *com = new SwOSCom( MacAddr( noMac ), serialNumber, CMD_STATE, true );
 
   int16_t FB, LR;
 
@@ -2897,7 +2961,7 @@ void SwOSCtrl::_sendAlias( SwOSCom *alias ) {
 
 void SwOSCtrl::sendAlias( void ) {
 
-  SwOSCom alias( NULL, serialNumber, CMD_ALIAS, true );
+  SwOSCom alias( MacAddr( noMac ), serialNumber, CMD_ALIAS, true );
   _sendAlias( &alias );
   alias.flushBuffer( );
   
@@ -2909,7 +2973,7 @@ void SwOSCtrl::sendAlias( void ) {
  *
  ***************************************************/
 
-SwOSSwarmI2CCtrl::SwOSSwarmI2CCtrl( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda ): SwOSCtrl (SN, macAddress, local, CPU,  IAmAKelda ) {
+SwOSSwarmI2CCtrl::SwOSSwarmI2CCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda ): SwOSCtrl (SN, macAddr, local, CPU,  IAmAKelda ) {
 
 }
 
@@ -2923,13 +2987,36 @@ SwOSSwarmI2CCtrl::~SwOSSwarmI2CCtrl() {
  *
  ***************************************************/
 
-SwOSSwarmPwrDrive::SwOSSwarmPwrDrive( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda ): SwOSSwarmI2CCtrl (SN, macAddress, local, CPU,  IAmAKelda ) {
+SwOSSwarmPwrDrive::SwOSSwarmPwrDrive( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda ): SwOSSwarmI2CCtrl (SN, macAddr, local, CPU,  IAmAKelda ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
   setName( buffer );
 
   if (local) pwrDrive = new ftPwrDrive( 32, 5, 4 );
+  
+}
+
+SwOSSwarmPwrDrive::SwOSSwarmPwrDrive( SwOSCom *com ):SwOSSwarmPwrDrive( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmAKelda ) {
+
+  // inputs
+  for (uint8_t i=0; i<inputs; i++ ) {
+    input[i]->setSensorType( com->data.registerCmd.input[i].sensorType, true, true );
+    input[i]->setValue( com->data.registerCmd.input[i].rawValue );
+  }
+
+  // actors
+  for (uint8_t i=0; i<actors; i++ ) {
+    actor[i]->setActorType( com->data.registerCmd.actor[i].actorType, true );
+    actor[i]->setValue( com->data.registerCmd.actor[i].motionType, com->data.registerCmd.actor[i].power );
+  }
+
+  // leds
+  for (uint8_t i=0; i<MAXLEDS; i++ ) {
+    if (led[i]) {
+      led[i]->setValue( com->data.registerCmd.jst.led[i].brightness, com->data.registerCmd.jst.led[i].color );
+    }
+  }
   
 }
 
@@ -2947,9 +3034,7 @@ FtSwarmControler_t SwOSSwarmPwrDrive::getType() {
 
 SwOSCom *SwOSSwarmPwrDrive::state2Com( void ) {
 
-  uint8_t mac[] = {0,0,0,0,0,0}; // dummy mac
-
-  SwOSCom *com = new SwOSCom( mac, serialNumber, CMD_STATE, true );
+  SwOSCom *com = new SwOSCom( MacAddr( noMac ), serialNumber, CMD_STATE, true );
 
   for (uint8_t i=0; i<inputs; i++ ) { 
     com->data.stepperStateCmd.inputValue[i] = input[i]->getValueUI32();
@@ -3029,7 +3114,7 @@ uint8_t SwOSSwarmPwrDrive::getMicrostepMode( void ) {
  *
  ***************************************************/
 
-SwOSSwarmDuino::SwOSSwarmDuino( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda ): SwOSSwarmI2CCtrl (SN, macAddress, local, CPU,  IAmAKelda ) {
+SwOSSwarmDuino::SwOSSwarmDuino( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda ): SwOSSwarmI2CCtrl (SN, macAddr, local, CPU,  IAmAKelda ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
@@ -3068,7 +3153,7 @@ void SwOSSwarmDuino::read() {
  *
  ***************************************************/
 
-SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda ) : SwOSCtrl (SN, macAddress, local, CPU,  IAmAKelda ) {
+SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda ) : SwOSCtrl (SN, macAddr, local, CPU,  IAmAKelda ) {
 
   gyro = NULL;
   I2C  = NULL;
@@ -3161,17 +3246,18 @@ void SwOSSwarmXX::_sendAlias( SwOSCom *alias ) {
  *
  ***************************************************/
 
-SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, uint8_t xLeds ):SwOSSwarmXX( SN, macAddress, local, CPU,  IAmAKelda ) {
+SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, uint8_t xLeds ):SwOSSwarmXX( SN, macAddr, local, CPU,  IAmAKelda ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
   setName( buffer );
 
   // additional  leds?
-  for ( uint8_t i = leds; i < xLeds++; i++ ) {
+  for ( uint8_t i = leds; i < xLeds; i++ ) {
     led[i] = new SwOSPixel("LED", i, this);
   }
   leds = xLeds;
+
   // define specific hardware
   servo[0] = new SwOSServo("SERVO", 0, this);
   if ( CPU == FTSWARMRS_2V1 ) {
@@ -3184,7 +3270,7 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, const uint8_t *macAddress,
 
 }
 
-SwOSSwarmJST::SwOSSwarmJST( SwOSCom *com ):SwOSSwarmJST( com->data.sourceSN, com->mac, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmAKelda, com->data.registerCmd.jst.leds ) {
+SwOSSwarmJST::SwOSSwarmJST( SwOSCom *com ):SwOSSwarmJST( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmAKelda, com->data.registerCmd.jst.leds ) {
 
   // inputs
   for (uint8_t i=0; i<inputs; i++ ) {
@@ -3387,7 +3473,7 @@ void SwOSSwarmJST::loadAliasFromNVS( nvs_handle_t my_handle ) {
  *
  ***************************************************/
 
-SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, int16_t zero[2][2], uint8_t displayType ):SwOSSwarmXX( SN, macAddress, local, CPU,  IAmAKelda ) {
+SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, int16_t zero[2][2], uint8_t displayType ):SwOSSwarmXX( SN, macAddr, local, CPU,  IAmAKelda ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
@@ -3406,7 +3492,7 @@ SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, const uint8_t *mac
 
 }
 
-SwOSSwarmControl::SwOSSwarmControl( SwOSCom *com ):SwOSSwarmControl( com->data.sourceSN, com->mac, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmAKelda, NULL, 1 ) {
+SwOSSwarmControl::SwOSSwarmControl( SwOSCom *com ):SwOSSwarmControl( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmAKelda, NULL, 1 ) {
 
   // joysticks
   for (uint8_t i=0; i<2; i++ ) {
@@ -3686,7 +3772,7 @@ void SwOSSwarmControl::setRemoteControl( boolean remoteControl ) {
  *
  ***************************************************/
 
-SwOSSwarmCAM::SwOSSwarmCAM( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda ):SwOSCtrl( SN, macAddress, local, CPU,  IAmAKelda ) {
+SwOSSwarmCAM::SwOSSwarmCAM( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda ):SwOSCtrl( SN, macAddr, local, CPU,  IAmAKelda ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
@@ -3696,7 +3782,7 @@ SwOSSwarmCAM::SwOSSwarmCAM( FtSwarmSerialNumber_t SN, const uint8_t *macAddress,
 
 }
 
-SwOSSwarmCAM::SwOSSwarmCAM( SwOSCom *com ):SwOSSwarmCAM( com->data.sourceSN, com->mac, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmAKelda ) {
+SwOSSwarmCAM::SwOSSwarmCAM( SwOSCom *com ):SwOSSwarmCAM( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmAKelda ) {
  
 }
 

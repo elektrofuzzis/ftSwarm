@@ -23,8 +23,6 @@
 #include "SwOSHW.h"
 #include "SwOSNVS.h"
 
-#define MAXCTRL 10
-
 class SwOSSwarm {
 protected:
   SemaphoreHandle_t _xAccessLock = xSemaphoreCreateMutex();

@@ -30,7 +30,6 @@
 SwOSSwarm myOSSwarm;
 
 // #define DEBUG_COMMUNICATION
-
 // #define DEBUG_READTASK
 
 /***************************************************
@@ -43,7 +42,7 @@ void recvTask( void *parameter ) {
   // After a valid datagram is sent to me, it's stored in the recvNotification queue.
   // This tasks waits for such events and process them vai myOSSwarm.OnDataRecv.
 
-  SwOSCom event( broadcast, NULL, 0 );
+  SwOSCom event( MacAddr( noMac ), NULL, 0 );
   
   // forever
   while (1) {
@@ -53,7 +52,9 @@ void recvTask( void *parameter ) {
 
       #ifdef DEBUG_COMMUNICATION
         if ( event.data.cmd != CMD_STATE ) {
-          printf("my friend sends some data...\nMAC: %02X:%02X:%02X:%02X:%02X:%02X secret %04X cmd %d valid %d\n", event.mac[0], event.mac[1], event.mac[2], event.mac[3], event.mac[4], event.mac[5], event.data.secret, event.data.cmd, event.isValid() );
+          printf("my friend sends some data...\n" );
+          event.macAddr.print();
+          printf("secret %04X cmd %d valid %d\n", event.data.secret, event.data.cmd, event.isValid() );
           event.print();
         }
       #endif
@@ -85,7 +86,6 @@ void readTask( void *parameter ) {
     
     // send data to all members
     if ( myOSSwarm.members() > 1 ) com->send();
-    //myOSSwarm.send( com );
     
     // cleanup
     delete com;
@@ -204,26 +204,24 @@ void SwOSSwarm::_startWifi( bool verbose ) {
 
   // best practise to throw away anything during a soft reboot
   WiFi.disconnect();
-  
+
+  // some common stuff  
+  WiFi.useStaticBuffers(true); 
+  WiFi.mode(WIFI_AP_STA);
+
   if ( ( nvs.wifiMode == wifiAP ) || Ctrl[0]->maintenanceMode() ) {
     // work as AP in standard or maintennace cable was set
     if (verbose) printf("Create own SSID: %s\n", Ctrl[0]->getHostname());
 
-    WiFi.mode(WIFI_AP_STA);
-
     esp_wifi_set_ps(WIFI_PS_NONE);
     WiFi.softAPsetHostname(Ctrl[0]->getHostname());
     WiFi.softAP( nvs.wifiSSID, "", nvs.channel); // passphrase not allowed on ESP32WROOM
-    Ctrl[0]->IP = WiFi.softAPIP();
     
   } else {
     // normal operation
     if (verbose) printf("Attempting to connect to SSID: %s", nvs.wifiSSID);
 
-    WiFi.mode(WIFI_AP_STA);  // AP_STA needed to get espnow running
-    
     WiFi.setHostname(Ctrl[0]->getHostname() );
-
     WiFi.begin(nvs.wifiSSID, nvs.wifiPwd);
 
     bool keyBreak = false;
@@ -270,10 +268,14 @@ void SwOSSwarm::_startWifi( bool verbose ) {
     esp_wifi_set_ps(WIFI_PS_NONE);
     
     if (verbose) printf("connected!\n");
-    Ctrl[0]->IP = WiFi.localIP();
   }
 
-  if (verbose) printf("hostname: %s\nip-address: %d.%d.%d.%d\n", Ctrl[0]->getHostname(), Ctrl[0]->IP[0],  Ctrl[0]->IP[1], Ctrl[0]->IP[2], Ctrl[0]->IP[3]);
+  // set mac addr of local controler
+  uint8_t mac[ESP_NOW_ETH_ALEN];
+  WiFi.macAddress( mac );
+  Ctrl[0]->macAddr.set( mac );
+
+  if (verbose) printf("hostname: %s\nip-address: %s\n", Ctrl[0]->getHostname(), WiFi.localIP().toString() );
 
 }
 
@@ -297,15 +299,15 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 	// create local controler
 	maxCtrl++;
   switch (nvs.controlerType) {
-  case FTSWARM:         Ctrl[maxCtrl] = new SwOSSwarmJST( nvs.serialNumber, NULL, true, nvs.CPU, IAmAKelda, nvs.RGBLeds );
+  case FTSWARM:         Ctrl[maxCtrl] = new SwOSSwarmJST( nvs.serialNumber, noMac, true, nvs.CPU, IAmAKelda, nvs.RGBLeds );
                         break;
-	case FTSWARMCONTROL:  Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, NULL, true, nvs.CPU, IAmAKelda, nvs.joyZero, nvs.displayType );
+	case FTSWARMCONTROL:  Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, noMac, true, nvs.CPU, IAmAKelda, nvs.joyZero, nvs.displayType );
                         break;
-	case FTSWARMCAM:      Ctrl[maxCtrl] =new SwOSSwarmCAM( nvs.serialNumber, NULL, true, nvs.CPU, IAmAKelda );
+	case FTSWARMCAM:      Ctrl[maxCtrl] =new SwOSSwarmCAM( nvs.serialNumber, noMac, true, nvs.CPU, IAmAKelda );
                         break;
-	case FTSWARMDUINO:    Ctrl[maxCtrl] = new SwOSSwarmDuino( nvs.serialNumber, NULL, true, nvs.CPU, IAmAKelda );
+	case FTSWARMDUINO:    Ctrl[maxCtrl] = new SwOSSwarmDuino( nvs.serialNumber, noMac, true, nvs.CPU, IAmAKelda );
                         break;
-	case FTSWARMPWRDRIVE: Ctrl[maxCtrl] = new SwOSSwarmPwrDrive( nvs.serialNumber, NULL, true, nvs.CPU, IAmAKelda );
+	case FTSWARMPWRDRIVE: Ctrl[maxCtrl] = new SwOSSwarmPwrDrive( nvs.serialNumber, noMac, true, nvs.CPU, IAmAKelda );
                         break;
   default:              // wrong setup
                         nvs.initialSetup();
@@ -376,7 +378,7 @@ void SwOSSwarm::halt( void ) {
 void SwOSSwarm::unsubscribe( void ) {
 
   for (uint8_t i=0; i<maxCtrl; i++)
-    Ctrl[i]->unsubscribe();
+    Ctrl[i]->unsubscribe( true );
 
 }
 
@@ -855,7 +857,7 @@ void SwOSSwarm::unlock() {
 void SwOSSwarm::registerMe( void ) {
 
   // register myself
-  SwOSCom com( broadcast, broadcastSN, CMD_ANYBODYOUTTHERE, true);
+  SwOSCom com( MacAddr( broadcast ), broadcastSN, CMD_ANYBODYOUTTHERE, false);
   Ctrl[0]->registerMe( &com );
   com.send();
 
@@ -885,7 +887,7 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
       #ifdef DEBUG_COMMUNICATION
         printf( "CMD_SWARMJOIN accepted.\n" ); 
       #endif
-      SwOSCom ack( com->mac, com->data.sourceSN, CMD_SWARMJOINACK, false );
+      SwOSCom ack( com->macAddr, com->data.sourceSN, CMD_SWARMJOINACK, false );
       ack.data.joinCmd.pin = nvs.swarmPIN;
       ack.data.joinCmd.swarmSecret = nvs.swarmSecret;
       strcpy( ack.data.joinCmd.swarmName, nvs.swarmName );
@@ -945,9 +947,10 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
 
       // add to swarm
       switch (com->data.registerCmd.ctrlType) {
-        case FTSWARM:        Ctrl[source] = new SwOSSwarmJST    ( com ); break;
-        case FTSWARMCONTROL: Ctrl[source] = new SwOSSwarmControl( com ); break;
-        case FTSWARMCAM:     Ctrl[source] = new SwOSSwarmCAM    ( com ); break;
+        case FTSWARM:         Ctrl[source] = new SwOSSwarmJST     ( com ); break;
+        case FTSWARMCONTROL:  Ctrl[source] = new SwOSSwarmControl ( com ); break;
+        case FTSWARMCAM:      Ctrl[source] = new SwOSSwarmCAM     ( com ); break;
+        case FTSWARMPWRDRIVE: Ctrl[source] = new SwOSSwarmPwrDrive( com ); break;
         default: ESP_LOGW( LOGFTSWARM, "Unknown controler type while adding a new controller to my swarm." ); return;
       }
 
@@ -958,7 +961,8 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
 
     // reply GOTYOU, if needed
     if ( com->data.cmd == CMD_ANYBODYOUTTHERE ) {
-      SwOSCom reply( com->mac, com->data.sourceSN, CMD_GOTYOU, false);
+      SwOSCom reply( com->macAddr, com->data.sourceSN, CMD_GOTYOU, false);
+      Ctrl[0]->registerMe(&reply);
       reply.send();
       Ctrl[0]->sendAlias( );
     }
@@ -978,7 +982,7 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
 void SwOSSwarm::leaveSwarm( void ) {
 
   // Prepare a leave message
-  SwOSCom leaveMsg( NULL, Ctrl[0]->serialNumber, CMD_SWARMLEAVE, true );
+  SwOSCom leaveMsg( MacAddr( noMac ), Ctrl[0]->serialNumber, CMD_SWARMLEAVE, true );
   leaveMsg.send();
 
   // change network pin to avoid swarm self healings
@@ -1000,7 +1004,7 @@ void SwOSSwarm::joinSwarm( bool createNewSwarm, char * newName, uint16_t newPIN 
   myOSNetwork.setSecret( DEFAULTSECRET, nvs.swarmPIN );
 
   // send CMD_SWARMJOIN
-  SwOSCom joinMsg( broadcast, broadcastSN, CMD_SWARMJOIN, true );
+  SwOSCom joinMsg( MacAddr( broadcast ), broadcastSN, CMD_SWARMJOIN, false );
   joinMsg.data.joinCmd.pin = newPIN;
   strcpy( joinMsg.data.joinCmd.swarmName, newName );
   joinMsg.send();

@@ -604,12 +604,13 @@ protected:
   bool             _IAmAKelda;
   bool             _local;
   unsigned long    _lastContact = 0;
+  bool             _isSubscribed = false;
+  char             *_subscribedCtrlName = NULL;
 	const char *     version( FtSwarmVersion_t v);
   virtual void     _sendAlias( SwOSCom *alias );
 public:
-  IPAddress IP;
 	FtSwarmSerialNumber_t serialNumber;
-  uint8_t mac[ESP_NOW_ETH_ALEN] = {0,0,0,0,0,0};
+  MacAddr               macAddr;
   
   // common hardware
 	SwOSInput    *input[MAXINPUTS];
@@ -618,7 +619,7 @@ public:
   uint8_t      inputs, actors, leds;
 	
   // constructor, destructor
-  SwOSCtrl( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
+  SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
   ~SwOSCtrl();
 
   // administrative stuff
@@ -640,10 +641,11 @@ public:
   virtual void setState( SwOSState_t state, uint8_t members = 0, char *SSID = NULL ); // visualizes controler's state like booting, error,...
   virtual void factorySettings( void );                                  // reset factory settings
   virtual void halt( void );                                             // stop all actors
-  virtual void unsubscribe(void );                                       // unsubscribe all IOs
+  virtual void unsubscribe( bool cascade );                              // unsubscribe userevents and if cascade = true all IOs
   virtual bool isI2CSwarmCtrl( void );                                   // is a ftSwarmI2C-Board 
   virtual unsigned long networkAge( void );                              // ms since last received package
   virtual void identify( void );                                         // set LEDs to aquamarine / OLED to "it's me" to identify HW 
+  virtual char *subscribe( char *ctrlName );                             // listen on user event data
 
   virtual void read(); // run measurements
 
@@ -686,7 +688,7 @@ class SwOSSwarmI2CCtrl : public SwOSCtrl {
   public:
 
     // constructor, destructor
-    SwOSSwarmI2CCtrl( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
+    SwOSSwarmI2CCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
     ~SwOSSwarmI2CCtrl();
 
 };
@@ -700,7 +702,8 @@ class SwOSSwarmI2CCtrl : public SwOSCtrl {
 class SwOSSwarmPwrDrive : public SwOSSwarmI2CCtrl {
    public:
     // constructor, destructor
-    SwOSSwarmPwrDrive( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
+    SwOSSwarmPwrDrive( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
+    SwOSSwarmPwrDrive( SwOSCom *com ); 
     ~SwOSSwarmPwrDrive();
 
     virtual char*              myType();                                   // what I am?
@@ -729,7 +732,7 @@ class SwOSSwarmPwrDrive : public SwOSSwarmI2CCtrl {
 class SwOSSwarmDuino : public SwOSSwarmI2CCtrl {
   public:
     // constructor, destructor
-    SwOSSwarmDuino( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
+    SwOSSwarmDuino( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
     ~SwOSSwarmDuino();
 
     virtual char* myType();                                                // what I am?
@@ -752,7 +755,7 @@ class SwOSSwarmXX : public SwOSCtrl {
     SwOSI2C      *I2C;
     
     // constructor, destructor
-    SwOSSwarmXX( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
+    SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
     ~SwOSSwarmXX();
     
     virtual SwOSIO *getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port);    // get a pointer to an IO port via address
@@ -781,7 +784,7 @@ class SwOSSwarmJST : public SwOSSwarmXX {
 	  SwOSServo *servo[MAXSERVOS];
 
     // constructor, destructor
-	  SwOSSwarmJST( FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, uint8_t xLeds );
+	  SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, uint8_t xLeds );
     SwOSSwarmJST( SwOSCom *com ); // constructor
     ~SwOSSwarmJST();
   
@@ -828,7 +831,7 @@ class SwOSSwarmControl : public SwOSSwarmXX {
 
     SwOSOLED     *oled;
  
-	  SwOSSwarmControl(FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, int16_t zero[2][2], uint8_t displayType ); // constructor
+	  SwOSSwarmControl(FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, int16_t zero[2][2], uint8_t displayType ); // constructor
     SwOSSwarmControl( SwOSCom *com ); // constructor
     ~SwOSSwarmControl(); // destructor
   
@@ -870,7 +873,7 @@ class SwOSSwarmCAM : public SwOSCtrl {
   public:
     SwOSCAM *cam = NULL;
 
-    SwOSSwarmCAM(FtSwarmSerialNumber_t SN, const uint8_t *macAddress, bool local, FtSwarmVersion_t CPU, bool IAmAKelda ); // constructor
+    SwOSSwarmCAM(FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda ); // constructor
     SwOSSwarmCAM( SwOSCom *com ); // constructor
     ~SwOSSwarmCAM(); // destructor
   

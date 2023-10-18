@@ -28,6 +28,7 @@
 #include <esp_debug_helpers.h>
 
 // #define DEBUG_COMMUNICATION
+// #define DEBUG_TXCOMMUNICATION
 // #define DEBUG_MONITOR
 
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -45,7 +46,7 @@
 #define RS485_MAXDELAY  100
 
 typedef struct {
-    uint8_t               mac_addr[ESP_NOW_ETH_ALEN];
+    uint8_t macAddr;
     esp_now_send_status_t status;
 } sendNotificationEvent_t;
 
@@ -82,25 +83,81 @@ void dumpBuffer( uint8_t *buf, int len ) {
 
 }
 
+/***************************************************
+ * 
+ * MacAddr
+ * 
+ ***************************************************/
+
+MacAddr::MacAddr() {
+  bzero( addr, ESP_NOW_ETH_ALEN );
+}
+
+MacAddr::MacAddr( uint8_t addr[ESP_NOW_ETH_ALEN] ) {
+
+  memcpy( this->addr, addr, ESP_NOW_ETH_ALEN);
+
+}
+
+MacAddr::MacAddr( const uint8_t *addr ) {
+
+  memcpy( this->addr, addr, ESP_NOW_ETH_ALEN);
+
+}
+
+bool MacAddr::isEqual( uint8_t addr[ESP_NOW_ETH_ALEN]) {
+
+  for (uint8_t i=0; i<ESP_NOW_ETH_ALEN; i++ ) {
+    if (this->addr[i] != addr[i] ) return false;
+  }
+
+  return true;
+
+}
+
+bool MacAddr::isNull( void ) {
+  return isEqual( (uint8_t *) noMac );
+}
+
+bool MacAddr::isBroadcast( void ) {
+  return isEqual( (uint8_t *) broadcast );
+}
+
+void MacAddr::set( MacAddr macAddr ) {
+  memcpy( this->addr, macAddr.addr, ESP_NOW_ETH_ALEN );
+}
+
+void MacAddr::print( void ) {
+  printf( "mac:");
+  for (uint8_t i=0; i<ESP_NOW_ETH_ALEN;i++) printf(" %02X", addr[i] );
+  printf("\n");
+}
+
+
+/***************************************************
+ * 
+ * SwOSCom
+ * 
+ ***************************************************/
+
 SwOSCom::SwOSCom() {
 
   // just cleanup everything
-  bzero( mac, ESP_NOW_ETH_ALEN );
   bzero( &data, sizeof(data) );
   bufferIndex = 0;
   _isValid = false;
 
 }
 
-SwOSCom::SwOSCom( const uint8_t *mac_addr, const uint8_t *buffer, int length):SwOSCom() {
+SwOSCom::SwOSCom( MacAddr macAddr, const uint8_t *buffer, int length):SwOSCom() {
 
   if (length>sizeof(data)) {
     ESP_LOGE( LOGFTSWARM, "SwOSCOM: max. packet size exceeded.");
     dumpBuffer( (uint8_t *) buffer, length );
   }
 
-  // copy mac
-  if (mac_addr) memcpy( mac, mac_addr, ESP_NOW_ETH_ALEN );
+  // set mac
+  this->macAddr.set( macAddr );
   
   // copy data
   bzero( &data, sizeof( SwOSDatagram_t ) );
@@ -121,15 +178,12 @@ SwOSCom::SwOSCom( const uint8_t *mac_addr, const uint8_t *buffer, int length):Sw
 
 }
 
-SwOSCom::SwOSCom( const uint8_t *mac_addr, FtSwarmSerialNumber_t affectedSN, SwOSCommand_t cmd, bool broadcast  ):SwOSCom() {
+SwOSCom::SwOSCom( MacAddr macAddr, FtSwarmSerialNumber_t affectedSN, SwOSCommand_t cmd, bool multicast ):SwOSCom() {
 
-  // set MAC, source & affected SNs
-  if (mac_addr) {
-    memcpy( mac, mac_addr, ESP_NOW_ETH_ALEN );
-  } else {
-    bzero( mac, ESP_NOW_ETH_ALEN );
-  }
+  // set mac
+  this->macAddr.set( macAddr );
 
+  // set SNs
   data.sourceSN = nvs.serialNumber;
   data.affectedSN = affectedSN;
   
@@ -137,7 +191,7 @@ SwOSCom::SwOSCom( const uint8_t *mac_addr, FtSwarmSerialNumber_t affectedSN, SwO
   data.secret    = myOSNetwork.secret;
   data.version   = VERSIONDATA;
   data.cmd       = cmd;
-  data.broadcast = broadcast;
+  data.multicast = multicast;
 
   // sendBuffered
   bufferIndex = 0;
@@ -190,12 +244,12 @@ void SwOSCom::flushBuffer( ) {
 
 void SwOSCom::print() {
 
-  printf("mac: %02x:%02x:%02x:%02x:%02x:%02x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], mac[6] );
+  macAddr.print();
   printf("size: %d\n", _size() );
   printf("secret: %04X\n", data.secret);
   printf("source: %d\n", data.sourceSN);
   printf("affected: %d\n", data.affectedSN);
-  printf("broadcast: %d\n", data.broadcast );
+  printf("multicast: %d\n", data.multicast );
   printf("command: %d\n", data.cmd);
   printf("isValid: %d _isvalid:%d\n", isValid(), _isValid);
 
@@ -227,41 +281,68 @@ void SwOSCom::print() {
 
 }
 
-esp_err_t SwOSCom::_sendWiFi( void ) {
+class MacAddrList {
+  public:
+    MacAddr macAddr[MAXCTRL];
+    uint8_t macAddresses = 0;
+    void add( MacAddr macAddr ) { 
+      if ( ( macAddr.isBroadcast() ) || ( macAddr.isNull() ) ) return;
+      if ( macAddresses == MAXCTRL ) return;
+      this->macAddr[macAddresses++].set( macAddr );
+    };
+};
+
+MacAddrList macAddrList;
+
+void SwOSCom::_sendWiFi( void ) {
+
+  sendNotificationEvent_t event;
 
   // need to register a new peer?  
-  if ( ( mac ) && ( !esp_now_is_peer_exist( mac ) ) ) {
+  if ( ( !macAddr.isNull() ) && 
+       ( !data.multicast ) &&
+       ( !esp_now_is_peer_exist( macAddr.addr ) ) ) {
+
+    // add to macAddrList
+    macAddrList.add( macAddr );
 
     // allocate some memory
     esp_now_peer_info_t *peerInfo = (esp_now_peer_info_t *) malloc( sizeof( esp_now_peer_info_t ) );
 
     // initialize
     memset( peerInfo, 0, sizeof(esp_now_peer_info_t) );
-    memcpy( peerInfo->peer_addr, mac, ESP_NOW_ETH_ALEN );
-    peerInfo->channel = 0;  
-    peerInfo->encrypt = false;
+    memcpy( peerInfo->peer_addr, macAddr.addr, ESP_NOW_ETH_ALEN );
+    // peerInfo->channel = 0;  
+    // peerInfo->encrypt = true;
 
     // and add it to the internal peer list
     esp_err_t err = esp_now_add_peer( peerInfo );
     if ( err != ESP_OK ){
-      ESP_LOGE(LOGFTSWARM, "Failed to add broadcast peer\n");
-
-      while(1) delay(100);
-      return err;
+      ESP_LOGE(LOGFTSWARM, "Failed to add peer\n");
+      return;
     }
 
   }
 
-  // wait until last transfer is done
-  sendNotificationEvent_t event;
-  xQueueReceive( myOSNetwork.sendNotificationWifi, &event, ESPNOW_MAXDELAY );
+  if ( data.multicast ) {
 
-  // now we could send the data
-  return esp_now_send( mac, (uint8_t *) &data, _size() );
-  
+    // send protocol broadcats to known devices
+    for (uint8_t i=0; i<macAddrList.macAddresses; i++) {
+      xQueueReceive( myOSNetwork.sendNotificationWifi, &event, ESPNOW_MAXDELAY );
+      esp_now_send( macAddrList.macAddr[i].addr, (uint8_t *) &data, _size() );
+    }
+
+  } else {
+
+    // now we could send the data
+    xQueueReceive( myOSNetwork.sendNotificationWifi, &event, ESPNOW_MAXDELAY );
+    esp_now_send( macAddr.addr, (uint8_t *) &data, _size() );
+
+  }
+ 
 }
 
-esp_err_t SwOSCom::_sendRS485( void ) {
+void SwOSCom::_sendRS485( void ) {
 
   RS485Frame_t frame;
   
@@ -286,42 +367,35 @@ esp_err_t SwOSCom::_sendRS485( void ) {
     ESP_LOGE( LOGFTSWARM, "xQueueSend RS485_tx_queue queue failed." );
   }
 
-  return ESP_OK;
-
 }
 
-esp_err_t SwOSCom::send( void ) {
+void SwOSCom::send( void ) {
 
   #ifdef DEBUG_MONITOR
     // Monitor mode, don't send data
     return ESP_OK;
   #endif
 
-  esp_err_t errWifi  = ESP_OK;
-  esp_err_t errRS485 = ESP_OK;
-
   // header
   data.size    = _size();
   
-  // broadcast?
-  if (data.broadcast) memcpy( mac, broadcast, ESP_NOW_ETH_ALEN );
-
   #ifdef DEBUG_TXCOMMUNICATION
+  if ( data.cmd != 8 ) {
     printf("SwOSCom.send\n");
     print();
+  }
   #endif
 
+  // multicast?
+  // if (data.multicast) memcpy( mac, broadcast, ESP_NOW_ETH_ALEN );
+
   if ( myOSNetwork.communication & swarmComWifi ) { // use wifi
-    errWifi = _sendWiFi();
+    _sendWiFi();
   }
   
   if (myOSNetwork.communication & swarmComRS485 ) { // RS485
-     errRS485 = _sendRS485();
+     _sendRS485();
   }
-
-  // return error code
-  if (errWifi != ESP_OK) return errWifi;
-  return errRS485;
 
 }
 
@@ -331,22 +405,22 @@ esp_err_t SwOSCom::send( void ) {
  * 
  *****************************************************************************/
 
-void _OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) { 
+static void _OnDataSent(const uint8_t *macAddr, esp_now_send_status_t status) { 
   // classic callback funtion to hand over data to the swarm
   // This function is called in an ISR Routine, so it's needed to send the result back via sendNotification
 
-  // stop on uninitialized
+   // stop on uninitialized
   if (!myOSNetwork.sendNotificationWifi) return;
 
   // store event
   sendNotificationEvent_t event;
   event.status = status;
-  memcpy( &event.mac_addr, mac_addr, ESP_NOW_ETH_ALEN );
+  memcpy( &event.macAddr, macAddr, ESP_NOW_ETH_ALEN );
 
   // and send it back
   if ( xQueueSend( myOSNetwork.sendNotificationWifi, &event, ESPNOW_MAXDELAY ) != pdTRUE ) {
     ESP_LOGW( LOGFTSWARM, "SendNotification queue fail" );
-  }
+  } 
 };
 
 bool _OnDataRecv( SwOSCom *payload ) {
@@ -371,13 +445,13 @@ bool _OnDataRecv( SwOSCom *payload ) {
     return false;
   }
 
-  if ( ( payload->data.broadcast ) && ( payload->data.sourceSN == nvs.serialNumber ) ) {
-    // broadcast from myself
+  if ( ( payload->data.multicast ) && ( payload->data.sourceSN == nvs.serialNumber ) ) {
+    // multicast from myself
     #ifdef DEBUG_COMMUNICATION
-      printf( "_onDataRecv: my own broadcast.\n");
+      printf( "_onDataRecv: my own multicast.\n");
     #endif
 
-  } else if ( ( !payload->data.broadcast ) && ( payload->data.affectedSN != nvs.serialNumber ) ) {
+  } else if ( ( !payload->data.multicast ) && ( payload->data.affectedSN != nvs.serialNumber ) && ( payload->data.affectedSN != broadcastSN ) ) {
     // direct communication to somebody else
     #ifdef DEBUG_COMMUNICATION
       printf( "_onDataRecv: to someone else.\n");
@@ -392,9 +466,9 @@ bool _OnDataRecv( SwOSCom *payload ) {
 
 }
 
-void _OnDataRecvWifi(const uint8_t *mac, const uint8_t *incomingData, int len ) {
+void _OnDataRecvWifi(const uint8_t *macAddr, const uint8_t *incomingData, int len ) {
 
-  SwOSCom payload( mac, incomingData, len );
+  SwOSCom payload( MacAddr( macAddr ), incomingData, len );
   _OnDataRecv( &payload );
 
 } 
@@ -590,7 +664,7 @@ static void RS485_rx_task(void *pvParameters) {
 
                                     if ( result ==  RS485_PAYLOAD ) {
                                       // copy payload to a SwOSCom packet
-                                      SwOSCom packet( NULL, payload, sizePayload );
+                                      SwOSCom packet( MacAddr( noMac), payload, sizePayload );
                                       // process packet
                                       _OnDataRecv( &packet );
                                     } 
@@ -680,7 +754,7 @@ bool SwOSNetwork::_StartWifi( void ) {
   // create dummy event
   sendNotificationEvent_t event;
   event.status = ESP_NOW_SEND_SUCCESS ;
-  memcpy( &event.mac_addr, broadcast, ESP_NOW_ETH_ALEN );
+  memcpy( &event.macAddr, broadcast, ESP_NOW_ETH_ALEN );
 
   // send a dummy event, so the first com->send assumes a perfect communication before
   if ( xQueueSend( myOSNetwork.sendNotificationWifi, &event, ESPNOW_MAXDELAY ) != pdTRUE ) {
@@ -710,6 +784,9 @@ bool SwOSNetwork::begin( uint16_t swarmSecret, uint16_t swarmPIN, FtSwarmCommuni
 
   // create Receive queue
   myOSNetwork.recvNotification = xQueueCreate(10, sizeof( SwOSCom ) );
+
+  // create userEvent-queue
+  myOSNetwork.userEvent = xQueueCreate( 5, sizeof( SwOSCom ) );
 
   bool ok = true;
 
