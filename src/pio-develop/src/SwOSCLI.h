@@ -103,3 +103,5 @@ class SwOSCLI {
     SwOSCLI();
     void run(void);
 };
+
+extern void mainMenu( void );

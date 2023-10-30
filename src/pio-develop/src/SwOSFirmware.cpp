@@ -14,10 +14,72 @@
 #include "easyKey.h"
 #include "SwOSCLI.h"
 
-const char I2CMODE[3][12] = { "off", "Master", "Slave" };
+const char EXTMODE[5][13] = { "off", "I2C-Master", "I2C-Slave", "Gyro MCU6040", "Outputs" };
 const char ONOFF[2][5]    = { "off", "on" };
+const char WIFI[3][12]    = { "off", "AP-Mode", "Client-Mode"};
 
-void I2CMenu() {
+#define MAXMENUITEMS 40
+
+class Menu {
+  private:
+    uint8_t maxItem = 0;
+    uint8_t spacer = 0;
+    uint8_t id[MAXMENUITEMS];
+    char    prompt[40];
+
+  public:
+    void    start( const char *prompt, uint8_t spacer );
+    void    add( const char *item, const char *value, uint8_t id );
+    void    add( const char *item, int value, uint8_t id );
+    uint8_t userChoice( void );
+};
+
+void Menu::start( const char *prompt, uint8_t spacer ) { 
+
+  maxItem = 0; 
+  id[0]   = 0;
+  this->spacer = spacer;
+  strcpy( this->prompt, (char *) prompt ); 
+
+  // print Headline
+  printf( "\n\n%s\n\n", this->prompt );
+
+};
+
+void Menu::add( const char *item, int value, uint8_t id ) {
+
+  char dummy[40];
+  sprintf( dummy, "%d", value );
+  add( item, dummy, id );
+}
+
+void Menu::add( const char *item, const char *value, uint8_t id ){
+
+  maxItem++;
+  printf( "(%d) %s", maxItem, item );
+  
+  if ( value[0] != '\0' ) {
+    printf(": ");
+    for (uint8_t i=strlen( item ); i<spacer; i++)  printf( " " );
+    printf( "%s\n", value );
+  } else {
+    printf("\n");
+  }
+
+  this->id[maxItem] = id;
+
+}
+
+uint8_t Menu::userChoice( void ) {
+
+  printf("\n(0) exit\n%s", prompt);
+  
+  // asking user
+  return id[ enterNumber( ">", 0, 0, maxItem ) ];
+
+}
+
+void ExtentionMenu() {
 
   bool    anythingChanged = false;
   char    prompt[255];
@@ -31,10 +93,17 @@ void I2CMenu() {
     (0) exit
     */
 
-    printf( "I2C mode: %d\ngyro: %d\n", nvs.I2CMode, nvs.gyro);
+    /* Mode:
+        I2C Master
+        I2C Slave
+        MCU Gyro
+        Motor-IO 
+    */
 
-    printf("\n\nI2C Settings\n\n");
-    sprintf(prompt, "(1) Mode: %s\n(2) Gyro: %s\n(3) I2C Address: %d\n\n(0) exit\nI2C>", I2CMODE[ nvs.I2CMode], ONOFF[nvs.gyro], nvs.I2CAddr );
+    // printf( "I2C mode: %d\ngyro: %d\n", nvs.I2CMode, nvs.gyro);
+
+    printf("\n\nExtention Port Settings\n\n");
+    sprintf(prompt, "(1) Mode: %s\n(2) Gyro: %s\n(3) I2C Address: %d\n\n(0) exit\nExtention>", EXTMODE[ nvs.extentionPort], ONOFF[nvs.gyro], nvs.I2CAddr );
     
     switch( enterNumber( prompt, 0, 0, 3) ) {
       
@@ -46,9 +115,9 @@ void I2CMenu() {
           return;
         }
         
-      case 1: // I2cMode
+      case 1: // ExtMode
         anythingChanged = true;
-        nvs.I2CMode = (FtSwarmI2CMode_t) enterNumber( "(0) off (1) Master (2) Slave: ", nvs.I2CMode, 0, 2 );
+        nvs.extentionPort = (FtSwarmExtMode_t) enterNumber( "(0) off (1) I2C-Master (2) I2C-Slave (3) Gyro MCU6040 (4) Outputs: ", nvs.extentionPort, 0, 4 );
         break;
 
       case 2: // Gyro
@@ -103,84 +172,39 @@ void SwarmControlMenu() {
 
 }
 
-void WebServerMenu() {
-
-  uint8_t maxChoice;
-  bool    anythingChanged = false;
-  char    prompt[255];
-  
-  while(1) {
-
-    printf("\n\nweb server settings\n\n");
-
-    if ( ( myOSSwarm.Ctrl[0]->getType() == FTSWARM ) && ( nvs.webUI ) ) {
-      sprintf(prompt, "(1) WebUI: %s\n(2) Show %d ftPixels in UI\n\n(0) exit\nweb server>", ONOFF[nvs.webUI], nvs.RGBLeds );
-      maxChoice = 2;
-    } else {
-      sprintf(prompt, "(1) WebUI: %s\n\n(0) exit\nweb server>", ONOFF[nvs.webUI] );
-      maxChoice = 1;
-    }
-
-    switch( enterNumber( prompt, 0, 0, maxChoice) ) {
-      
-      case 0: // exit
-        if ( ( anythingChanged) && ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) ) {
-          // save config
-          nvs.saveAndRestart();
-        } else {
-          return;
-        }
-        
-      case 1: // WebServer on/off
-        anythingChanged = true;
-        nvs.webUI = !nvs.webUI;
-        break;
-        
-      case 2: // # of ftPixel
-        anythingChanged = true;
-        nvs.RGBLeds = enterNumber( "enter number of ftPixel in WebUI [2..18]: ", nvs.RGBLeds, 2, MAXLEDS );
-        break;
-    }
-
-  }
-  
-}
-
 void wifiMenu( void ) {
 
   char          prompt[250];
   bool          anythingChanged = false;
   uint8_t       maxChoice;
   FtSwarmWifi_t wifiMode;
+
+  Menu menu;
   
   while(1) {
 
-    printf("\n\nWifi Settings\n\n");
+    // build menu
+    menu.start( "Wifi & WebUI", 14 );
+    menu.add( "wifi", WIFI[nvs.wifiMode], 1);
 
-    switch( nvs.wifiMode ) {
-
-      case wifiOFF:
-        sprintf( prompt, "(1) wifi: off\n\n(0) exit\nwifi>" );
-        maxChoice = 1;
-        break;
-        
-      case wifiAP:
-        sprintf( prompt, "(1) wifi:     AP-MODE\n(2) SSID:     %s\n(X) Password: NOPASSWORD\n(4) Channel:  %d\n\n(0) exit\nwifi>", nvs.wifiSSID, nvs.channel );
-        maxChoice = 4;
-        break;
-        
-      case wifiClient:
-        sprintf( prompt, "(1) wifi:     CLIENT-MODE\n(2) SSID:     %s\n(3) Password: ******\n\n(0) exit\nwifi>", nvs.wifiSSID );
-        maxChoice = 3;
-        break;
-
-      default:
-        printf( "ERROR: invalid wifi mode %d\n", nvs.wifiMode );
-        return;
-    }
-    
-    switch( enterNumber( prompt, 0, 0, maxChoice) ) {
+    if (nvs.wifiMode != wifiOFF ) {
       
+      menu.add( "SSID", nvs.wifiSSID, 2);
+      
+      if (nvs.wifiMode != wifiAP) {
+        menu.add( "Password", "*****", 3 );
+      } else {
+        menu.add( "channel", nvs.channel, 4 );
+      } 
+      
+      menu.add( "Web UI", ONOFF[nvs.webUI], 5);
+      
+      if ( nvs.webUI ) menu.add( "ftPixels in UI", nvs.RGBLeds, 6);
+    
+    }
+
+    switch ( menu.userChoice(  ) ) {
+
       case 0: // exit
         if ( ( anythingChanged) && ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) ) {
           // save config
@@ -215,6 +239,16 @@ void wifiMenu( void ) {
       case 4: // Channel
         anythingChanged = true;
         nvs.channel = enterNumber( "enter channel [1..13] - use 1,6 or 11 if possible: ", nvs.channel, 1, 13 );
+        break;
+
+      case 5: // WebServer on/off
+        anythingChanged = true;
+        nvs.webUI = !nvs.webUI;
+        break;
+        
+      case 6: // # of ftPixel
+        anythingChanged = true;
+        nvs.RGBLeds = enterNumber( "enter number of ftPixel in WebUI [2..18]: ", nvs.RGBLeds, 2, MAXLEDS );
         break;
     }
   }
@@ -276,7 +310,7 @@ void joinSwarm( boolean createNewSwarm ) {
     myOSSwarm.lock();
     myOSSwarm.joinSwarm( createNewSwarm, name, pin );
     myOSSwarm.unlock();
-  
+
     // wait some ticks to catch a response
     for (uint8_t j=0; j<10; j++) {
       vTaskDelay( 25 / portTICK_PERIOD_MS );
@@ -309,7 +343,7 @@ void joinSwarm( boolean createNewSwarm ) {
   } else {
 
     // swarm found
-    
+
     // send my configuration to the swarm
     myOSSwarm.lock();
     myOSSwarm.registerMe();
@@ -331,23 +365,53 @@ const char SWARMCOMMUNICATION[4][13] = { "none", "wifi", "RS485", "wifi & RS485"
 
 void swarmMenu( void ) {
 
-  char prompt[250];
-  char item1[2][2] = { "X", "1" };
+  char kelda[MAXIDENTIFIER];
   FtSwarmCommunication_t swarmCommunication;
-  
+  Menu menu;
+
   while (1) {
 
-    printf( "\n\nswarm settings\n\nThis device is connected to swarm \"%s\" with %d member(s) online.\nSwarm PIN is %d.\n", nvs.swarmName, myOSSwarm.members(), nvs.swarmPIN );
-    sprintf( prompt, "(%s) swarm communication: %s\n(2) create a new swarm\n(3) join another swarm\n(4) list swarm members\n\n(0) main\nswarm>", item1[nvs.RS485Available()], SWARMCOMMUNICATION[nvs.swarmCommunication]);
-    
-    switch( enterNumber(prompt, 0, 0, 4) ) {
+    menu.start("swarm configuration", 19 );
+
+    printf( "This device is connected to swarm \"%s\" with %d member(s) online.\nSwarm PIN is %d.\n", nvs.swarmName, myOSSwarm.members(), nvs.swarmPIN );
+
+    if (nvs.IAmKelda) {
+      strcpy( kelda, "this controler");
+    } else if ( myOSSwarm.Kelda) {
+      strcpy( kelda, myOSSwarm.Kelda->getHostname() );
+    } else {
+      strcpy( kelda, "none" );
+    }
+    menu.add( "Kelda", kelda, 1);
+
+    if ( nvs.RS485Available() ) menu.add( "swarm communication", SWARMCOMMUNICATION[nvs.swarmCommunication], 2 );
+
+    if (nvs.IAmKelda) {
+      menu.add( "create a new swarm", "", 3 );
+      menu.add( "list swarm members", "", 4 );
+    } else {
+      menu.add( "join another swarm", "", 3 );
+    }
+
+    switch( menu.userChoice() ) {
       case 0: // main
         return;
 
-      case 1: // swarm communication
-        if ( nvs.RS485Available() ) {
-          // swarmCommunication = (FtSwarmCommunication_t) enterNumber( "enter swarm communication [1-wifi, 2-RS485, 3-both]:", nvs.swarmCommunication, 1, 3 );
-          swarmCommunication = (FtSwarmCommunication_t) enterNumber( "enter swarm communication [1-wifi, 2-RS485]:", nvs.swarmCommunication, 1, 2 );
+      case 1: // kelda
+        if (nvs.IAmKelda) printf("Downgrading this controler from Kelda to swarm member.\n");
+        else              printf("Upgrading this controler from swarm member to Kelda.\n");
+        if ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) {
+          nvs.IAmKelda = !nvs.IAmKelda;
+          nvs.saveAndRestart();
+        }
+        break;
+
+      case 2: // swarm communication
+        if ( !nvs.RS485Available() ) {
+          printf("This controler just supports wifi.\n");
+        } else {
+          if ( nvs.IAmKelda ) swarmCommunication = (FtSwarmCommunication_t) enterNumber( "enter swarm communication [1-wifi, 2-RS485, 3-both]:", nvs.swarmCommunication, 1, 3 );
+          else                swarmCommunication = (FtSwarmCommunication_t) enterNumber( "enter swarm communication [1-wifi, 2-RS485]:", nvs.swarmCommunication, 1, 2 );
           if (nvs.swarmCommunication != swarmCommunication) {
             // test if wifiMode is OFF and swarm should use wifi
             if ( ( nvs.wifiMode == wifiOFF ) && ( swarmCommunication & 0x1 ) ) {
@@ -361,12 +425,8 @@ void swarmMenu( void ) {
         }
         break;
         
-      case 2: // create new swarm
-        joinSwarm( true ); 
-        break;
-        
-      case 3: // join a swarm
-        joinSwarm( false ); 
+      case 3: // create or join a swarm
+        joinSwarm( nvs.IAmKelda ); 
         break;
         
       case 4: // list swarm members
@@ -481,7 +541,8 @@ void aliasMenu( void ) {
         // save
         myOSSwarm.Ctrl[0]->saveAliasToNVS( my_handle );
 
-        myOSSwarm.Ctrl[0]->sendAlias( );
+        // send new config to Kelda
+        if ( ( myOSSwarm.Kelda ) && ( myOSSwarm.Kelda != myOSSwarm.Ctrl[0] ) ) myOSSwarm.Ctrl[0]->sendAlias( myOSSwarm.Kelda->macAddr );
 
         // commit
         ESP_ERROR_CHECK( nvs_commit( my_handle ) );
@@ -762,18 +823,18 @@ void mainMenu( void ) {
   // FTSWARMCONTROL special HW
   switch (myOSSwarm.Ctrl[0]->getType()) {
 
-    case FTSWARM:         sprintf( prompt, "\nMain Menu\n\n(1) wifi settings\n(2) webserver settings\n(3) swarm settings\n(4) alias names\n(5) factory settings\n(6) remoteControl\n(7) I2C\n\n(0) exit\nmain>" );
-                          maxChoice = 7;
+    case FTSWARM:         sprintf( prompt, "\nMain Menu\n\n(1) wifi & Web UI\n(2) swarm configuration\n(3) alias names\n(4) factory reset\n(5) remoteControl\n(6) extention port\n\n(0) exit\nmain>" );
+                          maxChoice = 6;
                           break;
 
-    case FTSWARMCONTROL:  sprintf( prompt, "\nMain Menu\n\n(1) wifi settings\n(2) webserver settings\n(3) swarm settings\n(4) alias names\n(5) factory settings\n(6) remoteControl\n(7) I2C\n(8) ftSwarmControl\n\n(0) exit\nmain>" );
-                          maxChoice = 8;
+    case FTSWARMCONTROL:  sprintf( prompt, "\nMain Menu\n\n(1) wifi & Web UI\n(2) swarm configuration\n(3) alias names\n(4) factory reset\n(5) remoteControl\n(6) extention port\n(7) ftSwarmControl\n\n(0) exit\nmain>" );
+                          maxChoice = 7;
                           break;
 
     case FTSWARMCAM:    
     case FTSWARMPWRDRIVE:
-    case FTSWARMDUINO:    sprintf( prompt, "\nMain Menu\n\n(1) wifi settings\n(2) webserver settings\n(3) swarm settings\n(4) alias names\n(5) factory settings\n(6) remoteControl\n\n(0) exit\nmain>" );
-                          maxChoice = 6;
+    case FTSWARMDUINO:    sprintf( prompt, "\nMain Menu\n\n(1) wifi & Web UI\n(2)swarm configuration\n(3) alias names\n(4) factory reset\n(5) remoteControl\n\n(0) exit\nmain>" );
+                          maxChoice = 5;
                           break;
 
   }
@@ -785,13 +846,12 @@ void mainMenu( void ) {
     switch( choice  ) {
       case 0: return;
       case 1: wifiMenu(); break;
-      case 2: WebServerMenu(); break;
-      case 3: swarmMenu(); break;
-      case 4: aliasMenu(); break;
-      case 5: factorySettings(); break;
-      case 6: remoteControl(); break;
-      case 7: I2CMenu(); break;
-      case 8: SwarmControlMenu(); break;
+      case 2: swarmMenu(); break;
+      case 3: aliasMenu(); break;
+      case 4: factorySettings(); break;
+      case 5: remoteControl(); break;
+      case 6: ExtentionMenu(); break;
+      case 7: SwarmControlMenu(); break;
     }
     
   }
@@ -802,8 +862,16 @@ void mainMenu( void ) {
 
 void firmware( void ) {
 
-  SwOSCLI cli;
+  if ( nvs.IAmKelda ) {
+    
+    // only Keldas use CLI
+    SwOSCLI cli;
+    cli.run();
 
-  cli.run();
+  } else {
+
+    mainMenu();
+
+  }
 
 }

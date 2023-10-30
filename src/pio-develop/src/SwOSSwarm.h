@@ -26,30 +26,32 @@
 class SwOSSwarm {
 protected:
   SemaphoreHandle_t _xAccessLock = xSemaphoreCreateMutex();
-  uint16_t _lastToken = rand();
-  uint16_t _readDelay = 25;
+  uint16_t lastToken = rand();
+  uint16_t readDelay = 25;
+  bool     verbose = false;
 
-  uint8_t _getIndex( FtSwarmSerialNumber_t serialNumber );               // return index of controler with this s/n or are free slot if not found
-	bool    _splitId( char *id, uint8_t *index, char *io, size_t sizeIO);  // split identifier
-  uint16_t _nextToken( bool rotateToken);
-  SwOSIO *_waitFor( char *alias );
-  bool    _startEvents( void );
-  void    _startWifi( bool verbose );
+  uint8_t getIndex( FtSwarmSerialNumber_t serialNumber );               // return index of controler with this s/n or are free slot if not found
+	bool    splitID( char *id, uint8_t *index, char *io, size_t sizeIO);  // split identifier
+  uint16_t nextToken( bool rotateToken);
+  SwOSIO *waitFor( char *alias );
+  bool    startEvents( void );
+  void    startWifi( void );
   
 public:
 	int8_t   maxCtrl = -1;
+  SwOSCtrl *Kelda = NULL;
 	SwOSCtrl *Ctrl[MAXCTRL];
   bool     allowPairing = false;
 
   SwOSSwarm( ) { for ( uint8_t i=0; i<MAXCTRL; i++ ) { Ctrl[i] = NULL; } }; // constructor
-	FtSwarmSerialNumber_t begin( bool IAmAKelda, bool verbose );              // start my swarm
+	FtSwarmSerialNumber_t begin( bool verbose );                              // start my swarm
 
   void halt( void );        // stop all motors
   void unsubscribe( void ); // unsubscribe all io's
 
   // set/get time etween two reads
-  void     setReadDelay( uint16_t readDelay ) { _readDelay = readDelay; };
-  uint16_t getReadDelay() { return _readDelay; };
+  void     setReadDelay( uint16_t readDelay ) { this->readDelay = readDelay; };
+  uint16_t getReadDelay() { return readDelay; };
 
   // locking 
   void lock();   // request single access
@@ -67,7 +69,7 @@ public:
   uint16_t apiIsAuthorized( uint16_t token, bool rotateToken );                               // check, if it's a correct token
   bool apiPeekIsAuthorized( uint16_t token );
   uint16_t apiActorCmd( uint16_t token, char *id, int cmd, bool rotateToken );                // send an actor's command (from api)
-  uint16_t apiActorPower( uint16_t token, char *id, int power, bool rotateToken );            // send an actor's power (from api)
+  uint16_t apiActorSpeed( uint16_t token, char *id, int speed, bool rotateToken );            // send an actor's speed (from api)
 	uint16_t apiLEDBrightness( uint16_t token, char *id, int brightness, bool rotateToken );    // send a LED command (from api)
 	uint16_t apiLEDColor( uint16_t token, char *id, int color, bool rotateToken);               // send a LED command (from api)
   uint16_t apiServoOffset( uint16_t token, char *id, int offset, bool rotateToken );          // send a Servo command (from api)
@@ -86,7 +88,7 @@ public:
   void setState( SwOSState_t state ); // visualizes controler's state
 
   // **** inter swarm communication ****
-  void OnDataRecv( SwOSCom *buffer ); // receiving data from other controllers
+  void OnDataRecv( SwOSCom *buffer );                                     // receiving data from other controllers
   void registerMe( void );                                                // register myself in a swarm
   void leaveSwarm( void );                                                // send a leave swarm msg to all others and delete them
   void joinSwarm( bool createNewSwarm, char * newName, uint16_t newPIN ); // join a new swarm

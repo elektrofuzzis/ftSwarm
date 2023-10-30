@@ -24,7 +24,6 @@
 #include "SwOSNVS.h"
 #include "SwOSCom.h"
 
-#define MAXSPEED 255
 #define BRIGHTNESSDEFAULT 48
 
 class SwOSCtrl; // forward declaration
@@ -198,6 +197,7 @@ protected:
   // DC motors
 	gpio_num_t      _IN1, _IN2;
 	ledc_channel_t  _channelIN1, _channelIN2;
+  uint32_t        _rampUpT, _rampUpY;
 
   // stepper motors
   long            _distance;
@@ -209,7 +209,7 @@ protected:
   // generics
   FtSwarmActor_t  _actorType;
 	FtSwarmMotion_t _motionType = FTSWARM_COAST;
-	int16_t         _power = 0;
+	int16_t         _speed = 0;
 
   // local HW procedures
   virtual void _setupI2C(); // initializes local HW
@@ -234,18 +234,20 @@ public:
 
   // commands
   virtual void            setActorType( FtSwarmActor_t actorType, bool dontSendToRemote );    // set actor type
-  virtual void            setValue( FtSwarmMotion_t motionType, int16_t power ) { _motionType = motionType; _power = power; };  // set values
-	virtual void            setPower( int16_t power );                   // set power
-  virtual int16_t         getPower() { return _power; };               // get power
-  virtual void            setMotionType( FtSwarmMotion_t motionType ); // set motion type
-	virtual FtSwarmMotion_t getMotionType() { return _motionType; };     // get motion type
+  virtual void            setValue( FtSwarmMotion_t motionType, int16_t speed ) { _motionType = motionType; _speed = speed; };  // set values
+	virtual void            setSpeed( int16_t speed );                                 // set speed
+  virtual int16_t         getSpeed() { return _speed; };                             // get speed
+  virtual void            setAcceleration( uint32_t _rampUpT,  uint32_t _rampUpY );  // set acceleration ramp
+  virtual void            getAcceleration( uint32_t *_rampUpT, uint32_t *_rampUpY ); // get acceleration ramp
+  virtual void            setMotionType( FtSwarmMotion_t motionType );               // set motion type
+	virtual FtSwarmMotion_t getMotionType() { return _motionType; };                   // get motion type
 
   // steppers only
   virtual void            setValue( long distance, long position, bool isHoming, bool isRunning );
-  virtual void            setDistance( long distance, bool relative, bool dontSendToRemote = false  );  // set a distance to go
+  virtual void            setDistance( long distance, bool relative, bool dontSendToRemote  );  // set a distance to go
   virtual long            getDistance( void );                          // get distance
   virtual void            startStop( bool start );                      // start/stop motor
-  virtual void            setPosition( long position, bool dontSendToRemote = false );                 // set absolute motor position
+  virtual void            setPosition( long position, bool dontSendToRemote );                 // set absolute motor position
   virtual long            getPosition( void );                          // get motor position
   virtual void            homing( long maxDistance );                   // start homing
   virtual void            setHomingOffset( long offset );               // set homing offset
@@ -601,7 +603,6 @@ class SwOSCAM : public SwOSIO {
 class SwOSCtrl : public SwOSObj {
 protected:
 	FtSwarmVersion_t _CPU;
-  bool             _IAmAKelda;
   bool             _local;
   unsigned long    _lastContact = 0;
   bool             _isSubscribed = false;
@@ -611,6 +612,7 @@ protected:
 public:
 	FtSwarmSerialNumber_t serialNumber;
   MacAddr               macAddr;
+  bool                  IAmAKelda;
   
   // common hardware
 	SwOSInput    *input[MAXINPUTS];
@@ -619,12 +621,11 @@ public:
   uint8_t      inputs, actors, leds;
 	
   // constructor, destructor
-  SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
+  SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, FtSwarmExtMode_t extentionPort );
   ~SwOSCtrl();
 
   // administrative stuff
-  bool AmIAKelda() { return _IAmAKelda; };
-	virtual bool cmdAlias( const char *obj, const char *alias);            // set an alias for this board or IO device
+  virtual bool cmdAlias( const char *obj, const char *alias);            // set an alias for this board or IO device
 	virtual bool cmdAlias( char *device, uint8_t port, const char *alias); // set an alias for a IO device
   virtual SwOSIO *getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port);    // get a pointer to an IO port via address
 	virtual SwOSIO *getIO( const char *name);                              // get a pointer to an IO port via name or alias
@@ -651,7 +652,7 @@ public:
 
   // API commnds
 	virtual bool apiActorCmd( char *id, int cmd );                 // send an actor's command (from api)
-  virtual bool apiActorPower( char *id, int power );             // send an actors's power (from api)
+  virtual bool apiActorSpeed( char *id, int speed );             // send an actors's speed (from api)
 	virtual bool apiLEDBrightness( char *id, int brightness );     // send a LED command (from api)
 	virtual bool apiLEDColor( char *id, int color );               // send a LED command (from api)
   virtual bool apiServoOffset( char *id, int offset );           // send a Servo command (from api)
@@ -669,11 +670,11 @@ public:
   virtual bool maintenanceMode();
 
   // Communications
-  virtual bool OnDataRecv( SwOSCom *com );     // data via espnow revceived
-  virtual bool recvState( SwOSCom *com );      // receive state from another ftSwarmXX
-  virtual SwOSCom *state2Com( void );          // copy my state in a com struct
-  virtual void registerMe( SwOSCom *com );     // fill in my own data in registerCmd datagram
-  virtual void sendAlias( void );              // send my alias names
+  virtual bool OnDataRecv( SwOSCom *com );                         // data via espnow revceived
+  virtual bool recvState( SwOSCom *com );                          // receive state from another ftSwarmXX
+  virtual SwOSCom *state2Com( MacAddr destination );               // copy my state in a com struct
+  virtual void registerMe( SwOSCom *com );                         // fill in my own data in registerCmd datagram
+  virtual void sendAlias( MacAddr destination );                   // send my alias names
     
 };
 
@@ -700,7 +701,9 @@ class SwOSSwarmI2CCtrl : public SwOSCtrl {
  ***************************************************/
 
 class SwOSSwarmPwrDrive : public SwOSSwarmI2CCtrl {
-   public:
+  private:
+    uint8_t _microstepMode = 0;
+  public:
     // constructor, destructor
     SwOSSwarmPwrDrive( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
     SwOSSwarmPwrDrive( SwOSCom *com ); 
@@ -708,12 +711,14 @@ class SwOSSwarmPwrDrive : public SwOSSwarmI2CCtrl {
 
     virtual char*              myType();                                   // what I am?
 	  virtual FtSwarmControler_t getType();                                  // what I am?
-    virtual SwOSCom *          state2Com( void );
+    virtual SwOSCom *          state2Com( MacAddr destination );
     virtual bool               recvState( SwOSCom *com );                  // receive state from another ftSwarmXX
     virtual void               read( void );
   
-
-    virtual void setMicrostepMode( uint8_t mode );
+    // Communications
+    virtual bool OnDataRecv( SwOSCom *com );     // data via espnow revceived
+  
+    virtual void setMicrostepMode( uint8_t mode, bool dontSendToRemote );
       // set microstep mode
       // FILLSTEP, HALFSTEP, QUARTERSTEP, EIGTHSTEP, SIXTEENTHSTEP
       
@@ -755,7 +760,7 @@ class SwOSSwarmXX : public SwOSCtrl {
     SwOSI2C      *I2C;
     
     // constructor, destructor
-    SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
+    SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, FtSwarmExtMode_t extentionPort );
     ~SwOSSwarmXX();
     
     virtual SwOSIO *getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port);    // get a pointer to an IO port via address
@@ -784,7 +789,7 @@ class SwOSSwarmJST : public SwOSSwarmXX {
 	  SwOSServo *servo[MAXSERVOS];
 
     // constructor, destructor
-	  SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, uint8_t xLeds );
+	  SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, uint8_t xLed, FtSwarmExtMode_t extentionPort );
     SwOSSwarmJST( SwOSCom *com ); // constructor
     ~SwOSSwarmJST();
   
@@ -806,7 +811,6 @@ class SwOSSwarmJST : public SwOSSwarmXX {
 
     // **** Communications *****
     virtual bool OnDataRecv( SwOSCom *com ); // data via espnow revceived
-    virtual void registerMe( SwOSCom *com );     // fill in my own data in registerCmd datagram
 
 };
 
@@ -854,9 +858,8 @@ class SwOSSwarmControl : public SwOSSwarmXX {
 
     // **** Communications *****
     virtual bool recvState( SwOSCom *com );    // receive state from another FtSwarmControl
-    virtual SwOSCom *state2Com( void );        // copy my state in a com struct
+    virtual SwOSCom *state2Com( MacAddr destination );        // copy my state in a com struct
     virtual bool OnDataRecv( SwOSCom *com );   // data via espnow revceived
-    virtual void registerMe( SwOSCom *com );   // fill in my own data in registerCmd datagram
   
 };
 

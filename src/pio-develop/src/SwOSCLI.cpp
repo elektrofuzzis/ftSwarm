@@ -22,6 +22,8 @@ typedef struct {
 const IOCmdList_t IOCmdList [CLICMD_MAX] = {
   { "triggerUserEvent", 0, 10 },
   { "show", 0, 0 },
+  { "setMicrostepMode", 1, 1 },
+  { "getMicrostepMode", 0, 0 },
   { "subscribe", 0, 1 },
   { "getIOType", 0, 0},
   { "getSensorType", 0, 0},
@@ -234,8 +236,10 @@ void SwOSCLI::help( void ) {
     printf("<Hostname>.<IO-Name>.<Command>(<parameter>, ...)\n\n");
 
     printf("Controler commands:\n");
-    printf("  show\n" );
-    printf("  triggerUserEvent(P1,P2,..P10)\n\n");
+    printf("  show                          - identify controller by blue LEDs\n" );
+    printf("  triggerUserEvent(P1,P2,..P10) - Trigger a user remote code.\n");
+    printf("  setMicroStepMode(mode)        - set Microstep Mode / ftSwarmPwrDrive only\n");
+    printf("  getMicroStepMode()            - get Microstep Mode / ftSwarmPwrDrive only\n\n");
 
     printf("Input commands (A1..A6):\n");
     printf("  subscribe( hysteresis )\n" );
@@ -364,7 +368,7 @@ bool SwOSCLI::eval( void ) {
 void SwOSCLI::executeControlerCmd(void ) {
 
   SwOSCom *userEvent;
-  int      p;
+  int      p, microStepMode;
 
   switch ( _cmd ) {
     case CLICMD_show:               // show controler
@@ -375,7 +379,7 @@ void SwOSCLI::executeControlerCmd(void ) {
 
     case CLICMD_triggerUserEvent:   // create SwOSCom header
                                     myOSSwarm.lock();
-                                    userEvent = new SwOSCom( _ctrl->macAddr, _ctrl->serialNumber, CMD_USEREVENT, false);
+                                    userEvent = new SwOSCom( _ctrl->macAddr, _ctrl->serialNumber, CMD_USEREVENT );
                                     myOSSwarm.unlock();
 
                                     // copy parameters
@@ -392,12 +396,30 @@ void SwOSCLI::executeControlerCmd(void ) {
                                     } else {
                                       userEvent->data.userEventCmd.trigger = true;
                                       userEvent->send();
-
+                                      myOSSwarm.unlock();
                                     }
 
                                     // cleanup
                                     delete userEvent;
 
+                                    break;
+
+    case CLICMD_setMicrostepMode:   if (_parameter[0].inRange( "MicroStepMode", 0, 7 ) ) {
+                                      printf("R: ok\n");
+                                      if ( _ctrl->getType() == FTSWARMPWRDRIVE ) {
+                                        myOSSwarm.lock();
+                                        static_cast<SwOSSwarmPwrDrive *>(_ctrl)->setMicrostepMode( (uint8_t) _parameter[0].getValue(), false );
+                                        myOSSwarm.unlock();
+                                      }
+                                    }
+                                    break;
+
+    case CLICMD_getMicrostepMode:   if ( _ctrl->getType() == FTSWARMPWRDRIVE ) {
+                                      myOSSwarm.lock();
+                                      microStepMode = static_cast<SwOSSwarmPwrDrive *>(_ctrl)->getMicrostepMode( );
+                                      myOSSwarm.unlock();
+                                      printf("R: %d\n", microStepMode );
+                                    } else { printf("kein PwrDrive\n"); }
                                     break;
 
     default:                        printf("Error: invalid command.\n");
@@ -485,9 +507,10 @@ void SwOSCLI::executeInputCmd( void ) {
 void SwOSCLI::executeActorCmd( void ) {
 
   SwOSActor *io = (SwOSActor *)_io;
+  int       maxspeed;
   
   switch ( _cmd ) {
-    case CLICMD_setActorType:    if (_parameter[0].inRange( "actorType", 0, (int)FTSWARM_MAXACTOR-1 ) ) { 
+    case CLICMD_setActorType:   if (_parameter[0].inRange( "actorType", 0, (int)FTSWARM_MAXACTOR-1 ) ) { 
                                     printf("R: ok\n"); 
                                     myOSSwarm.lock();
                                     io->setActorType( (FtSwarmActor_t) _parameter[0].getValue(), false );
@@ -495,21 +518,23 @@ void SwOSCLI::executeActorCmd( void ) {
                                 }
                                 break;
 
-    case CLICMD_getActorType:    myOSSwarm.lock();
+    case CLICMD_getActorType:   myOSSwarm.lock();
                                 printf("R: %d\n", (int) io->getActorType() ); 
                                 myOSSwarm.unlock();
                                 break;
 
-    case CLICMD_setSpeed:        if (_parameter[0].inRange( "speed", -255, 255 ) ) { 
+    case CLICMD_setSpeed:      if ( io->getCtrl()->getType() == FTSWARMPWRDRIVE ) maxspeed = 4095;
+                                else maxspeed = 255;
+                                if (_parameter[0].inRange( "speed", -maxspeed, maxspeed ) ) { 
                                   printf("R: ok\n");
                                   myOSSwarm.lock(); 
-                                  io->setPower( _parameter[0].getValue() );
+                                  io->setSpeed( _parameter[0].getValue() );
                                   myOSSwarm.unlock();
                                 }
                                 break;
 
-    case CLICMD_getSpeed:        myOSSwarm.lock();
-                                printf("R: %d\n", io->getPower() ); 
+    case CLICMD_getSpeed:       myOSSwarm.lock();
+                                printf("R: %d\n", io->getSpeed() ); 
                                 myOSSwarm.unlock();
                                 break;
 
@@ -521,58 +546,58 @@ void SwOSCLI::executeActorCmd( void ) {
                                 }
                                 break;
 
-    case CLICMD_getMotionType:   myOSSwarm.lock();
+    case CLICMD_getMotionType:  myOSSwarm.lock();
                                 printf("R: %d\n", (int) io->getMotionType() ); 
                                 myOSSwarm.unlock();
                                 break;
 
-    case CLICMD_setDistance:     printf("R: ok\n");
+    case CLICMD_setDistance:    printf("R: ok\n");
                                 myOSSwarm.lock(); 
-                                io->setDistance( _parameter[0].getLongValue(), (_parameter[1].getValue() > 0) );
+                                io->setDistance( _parameter[0].getLongValue(), (_parameter[1].getValue() > 0), false );
                                 myOSSwarm.unlock();
                                 break;
 
-    case CLICMD_getDistance:     myOSSwarm.lock();
-                                printf("R: %l\n", io->getDistance() ); 
+    case CLICMD_getDistance:    myOSSwarm.lock();
+                                printf("R: %lu\n", io->getDistance() ); 
                                 myOSSwarm.unlock();
                                 break;
 
-    case CLICMD_run:             printf("R: ok\n");
+    case CLICMD_run:            printf("R: ok\n");
                                 myOSSwarm.lock(); 
                                 io->startStop( true );
                                 myOSSwarm.unlock();
                                 break;
 
-    case CLICMD_isRunning:       myOSSwarm.lock();
-                                printf("R: %B\n", io->isRunning() ); 
+    case CLICMD_isRunning:      myOSSwarm.lock();
+                                if ( io->isRunning() ) printf("R: 1\n"  ); else printf("R: 1\n"  );
                                 myOSSwarm.unlock();
                                 break;
 
-    case CLICMD_stop:            printf("R: ok\n");
+    case CLICMD_stop:           printf("R: ok\n");
                                 myOSSwarm.lock(); 
                                 io->startStop( false );
                                 myOSSwarm.unlock();
                                 break;
 
-    case CLICMD_setPosition:     printf("R: ok\n");
+    case CLICMD_setPosition:    printf("R: ok\n");
                                 myOSSwarm.lock(); 
-                                io->setPosition( _parameter[0].getLongValue() );
+                                io->setPosition( _parameter[0].getLongValue(), false );
                                 myOSSwarm.unlock();
                                 break;
 
-    case CLICMD_getPosition:     myOSSwarm.lock();
-                                printf("R: %l\n", io->getPosition() ); 
+    case CLICMD_getPosition:    myOSSwarm.lock();
+                                printf("R: %lu\n", io->getPosition() ); 
                                 myOSSwarm.unlock();
                                 break;
 
-    case CLICMD_homing:          printf("R: ok\n");
+    case CLICMD_homing:         printf("R: ok\n");
                                 myOSSwarm.lock(); 
                                 io->homing( _parameter[0].getLongValue() );
                                 myOSSwarm.unlock();
                                 break;
                                 
-    case CLICMD_isHoming:        myOSSwarm.lock();
-                                printf("R: %B\n", io->isHoming() ); 
+    case CLICMD_isHoming:       myOSSwarm.lock();
+                                printf("R: %d\n", io->isHoming() ); 
                                 myOSSwarm.unlock();
                                 break;
 
@@ -952,8 +977,7 @@ void SwOSCLI::evalIOCommand( char *token ) {
 
 void SwOSCLI::run( void ) {
 
-  printf("\n\nftSwarmOS %s\n\n(C) Christian Bergschneider & Stefan Fuss\n", SWOSVERSION );
-  printf("\n\nsetup - start configuration menus\nexit - end CLI mode\nhelp - show commands\n\n");
+  printf("\n\nsetup - starts configuration menu\nexit - end CLI mode\nhelp - show commands\n\n");
 
   startCLI( false );
 

@@ -79,8 +79,8 @@ typedef enum { FTSWARM_NOTOGGLE, FTSWARM_TOGGLEUP, FTSWARM_TOGGLEDOWN } FtSwarmT
 // alignment
 typedef enum { FTSWARM_ALIGNLEFT, FTSWARM_ALIGNCENTER, FTSWARM_ALIGNRIGHT } FtSwarmAlign_t;
 
-// I2C modes
-typedef enum { FTSWARM_I2C_OFF, FTSWARM_I2C_MASTER, FTSWARM_I2C_SLAVE  } FtSwarmI2CMode_t;
+// Ext Port modes
+typedef enum { FTSWARM_EXT_OFF, FTSWARM_EXT_I2C_MASTER, FTSWARM_EXT_I2C_SLAVE, FTSWARM_EXT_MCU6040, FTSWARM_EXT_OUTPUT  } FtSwarmExtMode_t;
 
 // trigger events
 typedef enum { FTSWARM_TRIGGERUP, FTSWARM_TRIGGERDOWN, FTSWARM_TRIGGERVALUE, FTSWARM_TRIGGERI2CREAD, FTSWARM_TRIGGERI2CWRITE, FTSWARM_MAXTRIGGER } FtSwarmTrigger_t;
@@ -95,6 +95,8 @@ typedef enum {
     Aquamarine = 0x7FFFD4,
     Black      = 0x000000
 } FtSwarmColor;
+
+#define MAXSPEED 4095 
 
 // **** port definitions ****
 
@@ -119,6 +121,8 @@ typedef enum {
 // outputs
 #define FTSWARM_M1 0
 #define FTSWARM_M2 1 
+#define FTSWARM_M3 2 
+#define FTSWARM_M4 3 
 
 // joysticks
 #define FTSWARM_JOY1 0
@@ -527,13 +531,9 @@ class FtSwarmCAM : public FtSwarmIO {
 
 class FtSwarm {
   // my swarm...
-  protected:
-    bool _IAmAKelda = false;
-    bool _verbose = true;
     
   public:
-    FtSwarmSerialNumber_t begin( bool IAmAKelda = true );  // start my swarm
-    void verbose( bool on );                               // be chatty
+    FtSwarmSerialNumber_t begin( bool verbose = false );   // start my swarm
     void setReadDelay( uint16_t readDelay );               // set delay between two measures
     void halt( void );                                     // stop all actors
     bool waitOnUserEvent( int parameter[10], TickType_t xTicksToWait = 512 );

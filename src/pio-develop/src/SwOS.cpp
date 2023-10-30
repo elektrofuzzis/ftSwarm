@@ -353,7 +353,7 @@ FtSwarmMotor::FtSwarmMotor( const char *name, FtSwarmActor_t actorType):FtSwarmA
 void FtSwarmMotor::setSpeed( int16_t speed ) {
   if (me) {
     myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setPower( speed );
+    static_cast<SwOSActor *>(me)->setSpeed( speed );
     myOSSwarm.unlock();
   }
 }
@@ -363,7 +363,7 @@ uint16_t FtSwarmMotor::getSpeed() {
   if (!me) return 0;
 
   myOSSwarm.lock();
-  uint16_t xReturn = (static_cast<SwOSActor *>(me)->getPower());
+  uint16_t xReturn = (static_cast<SwOSActor *>(me)->getSpeed());
   myOSSwarm.unlock();
 
   return xReturn;
@@ -417,7 +417,7 @@ void FtSwarmStepperMotor::setDistance( long distance, bool relative ) {
 
   if (me) {
     myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setDistance( distance, relative );
+    static_cast<SwOSActor *>(me)->setDistance( distance, relative, false );
     myOSSwarm.unlock();
   }
 
@@ -475,7 +475,7 @@ void FtSwarmStepperMotor::setPosition( long position ) {
 
   if (me) {
     myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setPosition( position );
+    static_cast<SwOSActor *>(me)->setPosition( position, false );
     myOSSwarm.unlock();
   }
 
@@ -534,10 +534,10 @@ void FtSwarmStepperMotor::setHomingOffset( long offset ) {
 FtSwarmLamp::FtSwarmLamp( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmActor( serialNumber, port, FTSWARM_LAMP ) {};
 FtSwarmLamp::FtSwarmLamp( const char *name ):FtSwarmActor( name, FTSWARM_LAMP ) {};
 
-void FtSwarmLamp::on( uint8_t power ) {
+void FtSwarmLamp::on( uint8_t speed ) {
   if (me) {
     myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setPower( power);
+    static_cast<SwOSActor *>(me)->setSpeed( speed);
     myOSSwarm.unlock();
   }
 }
@@ -554,7 +554,7 @@ FtSwarmValve::FtSwarmValve( const char *name ):FtSwarmActor( name, FTSWARM_LAMP 
 void FtSwarmValve::on( void ) {
   if (me) {
     myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setPower( 255);
+    static_cast<SwOSActor *>(me)->setSpeed( MAXSPEED );
     myOSSwarm.unlock();
   }
 }
@@ -562,7 +562,7 @@ void FtSwarmValve::on( void ) {
 void FtSwarmValve::off( void ) {
   if (me) {
     myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setPower( 0);
+    static_cast<SwOSActor *>(me)->setSpeed( 0);
     myOSSwarm.unlock();
   };
 }
@@ -575,7 +575,7 @@ FtSwarmCompressor::FtSwarmCompressor( const char *name ):FtSwarmActor( name, FTS
 void FtSwarmCompressor::on( void ) {
   if (me) {
     myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setPower( 255);
+    static_cast<SwOSActor *>(me)->setSpeed( MAXSPEED );
     myOSSwarm.unlock();
   }
 }
@@ -583,7 +583,7 @@ void FtSwarmCompressor::on( void ) {
 void FtSwarmCompressor::off( void ) {
   if (me) {
     myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setPower( 0);
+    static_cast<SwOSActor *>(me)->setSpeed( 0);
     myOSSwarm.unlock();
   };
 }
@@ -596,7 +596,7 @@ FtSwarmBuzzer::FtSwarmBuzzer( const char *name ):FtSwarmActor( name, FTSWARM_BUZ
 void FtSwarmBuzzer::on( void ) {
   if (me) {
     myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setPower( 255);
+    static_cast<SwOSActor *>(me)->setSpeed( MAXSPEED );
     myOSSwarm.unlock();
   }
 }
@@ -604,7 +604,7 @@ void FtSwarmBuzzer::on( void ) {
 void FtSwarmBuzzer::off( void ) {
   if (me) {
     myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setPower( 0);
+    static_cast<SwOSActor *>(me)->setSpeed( 0);
     myOSSwarm.unlock();
   };
 }
@@ -1152,14 +1152,18 @@ void FtSwarmCAM::setVFlip( bool vFlip ) {
 
 // **** FtSwarm ****
 
-void FtSwarm::verbose( bool on ) {
-  _verbose = on;
-}
+FtSwarmSerialNumber_t FtSwarm::begin( bool verbose ) {
 
-FtSwarmSerialNumber_t FtSwarm::begin( bool IAmAKelda ) {
+  bool result = myOSSwarm.begin( verbose );
 
-  _IAmAKelda = IAmAKelda;
-  return myOSSwarm.begin( _IAmAKelda, _verbose );
+  if (!nvs.IAmKelda) {
+    printf("ERROR: Please configure this controler as Kelda.\n");
+    myOSSwarm.setState( ERROR );
+    firmware();
+    ESP.restart();
+  }
+
+  return result;
 
 }
 
@@ -1198,13 +1202,16 @@ bool FtSwarm::waitOnUserEvent( int parameter[10], TickType_t xTicksToWait ) {
 
 }
 
-bool FtSwarm::sendEventData( uint8_t *buffer, size_t size ){
+bool FtSwarm::sendEventData( uint8_t *buffer, size_t size ) {
 
   // error, if size is to big
   if (size > MAXUSEREVENTPAYLOAD ) return false;
 
+  // ignore, if there is no Kelda
+  if (!myOSSwarm.Kelda) return true;
+
   // create packet
-  SwOSCom eventData( MacAddr( noMac ), myOSSwarm.Ctrl[0]->serialNumber, CMD_USEREVENT, true );
+  SwOSCom eventData( myOSSwarm.Kelda->macAddr, myOSSwarm.Ctrl[0]->serialNumber, CMD_USEREVENT );
 
   // copy payload
   eventData.data.userEventCmd.trigger = false;

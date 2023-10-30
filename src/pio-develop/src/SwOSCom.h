@@ -4,7 +4,7 @@
  * Communication between your controlers
  * 
  * (C) 2021/22 Christian Bergschneider & Stefan Fuss
- * 
+ *
  */
  
 #pragma once
@@ -31,7 +31,7 @@ typedef enum {
   CMD_ANYBODYOUTTHERE,   // Broadcast to get known by everybody 
   CMD_GOTYOU,            // anybody's reply on ANYBODYOUTTHERE
   CMD_SETLED,            // set LED color & brightness
-  CMD_SETACTORPOWER,     // set actors motionType & power
+  CMD_SETACTORSPEED,     // set actors motionType & speed
   CMD_SETSERVO,          // set servo position
   CMD_STATE,             // send my input's readings
   CMD_SETSENSORTYPE,     // set an input's sensor type
@@ -43,6 +43,7 @@ typedef enum {
   CMD_SETSTEPPERPOSITION, // set stepper position
   CMD_STEPPERHOMING,      // start stepper homing procedure
   CMD_SETSTEPPERHOMINGOFFSET, // set homing offset
+  CMD_SETMICROSTEPMODE,       // set Microstepmode
   CMD_USEREVENT,              // send data from user exit back to Kelda
   CMD_IDENTIFY,               // 
   CMD_MAX
@@ -56,7 +57,7 @@ extern QueueHandle_t sendNotificationRS485;
 extern QueueHandle_t recvNotification;
 
 struct Input_t { FtSwarmSensor_t sensorType; uint32_t rawValue; } __attribute__((packed));
-struct Actor_t { FtSwarmActor_t actorType; FtSwarmMotion_t motionType; int16_t power; } __attribute__((packed));
+struct Actor_t { FtSwarmActor_t actorType; FtSwarmMotion_t motionType; int16_t speed; } __attribute__((packed));
 struct LED_t   { uint8_t brightness; uint32_t color; } __attribute__((packed));
 struct Servo_t { int16_t offset; int16_t position; } __attribute__((packed));
 struct Joystick_t { int16_t LR; int16_t FB; } __attribute__((packed));
@@ -77,13 +78,8 @@ struct registerCmd_t {
   FtSwarmControler_t ctrlType; 
   FtSwarmVersion_t versionCPU; 
   bool IAmAKelda; 
-  uint16_t pin; 
-  Input_t input[4];
-  Actor_t actor[2];
-  union {
-    registerJST_t     jst;
-    registerControl_t control;
-  };
+  FtSwarmExtMode_t extentionPort;
+  uint8_t leds;
 } __attribute__((packed));
 
 
@@ -93,7 +89,6 @@ struct SwOSDatagram_t {
   uint8_t               version;
   FtSwarmSerialNumber_t sourceSN;      // who is sending this information?
   FtSwarmSerialNumber_t affectedSN;    // who will receive this information?
-  bool                  multicast;
   SwOSCommand_t         cmd;
   union {
     registerCmd_t registerCmd;
@@ -102,12 +97,13 @@ struct SwOSDatagram_t {
     struct { bool isHoming[4]; bool isRunning[4]; uint32_t inputValue[5]; long distance[4]; long position[4];} stepperStateCmd;
     struct { uint8_t index; FtSwarmSensor_t sensorType; bool normallyOpen; } sensorCmd __attribute__((packed));
     struct { uint8_t index; int16_t offset; int16_t position; } servoCmd;
-    struct { uint8_t index; FtSwarmMotion_t motionType; int16_t power; } actorPowerCmd;
+    struct { uint8_t index; FtSwarmMotion_t motionType; int16_t speed; } actorSpeedCmd;
     struct { uint8_t index; long paraml; bool paramb; } actorStepperCmd;
     struct { uint8_t index; FtSwarmActor_t actorType; } actorTypeCmd;
     struct { uint8_t index; uint8_t brightness; uint32_t color; } ledCmd;
     struct { Alias_t alias[MAXALIAS]; } aliasCmd;
     struct { uint8_t reg; uint8_t value; } I2CRegisterCmd;
+    struct { uint8_t microstepMode; } CtrlCmd;
     struct { bool trigger; uint8_t size; uint8_t payload[MAXUSEREVENTPAYLOAD]; } userEventCmd;
   };
 } __attribute__((packed));
@@ -135,9 +131,6 @@ class SwOSCom {
 protected:
   bool    _isValid;
   uint8_t bufferIndex;
-  size_t  _size( void );
-  void _sendWiFi( void );
-  void _sendRS485( void );
 
 public:
   MacAddr        macAddr;
@@ -145,7 +138,8 @@ public:
 
   SwOSCom();
   SwOSCom( MacAddr macAddr, const uint8_t *buffer, int length); 
-  SwOSCom( MacAddr macAddr, FtSwarmSerialNumber_t affectedSN, SwOSCommand_t cmd, bool multicast );
+  SwOSCom( MacAddr macAddr, FtSwarmSerialNumber_t affectedSN, SwOSCommand_t cmd );
+  size_t size( void );
 
   // send my alias names buffered
   void sendBuffered( char *name, char *alias );
@@ -165,7 +159,7 @@ class SwOSNetwork {
     bool _StartRS485( void );
 
   public:
-    QueueHandle_t RS485_tx_queue = NULL;
+    QueueHandle_t tx_queue = NULL;
     QueueHandle_t RS485_rx_queue = NULL;
     QueueHandle_t sendNotificationWifi = NULL;
     QueueHandle_t recvNotification = NULL;
@@ -179,7 +173,8 @@ class SwOSNetwork {
     bool begin( uint16_t swarmSecret, uint16_t swarmPIN, FtSwarmCommunication_t swarmCommunication );
     void setSecret( uint16_t swarmSecret, uint16_t swarmPIN );
     bool hasJoinedASwarm( void );
-
+    void AddPeer( MacAddr macAddr );
 };
 
 extern SwOSNetwork myOSNetwork;
+ 

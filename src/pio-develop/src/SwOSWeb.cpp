@@ -393,7 +393,7 @@ esp_err_t apiActor( httpd_req_t *req ) {
  
   char id[64];
   int  cmd = 0;
-  int  power = 0;
+  int  speed = 0;
   uint16_t token;
   uint16_t status = 400;
 
@@ -408,15 +408,15 @@ esp_err_t apiActor( httpd_req_t *req ) {
   
   // optional parameters
   boolean hasCmd = ( req, getParameter( req, root, "cmd", &cmd, false ) );
-  boolean hasPower = ( req, getParameter( req, root, "power", &power, false ) );
+  boolean hasSpeed = ( req, getParameter( req, root, "power", &speed, false ) );
 
   // cleanup
   cJSON_Delete( root );
 
   // let's do it
   myOSSwarm.lock();  
-  if ( hasCmd )   status = myOSSwarm.apiActorCmd( token, id, cmd, !hasPower );
-  if ( hasPower ) status = myOSSwarm.apiActorPower( token, id, power, true); 
+  if ( hasCmd )   status = myOSSwarm.apiActorCmd( token, id, cmd, !hasSpeed );
+  if ( hasSpeed ) status = myOSSwarm.apiActorSpeed( token, id, speed, true); 
   myOSSwarm.unlock();
 
   return sendResponse( req, status );

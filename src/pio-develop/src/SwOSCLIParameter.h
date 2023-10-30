@@ -14,6 +14,8 @@
 typedef enum {
   CLICMD_triggerUserEvent,
   CLICMD_show,
+  CLICMD_setMicrostepMode,
+  CLICMD_getMicrostepMode,
   CLICMD_subscribe,
   CLICMD_getIOType,
   CLICMD_getSensorType,

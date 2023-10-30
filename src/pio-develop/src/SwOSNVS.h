@@ -55,7 +55,7 @@ class SwOSNVS {
     bool                  IAmKelda;
     FtSwarmCommunication_t swarmCommunication;
     FtSwarmSerialNumber_t swarmMembers[MAXSWARM];
-    FtSwarmI2CMode_t      I2CMode;
+    FtSwarmExtMode_t      extentionPort;
     bool                  gyro;
     uint8_t               I2CAddr;
 

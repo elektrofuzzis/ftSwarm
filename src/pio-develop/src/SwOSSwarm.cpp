@@ -30,7 +30,7 @@
 SwOSSwarm myOSSwarm;
 
 // #define DEBUG_COMMUNICATION
-// #define DEBUG_READTASK
+#define DEBUG_READTASK
 
 /***************************************************
  *
@@ -52,7 +52,7 @@ void recvTask( void *parameter ) {
 
       #ifdef DEBUG_COMMUNICATION
         if ( event.data.cmd != CMD_STATE ) {
-          printf("my friend sends some data...\n" );
+          printf("\n\n-----------------------------\nmy friend sends some data...\n" );
           event.macAddr.print();
           printf("secret %04X cmd %d valid %d\n", event.data.secret, event.data.cmd, event.isValid() );
           event.print();
@@ -62,7 +62,7 @@ void recvTask( void *parameter ) {
       myOSSwarm.lock();
       myOSSwarm.OnDataRecv( &event );
       myOSSwarm.unlock();
-      
+
     }
     
   }
@@ -80,19 +80,21 @@ void readTask( void *parameter ) {
     
     // read
     myOSSwarm.Ctrl[0]->read();
-    
-    // copy my state to a datagram
-    SwOSCom *com = myOSSwarm.Ctrl[0]->state2Com( );
-    
-    // send data to all members
-    if ( myOSSwarm.members() > 1 ) com->send();
-    
-    // cleanup
-    delete com;
 
+    // Do I know a Kelda and I am not the Kelda, so I need to send my state
+    if ( ( myOSSwarm.Kelda ) && ( myOSSwarm.Kelda != myOSSwarm.Ctrl[0] ) ) {
+      
+      // copy my state to a datagram
+      SwOSCom *com = myOSSwarm.Ctrl[0]->state2Com( myOSSwarm.Kelda->macAddr );
+      com->print();
+      com->send();
+      delete com;
+
+    }
+ 
     // calc delay time
     #ifdef DEBUG_READTASK
-      xDelay = 25000 / portTICK_PERIOD_MS;
+      xDelay = 10000 / portTICK_PERIOD_MS;
     #else
       xDelay = myOSSwarm.getReadDelay() / portTICK_PERIOD_MS;
     #endif
@@ -111,18 +113,18 @@ void readTask( void *parameter ) {
  *
  ***************************************************/
 
-uint16_t SwOSSwarm::_nextToken( bool rotateToken ) {
+uint16_t SwOSSwarm::nextToken( bool rotateToken ) {
 
   uint32_t pin      = nvs.swarmPIN;
-  uint16_t newToken = ( 2 + ( _lastToken ^ pin ) ) & 0xFFFF;
+  uint16_t newToken = ( 2 + ( lastToken ^ pin ) ) & 0xFFFF;
 
-  if ( rotateToken ) _lastToken = newToken;
+  if ( rotateToken ) lastToken = newToken;
 
   return newToken;
   
 }
 
-SwOSIO *SwOSSwarm::_waitFor( char *alias ) {
+SwOSIO *SwOSSwarm::waitFor( char *alias ) {
 
   SwOSIO *me = NULL;
   bool   firstTry = true;
@@ -149,7 +151,7 @@ SwOSIO *SwOSSwarm::_waitFor( char *alias ) {
   
 }
 
-bool SwOSSwarm::_startEvents( void ) {
+bool SwOSSwarm::startEvents( void ) {
 
   SwOSIO *sensor;
   SwOSIO *actor;
@@ -162,8 +164,8 @@ bool SwOSSwarm::_startEvents( void ) {
     if ( ( event->sensor[0] != '\0' ) && ( event->actor[0] != '\0' ) ) {
 
       // get IOs and stop on error
-      sensor = _waitFor( event->sensor ); if (!sensor) return false;
-      actor  = _waitFor( event->actor );  if (!actor)  return false;
+      sensor = waitFor( event->sensor ); if (!sensor) return false;
+      actor  = waitFor( event->actor );  if (!actor)  return false;
 
       switch ( sensor->getIOType() ) {
     
@@ -190,7 +192,7 @@ bool SwOSSwarm::_startEvents( void ) {
 
 }
 
-void SwOSSwarm::_startWifi( bool verbose ) {
+void SwOSSwarm::startWifi( void ) {
 
   // no wifi config?
   if (nvs.wifiSSID[0]=='\0') {
@@ -275,17 +277,18 @@ void SwOSSwarm::_startWifi( bool verbose ) {
   WiFi.macAddress( mac );
   Ctrl[0]->macAddr.set( mac );
 
-  if (verbose) printf("hostname: %s\nip-address: %s\n", Ctrl[0]->getHostname(), WiFi.localIP().toString() );
+  if (verbose) printf("hostname: %s\nip-address: %d.%d.%d.%d\n", Ctrl[0]->getHostname(), WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
+
 
 }
 
-FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
+FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
-  if (verbose) {
-    printf("\n\nftSwarmOS " ); 
-    printf(SWOSVERSION);
-    printf("\n\n(C) Christian Bergschneider & Stefan Fuss\n\nPress any key to enter bios settings.\n");
-  }
+  this->verbose = verbose;
+
+  printf("\n\nftSwarmOS " ); 
+  printf(SWOSVERSION);
+  printf("\n\n(C) Christian Bergschneider & Stefan Fuss\n\nPress any key to enter bios settings.\n");
 
   // set watchdog to 30s
   esp_task_wdt_init(30, false);
@@ -295,24 +298,27 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
 
   // initialize nvs
   nvs.begin();
+  if ( ( nvs.IAmKelda ) && ( this->verbose ) ) { printf( "I am KELDA!\n"); }
 
 	// create local controler
 	maxCtrl++;
   switch (nvs.controlerType) {
-  case FTSWARM:         Ctrl[maxCtrl] = new SwOSSwarmJST( nvs.serialNumber, noMac, true, nvs.CPU, IAmAKelda, nvs.RGBLeds );
+  case FTSWARM:         Ctrl[maxCtrl] = new SwOSSwarmJST( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda, nvs.RGBLeds, nvs.extentionPort );
                         break;
-	case FTSWARMCONTROL:  Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, noMac, true, nvs.CPU, IAmAKelda, nvs.joyZero, nvs.displayType );
+	case FTSWARMCONTROL:  Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda, nvs.joyZero, nvs.displayType );
                         break;
-	case FTSWARMCAM:      Ctrl[maxCtrl] =new SwOSSwarmCAM( nvs.serialNumber, noMac, true, nvs.CPU, IAmAKelda );
+	case FTSWARMCAM:      Ctrl[maxCtrl] =new SwOSSwarmCAM( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda );
                         break;
-	case FTSWARMDUINO:    Ctrl[maxCtrl] = new SwOSSwarmDuino( nvs.serialNumber, noMac, true, nvs.CPU, IAmAKelda );
+	case FTSWARMDUINO:    Ctrl[maxCtrl] = new SwOSSwarmDuino( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda );
                         break;
-	case FTSWARMPWRDRIVE: Ctrl[maxCtrl] = new SwOSSwarmPwrDrive( nvs.serialNumber, noMac, true, nvs.CPU, IAmAKelda );
+	case FTSWARMPWRDRIVE: Ctrl[maxCtrl] = new SwOSSwarmPwrDrive( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda );
                         break;
   default:              // wrong setup
                         nvs.initialSetup();
                         break;
   } 
+
+  if ( nvs.IAmKelda ) Kelda = Ctrl[0];
 
   // Who I am?
   printf("Boot %s (SN:%d).\n", Ctrl[maxCtrl]->getHostname(), Ctrl[maxCtrl]->serialNumber );
@@ -325,14 +331,8 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
   // now I can visualize my state
   setState( BOOTING );
 
-  // temporary fix
-  if (nvs.controlerType==FTSWARMPWRDRIVE) {
-    // nvs.wifiMode = wifiOFF;
-    // nvs.swarmCommunication = swarmComRS485;
-  }
-
   // wifi
-  if ( nvs.wifiMode != wifiOFF ) _startWifi( verbose );
+  if ( nvs.wifiMode != wifiOFF ) startWifi( );
 
   // Init Communication
   if (!myOSNetwork.begin( nvs.swarmSecret, nvs.swarmPIN, nvs.swarmCommunication )) {
@@ -352,7 +352,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool IAmAKelda, bool verbose ) {
   if ( ( nvs.webUI ) && ( nvs.wifiMode != wifiOFF ) ) SwOSStartWebServer();
 
   // firmware events?
-  if ( !_startEvents( ) ) {
+  if ( !startEvents( ) ) {
       printf( "\nStarting setup..\n" );
       mainMenu();
       ESP.restart();
@@ -382,7 +382,7 @@ void SwOSSwarm::unsubscribe( void ) {
 
 }
 
-uint8_t SwOSSwarm::_getIndex( FtSwarmSerialNumber_t serialNumber ) {
+uint8_t SwOSSwarm::getIndex( FtSwarmSerialNumber_t serialNumber ) {
 
   uint8_t i = 0;
   uint8_t f = maxCtrl+1;  // free index
@@ -410,7 +410,7 @@ uint8_t SwOSSwarm::_getIndex( FtSwarmSerialNumber_t serialNumber ) {
 SwOSIO* SwOSSwarm::getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmIOType_t ioType,FtSwarmPort_t port) {
 
   // check on valid controler
-  uint8_t i = _getIndex( serialNumber );
+  uint8_t i = getIndex( serialNumber );
 
   if ( Ctrl[i] ) return Ctrl[i]->getIO( ioType, port );
 
@@ -460,8 +460,8 @@ void SwOSSwarm::jsonize( JSONize *json) {
     // send data
     if ( Ctrl[i] ) Ctrl[i]->jsonize( json, i );
 
-    // visualize others, if I'm a Kelda only
-    // if (!Ctrl[0]->AmIAKelda()) break;
+    // visualize others only if I'm a Kelda
+    if ( !Ctrl[0]->IAmAKelda ) break;
     
 	}
 
@@ -471,15 +471,15 @@ void SwOSSwarm::jsonize( JSONize *json) {
 
 void SwOSSwarm::getToken( JSONize *json) {
 
-  _lastToken = rand();
+  lastToken = rand();
 
   json->startObject();
-  json->variableUI16( "token", _lastToken );
+  json->variableUI16( "token", lastToken );
   json->endObject();
   
 }
 
-bool SwOSSwarm::_splitId( char *id, uint8_t *index, char *io, size_t sizeIO) {
+bool SwOSSwarm::splitID( char *id, uint8_t *index, char *io, size_t sizeIO) {
 
 	// split id "12-LED1" into i=12 and io="LED1"
 
@@ -519,7 +519,7 @@ bool SwOSSwarm::_splitId( char *id, uint8_t *index, char *io, size_t sizeIO) {
 
 uint16_t SwOSSwarm::apiIsAuthorized( uint16_t token, bool rotateToken ) {
 
-  uint16_t n = _nextToken(rotateToken);
+  uint16_t n = nextToken(rotateToken);
 
   if ( token != n ) return 401;
 
@@ -527,7 +527,7 @@ uint16_t SwOSSwarm::apiIsAuthorized( uint16_t token, bool rotateToken ) {
 }
 
 bool SwOSSwarm::apiPeekIsAuthorized( uint16_t token ) {
-  return token == _lastToken;
+  return token == lastToken;
 }
 
 uint16_t SwOSSwarm::apiActorCmd( uint16_t token, char *id, int cmd, bool rotateToken ) {
@@ -537,10 +537,10 @@ uint16_t SwOSSwarm::apiActorCmd( uint16_t token, char *id, int cmd, bool rotateT
 	char    io[20];
 
   // Token error
-  if ( token != _nextToken(rotateToken) ) return 401;
+  if ( token != nextToken(rotateToken) ) return 401;
 
 	// split ID to device and nr
-	if (!_splitId(id, &i, io, sizeof(io))) return 400;
+	if (!splitID(id, &i, io, sizeof(io))) return 400;
 
 	// execute cmd
   if ( ( Ctrl[i] ) && ( Ctrl[i]->apiActorCmd( io, cmd ) ) ) return 200;
@@ -549,20 +549,20 @@ uint16_t SwOSSwarm::apiActorCmd( uint16_t token, char *id, int cmd, bool rotateT
 
 }
 
-uint16_t SwOSSwarm::apiActorPower( uint16_t token, char *id, int power, bool rotateToken ) {
-// send an actor's power(from api)
+uint16_t SwOSSwarm::apiActorSpeed( uint16_t token, char *id, int speed, bool rotateToken ) {
+// send an actor's speed(from api)
 
   uint8_t i;
   char    io[20];
 
   // Token error
-  if ( token != _nextToken(rotateToken) ) return 401;
+  if ( token != nextToken(rotateToken) ) return 401;
 
   // split ID to device and nr
-  if (!_splitId(id, &i, io, sizeof(io))) return 400;
+  if (!splitID(id, &i, io, sizeof(io))) return 400;
 
   // execute cmd
-  if ( ( Ctrl[i] ) && ( Ctrl[i]->apiActorPower( io, power ) ) ) return 200;
+  if ( ( Ctrl[i] ) && ( Ctrl[i]->apiActorSpeed( io, speed ) ) ) return 200;
 
   return 400;
   
@@ -575,10 +575,10 @@ uint16_t SwOSSwarm::apiLEDBrightness( uint16_t token, char *id, int brightness, 
 	char    io[20];
 
   // Token error
-  if ( token != _nextToken(rotateToken) ) return 401;
+  if ( token != nextToken(rotateToken) ) return 401;
 
 	// split ID to device and nr
-	if (!_splitId(id, &i, io, sizeof(io))) return 400;
+	if (!splitID(id, &i, io, sizeof(io))) return 400;
 
 	// execute cmd
 	if ( ( Ctrl[i] ) && ( Ctrl[i]->apiLEDBrightness( io, brightness) ) ) return 200;
@@ -594,10 +594,10 @@ uint16_t SwOSSwarm::apiLEDColor( uint16_t token, char *id, int color, bool rotat
   char    io[20];
 
   // Token error
-  if ( token != _nextToken(rotateToken) ) return 401;
+  if ( token != nextToken(rotateToken) ) return 401;
 
   // split ID to device and nr
-  if (!_splitId(id, &i, io, sizeof(io))) return 400;
+  if (!splitID(id, &i, io, sizeof(io))) return 400;
 
   // execute cmd
   if ( ( Ctrl[i] ) && ( Ctrl[i]->apiLEDColor( io, color ) ) ) return 200;
@@ -613,10 +613,10 @@ uint16_t SwOSSwarm::apiServoOffset( uint16_t token, char *id, int offset, bool r
 	char    io[20];
 
   // Token error
-  if ( token != _nextToken(rotateToken) ) return 401;
+  if ( token != nextToken(rotateToken) ) return 401;
 
 	// split ID to device and nr
-	if (!_splitId(id, &i, io, sizeof(io))) return 400;
+	if (!splitID(id, &i, io, sizeof(io))) return 400;
 
 	// execute cmd
 	if ( ( Ctrl[i] ) && ( Ctrl[i]->apiServoOffset( io, offset  ) ) ) return 200;
@@ -632,10 +632,10 @@ uint16_t SwOSSwarm::apiServoPosition( uint16_t token, char *id, int position, bo
   char    io[20];
 
   // Token error
-  if ( token != _nextToken(rotateToken) ) return 401;
+  if ( token != nextToken(rotateToken) ) return 401;
 
   // split ID to device and nr
-  if (!_splitId(id, &i, io, sizeof(io))) return 400;
+  if (!splitID(id, &i, io, sizeof(io))) return 400;
 
   // execute cmd
   if ( ( Ctrl[i] ) && ( Ctrl[i]->apiServoPosition( io, position ) ) ) return 200;
@@ -650,10 +650,10 @@ uint16_t SwOSSwarm::apiCAMStreaming( uint16_t token, char *id, int onOff, bool r
   char    io[20];
 
   // Token error
-  if ( token != _nextToken(rotateToken) ) return 401;
+  if ( token != nextToken(rotateToken) ) return 401;
 
   // split ID to device and nr
-  if (!_splitId(id, &i, io, sizeof(io))) return 400;
+  if (!splitID(id, &i, io, sizeof(io))) return 400;
 
   // execute cmd
   if ( ( Ctrl[i] ) && ( Ctrl[i]->apiCAMStreaming( io, onOff > 0 ) ) ) return 200;
@@ -668,10 +668,10 @@ uint16_t SwOSSwarm::apiCAMFramesize( uint16_t token, char *id, int framesize, bo
   char    io[20];
 
   // Token error
-  if ( token != _nextToken(rotateToken) ) return 401;
+  if ( token != nextToken(rotateToken) ) return 401;
 
   // split ID to device and nr
-  if (!_splitId(id, &i, io, sizeof(io))) return 400;
+  if (!splitID(id, &i, io, sizeof(io))) return 400;
 
   // execute cmd
   if ( ( Ctrl[i] ) && ( Ctrl[i]->apiCAMFramesize( io, framesize ) ) ) return 200;
@@ -686,10 +686,10 @@ uint16_t SwOSSwarm::apiCAMQuality( uint16_t token, char *id, int quality, bool r
   char    io[20];
 
   // Token error
-  if ( token != _nextToken(rotateToken) ) return 401;
+  if ( token != nextToken(rotateToken) ) return 401;
 
   // split ID to device and nr
-  if (!_splitId(id, &i, io, sizeof(io))) return 400;
+  if (!splitID(id, &i, io, sizeof(io))) return 400;
 
   // execute cmd
   if ( ( Ctrl[i] ) && ( Ctrl[i]->apiCAMQuality( io, quality ) ) ) return 200;
@@ -704,10 +704,10 @@ uint16_t SwOSSwarm::apiCAMBrightness( uint16_t token, char *id, int brightness, 
   char    io[20];
 
   // Token error
-  if ( token != _nextToken(rotateToken) ) return 401;
+  if ( token != nextToken(rotateToken) ) return 401;
 
   // split ID to device and nr
-  if (!_splitId(id, &i, io, sizeof(io))) return 400;
+  if (!splitID(id, &i, io, sizeof(io))) return 400;
 
   // execute cmd
   if ( ( Ctrl[i] ) && ( Ctrl[i]->apiCAMBrightness( io, brightness ) ) ) return 200;
@@ -722,10 +722,10 @@ uint16_t SwOSSwarm::apiCAMContrast( uint16_t token, char *id, int contrast, bool
   char    io[20];
 
   // Token error
-  if ( token != _nextToken(rotateToken) ) return 401;
+  if ( token != nextToken(rotateToken) ) return 401;
 
   // split ID to device and nr
-  if (!_splitId(id, &i, io, sizeof(io))) return 400;
+  if (!splitID(id, &i, io, sizeof(io))) return 400;
 
   // execute cmd
   if ( ( Ctrl[i] ) && ( Ctrl[i]->apiCAMContrast( io, contrast ) ) ) return 200;
@@ -740,10 +740,10 @@ uint16_t SwOSSwarm::apiCAMSaturation( uint16_t token, char *id, int saturation, 
   char    io[20];
 
   // Token error
-  if ( token != _nextToken(rotateToken) ) return 401;
+  if ( token != nextToken(rotateToken) ) return 401;
 
   // split ID to device and nr
-  if (!_splitId(id, &i, io, sizeof(io))) return 400;
+  if (!splitID(id, &i, io, sizeof(io))) return 400;
 
   // execute cmd
   if ( ( Ctrl[i] ) && ( Ctrl[i]->apiCAMSaturation( io, saturation ) ) ) return 200;
@@ -758,10 +758,10 @@ uint16_t SwOSSwarm::apiCAMSpecialEffect( uint16_t token, char *id, int specialEf
   char    io[20];
 
   // Token error
-  if ( token != _nextToken(rotateToken) ) return 401;
+  if ( token != nextToken(rotateToken) ) return 401;
 
   // split ID to device and nr
-  if (!_splitId(id, &i, io, sizeof(io))) return 400;
+  if (!splitID(id, &i, io, sizeof(io))) return 400;
 
   // execute cmd
   if ( ( Ctrl[i] ) && ( Ctrl[i]->apiCAMSpecialEffect( io, specialEffect ) ) ) return 200;
@@ -776,10 +776,10 @@ uint16_t SwOSSwarm::apiCAMWbMode( uint16_t token, char *id, int wbMode, bool rot
   char    io[20];
 
   // Token error
-  if ( token != _nextToken(rotateToken) ) return 401;
+  if ( token != nextToken(rotateToken) ) return 401;
 
   // split ID to device and nr
-  if (!_splitId(id, &i, io, sizeof(io))) return 400;
+  if (!splitID(id, &i, io, sizeof(io))) return 400;
 
   // execute cmd
   if ( ( Ctrl[i] ) && ( Ctrl[i]->apiCAMWbMode( io, wbMode ) ) ) return 200;
@@ -794,10 +794,10 @@ uint16_t SwOSSwarm::apiCAMHMirror( uint16_t token, char *id, int hMirror, bool r
   char    io[20];
 
   // Token error
-  if ( token != _nextToken(rotateToken) ) return 401;
+  if ( token != nextToken(rotateToken) ) return 401;
 
   // split ID to device and nr
-  if (!_splitId(id, &i, io, sizeof(io))) return 400;
+  if (!splitID(id, &i, io, sizeof(io))) return 400;
 
   // execute cmd
   if ( ( Ctrl[i] ) && ( Ctrl[i]->apiCAMHMirror( io, hMirror>0 ) ) ) return 200;
@@ -812,10 +812,10 @@ uint16_t SwOSSwarm::apiCAMVFlip( uint16_t token, char *id, int vFlip, bool rotat
   char    io[20];
 
   // Token error
-  if ( token != _nextToken(rotateToken) ) return 401;
+  if ( token != nextToken(rotateToken) ) return 401;
 
   // split ID to device and nr
-  if (!_splitId(id, &i, io, sizeof(io))) return 400;
+  if (!splitID(id, &i, io, sizeof(io))) return 400;
 
   // execute cmd
   if ( ( Ctrl[i] ) && ( Ctrl[i]->apiCAMVFlip( io, vFlip>0 ) ) ) return 200;
@@ -857,11 +857,13 @@ void SwOSSwarm::unlock() {
 void SwOSSwarm::registerMe( void ) {
 
   // register myself
-  SwOSCom com( MacAddr( broadcast ), broadcastSN, CMD_ANYBODYOUTTHERE, false);
+  SwOSCom com( MacAddr( broadcast ), broadcastSN, CMD_ANYBODYOUTTHERE );
   Ctrl[0]->registerMe( &com );
   com.send();
 
 }
+
+int haltan =20;
 
 void SwOSSwarm::OnDataRecv(SwOSCom *com) {
   // callback function receiving data from other controllers
@@ -869,10 +871,8 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
   // ignore invalid data
   if (!com) return;
 
-  // com->print();
-
-  uint8_t source   = _getIndex( com->data.sourceSN );
-  uint8_t affected = _getIndex( com->data.affectedSN );
+  uint8_t source   = getIndex( com->data.sourceSN );
+  uint8_t affected = getIndex( com->data.affectedSN );
 
   // check on join message
   if ( com->data.cmd == CMD_SWARMJOIN ) {
@@ -887,7 +887,7 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
       #ifdef DEBUG_COMMUNICATION
         printf( "CMD_SWARMJOIN accepted.\n" ); 
       #endif
-      SwOSCom ack( com->macAddr, com->data.sourceSN, CMD_SWARMJOINACK, false );
+      SwOSCom ack( com->macAddr, com->data.sourceSN, CMD_SWARMJOINACK );
       ack.data.joinCmd.pin = nvs.swarmPIN;
       ack.data.joinCmd.swarmSecret = nvs.swarmSecret;
       strcpy( ack.data.joinCmd.swarmName, nvs.swarmName );
@@ -930,20 +930,29 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
 
   } // end CMD_SWARMLEAVE
 
-  // check, on welcome messages
-  if ( ( com->data.cmd == CMD_ANYBODYOUTTHERE ) ||
-       ( com->data.cmd == CMD_GOTYOU ) ) {
+  // check, on welcome messages if I'm a Kelda or a Kelda is asking
+  if ( ( ( com->data.cmd == CMD_ANYBODYOUTTHERE ) || ( com->data.cmd == CMD_GOTYOU ) ) &&
+       ( ( com->data.registerCmd.IAmAKelda ) || ( Ctrl[0]->IAmAKelda ) ) ) {
 
     #ifdef DEBUG_COMMUNICATION
       printf( "register msg %d source: %d affected: %d maxCtrl %d\n", com->data.cmd, source, affected, maxCtrl );
     #endif
-    
+
     // check on unkown controler
     if ( !Ctrl[source] ) {
-      
+
       #ifdef DEBUG_COMMUNICATION
-        printf( "add a new controler type %d\n", com->data.registerCmd.ctrlType);
+      printf( "add a new controler type %d at %d\n", com->data.registerCmd.ctrlType, source);
       #endif
+
+      // test, if the new controler is a Kelda and there is already a Kelda in my swarm
+      if ( ( com->data.registerCmd.IAmAKelda ) && ( Kelda ) ) {
+        setState( ERROR );
+        printf("ERROR: Multiple Keldas found! %s %s\n", Kelda->serialNumber, com->data.sourceSN );
+        while (1) { delay(50); }
+      }
+
+      myOSNetwork.AddPeer( com->macAddr );
 
       // add to swarm
       switch (com->data.registerCmd.ctrlType) {
@@ -952,7 +961,13 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
         case FTSWARMCAM:      Ctrl[source] = new SwOSSwarmCAM     ( com ); break;
         case FTSWARMPWRDRIVE: Ctrl[source] = new SwOSSwarmPwrDrive( com ); break;
         default: ESP_LOGW( LOGFTSWARM, "Unknown controler type while adding a new controller to my swarm." ); return;
-      }
+      } 
+
+      if ( Ctrl[source]->IAmAKelda ) {
+        // register Kelda
+        if (verbose) { printf("Kelda %s with MAC ", Ctrl[source]->getHostname() ); Ctrl[source]->macAddr.print(); printf(" joined the swarm \n"); }
+        Kelda = Ctrl[source];
+      } 
 
       // update oled display
       setState( RUNNING );
@@ -961,16 +976,19 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
 
     // reply GOTYOU, if needed
     if ( com->data.cmd == CMD_ANYBODYOUTTHERE ) {
-      SwOSCom reply( com->macAddr, com->data.sourceSN, CMD_GOTYOU, false);
-      Ctrl[0]->registerMe(&reply);
+      
+      // frist introduce myself
+      SwOSCom reply( com->macAddr, com->data.sourceSN, CMD_GOTYOU );
+      Ctrl[0]->registerMe( &reply );
+      reply.print();
       reply.send();
-      Ctrl[0]->sendAlias( );
+
+      // send my alias names, if the new controler is a Kelda
+      if ( com->data.registerCmd.IAmAKelda ) Ctrl[0]->sendAlias( com->macAddr );
+
     }
 
   } // end welcome messages
-
-  // if I don't know the source, say hello
-  if ( !Ctrl[source] ) { registerMe(); }
  
   // any other type of msg will be processed on controler level
   if ( Ctrl[affected] ) {
@@ -982,7 +1000,7 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
 void SwOSSwarm::leaveSwarm( void ) {
 
   // Prepare a leave message
-  SwOSCom leaveMsg( MacAddr( noMac ), Ctrl[0]->serialNumber, CMD_SWARMLEAVE, true );
+  SwOSCom leaveMsg( MacAddr( broadcast ), Ctrl[0]->serialNumber, CMD_SWARMLEAVE );
   leaveMsg.send();
 
   // change network pin to avoid swarm self healings
@@ -1004,7 +1022,7 @@ void SwOSSwarm::joinSwarm( bool createNewSwarm, char * newName, uint16_t newPIN 
   myOSNetwork.setSecret( DEFAULTSECRET, nvs.swarmPIN );
 
   // send CMD_SWARMJOIN
-  SwOSCom joinMsg( MacAddr( broadcast ), broadcastSN, CMD_SWARMJOIN, false );
+  SwOSCom joinMsg( MacAddr( broadcast ), broadcastSN, CMD_SWARMJOIN );
   joinMsg.data.joinCmd.pin = newPIN;
   strcpy( joinMsg.data.joinCmd.swarmName, newName );
   joinMsg.send();

@@ -88,7 +88,7 @@ SwOSNVS::SwOSNVS() {
   swarmCommunication = swarmComWifi;
   IAmKelda           = false;
   memset( &swarmMembers, 0, sizeof( swarmMembers ) );
-  I2CMode            = FTSWARM_I2C_OFF;
+  extentionPort      = FTSWARM_EXT_OFF;
   I2CAddr            = 0x66;
   gyro               = false;
 
@@ -187,9 +187,9 @@ bool SwOSNVS::load() {
   // webUI
   nvs_get_u8 ( my_handle, "webUI", (uint8_t *) &webUI );
 
-  // I2C
+  // extentionPort
   nvs_get_u8 ( my_handle, "I2CAddr", &I2CAddr );
-  nvs_get_u32( my_handle, "I2CMode", (uint32_t *) &I2CMode);
+  nvs_get_u32( my_handle, "extentionPort", (uint32_t *) &extentionPort);
   nvs_get_u8 ( my_handle, "Gyro",    (uint8_t *) &gyro);
 
   return true;
@@ -244,9 +244,9 @@ void SwOSNVS::save( bool writeAll ) {
   // webUI
   ESP_ERROR_CHECK( nvs_set_u8 ( my_handle,  "webUI",   (uint8_t) webUI ) );
 
-  // I2C
+  // extentionPort
   ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "I2CAddr", I2CAddr ) );
-  ESP_ERROR_CHECK( nvs_set_u32( my_handle, "I2CMode", (uint32_t) I2CMode) );
+  ESP_ERROR_CHECK( nvs_set_u32( my_handle, "extentionPort", (uint32_t) extentionPort) );
   ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "Gyro",    (uint8_t)  gyro) );
 
 
