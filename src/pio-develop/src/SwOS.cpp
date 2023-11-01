@@ -55,12 +55,18 @@ FtSwarmIO::FtSwarmIO( const char *name ) {
       myOSSwarm.setState( WAITING );
       firstTry = false;
     }
+
+
     
     myOSSwarm.unlock();
 
     if (!me) vTaskDelay( 25 / portTICK_PERIOD_MS );
   }
   
+}
+
+FtSwarmIO::~FtSwarmIO() {
+
 }
 
 bool FtSwarmIO::isOnline() { 
@@ -116,6 +122,49 @@ void FtSwarmInput::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor ) 
   }
 
 };
+
+// **** FtSwarmCounter ****
+
+FtSwarmCounter::FtSwarmCounter( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port ):FtSwarmInput( serialNumber, port, FTSWARM_COUNTER ) {
+
+};
+
+FtSwarmCounter::FtSwarmCounter( const char *name ):FtSwarmInput( name, FTSWARM_COUNTER )  {
+
+}
+    
+void FtSwarmCounter::resetCounter( void ) {
+
+  if (!me) return;
+
+  myOSSwarm.lock();
+  static_cast<SwOSInput *>(me)->resetCounter();
+  myOSSwarm.unlock();
+
+}
+
+int32_t FtSwarmCounter::getCounter ( void ) {
+
+  if (!me) return 0;
+
+  myOSSwarm.lock();
+  int32_t xReturn = static_cast<SwOSInput *>(me)->getCounter();
+  myOSSwarm.unlock();
+
+  return xReturn;
+
+}
+
+int32_t FtSwarmCounter::getFrequency( void ) {
+
+  if (!me) return 0;
+
+  myOSSwarm.lock();
+  int32_t xReturn = static_cast<SwOSInput *>(me)->getFrequency();
+  myOSSwarm.unlock();
+
+  return xReturn;
+}
 
 
 // **** FtSwarmDigitalInput ****
@@ -369,6 +418,24 @@ uint16_t FtSwarmMotor::getSpeed() {
   return xReturn;
 };
 
+void FtSwarmMotor::setAcceleration( uint32_t rampUpT, uint32_t rampUpY ) {
+  if (me) {
+    myOSSwarm.lock();
+    static_cast<SwOSActor *>(me)->setAcceleration( rampUpT, rampUpY );
+    myOSSwarm.unlock();
+  }
+}
+
+void FtSwarmMotor::getAcceleration( uint32_t *rampUpT, uint32_t *rampUpY ) {
+
+  if (!me) return;
+
+  myOSSwarm.lock();
+  static_cast<SwOSActor *>(me)->getAcceleration( rampUpT, rampUpY );
+  myOSSwarm.unlock();
+
+};
+
 // **** FtSwarmTractorMotor
 
 FtSwarmTractorMotor::FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType):FtSwarmMotor( serialNumber, port, actorType) {};
@@ -529,12 +596,12 @@ void FtSwarmStepperMotor::setHomingOffset( long offset ) {
 
 }
 
-// **** FtSwarmLamp ****
+// **** FtSwarmOnOffActor ****
 
-FtSwarmLamp::FtSwarmLamp( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmActor( serialNumber, port, FTSWARM_LAMP ) {};
-FtSwarmLamp::FtSwarmLamp( const char *name ):FtSwarmActor( name, FTSWARM_LAMP ) {};
+FtSwarmOnOffActor::FtSwarmOnOffActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType):FtSwarmActor( serialNumber, port, actorType ) {};
+FtSwarmOnOffActor::FtSwarmOnOffActor( const char *name, FtSwarmActor_t actorType ):FtSwarmActor( name, actorType ) {};
 
-void FtSwarmLamp::on( uint8_t speed ) {
+void FtSwarmOnOffActor::on( int16_t speed ) {
   if (me) {
     myOSSwarm.lock();
     static_cast<SwOSActor *>(me)->setSpeed( speed);
@@ -542,72 +609,31 @@ void FtSwarmLamp::on( uint8_t speed ) {
   }
 }
 
-void FtSwarmLamp::off( void ) {
+void FtSwarmOnOffActor::off( void ) {
   on(0);
 }
 
+// **** FtSwarmLamp ****
+
+FtSwarmLamp::FtSwarmLamp( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmOnOffActor( serialNumber, port, FTSWARM_LAMP ) {};
+FtSwarmLamp::FtSwarmLamp( const char *name ):FtSwarmOnOffActor( name, FTSWARM_LAMP ) {};
+
 // **** FtSwarmValve ****
 
-FtSwarmValve::FtSwarmValve( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmActor( serialNumber, port, FTSWARM_VALVE ) {};
-FtSwarmValve::FtSwarmValve( const char *name ):FtSwarmActor( name, FTSWARM_LAMP ) {};
+FtSwarmValve::FtSwarmValve( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmOnOffActor( serialNumber, port, FTSWARM_VALVE ) {};
+FtSwarmValve::FtSwarmValve( const char *name ):FtSwarmOnOffActor( name, FTSWARM_LAMP ) {};
 
-void FtSwarmValve::on( void ) {
-  if (me) {
-    myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setSpeed( MAXSPEED );
-    myOSSwarm.unlock();
-  }
-}
-
-void FtSwarmValve::off( void ) {
-  if (me) {
-    myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setSpeed( 0);
-    myOSSwarm.unlock();
-  };
-}
 
 // **** FtSwarmCompressor ****
 
-FtSwarmCompressor::FtSwarmCompressor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmActor( serialNumber, port, FTSWARM_VALVE ) {};
-FtSwarmCompressor::FtSwarmCompressor( const char *name ):FtSwarmActor( name, FTSWARM_COMPRESSOR ) {};
-
-void FtSwarmCompressor::on( void ) {
-  if (me) {
-    myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setSpeed( MAXSPEED );
-    myOSSwarm.unlock();
-  }
-}
-
-void FtSwarmCompressor::off( void ) {
-  if (me) {
-    myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setSpeed( 0);
-    myOSSwarm.unlock();
-  };
-}
+FtSwarmCompressor::FtSwarmCompressor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmOnOffActor( serialNumber, port, FTSWARM_VALVE ) {};
+FtSwarmCompressor::FtSwarmCompressor( const char *name ):FtSwarmOnOffActor( name, FTSWARM_COMPRESSOR ) {};
 
 // **** FtSwarmBuzzer ****
 
-FtSwarmBuzzer::FtSwarmBuzzer( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmActor( serialNumber, port, FTSWARM_VALVE ) {};
-FtSwarmBuzzer::FtSwarmBuzzer( const char *name ):FtSwarmActor( name, FTSWARM_BUZZER ) {};
+FtSwarmBuzzer::FtSwarmBuzzer( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmOnOffActor( serialNumber, port, FTSWARM_VALVE ) {};
+FtSwarmBuzzer::FtSwarmBuzzer( const char *name ):FtSwarmOnOffActor( name, FTSWARM_BUZZER ) {};
 
-void FtSwarmBuzzer::on( void ) {
-  if (me) {
-    myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setSpeed( MAXSPEED );
-    myOSSwarm.unlock();
-  }
-}
-
-void FtSwarmBuzzer::off( void ) {
-  if (me) {
-    myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setSpeed( 0);
-    myOSSwarm.unlock();
-  };
-}
 
 // **** FtSwarmJoystick ****
 

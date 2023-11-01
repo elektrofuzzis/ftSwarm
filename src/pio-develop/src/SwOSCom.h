@@ -57,7 +57,7 @@ extern QueueHandle_t sendNotificationRS485;
 extern QueueHandle_t recvNotification;
 
 struct Input_t { FtSwarmSensor_t sensorType; uint32_t rawValue; } __attribute__((packed));
-struct Actor_t { FtSwarmActor_t actorType; FtSwarmMotion_t motionType; int16_t speed; } __attribute__((packed));
+struct Actor_t { FtSwarmActor_t actorType; FtSwarmMotion_t motionType; int16_t speed; uint32_t rampUpT; uint32_t rampUpY; } __attribute__((packed));
 struct LED_t   { uint8_t brightness; uint32_t color; } __attribute__((packed));
 struct Servo_t { int16_t offset; int16_t position; } __attribute__((packed));
 struct Joystick_t { int16_t LR; int16_t FB; } __attribute__((packed));
@@ -97,7 +97,7 @@ struct SwOSDatagram_t {
     struct { bool isHoming[4]; bool isRunning[4]; uint32_t inputValue[5]; long distance[4]; long position[4];} stepperStateCmd;
     struct { uint8_t index; FtSwarmSensor_t sensorType; bool normallyOpen; } sensorCmd __attribute__((packed));
     struct { uint8_t index; int16_t offset; int16_t position; } servoCmd;
-    struct { uint8_t index; FtSwarmMotion_t motionType; int16_t speed; } actorSpeedCmd;
+    struct { uint8_t index; FtSwarmMotion_t motionType; int16_t speed;  uint32_t rampUpT; uint32_t rampUpY; } actorSpeedCmd;
     struct { uint8_t index; long paraml; bool paramb; } actorStepperCmd;
     struct { uint8_t index; FtSwarmActor_t actorType; } actorTypeCmd;
     struct { uint8_t index; uint8_t brightness; uint32_t color; } ledCmd;

@@ -39,10 +39,11 @@ const char SENSORICON[FTSWARM_MAXSENSOR][20] = {
   "07_ldr.svg",
   "08_trailsensor.svg",
   "09_colorsensor.svg",
-  "10_ultrasonic.svg"
+  "10_ultrasonic.svg",
+  "10_ultrasonic.svg"  // ToDo add Icon
 };
 
-const char SENSORTYPE[FTSWARM_MAXSENSOR][20] = { "DIGITAL", "ANALOG", "SWITCH", "REEDSWITCH", "LIGHTBARRIER", "VOLTMETER", "OHMMETER", "THERMOMETER", "LDR", "TRAILSENSOR", "COLORSENSOR", "ULTRASONIC" };
+const char SENSORTYPE[FTSWARM_MAXSENSOR][20] = { "DIGITAL", "ANALOG", "SWITCH", "REEDSWITCH", "LIGHTBARRIER", "VOLTMETER", "OHMMETER", "THERMOMETER", "LDR", "TRAILSENSOR", "COLORSENSOR", "ULTRASONIC", "COUNTER" };
 
 const char ACTORICON[FTSWARM_MAXACTOR][20] = {
   "16_xmotor.svg",
@@ -560,7 +561,10 @@ void SwOSInput::read() {
   uint32_t newValue;
 
   // local reading
-  if ( ( !isDigitalSensor() ) && ( _ADCChannel != ADC1_CHANNEL_MAX) ) {
+  if ( _sensorType == FTSWARM_COUNTER) {
+    // ToDO 
+
+  } else if ( ( !isDigitalSensor() ) && ( _ADCChannel != ADC1_CHANNEL_MAX) ) {
 
     if ((adc_unit_t)_ADCUnit == ADC_UNIT_1) newValue = adc1_get_raw( (adc1_channel_t )_ADCChannel );
 
@@ -708,6 +712,29 @@ FtSwarmToggle_t SwOSInput::getToggle() {
   return toggle;
 }
 
+void SwOSInput::resetCounter( void ){
+  
+  _counter = 0;
+
+  if (!_ctrl->isLocal() ) {
+
+  } else {
+
+  }
+  
+}
+
+int32_t SwOSInput::getCounter( void ){
+
+  return _counter;
+
+}
+
+uint32_t SwOSInput::getFrequency( void ){
+  
+  return _frequency;
+}
+
 void SwOSInput::jsonize( JSONize *json, uint8_t id) {
   json->startObject();
   SwOSIO::jsonize(json, id);
@@ -722,6 +749,8 @@ void SwOSInput::jsonize( JSONize *json, uint8_t id) {
     json->variableOhm("value", getResistance() );
   } else if ( _sensorType == FTSWARM_THERMOMETER ) {
     json->variableCelcius("value", getCelcius() );
+  } else if ( _sensorType == FTSWARM_COUNTER ) {
+    json->variableUI32( "value", getCounter() );
   } else {
     json->variableUI32("value", getValueUI32() );
   }
@@ -867,15 +896,24 @@ void SwOSActor::setActorType( FtSwarmActor_t actorType, bool dontSendToRemote ) 
   
 };   
 
-void SwOSActor::setAcceleration( uint32_t _rampUpT,  uint32_t _rampUpY ) {
+void SwOSActor::setAcceleration( uint32_t rampUpT,  uint32_t rampUpY ) {
+
+  _rampUpT = rampUpT;
+  _rampUpY = rampUpY;
+
+  if (!_ctrl->isLocal()) _setRemote();
 
 }
 
-void SwOSActor::getAcceleration( uint32_t *_rampUpT,  uint32_t *_rampUpY ) {
-  
+void SwOSActor::getAcceleration( uint32_t *rampUpT,  uint32_t *rampUpY ) {
+  *rampUpY = _rampUpY;
+  *rampUpT = _rampUpT;
 }
 
 void SwOSActor::setSpeed( int16_t speed ) {
+
+  // if no change is needed, return
+  if ( speed == _speed ) return;
 
   // XMotor: set COAST or ON automatically
   if ( _actorType == FTSWARM_XMOTOR ) {
@@ -901,7 +939,10 @@ void SwOSActor::_setRemote() {
   cmd.data.actorSpeedCmd.index = _port;
   cmd.data.actorSpeedCmd.motionType = _motionType;
   cmd.data.actorSpeedCmd.speed = _speed;
+  cmd.data.actorSpeedCmd.rampUpT = _rampUpT;
+  cmd.data.actorSpeedCmd.rampUpY = _rampUpY;
   cmd.send( );
+
 }
 
 void SwOSActor::_setLocalI2C() {
@@ -2799,7 +2840,9 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
     case CMD_SETACTORSPEED:
       printf("CMD %d\n", com->data.actorSpeedCmd.speed);
       actor[com->data.actorSpeedCmd.index]->setMotionType( com->data.actorSpeedCmd.motionType );
+      actor[com->data.actorSpeedCmd.index]->setAcceleration( com->data.actorSpeedCmd.rampUpT, com->data.actorSpeedCmd.rampUpY );
       actor[com->data.actorSpeedCmd.index]->setSpeed( com->data.actorSpeedCmd.speed );
+      
       return true;
 
     case CMD_SETSTEPPERDISTANCE:

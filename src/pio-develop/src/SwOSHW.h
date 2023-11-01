@@ -149,6 +149,8 @@ protected:
   FtSwarmToggle_t   _toggle;
   bool              _normallyOpen = true;
   esp_adc_cal_characteristics_t *_adc_chars = NULL;
+  int32_t           _counter = 0;
+  uint32_t          _frequency = 0;
 	
 	bool isDigitalSensor();
   bool isXMeter();
@@ -173,15 +175,18 @@ public:
 
   // external commands
   virtual void            setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote );  // set sensor type
-	virtual uint32_t        getValueUI32();                               // get raw reading
-	virtual float           getValueF();                                  // get float reading
-  virtual float           getVoltage();                                 // get voltage reading
-  virtual float           getResistance();                              // get resistance reading
-  virtual float           getKelvin();                                  // get temperature reading
-  virtual float           getCelcius();                                 // get temperature reading
-  virtual float           getFahrenheit();                              // get temperature reading
+	virtual uint32_t        getValueUI32( void );                               // get raw reading
+	virtual float           getValueF( void );                                  // get float reading
+  virtual float           getVoltage( void );                                 // get voltage reading
+  virtual float           getResistance( void );                              // get resistance reading
+  virtual float           getKelvin( void );                                  // get temperature reading
+  virtual float           getCelcius( void );                                 // get temperature reading
+  virtual float           getFahrenheit( void );                              // get temperature reading
   virtual void            setValue( uint32_t value );                   // set value by an external call
-  virtual FtSwarmToggle_t getToggle();                                  // check, on toggling signals
+  virtual FtSwarmToggle_t getToggle( void );                                  // check, on toggling signals
+  virtual void            resetCounter( void );                               // reset counter
+  virtual int32_t         getCounter( void );                                 // get counter
+  virtual uint32_t        getFrequency( void );                               // get frequency
 
 };
 
@@ -237,8 +242,8 @@ public:
   virtual void            setValue( FtSwarmMotion_t motionType, int16_t speed ) { _motionType = motionType; _speed = speed; };  // set values
 	virtual void            setSpeed( int16_t speed );                                 // set speed
   virtual int16_t         getSpeed() { return _speed; };                             // get speed
-  virtual void            setAcceleration( uint32_t _rampUpT,  uint32_t _rampUpY );  // set acceleration ramp
-  virtual void            getAcceleration( uint32_t *_rampUpT, uint32_t *_rampUpY ); // get acceleration ramp
+  virtual void            setAcceleration( uint32_t rampUpT,  uint32_t rampUpY );    // set acceleration ramp
+  virtual void            getAcceleration( uint32_t *rampUpT, uint32_t *rampUpY );   // get acceleration ramp
   virtual void            setMotionType( FtSwarmMotion_t motionType );               // set motion type
 	virtual FtSwarmMotion_t getMotionType() { return _motionType; };                   // get motion type
 

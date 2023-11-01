@@ -53,7 +53,7 @@ typedef enum { FTSWARM_UNDEF = -1, FTSWARM_INPUT, FTSWARM_ACTOR, FTSWARM_BUTTON,
 typedef enum { FTSWARM_NOCTRL = -1, FTSWARM = 0, FTSWARMCONTROL, FTSWARMCAM, FTSWARMPWRDRIVE, FTSWARMDUINO } FtSwarmControler_t;
 
 // sensor types
-typedef enum { FTSWARM_DIGITAL, FTSWARM_ANALOG, FTSWARM_SWITCH, FTSWARM_REEDSWITCH, FTSWARM_LIGHTBARRIER, FTSWARM_VOLTMETER, FTSWARM_OHMMETER, FTSWARM_THERMOMETER, FTSWARM_LDR, FTSWARM_TRAILSENSOR, FTSWARM_COLORSENSOR, FTSWARM_ULTRASONIC, FTSWARM_MAXSENSOR } FtSwarmSensor_t;
+typedef enum { FTSWARM_DIGITAL, FTSWARM_ANALOG, FTSWARM_SWITCH, FTSWARM_REEDSWITCH, FTSWARM_LIGHTBARRIER, FTSWARM_VOLTMETER, FTSWARM_OHMMETER, FTSWARM_THERMOMETER, FTSWARM_LDR, FTSWARM_TRAILSENSOR, FTSWARM_COLORSENSOR, FTSWARM_ULTRASONIC, FTSWARM_COUNTER, FTSWARM_MAXSENSOR } FtSwarmSensor_t;
 
 // actor types
 typedef enum { FTSWARM_XMOTOR, FTSWARM_XMMOTOR, FTSWARM_TRACTOR,  FTSWARM_ENCODER, FTSWARM_LAMP, FTSWARM_VALVE, FTSWARM_COMPRESSOR, FTSWARM_BUZZER, FTSWARM_STEPPER, FTSWARM_MAXACTOR } FtSwarmActor_t;
@@ -167,6 +167,9 @@ class FtSwarmIO {
     FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmIOType_t ioType);
     FtSwarmIO( const char *name );
 
+    // destructor
+    ~FtSwarmIO();
+
   public:
     bool isOnline();          // check, if I'm online
     SwOSIOHandle_t me = NULL; // pointer to my swarm HW, don't use!
@@ -185,6 +188,16 @@ class FtSwarmInput : public FtSwarmIO {
 };
 
 // **** input / actor classes to use in your sketch ****
+
+class FtSwarmCounter : public FtSwarmInput {
+  // digtal counters. Ports A1..A4, all controller types. Dont use with switches hardware! 
+  public:
+    FtSwarmCounter( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
+    FtSwarmCounter( const char *name );
+    void resetCounter( void );
+    int32_t getCounter ( void );
+    int32_t getFrequency( void );   // returns the input signals frequency in 100mHz.
+};
 
 class FtSwarmDigitalInput : public FtSwarmInput {
   // digital inputs. ports A1..A4, all controler types
@@ -310,8 +323,11 @@ class FtSwarmMotor : public FtSwarmActor {
     FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType = FTSWARM_XMOTOR );
     FtSwarmMotor( const char *name, FtSwarmActor_t actorType = FTSWARM_XMOTOR );
     
-    void     setSpeed( int16_t speed );    // speed +/-256, speed 0 motor stopss
-    uint16_t getSpeed();                   // actual speed
+    void     setSpeed( int16_t speed );                                // speed +/-4095, speed 0 motor stopss
+    uint16_t getSpeed();                                               // actual speed
+    void     setAcceleration( uint32_t rampUpT,  uint32_t rampUpY );  
+    void     getAcceleration( uint32_t *rampUpT, uint32_t *rampUpY );
+    
 };
 
 class FtSwarmTractorMotor : public FtSwarmMotor {
@@ -368,48 +384,52 @@ class FtSwarmStepperMotor : public FtSwarmTractorMotor {
 };
 
 
-class FtSwarmLamp : public FtSwarmActor {
+class FtSwarmOnOffActor : public FtSwarmActor {
+  // classic on/off devices
+  // M1..M2 all contollers - keep power budget in mind!
+  public:
+    FtSwarmOnOffActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType );
+    FtSwarmOnOffActor( const char *name, FtSwarmActor_t actorType );
+    
+    void on( int16_t power = MAXSPEED );
+    void off( void );
+};
+
+
+class FtSwarmLamp : public FtSwarmOnOffActor {
   // classic lamps and LEDs
   // M1..M2 all contollers - keep power budget in mind!
   public:
     FtSwarmLamp( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
     FtSwarmLamp( const char *name );
-    
-    void on( uint8_t power = 255 );
-    void off( void );
+
 };
 
-class FtSwarmValve : public FtSwarmActor {
+class FtSwarmValve : public FtSwarmOnOffActor {
   // Valve
   // M1..M2 all contollers - keep power budget in mind!
   public:
     FtSwarmValve( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
     FtSwarmValve( const char *name );
-    
-    void on( void );
-    void off( void );
+
 };
 
-class FtSwarmCompressor : public FtSwarmActor {
+class FtSwarmCompressor : public FtSwarmOnOffActor {
   // Compressor
   // M1..M2 all contollers - keep power budget in mind!
   public:
     FtSwarmCompressor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
     FtSwarmCompressor( const char *name );
-    
-    void on( void );
-    void off( void );
+
 };
 
-class FtSwarmBuzzer : public FtSwarmActor {
+class FtSwarmBuzzer : public FtSwarmOnOffActor {
   // Buzzer
   // M1..M2 all contollers - keep power budget in mind!
   public:
     FtSwarmBuzzer( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
     FtSwarmBuzzer( const char *name );
-    
-    void on( void );
-    void off( void );
+
 };
 
 
