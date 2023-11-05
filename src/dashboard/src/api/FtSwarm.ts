@@ -3,7 +3,7 @@ import {nextToken} from "./auth";
 import Swal from "sweetalert2";
 import {get} from "svelte/store";
 
-const SWARM_API_BASE = window.location.origin === 'http://127.0.0.1:5173' ? 'http://127.0.0.1:5000/api/' : window.location.origin + '/api/'
+const SWARM_API_BASE = window.location.origin === 'http://localhost:5173' ? 'http://172.16.16.132/api/' : window.location.origin + '/api/'
 let mouseDown = false;
 let lastRequest = 0;
 
@@ -50,6 +50,8 @@ class FtSwarm {
     async fetch(url: string, options: RequestInit = {}) {
         const token = localStorage.getItem('token')
         const headers = new Headers(options.headers)
+
+        options['cache'] = 'no-store'
 
         if (token) {
             headers.append('Authorization', `Bearer ${token}`)
@@ -147,7 +149,7 @@ class FtSwarm {
             throw new Error('Not logged in')
         }
 
-        await this.performTokenMod()
+        this.performTokenMod()
         return this.fetch(url, options)
     }
 
@@ -188,14 +190,14 @@ class FtSwarm {
         })
     }
 
-    async updateMotor(id: string, cmd: number, power: number) {
-        console.log("FtSwarm: updateMotor", id, cmd, power)
+    async updateMotor(id: string, cmd: number, speed: number) {
+        console.log("FtSwarm: updateMotor", id, cmd, speed)
         await this.fetchWithAuth(`actor`, {
             method: 'POST',
             body: JSON.stringify({
                 id,
                 cmd,
-                power,
+                speed,
             }),
         })
     }

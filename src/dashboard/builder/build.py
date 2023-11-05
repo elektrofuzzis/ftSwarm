@@ -191,12 +191,12 @@ consoleloader.warn("Please be sure to provide the HTTP header 'Content-Encoding:
 consoleloader.succeed("Cleaned up")
 consoleloader = Halo("Integrating...")
 
-if os.path.exists("../../arduino-cpp-library/src/sfs_files.cpp"):
-    os.remove("../../arduino-cpp-library/src/sfs_files.cpp")
-if os.path.exists("../../arduino-cpp-library/src/sfs_files.h"):
-    os.remove("../../arduino-cpp-library/src/sfs_files.h")
+if os.path.exists("../../pio-develop/src/sfs_files.cpp"):
+    os.remove("../../pio-develop/src/sfs_files.cpp")
+if os.path.exists("../../pio-develop/src/sfs_files.h"):
+    os.remove("../../pio-develop/src/sfs_files.h")
 
-shutil.copy("sfs_files.cpp", "../../arduino-cpp-library/src/")
-shutil.copy("sfs_files.h", "../../arduino-cpp-library/src/")
+shutil.copy("sfs_files.cpp", "../../pio-develop/src/")
+shutil.copy("sfs_files.h", "../../pio-develop/src/")
 
 consoleloader.succeed("Integrated")

@@ -13,14 +13,15 @@
 <SwarmCtrlBase colspan={2} descriptor={input.subType} io={input}>
     <div class="container">
         <select bind:value={input.motiontype} {disabled} on:change={(_) => {
-            ftSwarm.debouncedUpdateMotor(input.id, input.motiontype, input.power);
+            ftSwarm.debouncedUpdateMotor(input.id, input.motiontype, input.speed);
         }}>
             <option value={0}>COAST</option>
             <option value={1}>BRAKE</option>
             <option value={2}>RUN</option>
         </select>
-        <Slider max={255} min={-255} bind:value={input.power} oninput={(_) => {
-            ftSwarm.debouncedUpdateMotor(input.id, input.motiontype, input.power);
+        <Slider max={255} min={-255} bind:value={input.speed} oninput={(_) => {
+            ftSwarm.debouncedUpdateMotor(input.id, input.motiontype, input.speed
+);
         }}/>
     </div>
 </SwarmCtrlBase>

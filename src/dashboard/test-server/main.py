@@ -66,7 +66,7 @@ def index():
         "icon": "17_tractor.svg",
         "subType": "TRACTORMOTOR",
         "motiontype": 0,
-        "power": 0
+        "speed": 0
       },
       {
         "name": "ALias7",
@@ -75,7 +75,7 @@ def index():
         "icon": "16_xmotor.svg",
         "subType": "XMOTOR",
         "motiontype": 0,
-        "power": 0
+        "speed": 0
       },
       {
         "name": "Alias8",
@@ -153,7 +153,7 @@ def index():
           "icon": "17_tractor.svg",
           "subType": "TRACTORMOTOR",
           "motiontype": 0,
-          "power": 255
+          "speed": 255
         },
         {
           "name": "ALias7",
@@ -162,7 +162,7 @@ def index():
           "icon": "16_xmotor.svg",
           "subType": "XMOTOR",
           "motiontype": 0,
-          "power": 0
+          "speed": 0
         },
         {
           "name": "Alias8",

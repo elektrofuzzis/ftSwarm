@@ -1,18 +1,22 @@
-<script>
-    import {currentSwarm, swarmApiData} from "../stores.ts";
+<script lang="ts">
+    import {currentSwarm, swarmApiData} from "../stores";
     import SwarmInput from "./SwarmInput.svelte";
     import SwarmBtn from "./SwarmBtn.svelte";
     import SwarmJoystick from "./SwarmJoystick.svelte";
     import SwarmActor from "./SwarmActor.svelte";
     import SwarmServo from "./SwarmServo.svelte";
     import SwarmLED from "./SwarmLED.svelte";
+    import SwarmCounter from "./SwarmCounter.svelte";
 </script>
 
 <div class="container">
     <span class="label">Input</span>
     <div class="grid">
-        {#each $swarmApiData.swarms[$currentSwarm].io.filter((io) => io.type === "INPUT") as io}
+        {#each $swarmApiData.swarms[$currentSwarm].io.filter((io) => io.type === "DIGITALINPUT" || io.type === "ANALOGINPUT") as io}
             <SwarmInput input={io}/>
+        {/each}
+        {#each $swarmApiData.swarms[$currentSwarm].io.filter((io) => io.type === "COUNTER") as io}
+            <SwarmCounter input={io}/>
         {/each}
         {#each $swarmApiData.swarms[$currentSwarm].io.filter((io) => io.type === "BUTTON") as io}
             <SwarmBtn input={io}/>
