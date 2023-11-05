@@ -430,7 +430,7 @@ void SwOSCLI::executeControlerCmd(void ) {
 
 void SwOSCLI::executeInputCmd( void ) {
 
-  SwOSInput *io = (SwOSInput *)_io;
+  SwOSInput        *io = (SwOSInput *)_io;
 
   switch ( _cmd ) {
     case CLICMD_getSensorType: myOSSwarm.lock();
@@ -440,45 +440,77 @@ void SwOSCLI::executeInputCmd( void ) {
 
     case CLICMD_setSensorType: if ( ( _parameter[0].inRange( "sensorType", 0, FTSWARM_MAXSENSOR-1 ) ) && 
                                    ( _parameter[1].inRange( "normallyOpen", 0, 1 ) ) ) {
-                                printf("R: ok\n");
                                 myOSSwarm.lock();
-                                io->setSensorType( (FtSwarmSensor_t)_parameter[0].getValue(), (bool)_parameter[1].getValue(), false );
+                                io = (SwOSInput *) myOSSwarm.getIO( io->getCtrl()->serialNumber, io->getPort(), sensorType2IOType( (FtSwarmSensor_t) _parameter[0].getValue() ) );
+                                if (io->getIOType() == FTSWARM_ANALOGINPUT ) {
+                                  ((SwOSAnalogInput *)io)->setSensorType( (FtSwarmSensor_t)_parameter[0].getValue(), false );
+                                  printf("R: ok\n");
+                                } else if (io->getIOType() == FTSWARM_DIGITALINPUT ) {
+                                  ((SwOSDigitalInput *)io)->setSensorType( (FtSwarmSensor_t)_parameter[0].getValue(), (bool)_parameter[1].getValue(), false );
+                                  printf("R: ok\n");
+                                } else {
+                                  printf("ERROR: wrong iotype.\n");
+                                }
                                 myOSSwarm.unlock();
                               }
                               break;
 
-    case CLICMD_getValue:      myOSSwarm.lock();
+    case CLICMD_getValue:     myOSSwarm.lock();
                               printf("R: %d\n", io->getValueUI32() );
                               myOSSwarm.unlock();
                               break;
 
-    case CLICMD_getVoltage:    myOSSwarm.lock();
-                              printf("R: %f\n", io->getVoltage());
+    case CLICMD_getVoltage:   myOSSwarm.lock();
+                              if ( io->getIOType() == FTSWARM_ANALOGINPUT ) {
+                                printf("R: %f\n", ((SwOSAnalogInput *)io)->getVoltage());
+                              } else {
+                                printf("ERROR: wrong IO type %d\n", io->getIOType() );
+                              }
                               myOSSwarm.unlock();
                               break;
 
     case CLICMD_getResistance: myOSSwarm.lock();
-                              printf("R: %f\n", io->getResistance());
+                              if ( io->getIOType() == FTSWARM_ANALOGINPUT ) {
+                                printf("R: %f\n", ((SwOSAnalogInput *)io)->getResistance());
+                              } else {
+                                printf("ERROR: wrong IO type %d\n", io->getIOType() );
+                              }
                               myOSSwarm.unlock();
                               break;
 
-    case CLICMD_getKelvin:     myOSSwarm.lock();
-                              printf("R: %f\n", io->getKelvin());
+    case CLICMD_getKelvin:    myOSSwarm.lock();
+                              if ( io->getIOType() == FTSWARM_ANALOGINPUT ) {
+                                printf("R: %f\n", ((SwOSAnalogInput *)io)->getKelvin());
+                              } else {
+                                printf("ERROR: wrong IO type %d\n", io->getIOType() );
+                              }
                               myOSSwarm.unlock();
                               break;
 
-    case CLICMD_getCelcius:    myOSSwarm.lock();
-                              printf("R: %f\n", io->getCelcius());
+    case CLICMD_getCelcius:   myOSSwarm.lock();
+                              if ( io->getIOType() == FTSWARM_ANALOGINPUT ) {
+                                printf("R: %f\n", ((SwOSAnalogInput *)io)->getCelcius());
+                              } else {
+                                printf("ERROR: wrong IO type %d\n", io->getIOType() );
+                              }
                               myOSSwarm.unlock();
                               break;
 
     case CLICMD_getFahrenheit: myOSSwarm.lock();
-                              printf("R: %f\n", io->getFahrenheit());
+                              if ( io->getIOType() == FTSWARM_ANALOGINPUT ) {
+                                printf("R: %f\n", ((SwOSAnalogInput *)io)->getFahrenheit());
+                              } else {
+                                printf("ERROR: wrong IO type %d\n", io->getIOType() );
+                              }
                               myOSSwarm.unlock();
                               break;
 
-    case CLICMD_getToggle:     myOSSwarm.lock();
-                              printf("R: %d\n", io->getToggle());
+    case CLICMD_getToggle:    myOSSwarm.lock();
+                              if ( io->getIOType() == FTSWARM_DIGITALINPUT ) {
+                                printf("R: %f\n", ((SwOSDigitalInput*)io)->getToggle());
+                              } else {
+                                printf("ERROR: wrong IO type %d\n", io->getIOType() );
+                              }
                               myOSSwarm.unlock();
                               break;
 
@@ -792,12 +824,14 @@ void SwOSCLI::executeIOCommand( void ) {
   } else if (_io ) {
     // io cmd?
     switch (_io->getIOType() ) {
-      case FTSWARM_INPUT:    executeInputCmd(); break;
-      case FTSWARM_ACTOR:    executeActorCmd(); break;
-      case FTSWARM_JOYSTICK: executeJoystickCmd(); break;
-      case FTSWARM_SERVO:    executeServoCmd(); break;
-      case FTSWARM_PIXEL:    executePixelCmd(); break;
-      case FTSWARM_I2C:      executeI2CCmd(); break;
+      case FTSWARM_DIGITALINPUT:
+      case FTSWARM_ANALOGINPUT:
+      case FTSWARM_INPUT:       executeInputCmd(); break;
+      case FTSWARM_ACTOR:       executeActorCmd(); break;
+      case FTSWARM_JOYSTICK:    executeJoystickCmd(); break;
+      case FTSWARM_SERVO:       executeServoCmd(); break;
+      case FTSWARM_PIXEL:       executePixelCmd(); break;
+      case FTSWARM_I2C:         executeI2CCmd(); break;
       //case FTSWARM_BUTTON:
       //case FTSWARM_OLED:
       //case FTSWARM_GYRO:
@@ -870,7 +904,7 @@ bool  SwOSCLI::getIO( char *token, char *IOName, SwOSCtrl **ctrl, SwOSIO **io ) 
   } else {
 
     // it was an alias name without controller
-    _io = myOSSwarm.getIO( token );
+    _io = myOSSwarm.getIO( token, FTSWARM_UNDEF );
     strcpy( IOName, token );
   }
 

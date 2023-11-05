@@ -47,7 +47,7 @@ typedef uint8_t  FtSwarmPort_t;
 typedef enum { swarmComWifi = 1, swarmComRS485 = 2, swarmComBoth= 3 } FtSwarmCommunication_t; 
 
 // IO types
-typedef enum { FTSWARM_UNDEF = -1, FTSWARM_INPUT, FTSWARM_ACTOR, FTSWARM_BUTTON, FTSWARM_JOYSTICK, FTSWARM_PIXEL, FTSWARM_SERVO,  FTSWARM_OLED, FTSWARM_GYRO, FTSWARM_HC165, FTSWARM_I2C, FTSWARM_CAM, FTSWARM_MAXIOTYPE } FtSwarmIOType_t ;
+typedef enum { FTSWARM_UNDEF = -1, FTSWARM_INPUT, FTSWARM_DIGITALINPUT, FTSWARM_ANALOGINPUT, FTSWARM_ACTOR, FTSWARM_BUTTON, FTSWARM_JOYSTICK, FTSWARM_PIXEL, FTSWARM_SERVO,  FTSWARM_OLED, FTSWARM_GYRO, FTSWARM_HC165, FTSWARM_I2C, FTSWARM_CAM, FTSWARM_MAXIOTYPE } FtSwarmIOType_t ;
 
 // controler types
 typedef enum { FTSWARM_NOCTRL = -1, FTSWARM = 0, FTSWARMCONTROL, FTSWARMCAM, FTSWARMPWRDRIVE, FTSWARMDUINO } FtSwarmControler_t;
@@ -163,9 +163,8 @@ class FtSwarmIO {
   protected:
     
     // constructors
-    FtSwarmIO() {};
     FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmIOType_t ioType);
-    FtSwarmIO( const char *name );
+    FtSwarmIO( const char *name, FtSwarmIOType_t ioType );
 
     // destructor
     ~FtSwarmIO();
@@ -179,8 +178,8 @@ class FtSwarmInput : public FtSwarmIO {
   // an input base class, don't use this class at all
   
   protected:
-    FtSwarmInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmSensor_t sensorType, bool normallyOpen = true);
-    FtSwarmInput( const char *name, FtSwarmSensor_t sensorType, bool normallyOpen = true );
+    FtSwarmInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmIOType_t ioType );
+    FtSwarmInput( const char *name, FtSwarmIOType_t ioType );
 
   public:
     void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 ); 
@@ -189,26 +188,15 @@ class FtSwarmInput : public FtSwarmIO {
 
 // **** input / actor classes to use in your sketch ****
 
-class FtSwarmCounter : public FtSwarmInput {
-  // digtal counters. Ports A1..A4, all controller types. Dont use with switches hardware! 
-  public:
-    FtSwarmCounter( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
-    FtSwarmCounter( const char *name );
-    void resetCounter( void );
-    int32_t getCounter ( void );
-    int32_t getFrequency( void );   // returns the input signals frequency in 100mHz.
-};
-
 class FtSwarmDigitalInput : public FtSwarmInput {
   // digital inputs. ports A1..A4, all controler types
 
   protected:
     FtSwarmDigitalInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmSensor_t sensorType, bool normallyOpen = true);
     FtSwarmDigitalInput( const char *name, FtSwarmSensor_t sensorType, bool normallyOpen );
+    void setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen );
   
   public:
-    FtSwarmDigitalInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
-    FtSwarmDigitalInput( const char *name  );
 
     bool isPressed();                     // getState()
     bool isReleased();                    // !getState()
@@ -261,11 +249,9 @@ class FtSwarmAnalogInput : public FtSwarmInput {
   protected:
     FtSwarmAnalogInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmSensor_t sensorType);
     FtSwarmAnalogInput( const char *name, FtSwarmSensor_t sensorType );
+    void setSensorType( FtSwarmSensor_t sensorType );
 
   public:
-    FtSwarmAnalogInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
-    FtSwarmAnalogInput( const char *name );
-
     int32_t getValue();  // get 12 bit raw reading
 };
 
@@ -564,3 +550,5 @@ class FtSwarm {
 extern FtSwarm ftSwarm;
 
 extern void forever( char *prompt);
+
+extern FtSwarmIOType_t sensorType2IOType( FtSwarmSensor_t sensor2IOType );

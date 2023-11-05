@@ -124,14 +124,14 @@ uint16_t SwOSSwarm::nextToken( bool rotateToken ) {
   
 }
 
-SwOSIO *SwOSSwarm::waitFor( char *alias ) {
+SwOSIO *SwOSSwarm::waitFor( char *alias, FtSwarmIOType_t ioType ) {
 
   SwOSIO *me = NULL;
   bool   firstTry = true;
 
   while (!me) {
 
-    me = getIO( alias );
+    me = getIO( alias, ioType );
 
     // no success, wait 25 ms
     if ( (!me) && ( firstTry ) ) {
@@ -164,8 +164,8 @@ bool SwOSSwarm::startEvents( void ) {
     if ( ( event->sensor[0] != '\0' ) && ( event->actor[0] != '\0' ) ) {
 
       // get IOs and stop on error
-      sensor = waitFor( event->sensor ); if (!sensor) return false;
-      actor  = waitFor( event->actor );  if (!actor)  return false;
+      sensor = waitFor( event->sensor, FTSWARM_INPUT ); if (!sensor) return false;
+      actor  = waitFor( event->actor, FTSWARM_ACTOR );  if (!actor)  return false;
 
       switch ( sensor->getIOType() ) {
     
@@ -407,32 +407,69 @@ uint8_t SwOSSwarm::getIndex( FtSwarmSerialNumber_t serialNumber ) {
   
  }
 
-SwOSIO* SwOSSwarm::getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmIOType_t ioType,FtSwarmPort_t port) {
+SwOSIO* SwOSSwarm::getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmIOType_t ioType ) {
 
+  SwOSIO *IO = NULL;
+  
   // check on valid controler
   uint8_t i = getIndex( serialNumber );
 
-  if ( Ctrl[i] ) return Ctrl[i]->getIO( ioType, port );
+  if ( Ctrl[i] ) IO = Ctrl[i]->getIO( ioType, port );
 
-  // nothing found
-  return NULL;
+  if ( IO ) {
+
+    // everything is fine...
+    if ( ( ioType == FTSWARM_UNDEF ) || ( IO->getIOType() == ioType ) ) return IO;
+
+    // test, if the controller could change the IOType
+    if ( IO->isInUse() ) {
+      printf("ERROR: Can't change IO Type. %s.%s is in use.\n", Ctrl[i]->getName(), IO->getName() );
+      setState( ERROR );
+    }
+
+    if ( Ctrl[i]->changeIOType( port, IO->getIOType(), ioType ) ) return Ctrl[i]->getIO( ioType, port );
+
+  }
+
+  return IO;
   
 }
 
-SwOSIO* SwOSSwarm::getIO( const char *name ) {
+SwOSIO* SwOSSwarm::getIO( const char *name, FtSwarmIOType_t ioType ) {
 
-  SwOSIO *IO = NULL;
+  SwOSIO *IO;
 
   for ( uint8_t i=0; i<=maxCtrl; i++ ) {
 
     if ( Ctrl[i] ) {
+
       IO = Ctrl[i]->getIO( name );
-      if (IO) break;
+      
+      if ( IO ) {
+
+        // everything is fine...
+        if ( ( ioType == FTSWARM_UNDEF ) || ( IO->getIOType() == ioType ) ) return IO;
+
+        // test, if the controller could change the IOType
+        if ( IO->isInUse() ) {
+          printf("ERROR: Can't change IO Type. %s.%s is in use.\n", Ctrl[i]->getName(), IO->getName() );
+          setState( ERROR );
+          while (1) delay(50);
+        }
+
+        if ( Ctrl[i]->changeIOType( IO->getPort(), IO->getIOType(), ioType ) ) return Ctrl[i]->getIO( name );
+        
+        // not possible at all
+        return NULL;
+        
+      }
+
     }
     
   }
 
-  return IO;
+  // nothing found
+  return NULL;
   
 }
 

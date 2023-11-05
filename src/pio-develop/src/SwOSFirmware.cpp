@@ -596,7 +596,7 @@ bool changeEvent( NVSEvent *event ) {
   // enter sensor
   while (true) {
     enterString( "sensor: ", sensor, sizeof(sensor) );
-    newSensor = myOSSwarm.getIO( sensor );
+    newSensor = myOSSwarm.getIO( sensor, FTSWARM_INPUT );
     
     if (sensor[0] == '\0' ) 
       return false;
@@ -624,7 +624,7 @@ bool changeEvent( NVSEvent *event ) {
   // enter actor
   while (true) {
     enterString( "actor: ", actor, sizeof(actor) );
-    newActor = myOSSwarm.getIO( actor);
+    newActor = myOSSwarm.getIO( actor, FTSWARM_ACTOR );
     
     if (actor[0] == '\0' ) 
       return false;
@@ -645,7 +645,7 @@ bool changeEvent( NVSEvent *event ) {
   if (!usePortValue) parameter = enterNumberI32( "Which value should be set? ", 0, 0, 0xFFFFFF );
 
   // delete old trigger
-  SwOSIO *oldSensor = myOSSwarm.getIO( event->sensor );
+  SwOSIO *oldSensor = myOSSwarm.getIO( event->sensor, FTSWARM_INPUT );
   
   if ( oldSensor != NULL ) {
   

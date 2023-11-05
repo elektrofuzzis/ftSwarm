@@ -33,7 +33,7 @@ protected:
   uint8_t getIndex( FtSwarmSerialNumber_t serialNumber );               // return index of controler with this s/n or are free slot if not found
 	bool    splitID( char *id, uint8_t *index, char *io, size_t sizeIO);  // split identifier
   uint16_t nextToken( bool rotateToken);
-  SwOSIO *waitFor( char *alias );
+  SwOSIO *waitFor( char *alias, FtSwarmIOType_t ioType );
   bool    startEvents( void );
   void    startWifi( void );
   
@@ -60,8 +60,8 @@ public:
 	void *getControler(char *name);
 
   // search an IO in my swarm via <serialNumber, ioType, port> or with my IO's name
-  virtual SwOSIO* getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmIOType_t ioType, FtSwarmPort_t port);
-  virtual SwOSIO* getIO( const char *name );
+  virtual SwOSIO* getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmIOType_t ioType);
+  virtual SwOSIO* getIO( const char *name, FtSwarmIOType_t ioType );
 
   // **** REST API ****
 	void jsonize( JSONize *json);                                                               // transfer my swarm to a JSON structure

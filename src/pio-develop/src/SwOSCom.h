@@ -25,27 +25,28 @@
 #define MAXUSEREVENTPAYLOAD 128
 
 typedef enum {
-  CMD_SWARMJOIN,         // I want to join a swarm
-  CMD_SWARMJOINACK,      // Acknowledge on join swarm
-  CMD_SWARMLEAVE,        // leave swarm
-  CMD_ANYBODYOUTTHERE,   // Broadcast to get known by everybody 
-  CMD_GOTYOU,            // anybody's reply on ANYBODYOUTTHERE
-  CMD_SETLED,            // set LED color & brightness
-  CMD_SETACTORSPEED,     // set actors motionType & speed
-  CMD_SETSERVO,          // set servo position
-  CMD_STATE,             // send my input's readings
-  CMD_SETSENSORTYPE,     // set an input's sensor type
-  CMD_SETACTORTYPE,      // set an actors's actor type
-  CMD_ALIAS,             // send some alias names
-  CMD_I2CREGISTER,       // set an I2C register
-  CMD_SETSTEPPERDISTANCE, // set distance to go
-  CMD_STEPPERSTARTSTOP,   // start/stop
-  CMD_SETSTEPPERPOSITION, // set stepper position
-  CMD_STEPPERHOMING,      // start stepper homing procedure
+  CMD_SWARMJOIN,              // I want to join a swarm
+  CMD_SWARMJOINACK,           // Acknowledge on join swarm
+  CMD_SWARMLEAVE,             // leave swarm
+  CMD_ANYBODYOUTTHERE,        // Broadcast to get known by everybody 
+  CMD_GOTYOU,                 // anybody's reply on ANYBODYOUTTHERE
+  CMD_SETLED,                 // set LED color & brightness
+  CMD_SETACTORSPEED,          // set actors motionType & speed
+  CMD_SETSERVO,               // set servo position
+  CMD_STATE,                  // send my input's readings
+  CMD_SETSENSORTYPE,          // set an input's sensor type
+  CMD_SETACTORTYPE,           // set an actors's actor type
+  CMD_ALIAS,                  // send some alias names
+  CMD_I2CREGISTER,            // set an I2C register
+  CMD_SETSTEPPERDISTANCE,     // set distance to go
+  CMD_STEPPERSTARTSTOP,       // start/stop
+  CMD_SETSTEPPERPOSITION,     // set stepper position
+  CMD_STEPPERHOMING,          // start stepper homing procedure
   CMD_SETSTEPPERHOMINGOFFSET, // set homing offset
   CMD_SETMICROSTEPMODE,       // set Microstepmode
   CMD_USEREVENT,              // send data from user exit back to Kelda
-  CMD_IDENTIFY,               // 
+  CMD_IDENTIFY,               // show myself
+  CMD_CHANGEIOTYPE,           // change a port's IO Type
   CMD_MAX
 } SwOSCommand_t;
 
@@ -105,6 +106,7 @@ struct SwOSDatagram_t {
     struct { uint8_t reg; uint8_t value; } I2CRegisterCmd;
     struct { uint8_t microstepMode; } CtrlCmd;
     struct { bool trigger; uint8_t size; uint8_t payload[MAXUSEREVENTPAYLOAD]; } userEventCmd;
+    struct { uint8_t index; FtSwarmIOType_t oldIOType; FtSwarmIOType_t newIOType; } changeIOTypeCmd;
   };
 } __attribute__((packed));
 

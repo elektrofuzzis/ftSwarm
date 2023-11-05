@@ -376,6 +376,8 @@ esp_err_t apiGetToken(httpd_req_t *req ) {
 esp_err_t apiGetHandler(httpd_req_t *req ) {
   // reply on get /api/*
 
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+
   // check on sub urls, apiGetSwarm will lock
   if (strcmp( req->uri, "/api/getSwarm" ) == 0 ) { return apiGetSwarm( req ); }
   if (strcmp( req->uri, "/api/getToken" ) == 0 ) { return apiGetToken( req ); }

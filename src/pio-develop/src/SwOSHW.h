@@ -46,8 +46,8 @@ public:
 	SwOSObj( const char *name);		    // constructor, sets the objects HW name
   ~SwOSObj();                       // destructor
 
-  virtual void loadAliasFromNVS(  nvs_handle_t my_handle ); // write my alias to NVS
-  virtual void saveAliasToNVS(  nvs_handle_t my_handle );   // load my alias from NVS
+  virtual void loadAliasFromNVS(  nvs_handle_t my_handle ); // load my alias from NVS
+  virtual void saveAliasToNVS(  nvs_handle_t my_handle );   // dave my alias from NVS
   
 	void setName( const char *name);   // set new name
   char *getName();                   // get name
@@ -74,6 +74,7 @@ protected:
   uint32_t  _lastsubscribedValue = 0;
   uint32_t  _hysteresis = 0;
   char     *_subscribedIOName = NULL;
+  int16_t   _useCounter = 0;
 
   // local HW 
   virtual void _setupLocal() {};
@@ -91,6 +92,9 @@ public:
 	virtual FtSwarmIOType_t getIOType() { return FTSWARM_UNDEF; };
   virtual char*           getIcon() { return (char *) "UNDEFINED"; };
 	virtual void            jsonize( JSONize *json, uint8_t id);
+  virtual void            take( void ) { _useCounter++; };                      // register an instance using this IO
+  virtual void            give( void ) { if (_useCounter>0) _useCounter--; };   // unregister an instance using this IO
+  virtual bool            isInUse( void ) { return _useCounter > 0; };          // test, if an IO is used by some user elements
   
   virtual void read( void ) { };
   virtual void onTrigger( int32_t value );
@@ -142,51 +146,107 @@ class SwOSEventInput {
  ***************************************************/
 
 class SwOSInput : public SwOSIO, public SwOSEventInput {
-protected:
-  int8_t            _GPIO, _PUA2, _USTX, _ADCChannel, _ADCUnit;
-	FtSwarmSensor_t   _sensorType;
-	uint32_t          _lastRawValue;
-  FtSwarmToggle_t   _toggle;
-  bool              _normallyOpen = true;
-  esp_adc_cal_characteristics_t *_adc_chars = NULL;
-  int32_t           _counter = 0;
-  uint32_t          _frequency = 0;
-	
-	bool isDigitalSensor();
-  bool isXMeter();
-  virtual void _setupLocal();
-  virtual void _setupI2CSensor();
-  virtual void _setSensorTypeI2C( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote );  // set sensor type
-  virtual void _setSensorTypeLHW( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote );  // set sensor type
-  virtual void subscription();
-
-public:
- 
-	SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl );
   
-  // administrative stuff
-	virtual FtSwarmIOType_t getIOType() { return FTSWARM_INPUT; };
-  virtual FtSwarmSensor_t getSensorType() { return _sensorType; };
-  virtual char *getIcon();
-	virtual void jsonize( JSONize *json, uint8_t id);
+  protected:
+    gpio_num_t        _GPIO = GPIO_NUM_NC;
+	  FtSwarmSensor_t   _sensorType;
+	  uint32_t          _lastRawValue = 0;
+	
+    virtual void _setupLocal();
+    virtual void subscription();
 
-  // read sensor
-	virtual void     read();
+  public:
+ 
+	  SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl, FtSwarmSensor_t sensorType );
+  
+    // administrative stuff
+	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_INPUT; };
+    virtual FtSwarmSensor_t getSensorType() { return _sensorType; };
+    virtual char *getIcon();
+	  virtual void jsonize( JSONize *json, uint8_t id) {};               // just a placeholder
 
-  // external commands
-  virtual void            setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote );  // set sensor type
-	virtual uint32_t        getValueUI32( void );                               // get raw reading
-	virtual float           getValueF( void );                                  // get float reading
-  virtual float           getVoltage( void );                                 // get voltage reading
-  virtual float           getResistance( void );                              // get resistance reading
-  virtual float           getKelvin( void );                                  // get temperature reading
-  virtual float           getCelcius( void );                                 // get temperature reading
-  virtual float           getFahrenheit( void );                              // get temperature reading
-  virtual void            setValue( uint32_t value );                   // set value by an external call
-  virtual FtSwarmToggle_t getToggle( void );                                  // check, on toggling signals
-  virtual void            resetCounter( void );                               // reset counter
-  virtual int32_t         getCounter( void );                                 // get counter
-  virtual uint32_t        getFrequency( void );                               // get frequency
+    // read sensor
+	  virtual void     read() {};
+
+    // external commands
+    virtual void            setSensorType( FtSwarmSensor_t sensorType );  // set sensor type
+	  virtual uint32_t        getValueUI32( void );                         // get raw reading
+	  virtual float           getValueF( void );                            // get float reading
+    virtual void            setValue( uint32_t value ) {};                // set value by an external call
+  
+};
+
+/***************************************************
+ *
+ *   SwOSDigitalInput
+ *
+ ***************************************************/
+
+class SwOSDigitalInput : public SwOSInput {
+
+  protected:
+    gpio_num_t      _PUA2   = GPIO_NUM_NC;
+    gpio_num_t      _USTX   = GPIO_NUM_NC;
+    FtSwarmToggle_t _toggle = FTSWARM_NOTOGGLE;
+    bool            _normallyOpen = true;
+
+    virtual void _setupLocal();
+    virtual void _setSensorTypeLHW( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote );  // set sensor type
+
+  public:
+ 
+	  SwOSDigitalInput(const char *name, uint8_t port, SwOSCtrl *ctrl );
+  
+    // administrative stuff
+	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_DIGITALINPUT; };
+    virtual void jsonize( JSONize *json, uint8_t id);
+
+    // read sensor
+	  virtual void     read();
+
+    // external commands
+    virtual void            setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote );  // set sensor type
+    virtual void            setValue( uint32_t value );                   // set value by an external call
+    virtual FtSwarmToggle_t getToggle( void );                                  // check, on toggling signals
+
+};
+
+/***************************************************
+ *
+ *   SwOSAnalogInput
+ *
+ ***************************************************/
+
+class SwOSAnalogInput : public SwOSInput {
+
+  protected:
+    int8_t            _ADCChannel = ADC1_CHANNEL_MAX;
+    int8_t            _ADCUnit    = GPIO_NUM_NC;
+    esp_adc_cal_characteristics_t *_adc_chars = NULL;
+	
+    bool isXMeter();
+    virtual void _setupLocal();
+    virtual void _setSensorTypeLHW( FtSwarmSensor_t sensorType, bool dontSendToRemote );  // set sensor type
+
+  public:
+ 
+	  SwOSAnalogInput(const char *name, uint8_t port, SwOSCtrl *ctrl );
+  
+    // administrative stuff
+	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_ANALOGINPUT; };
+    virtual void jsonize( JSONize *json, uint8_t id);
+
+    // read sensor
+	  virtual void     read();
+
+    // external commands
+    virtual void   setSensorType( FtSwarmSensor_t sensorType, bool dontSendToRemote );  // set sensor type
+    virtual void   setValue( uint32_t value );                   // set value by an external call
+    virtual float  getVoltage();
+    virtual float  getResistance();
+    virtual float  getKelvin();
+    virtual float  getCelcius();
+    virtual float  getFahrenheit();
 
 };
 
@@ -652,6 +712,7 @@ public:
   virtual unsigned long networkAge( void );                              // ms since last received package
   virtual void identify( void );                                         // set LEDs to aquamarine / OLED to "it's me" to identify HW 
   virtual char *subscribe( char *ctrlName );                             // listen on user event data
+  virtual bool changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarmIOType_t newIOType ); // change port's IO Type if possible
 
   virtual void read(); // run measurements
 
@@ -809,6 +870,7 @@ class SwOSSwarmJST : public SwOSSwarmXX {
     virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
     virtual void factorySettings( void );                                  // reset factory settings
     virtual void unsubscribe(void );                                       // unsubscribe all IOs
+    virtual bool changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarmIOType_t newIOType ); // change port's IO Type if possible
 
     // API commands
     virtual bool apiServoOffset( char *id, int offset );           // send a Servo command (from api)

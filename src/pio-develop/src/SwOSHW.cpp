@@ -23,7 +23,7 @@
 #include "SwOSHW.h"
 #include "SwOSCom.h"
 
-const char IOTYPE[FTSWARM_MAXIOTYPE][10] = { "INPUT", "ACTOR", "BUTTON", "JOYSTICK", "LED", "SERVO", "OLED", "GYRO", "HC165", "I2C", "CAM" };
+const char IOTYPE[FTSWARM_MAXIOTYPE][13] = { "INPUT", "DIGITALINPUT", "ANALOGINPUT", "ACTOR", "BUTTON", "JOYSTICK", "LED", "SERVO", "OLED", "GYRO", "HC165", "I2C", "CAM" };
 
 const char EMPTYSTRING[] = "";
 
@@ -369,43 +369,87 @@ const int8_t GPIO_INPUT[6][6][3] =
     /* FTSWARMCAM_2V11 */     { { GPIO_NUM_33, ADC_UNIT_1, ADC1_CHANNEL_5}, { GPIO_NUM_12,  ADC_UNIT_1, ADC1_CHANNEL_1},   { GPIO_NUM_13, ADC_UNIT_2, ADC1_CHANNEL_8},   { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} }
   };   
 
-SwOSInput::SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSIO( name, port, ctrl ), SwOSEventInput( ) {
+SwOSInput::SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl, FtSwarmSensor_t sensorType ) : SwOSIO( name, port, ctrl ), SwOSEventInput( ) {
   
   // initialize some vars to undefined
-  _lastRawValue = 0;
-  _toggle       = FTSWARM_NOTOGGLE;
-  _sensorType   = FTSWARM_DIGITAL;
+  _sensorType   = sensorType;
 
-  // initialize local HW
-  if ( _ctrl->isLocal() ) {
-    if ( _ctrl->isI2CSwarmCtrl() ) {
-      _setupI2CSensor();
-    } else {
-      _setupLocal();
-    }
-  }
-
-}
-
-void SwOSInput::_setupI2CSensor() {
-  _ADCUnit      = GPIO_NUM_NC;
-  _ADCChannel   = ADC1_CHANNEL_MAX;
-  _PUA2         = GPIO_NUM_NC;
-  _USTX         = GPIO_NUM_NC;
-  _GPIO         = GPIO_NUM_NC;
 }
 
 
 void SwOSInput::_setupLocal() {
   // initialize local HW
 
+  gpio_config_t io_conf = {};
+
+  if ( _GPIO != GPIO_NUM_NC) {
+
+    // initialize digital  port
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    io_conf.mode = GPIO_MODE_INPUT;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+    io_conf.pin_bit_mask = 1ULL << _GPIO;
+    gpio_config(&io_conf);
+
+  }
+  
+}
+
+char * SwOSInput::getIcon() { 
+  return (char *) SENSORICON[ _sensorType ]; 
+}; 
+
+void SwOSInput::setSensorType( FtSwarmSensor_t sensorType ) {
+
+  _sensorType   = sensorType;
+
+}
+
+void SwOSInput::subscription() {
+
+  // test, if input is subscribed
+  if (!_isSubscribed) return;
+
+  if ( ( (_lastRawValue > _lastsubscribedValue) && (_lastRawValue-_lastsubscribedValue) > _hysteresis ) ||
+       ( (_lastsubscribedValue > _lastRawValue ) && (_lastsubscribedValue-_lastRawValue) > _hysteresis ) ) {
+       printf("S: %s %d\n", _subscribedIOName, _lastRawValue);
+       _lastsubscribedValue = _lastRawValue;
+  }
+}
+
+
+uint32_t SwOSInput::getValueUI32() {
+  return _lastRawValue;
+}
+
+float SwOSInput::getValueF() {
+  return (float)_lastRawValue;
+}
+
+
+/***************************************************
+ *
+ *   SwOSDigitalInput
+ *
+ ***************************************************/
+
+SwOSDigitalInput::SwOSDigitalInput(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSInput( name, port, ctrl, FTSWARM_DIGITAL ) {
+  
+  // initialize local HW
+  if ( _ctrl->isLocal() ) _setupLocal();
+
+}
+
+void SwOSDigitalInput::_setupLocal() {
+  // initialize local HW
+
+  SwOSInput::_setupLocal( );
+
   // local init
-  _ADCUnit      = GPIO_INPUT[(int8_t)_ctrl->getCPU()][(int8_t) _port][1];
-  _ADCChannel   = GPIO_INPUT[(int8_t)_ctrl->getCPU()][(int8_t) _port][2];
   _PUA2         = GPIO_NUM_NC;
   _USTX         = GPIO_NUM_NC;
-  _GPIO         = GPIO_INPUT[(int8_t)_ctrl->getCPU()][(int8_t) _port][0];
-
+ 
   switch (_ctrl->getCPU() ) {
     case FTSWARMRS_2V1:  if ( _port == 0 ) _USTX = xGPIO_NUM_42;
                        if ( ( _ctrl->getType() == FTSWARM ) && ( _port == 2 ) ) { _PUA2 = xGPIO_NUM_41; }                       
@@ -426,28 +470,13 @@ void SwOSInput::_setupLocal() {
     default:           break;
   }
 
-  if ( ( _ADCUnit ==  ADC_UNIT_1) && ( _ADCChannel != ADC1_CHANNEL_MAX ) ) {
-    // set ADC to 12 bits, scale 3.9V
-    adc1_config_width(ADC_WIDTH_BIT_12);
-  }
-
   gpio_config_t io_conf = {};
-
-  if ( _GPIO != GPIO_NUM_NC) {
-
-    // initialize digital  port
-    io_conf.intr_type = GPIO_INTR_DISABLE;
-    io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.pin_bit_mask = 1ULL << _GPIO;
-    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-    gpio_config(&io_conf);
-
-  }
   
   // initialize A2 pullup
   if (_PUA2 != GPIO_NUM_NC) {
     io_conf.mode = GPIO_MODE_OUTPUT;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
     io_conf.pin_bit_mask = 1ULL << _PUA2;
     gpio_config(&io_conf);
     gpio_set_level( (gpio_num_t) _PUA2, 0 );
@@ -457,45 +486,20 @@ void SwOSInput::_setupLocal() {
   if (_USTX != GPIO_NUM_NC) {
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pin_bit_mask = 1ULL << _USTX;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
     gpio_config(&io_conf);
     gpio_set_level( (gpio_num_t) _USTX, 0 );
   }
 
 }
 
-char * SwOSInput::getIcon() { 
-  return (char *) SENSORICON[ _sensorType ]; 
-}; 
-
-bool SwOSInput::isDigitalSensor() {
-
-  return ( ( _sensorType == FTSWARM_DIGITAL ) ||
-           ( _sensorType == FTSWARM_SWITCH ) ||
-           ( _sensorType == FTSWARM_REEDSWITCH ) ||
-           ( _sensorType == FTSWARM_LIGHTBARRIER ) ||
-           ( _sensorType == FTSWARM_TRAILSENSOR ) );
-
-}
-
-bool SwOSInput::isXMeter() {
-
-  return ( ( _sensorType == FTSWARM_VOLTMETER ) ||
-           ( _sensorType == FTSWARM_OHMMETER ) ||
-           ( _sensorType == FTSWARM_THERMOMETER ) );
-
-}
-
-void SwOSInput::setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote ) {
+void SwOSDigitalInput::setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote ) {
 
   _sensorType   = sensorType;
   _normallyOpen = normallyOpen;
 
-  if (_ctrl->isLocal()) {
-
-    if ( _ctrl->isI2CSwarmCtrl() ) _setSensorTypeI2C( sensorType, normallyOpen, dontSendToRemote );
-    else                           _setSensorTypeLHW( sensorType, normallyOpen, dontSendToRemote );
-  
-  }
+  if (_ctrl->isLocal()) { _setSensorTypeLHW( sensorType, normallyOpen, dontSendToRemote ); }
 
   if ( !dontSendToRemote ) {
 
@@ -510,25 +514,7 @@ void SwOSInput::setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen, bo
 
 }
 
-void SwOSInput::_setSensorTypeI2C( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote ) {
-
-  if (_ctrl->getCPU() == FTSWARMDUINO_1V141 ) {
-    Wire.beginTransmission( FTDUINOADDR );
-    Wire.write( FTDUINO_CMD_SETSENSORTYPE );
-    Wire.write( sensorType );
-    Wire.write( normallyOpen );
-    Wire.endTransmission();
-  }
-
-}
-
-void SwOSInput::_setSensorTypeLHW( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote ) {
-
-  // analog calibration if needed
-  if ( ( isXMeter() ) && (!_adc_chars) ) {
-    _adc_chars = (esp_adc_cal_characteristics_t*) calloc(1, sizeof(esp_adc_cal_characteristics_t));
-    esp_adc_cal_characterize((adc_unit_t) _ADCUnit, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 0, _adc_chars);
-  }
+void SwOSDigitalInput::_setSensorTypeLHW( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote ) {
 
   // set A1 pullup if available
   if ( ( _PUA2 != GPIO_NUM_NC ) && ( _sensorType != FTSWARM_ULTRASONIC ) ) {
@@ -537,19 +523,7 @@ void SwOSInput::_setSensorTypeLHW( FtSwarmSensor_t sensorType, bool normallyOpen
 
 }
 
-void SwOSInput::subscription() {
-
-  // test, if input is subscribed
-  if (!_isSubscribed) return;
-
-  if ( ( (_lastRawValue > _lastsubscribedValue) && (_lastRawValue-_lastsubscribedValue) > _hysteresis ) ||
-       ( (_lastsubscribedValue > _lastRawValue ) && (_lastsubscribedValue-_lastRawValue) > _hysteresis ) ) {
-       printf("S: %s %d\n", _subscribedIOName, _lastRawValue);
-       _lastsubscribedValue = _lastRawValue;
-  }
-}
-
-void SwOSInput::read() {
+void SwOSDigitalInput::read() {
 
   // nothing todo on remote sensors
   if (!_ctrl->isLocal()) return;
@@ -560,41 +534,16 @@ void SwOSInput::read() {
 
   uint32_t newValue;
 
-  // local reading
-  if ( _sensorType == FTSWARM_COUNTER) {
-    // ToDO 
-
-  } else if ( ( !isDigitalSensor() ) && ( _ADCChannel != ADC1_CHANNEL_MAX) ) {
-
-    if ((adc_unit_t)_ADCUnit == ADC_UNIT_1) newValue = adc1_get_raw( (adc1_channel_t )_ADCChannel );
-
-    #if CONFIG_IDF_TARGET_ESP32S3
-    if ((adc_unit_t)_ADCUnit == ADC_UNIT_2) {
-      int raw;
-      adc2_get_raw( (adc2_channel_t )_ADCChannel, ADC_WIDTH_12Bit, &raw );
-      newValue = raw;
-    }
-    #endif
-
-    if ( isXMeter() ) {
-      // XMeter: cast to mV
-      newValue = esp_adc_cal_raw_to_voltage( newValue, _adc_chars ); 
-    }
+  // read new data
+  newValue = gpio_get_level( (gpio_num_t) _GPIO );
     
-  } else {
+  // normally open: change logic
+  if (_normallyOpen) newValue = 1-newValue;
     
-    // read new data
-    newValue = gpio_get_level( (gpio_num_t) _GPIO );
-    
-    // normally open: change logic
-    if (_normallyOpen) newValue = 1-newValue;
-    
-    // check if it's toggled?
-    if ( _lastRawValue != newValue ) { 
-      if (newValue) { _toggle = FTSWARM_TOGGLEUP;   trigger( FTSWARM_TRIGGERUP, newValue ); }
-      else          { _toggle = FTSWARM_TOGGLEDOWN; trigger( FTSWARM_TRIGGERDOWN, newValue ); }
-    }
-    
+  // check if it's toggled?
+  if ( _lastRawValue != newValue ) { 
+    if (newValue) { _toggle = FTSWARM_TOGGLEUP;   trigger( FTSWARM_TRIGGERUP, newValue ); }
+    else          { _toggle = FTSWARM_TOGGLEDOWN; trigger( FTSWARM_TRIGGERDOWN, newValue ); }
   }
 
   // send changed value event?
@@ -607,7 +556,7 @@ void SwOSInput::read() {
 
 }
 
-void SwOSInput::setValue( uint32_t value ) {
+void SwOSDigitalInput::setValue( uint32_t value ) {
 
   // nothing ToDo on real local HW
   if ( ( _ctrl->isLocal()) && (!_ctrl->isI2CSwarmCtrl() ) ) return;
@@ -615,11 +564,8 @@ void SwOSInput::setValue( uint32_t value ) {
   // check if it's toggled?
   if ( _lastRawValue != value) { 
 
-    // Toggles with digtal sensors only
-    if ( isDigitalSensor() ) {
-      if   (value) { _toggle = FTSWARM_TOGGLEUP;   trigger( FTSWARM_TRIGGERUP, value ); }
-      else         { _toggle = FTSWARM_TOGGLEDOWN; trigger( FTSWARM_TRIGGERDOWN, value ); }
-    }
+    if   (value) { _toggle = FTSWARM_TOGGLEUP;   trigger( FTSWARM_TRIGGERUP, value ); }
+    else         { _toggle = FTSWARM_TOGGLEDOWN; trigger( FTSWARM_TRIGGERDOWN, value ); }
 
     // trigger value event
     trigger( FTSWARM_TRIGGERVALUE, value );
@@ -632,19 +578,95 @@ void SwOSInput::setValue( uint32_t value ) {
 
 }
 
-uint32_t SwOSInput::getValueUI32() {
-  return _lastRawValue;
+FtSwarmToggle_t SwOSDigitalInput::getToggle() {
+  // check toggle state and reset it
+  FtSwarmToggle_t toggle = _toggle;
+  _toggle = FTSWARM_NOTOGGLE;
+  return toggle;
 }
 
-float SwOSInput::getValueF() {
-  return (float)_lastRawValue;
+void SwOSDigitalInput::jsonize( JSONize *json, uint8_t id) {
+  json->startObject();
+  SwOSIO::jsonize(json, id);
+  json->variableUI32("sensorType", _sensorType);
+  json->variable("subType",    (char *) SENSORTYPE[_sensorType]);
+
+  json->variableUI32("value", getValueUI32() );
+  
+  json->endObject();
 }
 
-float SwOSInput::getVoltage() {
+/***************************************************
+ *
+ *   SwOSAnalogInput
+ *
+ ***************************************************/
+
+SwOSAnalogInput::SwOSAnalogInput(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSInput( name, port, ctrl, FTSWARM_DIGITAL ) {
+  
+  // initialize local HW
+  if ( _ctrl->isLocal() ) _setupLocal();
+
+}
+
+
+void SwOSAnalogInput::_setupLocal() {
+  // initialize local HW
+
+  SwOSInput::_setupLocal( );
+
+  // local init
+  _ADCUnit      = GPIO_INPUT[(int8_t)_ctrl->getCPU()][(int8_t) _port][1];
+  _ADCChannel   = GPIO_INPUT[(int8_t)_ctrl->getCPU()][(int8_t) _port][2];
+
+  if ( ( _ADCUnit ==  ADC_UNIT_1) && ( _ADCChannel != ADC1_CHANNEL_MAX ) ) {
+    // set ADC to 12 bits, scale 3.9V
+    adc1_config_width(ADC_WIDTH_BIT_12);
+  }
+
+}
+
+bool SwOSAnalogInput::isXMeter() {
+
+  return ( ( _sensorType == FTSWARM_VOLTMETER ) ||
+           ( _sensorType == FTSWARM_OHMMETER ) ||
+           ( _sensorType == FTSWARM_THERMOMETER ) );
+
+}
+
+void SwOSAnalogInput::setSensorType( FtSwarmSensor_t sensorType, bool dontSendToRemote ) {
+
+  _sensorType   = sensorType;
+
+  if (_ctrl->isLocal()) { _setSensorTypeLHW( sensorType, dontSendToRemote ); }
+
+  if ( !dontSendToRemote ) {
+
+    // send SN, SETSENSORTYPE, _port, sensorType
+    SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_SETSENSORTYPE );
+    cmd.data.sensorCmd.index        = _port;
+    cmd.data.sensorCmd.sensorType   = _sensorType;
+    cmd.send( );
+
+  }
+
+}
+
+void SwOSAnalogInput::_setSensorTypeLHW( FtSwarmSensor_t sensorType, bool dontSendToRemote ) {
+
+  // analog calibration if needed
+  if ( ( isXMeter() ) && (!_adc_chars) ) {
+    _adc_chars = (esp_adc_cal_characteristics_t*) calloc(1, sizeof(esp_adc_cal_characteristics_t));
+    esp_adc_cal_characterize((adc_unit_t) _ADCUnit, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 0, _adc_chars);
+  }
+
+}
+
+float SwOSAnalogInput::getVoltage() {
   return ( (float) _lastRawValue ) / 1000 * (129.0/82.0);
 }
 
-float SwOSInput::getResistance() {
+float SwOSAnalogInput::getResistance() {
 
   // R1 = 2k
   // R2 = ?
@@ -673,7 +695,7 @@ float SwOSInput::getResistance() {
 
 #define NULLKELVIN 273.15
 
-float SwOSInput::getKelvin() {
+float SwOSAnalogInput::getKelvin() {
 
   // Tref = 25°C
   // Rref = 1500
@@ -695,69 +717,89 @@ float SwOSInput::getKelvin() {
   return t;
 }
 
-float SwOSInput::getCelcius() {
+float SwOSAnalogInput::getCelcius() {
   // ToDo cast to temperature
   return getKelvin() - NULLKELVIN;
 }
 
-float SwOSInput::getFahrenheit() {
+float SwOSAnalogInput::getFahrenheit() {
   // ToDo cast to temperature
   return getCelcius() * 9 / 5 + 32;
 }
 
-FtSwarmToggle_t SwOSInput::getToggle() {
-  // check toggle state and reset it
-  FtSwarmToggle_t toggle = _toggle;
-  _toggle = FTSWARM_NOTOGGLE;
-  return toggle;
+void SwOSAnalogInput::read() {
+
+  // nothing todo on remote sensors
+  if (!_ctrl->isLocal()) return;
+  if (_ctrl->isI2CSwarmCtrl()) return;  // sensor is read via a block control by <controller>.read
+
+  // non existing port?
+  if ( ( _GPIO == GPIO_NUM_NC ) || ( _ADCChannel != ADC1_CHANNEL_MAX) ) return;
+
+  uint32_t newValue;
+
+  if ((adc_unit_t)_ADCUnit == ADC_UNIT_1) newValue = adc1_get_raw( (adc1_channel_t )_ADCChannel );
+
+  #if CONFIG_IDF_TARGET_ESP32S3
+  if ((adc_unit_t)_ADCUnit == ADC_UNIT_2) {
+    int raw;
+    adc2_get_raw( (adc2_channel_t )_ADCChannel, ADC_WIDTH_12Bit, &raw );
+    newValue = raw;
+  }
+  #endif
+
+  if ( isXMeter() ) {
+    // XMeter: cast to mV
+    newValue = esp_adc_cal_raw_to_voltage( newValue, _adc_chars ); 
+  }
+    
+  // send changed value event?
+  if ( (_events) && ( _lastRawValue != newValue ) ) trigger( FTSWARM_TRIGGERVALUE, newValue );
+
+  // store new data
+  _lastRawValue = newValue;  
+
+  subscription();
+
 }
 
-void SwOSInput::resetCounter( void ){
-  
-  _counter = 0;
+void SwOSAnalogInput::setValue( uint32_t value ) {
 
-  if (!_ctrl->isLocal() ) {
+  // nothing ToDo on real local HW
+  if ( ( _ctrl->isLocal()) && (!_ctrl->isI2CSwarmCtrl() ) ) return;
 
-  } else {
+  // check if it's toggled?
+  if ( _lastRawValue != value) { 
 
+    // trigger value event
+    trigger( FTSWARM_TRIGGERVALUE, value );
+    
   }
   
-}
+  _lastRawValue = value;
 
-int32_t SwOSInput::getCounter( void ){
-
-  return _counter;
+  subscription();
 
 }
 
-uint32_t SwOSInput::getFrequency( void ){
-  
-  return _frequency;
-}
-
-void SwOSInput::jsonize( JSONize *json, uint8_t id) {
+void SwOSAnalogInput::jsonize( JSONize *json, uint8_t id) {
   json->startObject();
   SwOSIO::jsonize(json, id);
   json->variableUI32("sensorType", _sensorType);
   json->variable("subType",    (char *) SENSORTYPE[_sensorType]);
 
-  if ( isDigitalSensor() ) {
-    json->variableUI32("value", getValueUI32() );
-  } else if ( _sensorType == FTSWARM_VOLTMETER ) {
+  if ( _sensorType == FTSWARM_VOLTMETER ) {
     json->variableVolt("value", getVoltage() );
   } else if ( _sensorType == FTSWARM_OHMMETER ) {
     json->variableOhm("value", getResistance() );
   } else if ( _sensorType == FTSWARM_THERMOMETER ) {
     json->variableCelcius("value", getCelcius() );
-  } else if ( _sensorType == FTSWARM_COUNTER ) {
-    json->variableUI32( "value", getCounter() );
   } else {
     json->variableUI32("value", getValueUI32() );
   }
   
   json->endObject();
 }
-
 
 /***************************************************
  *
@@ -1121,7 +1163,7 @@ void SwOSActor::jsonize( JSONize *json, uint8_t id) {
   SwOSIO::jsonize(json, id);
   json->variable("subType",    (char *) ACTORTYPE[ _actorType ] );
   json->variableUI32("motiontype", getMotionType() );
-  json->variableI16 ("power",      getSpeed() );
+  json->variableI16 ("speed",      getSpeed() );
   json->endObject();
 }
 
@@ -2382,14 +2424,14 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwa
       if (CPU == FTSWARMPWRDRIVE_1V141 ) {
 
         if (i==4) {
-          input[i] = new SwOSInput("EM", 255, this );
+          input[i] = new SwOSDigitalInput("EM", 255, this );
         } else {
-          input[i] = new SwOSInput("ES", i, this );
+          input[i] = new SwOSDigitalInput("ES", i, this );
         }
 
       } else {
 
-        input[i] = new SwOSInput("A", i, this );
+        input[i] = new SwOSDigitalInput("A", i, this );
       
       }
 
@@ -2534,9 +2576,11 @@ SwOSIO *SwOSCtrl::getIO( const char *name) {
 SwOSIO *SwOSCtrl::getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port) {
 
   switch (ioType) {
-    case FTSWARM_INPUT: return ( (port<inputs)?input[ port ]:NULL);
-    case FTSWARM_ACTOR: return ( (port<actors)?actor[ port ]:NULL);
-    case FTSWARM_PIXEL: return ( (port<MAXLEDS)?led[ port ]:NULL);
+    case FTSWARM_INPUT: 
+    case FTSWARM_DIGITALINPUT:
+    case FTSWARM_ANALOGINPUT : return ( (port<inputs)?input[ port ]:NULL);
+    case FTSWARM_ACTOR:        return ( (port<actors)?actor[ port ]:NULL);
+    case FTSWARM_PIXEL:        return ( (port<MAXLEDS)?led[ port ]:NULL);
     default: return NULL;   
   }
 
@@ -2592,6 +2636,13 @@ char *SwOSCtrl::getHostname( void ) {
   } else {
     return _name;
   }
+
+}
+
+bool SwOSCtrl::changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarmIOType_t newIOType ) {
+
+  // not in standard, maybe overloaded
+  return false;
 
 }
 
@@ -2834,7 +2885,11 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
       return true;
 
     case CMD_SETSENSORTYPE:
-      input[com->data.sensorCmd.index]->setSensorType( com->data.sensorCmd.sensorType, com->data.sensorCmd.normallyOpen, true );
+      if ( input[com->data.sensorCmd.index]->getIOType() == FTSWARM_DIGITALINPUT) { 
+        ((SwOSDigitalInput *)input[com->data.sensorCmd.index])->setSensorType( com->data.sensorCmd.sensorType, com->data.sensorCmd.normallyOpen, true );
+      } else {
+        ((SwOSAnalogInput *)input[com->data.sensorCmd.index])->setSensorType( com->data.sensorCmd.sensorType, true );
+      }
       return true;
 
     case CMD_SETACTORSPEED:
@@ -2908,6 +2963,12 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
         }
       }
       return true;
+
+    case CMD_CHANGEIOTYPE:
+      // change IO Type
+      changeIOType( com->data.changeIOTypeCmd.index, com->data.changeIOTypeCmd.oldIOType, com->data.changeIOTypeCmd.newIOType );
+      return true;
+
   }
 
   return false;
@@ -3384,6 +3445,45 @@ void SwOSSwarmJST::jsonizeIO( JSONize *json, uint8_t id) {
   if (gyro)  { gyro->jsonize(json, id); }
 
 }
+
+bool SwOSSwarmJST::changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarmIOType_t newIOType ) {
+
+  // check on compatible types
+  if ( ( oldIOType != FTSWARM_DIGITALINPUT ) && ( oldIOType != FTSWARM_ANALOGINPUT ) ) return false;
+  if ( ( newIOType != FTSWARM_DIGITALINPUT ) && ( newIOType != FTSWARM_ANALOGINPUT ) ) return false;
+  
+  // register the new one
+  SwOSInput *io;
+  switch ( newIOType ) {
+    case FTSWARM_DIGITALINPUT: io = new SwOSDigitalInput("A", port, this ); break;
+    case FTSWARM_ANALOGINPUT:  io = new SwOSAnalogInput("A", port, this ); break;
+    default: return false;
+  }
+
+  // if old port exits, transfer needed properties and kill it
+  if (!input[port]) {
+    char alias[MAXIDENTIFIER];
+    strcpy( alias, input[port]->getAlias() );
+    io->setAlias( alias );
+    delete input[port];
+  }
+
+  // assign new port
+  input[port] = io;
+
+  // if it's an remote port, change remote site as well
+  if ( !isLocal() ) {
+    SwOSCom IOType( macAddr, serialNumber, CMD_CHANGEIOTYPE );
+    IOType.data.changeIOTypeCmd.index     = port;
+    IOType.data.changeIOTypeCmd.oldIOType = oldIOType;
+    IOType.data.changeIOTypeCmd.newIOType = newIOType;
+    IOType.send();
+  }
+
+  return true;
+
+}
+
 
 bool SwOSSwarmJST::apiServoOffset( char *id, int offset ) {
   // send a Servo command (from api)
