@@ -197,6 +197,8 @@ class FtSwarmDigitalInput : public FtSwarmInput {
     void setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen );
   
   public:
+    FtSwarmDigitalInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool normallyOpen = true);
+    FtSwarmDigitalInput( const char *name, bool normallyOpen );
 
     bool isPressed();                     // getState()
     bool isReleased();                    // !getState()
@@ -252,6 +254,8 @@ class FtSwarmAnalogInput : public FtSwarmInput {
     void setSensorType( FtSwarmSensor_t sensorType );
 
   public:
+    FtSwarmAnalogInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
+    FtSwarmAnalogInput( const char *name );
     int32_t getValue();  // get 12 bit raw reading
 };
 

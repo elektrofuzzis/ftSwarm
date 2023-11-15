@@ -364,8 +364,8 @@ const int8_t GPIO_INPUT[6][6][3] =
   { /* FTSWARMJST_1V0 */      { { GPIO_NUM_33, ADC_UNIT_1, ADC1_CHANNEL_5}, { xGPIO_NUM_25, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_26, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_27, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} },
     /* FTSWARMCONTROL_1V3 */  { { GPIO_NUM_39, ADC_UNIT_1, ADC1_CHANNEL_3}, { xGPIO_NUM_25, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_26, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_27, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} },
     /* FTSWARMJST_1V15 */     { { GPIO_NUM_39, ADC_UNIT_1, ADC1_CHANNEL_3}, { GPIO_NUM_32,  ADC_UNIT_1, ADC1_CHANNEL_4},   { GPIO_NUM_33, ADC_UNIT_1, ADC1_CHANNEL_5},   { GPIO_NUM_34, ADC_UNIT_1, ADC1_CHANNEL_6},   { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} },
-    /* FTSWARMRS_2V0 */       { { GPIO_NUM_1,  ADC_UNIT_1, ADC1_CHANNEL_0}, { GPIO_NUM_2,   ADC_UNIT_1, ADC1_CHANNEL_1},   { GPIO_NUM_8,  ADC_UNIT_1, ADC1_CHANNEL_7},   { GPIO_NUM_9,  ADC_UNIT_1, ADC1_CHANNEL_9},   { GPIO_NUM_11, ADC_UNIT_2, ADC2_CHANNEL_0},   { GPIO_NUM_13, ADC_UNIT_2, ADC2_CHANNEL_2} },
-    /* FTSWARMRS_2V1 */       { { GPIO_NUM_1,  ADC_UNIT_1, ADC1_CHANNEL_0}, { GPIO_NUM_2,   ADC_UNIT_1, ADC1_CHANNEL_1},   { GPIO_NUM_19, ADC_UNIT_2, ADC1_CHANNEL_8},   { GPIO_NUM_20, ADC_UNIT_2, ADC2_CHANNEL_9},   { GPIO_NUM_11, ADC_UNIT_2, ADC2_CHANNEL_8},   { GPIO_NUM_13, ADC_UNIT_2, ADC2_CHANNEL_2} },
+    /* FTSWARMRS_2V0 */       { { GPIO_NUM_1,  ADC_UNIT_1, ADC1_CHANNEL_0}, { GPIO_NUM_2,   ADC_UNIT_1, ADC1_CHANNEL_1},   { GPIO_NUM_8,  ADC_UNIT_1, ADC1_CHANNEL_7},   { GPIO_NUM_9,  ADC_UNIT_1, ADC1_CHANNEL_8},   { GPIO_NUM_11, ADC_UNIT_2, ADC2_CHANNEL_0},   { GPIO_NUM_13, ADC_UNIT_2, ADC2_CHANNEL_2} },
+    /* FTSWARMRS_2V1 */       { { GPIO_NUM_1,  ADC_UNIT_1, ADC1_CHANNEL_0}, { GPIO_NUM_2,   ADC_UNIT_1, ADC1_CHANNEL_1},   { GPIO_NUM_19, ADC_UNIT_2, ADC1_CHANNEL_8},   { GPIO_NUM_20, ADC_UNIT_2, ADC2_CHANNEL_9},   { GPIO_NUM_11, ADC_UNIT_2, ADC2_CHANNEL_0},   { GPIO_NUM_13, ADC_UNIT_2, ADC2_CHANNEL_2} },
     /* FTSWARMCAM_2V11 */     { { GPIO_NUM_33, ADC_UNIT_1, ADC1_CHANNEL_5}, { GPIO_NUM_12,  ADC_UNIT_1, ADC1_CHANNEL_1},   { GPIO_NUM_13, ADC_UNIT_2, ADC1_CHANNEL_8},   { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} }
   };   
 
@@ -379,6 +379,8 @@ SwOSInput::SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl, FtSwarmSens
 
 void SwOSInput::_setupLocal() {
   // initialize local HW
+
+  _GPIO = (gpio_num_t) GPIO_INPUT[_ctrl->getCPU()][_port][0];
 
   gpio_config_t io_conf = {};
 
@@ -524,10 +526,12 @@ void SwOSDigitalInput::_setSensorTypeLHW( FtSwarmSensor_t sensorType, bool norma
 }
 
 void SwOSDigitalInput::read() {
-
+  
   // nothing todo on remote sensors
   if (!_ctrl->isLocal()) return;
-  if (_ctrl->isI2CSwarmCtrl()) return;  // sensor is read via a block control by <controller>.read
+
+  // i2c sensor is read via a block control by <controller>.read
+  if (_ctrl->isI2CSwarmCtrl()) return; 
 
   // existing port?
   if (_GPIO == GPIO_NUM_NC ) return;
@@ -608,7 +612,6 @@ SwOSAnalogInput::SwOSAnalogInput(const char *name, uint8_t port, SwOSCtrl *ctrl 
   if ( _ctrl->isLocal() ) _setupLocal();
 
 }
-
 
 void SwOSAnalogInput::_setupLocal() {
   // initialize local HW
@@ -734,7 +737,7 @@ void SwOSAnalogInput::read() {
   if (_ctrl->isI2CSwarmCtrl()) return;  // sensor is read via a block control by <controller>.read
 
   // non existing port?
-  if ( ( _GPIO == GPIO_NUM_NC ) || ( _ADCChannel != ADC1_CHANNEL_MAX) ) return;
+  if ( ( _GPIO == GPIO_NUM_NC ) || ( _ADCChannel == ADC1_CHANNEL_MAX) ) return;
 
   uint32_t newValue;
 
@@ -2599,8 +2602,8 @@ void SwOSCtrl::read() {
   // don't send packets to myself, so I need to now last reading time
   _lastContact = millis();
 
-  for (uint8_t i=0; i<inputs; i++) { input[i]->read(); }
-  for (uint8_t i=0; i<actors; i++) { actor[i]->read(); }
+  for (uint8_t i=0; i<inputs; i++) { if (input[i]) input[i]->read(); }
+  for (uint8_t i=0; i<actors; i++) { if (actor[i]) actor[i]->read(); }
 
 }
 
@@ -2893,7 +2896,6 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
       return true;
 
     case CMD_SETACTORSPEED:
-      printf("CMD %d\n", com->data.actorSpeedCmd.speed);
       actor[com->data.actorSpeedCmd.index]->setMotionType( com->data.actorSpeedCmd.motionType );
       actor[com->data.actorSpeedCmd.index]->setAcceleration( com->data.actorSpeedCmd.rampUpT, com->data.actorSpeedCmd.rampUpY );
       actor[com->data.actorSpeedCmd.index]->setSpeed( com->data.actorSpeedCmd.speed );

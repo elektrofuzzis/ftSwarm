@@ -162,6 +162,18 @@ FtSwarmDigitalInput::FtSwarmDigitalInput( const char *name, FtSwarmSensor_t sens
 
 }
 
+FtSwarmDigitalInput::FtSwarmDigitalInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool normallyOpen ) :FtSwarmInput( serialNumber, port, FTSWARM_DIGITALINPUT ) {
+
+  setSensorType( FTSWARM_DIGITAL, normallyOpen );
+
+}
+
+FtSwarmDigitalInput::FtSwarmDigitalInput( const char *name, bool normallyOpen ):FtSwarmInput( name, FTSWARM_DIGITALINPUT) {
+
+  setSensorType( FTSWARM_DIGITAL, normallyOpen );
+
+}
+
 
 // some facades
 bool FtSwarmDigitalInput::isPressed()            { return getState(); };
@@ -288,6 +300,19 @@ FtSwarmAnalogInput::FtSwarmAnalogInput( const char *name, FtSwarmSensor_t sensor
   setSensorType( sensorType );
 
 };
+
+FtSwarmAnalogInput::FtSwarmAnalogInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port ):FtSwarmInput( serialNumber, port, FTSWARM_ANALOGINPUT ) {
+
+  setSensorType( FTSWARM_ANALOG );
+
+}
+    
+FtSwarmAnalogInput::FtSwarmAnalogInput( const char *name ):FtSwarmInput( name, FTSWARM_ANALOGINPUT ) {
+
+  setSensorType( FTSWARM_ANALOG );
+
+}
+
 
 int32_t FtSwarmAnalogInput::getValue() {
 
@@ -1186,7 +1211,7 @@ void FtSwarmCAM::setVFlip( bool vFlip ) {
 
 FtSwarmSerialNumber_t FtSwarm::begin( bool verbose ) {
 
-  bool result = myOSSwarm.begin( verbose );
+  FtSwarmSerialNumber_t result = myOSSwarm.begin( verbose );
 
   if (!nvs.IAmKelda) {
     printf("ERROR: Please configure this controler as Kelda.\n");

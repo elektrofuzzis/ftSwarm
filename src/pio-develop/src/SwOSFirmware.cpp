@@ -862,6 +862,8 @@ void mainMenu( void ) {
 
 void firmware( void ) {
 
+  myOSSwarm.begin( true );
+
   if ( nvs.IAmKelda ) {
     
     // only Keldas use CLI

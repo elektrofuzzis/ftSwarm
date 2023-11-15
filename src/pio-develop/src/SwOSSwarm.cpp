@@ -30,7 +30,7 @@
 SwOSSwarm myOSSwarm;
 
 // #define DEBUG_COMMUNICATION
-// #define DEBUG_READTASK
+#define DEBUG_READTASK
 
 /***************************************************
  *
@@ -86,7 +86,7 @@ void readTask( void *parameter ) {
       
       // copy my state to a datagram
       SwOSCom *com = myOSSwarm.Ctrl[0]->state2Com( myOSSwarm.Kelda->macAddr );
-      com->print();
+      // com->print();
       com->send();
       delete com;
 
@@ -94,7 +94,7 @@ void readTask( void *parameter ) {
  
     // calc delay time
     #ifdef DEBUG_READTASK
-      xDelay = 10000 / portTICK_PERIOD_MS;
+      xDelay = 2000 / portTICK_PERIOD_MS;
     #else
       xDelay = myOSSwarm.getReadDelay() / portTICK_PERIOD_MS;
     #endif
@@ -277,8 +277,12 @@ void SwOSSwarm::startWifi( void ) {
   WiFi.macAddress( mac );
   Ctrl[0]->macAddr.set( mac );
 
-  if (verbose) printf("hostname: %s\nip-address: %d.%d.%d.%d\n", Ctrl[0]->getHostname(), WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
-
+  if (verbose) {
+    if ( nvs.wifiMode == wifiAP )
+      printf("hostname: %s\nip-address: %d.%d.%d.%d\n", Ctrl[0]->getHostname(), WiFi.softAPIP()[0], WiFi.softAPIP()[1], WiFi.softAPIP()[2], WiFi.softAPIP()[3]);
+    else
+      printf("hostname: %s\nip-address: %d.%d.%d.%d\n", Ctrl[0]->getHostname(), WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
+  }
 
 }
 
