@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+        width="48"
+        height="48"
+        fill="currentColor"
+        class="bi bi-binoculars"
+        viewBox="0 0 19.2 19.2"
+        version="1.1"
+        id="svg138"
+        sodipodi:docname="27_rotaryEncoder.svg"
+        inkscape:version="1.1 (c68e22c387, 2021-05-23)"
+        xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+        xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+        xmlns="http://www.w3.org/2000/svg"
+        xmlns:svg="http://www.w3.org/2000/svg">
+    <sodipodi:namedview
+            id="namedview27"
+            pagecolor="#ffffff"
+            bordercolor="#666666"
+            borderopacity="1.0"
+            inkscape:pageshadow="2"
+            inkscape:pageopacity="0.0"
+            inkscape:pagecheckerboard="true"
+            showgrid="false"
+            inkscape:zoom="16.916667"
+            inkscape:cx="20.571428"
+            inkscape:cy="22.965517"
+            inkscape:window-width="1920"
+            inkscape:window-height="1001"
+            inkscape:window-x="-9"
+            inkscape:window-y="-9"
+            inkscape:window-maximized="1"
+            inkscape:current-layer="svg138" />
+    <defs
+            id="defs142">
+        <clipPath
+                id="clip0">
+            <rect
+                    x="132"
+                    y="286"
+                    width="28"
+                    height="75"
+                    id="rect121" />
+        </clipPath>
+        <clipPath
+                id="clip0-6">
+            <rect
+                    x="132"
+                    y="286"
+                    width="28"
+                    height="75"
+                    id="rect1075" />
+        </clipPath>
+        <clipPath
+                id="clip0-9">
+            <rect
+                    x="95"
+                    y="401"
+                    width="72"
+                    height="75"
+                    id="rect1325" />
+        </clipPath>
+        <clipPath
+                id="clip1">
+            <rect
+                    x="95"
+                    y="419"
+                    width="40"
+                    height="40"
+                    id="rect1328" />
+        </clipPath>
+        <clipPath
+                id="clip2">
+            <rect
+                    x="95"
+                    y="419"
+                    width="40"
+                    height="40"
+                    id="rect1331" />
+        </clipPath>
+        <clipPath
+                id="clip3">
+            <rect
+                    x="95"
+                    y="419"
+                    width="40"
+                    height="40"
+                    id="rect1334" />
+        </clipPath>
+        <clipPath
+                id="clip0-65">
+            <rect
+                    x="430"
+                    y="70"
+                    width="63"
+                    height="78"
+                    id="rect1482" />
+        </clipPath>
+    </defs>
+    <path
+            d="m 2.80074,4.63344 5.03832,2.4e-5"
+            stroke="#ffffff"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-miterlimit="8"
+            fill="none"
+            fill-rule="evenodd"
+            id="path1493" />
+    <path
+            d="M 7.8390285,8.056488 H 12.877349"
+            stroke="#ffffff"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-miterlimit="8"
+            fill="none"
+            fill-rule="evenodd"
+            id="path1495" />
+    <path
+            d="M -2.237612,8.056464 H 2.8007085"
+            stroke="#ffffff"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-miterlimit="8"
+            fill="none"
+            fill-rule="evenodd"
+            id="path1495-1" />
+    <path
+            d="m 17.91567,8.056488 h 5.03832"
+            stroke="#ffffff"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-miterlimit="8"
+            fill="none"
+            fill-rule="evenodd"
+            id="path1495-3" />
+    <path
+            d="m 12.877381,4.633464 h 5.038321"
+            stroke="#ffffff"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-miterlimit="8"
+            fill="none"
+            fill-rule="evenodd"
+            id="path1495-4" />
+    <path
+            d="M 2.8007085,8.056464 2.80074,4.63344"
+            stroke="#ffffff"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-miterlimit="8"
+            fill="none"
+            fill-rule="evenodd"
+            id="path1499" />
+    <path
+            d="m 12.877349,8.056488 3.2e-5,-3.423024"
+            stroke="#ffffff"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-miterlimit="8"
+            fill="none"
+            fill-rule="evenodd"
+            id="path1499-0" />
+    <path
+            d="m 17.91567,8.056488 3.2e-5,-3.423024"
+            stroke="#ffffff"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-miterlimit="8"
+            fill="none"
+            fill-rule="evenodd"
+            id="path1499-0-4" />
+    <path
+            d="M 7.8390285,8.056488 7.83906,4.633464"
+            stroke="#ffffff"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-miterlimit="8"
+            fill="none"
+            fill-rule="evenodd"
+            id="path1501" />
+    <path
+            d="m 5.687871,10.765323 5.03832,2.4e-5"
+            stroke="#ffffff"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-miterlimit="8"
+            fill="none"
+            fill-rule="evenodd"
+            id="path1493-5" />
+    <path
+            d="m 10.72616,14.188371 h 5.03832"
+            stroke="#ffffff"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-miterlimit="8"
+            fill="none"
+            fill-rule="evenodd"
+            id="path1495-43" />
+    <path
+            d="M 0.649519,14.188347 H 5.6878395"
+            stroke="#ffffff"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-miterlimit="8"
+            fill="none"
+            fill-rule="evenodd"
+            id="path1495-1-7" />
+    <path
+            d="m 15.764512,10.765347 h 5.038321"
+            stroke="#ffffff"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-miterlimit="8"
+            fill="none"
+            fill-rule="evenodd"
+            id="path1495-4-7" />
+    <path
+            d="m 5.6878395,14.188347 3.15e-5,-3.423024"
+            stroke="#ffffff"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-miterlimit="8"
+            fill="none"
+            fill-rule="evenodd"
+            id="path1499-7" />
+    <path
+            d="m 15.76448,14.188371 3.2e-5,-3.423024"
+            stroke="#ffffff"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-miterlimit="8"
+            fill="none"
+            fill-rule="evenodd"
+            id="path1499-0-40" />
+    <path
+            d="m 10.72616,14.188371 3.1e-5,-3.423024"
+            stroke="#ffffff"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-miterlimit="8"
+            fill="none"
+            fill-rule="evenodd"
+            id="path1501-6" />
+</svg>
