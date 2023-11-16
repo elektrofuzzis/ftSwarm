@@ -1,18 +1,17 @@
 {
-  "name": "ftswarm-jst",
-  "version": "0.4.0",
-  "description": "The goal of the ftSwarm project is to build small networked controllers for DIY and toy applications. Since they are networked with each other, they can act like a swarm. For example, they can act as several independent robots to solve a task together. In larger models, the controllers can be installed at different positions close to actuators and sensors - together they control the complete model.\n\n This is the library for ftSwarmJST-type controllers",
-  "keywords": "ftswarm, swarm, network, controller, fischertechnik, robot, model, actuator, sensor",
-  "repository":
-  {
-    "type": "git",
-    "url": "https://github.com/elektrofuzzis/ftSwarm/"
-  },
-  "license": "MIT",
-  "homepage": "https://elektrofuzzis.github.io/en/index.html#top",
-  "dependencies": {
-    "Elektrofuzzis/ftswarm-core": "symlink://../ftswarm-core"
-  },
-  "frameworks": "arduino",
-  "platforms": "espressif32"
+    "name": "ftswarm-jst",
+    "version": "0.5.0",
+    "description": "The goal of the ftSwarm project is to build small networked controllers for DIY and toy applications. Since they are networked with each other, they can act like a swarm. For example, they can act as several independent robots to solve a task together. In larger models, the controllers can be installed at different positions close to actuators and sensors - together they control the complete model.\n\n This is the library for ftSwarmJST-type controllers",
+    "keywords": "ftswarm, swarm, network, controller, fischertechnik, robot, model, actuator, sensor",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/elektrofuzzis/ftSwarm/"
+    },
+    "license": "MIT",
+    "homepage": "https://elektrofuzzis.github.io/en/index.html#top",
+    "dependencies": {
+        "Elektrofuzzis/ftswarm-core": "0.5.0"
+    },
+    "frameworks": "arduino",
+    "platforms": "espressif32"
 }
