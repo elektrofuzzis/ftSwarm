@@ -7,7 +7,7 @@
  * (C) 2021-23 Christian Bergschneider & Stefan Fuss
  * 
  */
- 
+
  /*  needed Arduino IDE settings:
 
     Board: "ESP32 Dev Module"
@@ -23,9 +23,6 @@
 void setup() {
 
   Serial.begin(115200);
-
-  ftSwarm.verbose(true);
-  FtSwarmSerialNumber_t local = ftSwarm.begin( false );
 
   firmware();
   ESP.restart();
