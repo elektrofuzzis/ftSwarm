@@ -352,3 +352,5 @@ arduino-cpp-library/src/debug.cfg
 
 # Build Files
 deployment/
+src/ftswarm-*/examples/
+*.gz
