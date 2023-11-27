@@ -3259,16 +3259,22 @@ SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local,
   gyro = NULL;
   I2C  = NULL;
 
-  if ( ( local ) && 
-       ( ( nvs.extentionPort == FTSWARM_EXT_I2C_MASTER ) || ( nvs.extentionPort == FTSWARM_EXT_MCU6040 ) ) ) { 
+  if ( local ) {
     
-    if ( ( nvs.CPU == FTSWARMRS_2V1 ) || ( nvs.CPU == FTSWARMRS_2V0 ) ) { 
-      Wire.begin( 8, 9 ); 
-    } else if ( nvs.CPU == FTSWARMJST_1V0 ) {
-      Wire.begin( 13, 12 );
-    } else {
-      Wire.begin( 21, 22 ); 
-    } 
+    switch (CPU) {
+
+      case FTSWARMJST_1V0:      Wire.begin( 13, 12 ); break;
+
+      case FTSWARMCONTROL_1V3: 
+      case FTSWARMJST_1V15:     Wire.begin( 21, 22 ); break;
+
+      case FTSWARMRS_2V0: 
+      case FTSWARMRS_2V1:       if ( ( nvs.extentionPort != FTSWARM_EXT_I2C_SLAVE ) && ( nvs.extentionPort != FTSWARM_EXT_OFF ) ) Wire.begin( 8, 9 ); 
+                                break;
+  
+      default:                  break;
+
+    }
 
   }
 
