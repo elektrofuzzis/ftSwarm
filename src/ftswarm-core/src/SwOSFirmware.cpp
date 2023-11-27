@@ -143,7 +143,7 @@ void SwarmControlMenu() {
   while (1) {
     
     printf("\n\nftSwarmControl settings\n\n");
-    sprintf( prompt, "(1) Display:  type %d\n (2) Calibrate Joysticks\n\n(0) exit\nftSwarmControl>", nvs.displayType );
+    sprintf( prompt, "(1) Display:  type %d\n(2) Calibrate Joysticks\n\n(0) exit\nftSwarmControl>", nvs.displayType );
     switch( enterNumber( prompt, 0, 0, 2) ) {
       
       case 0: // exit

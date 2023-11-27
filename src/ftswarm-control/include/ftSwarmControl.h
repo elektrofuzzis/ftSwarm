@@ -1,5 +1,5 @@
 /*
- * ftSwarmRS.h
+ * ftSwarmControl.h
  *
  * framework to build a ftSwarm application
  * 

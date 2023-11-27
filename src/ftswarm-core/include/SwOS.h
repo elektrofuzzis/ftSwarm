@@ -18,12 +18,18 @@
 #define MAXIDENTIFIER 32
 #define MAXACTORS 4
 #define MAXINPUTS 8
-#define SWOSVERSION "0.5.1"
+#define SWOSVERSION "0.5.2"
 
 #include <stdint.h>
 #include <cstddef>
 
-#include "SwOSExtLibs.h"
+#include <FastLED.h>
+#include <LSM6DSRSensor.h>
+#include <ftPwrDrive/ftPwrDrive.h>
+#include <esp_camera.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
 #include "SwOSFirmware.h"
 
 // max LEDs ftSwarm
