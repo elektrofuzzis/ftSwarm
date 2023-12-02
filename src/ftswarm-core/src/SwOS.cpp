@@ -18,7 +18,13 @@ FtSwarmIOType_t sensorType2IOType( FtSwarmSensor_t sensor2IOType ) {
     case FTSWARM_SWITCH:
     case FTSWARM_REEDSWITCH:
     case FTSWARM_LIGHTBARRIER:  return FTSWARM_DIGITALINPUT;
+    
+    case FTSWARM_ROTARYENCODER:
+    case FTSWARM_FREQUENCY:
+    case FTSWARM_COUNTER:       return FTSWARM_COUNTERINPUT;
+    
     default:                    return FTSWARM_ANALOGINPUT;
+
   }
 
 }
@@ -54,6 +60,10 @@ FtSwarmIO::FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, Ft
   static_cast<SwOSIO *>(me)->take();
   myOSSwarm.unlock(); 
   
+};
+
+FtSwarmIO::FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmIOType_t ioType ):FtSwarmIO(serialNumber, 255, ioType ) {
+  // helper for all devices, which don't have a port like CAM, OLED, ...
 };
 
 FtSwarmIO::FtSwarmIO( const char *name, FtSwarmIOType_t ioType ) {
@@ -198,7 +208,7 @@ bool FtSwarmDigitalInput::getState() {
   if (!me) return false;
 
   myOSSwarm.lock();
-  bool xReturn = (static_cast<SwOSDigitalInput *>(me)->getValueUI32()>0);
+  bool xReturn = (static_cast<SwOSDigitalInput *>(me)->getValueI32()>0);
   myOSSwarm.unlock();
 
   return xReturn;
@@ -276,6 +286,35 @@ bool FtSwarmButton::isReleased()           { return !getState(); };
 bool FtSwarmButton::hasToggledUp()         { return ( getToggle() == FTSWARM_TOGGLEUP ); };
 bool FtSwarmButton::hasToggledDown()       { return ( getToggle() == FTSWARM_TOGGLEDOWN ); };
 
+// **** FtSwarmCounter
+
+FtSwarmCounter::FtSwarmCounter( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmInput( serialNumber, port, FTSWARM_COUNTERINPUT ) {
+
+};
+
+FtSwarmCounter::FtSwarmCounter( const char *name):FtSwarmInput( name, FTSWARM_COUNTERINPUT ) {
+
+};
+
+int16_t FtSwarmCounter::getValue() {
+
+  if (!me) return 0;
+
+  myOSSwarm.lock();
+  uint16_t xReturn = (static_cast<SwOSCounter *>(me)->getValueI32());
+  myOSSwarm.unlock();
+
+  return xReturn;
+};
+
+void FtSwarmCounter::reset( void ) {
+
+  myOSSwarm.lock();
+  static_cast<SwOSCounter *>(me)->reset();
+  myOSSwarm.unlock();
+
+};
+
 // **** FtSwarmAnalogInput ****
 
 void FtSwarmAnalogInput::setSensorType( FtSwarmSensor_t sensorType ) {
@@ -319,7 +358,7 @@ int32_t FtSwarmAnalogInput::getValue() {
   if (!me) return 0;
 
   myOSSwarm.lock();
-  uint16_t xReturn = (static_cast<SwOSInput *>(me)->getValueUI32());
+  uint16_t xReturn = (static_cast<SwOSInput *>(me)->getValueI32());
   myOSSwarm.unlock();
 
   return xReturn;
@@ -413,7 +452,7 @@ FtSwarmActor::FtSwarmActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t po
 
 };
 
-FtSwarmActor::FtSwarmActor( const char *name, FtSwarmActor_t actorType):FtSwarmIO( name, FTSWARM_ACTOR ) {
+FtSwarmActor::FtSwarmActor( const char *name, FtSwarmActor_t actorType ):FtSwarmIO( name, FTSWARM_ACTOR ) {
   // constructor: register at myOSSwarm and get a pointer to myself 
 
   // set sensor type
@@ -897,6 +936,9 @@ void FtSwarmServo::setOffset(int16_t offset) {
 
 // **** FtSwarmOLED ****
 
+FtSwarmOLED::FtSwarmOLED(FtSwarmSerialNumber_t serialNumber):FtSwarmIO( serialNumber, FTSWARM_OLED) {};
+FtSwarmOLED::FtSwarmOLED( const char *name ):FtSwarmIO( name, FTSWARM_OLED ) {};
+
 void FtSwarmOLED::display(void) {
 
   if (!me) return;
@@ -1113,7 +1155,7 @@ void FtSwarmOLED::getCursor(int16_t *x, int16_t *y) {
 
 // **** FtSwarmCAM ****
 
-FtSwarmCAM::FtSwarmCAM( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmIO( serialNumber, port, FTSWARM_CAM) {};
+FtSwarmCAM::FtSwarmCAM( FtSwarmSerialNumber_t serialNumber ):FtSwarmIO( serialNumber, FTSWARM_CAM) {};
 FtSwarmCAM::FtSwarmCAM( const char *name ):FtSwarmIO( name, FTSWARM_CAM ) {};
 
 void FtSwarmCAM::streaming( bool onOff ) {

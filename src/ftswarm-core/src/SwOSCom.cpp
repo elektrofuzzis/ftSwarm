@@ -129,7 +129,6 @@ void MacAddr::set( MacAddr macAddr ) {
 void MacAddr::print( void ) {
   printf( "mac:");
   for (uint8_t i=0; i<ESP_NOW_ETH_ALEN;i++) printf(" %02X", addr[i] );
-  printf("\n");
 }
 
 /***************************************************

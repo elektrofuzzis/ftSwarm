@@ -288,6 +288,8 @@ void SwOSSwarm::startWifi( void ) {
 
 FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
+  if (initialized) return Ctrl[0]->serialNumber;
+
   this->verbose = verbose;
 
   printf("\n\nftSwarmOS " ); 
@@ -369,6 +371,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
   if (verbose) printf("Start normal operation.\n");
 
+  initialized = true;
   return Ctrl[0]->serialNumber;
 
 }
