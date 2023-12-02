@@ -50,6 +50,7 @@ public:
   void variableI16( const char *identifier, int16_t i );
   void variableUI16( const char *identifier, uint16_t i );
 	void variableUI32( const char *identifier, uint32_t i );
+	void variableI32( const char *identifier, int32_t i );
   void variableUI32X( const char *identifier, uint32_t i );
   void variableVolt( const char *identifier, float f);
 	void variableOhm( const char *identifier, float f);

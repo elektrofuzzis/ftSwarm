@@ -29,6 +29,7 @@ protected:
   uint16_t lastToken = rand();
   uint16_t readDelay = 25;
   bool     verbose = false;
+  bool     initialized = false;
 
   uint8_t getIndex( FtSwarmSerialNumber_t serialNumber );               // return index of controler with this s/n or are free slot if not found
 	bool    splitID( char *id, uint8_t *index, char *io, size_t sizeIO);  // split identifier

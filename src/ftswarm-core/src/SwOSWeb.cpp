@@ -410,7 +410,7 @@ esp_err_t apiActor( httpd_req_t *req ) {
   
   // optional parameters
   boolean hasCmd = ( req, getParameter( req, root, "cmd", &cmd, false ) );
-  boolean hasSpeed = ( req, getParameter( req, root, "power", &speed, false ) );
+  boolean hasSpeed = ( req, getParameter( req, root, "speed", &speed, false ) );
 
   // cleanup
   cJSON_Delete( root );

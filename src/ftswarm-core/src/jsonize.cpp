@@ -132,7 +132,21 @@ void JSONize::variableUI32( const char *identifier, uint32_t i ) {
   text2string( (char *) identifier );
   assign();
 
-  sprintf(value, "%lu", (unsigned long) i );
+  sprintf(value, "%d", i );
+  httpd_resp_sendstr_chunk( _req, value );
+
+}
+
+void JSONize::variableI32( const char *identifier, int32_t i ) {
+
+  char value[10];
+
+  newObject(JSONVariable);
+
+  text2string( (char *) identifier );
+  assign();
+
+  sprintf(value, "%d", i );
   httpd_resp_sendstr_chunk( _req, value );
 
 }

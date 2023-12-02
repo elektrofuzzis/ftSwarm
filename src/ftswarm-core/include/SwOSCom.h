@@ -57,7 +57,7 @@ extern QueueHandle_t sendNotificationWifi;
 extern QueueHandle_t sendNotificationRS485;
 extern QueueHandle_t recvNotification;
 
-struct Input_t { FtSwarmSensor_t sensorType; uint32_t rawValue; } __attribute__((packed));
+struct Input_t { FtSwarmSensor_t sensorType; int32_t rawValue; } __attribute__((packed));
 struct Actor_t { FtSwarmActor_t actorType; FtSwarmMotion_t motionType; int16_t speed; uint32_t rampUpT; uint32_t rampUpY; } __attribute__((packed));
 struct LED_t   { uint8_t brightness; uint32_t color; } __attribute__((packed));
 struct Servo_t { int16_t offset; int16_t position; } __attribute__((packed));

@@ -456,7 +456,7 @@ void SwOSCLI::executeInputCmd( void ) {
                               break;
 
     case CLICMD_getValue:     myOSSwarm.lock();
-                              printf("R: %d\n", io->getValueUI32() );
+                              printf("R: %d\n", io->getValueI32() );
                               myOSSwarm.unlock();
                               break;
 

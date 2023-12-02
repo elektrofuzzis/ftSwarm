@@ -16,9 +16,9 @@
     
 #define LOGFTSWARM  "FTSWARM"
 #define MAXIDENTIFIER 32
-#define MAXACTORS 4
+#define MAXACTORS 8
 #define MAXINPUTS 8
-#define SWOSVERSION "0.5.2"
+#define SWOSVERSION "0.5.3"
 
 #include <stdint.h>
 #include <cstddef>
@@ -53,16 +53,16 @@ typedef uint8_t  FtSwarmPort_t;
 typedef enum { swarmComWifi = 1, swarmComRS485 = 2, swarmComBoth= 3 } FtSwarmCommunication_t; 
 
 // IO types
-typedef enum { FTSWARM_UNDEF = -1, FTSWARM_INPUT, FTSWARM_DIGITALINPUT, FTSWARM_ANALOGINPUT, FTSWARM_ACTOR, FTSWARM_BUTTON, FTSWARM_JOYSTICK, FTSWARM_PIXEL, FTSWARM_SERVO,  FTSWARM_OLED, FTSWARM_GYRO, FTSWARM_HC165, FTSWARM_I2C, FTSWARM_CAM, FTSWARM_MAXIOTYPE } FtSwarmIOType_t ;
+typedef enum { FTSWARM_UNDEF = -1, FTSWARM_INPUT, FTSWARM_DIGITALINPUT, FTSWARM_ANALOGINPUT, FTSWARM_ACTOR, FTSWARM_BUTTON, FTSWARM_JOYSTICK, FTSWARM_PIXEL, FTSWARM_SERVO,  FTSWARM_OLED, FTSWARM_GYRO, FTSWARM_HC165, FTSWARM_I2C, FTSWARM_CAM, FTSWARM_COUNTERINPUT, FTSWARM_MAXIOTYPE } FtSwarmIOType_t ;
 
 // controler types
 typedef enum { FTSWARM_NOCTRL = -1, FTSWARM = 0, FTSWARMCONTROL, FTSWARMCAM, FTSWARMPWRDRIVE, FTSWARMDUINO } FtSwarmControler_t;
 
 // sensor types
-typedef enum { FTSWARM_DIGITAL, FTSWARM_ANALOG, FTSWARM_SWITCH, FTSWARM_REEDSWITCH, FTSWARM_LIGHTBARRIER, FTSWARM_VOLTMETER, FTSWARM_OHMMETER, FTSWARM_THERMOMETER, FTSWARM_LDR, FTSWARM_TRAILSENSOR, FTSWARM_COLORSENSOR, FTSWARM_ULTRASONIC, FTSWARM_COUNTER, FTSWARM_MAXSENSOR } FtSwarmSensor_t;
+typedef enum { FTSWARM_DIGITAL, FTSWARM_ANALOG, FTSWARM_SWITCH, FTSWARM_REEDSWITCH, FTSWARM_LIGHTBARRIER, FTSWARM_VOLTMETER, FTSWARM_OHMMETER, FTSWARM_THERMOMETER, FTSWARM_LDR, FTSWARM_TRAILSENSOR, FTSWARM_COLORSENSOR, FTSWARM_ULTRASONIC, FTSWARM_CAMSENSOR, FTSWARM_COUNTER, FTSWARM_ROTARYENCODER, FTSWARM_FREQUENCY, FTSWARM_MAXSENSOR } FtSwarmSensor_t;
 
 // actor types
-typedef enum { FTSWARM_XMOTOR, FTSWARM_XMMOTOR, FTSWARM_TRACTOR,  FTSWARM_ENCODER, FTSWARM_LAMP, FTSWARM_VALVE, FTSWARM_COMPRESSOR, FTSWARM_BUZZER, FTSWARM_STEPPER, FTSWARM_MAXACTOR } FtSwarmActor_t;
+typedef enum { FTSWARM_MOTOR, FTSWARM_XMMOTOR, FTSWARM_TRACTOR,  FTSWARM_ENCODER, FTSWARM_LAMP, FTSWARM_VALVE, FTSWARM_COMPRESSOR, FTSWARM_BUZZER, FTSWARM_STEPPER, FTSWARM_MAXACTOR } FtSwarmActor_t;
 
 // HW versions
 typedef enum { 
@@ -102,7 +102,8 @@ typedef enum {
     Black      = 0x000000
 } FtSwarmColor;
 
-#define MAXSPEED 4095 
+#define MAXSPEED256  256 
+#define MAXSPEED4096 4095 
 
 // **** port definitions ****
 
@@ -170,6 +171,7 @@ class FtSwarmIO {
     
     // constructors
     FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmIOType_t ioType);
+    FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmIOType_t ioType);
     FtSwarmIO( const char *name, FtSwarmIOType_t ioType );
 
     // destructor
@@ -252,6 +254,30 @@ class FtSwarmButton : public FtSwarmIO {
     void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor ); 
 };
 
+class FtSwarmCounter : public FtSwarmInput {
+  // counter input is available at all ports
+  public:
+    FtSwarmCounter( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
+    FtSwarmCounter( const char *name );
+
+    int16_t getValue( void );
+    void reset( void );
+
+};
+
+/* 
+class FtSwarmRotaryEncoder : public FtSwarmInput {
+
+  public:
+    FtSwarmCounter( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port1, FtSwarmPort_t port2 );
+    FtSwarmCounter( const char *name1, const char *name1 );
+
+    int32_t getValue( void );
+    void reset( void );
+
+};
+*/
+
 class FtSwarmAnalogInput : public FtSwarmInput { 
   // general analog input, A1..A4 ftSwarm only
   protected:
@@ -315,11 +341,13 @@ class FtSwarmActor : public FtSwarmIO {
 class FtSwarmMotor : public FtSwarmActor {
   // general motor class, use this class for (old) gray motors, mini motors, XS motors
   // M1..M2 all contollers - keep power budget in mind!
+  protected:
+    FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType );
+    FtSwarmMotor( const char *name, FtSwarmActor_t actorType );
   public:
-    FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType = FTSWARM_XMOTOR );
-    FtSwarmMotor( const char *name, FtSwarmActor_t actorType = FTSWARM_XMOTOR );
-    
-    void     setSpeed( int16_t speed );                                // speed +/-4095, speed 0 motor stopss
+    FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port ):FtSwarmMotor( serialNumber, port, FTSWARM_MOTOR ) {};
+    FtSwarmMotor( const char *name ):FtSwarmMotor( name, FTSWARM_MOTOR ) {};    
+    void     setSpeed( int16_t speed );                                // speed +/- 255 or +/-4095 dependend on speedRange, speed 0 motor stopss
     uint16_t getSpeed();                                               // actual speed
     void     setAcceleration( uint32_t rampUpT,  uint32_t rampUpY );  
     void     getAcceleration( uint32_t *rampUpT, uint32_t *rampUpY );
@@ -357,7 +385,7 @@ class FtSwarmEncoderMotor : public FtSwarmTractorMotor {
   // M1..M2 all contollers - keep power budget in mind!
   // TODO: implement encoder input
   public:
-    FtSwarmEncoderMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
+    FtSwarmEncoderMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
     FtSwarmEncoderMotor( const char * name );
 };
 
@@ -387,7 +415,7 @@ class FtSwarmOnOffActor : public FtSwarmActor {
     FtSwarmOnOffActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType );
     FtSwarmOnOffActor( const char *name, FtSwarmActor_t actorType );
     
-    void on( int16_t power = MAXSPEED );
+    void on( int16_t power = MAXSPEED256 );
     void off( void );
 };
 
@@ -496,6 +524,10 @@ class FtSwarmOLED : public FtSwarmIO {
   // OLED display, ftSwarmControl only
   // TODO: add remote calls. Actually the display is limited to local displays.
   public:
+
+    FtSwarmOLED(FtSwarmSerialNumber_t serialNumber);
+    FtSwarmOLED( const char *name );
+    
     void display(void);
     void invertDisplay(bool i);
     void fillScreen( bool white=true);    
@@ -530,7 +562,7 @@ class FtSwarmOLED : public FtSwarmIO {
 
 class FtSwarmCAM : public FtSwarmIO {
   public:
-    FtSwarmCAM( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
+    FtSwarmCAM( FtSwarmSerialNumber_t serialNumber );
     FtSwarmCAM( const char *name );
 
     void streaming( bool onOff );

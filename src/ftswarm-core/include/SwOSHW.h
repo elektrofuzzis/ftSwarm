@@ -16,6 +16,7 @@
 #include <driver/gpio.h>
 #include <driver/adc.h>
 #include <esp_adc_cal.h>
+#include <driver/pcnt.h>
 
 #include <WiFi.h>
 
@@ -150,7 +151,7 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
   protected:
     gpio_num_t        _GPIO = GPIO_NUM_NC;
 	  FtSwarmSensor_t   _sensorType;
-	  uint32_t          _lastRawValue = 0;
+	  int32_t           _lastRawValue = 0;
 	
     virtual void _setupLocal();
     virtual void subscription();
@@ -170,9 +171,9 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
 
     // external commands
     virtual void            setSensorType( FtSwarmSensor_t sensorType );  // set sensor type
-	  virtual uint32_t        getValueUI32( void );                         // get raw reading
+	  virtual int32_t         getValueI32( void );                          // get raw reading
 	  virtual float           getValueF( void );                            // get float reading
-    virtual void            setValue( uint32_t value ) {};                // set value by an external call
+    virtual void            setValue( int32_t value ) {};                 // set value by an external call
   
 };
 
@@ -206,8 +207,40 @@ class SwOSDigitalInput : public SwOSInput {
 
     // external commands
     virtual void            setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote );  // set sensor type
-    virtual void            setValue( uint32_t value );                   // set value by an external call
-    virtual FtSwarmToggle_t getToggle( void );                                  // check, on toggling signals
+    virtual void            setValue( int32_t value );                                                              // set value by an external call
+    virtual FtSwarmToggle_t getToggle( void );                                                                      // check, on toggling signals
+
+};
+
+/***************************************************
+ *
+ *   SwOSCounter
+ *
+ ***************************************************/
+
+class SwOSCounter : public SwOSInput {
+
+  protected:
+
+    gpio_num_t _CONTROL  = GPIO_NUM_NC;
+    uint8_t _portControl = 255;
+    pcnt_unit_t _unit = PCNT_UNIT_MAX;
+
+    virtual void _setupLocal();
+
+  public:
+ 
+	  SwOSCounter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl );
+  
+    // administrative stuff
+	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_COUNTERINPUT; };
+    virtual void jsonize( JSONize *json, uint8_t id);
+
+    // read sensor
+	  virtual void read();
+
+    // external commands
+    virtual void reset( void );
 
 };
 
@@ -241,7 +274,7 @@ class SwOSAnalogInput : public SwOSInput {
 
     // external commands
     virtual void   setSensorType( FtSwarmSensor_t sensorType, bool dontSendToRemote );  // set sensor type
-    virtual void   setValue( uint32_t value );                   // set value by an external call
+    virtual void   setValue( int32_t value );                                           // set value by an external call
     virtual float  getVoltage();
     virtual float  getResistance();
     virtual float  getKelvin();
@@ -260,16 +293,16 @@ class SwOSActor : public SwOSIO {
 protected:
 
   // DC motors
-	gpio_num_t      _IN1, _IN2;
-	ledc_channel_t  _channelIN1, _channelIN2;
-  uint32_t        _rampUpT, _rampUpY;
+	gpio_num_t     _IN1, _IN2;
+	ledc_channel_t _channelIN1, _channelIN2;
+  uint32_t       _rampUpT, _rampUpY;
 
   // stepper motors
-  long            _distance;
-  long            _position;
-  uint8_t         _pwrDriveMotor;
-  bool            _isHoming;
-  bool            _isRunning;
+  long           _distance;
+  long           _position;
+  uint8_t        _pwrDriveMotor;
+  bool           _isHoming;
+  bool           _isRunning;
 
   // generics
   FtSwarmActor_t  _actorType;
@@ -287,7 +320,7 @@ protected:
 
 public:
   // Constructors
-	SwOSActor(const char *name, uint8_t port, SwOSCtrl *ctrl);
+	SwOSActor(const char *name, uint8_t port, SwOSCtrl *ctrl );
 
   // adminstrative stuff
 	virtual FtSwarmIOType_t getIOType()  { return FTSWARM_ACTOR; };
@@ -833,6 +866,7 @@ class SwOSSwarmXX : public SwOSCtrl {
 	  virtual SwOSIO *getIO( const char *name);                              // get a pointer to an IO port via name or alias
     virtual void factorySettings( void );                                  // reset factory settings  
     virtual void unsubscribe(void );                                       // unsubscribe all IOs
+    virtual bool changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarmIOType_t newIOType ); // change port's IO Type if possible
 
     virtual bool OnDataRecv( SwOSCom *com );     // data via espnow revceived
 
@@ -870,7 +904,6 @@ class SwOSSwarmJST : public SwOSSwarmXX {
     virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
     virtual void factorySettings( void );                                  // reset factory settings
     virtual void unsubscribe(void );                                       // unsubscribe all IOs
-    virtual bool changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarmIOType_t newIOType ); // change port's IO Type if possible
 
     // API commands
     virtual bool apiServoOffset( char *id, int offset );           // send a Servo command (from api)
