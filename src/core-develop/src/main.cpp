@@ -5,6 +5,9 @@ void setup() {
 
     Serial.begin(115200);
 
+    firmware();
+    ESP.restart();
+
     FtSwarmSerialNumber_t local = ftSwarm.begin( );
 
     FtSwarmMotor *mini = new FtSwarmMotor( "MiniMotor" );

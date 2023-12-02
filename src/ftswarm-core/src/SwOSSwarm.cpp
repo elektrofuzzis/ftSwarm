@@ -30,7 +30,7 @@
 SwOSSwarm myOSSwarm;
 
 // #define DEBUG_COMMUNICATION
-#define DEBUG_READTASK
+// #define DEBUG_READTASK
 
 /***************************************************
  *
@@ -990,10 +990,10 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
       #endif
 
       // test, if the new controler is a Kelda and there is already a Kelda in my swarm
-      if ( ( com->data.registerCmd.IAmAKelda ) && ( Kelda ) ) {
+      if ( ( com->data.registerCmd.IAmAKelda ) && ( Ctrl[0]->IAmAKelda ) ) {
         setState( ERROR );
-        printf("ERROR: Multiple Keldas found! %s %s\n", Kelda->serialNumber, com->data.sourceSN );
-        while (1) { delay(50); }
+        printf("ERROR: Multiple Keldas found! %d %d\n", Kelda->serialNumber, com->data.sourceSN );
+        return;
       }
 
       myOSNetwork.AddPeer( com->macAddr );
