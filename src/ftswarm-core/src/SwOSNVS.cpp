@@ -33,7 +33,7 @@ void SwOSNVS::initialSetup( void ) {
 
   version = 2;
 
-  switch ( enterNumber(("Controler Type\n (1) ftSwarm\n (2) ftSwarmRS\n (3) ftSwarmControl\n (4) ftSwarmCAM\n (5) ftSwarmPwrDrive\n (6) ftSwarmDuino\n (7) special config\n>"), 0, 1, 7 ) ) {
+  switch ( enterNumber(("Controler Type\n (1) ftSwarm\n (2) ftSwarmRS\n (3) ftSwarmControl\n (4) ftSwarmCAM\n (5) ftSwarmPwrDrive\n (6) ftSwarmDuino\n (8) special config\n>"), 0, 1, 7 ) ) {
     case 1:  controlerType = FTSWARM;         CPU = FTSWARMJST_1V15;       break;
     case 2:  controlerType = FTSWARM;         CPU = FTSWARMRS_2V1;         break;
     case 3:  controlerType = FTSWARMCONTROL;  CPU = FTSWARMCONTROL_1V3;    break;

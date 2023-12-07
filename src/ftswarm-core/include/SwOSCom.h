@@ -47,6 +47,8 @@ typedef enum {
   CMD_USEREVENT,              // send data from user exit back to Kelda
   CMD_IDENTIFY,               // show myself
   CMD_CHANGEIOTYPE,           // change a port's IO Type
+  CMD_RESETCOUNTER,           // Reset counter
+  CMD_STARTFREQUENCYMETER,    // start frequency meter
   CMD_MAX
 } SwOSCommand_t;
 
@@ -107,6 +109,7 @@ struct SwOSDatagram_t {
     struct { uint8_t microstepMode; } CtrlCmd;
     struct { bool trigger; uint8_t size; uint8_t payload[MAXUSEREVENTPAYLOAD]; } userEventCmd;
     struct { uint8_t index; FtSwarmIOType_t oldIOType; FtSwarmIOType_t newIOType; } changeIOTypeCmd;
+    struct { uint8_t index; } CounterCmd;
   };
 } __attribute__((packed));
 

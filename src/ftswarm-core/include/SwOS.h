@@ -12,13 +12,13 @@
 
 // inter swarm communication deep debugging 
 // #define DEBUG_COMMUNICATION
-//#define DEBUG_READTASK
+// #define DEBUG_READTASK
     
 #define LOGFTSWARM  "FTSWARM"
 #define MAXIDENTIFIER 32
 #define MAXACTORS 8
 #define MAXINPUTS 8
-#define SWOSVERSION "0.5.3"
+#define SWOSVERSION "0.5.4"
 
 #include <stdint.h>
 #include <cstddef>
@@ -53,13 +53,13 @@ typedef uint8_t  FtSwarmPort_t;
 typedef enum { swarmComWifi = 1, swarmComRS485 = 2, swarmComBoth= 3 } FtSwarmCommunication_t; 
 
 // IO types
-typedef enum { FTSWARM_UNDEF = -1, FTSWARM_INPUT, FTSWARM_DIGITALINPUT, FTSWARM_ANALOGINPUT, FTSWARM_ACTOR, FTSWARM_BUTTON, FTSWARM_JOYSTICK, FTSWARM_PIXEL, FTSWARM_SERVO,  FTSWARM_OLED, FTSWARM_GYRO, FTSWARM_HC165, FTSWARM_I2C, FTSWARM_CAM, FTSWARM_COUNTERINPUT, FTSWARM_MAXIOTYPE } FtSwarmIOType_t ;
+typedef enum { FTSWARM_UNDEF = -1, FTSWARM_INPUT, FTSWARM_DIGITALINPUT, FTSWARM_ANALOGINPUT, FTSWARM_ACTOR, FTSWARM_BUTTON, FTSWARM_JOYSTICK, FTSWARM_PIXEL, FTSWARM_SERVO,  FTSWARM_OLED, FTSWARM_GYRO, FTSWARM_HC165, FTSWARM_I2C, FTSWARM_CAM, FTSWARM_COUNTERINPUT, FTSWARM_FREQUENCYINPUT, FTSWARM_MAXIOTYPE } FtSwarmIOType_t ;
 
 // controler types
 typedef enum { FTSWARM_NOCTRL = -1, FTSWARM = 0, FTSWARMCONTROL, FTSWARMCAM, FTSWARMPWRDRIVE, FTSWARMDUINO } FtSwarmControler_t;
 
 // sensor types
-typedef enum { FTSWARM_DIGITAL, FTSWARM_ANALOG, FTSWARM_SWITCH, FTSWARM_REEDSWITCH, FTSWARM_LIGHTBARRIER, FTSWARM_VOLTMETER, FTSWARM_OHMMETER, FTSWARM_THERMOMETER, FTSWARM_LDR, FTSWARM_TRAILSENSOR, FTSWARM_COLORSENSOR, FTSWARM_ULTRASONIC, FTSWARM_CAMSENSOR, FTSWARM_COUNTER, FTSWARM_ROTARYENCODER, FTSWARM_FREQUENCY, FTSWARM_MAXSENSOR } FtSwarmSensor_t;
+typedef enum { FTSWARM_DIGITAL, FTSWARM_ANALOG, FTSWARM_SWITCH, FTSWARM_REEDSWITCH, FTSWARM_LIGHTBARRIER, FTSWARM_VOLTMETER, FTSWARM_OHMMETER, FTSWARM_THERMOMETER, FTSWARM_LDR, FTSWARM_TRAILSENSOR, FTSWARM_COLORSENSOR, FTSWARM_ULTRASONIC, FTSWARM_CAMSENSOR, FTSWARM_COUNTER, FTSWARM_ROTARYENCODER, FTSWARM_FREQUENCYMETER, FTSWARM_MAXSENSOR } FtSwarmSensor_t;
 
 // actor types
 typedef enum { FTSWARM_MOTOR, FTSWARM_XMMOTOR, FTSWARM_TRACTOR,  FTSWARM_ENCODER, FTSWARM_LAMP, FTSWARM_VALVE, FTSWARM_COMPRESSOR, FTSWARM_BUZZER, FTSWARM_STEPPER, FTSWARM_MAXACTOR } FtSwarmActor_t;
@@ -202,7 +202,7 @@ class FtSwarmDigitalInput : public FtSwarmInput {
   protected:
     FtSwarmDigitalInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmSensor_t sensorType, bool normallyOpen = true);
     FtSwarmDigitalInput( const char *name, FtSwarmSensor_t sensorType, bool normallyOpen );
-    void setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen );
+    virtual void setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen );
   
   public:
     FtSwarmDigitalInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool normallyOpen = true);
@@ -256,12 +256,25 @@ class FtSwarmButton : public FtSwarmIO {
 
 class FtSwarmCounter : public FtSwarmInput {
   // counter input is available at all ports
+  protected:
+    virtual void setSensorType( FtSwarmSensor_t sensorType);
+    FtSwarmCounter( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmSensor_t sensorType );
+    FtSwarmCounter( const char *name, FtSwarmSensor_t sensorType );
   public:
     FtSwarmCounter( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
     FtSwarmCounter( const char *name );
 
-    int16_t getValue( void );
-    void reset( void );
+    int16_t getCounter( void );
+    void resetCounter( void );
+
+};
+
+class FtSwarmFrequencymeter : public FtSwarmInput {
+  // FtSwarmFrequencymeter is available at all input ports
+  public:
+    FtSwarmFrequencymeter( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
+    FtSwarmFrequencymeter( const char *name );
+    virtual int16_t getFrequency( void );
 
 };
 
