@@ -348,7 +348,7 @@ old/
 release/
 arduino-cpp-library/src/src.ino
 arduino-cpp-library/src/debug.cfg
-
+src/core-develop
 
 # Build Files
 deployment/

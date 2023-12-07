@@ -19,12 +19,13 @@
 #include <driver/pcnt.h>
 #include <esp_now.h>
 #include <esp_log.h>
+#include <freertos/semphr.h>
 
 #include "SwOS.h"
 #include "SwOSHW.h"
 #include "SwOSCom.h"
 
-const char IOTYPE[FTSWARM_MAXIOTYPE][13] = { "INPUT", "DIGITALINPUT", "ANALOGINPUT", "ACTOR", "BUTTON", "JOYSTICK", "LED", "SERVO", "OLED", "GYRO", "HC165", "I2C", "CAM",  "COUNTER" };
+const char IOTYPE[FTSWARM_MAXIOTYPE][15] = { "INPUT", "DIGITALINPUT", "ANALOGINPUT", "ACTOR", "BUTTON", "JOYSTICK", "LED", "SERVO", "OLED", "GYRO", "HC165", "I2C", "CAM",  "COUNTER", "FREQUENCYMETER" };
 
 const char EMPTYSTRING[] = "";
 
@@ -47,7 +48,7 @@ const char SENSORICON[FTSWARM_MAXSENSOR][21] = {
   "28_frequency.svg"
 };
 
-const char SENSORTYPE[FTSWARM_MAXSENSOR][20] = { "DIGITAL", "ANALOG", "SWITCH", "REEDSWITCH", "LIGHTBARRIER", "VOLTMETER", "OHMMETER", "THERMOMETER", "LDR", "TRAILSENSOR", "COLORSENSOR", "ULTRASONIC", "CAM", "COUNTER", "ROTARY", "FREQUENCY" };
+const char SENSORTYPE[FTSWARM_MAXSENSOR][20] = { "DIGITAL", "ANALOG", "SWITCH", "REEDSWITCH", "LIGHTBARRIER", "VOLTMETER", "OHMMETER", "THERMOMETER", "LDR", "TRAILSENSOR", "COLORSENSOR", "ULTRASONIC", "CAM", "COUNTER", "ROTARY", "FREQUENCYMETER" };
 
 const char ACTORICON[FTSWARM_MAXACTOR][20] = {
   "16_xmotor.svg",
@@ -406,9 +407,27 @@ char * SwOSInput::getIcon() {
   return (char *) SENSORICON[ _sensorType ]; 
 }; 
 
+void SwOSInput::setSensorTypeLocal( FtSwarmSensor_t sensorType ) {
+
+}
+
 void SwOSInput::setSensorType( FtSwarmSensor_t sensorType ) {
 
   _sensorType   = sensorType;
+
+  if ( _ctrl->isLocal() ) {
+
+    setSensorTypeLocal( sensorType ); 
+
+  } else {
+
+    // send SN, SETSENSORTYPE, _port, sensorType
+    SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_SETSENSORTYPE );
+    cmd.data.sensorCmd.index        = _port;
+    cmd.data.sensorCmd.sensorType   = _sensorType;
+    cmd.send( );
+
+  }
 
 }
 
@@ -500,14 +519,18 @@ void SwOSDigitalInput::_setupLocal() {
 
 }
 
-void SwOSDigitalInput::setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote ) {
+void SwOSDigitalInput::setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen ) {
+
+  // due to send norallyOpen to remote controllers, don't call super class
 
   _sensorType   = sensorType;
   _normallyOpen = normallyOpen;
 
-  if (_ctrl->isLocal()) { _setSensorTypeLHW( sensorType, normallyOpen, dontSendToRemote ); }
+  if (_ctrl->isLocal()) { 
+    
+    setSensorTypeLocal( sensorType );
 
-  if ( !dontSendToRemote ) {
+  } else {
 
     // send SN, SETSENSORTYPE, _port, sensorType
     SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_SETSENSORTYPE );
@@ -520,7 +543,7 @@ void SwOSDigitalInput::setSensorType( FtSwarmSensor_t sensorType, bool normallyO
 
 }
 
-void SwOSDigitalInput::_setSensorTypeLHW( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote ) {
+void SwOSDigitalInput::setSensorTypeLocal( FtSwarmSensor_t sensorType ) {
 
   // set A1 pullup if available
   if ( ( _PUA2 != GPIO_NUM_NC ) && ( _sensorType != FTSWARM_ULTRASONIC ) ) {
@@ -686,18 +709,16 @@ void SwOSCounter::_setupLocal() {
     pcnt_unit_config(&pcnt_config);
   }
   
+  /* Configure and enable the input filter */
+  pcnt_set_filter_value(_unit, 100);
+  pcnt_filter_enable(_unit);
 
-    /* Configure and enable the input filter */
-    pcnt_set_filter_value(_unit, 100);
-    pcnt_filter_enable(_unit);
+  /* Initialize PCNT's counter */
+  pcnt_counter_pause(_unit);
+  pcnt_counter_clear(_unit);
 
-    /* Initialize PCNT's counter */
-    pcnt_counter_pause(_unit);
-    pcnt_counter_clear(_unit);
-
-    /* Everything is set up, now go to counting */
-    pcnt_counter_resume(_unit);
-
+  /* Everything is set up, now go to counting */
+  pcnt_counter_resume(_unit);
 
 }
 
@@ -715,15 +736,31 @@ void SwOSCounter::read( void ) {
   int16_t newValue;
   pcnt_get_counter_value(_unit, &newValue);
 
-    // store new data
+  // store new data
   _lastRawValue = newValue;  
 
   subscription();
 
 }
 
-void SwOSCounter::reset( void ) {
-  pcnt_counter_clear( _unit );
+void SwOSCounter::resetCounter( void ) {
+
+  if ( _ctrl->isLocal() ) {
+
+    pcnt_counter_clear( _unit );
+
+  } else {
+
+    SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_RESETCOUNTER );
+    cmd.data.CounterCmd.index = _port;
+    cmd.send( );
+
+  }
+
+  _lastRawValue = 0;
+
+  subscription();
+
 }
 
 void SwOSCounter::jsonize( JSONize *json, uint8_t id) {
@@ -731,9 +768,107 @@ void SwOSCounter::jsonize( JSONize *json, uint8_t id) {
   SwOSIO::jsonize(json, id);
   json->variableUI32("sensorType", _sensorType);
   json->variable("subType", (char *) SENSORTYPE[_sensorType]);
-
   json->variableI32("value", getValueI32() );
+  json->endObject();
+}
+
+/***************************************************
+ *
+ *   SwOSFrequencymeter
+ *
+ ***************************************************/
+
+static void IRAM_ATTR freq_isr_handler(void* arg) {
+
+  QueueHandle_t freqQueue = (QueueHandle_t) arg;
+  unsigned long t = esp_timer_get_time();
+  xQueueSendFromISR(freqQueue, &t, NULL);
+
+}
+
+SwOSFrequencymeter::SwOSFrequencymeter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl ) : SwOSInput( name, port1, ctrl, FTSWARM_FREQUENCYMETER ) {
+
+  _portControl = port2;
   
+  // initialize local HW
+  if ( _ctrl->isLocal() ) _setupLocal();
+
+}
+
+SwOSFrequencymeter::~SwOSFrequencymeter( ) {
+  
+  if ( _freqQueue ) {
+    gpio_isr_handler_remove( _GPIO );
+    vQueueDelete( _freqQueue );
+    _freqQueue = NULL;
+  }
+
+}
+
+void SwOSFrequencymeter::_setupLocal() {
+  // initialize local HW
+
+  // setup _GPIO / Counter Input
+  SwOSInput::_setupLocal( );
+
+  // local variables
+  _freqQueue = xQueueCreate(10, sizeof(unsigned long));
+  _lastTick = esp_timer_get_time();
+
+  // setup interupt handling
+  gpio_set_intr_type( _GPIO, GPIO_INTR_POSEDGE );
+  gpio_install_isr_service( 0 );
+  gpio_isr_handler_add( _GPIO, freq_isr_handler, (void*) _freqQueue );
+
+}
+
+void SwOSFrequencymeter::read( void ) {
+
+  // nothing todo on remote sensors
+  if (!_ctrl->isLocal()) return;
+
+  // i2c sensor is read via a block control by <controller>.read
+  if (_ctrl->isI2CSwarmCtrl()) return; 
+
+  // not initialized?
+  if ( !_freqQueue ) return;
+
+  int16_t newValue;
+  unsigned long tick, dt, dt1;
+  bool hasEvents = false;
+  
+  // now read the latest data
+  while ( xQueueReceive( _freqQueue, &tick, 0 ) == pdTRUE ) {
+    dt1 = tick - _lastTick;
+    if ( ( dt1 > 1000 ) && ( dt1 < 1000000 ) )  {
+      dt = dt1;
+      _lastTick = tick;
+      hasEvents = true;
+    }
+  }
+
+  if (hasEvents) {
+    // I got some data out of the queue, so I calc the frequency
+    newValue = dt;
+
+  } else if ( esp_timer_get_time() - _lastTick > 1000000 ) {
+    // no tick for more than a second
+    newValue = 0;
+  }
+
+  // store new data
+  _lastRawValue = newValue;  
+
+  subscription();
+
+}
+
+void SwOSFrequencymeter::jsonize( JSONize *json, uint8_t id) {
+  json->startObject();
+  SwOSIO::jsonize(json, id);
+  json->variableUI32("sensorType", _sensorType);
+  json->variable("subType", (char *) SENSORTYPE[_sensorType]);
+  json->variableI32("value", getValueI32() );
   json->endObject();
 }
 
@@ -774,25 +909,7 @@ bool SwOSAnalogInput::isXMeter() {
 
 }
 
-void SwOSAnalogInput::setSensorType( FtSwarmSensor_t sensorType, bool dontSendToRemote ) {
-
-  _sensorType   = sensorType;
-
-  if (_ctrl->isLocal()) { _setSensorTypeLHW( sensorType, dontSendToRemote ); }
-
-  if ( !dontSendToRemote ) {
-
-    // send SN, SETSENSORTYPE, _port, sensorType
-    SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_SETSENSORTYPE );
-    cmd.data.sensorCmd.index        = _port;
-    cmd.data.sensorCmd.sensorType   = _sensorType;
-    cmd.send( );
-
-  }
-
-}
-
-void SwOSAnalogInput::_setSensorTypeLHW( FtSwarmSensor_t sensorType, bool dontSendToRemote ) {
+void SwOSAnalogInput::_setSensorTypeLocal( FtSwarmSensor_t sensorType ) {
 
   // analog calibration if needed
   if ( ( isXMeter() ) && (!_adc_chars) ) {
@@ -2714,9 +2831,9 @@ bool SwOSCtrl::cmdAlias( char *device, uint8_t port, const char *alias) {
 
 SwOSIO *SwOSCtrl::getIO( const char *name) {
 
-  for (uint8_t i=0;i<inputs;i++)  { if (input[i]->equals(name) ) { return input[i]; } }
-  for (uint8_t i=0;i<actors;i++)  { if (actor[i]->equals(name) ) { return actor[i]; } }
-  for (uint8_t i=0;i<MAXLEDS;i++) { if ( (led[i]) && ( led[i]->equals(name) ) ) { return led[i]; } }
+  for ( uint8_t i=0; i<inputs;  i++) { if ( ( input[i] ) && ( input[i]->equals(name) ) ) { return input[i]; } }
+  for ( uint8_t i=0; i<actors;  i++) { if ( ( actor[i] ) && ( actor[i]->equals(name) ) ) { return actor[i]; } }
+  for ( uint8_t i=0; i<MAXLEDS; i++) { if ( ( led[i] )   && ( led[i]->equals(name) ) )   { return led[i]; } }
 
   return NULL;
 }
@@ -3039,9 +3156,9 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
 
     case CMD_SETSENSORTYPE:
       if ( input[com->data.sensorCmd.index]->getIOType() == FTSWARM_DIGITALINPUT) { 
-        ((SwOSDigitalInput *)input[com->data.sensorCmd.index])->setSensorType( com->data.sensorCmd.sensorType, com->data.sensorCmd.normallyOpen, true );
+        ((SwOSDigitalInput *)input[com->data.sensorCmd.index])->setSensorType( com->data.sensorCmd.sensorType, com->data.sensorCmd.normallyOpen );
       } else {
-        ((SwOSAnalogInput *)input[com->data.sensorCmd.index])->setSensorType( com->data.sensorCmd.sensorType, true );
+        ((SwOSAnalogInput *)input[com->data.sensorCmd.index])->setSensorType( com->data.sensorCmd.sensorType );
       }
       return true;
 
@@ -3051,6 +3168,11 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
       actor[com->data.actorSpeedCmd.index]->setSpeed( com->data.actorSpeedCmd.speed );
       
       return true;
+
+    case CMD_RESETCOUNTER:
+       if ( ( input[com->data.CounterCmd.index] ) && ( input[com->data.CounterCmd.index]->getIOType() == FTSWARM_COUNTERINPUT ) )
+          static_cast<SwOSCounter *>(input[com->data.CounterCmd.index])->resetCounter();
+       return true;
 
     case CMD_SETSTEPPERDISTANCE:
       actor[com->data.actorStepperCmd.index]->setDistance( com->data.actorStepperCmd.paraml, com->data.actorStepperCmd.paramb, true );
@@ -3182,7 +3304,7 @@ void SwOSCtrl::loadAliasFromNVS( nvs_handle_t my_handle ) {
 void SwOSCtrl::_sendAlias( SwOSCom *alias ) {
 
     // hostname
-  alias->sendBuffered( (char *)"HOSTANME", getAlias() ); 
+  alias->sendBuffered( (char *)"HOSTNAME", getAlias() ); 
 
   // input
   for (uint8_t i=0; i<inputs;i++) alias->sendBuffered( input[i]->getName(), input[i]->getAlias() ); 
@@ -3500,23 +3622,32 @@ void SwOSSwarmXX::_sendAlias( SwOSCom *alias ) {
 
 }
 
+bool isInputType( FtSwarmIOType_t ioType ) {
+
+  return ( ioType == FTSWARM_DIGITALINPUT ) ||
+         ( ioType == FTSWARM_ANALOGINPUT ) ||
+         ( ioType == FTSWARM_COUNTERINPUT ) ||
+         ( ioType == FTSWARM_FREQUENCYINPUT );
+}
+
 bool SwOSSwarmXX::changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarmIOType_t newIOType ) {
 
   // check on compatible types
-  if ( ( oldIOType != FTSWARM_DIGITALINPUT ) && ( oldIOType != FTSWARM_ANALOGINPUT ) && ( oldIOType != FTSWARM_COUNTERINPUT ) ) return false;
-  if ( ( newIOType != FTSWARM_DIGITALINPUT ) && ( newIOType != FTSWARM_ANALOGINPUT ) && ( newIOType != FTSWARM_COUNTERINPUT ) ) return false;
-  
+  if (!isInputType( oldIOType) ) return false;
+  if (!isInputType( newIOType) ) return false;
+
   // register the new one
   SwOSInput *io;
   switch ( newIOType ) {
-    case FTSWARM_DIGITALINPUT: io = new SwOSDigitalInput("A", port, this ); break;
-    case FTSWARM_ANALOGINPUT:  io = new SwOSAnalogInput("A", port, this ); break;
-    case FTSWARM_COUNTERINPUT: io = new SwOSCounter("A", port, 255, this ); break;
+    case FTSWARM_DIGITALINPUT:   io = new SwOSDigitalInput("A", port, this ); break;
+    case FTSWARM_ANALOGINPUT:    io = new SwOSAnalogInput("A", port, this ); break;
+    case FTSWARM_COUNTERINPUT:   io = new SwOSCounter("A", port, 255, this ); break;
+    case FTSWARM_FREQUENCYINPUT: io = new SwOSFrequencymeter("A", port, 255, this ); break;
     default: return false;
   }
 
   // if old port exits, transfer needed properties and kill it
-  if (!input[port]) {
+  if (input[port]) {
     char alias[MAXIDENTIFIER];
     strcpy( alias, input[port]->getAlias() );
     io->setAlias( alias );

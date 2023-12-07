@@ -17,13 +17,14 @@ FtSwarmIOType_t sensorType2IOType( FtSwarmSensor_t sensor2IOType ) {
     case FTSWARM_DIGITAL:
     case FTSWARM_SWITCH:
     case FTSWARM_REEDSWITCH:
-    case FTSWARM_LIGHTBARRIER:  return FTSWARM_DIGITALINPUT;
+    case FTSWARM_LIGHTBARRIER:   return FTSWARM_DIGITALINPUT;
     
+    case FTSWARM_FREQUENCYMETER: return FTSWARM_FREQUENCYINPUT;
+
     case FTSWARM_ROTARYENCODER:
-    case FTSWARM_FREQUENCY:
-    case FTSWARM_COUNTER:       return FTSWARM_COUNTERINPUT;
+    case FTSWARM_COUNTER:        return FTSWARM_COUNTERINPUT;
     
-    default:                    return FTSWARM_ANALOGINPUT;
+    default:                     return FTSWARM_ANALOGINPUT;
 
   }
 
@@ -154,7 +155,7 @@ void FtSwarmDigitalInput::setSensorType( FtSwarmSensor_t sensorType, bool normal
   // set sensor type
   if (me) {
     myOSSwarm.lock();
-    static_cast<SwOSDigitalInput *>(me)->setSensorType( sensorType, normallyOpen, true );
+    static_cast<SwOSDigitalInput *>(me)->setSensorType( sensorType, normallyOpen );
     myOSSwarm.unlock();
   }
 
@@ -288,15 +289,38 @@ bool FtSwarmButton::hasToggledDown()       { return ( getToggle() == FTSWARM_TOG
 
 // **** FtSwarmCounter
 
-FtSwarmCounter::FtSwarmCounter( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmInput( serialNumber, port, FTSWARM_COUNTERINPUT ) {
+void FtSwarmCounter::setSensorType( FtSwarmSensor_t sensorType ) {
+
+  // set sensor type
+  if (me) {
+    myOSSwarm.lock();
+    static_cast<SwOSCounter *>(me)->setSensorType( sensorType );
+    myOSSwarm.unlock();
+  }
+
+}
+
+FtSwarmCounter::FtSwarmCounter( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmSensor_t sensorType ):FtSwarmInput( serialNumber, port, FTSWARM_COUNTERINPUT ) {
+
+  setSensorType( sensorType );
 
 };
 
-FtSwarmCounter::FtSwarmCounter( const char *name):FtSwarmInput( name, FTSWARM_COUNTERINPUT ) {
+FtSwarmCounter::FtSwarmCounter( const char *name, FtSwarmSensor_t sensorType ):FtSwarmInput( name, FTSWARM_COUNTERINPUT ) {
+
+  setSensorType( sensorType );
+  
+};
+
+FtSwarmCounter::FtSwarmCounter( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmCounter( serialNumber, port, FTSWARM_COUNTER ) {
 
 };
 
-int16_t FtSwarmCounter::getValue() {
+FtSwarmCounter::FtSwarmCounter( const char *name):FtSwarmCounter( name, FTSWARM_COUNTER ) {
+
+};
+
+int16_t FtSwarmCounter::getCounter() {
 
   if (!me) return 0;
 
@@ -307,12 +331,33 @@ int16_t FtSwarmCounter::getValue() {
   return xReturn;
 };
 
-void FtSwarmCounter::reset( void ) {
+void FtSwarmCounter::resetCounter( void ) {
 
   myOSSwarm.lock();
-  static_cast<SwOSCounter *>(me)->reset();
+  static_cast<SwOSCounter *>(me)->resetCounter();
   myOSSwarm.unlock();
 
+};
+
+// **** FtSwarmFrequencymeter
+
+FtSwarmFrequencymeter::FtSwarmFrequencymeter( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmInput( serialNumber, port, FTSWARM_FREQUENCYINPUT ) {
+
+};
+
+FtSwarmFrequencymeter::FtSwarmFrequencymeter( const char *name ):FtSwarmInput( name, FTSWARM_FREQUENCYINPUT ) {
+
+};
+
+int16_t FtSwarmFrequencymeter::getFrequency() {
+
+  if (!me) return 0;
+
+  myOSSwarm.lock();
+  uint16_t xReturn = (static_cast<SwOSFrequencymeter *>(me)->getValueI32());
+  myOSSwarm.unlock();
+
+  return xReturn;
 };
 
 // **** FtSwarmAnalogInput ****
@@ -322,7 +367,7 @@ void FtSwarmAnalogInput::setSensorType( FtSwarmSensor_t sensorType ) {
   // set sensor type
   if (me) {
     myOSSwarm.lock();
-    static_cast<SwOSAnalogInput *>(me)->setSensorType( sensorType, true );
+    static_cast<SwOSAnalogInput *>(me)->setSensorType( sensorType );
     myOSSwarm.unlock();
   }
 

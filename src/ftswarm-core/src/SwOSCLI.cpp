@@ -443,10 +443,10 @@ void SwOSCLI::executeInputCmd( void ) {
                                 myOSSwarm.lock();
                                 io = (SwOSInput *) myOSSwarm.getIO( io->getCtrl()->serialNumber, io->getPort(), sensorType2IOType( (FtSwarmSensor_t) _parameter[0].getValue() ) );
                                 if (io->getIOType() == FTSWARM_ANALOGINPUT ) {
-                                  ((SwOSAnalogInput *)io)->setSensorType( (FtSwarmSensor_t)_parameter[0].getValue(), false );
+                                  ((SwOSAnalogInput *)io)->setSensorType( (FtSwarmSensor_t)_parameter[0].getValue() );
                                   printf("R: ok\n");
                                 } else if (io->getIOType() == FTSWARM_DIGITALINPUT ) {
-                                  ((SwOSDigitalInput *)io)->setSensorType( (FtSwarmSensor_t)_parameter[0].getValue(), (bool)_parameter[1].getValue(), false );
+                                  ((SwOSDigitalInput *)io)->setSensorType( (FtSwarmSensor_t)_parameter[0].getValue(), (bool)_parameter[1].getValue() );
                                   printf("R: ok\n");
                                 } else {
                                   printf("ERROR: wrong iotype.\n");

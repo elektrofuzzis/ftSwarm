@@ -155,6 +155,8 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
 	
     virtual void _setupLocal();
     virtual void subscription();
+    virtual void setSensorTypeLocal( FtSwarmSensor_t sensorType );
+	  
 
   public:
  
@@ -192,7 +194,7 @@ class SwOSDigitalInput : public SwOSInput {
     bool            _normallyOpen = true;
 
     virtual void _setupLocal();
-    virtual void _setSensorTypeLHW( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote );  // set sensor type
+    virtual void setSensorTypeLocal( FtSwarmSensor_t sensorType );
 
   public:
  
@@ -206,9 +208,9 @@ class SwOSDigitalInput : public SwOSInput {
 	  virtual void     read();
 
     // external commands
-    virtual void            setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen, bool dontSendToRemote );  // set sensor type
-    virtual void            setValue( int32_t value );                                                              // set value by an external call
-    virtual FtSwarmToggle_t getToggle( void );                                                                      // check, on toggling signals
+    virtual void            setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen );  // set sensor type
+    virtual void            setValue( int32_t value );                                       // set value by an external call
+    virtual FtSwarmToggle_t getToggle( void );                                               // check, on toggling signals
 
 };
 
@@ -240,8 +242,40 @@ class SwOSCounter : public SwOSInput {
 	  virtual void read();
 
     // external commands
-    virtual void reset( void );
+    virtual void resetCounter( void );
 
+};
+
+/***************************************************
+ *
+ *   SwOSFrequencymeter
+ *
+ ***************************************************/
+
+class SwOSFrequencymeter : public SwOSInput {
+
+  protected:
+
+    gpio_num_t _CONTROL  = GPIO_NUM_NC;
+    uint8_t    _portControl = 255;
+
+    unsigned long _lastTick = 0;
+    QueueHandle_t _freqQueue = NULL;
+
+    virtual void _setupLocal();
+
+  public:
+ 
+	  SwOSFrequencymeter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl );
+    ~SwOSFrequencymeter();
+  
+    // administrative stuff
+	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_FREQUENCYINPUT; };
+    virtual void jsonize( JSONize *json, uint8_t id);
+
+    // read sensor
+	  virtual void read();
+    
 };
 
 /***************************************************
@@ -259,7 +293,7 @@ class SwOSAnalogInput : public SwOSInput {
 	
     bool isXMeter();
     virtual void _setupLocal();
-    virtual void _setSensorTypeLHW( FtSwarmSensor_t sensorType, bool dontSendToRemote );  // set sensor type
+    virtual void _setSensorTypeLocal( FtSwarmSensor_t sensorType );  // set sensor type
 
   public:
  
@@ -273,8 +307,7 @@ class SwOSAnalogInput : public SwOSInput {
 	  virtual void     read();
 
     // external commands
-    virtual void   setSensorType( FtSwarmSensor_t sensorType, bool dontSendToRemote );  // set sensor type
-    virtual void   setValue( int32_t value );                                           // set value by an external call
+    virtual void   setValue( int32_t value );                    // set value by an external call
     virtual float  getVoltage();
     virtual float  getResistance();
     virtual float  getKelvin();
