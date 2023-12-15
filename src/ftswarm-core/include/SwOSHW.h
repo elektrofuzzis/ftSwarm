@@ -259,7 +259,7 @@ class SwOSFrequencymeter : public SwOSInput {
     gpio_num_t _CONTROL  = GPIO_NUM_NC;
     uint8_t    _portControl = 255;
 
-    unsigned long _lastTick = 0;
+    int64_t                  _lastTick = 0;
     QueueHandle_t _freqQueue = NULL;
 
     virtual void _setupLocal();

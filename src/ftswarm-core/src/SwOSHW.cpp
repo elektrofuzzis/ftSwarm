@@ -781,7 +781,7 @@ void SwOSCounter::jsonize( JSONize *json, uint8_t id) {
 static void IRAM_ATTR freq_isr_handler(void* arg) {
 
   QueueHandle_t freqQueue = (QueueHandle_t) arg;
-  unsigned long t = esp_timer_get_time();
+  int64_t t = esp_timer_get_time();
   xQueueSendFromISR(freqQueue, &t, NULL);
 
 }
@@ -812,7 +812,7 @@ void SwOSFrequencymeter::_setupLocal() {
   SwOSInput::_setupLocal( );
 
   // local variables
-  _freqQueue = xQueueCreate(10, sizeof(unsigned long));
+  _freqQueue = xQueueCreate(10, sizeof(int64_t));
   _lastTick = esp_timer_get_time();
 
   // setup interupt handling
@@ -833,31 +833,28 @@ void SwOSFrequencymeter::read( void ) {
   // not initialized?
   if ( !_freqQueue ) return;
 
-  int16_t newValue;
-  unsigned long tick, dt, dt1;
+  int64_t tick, dt, dt1;
   bool hasEvents = false;
   
   // now read the latest data
   while ( xQueueReceive( _freqQueue, &tick, 0 ) == pdTRUE ) {
     dt1 = tick - _lastTick;
-    if ( ( dt1 > 1000 ) && ( dt1 < 1000000 ) )  {
+    if ( dt1 > 1000LL )  {
       dt = dt1;
       _lastTick = tick;
       hasEvents = true;
     }
   }
 
-  if (hasEvents) {
+  if ( (hasEvents) && (dt != 0LL) ) {
     // I got some data out of the queue, so I calc the frequency
-    newValue = dt;
-
-  } else if ( esp_timer_get_time() - _lastTick > 1000000 ) {
+    float newValueF = 1/( ((float)dt) / 1000000.0 );
+    _lastRawValue = newValueF; 
+  
+  } else if ( esp_timer_get_time() - _lastTick > 1000000LL ) {
     // no tick for more than a second
-    newValue = 0;
+    _lastRawValue = 0;
   }
-
-  // store new data
-  _lastRawValue = newValue;  
 
   subscription();
 
