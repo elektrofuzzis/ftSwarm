@@ -328,6 +328,7 @@ protected:
   // DC motors
 	gpio_num_t     _IN1 = GPIO_NUM_NC;
   gpio_num_t     _IN2 = GPIO_NUM_NC;
+  ledc_channel_config_t *ledc_channel = NULL;
   uint32_t       _rampUpT = 0;
   uint32_t       _rampUpY = 0;
 
@@ -348,6 +349,7 @@ protected:
   virtual void _setupLocal(); // initializes local HW
   virtual void _setLocalI2C();   // start moving locally
   virtual void _setLocalLHW();   // start moving locally
+  virtual void setPWM( int16_t in1, int16_t in2, gpio_num_t pwm, uint32_t duty );
 
   // remote HW procedures
   virtual void _setRemote();  // start moving remotely 
@@ -355,6 +357,7 @@ protected:
 public:
   // Constructors
 	SwOSActor(const char *name, uint8_t port, SwOSCtrl *ctrl );
+  ~SwOSActor( );
 
   // adminstrative stuff
 	virtual FtSwarmIOType_t getIOType()  { return FTSWARM_ACTOR; };
@@ -945,28 +948,6 @@ class SwOSSwarmJST : public SwOSSwarmXX {
 
     // **** Communications *****
     virtual bool OnDataRecv( SwOSCom *com ); // data via espnow revceived
-
-};
-
-/***************************************************
- *
- *   SwOSSwarmXL
- *
- ***************************************************/
-
-class SwOSSwarmXL : public SwOSSwarmXX {
-
-  protected:
-  
-  public:
-
-    // constructor, destructor
-	  SwOSSwarmXL( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, uint8_t xLed, FtSwarmExtMode_t extentionPort );
-    SwOSSwarmXL( SwOSCom *com ); // constructor
-  
-    // administrative stuff
-	  virtual FtSwarmControler_t getType();                                  // what I am?
-	  virtual char* myType();                                                // what I am?
 
 };
 

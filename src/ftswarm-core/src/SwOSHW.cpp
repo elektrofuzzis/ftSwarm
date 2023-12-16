@@ -1081,6 +1081,11 @@ SwOSActor::SwOSActor(const char *name, uint8_t port, SwOSCtrl *ctrl):SwOSIO(name
 
 }
 
+SwOSActor::~SwOSActor() {
+  if (_ctrl->isLocal() ) setSpeed(0);
+  if ( ledc_channel ) free( ledc_channel );
+}
+
 char * SwOSActor::getIcon() { 
   return (char *) ACTORICON[ _actorType ]; 
 }; 
@@ -1135,16 +1140,14 @@ void SwOSActor::_setupLocal() {
   ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
 
   // register led channel
-  ledc_channel_config_t ledc_channel = {
-    .gpio_num       = _IN1,
-    .speed_mode     = LEDC_LOW_SPEED_MODE,
-    .channel        = (ledc_channel_t) (_port),
-    .intr_type      = LEDC_INTR_DISABLE,
-    .timer_sel      = LEDC_TIMER_0,
-    .duty           = 0, // Set duty to 0%
-    .hpoint         = 0
-  };
-  ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel));
+  ledc_channel = (ledc_channel_config_t *) malloc( sizeof( ledc_channel_config_t ) );
+  ledc_channel->gpio_num       = _IN1;
+  ledc_channel->speed_mode     = LEDC_LOW_SPEED_MODE;
+  ledc_channel->channel        = (ledc_channel_t) (_port);
+  ledc_channel->intr_type      = LEDC_INTR_DISABLE;
+  ledc_channel->timer_sel      = LEDC_TIMER_0;
+  ledc_channel->duty           = 0; // Set duty to 0%
+  ledc_channel->hpoint         = 0;
 
 }
 
@@ -1248,6 +1251,38 @@ void setDuty( ledc_channel_t channel, uint32_t duty, uint32_t rampUpT, uint32_t 
     ledc_set_fade( LEDC_LOW_SPEED_MODE, channel, oldDuty, dir, rampUpT, rampUpY, duty );
 }
 
+void SwOSActor::setPWM( int16_t in1, int16_t in2, gpio_num_t pwm, uint32_t duty ) {
+
+  // first check, if the old pwm pin is different to the new one
+  if ( ledc_channel->gpio_num != pwm ) {
+    
+    // reconfigure old pin
+    if ( ledc_channel->gpio_num != GPIO_NUM_NC ) {    
+      gpio_config_t io_conf = {
+        .pin_bit_mask = io_conf.pin_bit_mask | (1ULL << ledc_channel->gpio_num),
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+      };
+      gpio_reset_pin( (gpio_num_t) ledc_channel->gpio_num );
+      gpio_config(&io_conf);
+    }
+    
+    // set ledc_channel to new pin
+    ledc_channel->gpio_num = pwm;
+    if ( pwm != GPIO_NUM_NC ) ledc_channel_config( ledc_channel );
+  }
+
+  // second step: set static levels if applicable
+  if ( ( pwm != _IN1 ) && ( _IN1 != GPIO_NUM_NC ) ) gpio_set_level( _IN1, in1 );
+  if ( ( pwm != _IN2 ) && ( _IN2 != GPIO_NUM_NC ) ) gpio_set_level( _IN2, in2 );
+  
+  // 3rd step: set pwm
+  if ( pwm != GPIO_NUM_NC ) setDuty( (ledc_channel_t) (_port), duty, _rampUpT, _rampUpY );
+
+}
+
 void SwOSActor::_setLocalLHW() {
 
   // just in case of non-existent HW
@@ -1256,34 +1291,28 @@ void SwOSActor::_setLocalLHW() {
   // calculate duty
   switch (_motionType) {
     case FTSWARM_COAST: // SLEEP HIGH, IN1 LOW, IN2 LOW
-                        ledc_set_pin( GPIO_NUM_NC, LEDC_LOW_SPEED_MODE, (ledc_channel_t) (_port) );
-                        gpio_set_level( _IN1, 0 );
-                        gpio_set_level( _IN2, 0 );
+                        printf("coast\n");
+                        setPWM( 0, 0, GPIO_NUM_NC, 0 );
                         break;
   
     case FTSWARM_BRAKE: // SLEEP HIGH, IN1 HIGH, IN2 HIGH
-                        ledc_set_pin( GPIO_NUM_NC, LEDC_LOW_SPEED_MODE, (ledc_channel_t) (_port) );
-                        gpio_set_level( _IN1, 1 );
-                        gpio_set_level( _IN2, 1 );
+                        printf("brake\n");
+                        setPWM( 1, 1, GPIO_NUM_NC, 0 );
                         break;
 
-    case FTSWARM_ON:    if ( _speed <  0) {
+    case FTSWARM_ON:    printf("on %d\n", _speed);
+                        if ( _speed <  0) {
                           // SLEEP HIGH, IN1 PWM, IN2 HIGH
-                          ledc_set_pin( _IN1, LEDC_LOW_SPEED_MODE, (ledc_channel_t) (_port) );
-                          setDuty( (ledc_channel_t) (_port), abs(_speed), _rampUpT, _rampUpY );
-                          gpio_set_level( _IN2, 1 );
+                          setPWM( 0, 1, _IN1, abs(_speed) );
                         } else {
                           // SLEEP HIGH, IN1 HIGH, IN2 PWM
-                          gpio_set_level( _IN1, 1 );
-                          ledc_set_pin( _IN2, LEDC_LOW_SPEED_MODE, (ledc_channel_t) (_port) );
-                          setDuty( (ledc_channel_t) (_port), abs(_speed), _rampUpT, _rampUpY );
+                          setPWM( 1, 0, _IN2, abs(_speed) );
                         }
                         break;
 
     default:            // SLEEP HIGH, IN1 LOW, IN2 LOW
-                        ledc_set_pin( GPIO_NUM_NC, LEDC_LOW_SPEED_MODE, (ledc_channel_t) (_port) );
-                        gpio_set_level( _IN1, 0 );
-                        gpio_set_level( _IN2, 0 );
+                        printf("default\n");
+                        setPWM( 0, 0, GPIO_NUM_NC, 0 );
                         break;
     }  
 
@@ -3678,13 +3707,20 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
   leds = xLeds;
 
   // define specific hardware
-  servo[0] = new SwOSServo("SERVO", 0, this);
-  if ( CPU == FTSWARMRS_2V1 ) {
-    servo[1] = new SwOSServo("SERVO", 1, this);
-    servos = 2;
-  } else { 
-    servo[1] = NULL;
-    servos = 1;
+  for (uint8_t i=0; i<MAXSERVOS; i++) servo[i] = NULL;
+  switch ( CPU ) {
+    case FTSWARMRS_2V1:     servo[0] = new SwOSServo("SERVO", 0, this);
+                            servo[1] = new SwOSServo("SERVO", 1, this);
+                            servos = 2;
+                            break;
+
+    case FTSWARMRS_2V0:
+    case FTSWARMJST_1V15:   servo[0] = new SwOSServo("SERVO", 0, this);
+                            servos = 1;
+                            break;
+
+    default:                servos = 0;
+                            break;
   }
 
 }
@@ -3841,38 +3877,6 @@ void SwOSSwarmJST::loadAliasFromNVS( nvs_handle_t my_handle ) {
   if (gyro) gyro->loadAliasFromNVS( my_handle );
   for (uint8_t i=0; i<MAXSERVOS; i++ ) if (servo[i]) servo[i]->loadAliasFromNVS( my_handle );
   
-}
-
-/***************************************************
- *
- *   SwOSSwarmXL
- *
- ***************************************************/
-
-SwOSSwarmXL::SwOSSwarmXL( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, uint8_t xLeds, FtSwarmExtMode_t extentionPort ):SwOSSwarmXX( SN, macAddr, local, CPU, IAmAKelda, extentionPort ) {
-
-  char buffer[32];
-  sprintf( buffer, "ftSwarm%d", SN);
-  setName( buffer );
-
-  // additional  leds?
-  for ( uint8_t i = leds; i < xLeds; i++ ) {
-    led[i] = new SwOSPixel("LED", i, this);
-  }
-  leds = xLeds;
-
-}
-
-SwOSSwarmXL::SwOSSwarmXL( SwOSCom *com ):SwOSSwarmXL( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmAKelda, com->data.registerCmd.leds, com->data.registerCmd.extentionPort ) {
-  
-}
-
-char* SwOSSwarmXL::myType() {
-  return (char *) "ftSwarmXL";
-}
-
-FtSwarmControler_t SwOSSwarmXL::getType() {
-  return FTSWARMXL;
 }
 
 /***************************************************

@@ -688,10 +688,11 @@ bool SwOSNetwork::_StartRS485( void ) {
   // Initialize RS485 communication stack
 
   # if !defined(CONFIG_IDF_TARGET_ESP32S3)
-    return true; // ftSwarmRS only
+    // ftSwarmJST, ftSwarmControl: no RS485
+    return true; 
 
   #else
-
+    // ftSwarmRS, XL, PwrDrive, Duino
     RS485_rx_queue = xQueueCreate(10, sizeof( SwOSDatagram_t ) );
 
     // REB & DE

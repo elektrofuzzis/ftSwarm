@@ -319,8 +319,6 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
                         break;
 	case FTSWARMPWRDRIVE: Ctrl[maxCtrl] = new SwOSSwarmPwrDrive( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda );
                         break;
-	case FTSWARMXL:       Ctrl[maxCtrl] = new SwOSSwarmXL( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda, nvs.RGBLeds, nvs.extentionPort );
-                        break;
   default:              // wrong setup
                         nvs.initialSetup();
                         break;
@@ -1007,7 +1005,6 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
         case FTSWARMCAM:      Ctrl[source] = new SwOSSwarmCAM     ( com ); break;
         case FTSWARMPWRDRIVE: Ctrl[source] = new SwOSSwarmPwrDrive( com ); break;
         // case FTSWARMDUINO:    Ctrl[source] = new SwOSSwarmDuino   ( com ); break;
-        case FTSWARMXL:       Ctrl[source] = new SwOSSwarmXL      ( com ); break;
         default: ESP_LOGW( LOGFTSWARM, "Unknown controler type while adding a new controller to my swarm." ); return;
       } 
 
