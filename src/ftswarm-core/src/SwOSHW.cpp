@@ -374,7 +374,7 @@ const int8_t GPIO_INPUT[9][8][3] =
     /* FTSWARMCAM_2V11 */      { { GPIO_NUM_33, ADC_UNIT_1, ADC1_CHANNEL_5},   { GPIO_NUM_12,  ADC_UNIT_1, ADC1_CHANNEL_1},   { GPIO_NUM_13, ADC_UNIT_2, ADC1_CHANNEL_8},   { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} },
     /* FTSWARMPWRDRIVE_1V14 */ { { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} },
     /* FTSWARMDUINO_1V14 */    { { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} },
-    /* FTSWARMXL_1V00 */       { { GPIO_NUM_4,  ADC_UNIT_1, ADC1_CHANNEL_3},   { GPIO_NUM_3,   ADC_UNIT_1, ADC1_CHANNEL_2},   { GPIO_NUM_2, ADC_UNIT_2, ADC1_CHANNEL_1},    { GPIO_NUM_1,  ADC_UNIT_1, ADC1_CHANNEL_0},   { GPIO_NUM_5, ADC_UNIT_1, ADC1_CHANNEL_4},    { GPIO_NUM_8, ADC_UNIT_1, ADC1_CHANNEL_7},    { GPIO_NUM_10, ADC_UNIT_1, ADC1_CHANNEL_9},   { GPIO_NUM_9, ADC_UNIT_1, ADC1_CHANNEL_8}    }
+    /* FTSWARMXL_1V00 */       { { GPIO_NUM_1,  ADC_UNIT_1, ADC1_CHANNEL_0},   { GPIO_NUM_2,   ADC_UNIT_1, ADC1_CHANNEL_1},   { GPIO_NUM_3, ADC_UNIT_1, ADC1_CHANNEL_2},    { GPIO_NUM_4,  ADC_UNIT_1, ADC1_CHANNEL_3},   { GPIO_NUM_5, ADC_UNIT_1, ADC1_CHANNEL_4},    { GPIO_NUM_8, ADC_UNIT_1, ADC1_CHANNEL_7},    { GPIO_NUM_10, ADC_UNIT_1, ADC1_CHANNEL_9},   { GPIO_NUM_9, ADC_UNIT_1, ADC1_CHANNEL_8}    }
   };   
 
 SwOSInput::SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl, FtSwarmSensor_t sensorType ) : SwOSIO( name, port, ctrl ), SwOSEventInput( ) {
@@ -1103,7 +1103,7 @@ const gpio_num_t GPIO_ACTOR[9][8][2] =
     /* FTSWARMCAM_2V11 */     { { GPIO_NUM_14,  GPIO_NUM_15 }, { GPIO_NUM_2,   GPIO_NUM_4},   { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
     /* FTSWARMPWRDRIVE_1V14*/ { { GPIO_NUM_NC,  GPIO_NUM_NC},  { GPIO_NUM_NC,  GPIO_NUM_NC},  { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
     /* FTSWARMDUINO_1V14*/    { { GPIO_NUM_NC,  GPIO_NUM_NC},  { GPIO_NUM_NC,  GPIO_NUM_NC},  { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
-    /* FTSWARMXL_1V00*/       { { GPIO_NUM_19,  GPIO_NUM_20},  { GPIO_NUM_35,  GPIO_NUM_36},  { GPIO_NUM_40, GPIO_NUM_39}, { GPIO_NUM_38, GPIO_NUM_37}, { GPIO_NUM_11, GPIO_NUM_12}, { GPIO_NUM_42, GPIO_NUM_41}, { GPIO_NUM_16, GPIO_NUM_15}, { GPIO_NUM_14, GPIO_NUM_13} }
+    /* FTSWARMXL_1V00*/       { { GPIO_NUM_16,  GPIO_NUM_15},  { GPIO_NUM_14,  GPIO_NUM_13},  { GPIO_NUM_11, GPIO_NUM_12}, { GPIO_NUM_42, GPIO_NUM_41}, { GPIO_NUM_40, GPIO_NUM_39}, { GPIO_NUM_38, GPIO_NUM_37}, { GPIO_NUM_19, GPIO_NUM_20}, { GPIO_NUM_35, GPIO_NUM_36} }
   };   
 
 void SwOSActor::_setupLocal() {
@@ -1294,17 +1294,14 @@ void SwOSActor::_setLocalLHW() {
   // calculate duty
   switch (_motionType) {
     case FTSWARM_COAST: // SLEEP HIGH, IN1 LOW, IN2 LOW
-                        printf("coast\n");
                         setPWM( 0, 0, GPIO_NUM_NC, 0 );
                         break;
   
     case FTSWARM_BRAKE: // SLEEP HIGH, IN1 HIGH, IN2 HIGH
-                        printf("brake\n");
                         setPWM( 1, 1, GPIO_NUM_NC, 0 );
                         break;
 
-    case FTSWARM_ON:    printf("on %d\n", _speed);
-                        if ( _speed <  0) {
+    case FTSWARM_ON:    if ( _speed <  0) {
                           // SLEEP HIGH, IN1 PWM, IN2 HIGH
                           setPWM( 0, 1, _IN1, abs(_speed) );
                         } else {
@@ -1314,7 +1311,6 @@ void SwOSActor::_setLocalLHW() {
                         break;
 
     default:            // SLEEP HIGH, IN1 LOW, IN2 LOW
-                        printf("default\n");
                         setPWM( 0, 0, GPIO_NUM_NC, 0 );
                         break;
     }  
