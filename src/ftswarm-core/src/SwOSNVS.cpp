@@ -262,7 +262,10 @@ void SwOSNVS::saveAndRestart( void ) {
 }
 
 bool SwOSNVS::RS485Available( void ) {
-  return ( CPU == FTSWARMRS_2V0 ) || ( CPU == FTSWARMRS_2V1 ) || ( CPU == FTSWARMPWRDRIVE_1V141 ) || ( CPU == FTSWARMDUINO_1V141 );
+  return ( CPU == FTSWARMRS_2V0 ) || ( CPU == FTSWARMRS_2V1 ) || 
+         ( CPU == FTSWARMPWRDRIVE_1V141 ) || 
+         ( CPU == FTSWARMDUINO_1V141 ) || 
+         ( CPU == FTSWARMXL_1V00 );
 }
 
 void SwOSNVS::factorySettings( void ) {
