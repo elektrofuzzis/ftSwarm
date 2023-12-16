@@ -355,6 +355,8 @@ protected:
   virtual void _setRemote();  // start moving remotely 
 
 public:
+  bool           _highResolution = false;
+
   // Constructors
 	SwOSActor(const char *name, uint8_t port, SwOSCtrl *ctrl );
   ~SwOSActor( );
@@ -368,7 +370,7 @@ public:
   virtual void            read( void );
 
   // commands
-  virtual void            setActorType( FtSwarmActor_t actorType, bool dontSendToRemote );    // set actor type
+  virtual void            setActorType( FtSwarmActor_t actorType, bool highResolution, bool dontSendToRemote );    // set actor type
   virtual void            setValue( FtSwarmMotion_t motionType, int16_t speed ) { _motionType = motionType; _speed = speed; };  // set values
 	virtual void            setSpeed( int16_t speed );                                 // set speed
   virtual int16_t         getSpeed() { return _speed; };                             // get speed

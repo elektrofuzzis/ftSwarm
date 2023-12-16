@@ -20,7 +20,7 @@
 
 #define ESPNOW_MAXDELAY     128
 #define DEFAULTSECRET       0x2506
-#define VERSIONDATA         6
+#define VERSIONDATA         7
 #define MAXALIAS            5
 #define MAXUSEREVENTPAYLOAD 128
 
@@ -102,7 +102,7 @@ struct SwOSDatagram_t {
     struct { uint8_t index; int16_t offset; int16_t position; } servoCmd;
     struct { uint8_t index; FtSwarmMotion_t motionType; int16_t speed;  uint32_t rampUpT; uint32_t rampUpY; } actorSpeedCmd;
     struct { uint8_t index; long paraml; bool paramb; } actorStepperCmd;
-    struct { uint8_t index; FtSwarmActor_t actorType; } actorTypeCmd;
+    struct { uint8_t index; FtSwarmActor_t actorType; bool highResolution; } actorTypeCmd;
     struct { uint8_t index; uint8_t brightness; uint32_t color; } ledCmd;
     struct { Alias_t alias[MAXALIAS]; } aliasCmd;
     struct { uint8_t reg; uint8_t value; } I2CRegisterCmd;

@@ -485,25 +485,25 @@ FtSwarmLDR::FtSwarmLDR( const char *name ):FtSwarmAnalogInput( name, FTSWARM_LDR
 
 // **** FtSwarmActor
 
-FtSwarmActor::FtSwarmActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType ):FtSwarmIO(serialNumber, port, FTSWARM_ACTOR ) {
+FtSwarmActor::FtSwarmActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType, bool highResolution ):FtSwarmIO(serialNumber, port, FTSWARM_ACTOR ) {
   // constructor: register at myOSSwarm and get a pointer to myself 
 
   // set sensor type
   if (me) {
     myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setActorType( actorType, false );
+    static_cast<SwOSActor *>(me)->setActorType( actorType, highResolution, false );
     myOSSwarm.unlock();
   }
 
 };
 
-FtSwarmActor::FtSwarmActor( const char *name, FtSwarmActor_t actorType ):FtSwarmIO( name, FTSWARM_ACTOR ) {
+FtSwarmActor::FtSwarmActor( const char *name, FtSwarmActor_t actorType, bool highResolution ):FtSwarmIO( name, FTSWARM_ACTOR ) {
   // constructor: register at myOSSwarm and get a pointer to myself 
 
   // set sensor type
   if (me) {
     myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setActorType( actorType, false );
+    static_cast<SwOSActor *>(me)->setActorType( actorType, highResolution, false );
     myOSSwarm.unlock();
   }
 
@@ -511,8 +511,8 @@ FtSwarmActor::FtSwarmActor( const char *name, FtSwarmActor_t actorType ):FtSwarm
 
 // **** FtSwarmMotor ****
 
-FtSwarmMotor::FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType):FtSwarmActor( serialNumber, port, actorType) {};
-FtSwarmMotor::FtSwarmMotor( const char *name, FtSwarmActor_t actorType):FtSwarmActor( name, actorType ) {};
+FtSwarmMotor::FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType, bool highResolution):FtSwarmActor( serialNumber, port, actorType, highResolution) {};
+FtSwarmMotor::FtSwarmMotor( const char *name, FtSwarmActor_t actorType, bool highResolution):FtSwarmActor( name, actorType, highResolution ) {};
     
 void FtSwarmMotor::setSpeed( int16_t speed ) {
   if (me) {
@@ -553,10 +553,10 @@ void FtSwarmMotor::getAcceleration( uint32_t *rampUpT, uint32_t *rampUpY ) {
 
 // **** FtSwarmTractorMotor
 
-FtSwarmTractorMotor::FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType):FtSwarmMotor( serialNumber, port, actorType) {};
-FtSwarmTractorMotor::FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmMotor( serialNumber, port, FTSWARM_TRACTOR) {};
-FtSwarmTractorMotor::FtSwarmTractorMotor( const char *name, FtSwarmActor_t actorType ):FtSwarmMotor( name, actorType ) {};
-FtSwarmTractorMotor::FtSwarmTractorMotor( const char *name ):FtSwarmMotor( name, FTSWARM_TRACTOR ) {};
+FtSwarmTractorMotor::FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType, bool highResolution):FtSwarmMotor( serialNumber, port, actorType, highResolution) {};
+FtSwarmTractorMotor::FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool highResolution):FtSwarmMotor( serialNumber, port, FTSWARM_TRACTOR, highResolution) {};
+FtSwarmTractorMotor::FtSwarmTractorMotor( const char *name, FtSwarmActor_t actorType, bool highResolution ):FtSwarmMotor( name, actorType, highResolution ) {};
+FtSwarmTractorMotor::FtSwarmTractorMotor( const char *name, bool highResolution ):FtSwarmMotor( name, FTSWARM_TRACTOR, highResolution ) {};
 
 void FtSwarmTractorMotor::setMotionType( FtSwarmMotion_t motionType ) {
   if (me) {
@@ -582,18 +582,18 @@ FtSwarmMotion_t FtSwarmTractorMotor::getMotionType( void ) {
 
 // **** FtSwarmXMMotor
 
-FtSwarmXMMotor::FtSwarmXMMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmTractorMotor( serialNumber, port, FTSWARM_XMMOTOR ) {};
-FtSwarmXMMotor::FtSwarmXMMotor( const char *name ):FtSwarmTractorMotor( name, FTSWARM_XMMOTOR ) {};
+FtSwarmXMMotor::FtSwarmXMMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool highResolution):FtSwarmTractorMotor( serialNumber, port, FTSWARM_XMMOTOR, highResolution ) {};
+FtSwarmXMMotor::FtSwarmXMMotor( const char *name, bool highResolution ):FtSwarmTractorMotor( name, FTSWARM_XMMOTOR, highResolution ) {};
 
 // **** FtSwarmEncoderMotor
 
-FtSwarmEncoderMotor::FtSwarmEncoderMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmTractorMotor( serialNumber, port, FTSWARM_ENCODER ) {};
-FtSwarmEncoderMotor::FtSwarmEncoderMotor( const char *name ):FtSwarmTractorMotor( name, FTSWARM_ENCODER ) {};
+FtSwarmEncoderMotor::FtSwarmEncoderMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool highResolution):FtSwarmTractorMotor( serialNumber, port, FTSWARM_ENCODER, highResolution ) {};
+FtSwarmEncoderMotor::FtSwarmEncoderMotor( const char *name, bool highResolution ):FtSwarmTractorMotor( name, FTSWARM_ENCODER, highResolution ) {};
 
 // **** FtSwarmStepperMotor
 
-FtSwarmStepperMotor::FtSwarmStepperMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmTractorMotor( serialNumber, port, FTSWARM_STEPPER ) {};
-FtSwarmStepperMotor::FtSwarmStepperMotor( const char * name ):FtSwarmTractorMotor( name, FTSWARM_STEPPER ) {};
+FtSwarmStepperMotor::FtSwarmStepperMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmTractorMotor( serialNumber, port, FTSWARM_STEPPER, true ) {};
+FtSwarmStepperMotor::FtSwarmStepperMotor( const char * name ):FtSwarmTractorMotor( name, FTSWARM_STEPPER, true ) {};
 
 void FtSwarmStepperMotor::setDistance( long distance, bool relative ) {
 
@@ -713,8 +713,8 @@ void FtSwarmStepperMotor::setHomingOffset( long offset ) {
 
 // **** FtSwarmOnOffActor ****
 
-FtSwarmOnOffActor::FtSwarmOnOffActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType):FtSwarmActor( serialNumber, port, actorType ) {};
-FtSwarmOnOffActor::FtSwarmOnOffActor( const char *name, FtSwarmActor_t actorType ):FtSwarmActor( name, actorType ) {};
+FtSwarmOnOffActor::FtSwarmOnOffActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType):FtSwarmActor( serialNumber, port, actorType, false ) {};
+FtSwarmOnOffActor::FtSwarmOnOffActor( const char *name, FtSwarmActor_t actorType ):FtSwarmActor( name, actorType, false ) {};
 
 void FtSwarmOnOffActor::on( int16_t speed ) {
   if (me) {

@@ -347,8 +347,8 @@ class FtSwarmLDR : public FtSwarmAnalogInput {
 class FtSwarmActor : public FtSwarmIO {
   // an actor base class, don't use this class at all
   protected:
-    FtSwarmActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType );
-    FtSwarmActor( const char *name, FtSwarmActor_t actorType );
+    FtSwarmActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType, bool highResolution );
+    FtSwarmActor( const char *name, FtSwarmActor_t actorType, bool highResolution );
 };
 
 
@@ -356,12 +356,12 @@ class FtSwarmMotor : public FtSwarmActor {
   // general motor class, use this class for (old) gray motors, mini motors, XS motors
   // M1..M2 all contollers - keep power budget in mind!
   protected:
-    FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType );
-    FtSwarmMotor( const char *name, FtSwarmActor_t actorType );
+    FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType, bool highResolution );
+    FtSwarmMotor( const char *name, FtSwarmActor_t actorType, bool highResolution );
   public:
-    FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port ):FtSwarmMotor( serialNumber, port, FTSWARM_MOTOR ) {};
-    FtSwarmMotor( const char *name ):FtSwarmMotor( name, FTSWARM_MOTOR ) {};    
-    void     setSpeed( int16_t speed );                                // speed +/- 255 or +/-4095 dependend on speedRange, speed 0 motor stopss
+    FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool highResolution = false ):FtSwarmMotor( serialNumber, port, FTSWARM_MOTOR, highResolution ) {};
+    FtSwarmMotor( const char *name, bool highResolution = false ):FtSwarmMotor( name, FTSWARM_MOTOR, highResolution ) {};  
+    void     setSpeed( int16_t speed );                                // speed +/- 255 or +/-4095 dependend on resolution, speed 0 motor stopss
     uint16_t getSpeed();                                               // actual speed
     void     setAcceleration( uint32_t rampUpT,  uint32_t rampUpY );  
     void     getAcceleration( uint32_t *rampUpT, uint32_t *rampUpY );
@@ -372,12 +372,12 @@ class FtSwarmTractorMotor : public FtSwarmMotor {
   // tractor & XM motor
   // M1..M2 all contollers - keep power budget in mind!
   protected:
-    FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType );
-    FtSwarmTractorMotor( const char * name, FtSwarmActor_t actorType );
+    FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType, bool highResolution );
+    FtSwarmTractorMotor( const char * name, FtSwarmActor_t actorType, bool highResolution );
       
   public:
-    FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
-    FtSwarmTractorMotor( const char * name );
+    FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool highResolution = false );
+    FtSwarmTractorMotor( const char * name, bool highResolution = false );
 
     // FtSwarmTractor has different options for stopping motor:
     virtual void setMotionType( FtSwarmMotion_t motionType );
@@ -390,8 +390,8 @@ class FtSwarmXMMotor : public FtSwarmTractorMotor {
   // xm motor
   // M1..M2 all contollers - keep power budget in mind!
   public:
-    FtSwarmXMMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
-    FtSwarmXMMotor( const char * name );
+    FtSwarmXMMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool highResolution = false);
+    FtSwarmXMMotor( const char * name, bool highResolution = false );
 };
 
 class FtSwarmEncoderMotor : public FtSwarmTractorMotor {
@@ -399,8 +399,8 @@ class FtSwarmEncoderMotor : public FtSwarmTractorMotor {
   // M1..M2 all contollers - keep power budget in mind!
   // TODO: implement encoder input
   public:
-    FtSwarmEncoderMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
-    FtSwarmEncoderMotor( const char * name );
+    FtSwarmEncoderMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool highResolution = false );
+    FtSwarmEncoderMotor( const char * name, bool highResolution = false );
 };
 
 class FtSwarmStepperMotor : public FtSwarmTractorMotor {

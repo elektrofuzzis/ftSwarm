@@ -1132,7 +1132,7 @@ void SwOSActor::_setupLocal() {
   // use Timer 0
   ledc_timer_config_t ledc_timer = {
     .speed_mode       = LEDC_LOW_SPEED_MODE,
-    .duty_resolution  = LEDC_TIMER_8_BIT,
+    .duty_resolution  = LEDC_TIMER_12_BIT,
     .timer_num        = LEDC_TIMER_0,
     .freq_hz          = 60,  // Set output frequency to 60 Hz
     .clk_cfg          = LEDC_AUTO_CLK
@@ -1161,17 +1161,19 @@ void SwOSActor::setMotionType( FtSwarmMotion_t motionType ) {
   
 }
 
-void SwOSActor::setActorType( FtSwarmActor_t actorType, bool dontSendToRemote ) { 
+void SwOSActor::setActorType( FtSwarmActor_t actorType, bool highResolution, bool dontSendToRemote ) { 
 
   _actorType = actorType;
+  _highResolution = highResolution;
 
   if (_ctrl->isLocal()) { 
     
   } else if (!dontSendToRemote) {    
     // send SN, SETSENSORTYPE, _port, sensorType
     SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_SETACTORTYPE );
-    cmd.data.actorTypeCmd.index      = _port;
-    cmd.data.actorTypeCmd.actorType  = _actorType;
+    cmd.data.actorTypeCmd.index        = _port;
+    cmd.data.actorTypeCmd.actorType    = _actorType;
+    cmd.data.actorTypeCmd.highResolution = highResolution;
     cmd.send( );
 
   }
@@ -1205,6 +1207,7 @@ void SwOSActor::setSpeed( int16_t speed ) {
   
   // limit speed values
   int16_t maxSpeed = MAXSPEED256;
+  if (_highResolution) maxSpeed = MAXSPEED4096;
   if      (speed> maxSpeed) _speed =  maxSpeed;
   else if (speed<-maxSpeed) _speed = -maxSpeed;
   else                      _speed =  speed;
@@ -1279,7 +1282,7 @@ void SwOSActor::setPWM( int16_t in1, int16_t in2, gpio_num_t pwm, uint32_t duty 
   if ( ( pwm != _IN2 ) && ( _IN2 != GPIO_NUM_NC ) ) gpio_set_level( _IN2, in2 );
   
   // 3rd step: set pwm
-  if ( pwm != GPIO_NUM_NC ) setDuty( (ledc_channel_t) (_port), duty, _rampUpT, _rampUpY );
+  if ( pwm != GPIO_NUM_NC ) setDuty( (ledc_channel_t) (_port), (_highResolution)?duty:duty<<4, _rampUpT, _rampUpY );
 
 }
 
@@ -1434,6 +1437,7 @@ void SwOSActor::jsonize( JSONize *json, uint8_t id) {
   json->variable("subType",    (char *) ACTORTYPE[ _actorType ] );
   json->variableUI32("motiontype", getMotionType() );
   json->variableI16 ("speed",      getSpeed() );
+  json->variableB( "highResolution", _highResolution );
   json->endObject();
 }
 
@@ -3211,7 +3215,7 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
       return true;
 
     case CMD_SETACTORTYPE:
-      actor[com->data.actorTypeCmd.index]->setActorType( com->data.actorTypeCmd.actorType, true );
+      actor[com->data.actorTypeCmd.index]->setActorType( com->data.actorTypeCmd.actorType, com->data.actorTypeCmd.highResolution, true );
       return true;
 
     case CMD_IDENTIFY:

@@ -35,7 +35,7 @@ const IOCmdList_t IOCmdList [CLICMD_MAX] = {
   { "getCelcius", 0, 0},
   { "getFahrenheit", 0, 0},
   { "getToggle", 0, 0},
-  { "setActorType", 1, 1},  
+  { "setActorType", 1, 2},  
   { "getActorType", 0, 0},
   { "setSpeed", 1, 1},
   { "getSpeed", 0, 0},
@@ -540,13 +540,23 @@ void SwOSCLI::executeActorCmd( void ) {
 
   SwOSActor *io = (SwOSActor *)_io;
   int       maxspeed;
+  bool      highResolution = false;
+  bool      ok = true;
   
   switch ( _cmd ) {
     case CLICMD_setActorType:   if (_parameter[0].inRange( "actorType", 0, (int)FTSWARM_MAXACTOR-1 ) ) { 
-                                    printf("R: ok\n"); 
-                                    myOSSwarm.lock();
-                                    io->setActorType( (FtSwarmActor_t) _parameter[0].getValue(), false );
-                                    myOSSwarm.unlock();
+                                    if ( _maxParameter > 0) {
+                                      if (_parameter[1].inRange( "highResolution", 0, 1 ) ) 
+                                        highResolution = _parameter[1].getValue(); 
+                                      else 
+                                        ok = false;
+                                    }
+                                    if (ok) {
+                                      printf("R: ok\n"); 
+                                      myOSSwarm.lock();
+                                      io->setActorType( (FtSwarmActor_t) _parameter[0].getValue(), highResolution, false );
+                                      myOSSwarm.unlock();
+                                    }
                                 }
                                 break;
 
@@ -555,7 +565,7 @@ void SwOSCLI::executeActorCmd( void ) {
                                 myOSSwarm.unlock();
                                 break;
 
-    case CLICMD_setSpeed:      if ( io->getCtrl()->getType() == FTSWARMPWRDRIVE ) maxspeed = 4095;
+    case CLICMD_setSpeed:      if ( io->_highResolution ) maxspeed = 4095;
                                 else maxspeed = 255;
                                 if (_parameter[0].inRange( "speed", -maxspeed, maxspeed ) ) { 
                                   printf("R: ok\n");
