@@ -326,9 +326,10 @@ class SwOSActor : public SwOSIO {
 protected:
 
   // DC motors
-	gpio_num_t     _IN1, _IN2;
-	ledc_channel_t _channelIN1, _channelIN2;
-  uint32_t       _rampUpT, _rampUpY;
+	gpio_num_t     _IN1 = GPIO_NUM_NC;
+  gpio_num_t     _IN2 = GPIO_NUM_NC;
+  uint32_t       _rampUpT = 0;
+  uint32_t       _rampUpY = 0;
 
   // stepper motors
   long           _distance;
@@ -338,7 +339,7 @@ protected:
   bool           _isRunning;
 
   // generics
-  FtSwarmActor_t  _actorType;
+  FtSwarmActor_t  _actorType = FTSWARM_MOTOR;
 	FtSwarmMotion_t _motionType = FTSWARM_COAST;
 	int16_t         _speed = 0;
 
@@ -944,6 +945,28 @@ class SwOSSwarmJST : public SwOSSwarmXX {
 
     // **** Communications *****
     virtual bool OnDataRecv( SwOSCom *com ); // data via espnow revceived
+
+};
+
+/***************************************************
+ *
+ *   SwOSSwarmXL
+ *
+ ***************************************************/
+
+class SwOSSwarmXL : public SwOSSwarmXX {
+
+  protected:
+  
+  public:
+
+    // constructor, destructor
+	  SwOSSwarmXL( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, uint8_t xLed, FtSwarmExtMode_t extentionPort );
+    SwOSSwarmXL( SwOSCom *com ); // constructor
+  
+    // administrative stuff
+	  virtual FtSwarmControler_t getType();                                  // what I am?
+	  virtual char* myType();                                                // what I am?
 
 };
 

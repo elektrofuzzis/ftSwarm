@@ -33,16 +33,17 @@ void SwOSNVS::initialSetup( void ) {
 
   version = 2;
 
-  switch ( enterNumber(("Controler Type\n (1) ftSwarm\n (2) ftSwarmRS\n (3) ftSwarmControl\n (4) ftSwarmCAM\n (5) ftSwarmPwrDrive\n (6) ftSwarmDuino\n (8) special config\n>"), 0, 1, 7 ) ) {
+  switch ( enterNumber(("Controler Type\n (1) ftSwarm\n (2) ftSwarmRS\n (3) ftSwarmControl\n (4) ftSwarmCAM\n (5) ftSwarmPwrDrive\n (6) ftSwarmDuino\n (7) ftSwarmXL\n (8) special config\n>"), 0, 1, 8 ) ) {
     case 1:  controlerType = FTSWARM;         CPU = FTSWARMJST_1V15;       break;
     case 2:  controlerType = FTSWARM;         CPU = FTSWARMRS_2V1;         break;
     case 3:  controlerType = FTSWARMCONTROL;  CPU = FTSWARMCONTROL_1V3;    break;
     case 4:  controlerType = FTSWARMCAM;      CPU = FTSWARMCAM_2V11;       break;
     case 5:  controlerType = FTSWARMPWRDRIVE; CPU = FTSWARMPWRDRIVE_1V141; break;
     case 6:  controlerType = FTSWARMDUINO;    CPU = FTSWARMDUINO_1V141;    break;
+    case 7:  controlerType = FTSWARMXL;       CPU = FTSWARMXL_1V00;        break;
     default: // manual configuration
-             controlerType = (FtSwarmControler_t) (enterNumber(("Controler Type\n (1) ftSwarm\n (2) ftSwarmControl\n (3) ftSwarmCAM\n (4) ftSwarmPwrDrive\n (5) ftSwarmDuino\n>"), 0, 1, 5 ) - 1 );
-             CPU = ( FtSwarmVersion_t ) ( enterNumber(("CPU Version\n (1) FTSWARMJST_1V0\n (2) FTSWARMCONTROL_1V3\n (3) FTSWARMJST_1V15\n (4) FTSWARMRS_2V0\n (5) FTSWARMRS_2V1\n (6) FTSWARMCAM_1V0\n (7) FTSWARMDUINO_1V141\n (8) FTSWARMPWRDRIVE_1V141\n"), 0, 1, 8 ) -1 );
+             controlerType = (FtSwarmControler_t) (enterNumber(("Controler Type\n (1) ftSwarm\n (2) ftSwarmControl\n (3) ftSwarmCAM\n (4) ftSwarmPwrDrive\n (5) ftSwarmDuino\n (6) ftSwarmXL\n>"), 0, 1, 6 ) - 1 );
+             CPU = ( FtSwarmVersion_t ) ( enterNumber(("CPU Version\n (1) FTSWARMJST_1V0\n (2) FTSWARMCONTROL_1V3\n (3) FTSWARMJST_1V15\n (4) FTSWARMRS_2V0\n (5) FTSWARMRS_2V1\n (6) FTSWARMCAM_1V0\n (7) FTSWARMDUINO_1V141\n (8) FTSWARMPWRDRIVE_1V141\n (9) FTSWARMXL_1V00"), 0, 1, 9 ) -1 );
   }
 
   serialNumber = enterNumber("Serial number [1..65535]>", 0, 1, 65535 );

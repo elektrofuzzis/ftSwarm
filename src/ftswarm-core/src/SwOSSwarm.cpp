@@ -71,7 +71,7 @@ void recvTask( void *parameter ) {
 
 void readTask( void *parameter ) {
   // This tasks reads the value of the local inputs and sends the readings to all other controllers.
-  
+
   TickType_t xDelay;
 
   while (true) {
@@ -318,6 +318,8 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 	case FTSWARMDUINO:    Ctrl[maxCtrl] = new SwOSSwarmDuino( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda );
                         break;
 	case FTSWARMPWRDRIVE: Ctrl[maxCtrl] = new SwOSSwarmPwrDrive( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda );
+                        break;
+	case FTSWARMXL:       Ctrl[maxCtrl] = new SwOSSwarmXL( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda, nvs.RGBLeds, nvs.extentionPort );
                         break;
   default:              // wrong setup
                         nvs.initialSetup();
@@ -1004,6 +1006,8 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
         case FTSWARMCONTROL:  Ctrl[source] = new SwOSSwarmControl ( com ); break;
         case FTSWARMCAM:      Ctrl[source] = new SwOSSwarmCAM     ( com ); break;
         case FTSWARMPWRDRIVE: Ctrl[source] = new SwOSSwarmPwrDrive( com ); break;
+        // case FTSWARMDUINO:    Ctrl[source] = new SwOSSwarmDuino   ( com ); break;
+        case FTSWARMXL:       Ctrl[source] = new SwOSSwarmXL      ( com ); break;
         default: ESP_LOGW( LOGFTSWARM, "Unknown controler type while adding a new controller to my swarm." ); return;
       } 
 

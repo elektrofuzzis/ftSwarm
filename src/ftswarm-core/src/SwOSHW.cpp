@@ -365,13 +365,16 @@ void SwOSEventInput::trigger( FtSwarmTrigger_t triggerEvent, int32_t portValue )
   #define ADC1_CHANNEL_9  ADC1_CHANNEL_MAX
 #endif
 
-const int8_t GPIO_INPUT[6][6][3] = 
-  { /* FTSWARMJST_1V0 */      { { GPIO_NUM_33, ADC_UNIT_1, ADC1_CHANNEL_5}, { xGPIO_NUM_25, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_26, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_27, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} },
-    /* FTSWARMCONTROL_1V3 */  { { GPIO_NUM_39, ADC_UNIT_1, ADC1_CHANNEL_3}, { xGPIO_NUM_25, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_26, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_27, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} },
-    /* FTSWARMJST_1V15 */     { { GPIO_NUM_39, ADC_UNIT_1, ADC1_CHANNEL_3}, { GPIO_NUM_32,  ADC_UNIT_1, ADC1_CHANNEL_4},   { GPIO_NUM_33, ADC_UNIT_1, ADC1_CHANNEL_5},   { GPIO_NUM_34, ADC_UNIT_1, ADC1_CHANNEL_6},   { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} },
-    /* FTSWARMRS_2V0 */       { { GPIO_NUM_1,  ADC_UNIT_1, ADC1_CHANNEL_0}, { GPIO_NUM_2,   ADC_UNIT_1, ADC1_CHANNEL_1},   { GPIO_NUM_8,  ADC_UNIT_1, ADC1_CHANNEL_7},   { GPIO_NUM_9,  ADC_UNIT_1, ADC1_CHANNEL_8},   { GPIO_NUM_11, ADC_UNIT_2, ADC2_CHANNEL_0},   { GPIO_NUM_13, ADC_UNIT_2, ADC2_CHANNEL_2} },
-    /* FTSWARMRS_2V1 */       { { GPIO_NUM_1,  ADC_UNIT_1, ADC1_CHANNEL_0}, { GPIO_NUM_2,   ADC_UNIT_1, ADC1_CHANNEL_1},   { GPIO_NUM_19, ADC_UNIT_2, ADC1_CHANNEL_8},   { GPIO_NUM_20, ADC_UNIT_2, ADC2_CHANNEL_9},   { GPIO_NUM_11, ADC_UNIT_2, ADC2_CHANNEL_0},   { GPIO_NUM_13, ADC_UNIT_2, ADC2_CHANNEL_2} },
-    /* FTSWARMCAM_2V11 */     { { GPIO_NUM_33, ADC_UNIT_1, ADC1_CHANNEL_5}, { GPIO_NUM_12,  ADC_UNIT_1, ADC1_CHANNEL_1},   { GPIO_NUM_13, ADC_UNIT_2, ADC1_CHANNEL_8},   { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} }
+const int8_t GPIO_INPUT[9][8][3] = 
+  { /* FTSWARMJST_1V0 */       { { GPIO_NUM_33, ADC_UNIT_1, ADC1_CHANNEL_5},   { xGPIO_NUM_25, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_26, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_27, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} },
+    /* FTSWARMCONTROL_1V3 */   { { GPIO_NUM_39, ADC_UNIT_1, ADC1_CHANNEL_3},   { xGPIO_NUM_25, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_26, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_27, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} },
+    /* FTSWARMJST_1V15 */      { { GPIO_NUM_39, ADC_UNIT_1, ADC1_CHANNEL_3},   { GPIO_NUM_32,  ADC_UNIT_1, ADC1_CHANNEL_4},   { GPIO_NUM_33, ADC_UNIT_1, ADC1_CHANNEL_5},   { GPIO_NUM_34, ADC_UNIT_1, ADC1_CHANNEL_6},   { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} },
+    /* FTSWARMRS_2V0 */        { { GPIO_NUM_1,  ADC_UNIT_1, ADC1_CHANNEL_0},   { GPIO_NUM_2,   ADC_UNIT_1, ADC1_CHANNEL_1},   { GPIO_NUM_8,  ADC_UNIT_1, ADC1_CHANNEL_7},   { GPIO_NUM_9,  ADC_UNIT_1, ADC1_CHANNEL_8},   { GPIO_NUM_11, ADC_UNIT_2, ADC2_CHANNEL_0},   { GPIO_NUM_13, ADC_UNIT_2, ADC2_CHANNEL_2},   { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} },
+    /* FTSWARMRS_2V1 */        { { GPIO_NUM_1,  ADC_UNIT_1, ADC1_CHANNEL_0},   { GPIO_NUM_2,   ADC_UNIT_1, ADC1_CHANNEL_1},   { GPIO_NUM_19, ADC_UNIT_2, ADC1_CHANNEL_8},   { GPIO_NUM_20, ADC_UNIT_2, ADC2_CHANNEL_9},   { GPIO_NUM_11, ADC_UNIT_2, ADC2_CHANNEL_0},   { GPIO_NUM_13, ADC_UNIT_2, ADC2_CHANNEL_2},   { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} },
+    /* FTSWARMCAM_2V11 */      { { GPIO_NUM_33, ADC_UNIT_1, ADC1_CHANNEL_5},   { GPIO_NUM_12,  ADC_UNIT_1, ADC1_CHANNEL_1},   { GPIO_NUM_13, ADC_UNIT_2, ADC1_CHANNEL_8},   { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} },
+    /* FTSWARMPWRDRIVE_1V14 */ { { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} },
+    /* FTSWARMDUINO_1V14 */    { { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX}, { GPIO_NUM_NC, ADC_UNIT_1, ADC1_CHANNEL_MAX} },
+    /* FTSWARMXL_1V00 */       { { GPIO_NUM_4,  ADC_UNIT_1, ADC1_CHANNEL_3},   { GPIO_NUM_3,   ADC_UNIT_1, ADC1_CHANNEL_2},   { GPIO_NUM_2, ADC_UNIT_2, ADC1_CHANNEL_1},    { GPIO_NUM_1,  ADC_UNIT_1, ADC1_CHANNEL_0},   { GPIO_NUM_5, ADC_UNIT_1, ADC1_CHANNEL_4},    { GPIO_NUM_8, ADC_UNIT_1, ADC1_CHANNEL_7},    { GPIO_NUM_10, ADC_UNIT_1, ADC1_CHANNEL_9},   { GPIO_NUM_9, ADC_UNIT_1, ADC1_CHANNEL_8}    }
   };   
 
 SwOSInput::SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl, FtSwarmSensor_t sensorType ) : SwOSIO( name, port, ctrl ), SwOSEventInput( ) {
@@ -492,7 +495,8 @@ void SwOSDigitalInput::_setupLocal() {
                        if ( ( _ctrl->getType() == FTSWARM ) && ( _port == 2 ) ) { _PUA2 = GPIO_NUM_14; }
                        break;
 
-    default:           break;
+    default:           /* eg. PwrDrive, XL, Duino */
+                       break;
   }
 
   gpio_config_t io_conf = {};
@@ -1063,18 +1067,6 @@ void SwOSAnalogInput::jsonize( JSONize *json, uint8_t id) {
 
 SwOSActor::SwOSActor(const char *name, uint8_t port, SwOSCtrl *ctrl):SwOSIO(name, port, ctrl ){
 
-  _motionType = FTSWARM_COAST;
-  _speed      = 0;
-  _actorType  = FTSWARM_MOTOR;
-
-  // no acceleration ramp
-  _rampUpT    = 0;
-  _rampUpY    = 0;
-
-  // stepper specific
-  _position   = 0;
-  _distance   = 0;
-
   // ftPwrDrive has a bitmap motor representation, so precalc the Mx values
   _pwrDriveMotor = 1 << _port;
 
@@ -1094,19 +1086,19 @@ char * SwOSActor::getIcon() {
 }; 
 
 void SwOSActor::_setupI2C() {
-  // initialize local HW
-  _IN1 = GPIO_NUM_NC;
-  _IN2 = GPIO_NUM_NC;
   
 }
 
-const gpio_num_t GPIO_ACTOR[6][4][2] = 
-  { /* FTSWARMJST_1V0 */      { { GPIO_NUM_13,  GPIO_NUM_4  }, { GPIO_NUM_2,   GPIO_NUM_0},   { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
-    /* FTSWARMCONTROL_1V3 */  { { GPIO_NUM_13,  GPIO_NUM_4  }, { GPIO_NUM_2,   GPIO_NUM_0},   { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
-    /* FTSWARMJST_1V15 */     { { GPIO_NUM_13,  GPIO_NUM_4  }, { GPIO_NUM_2,   GPIO_NUM_0},   { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
-    /* FTSWARMRS_2V0 */       { { GPIO_NUM_14,  GPIO_NUM_21 }, { xGPIO_NUM_45, xGPIO_NUM_46}, { GPIO_NUM_NC, GPIO_NUM_8},  { GPIO_NUM_NC, GPIO_NUM_9} },
-    /* FTSWARMRS_2V1 */       { { GPIO_NUM_14,  GPIO_NUM_21 }, { xGPIO_NUM_45, xGPIO_NUM_46}, { GPIO_NUM_NC, GPIO_NUM_8},  { GPIO_NUM_NC, GPIO_NUM_9} },
-    /* FTSWARMCAM_2V11 */     { { GPIO_NUM_14,  GPIO_NUM_15 }, { GPIO_NUM_2,   GPIO_NUM_4},   { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
+const gpio_num_t GPIO_ACTOR[9][8][2] = 
+  { /* FTSWARMJST_1V0 */      { { GPIO_NUM_13,  GPIO_NUM_4  }, { GPIO_NUM_2,   GPIO_NUM_0},   { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
+    /* FTSWARMCONTROL_1V3 */  { { GPIO_NUM_13,  GPIO_NUM_4  }, { GPIO_NUM_2,   GPIO_NUM_0},   { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
+    /* FTSWARMJST_1V15 */     { { GPIO_NUM_13,  GPIO_NUM_4  }, { GPIO_NUM_2,   GPIO_NUM_0},   { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
+    /* FTSWARMRS_2V0 */       { { GPIO_NUM_14,  GPIO_NUM_21 }, { xGPIO_NUM_45, xGPIO_NUM_46}, { GPIO_NUM_NC, GPIO_NUM_8},  { GPIO_NUM_NC, GPIO_NUM_9},  { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
+    /* FTSWARMRS_2V1 */       { { GPIO_NUM_14,  GPIO_NUM_21 }, { xGPIO_NUM_45, xGPIO_NUM_46}, { GPIO_NUM_NC, GPIO_NUM_8},  { GPIO_NUM_NC, GPIO_NUM_9},  { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
+    /* FTSWARMCAM_2V11 */     { { GPIO_NUM_14,  GPIO_NUM_15 }, { GPIO_NUM_2,   GPIO_NUM_4},   { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
+    /* FTSWARMPWRDRIVE_1V14*/ { { GPIO_NUM_NC,  GPIO_NUM_NC},  { GPIO_NUM_NC,  GPIO_NUM_NC},  { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
+    /* FTSWARMDUINO_1V14*/    { { GPIO_NUM_NC,  GPIO_NUM_NC},  { GPIO_NUM_NC,  GPIO_NUM_NC},  { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
+    /* FTSWARMXL_1V00*/       { { GPIO_NUM_19,  GPIO_NUM_20},  { GPIO_NUM_35,  GPIO_NUM_36},  { GPIO_NUM_40, GPIO_NUM_39}, { GPIO_NUM_38, GPIO_NUM_37}, { GPIO_NUM_11, GPIO_NUM_12}, { GPIO_NUM_42, GPIO_NUM_41}, { GPIO_NUM_16, GPIO_NUM_15}, { GPIO_NUM_14, GPIO_NUM_13} }
   };   
 
 void SwOSActor::_setupLocal() {
@@ -1117,22 +1109,20 @@ void SwOSActor::_setupLocal() {
   _IN2 = GPIO_ACTOR[_ctrl->getCPU()][_port][1];
   
   // set digital ports _in1 & in2 to output
-  gpio_config_t io_conf = {};
-  io_conf.intr_type = GPIO_INTR_DISABLE;
-  io_conf.mode = GPIO_MODE_OUTPUT;
-  io_conf.pin_bit_mask = 0;
+  gpio_config_t io_conf = {
+    .pin_bit_mask = 0,
+    .mode = GPIO_MODE_OUTPUT,
+    .pull_up_en = GPIO_PULLUP_DISABLE,
+    .pull_down_en = GPIO_PULLDOWN_DISABLE,
+    .intr_type = GPIO_INTR_DISABLE,
+  };
   if ( _IN1 != GPIO_NUM_NC ) io_conf.pin_bit_mask = io_conf.pin_bit_mask | (1ULL << _IN1);
   if ( _IN2 != GPIO_NUM_NC ) io_conf.pin_bit_mask = io_conf.pin_bit_mask | (1ULL << _IN2);
-  io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-  io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
   gpio_config(&io_conf);
-
+  
+  // set motor driver off
   if ( _IN1 != GPIO_NUM_NC ) gpio_set_level( _IN1, 0 );
-  if ( _IN2 != GPIO_NUM_NC ) gpio_set_level( _IN2, 1 );
-
-  // ledc channels
-  _channelIN1 = (ledc_channel_t) (2*_port);
-  _channelIN2 = (ledc_channel_t) (2*_port + 1);
+  if ( _IN2 != GPIO_NUM_NC ) gpio_set_level( _IN2, 0 );
 
   // use Timer 0
   ledc_timer_config_t ledc_timer = {
@@ -1144,24 +1134,17 @@ void SwOSActor::_setupLocal() {
   };
   ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
 
-  // register 1st channel
+  // register led channel
   ledc_channel_config_t ledc_channel = {
     .gpio_num       = _IN1,
     .speed_mode     = LEDC_LOW_SPEED_MODE,
-    .channel        = _channelIN1,
+    .channel        = (ledc_channel_t) (_port),
     .intr_type      = LEDC_INTR_DISABLE,
     .timer_sel      = LEDC_TIMER_0,
     .duty           = 0, // Set duty to 0%
     .hpoint         = 0
   };
-  if ( _IN1 != GPIO_NUM_NC ) ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel));
-
-  // register 2nd Channel
-  if ( _IN2 != GPIO_NUM_NC ) {
-    ledc_channel.gpio_num = _IN2;
-    ledc_channel.channel  = _channelIN2;
-    ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel));
-  }
+  ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel));
 
 }
 
@@ -1273,36 +1256,40 @@ void SwOSActor::_setLocalLHW() {
   // calculate duty
   switch (_motionType) {
     case FTSWARM_COAST: // SLEEP HIGH, IN1 LOW, IN2 LOW
-                        ledc_set_duty(LEDC_LOW_SPEED_MODE, _channelIN1, 0);
-                        ledc_set_duty(LEDC_LOW_SPEED_MODE, _channelIN2, 0);
+                        ledc_set_pin( GPIO_NUM_NC, LEDC_LOW_SPEED_MODE, (ledc_channel_t) (_port) );
+                        gpio_set_level( _IN1, 0 );
+                        gpio_set_level( _IN2, 0 );
                         break;
   
     case FTSWARM_BRAKE: // SLEEP HIGH, IN1 HIGH, IN2 HIGH
-                        ledc_set_duty(LEDC_LOW_SPEED_MODE, _channelIN1, MAXSPEED256);
-                        ledc_set_duty(LEDC_LOW_SPEED_MODE, _channelIN2, MAXSPEED256);
+                        ledc_set_pin( GPIO_NUM_NC, LEDC_LOW_SPEED_MODE, (ledc_channel_t) (_port) );
+                        gpio_set_level( _IN1, 1 );
+                        gpio_set_level( _IN2, 1 );
                         break;
 
     case FTSWARM_ON:    if ( _speed <  0) {
                           // SLEEP HIGH, IN1 PWM, IN2 HIGH
-                          setDuty( _channelIN1, abs(_speed), _rampUpT, _rampUpY );
-                          ledc_set_duty(LEDC_LOW_SPEED_MODE, _channelIN2, 0);
+                          ledc_set_pin( _IN1, LEDC_LOW_SPEED_MODE, (ledc_channel_t) (_port) );
+                          setDuty( (ledc_channel_t) (_port), abs(_speed), _rampUpT, _rampUpY );
+                          gpio_set_level( _IN2, 1 );
                         } else {
                           // SLEEP HIGH, IN1 HIGH, IN2 PWM
-                          ledc_set_duty(LEDC_LOW_SPEED_MODE, _channelIN1, 0 );
-                          setDuty( _channelIN2, _speed, _rampUpT, _rampUpY );
+                          gpio_set_level( _IN1, 1 );
+                          ledc_set_pin( _IN2, LEDC_LOW_SPEED_MODE, (ledc_channel_t) (_port) );
+                          setDuty( (ledc_channel_t) (_port), abs(_speed), _rampUpT, _rampUpY );
                         }
                         break;
 
     default:            // SLEEP HIGH, IN1 LOW, IN2 LOW
-                        ledc_set_duty(LEDC_LOW_SPEED_MODE, _channelIN1, 0);
-                        ledc_set_duty(LEDC_LOW_SPEED_MODE, _channelIN2, 0);
+                        ledc_set_pin( GPIO_NUM_NC, LEDC_LOW_SPEED_MODE, (ledc_channel_t) (_port) );
+                        gpio_set_level( _IN1, 0 );
+                        gpio_set_level( _IN2, 0 );
                         break;
     }  
 
   // update duty
-  if ( _IN1 != GPIO_NUM_NC ) ESP_ERROR_CHECK(ledc_update_duty(LEDC_LOW_SPEED_MODE, _channelIN1));
-  if ( _IN2 != GPIO_NUM_NC ) ESP_ERROR_CHECK(ledc_update_duty(LEDC_LOW_SPEED_MODE, _channelIN2));
-
+  ESP_ERROR_CHECK(ledc_update_duty(LEDC_LOW_SPEED_MODE, (ledc_channel_t) (_port) ) );
+  
 }
 
 void SwOSActor::setDistance( long distance, bool relative, bool dontSendToRemote ) {
@@ -1665,6 +1652,7 @@ void SwOSPixel::_setupLocal() {
       #if CONFIG_IDF_TARGET_ESP32S3
         case FTSWARMPWRDRIVE_1V141:
         case FTSWARMDUINO_1V141:
+        case FTSWARMXL_1V00:
         case FTSWARMRS_2V1:
         case FTSWARMRS_2V0:  FastLED.addLeds<WS2812, xGPIO_NUM_48, GRB>(led, MAXLEDS).setCorrection( TypicalLEDStrip ); break;
       #endif
@@ -2675,6 +2663,7 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwa
     case FTSWARMCAM_2V11:       inputs = 3; actors = 2; leds = 0; break;
     case FTSWARMDUINO_1V141:    inputs = 8; actors = 4; leds = 2; break;
     case FTSWARMPWRDRIVE_1V141: inputs = 5; actors = 4; leds = 2; break;
+    case FTSWARMXL_1V00:        inputs = 8; actors = 8; leds = 2; break;
     default:                    inputs = 4; actors = 2; leds = 0; break;
   }
 
@@ -2888,6 +2877,7 @@ const char *SwOSCtrl::version( FtSwarmVersion_t v) {
   case FTSWARMCAM_2V11:       return "2.1.1";
   case FTSWARMDUINO_1V141:  
   case FTSWARMPWRDRIVE_1V141: return "1.4.1";
+  case FTSWARMXL_1V00:        return "1.0.0";
   default:                    return  "??";
   }
 }
@@ -3537,6 +3527,8 @@ SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local,
       case FTSWARMCONTROL_1V3: 
       case FTSWARMJST_1V15:     Wire.begin( 21, 22 ); break;
 
+      case FTSWARMXL_1V00:      Wire.begin( 4, 5 ); break;
+
       case FTSWARMRS_2V0: 
       case FTSWARMRS_2V1:       if ( ( nvs.extentionPort != FTSWARM_EXT_I2C_SLAVE ) && ( nvs.extentionPort != FTSWARM_EXT_OFF ) ) Wire.begin( 8, 9 ); 
                                 break;
@@ -3849,6 +3841,38 @@ void SwOSSwarmJST::loadAliasFromNVS( nvs_handle_t my_handle ) {
   if (gyro) gyro->loadAliasFromNVS( my_handle );
   for (uint8_t i=0; i<MAXSERVOS; i++ ) if (servo[i]) servo[i]->loadAliasFromNVS( my_handle );
   
+}
+
+/***************************************************
+ *
+ *   SwOSSwarmXL
+ *
+ ***************************************************/
+
+SwOSSwarmXL::SwOSSwarmXL( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, uint8_t xLeds, FtSwarmExtMode_t extentionPort ):SwOSSwarmXX( SN, macAddr, local, CPU, IAmAKelda, extentionPort ) {
+
+  char buffer[32];
+  sprintf( buffer, "ftSwarm%d", SN);
+  setName( buffer );
+
+  // additional  leds?
+  for ( uint8_t i = leds; i < xLeds; i++ ) {
+    led[i] = new SwOSPixel("LED", i, this);
+  }
+  leds = xLeds;
+
+}
+
+SwOSSwarmXL::SwOSSwarmXL( SwOSCom *com ):SwOSSwarmXL( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmAKelda, com->data.registerCmd.leds, com->data.registerCmd.extentionPort ) {
+  
+}
+
+char* SwOSSwarmXL::myType() {
+  return (char *) "ftSwarmXL";
+}
+
+FtSwarmControler_t SwOSSwarmXL::getType() {
+  return FTSWARMXL;
 }
 
 /***************************************************

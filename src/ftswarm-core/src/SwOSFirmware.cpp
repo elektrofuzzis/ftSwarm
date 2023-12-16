@@ -823,6 +823,7 @@ void mainMenu( void ) {
   // FTSWARMCONTROL special HW
   switch (myOSSwarm.Ctrl[0]->getType()) {
 
+    case FTSWARMXL:
     case FTSWARM:         sprintf( prompt, "\nMain Menu\n\n(1) wifi & Web UI\n(2) swarm configuration\n(3) alias names\n(4) factory reset\n(5) remoteControl\n(6) extention port\n\n(0) exit\nmain>" );
                           maxChoice = 6;
                           break;
