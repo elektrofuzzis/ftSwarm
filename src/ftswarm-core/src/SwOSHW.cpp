@@ -1134,20 +1134,21 @@ void SwOSActor::_setupLocal() {
     .speed_mode       = LEDC_LOW_SPEED_MODE,
     .duty_resolution  = LEDC_TIMER_12_BIT,
     .timer_num        = LEDC_TIMER_0,
-    .freq_hz          = 60,  // Set output frequency to 60 Hz
-    .clk_cfg          = LEDC_AUTO_CLK
+    .freq_hz          = 600,  // Set output frequency to 60 Hz
+    .clk_cfg          = LEDC_AUTO_CLK,
   };
   ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
 
-  // register led channel
-  ledc_channel = (ledc_channel_config_t *) malloc( sizeof( ledc_channel_config_t ) );
-  ledc_channel->gpio_num       = _IN1;
+  // just prepare led channel, don't register yet
+  ledc_channel = (ledc_channel_config_t *) calloc( sizeof( ledc_channel_config_t ), 1 );
+  ledc_channel->gpio_num       = GPIO_NUM_NC;
   ledc_channel->speed_mode     = LEDC_LOW_SPEED_MODE;
   ledc_channel->channel        = (ledc_channel_t) (_port);
   ledc_channel->intr_type      = LEDC_INTR_DISABLE;
   ledc_channel->timer_sel      = LEDC_TIMER_0;
-  ledc_channel->duty           = 0; // Set duty to 0%
+  ledc_channel->duty           = 0; 
   ledc_channel->hpoint         = 0;
+  ledc_channel->flags.output_invert = 1;
 
 }
 
@@ -1240,7 +1241,8 @@ void SwOSActor::_setLocalI2C() {
 
 void setDuty( ledc_channel_t channel, uint32_t duty, uint32_t rampUpT, uint32_t rampUpY ) {
   // just a wrapper around ledc_set_fade
-  
+
+
   uint32_t oldDuty = ledc_get_duty( LEDC_LOW_SPEED_MODE, channel );
   
   ledc_duty_direction_t dir = LEDC_DUTY_DIR_INCREASE;
@@ -1248,41 +1250,52 @@ void setDuty( ledc_channel_t channel, uint32_t duty, uint32_t rampUpT, uint32_t 
 
   if ( ( rampUpT == 0) || ( rampUpY == 0 ) )
     // if rampUp isn't specified, don't use an ramp
-    ledc_set_duty( LEDC_LOW_SPEED_MODE, channel, duty );
+    ESP_ERROR_CHECK( ledc_set_duty( LEDC_LOW_SPEED_MODE, channel, duty ) );
   else
     // set an acceleration ramp
-    ledc_set_fade( LEDC_LOW_SPEED_MODE, channel, oldDuty, dir, rampUpT, rampUpY, duty );
+    ESP_ERROR_CHECK( ledc_set_fade( LEDC_LOW_SPEED_MODE, channel, oldDuty, dir, rampUpT, rampUpY, duty ) );
+
+  ESP_ERROR_CHECK( ledc_update_duty( LEDC_LOW_SPEED_MODE, channel) );
+
 }
 
 void SwOSActor::setPWM( int16_t in1, int16_t in2, gpio_num_t pwm, uint32_t duty ) {
 
-  // first check, if the old pwm pin is different to the new one
+  // calc duty based on _highResolution
+  uint32_t duty1 = duty;
+  if ( (!_highResolution) && (duty) ) duty1 = ( duty1 << 4 ) + 0xF;
+
+  // 1st step, check if the old pwm pin is different to the new one
   if ( ledc_channel->gpio_num != pwm ) {
-    
+  
     // reconfigure old pin
-    if ( ledc_channel->gpio_num != GPIO_NUM_NC ) {    
-      gpio_config_t io_conf = {
-        .pin_bit_mask = io_conf.pin_bit_mask | (1ULL << ledc_channel->gpio_num),
-        .mode = GPIO_MODE_OUTPUT,
-        .pull_up_en = GPIO_PULLUP_DISABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type = GPIO_INTR_DISABLE,
-      };
-      gpio_reset_pin( (gpio_num_t) ledc_channel->gpio_num );
-      gpio_config(&io_conf);
-    }
-    
+    if ( ledc_channel->gpio_num != GPIO_NUM_NC ) ESP_ERROR_CHECK( gpio_reset_pin( (gpio_num_t) ledc_channel->gpio_num ) );
+  
     // set ledc_channel to new pin
     ledc_channel->gpio_num = pwm;
-    if ( pwm != GPIO_NUM_NC ) ledc_channel_config( ledc_channel );
+    if ( ledc_channel->gpio_num != GPIO_NUM_NC ) ESP_ERROR_CHECK( ledc_channel_config( ledc_channel ) );
+  
   }
 
-  // second step: set static levels if applicable
-  if ( ( pwm != _IN1 ) && ( _IN1 != GPIO_NUM_NC ) ) gpio_set_level( _IN1, in1 );
-  if ( ( pwm != _IN2 ) && ( _IN2 != GPIO_NUM_NC ) ) gpio_set_level( _IN2, in2 );
-  
-  // 3rd step: set pwm
-  if ( pwm != GPIO_NUM_NC ) setDuty( (ledc_channel_t) (_port), (_highResolution)?duty:duty<<4, _rampUpT, _rampUpY );
+  // 2rd step: set pwm
+  if ( ledc_channel->gpio_num != GPIO_NUM_NC ) {
+
+    if ( _rampUpT | _rampUpY ) {
+
+      uint32_t oldDuty = ledc_get_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel );
+      ESP_ERROR_CHECK( ledc_set_fade( LEDC_LOW_SPEED_MODE, ledc_channel->channel, oldDuty, ( oldDuty > duty1 ) ? LEDC_DUTY_DIR_DECREASE : LEDC_DUTY_DIR_INCREASE, _rampUpT, _rampUpY, duty1 ) );
+      ESP_ERROR_CHECK( ledc_update_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel ) );
+    
+    } else {
+      ESP_ERROR_CHECK( ledc_set_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel, duty1 ) );
+      ESP_ERROR_CHECK( ledc_update_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel ) );
+    }
+
+  }
+
+  // 3rd step: set static levels if applicable
+  if ( _IN1 != GPIO_NUM_NC ) gpio_set_level( _IN1, in1 );
+  if ( _IN2 != GPIO_NUM_NC ) gpio_set_level( _IN2, in2 );
 
 }
 
