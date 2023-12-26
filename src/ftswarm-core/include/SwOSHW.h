@@ -169,7 +169,8 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
 	  virtual void jsonize( JSONize *json, uint8_t id) {};               // just a placeholder
 
     // read sensor
-	  virtual void     read() {};
+	  virtual void read() {};
+    virtual void setReading( int32_t newValue ) {};
 
     // external commands
     virtual void            setSensorType( FtSwarmSensor_t sensorType );  // set sensor type
@@ -205,7 +206,8 @@ class SwOSDigitalInput : public SwOSInput {
     virtual void jsonize( JSONize *json, uint8_t id);
 
     // read sensor
-	  virtual void     read();
+	  virtual void read();
+    virtual void setReading( int32_t newValue );
 
     // external commands
     virtual void            setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen );  // set sensor type
@@ -305,6 +307,7 @@ class SwOSAnalogInput : public SwOSInput {
 
     // read sensor
 	  virtual void     read();
+    virtual void setReading( int32_t newValue );
 
     // external commands
     virtual void   setValue( int32_t value );                    // set value by an external call

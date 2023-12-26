@@ -30,7 +30,7 @@
 SwOSSwarm myOSSwarm;
 
 // #define DEBUG_COMMUNICATION
-// #define DEBUG_READTASK
+#define DEBUG_READTASK
 
 /***************************************************
  *

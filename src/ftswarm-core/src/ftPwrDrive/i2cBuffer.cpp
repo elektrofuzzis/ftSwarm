@@ -19,7 +19,7 @@ void i2cBuffer::sendBuffer( uint8_t address  ) {
  
   Wire.beginTransmission( address );
   Wire.write( data, len );
-  Wire.endTransmission();
+  error = Wire.endTransmission();
 }
 
 void i2cBuffer::receiveBuffer( uint8_t address, uint8_t quantity ) {
@@ -36,7 +36,8 @@ void i2cBuffer::receiveBuffer( uint8_t address, uint8_t quantity ) {
   len = 0;
 
   // request quantity uint8_ts
-  Wire.requestFrom( address, quantity);
+  if ( Wire.requestFrom( address, quantity) != quantity ) error = 4; 
+  else error = 0;
 
   uint8_t x;
   // receive data
@@ -121,6 +122,25 @@ void i2cBuffer::sendData( uint8_t address, uint8_t cmd, int v1 ) {
   len = 0;
   push( cmd );
   push( v1 );
+  sendBuffer( address );
+}
+
+void i2cBuffer::sendData( uint8_t address, uint8_t cmd, uint8_t v1, uint8_t v2 ) {
+  // send a command with 2 uint8_t
+  len = 0;
+  push( cmd );
+  push( v1 );
+  push( v2 );
+  sendBuffer( address );
+}
+
+void i2cBuffer::sendData( uint8_t address, uint8_t cmd, uint8_t v1, uint8_t v2, uint8_t v3 ) {
+  // send a command with 3 uint8_t
+  len = 0;
+  push( cmd );
+  push( v1 );
+  push( v2 );
+  push( v3 );
   sendBuffer( address );
 }
 

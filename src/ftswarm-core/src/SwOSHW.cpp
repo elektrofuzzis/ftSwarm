@@ -24,6 +24,7 @@
 #include "SwOS.h"
 #include "SwOSHW.h"
 #include "SwOSCom.h"
+#include "ftDuino.h"
 
 const char IOTYPE[FTSWARM_MAXIOTYPE][15] = { "INPUT", "DIGITALINPUT", "ANALOGINPUT", "ACTOR", "BUTTON", "JOYSTICK", "LED", "SERVO", "OLED", "GYRO", "HC165", "I2C", "CAM",  "COUNTER", "FREQUENCYMETER" };
 
@@ -68,13 +69,16 @@ const uint32_t LEDCOLOR1[MAXSTATE] = { CRGB::Blue, CRGB::Yellow, CRGB::Green, CR
 
 const char     OLEDMSG[MAXSTATE][20] = { "booting", "connecting wifi", "online", "ERROR - check logs", "waiting on HW", "It's me!" };
 
-#define FTDUINOADDR               0x10
+#define FTDUINOADDR               0x20
 #define FTDUINO_CMD_READ          0x00
 #define FTDUINO_CMD_SETSENSORTYPE 0x01
 #define FTDUINO_CMD_SETACTORTYPE  0x02
 
 // reference to local ftPwrDrive
 ftPwrDrive *pwrDrive = NULL;
+
+// reference to local ftDuino
+FtDuino *ftDuino = NULL;
 
 /***************************************************
  *
@@ -554,6 +558,9 @@ void SwOSDigitalInput::setSensorTypeLocal( FtSwarmSensor_t sensorType ) {
     gpio_set_level( (gpio_num_t) _PUA2, true );
   }
 
+  // ftDuino
+  if ( ( _ctrl->getCPU() == FTSWARMDUINO_1V141 ) && (ftDuino) ) ftDuino->setSensorType( _port, sensorType );
+
 }
 
 void SwOSDigitalInput::read() {
@@ -571,6 +578,12 @@ void SwOSDigitalInput::read() {
 
   // read new data
   newValue = gpio_get_level( (gpio_num_t) _GPIO );
+
+  setReading( newValue );
+
+}
+
+void SwOSDigitalInput::setReading( int32_t newValue ) {
     
   // normally open: change logic
   if (_normallyOpen) newValue = 1-newValue;
@@ -921,10 +934,16 @@ void SwOSAnalogInput::_setSensorTypeLocal( FtSwarmSensor_t sensorType ) {
 }
 
 float SwOSAnalogInput::getVoltage() {
-  return ( (float) _lastRawValue ) / 1000 * (129.0/82.0);
+
+  if ( _ctrl->getCPU() == FTSWARMDUINO_1V141 )
+    return ( (float) _lastRawValue ) / 1000;
+  else
+    return ( (float) _lastRawValue ) / 1000 * (129.0/82.0);
 }
 
 float SwOSAnalogInput::getResistance() {
+
+  if ( _ctrl->getCPU() == FTSWARMDUINO_1V141 ) return ( (float) _lastRawValue ) / 1000;
 
   // R1 = 2k
   // R2 = ?
@@ -1010,6 +1029,12 @@ void SwOSAnalogInput::read() {
     // XMeter: cast to mV
     newValue = esp_adc_cal_raw_to_voltage( newValue, _adc_chars ); 
   }
+
+  setReading( newValue );
+
+}
+
+void SwOSAnalogInput::setReading( int32_t newValue ) {
     
   // send changed value event?
   if ( (_events) && ( _lastRawValue != newValue ) ) trigger( FTSWARM_TRIGGERVALUE, newValue );
@@ -1222,11 +1247,11 @@ void SwOSActor::setSpeed( int16_t speed ) {
 void SwOSActor::_setRemote() {
   
   SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_SETACTORSPEED  );
-  cmd.data.actorSpeedCmd.index = _port;
+  cmd.data.actorSpeedCmd.index      = _port;
   cmd.data.actorSpeedCmd.motionType = _motionType;
-  cmd.data.actorSpeedCmd.speed = _speed;
-  cmd.data.actorSpeedCmd.rampUpT = _rampUpT;
-  cmd.data.actorSpeedCmd.rampUpY = _rampUpY;
+  cmd.data.actorSpeedCmd.speed      = _speed;
+  cmd.data.actorSpeedCmd.rampUpT    = _rampUpT;
+  cmd.data.actorSpeedCmd.rampUpY    = _rampUpY;
   cmd.send( );
 
 }
@@ -1237,25 +1262,9 @@ void SwOSActor::_setLocalI2C() {
     pwrDrive->setMaxSpeed( _pwrDriveMotor, _speed );
   }
 
-}
-
-void setDuty( ledc_channel_t channel, uint32_t duty, uint32_t rampUpT, uint32_t rampUpY ) {
-  // just a wrapper around ledc_set_fade
-
-
-  uint32_t oldDuty = ledc_get_duty( LEDC_LOW_SPEED_MODE, channel );
-  
-  ledc_duty_direction_t dir = LEDC_DUTY_DIR_INCREASE;
-  if ( oldDuty > duty ) dir = LEDC_DUTY_DIR_DECREASE;
-
-  if ( ( rampUpT == 0) || ( rampUpY == 0 ) )
-    // if rampUp isn't specified, don't use an ramp
-    ESP_ERROR_CHECK( ledc_set_duty( LEDC_LOW_SPEED_MODE, channel, duty ) );
-  else
-    // set an acceleration ramp
-    ESP_ERROR_CHECK( ledc_set_fade( LEDC_LOW_SPEED_MODE, channel, oldDuty, dir, rampUpT, rampUpY, duty ) );
-
-  ESP_ERROR_CHECK( ledc_update_duty( LEDC_LOW_SPEED_MODE, channel) );
+  if ( ( _ctrl->getCPU() == FTSWARMDUINO_1V141 ) && ( ftDuino ) ) {
+    ftDuino->setMotor( _port, _motionType, _speed);
+  }
 
 }
 
@@ -3363,6 +3372,8 @@ void SwOSCtrl::sendAlias( MacAddr destination ) {
 
 SwOSSwarmI2CCtrl::SwOSSwarmI2CCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda ): SwOSCtrl (SN, macAddr, local, CPU,  IAmAKelda, FTSWARM_EXT_OFF ) {
 
+  Wire.begin( 5, 4);
+
 }
 
 SwOSSwarmI2CCtrl::~SwOSSwarmI2CCtrl() {
@@ -3522,9 +3533,13 @@ SwOSSwarmDuino::SwOSSwarmDuino( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool 
   sprintf( buffer, "ftSwarm%d", SN);
   setName( buffer );
 
+  ftDuino = new FtDuino();
+
 }
 
 SwOSSwarmDuino::~SwOSSwarmDuino() {
+
+  if (ftDuino) delete ftDuino;
 
 }
 
@@ -3538,13 +3553,20 @@ FtSwarmControler_t SwOSSwarmDuino::getType() {
 
 void SwOSSwarmDuino::read() {
 
-  Wire.beginTransmission( FTDUINOADDR );
-  Wire.write( FTDUINO_CMD_READ );
-  Wire.endTransmission();
+  uint16_t value[8];
 
-  Wire.requestFrom( FTDUINOADDR, (int) inputs );
-  for (uint8_t i=0; i<inputs; i++) {
-    if ( Wire.available() ) input[i]->setValue( Wire.read() );
+  if ( ftDuino ) {
+    
+    // get input mesurements from ftDuino
+    ftDuino->getState( value );
+    
+    // set input measurements
+    for (uint8_t i=0; i<8; i++) { 
+      if ( input[i] ) input[i]->setReading( value[i] );
+    }
+
+    // errors during I2C communication?
+    if ( ftDuino->getError() != 0 ) setState( ERROR );
   }
 
 }
@@ -3569,7 +3591,7 @@ SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local,
       case FTSWARMCONTROL_1V3: 
       case FTSWARMJST_1V15:     Wire.begin( 21, 22 ); break;
 
-      case FTSWARMXL_1V00:      Wire.begin( 4, 5 ); break;
+      case FTSWARMXL_1V00:      Wire.begin( 5, 4 ); break;
 
       case FTSWARMRS_2V0: 
       case FTSWARMRS_2V1:       if ( ( nvs.extentionPort != FTSWARM_EXT_I2C_SLAVE ) && ( nvs.extentionPort != FTSWARM_EXT_OFF ) ) Wire.begin( 8, 9 ); 
