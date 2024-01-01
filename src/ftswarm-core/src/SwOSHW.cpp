@@ -945,26 +945,14 @@ float SwOSAnalogInput::getResistance() {
 
   if ( _ctrl->getCPU() == FTSWARMDUINO_1V141 ) return ( (float) _lastRawValue ) / 1000;
 
-  // R1 = 2k
-  // R2 = ?
-  // R3 = 47k
-  // R4 = 82 k
-  // Ue = 5V
-  //
-  //        R1(R3+R4)+R4
-  // R2 = ----------------
-  //      R4(Ue/Ua)-R1- R3
-  //
-  //         340000
-  // R2 = -----------
-  //      82(5/Ue)-49
+  // y = 8E-15x^6 - 2E-10x^5 + 1E-06x^4 - 0,0057x^3 + 13,847x^2 - 17791x + 9E+06
 
   // avoid hangup
   if ( _lastRawValue == 0 ) return 0;
 
-  float Ue = ( (float)_lastRawValue ) / 1000;
+  float adc = (float) _lastRawValue;
 
-  float r = 340000.0 / ( ( 410.0 / Ue ) - 49.0 );
+  float r = exp(-15)*pow(adc,float(6)) - 2*exp(-10)*pow(adc,5) + exp(-6)*pow(adc,4) - 0.0057*pow(adc,3) + 13.847*pow(adc,2) - 17791*adc + exp(6);
 
   return r;
   
