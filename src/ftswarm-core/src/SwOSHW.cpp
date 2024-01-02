@@ -206,6 +206,7 @@ void SwOSIO::jsonize( JSONize *json, uint8_t id) {
   SwOSObj::jsonize(json, id);
   json->variable("type", (char *) IOTYPE[getIOType()]);
   json->variable("icon", (char *) getIcon() );
+  json->variableB( "active", ( _alias != NULL ) || isInUse() );
 }
 
 void SwOSIO::onTrigger( int32_t value ) {
@@ -349,6 +350,7 @@ void SwOSEventInput::trigger( FtSwarmTrigger_t triggerEvent, int32_t portValue )
   #define xGPIO_NUM_22    GPIO_NUM_NC
   #define xGPIO_NUM_25    GPIO_NUM_NC
   #define xADC1_CHANNEL_8 ADC1_CHANNEL_8
+  #define xGPIO_NUM_40    GPIO_NUM_40
   #define xGPIO_NUM_41    GPIO_NUM_41
   #define xGPIO_NUM_42    GPIO_NUM_42
   #define xGPIO_NUM_45    GPIO_NUM_45
@@ -359,6 +361,7 @@ void SwOSEventInput::trigger( FtSwarmTrigger_t triggerEvent, int32_t portValue )
   #define xGPIO_NUM_22    GPIO_NUM_22
   #define xGPIO_NUM_25    GPIO_NUM_25
   #define xADC1_CHANNEL_8 ADC1_CHANNEL_MAX
+  #define xGPIO_NUM_40    GPIO_NUM_NC
   #define xGPIO_NUM_41    GPIO_NUM_NC
   #define xGPIO_NUM_42    GPIO_NUM_NC
   #define xGPIO_NUM_45    GPIO_NUM_NC
@@ -1128,7 +1131,7 @@ const gpio_num_t GPIO_ACTOR[9][8][2] =
     /* FTSWARMCAM_2V11 */     { { GPIO_NUM_14,  GPIO_NUM_15 }, { GPIO_NUM_2,   GPIO_NUM_4},   { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
     /* FTSWARMPWRDRIVE_1V14*/ { { GPIO_NUM_NC,  GPIO_NUM_NC},  { GPIO_NUM_NC,  GPIO_NUM_NC},  { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
     /* FTSWARMDUINO_1V14*/    { { GPIO_NUM_NC,  GPIO_NUM_NC},  { GPIO_NUM_NC,  GPIO_NUM_NC},  { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
-    /* FTSWARMXL_1V00*/       { { GPIO_NUM_16,  GPIO_NUM_15},  { GPIO_NUM_14,  GPIO_NUM_13},  { GPIO_NUM_11, GPIO_NUM_12}, { GPIO_NUM_42, GPIO_NUM_41}, { GPIO_NUM_40, GPIO_NUM_39}, { GPIO_NUM_38, GPIO_NUM_37}, { GPIO_NUM_19, GPIO_NUM_20}, { GPIO_NUM_35, GPIO_NUM_36} }
+    /* FTSWARMXL_1V00*/       { { GPIO_NUM_16,  GPIO_NUM_15},  { GPIO_NUM_14,  GPIO_NUM_13},  { GPIO_NUM_11, GPIO_NUM_12}, { xGPIO_NUM_42, xGPIO_NUM_41}, { xGPIO_NUM_40, GPIO_NUM_39}, { GPIO_NUM_38, GPIO_NUM_37}, { GPIO_NUM_19, GPIO_NUM_20}, { GPIO_NUM_35, GPIO_NUM_36} }
   };   
 
 void SwOSActor::_setupLocal() {
