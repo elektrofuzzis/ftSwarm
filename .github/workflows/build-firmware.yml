@@ -7,10 +7,10 @@ jobs:
     strategy:
       matrix:
         targets:
-#          - firmware-cam
-#          - firmware-control
+          - firmware-cam
+          - firmware-control
           - firmware-duino
-#          - firmware-jst
+          - firmware-jst
           - firmware-pwrdrive
           - firmware-rs
           - firmware-xl
