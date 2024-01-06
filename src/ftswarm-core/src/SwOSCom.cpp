@@ -26,6 +26,11 @@
 
 #include <esp_debug_helpers.h>
 
+// Debug options:
+// DEBUG_COMMUNICATION    show RX-Communication
+// DEBUG_TXCOMMUNICATION  show TX-Connumication
+// DEBUG_MONITOR          just monitor the bus and show communication
+
 // #define DEBUG_COMMUNICATION
 // #define DEBUG_TXCOMMUNICATION
 // #define DEBUG_MONITOR
@@ -280,7 +285,7 @@ void SwOSCom::send( void ) {
 
   #ifdef DEBUG_MONITOR
     // Monitor mode, don't send data
-    return ESP_OK;
+    return;
   #endif
 
   // header
@@ -786,7 +791,7 @@ void SwOSNetwork::setSecret( uint16_t swarmSecret, uint16_t swarmPIN ) {
 }
 
 bool SwOSNetwork::hasJoinedASwarm( void ) {
-  return secret == DEFAULTSECRET;
+  return secret != DEFAULTSECRET;
 }
 
 SwOSNetwork myOSNetwork;

@@ -174,7 +174,7 @@ void SwarmControlMenu() {
 
 void wifiMenu( void ) {
 
-  char          prompt[250];
+  char          info[250];
   bool          anythingChanged = false;
   uint8_t       maxChoice;
   FtSwarmWifi_t wifiMode;
@@ -183,8 +183,17 @@ void wifiMenu( void ) {
   
   while(1) {
 
+    switch ( nvs.wifiMode ) {
+    case wifiAP:      sprintf(info, "hostname: %s  \nip-address: %d.%d.%d.%d\n\n", myOSSwarm.Ctrl[0]->getHostname(), WiFi.softAPIP()[0], WiFi.softAPIP()[1], WiFi.softAPIP()[2], WiFi.softAPIP()[3]);
+                      break;
+    case wifiClient:  sprintf(info, "hostname: %s  \nip-address: %d.%d.%d.%d\n\n", myOSSwarm.Ctrl[0]->getHostname(), WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
+                      break;
+    default:          sprintf(info, "hostname: %s  \nip-address: none\n\n",myOSSwarm.Ctrl[0]->getHostname());
+    }
+
     // build menu
     menu.start( "Wifi & WebUI", 14 );
+    printf(info);
     menu.add( "wifi", WIFI[nvs.wifiMode], 1);
 
     if (nvs.wifiMode != wifiOFF ) {
@@ -316,12 +325,12 @@ void joinSwarm( boolean createNewSwarm ) {
       vTaskDelay( 25 / portTICK_PERIOD_MS );
     
       // got an ack? -> break inner loop;
-      if ( !myOSNetwork.hasJoinedASwarm() ) break;
+      if ( myOSNetwork.hasJoinedASwarm() ) break;
 
     }
 
     // got an ack? -> break outer loop;
-    if ( !myOSNetwork.hasJoinedASwarm() ) break;
+    if ( myOSNetwork.hasJoinedASwarm() ) break;
 
   }
 
@@ -331,7 +340,7 @@ void joinSwarm( boolean createNewSwarm ) {
   myOSSwarm.unlock();
 
   // Now check, if a swarm was found
-  if ( myOSNetwork.hasJoinedASwarm() ) {
+  if ( !myOSNetwork.hasJoinedASwarm() ) {
 
     // no swarm found, restore old settings
     myOSSwarm.lock();

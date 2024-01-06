@@ -993,6 +993,7 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
       if ( ( com->data.registerCmd.IAmAKelda ) && ( Ctrl[0]->IAmAKelda ) ) {
         setState( ERROR );
         printf("ERROR: Multiple Keldas found! %d %d\n", Kelda->serialNumber, com->data.sourceSN );
+        while (1) delay(1000);
         return;
       }
 
@@ -1025,7 +1026,6 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
       // frist introduce myself
       SwOSCom reply( com->macAddr, com->data.sourceSN, CMD_GOTYOU );
       Ctrl[0]->registerMe( &reply );
-      reply.print();
       reply.send();
 
       // send my alias names, if the new controler is a Kelda
