@@ -938,6 +938,9 @@ void SwOSCLI::evalIOCommand( char *token ) {
   // check, if the token is a controller or an io
   if (!getIO( token, IOName, &_ctrl, &_io ) ) { Error( ERROR_IOEXPECTED ); return; }
 
+  // unvalid io?
+  if ( ( !_io ) && ( !_ctrl ) ) { Error( ERROR_IOEXPECTED ); return; }
+
   // now we need another "." and a method
   if ( getNextToken( token ) != EVAL_DOT ) { Error( ERROR_DOTEXPECTED ); return; }
 
@@ -1015,6 +1018,7 @@ void SwOSCLI::evalIOCommand( char *token ) {
 
     // standard cmd
     executeIOCommand();
+  
   }
 
 }

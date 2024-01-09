@@ -997,7 +997,8 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
         return;
       }
 
-      myOSNetwork.AddPeer( com->macAddr );
+      // obviously dumb way to guru TODO
+      // myOSNetwork.AddPeer( com->macAddr );
 
       // add to swarm
       switch (com->data.registerCmd.ctrlType) {
