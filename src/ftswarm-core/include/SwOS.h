@@ -103,7 +103,7 @@ typedef enum {
     Black      = 0x000000
 } FtSwarmColor;
 
-#define MAXSPEED256  256 
+#define MAXSPEED256  255 
 #define MAXSPEED4096 4095 
 
 // **** port definitions ****

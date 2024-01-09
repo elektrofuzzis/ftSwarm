@@ -555,6 +555,7 @@ void SwOSCLI::executeActorCmd( void ) {
                                       printf("R: ok\n"); 
                                       myOSSwarm.lock();
                                       io->setActorType( (FtSwarmActor_t) _parameter[0].getValue(), highResolution, false );
+                                      io->apply();
                                       myOSSwarm.unlock();
                                     }
                                 }
@@ -565,12 +566,13 @@ void SwOSCLI::executeActorCmd( void ) {
                                 myOSSwarm.unlock();
                                 break;
 
-    case CLICMD_setSpeed:      if ( io->_highResolution ) maxspeed = 4095;
+    case CLICMD_setSpeed:       if ( io->_highResolution ) maxspeed = 4095;
                                 else maxspeed = 255;
                                 if (_parameter[0].inRange( "speed", -maxspeed, maxspeed ) ) { 
                                   printf("R: ok\n");
                                   myOSSwarm.lock(); 
                                   io->setSpeed( _parameter[0].getValue() );
+                                  io->apply();
                                   myOSSwarm.unlock();
                                 }
                                 break;
@@ -584,6 +586,7 @@ void SwOSCLI::executeActorCmd( void ) {
                                   printf("R: ok\n");
                                   myOSSwarm.lock(); 
                                   io->setMotionType( (FtSwarmMotion_t) _parameter[0].getValue() );
+                                  io->apply();
                                   myOSSwarm.unlock();
                                 }
                                 break;

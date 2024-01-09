@@ -518,6 +518,7 @@ void FtSwarmMotor::setSpeed( int16_t speed ) {
   if (me) {
     myOSSwarm.lock();
     static_cast<SwOSActor *>(me)->setSpeed( speed );
+    static_cast<SwOSActor *>(me)->apply();
     myOSSwarm.unlock();
   }
 }
@@ -720,6 +721,7 @@ void FtSwarmOnOffActor::on( int16_t speed ) {
   if (me) {
     myOSSwarm.lock();
     static_cast<SwOSActor *>(me)->setSpeed( speed);
+    static_cast<SwOSActor *>(me)->apply();
     myOSSwarm.unlock();
   }
 }

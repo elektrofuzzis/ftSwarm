@@ -376,6 +376,7 @@ public:
   virtual void            setActorType( FtSwarmActor_t actorType, bool highResolution, bool dontSendToRemote );    // set actor type
   virtual void            setValue( FtSwarmMotion_t motionType, int16_t speed ) { _motionType = motionType; _speed = speed; };  // set values
 	virtual void            setSpeed( int16_t speed );                                 // set speed
+  virtual void            apply( void );                                             // apply speed/setAcceleration/setMotionType
   virtual int16_t         getSpeed() { return _speed; };                             // get speed
   virtual void            setAcceleration( uint32_t rampUpT,  uint32_t rampUpY );    // set acceleration ramp
   virtual void            getAcceleration( uint32_t *rampUpT, uint32_t *rampUpY );   // get acceleration ramp

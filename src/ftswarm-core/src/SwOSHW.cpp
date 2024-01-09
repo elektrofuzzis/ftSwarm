@@ -1098,7 +1098,7 @@ SwOSActor::SwOSActor(const char *name, uint8_t port, SwOSCtrl *ctrl):SwOSIO(name
 }
 
 SwOSActor::~SwOSActor() {
-  if (_ctrl->isLocal() ) setSpeed(0);
+  if (_ctrl->isLocal() ) { setSpeed(0); apply(); }
   if ( ledc_channel ) free( ledc_channel );
 }
 
@@ -1171,10 +1171,6 @@ void SwOSActor::_setupLocal() {
 void SwOSActor::setMotionType( FtSwarmMotion_t motionType ) {
 
   _motionType = motionType;
-
-  if   (!_ctrl->isLocal())           _setRemote();  
-  else if ( _ctrl->isI2CSwarmCtrl()) _setLocalI2C();
-  else                               _setLocalLHW();
   
 }
 
@@ -1202,8 +1198,6 @@ void SwOSActor::setAcceleration( uint32_t rampUpT,  uint32_t rampUpY ) {
   _rampUpT = rampUpT;
   _rampUpY = rampUpY;
 
-  if (!_ctrl->isLocal()) _setRemote();
-
 }
 
 void SwOSActor::getAcceleration( uint32_t *rampUpT,  uint32_t *rampUpY ) {
@@ -1229,10 +1223,15 @@ void SwOSActor::setSpeed( int16_t speed ) {
   else if (speed<-maxSpeed) _speed = -maxSpeed;
   else                      _speed =  speed;
 
+}
+
+void SwOSActor::apply(void) {
+
   // set speed values
-  if   (!_ctrl->isLocal())           _setRemote();  
+  if      (!_ctrl->isLocal())        _setRemote();
   else if ( _ctrl->isI2CSwarmCtrl()) _setLocalI2C();
   else                               _setLocalLHW();
+
 }
 
 void SwOSActor::_setRemote() {
@@ -1243,6 +1242,7 @@ void SwOSActor::_setRemote() {
   cmd.data.actorSpeedCmd.speed      = _speed;
   cmd.data.actorSpeedCmd.rampUpT    = _rampUpT;
   cmd.data.actorSpeedCmd.rampUpY    = _rampUpY;
+  cmd.print();
   cmd.send( );
 
 }
@@ -1281,12 +1281,13 @@ void SwOSActor::setPWM( int16_t in1, int16_t in2, gpio_num_t pwm, uint32_t duty 
   if ( ledc_channel->gpio_num != GPIO_NUM_NC ) {
 
     if ( _rampUpT | _rampUpY ) {
-
+      // acceleration
       uint32_t oldDuty = ledc_get_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel );
       ESP_ERROR_CHECK( ledc_set_fade( LEDC_LOW_SPEED_MODE, ledc_channel->channel, oldDuty, ( oldDuty > duty1 ) ? LEDC_DUTY_DIR_DECREASE : LEDC_DUTY_DIR_INCREASE, _rampUpT, _rampUpY, duty1 ) );
       ESP_ERROR_CHECK( ledc_update_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel ) );
     
     } else {
+      // pwm signal
       ESP_ERROR_CHECK( ledc_set_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel, duty1 ) );
       ESP_ERROR_CHECK( ledc_update_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel ) );
     }
@@ -1307,11 +1308,11 @@ void SwOSActor::_setLocalLHW() {
   // calculate duty
   switch (_motionType) {
     case FTSWARM_COAST: // SLEEP HIGH, IN1 LOW, IN2 LOW
-                        setPWM( 0, 0, GPIO_NUM_NC, 0 );
+                        setPWM( 0, 0, _IN1, 0 );
                         break;
   
     case FTSWARM_BRAKE: // SLEEP HIGH, IN1 HIGH, IN2 HIGH
-                        setPWM( 1, 1, GPIO_NUM_NC, 0 );
+                        setPWM( 1, 1, _IN1, 0 );
                         break;
 
     case FTSWARM_ON:    if ( _speed <  0) {
@@ -1324,12 +1325,9 @@ void SwOSActor::_setLocalLHW() {
                         break;
 
     default:            // SLEEP HIGH, IN1 LOW, IN2 LOW
-                        setPWM( 0, 0, GPIO_NUM_NC, 0 );
+                        setPWM( 0, 0, _IN1, 0 );
                         break;
-    }  
-
-  // update duty
-  ESP_ERROR_CHECK(ledc_update_duty(LEDC_LOW_SPEED_MODE, (ledc_channel_t) (_port) ) );
+  }  
   
 }
 
@@ -1453,6 +1451,8 @@ void SwOSActor::jsonize( JSONize *json, uint8_t id) {
 void SwOSActor::onTrigger( int32_t value ) {
 
   setSpeed( (int16_t) value );
+  apply();
+
 }
 
 void SwOSActor::read( void ) {
@@ -2772,7 +2772,7 @@ SwOSCtrl::~SwOSCtrl() {
 
 void SwOSCtrl::halt( void ) {
 
-  for (uint8_t i=0; i<MAXACTORS; i++) { if ( actor[i] ) actor[i]->setSpeed(0); }
+  for (uint8_t i=0; i<MAXACTORS; i++) { if ( actor[i] ) actor[i]->setSpeed(0); actor[i]->apply(); }
 
 }
 
@@ -2995,6 +2995,7 @@ bool SwOSCtrl::apiActorSpeed( char *id, int speed ) {
     if ( actor[i]->equals(id) ) {
       // found
       actor[i]->setSpeed( speed );
+      actor[i]->apply();
       return true;
     }
   }
@@ -3195,6 +3196,7 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
       actor[com->data.actorSpeedCmd.index]->setMotionType( com->data.actorSpeedCmd.motionType );
       actor[com->data.actorSpeedCmd.index]->setAcceleration( com->data.actorSpeedCmd.rampUpT, com->data.actorSpeedCmd.rampUpY );
       actor[com->data.actorSpeedCmd.index]->setSpeed( com->data.actorSpeedCmd.speed );
+      actor[com->data.actorSpeedCmd.index]->apply();
       
       return true;
 
