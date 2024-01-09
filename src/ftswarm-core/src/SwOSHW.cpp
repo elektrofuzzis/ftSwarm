@@ -3557,7 +3557,8 @@ void SwOSSwarmDuino::read() {
     }
 
     // errors during I2C communication?
-    if ( ftDuino->getError() != 0 ) setState( ERROR );
+    if ( ftDuino->getError() != 0 ) i2cerror++; else i2cerror = 0;
+    if ( i2cerror > 5 ) setState( ERROR );
   }
 
 }

@@ -407,8 +407,14 @@ void swarmMenu( void ) {
         return;
 
       case 1: // kelda
-        if (nvs.IAmKelda) printf("Downgrading this controler from Kelda to swarm member.\n");
-        else              printf("Upgrading this controler from swarm member to Kelda.\n");
+        if (nvs.IAmKelda) {
+          printf("Downgrading this controler from Kelda to swarm member.\n");
+        } else if ( myOSSwarm.Kelda ) {
+          printf("ERROR: Please downgrade existing Kelda %s to a swarm member.\n", myOSSwarm.Kelda->getHostname() );
+          break;
+        } else {
+          printf("Upgrading this controler from swarm member to Kelda.\n");
+        }
         if ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) {
           nvs.IAmKelda = !nvs.IAmKelda;
           nvs.saveAndRestart();

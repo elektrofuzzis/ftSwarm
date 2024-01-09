@@ -435,6 +435,10 @@ static void tx_RS485( SwOSCom *com ) {
     ets_delay_us( myOSNetwork.delayTime ); 
 
   }
+
+  #ifdef DEBUG_TXCOMMUNICATION
+    printf("\n****\nsend rs485 end\n");
+  #endif
     
 }
 
@@ -596,6 +600,10 @@ int RS485GetPayload( uint8_t *buffer, int buflen, uint8_t **payload, int *sizePa
 }
 
 static void RS485_rx_task(void *pvParameters) {
+
+  #ifdef DEBUG_COMMUNICATION
+    printf("RS485_rx_task started\n");
+  #endif
   
   uart_event_t   event;
   uint8_t        *buffer = (uint8_t *) calloc(1, RS485_BUF_SIZE);
@@ -608,6 +616,10 @@ static void RS485_rx_task(void *pvParameters) {
 
     // wait for data
     if( pdTRUE == xQueueReceive(myOSNetwork.RS485_rx_queue, (void * )&event, portMAX_DELAY ) ) { 
+
+      #ifdef DEBUG_COMMUNICATION
+        printf("RS485_rx_task event %d size %d\n", event.type, event.size);
+      #endif
 
       switch (event.type) {
         

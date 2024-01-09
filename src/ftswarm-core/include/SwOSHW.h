@@ -876,6 +876,10 @@ class SwOSSwarmPwrDrive : public SwOSSwarmI2CCtrl {
  ***************************************************/
 
 class SwOSSwarmDuino : public SwOSSwarmI2CCtrl {
+
+  private:
+    uint8_t i2cerror = 0; 
+
   public:
     // constructor, destructor
     SwOSSwarmDuino( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
