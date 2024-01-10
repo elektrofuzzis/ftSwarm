@@ -378,13 +378,13 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
 void SwOSSwarm::halt( void ) {
 
-  for (uint8_t i=0; i<maxCtrl; i++)
+  for (uint8_t i=0; i<=maxCtrl; i++)
     Ctrl[i]->halt();
 }
 
 void SwOSSwarm::unsubscribe( void ) {
 
-  for (uint8_t i=0; i<maxCtrl; i++)
+  for (uint8_t i=0; i<=maxCtrl; i++)
     Ctrl[i]->unsubscribe( true );
 
 }
@@ -1053,7 +1053,7 @@ void SwOSSwarm::leaveSwarm( void ) {
   myOSNetwork.setSecret( 0, 0 );
 
   // now I could kill all swarm members
-  for (uint8_t i=1; i<maxCtrl; i++) {
+  for (uint8_t i=1; i<=maxCtrl; i++) {
     if (Ctrl[i]) delete Ctrl[i];
     Ctrl[i] = NULL;
   }

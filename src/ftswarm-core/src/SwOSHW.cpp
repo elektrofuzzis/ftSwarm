@@ -1157,7 +1157,7 @@ void SwOSActor::_setupLocal() {
 
   // just prepare led channel, don't register yet
   ledc_channel = (ledc_channel_config_t *) calloc( sizeof( ledc_channel_config_t ), 1 );
-  ledc_channel->gpio_num       = GPIO_NUM_NC;
+  ledc_channel->gpio_num       = _IN1;
   ledc_channel->speed_mode     = LEDC_LOW_SPEED_MODE;
   ledc_channel->channel        = (ledc_channel_t) (_port);
   ledc_channel->intr_type      = LEDC_INTR_DISABLE;
@@ -1242,7 +1242,6 @@ void SwOSActor::_setRemote() {
   cmd.data.actorSpeedCmd.speed      = _speed;
   cmd.data.actorSpeedCmd.rampUpT    = _rampUpT;
   cmd.data.actorSpeedCmd.rampUpY    = _rampUpY;
-  cmd.print();
   cmd.send( );
 
 }
@@ -1266,6 +1265,7 @@ void SwOSActor::setPWM( int16_t in1, int16_t in2, gpio_num_t pwm, uint32_t duty 
   if ( (!_highResolution) && (duty) ) duty1 = ( duty1 << 4 ) + 0xF;
 
   // 1st step, check if the old pwm pin is different to the new one
+
   if ( ledc_channel->gpio_num != pwm ) {
   
     // reconfigure old pin
@@ -2772,7 +2772,11 @@ SwOSCtrl::~SwOSCtrl() {
 
 void SwOSCtrl::halt( void ) {
 
-  for (uint8_t i=0; i<MAXACTORS; i++) { if ( actor[i] ) actor[i]->setSpeed(0); actor[i]->apply(); }
+  printf("halt %s\n", getName() );
+
+  for (uint8_t i=0; i<MAXACTORS; i++) { 
+    if ( actor[i] ) { actor[i]->setSpeed(0); actor[i]->apply(); }
+  }
 
 }
 
@@ -3227,6 +3231,7 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
 
     case CMD_SETACTORTYPE:
       actor[com->data.actorTypeCmd.index]->setActorType( com->data.actorTypeCmd.actorType, com->data.actorTypeCmd.highResolution, true );
+      actor[com->data.actorTypeCmd.index]->apply();
       return true;
 
     case CMD_IDENTIFY:

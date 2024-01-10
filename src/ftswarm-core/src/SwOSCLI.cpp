@@ -555,6 +555,7 @@ void SwOSCLI::executeActorCmd( void ) {
                                       printf("R: ok\n"); 
                                       myOSSwarm.lock();
                                       io->setActorType( (FtSwarmActor_t) _parameter[0].getValue(), highResolution, false );
+                                      io->setSpeed(0);
                                       io->apply();
                                       myOSSwarm.unlock();
                                     }
