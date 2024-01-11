@@ -396,10 +396,11 @@ void SwOSSwarm::halt( void ) {
 }
 
 void SwOSSwarm::unsubscribe( void ) {
-
   for (uint8_t i=0; i<=maxCtrl; i++)
-    Ctrl[i]->unsubscribe( true );
-
+    if ( Ctrl[i])
+      Ctrl[i]->unsubscribe( true );
+    else
+      printf("[ERROR]: unsubscribe: Ctrl[%d] is NULL\n", i );
 }
 
 uint8_t SwOSSwarm::getIndex( FtSwarmSerialNumber_t serialNumber ) {
