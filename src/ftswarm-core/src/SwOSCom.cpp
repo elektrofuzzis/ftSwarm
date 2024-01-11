@@ -177,6 +177,11 @@ SwOSCom::SwOSCom( MacAddr macAddr, const uint8_t *buffer, int length):SwOSCom() 
                ( length == size( ) ) &&
                ( data.cmd < CMD_MAX ) &&
                ( data.version == VERSIONDATA ) );
+/*
+  if ( data.cmd != 8 )
+    printf("SN = %d %d secret = %d %d _isvalid = %d isJoin = %d, isJoinAck = %d, length = %d, size = %d, cmd = %d, version = %d\n",
+            data.sourceSN, data.affectedSN, data.secret, myOSNetwork.secret, _isValid, isJoin, isJoinAck, length, size(), data.cmd, data.version);
+*/
 
 }
 

@@ -292,7 +292,14 @@ void SwOSNVS::createSwarm( char *name, uint16_t pin ) {
   // failsave copy of swarmName
   strncpy( swarmName, name, MAXIDENTIFIER ); swarmName[MAXIDENTIFIER] = '\0';
   swarmPIN = pin;
-  swarmSecret = generateSecret( serialNumber ); 
+
+  // genenerate a really new secret
+  uint16_t newSecret;
+  while (1) {
+    newSecret = generateSecret( serialNumber );
+    if ( newSecret != swarmSecret ) break;
+  }
+  swarmSecret = newSecret; 
   
 }
 

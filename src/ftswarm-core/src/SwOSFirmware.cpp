@@ -204,6 +204,8 @@ void wifiMenu( void ) {
 
 void joinSwarm( boolean createNewSwarm ) {
 
+  printf("joinSwarm %d\n", createNewSwarm );
+
   // create a new swarm
   char name[64];
   char prompt[256];
@@ -225,7 +227,7 @@ void joinSwarm( boolean createNewSwarm ) {
 
   // build swarm
   if ( createNewSwarm ) {
-    sprintf( prompt, "Do you really want to quit swarm \"%s\" and create new swarm \"%s\" with pin %d (Y/N) ?", nvs.swarmName, name, pin );
+    sprintf( prompt, "Do you really want to quit swarm \"%s\", create new swarm \"%s\" with pin %d and reboot (Y/N) ?", nvs.swarmName, name, pin );
   } else {
     sprintf( prompt, "Do you really want to quit swarm \"%s\" and join swarm \"%s\" with pin %d (Y/N) ?", nvs.swarmName, name, pin );
   }
@@ -241,9 +243,8 @@ void joinSwarm( boolean createNewSwarm ) {
   // new swarm?
   if ( createNewSwarm ) {
     nvs.createSwarm( name, pin );
-    myOSNetwork.setSecret( nvs.swarmSecret, nvs.swarmPIN );
     nvs.save();
-    printf("Swarm \"%s\" created sucessfully.\n", name );
+    ESP.restart();
     return;
   }
 
