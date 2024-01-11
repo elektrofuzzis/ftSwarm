@@ -600,6 +600,7 @@ class FtSwarm {
     void halt( void );                                     // stop all actors
     bool waitOnUserEvent( int parameter[10], TickType_t xTicksToWait = 512 );
     bool sendEventData( uint8_t *buffer, size_t size );
+    bool IOAvaliable( const char *name ) { return false; };
 };
 
 // There is one only

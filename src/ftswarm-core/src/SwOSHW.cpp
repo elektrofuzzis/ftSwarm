@@ -3343,10 +3343,10 @@ void SwOSCtrl::_sendAlias( SwOSCom *alias ) {
   alias->sendBuffered( (char *)"HOSTNAME", getAlias() ); 
 
   // input
-  for (uint8_t i=0; i<inputs;i++) alias->sendBuffered( input[i]->getName(), input[i]->getAlias() ); 
+  for (uint8_t i=0; i<inputs;i++) if (input[i]) alias->sendBuffered( input[i]->getName(), input[i]->getAlias() ); 
   
   // actor
-  for (uint8_t i=0; i<actors;i++) alias->sendBuffered( actor[i]->getName(), actor[i]->getAlias() ); 
+  for (uint8_t i=0; i<actors;i++) if (actor[i]) alias->sendBuffered( actor[i]->getName(), actor[i]->getAlias() ); 
   
   // LED
   for (uint8_t i=0; i<MAXLEDS;i++) 

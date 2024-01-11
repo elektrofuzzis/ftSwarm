@@ -161,3 +161,49 @@ bool yesNo( const char *prompt, bool defaultValue ) {
   return ( str[0] == 'y' ) || ( str[0] == 'Y' ) ;
 
 }
+
+
+void Menu::start( const char *prompt, uint8_t spacer ) { 
+
+  maxItem = 0; 
+  id[0]   = 0;
+  this->spacer = spacer;
+  strcpy( this->prompt, (char *) prompt ); 
+
+  // print Headline
+  printf( "\n\n%s\n\n", this->prompt );
+
+};
+
+void Menu::add( const char *item, int value, uint8_t id ) {
+
+  char dummy[40];
+  sprintf( dummy, "%d", value );
+  add( item, dummy, id );
+}
+
+void Menu::add( const char *item, const char *value, uint8_t id ){
+
+  maxItem++;
+  printf( "(%d) %s", maxItem, item );
+  
+  if ( value[0] != '\0' ) {
+    printf(": ");
+    for (uint8_t i=strlen( item ); i<spacer; i++)  printf( " " );
+    printf( "%s\n", value );
+  } else {
+    printf("\n");
+  }
+
+  this->id[maxItem] = id;
+
+}
+
+uint8_t Menu::userChoice( void ) {
+
+  printf("\n(0) exit\n%s", prompt);
+  
+  // asking user
+  return id[ enterNumber( ">", 0, 0, maxItem ) ];
+
+}

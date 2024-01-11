@@ -18,67 +18,6 @@ const char EXTMODE[5][13] = { "off", "I2C-Master", "I2C-Slave", "Gyro MCU6040", 
 const char ONOFF[2][5]    = { "off", "on" };
 const char WIFI[3][12]    = { "off", "AP-Mode", "Client-Mode"};
 
-#define MAXMENUITEMS 40
-
-class Menu {
-  private:
-    uint8_t maxItem = 0;
-    uint8_t spacer = 0;
-    uint8_t id[MAXMENUITEMS];
-    char    prompt[40];
-
-  public:
-    void    start( const char *prompt, uint8_t spacer );
-    void    add( const char *item, const char *value, uint8_t id );
-    void    add( const char *item, int value, uint8_t id );
-    uint8_t userChoice( void );
-};
-
-void Menu::start( const char *prompt, uint8_t spacer ) { 
-
-  maxItem = 0; 
-  id[0]   = 0;
-  this->spacer = spacer;
-  strcpy( this->prompt, (char *) prompt ); 
-
-  // print Headline
-  printf( "\n\n%s\n\n", this->prompt );
-
-};
-
-void Menu::add( const char *item, int value, uint8_t id ) {
-
-  char dummy[40];
-  sprintf( dummy, "%d", value );
-  add( item, dummy, id );
-}
-
-void Menu::add( const char *item, const char *value, uint8_t id ){
-
-  maxItem++;
-  printf( "(%d) %s", maxItem, item );
-  
-  if ( value[0] != '\0' ) {
-    printf(": ");
-    for (uint8_t i=strlen( item ); i<spacer; i++)  printf( " " );
-    printf( "%s\n", value );
-  } else {
-    printf("\n");
-  }
-
-  this->id[maxItem] = id;
-
-}
-
-uint8_t Menu::userChoice( void ) {
-
-  printf("\n(0) exit\n%s", prompt);
-  
-  // asking user
-  return id[ enterNumber( ">", 0, 0, maxItem ) ];
-
-}
-
 void ExtentionMenu() {
 
   bool    anythingChanged = false;

@@ -73,6 +73,7 @@ void readTask( void *parameter ) {
   // This tasks reads the value of the local inputs and sends the readings to all other controllers.
 
   TickType_t xDelay;
+  int timer = 0;
 
   while (true) {
 
@@ -91,7 +92,7 @@ void readTask( void *parameter ) {
       delete com;
 
     }
- 
+
     // calc delay time
     #ifdef DEBUG_READTASK
       xDelay = 2000 / portTICK_PERIOD_MS;
@@ -99,6 +100,18 @@ void readTask( void *parameter ) {
       xDelay = myOSSwarm.getReadDelay() / portTICK_PERIOD_MS;
     #endif
     
+    // nobody out there yet?
+    if ( myOSSwarm.members() < 2 ) {
+
+      // retry every second
+      timer += xDelay;
+      if ( timer > 1000 ) {
+        timer = 0;
+        myOSSwarm.registerMe( );
+      }
+
+    }
+ 
     myOSSwarm.unlock();
     
     vTaskDelay( xDelay );
@@ -1012,9 +1025,11 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
 
       if ( Ctrl[source]->IAmAKelda ) {
         // register Kelda
-        if (verbose) { printf("Kelda %s with MAC ", Ctrl[source]->getHostname() ); Ctrl[source]->macAddr.print(); printf(" joined the swarm \n"); }
+        // if (verbose) { printf("Kelda %s with MAC ", Ctrl[source]->getHostname() ); Ctrl[source]->macAddr.print(); printf(" joined the swarm \n"); }
         Kelda = Ctrl[source];
       } 
+      
+      if (verbose) { printf("%s with MAC ", Ctrl[source]->getHostname() ); Ctrl[source]->macAddr.print(); printf(" joined the swarm \n"); }
 
       // update oled display
       setState( RUNNING );
@@ -1028,11 +1043,13 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
       SwOSCom reply( com->macAddr, com->data.sourceSN, CMD_GOTYOU );
       Ctrl[0]->registerMe( &reply );
       reply.send();
-
-      // send my alias names, if the new controler is a Kelda
-      if ( com->data.registerCmd.IAmAKelda ) Ctrl[0]->sendAlias( com->macAddr );
-
+    
     }
+
+    // send my alias names, if the new controler is a Kelda
+    if ( com->data.registerCmd.IAmAKelda ) Ctrl[0]->sendAlias( com->macAddr ); 
+
+    return;
 
   } // end welcome messages
  
