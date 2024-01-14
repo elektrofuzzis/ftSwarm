@@ -3535,6 +3535,10 @@ SwOSSwarmDuino::SwOSSwarmDuino( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool 
 
 }
 
+SwOSSwarmDuino::SwOSSwarmDuino( SwOSCom *com ):SwOSSwarmDuino( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmAKelda ) {
+  
+}
+
 SwOSSwarmDuino::~SwOSSwarmDuino() {
 
   if (ftDuino) delete ftDuino;

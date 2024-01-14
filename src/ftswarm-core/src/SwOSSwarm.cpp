@@ -1021,7 +1021,7 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
         case FTSWARMCONTROL:  Ctrl[source] = new SwOSSwarmControl ( com ); break;
         case FTSWARMCAM:      Ctrl[source] = new SwOSSwarmCAM     ( com ); break;
         case FTSWARMPWRDRIVE: Ctrl[source] = new SwOSSwarmPwrDrive( com ); break;
-        // case FTSWARMDUINO:    Ctrl[source] = new SwOSSwarmDuino   ( com ); break;
+        case FTSWARMDUINO:    Ctrl[source] = new SwOSSwarmDuino   ( com ); break;
         default: ESP_LOGW( LOGFTSWARM, "Unknown controler type while adding a new controller to my swarm." ); return;
       } 
 

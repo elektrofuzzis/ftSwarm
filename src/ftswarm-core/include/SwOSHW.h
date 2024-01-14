@@ -884,6 +884,7 @@ class SwOSSwarmDuino : public SwOSSwarmI2CCtrl {
   public:
     // constructor, destructor
     SwOSSwarmDuino( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
+    SwOSSwarmDuino( SwOSCom *com ); 
     ~SwOSSwarmDuino();
 
     virtual char* myType();                                                // what I am?
