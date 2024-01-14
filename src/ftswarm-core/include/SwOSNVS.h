@@ -25,11 +25,13 @@ class NVSEvent {
     bool             usePortValue;
     int32_t          parameter;
     NVSEvent();
+    void reset( void );
 };
 
 class NVSEventList {
   public:
     NVSEvent event[MAXNVSEVENT];
+    void reset( void );
 };
 
 // wifi types

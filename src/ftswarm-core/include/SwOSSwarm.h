@@ -89,10 +89,11 @@ public:
   void setState( SwOSState_t state ); // visualizes controler's state
 
   // **** inter swarm communication ****
-  void OnDataRecv( SwOSCom *buffer );                                     // receiving data from other controllers
-  void registerMe( void );                                                // register myself in a swarm
-  void leaveSwarm( void );                                                // send a leave swarm msg to all others and delete them
-  void joinSwarm( bool createNewSwarm, char * newName, uint16_t newPIN ); // join a new swarm
+  void OnDataRecv( SwOSCom *buffer );                                             // receiving data from other controllers
+  void registerMe( void );                                                        // register myself in a swarm
+  void registerMe( MacAddr destinationMac, FtSwarmSerialNumber_t destinationSN ); // register myself at a specific controller 
+  void leaveSwarm( void );                                                        // send a leave swarm msg to all others and delete them
+  void joinSwarm( bool createNewSwarm, char * newName, uint16_t newPIN );         // join a new swarm
 
   // **** some useful stuff ****
   void    reload( void ); // restore swarm from nvs

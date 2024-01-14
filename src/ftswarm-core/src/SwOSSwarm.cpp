@@ -78,7 +78,7 @@ void readTask( void *parameter ) {
   while (true) {
 
     myOSSwarm.lock();
-    
+
     // read
     myOSSwarm.Ctrl[0]->read();
 
@@ -113,7 +113,7 @@ void readTask( void *parameter ) {
     }
  
     myOSSwarm.unlock();
-    
+
     vTaskDelay( xDelay );
   
   }
@@ -913,7 +913,13 @@ void SwOSSwarm::unlock() {
 void SwOSSwarm::registerMe( void ) {
 
   // register myself
-  SwOSCom com( MacAddr( broadcast ), broadcastSN, CMD_ANYBODYOUTTHERE );
+  registerMe( MacAddr( broadcast ), broadcastSN );
+}
+
+void SwOSSwarm::registerMe( MacAddr destinationMac, FtSwarmSerialNumber_t destinationSN ) {
+
+  // register myself
+  SwOSCom com( destinationMac, destinationSN, CMD_ANYBODYOUTTHERE );
   Ctrl[0]->registerMe( &com );
   com.send();
 
@@ -1009,9 +1015,6 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
         return;
       }
 
-      // obviously dumb way to guru TODO
-      // myOSNetwork.AddPeer( com->macAddr );
-
       // add to swarm
       switch (com->data.registerCmd.ctrlType) {
         case FTSWARM:         Ctrl[source] = new SwOSSwarmJST     ( com ); break;
@@ -1052,9 +1055,17 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
 
   } // end welcome messages
  
-  // any other type of msg will be processed on controler level
   if ( Ctrl[affected] ) {
+    // any other type of msg will be processed on controler level
     Ctrl[affected]->OnDataRecv( com );
+  
+  } else if ( com->data.secret == myOSNetwork.secret ) {
+    // data from and unkown controller, who knows my swarm's secret
+    // this may happen in bigger swarms after rebooting the Kelda
+    // so I need to say hello
+    registerMe( com->macAddr, com->data.sourceSN );
+    printf("Hello %d\n", com->data.sourceSN);
+
   } 
 
 }

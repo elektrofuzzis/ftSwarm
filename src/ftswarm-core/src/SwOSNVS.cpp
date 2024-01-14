@@ -21,8 +21,18 @@
 SwOSNVS nvs;
 
 NVSEvent::NVSEvent() {
+  reset();
+}
+
+void NVSEvent::reset( void ) {
   sensor[0] = '\0';
   actor[0]  = '\0';
+}
+
+void NVSEventList::reset( void ) {
+
+  for (uint8_t i=0; i<MAXNVSEVENT; i++) event[i].reset();
+
 }
 
 uint16_t generateSecret( FtSwarmSerialNumber_t serialNumber ) {
@@ -277,13 +287,22 @@ void SwOSNVS::factorySettings( void ) {
   
   wifiMode = wifiAP;
   sprintf( wifiSSID, "ftSwarm%d", serialNumber );
+  webUI = true;
 
   strcpy( swarmName, wifiSSID );
-  swarmSecret = generateSecret( serialNumber ); 
-  swarmPIN    = serialNumber;
+  swarmSecret        = generateSecret( serialNumber ); 
+  swarmPIN           = serialNumber;
+  IAmKelda           = false;
+  swarmCommunication = swarmComWifi;
 
-  displayType = 1;
-  RGBLeds = 2;
+  displayType        = 1;
+  RGBLeds            = 2;
+  
+  extentionPort      = FTSWARM_EXT_OFF;
+  I2CAddr            = 0x66;
+  gyro               = false;
+
+  eventList.reset();
 
 }
 

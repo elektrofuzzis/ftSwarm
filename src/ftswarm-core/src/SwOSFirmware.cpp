@@ -523,16 +523,25 @@ void factorySettings( void ) {
   // reset controller to factory settings
 
   if (yesNo("Do you want to reset this device to it's factory settings (Y/N)?" ) ) {
+
     nvs.factorySettings();
+
     myOSSwarm.Ctrl[0]->factorySettings();
+
     printf("device will restart now.\n");
+
     delay(2000);
+
+    // Alias names
     nvs_handle_t my_handle;
     ESP_ERROR_CHECK( nvs_open("ftSwarm", NVS_READWRITE, &my_handle) );
     myOSSwarm.Ctrl[0]->saveAliasToNVS( my_handle );
     ESP_ERROR_CHECK( nvs_commit( my_handle ) );
+
     nvs.saveAndRestart();
+
   }
+
 }
 
 bool changeEvent( NVSEvent *event ) {
