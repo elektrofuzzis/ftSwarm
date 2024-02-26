@@ -1004,11 +1004,18 @@ void SwOSCLI::evalIOCommand( char *token ) {
     // subscribe needs special handling due to non-int-parameters
     int a = _parameter[0].getValue();
 
-    // controller or IO?
-    _ctrl->lock();
-    if ( (!_io) && (_ctrl ) ) _ctrl->subscribe( IOName );
-    else _io->subscribe( IOName, a);
-    _ctrl->unlock();
+    // controller?
+    if ( (!_io) && (_ctrl ) ) {
+      _ctrl->lock();
+      _ctrl->subscribe( IOName );
+      _ctrl->unlock();
+    
+    // IO?
+    } else {
+      _io->lock();
+      _io->subscribe( IOName, a);
+      _io->unlock();
+    }
 
   } else {
 
