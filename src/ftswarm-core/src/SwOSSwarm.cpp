@@ -186,6 +186,9 @@ bool SwOSSwarm::startEvents( void ) {
   SwOSIO *actor;
   NVSEvent *event;
 
+  // test if I'm not a Kelda, I won't start the events
+  if ( !Ctrl[0]->IAmKelda ) return true;
+
   for (uint8_t i=0; i<MAXNVSEVENT; i++ ) {
 
     event = &nvs.eventList.event[i];
@@ -193,13 +196,21 @@ bool SwOSSwarm::startEvents( void ) {
     if ( ( event->sensor[0] != '\0' ) && ( event->actor[0] != '\0' ) ) {
 
       // get IOs and stop on error
-      sensor = waitFor( event->sensor, FTSWARM_INPUT ); if (!sensor) return false;
-      actor  = waitFor( event->actor, FTSWARM_ACTOR );  if (!actor)  return false;
+      sensor = waitFor( event->sensor, FTSWARM_UNDEF ); if (!sensor) return false;
+      actor  = waitFor( event->actor,  FTSWARM_ACTOR );  if (!actor)  return false;
 
       switch ( sensor->getIOType() ) {
     
         case FTSWARM_INPUT: 
           static_cast<SwOSInput *>(sensor)->registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter ); 
+          break;
+    
+        case FTSWARM_DIGITALINPUT: 
+          static_cast<SwOSDigitalInput *>(sensor)->registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter ); 
+          break;
+    
+        case FTSWARM_ANALOGINPUT: 
+          static_cast<SwOSAnalogInput *>(sensor)->registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter ); 
           break;
     
         case FTSWARM_BUTTON: 

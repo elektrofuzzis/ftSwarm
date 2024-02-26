@@ -581,15 +581,21 @@ bool changeEvent( NVSEvent *event ) {
   // enter sensor
   while (true) {
     enterString( "sensor: ", sensor, sizeof(sensor) );
-    newSensor = myOSSwarm.getIO( sensor, FTSWARM_INPUT );
+    newSensor = myOSSwarm.getIO( sensor, FTSWARM_UNDEF );
+    
+    if (newSensor) printf("%d\n", newSensor->getIOType());
     
     if (sensor[0] == '\0' ) 
       return false;
-    
+
     else if (!newSensor) 
       printf("sensor %s doesn't exist in the swarm.\n", sensor);
     
-    else if ( !( (newSensor->getIOType() == FTSWARM_INPUT ) || (newSensor->getIOType() == FTSWARM_BUTTON ) || (newSensor->getIOType() == FTSWARM_JOYSTICK ) ) )
+    else if ( !( (newSensor->getIOType() == FTSWARM_INPUT ) || 
+                 (newSensor->getIOType() == FTSWARM_DIGITALINPUT ) || 
+                 (newSensor->getIOType() == FTSWARM_ANALOGINPUT ) ||
+                 (newSensor->getIOType() == FTSWARM_BUTTON ) || 
+                 (newSensor->getIOType() == FTSWARM_JOYSTICK ) ) )
       printf("%s needs to be an input, a button or a joystick.\n", sensor);
 
     else
@@ -640,6 +646,14 @@ bool changeEvent( NVSEvent *event ) {
         static_cast<SwOSInput *>(oldSensor)->unregisterEvent( trigger ); 
         break;
       
+      case FTSWARM_DIGITALINPUT: 
+        static_cast<SwOSDigitalInput *>(oldSensor)->unregisterEvent( trigger ); 
+        break;
+
+      case FTSWARM_ANALOGINPUT: 
+        static_cast<SwOSAnalogInput *>(oldSensor)->unregisterEvent( trigger ); 
+        break;
+
       case FTSWARM_BUTTON: 
         static_cast<SwOSButton *>(oldSensor)->unregisterEvent( trigger ); 
         break;
@@ -662,6 +676,14 @@ bool changeEvent( NVSEvent *event ) {
     
     case FTSWARM_INPUT: 
       static_cast<SwOSInput *>(newSensor)->registerEvent( trigger, newActor, usePortValue, parameter ); 
+      break;
+    
+    case FTSWARM_DIGITALINPUT: 
+      static_cast<SwOSDigitalInput *>(newSensor)->registerEvent( trigger, newActor, usePortValue, parameter ); 
+      break;
+    
+    case FTSWARM_ANALOGINPUT: 
+      static_cast<SwOSAnalogInput *>(newSensor)->registerEvent( trigger, newActor, usePortValue, parameter ); 
       break;
     
     case FTSWARM_BUTTON: 
@@ -800,43 +822,49 @@ void remoteControl( void ) {
 
 }
 
+#define MAINMENUWEB       1
+#define MAINMENUSWARM     2
+#define MAINMENUALIAS     3
+#define MAINMENUFACTORY   4
+#define MAINMEUREMOTE     5
+#define MAINMENUEXTENTION 6
+#define MAINMENUSWARMCTRL 7
+
 void mainMenu( void ) {
 
-  uint8_t choice, maxChoice;
-  char prompt[255];
-  
-  // FTSWARMCONTROL special HW
-  switch (myOSSwarm.Ctrl[0]->getType()) {
-
-    case FTSWARM:         sprintf( prompt, "\nMain Menu\n\n(1) wifi & Web UI\n(2) swarm configuration\n(3) alias names\n(4) factory reset\n(5) remoteControl\n(6) extention port\n\n(0) exit\nmain>" );
-                          maxChoice = 6;
-                          break;
-
-    case FTSWARMCONTROL:  sprintf( prompt, "\nMain Menu\n\n(1) wifi & Web UI\n(2) swarm configuration\n(3) alias names\n(4) factory reset\n(5) remoteControl\n(6) extention port\n(7) ftSwarmControl\n\n(0) exit\nmain>" );
-                          maxChoice = 7;
-                          break;
-
-    case FTSWARMCAM:    
-    case FTSWARMPWRDRIVE:
-    case FTSWARMDUINO:    sprintf( prompt, "\nMain Menu\n\n(1) wifi & Web UI\n(2) swarm configuration\n(3) alias names\n(4) factory reset\n(5) remoteControl\n\n(0) exit\nmain>" );
-                          maxChoice = 5;
-                          break;
-
-  }
+  Menu menu;
 
   while (1) {
 
-    choice = enterNumber( prompt, 0, 0, maxChoice );
+    menu.start( "Main Menu", 14 );
+    menu.add("Wifi & Web UI", "", MAINMENUWEB );
+    menu.add("Swarm Configuration", "", MAINMENUSWARM );
+    menu.add("Alias Names", "", MAINMENUALIAS );
+    menu.add("Factory Reset", "", MAINMENUFACTORY );
 
-    switch( choice  ) {
-      case 0: return;
-      case 1: wifiMenu(); break;
-      case 2: swarmMenu(); break;
-      case 3: aliasMenu(); break;
-      case 4: factorySettings(); break;
-      case 5: remoteControl(); break;
-      case 6: ExtentionMenu(); break;
-      case 7: SwarmControlMenu(); break;
+    if (myOSSwarm.Ctrl[0]->IAmKelda) menu.add("Remote Control", "", MAINMEUREMOTE );
+
+    // special HW
+    switch (myOSSwarm.Ctrl[0]->getType()) {
+
+      case FTSWARM:         menu.add("Extention Port", "", MAINMENUEXTENTION );
+                            break;
+
+      case FTSWARMCONTROL:  menu.add("Extention Port", "", MAINMENUEXTENTION );
+                            menu.add("ftSwarmControl", "", MAINMENUSWARMCTRL );
+                            break;
+
+    }
+
+    switch( menu.userChoice(  )  ) {
+      case 0:                 return;
+      case MAINMENUWEB:       wifiMenu();         break;
+      case MAINMENUSWARM:     swarmMenu();        break;
+      case MAINMENUALIAS:     aliasMenu();        break;
+      case MAINMENUFACTORY:   factorySettings();  break;
+      case MAINMEUREMOTE:     remoteControl();    break;
+      case MAINMENUEXTENTION: ExtentionMenu();    break;
+      case MAINMENUSWARMCTRL: SwarmControlMenu(); break;
     }
     
   }
