@@ -435,8 +435,8 @@ void SwOSCLI::executeInputCmd( void ) {
 
     case CLICMD_setSensorType: if ( ( _parameter[0].inRange( "sensorType", 0, FTSWARM_MAXSENSOR-1 ) ) && 
                                    ( _parameter[1].inRange( "normallyOpen", 0, 1 ) ) ) {
-                                _io->lock();
                                 io = (SwOSInput *) myOSSwarm.getIO( io->getCtrl()->serialNumber, io->getPort(), sensorType2IOType( (FtSwarmSensor_t) _parameter[0].getValue() ) );
+                                io->lock();
                                 if (io->getIOType() == FTSWARM_ANALOGINPUT ) {
                                   ((SwOSAnalogInput *)io)->setSensorType( (FtSwarmSensor_t)_parameter[0].getValue() );
                                   printf("R: ok\n");
@@ -446,7 +446,7 @@ void SwOSCLI::executeInputCmd( void ) {
                                 } else {
                                   printf("ERROR: wrong iotype.\n");
                                 }
-                                _io->unlock();
+                                io->unlock();
                               }
                               break;
 
