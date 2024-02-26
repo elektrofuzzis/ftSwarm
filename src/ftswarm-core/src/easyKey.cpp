@@ -116,7 +116,7 @@ uint16_t enterNumber( const char *prompt, uint16_t defaultValue, uint16_t minVal
 
     // get number and check on defaults
     if ( ( !enterSomething( prompt, str, 6, false, isdigit ) ) || ( str[0] == '\0' ) ) {
-      i = defaultValue;
+      return defaultValue;
     } else {
       i = atoi( str );
     }
@@ -137,7 +137,7 @@ int32_t enterNumberI32( const char *prompt, uint16_t defaultValue, int32_t minVa
 
     // get number and check on defaults
     if ( ( !enterSomething( prompt, str, 10, false, isdigit ) ) || ( str[0] == '\0' ) ) {
-      i = defaultValue;
+      return defaultValue;
     } else {
       i = atoi( str );
     }
@@ -199,11 +199,15 @@ void Menu::add( const char *item, const char *value, uint8_t id ){
 
 }
 
-uint8_t Menu::userChoice( void ) {
+int8_t Menu::userChoice( void ) {
 
   printf("\n(0) exit\n%s", prompt);
   
   // asking user
-  return id[ enterNumber( ">", 0, 0, maxItem ) ];
+  uint16_t choice = enterNumber( ">", maxItem+1, 0, maxItem );
+  if ( choice > maxItem ) 
+    return -1; 
+  else 
+    return id[ choice ];
 
 }

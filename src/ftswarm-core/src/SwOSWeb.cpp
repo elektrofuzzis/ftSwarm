@@ -332,8 +332,6 @@ esp_err_t apiGetSwarm(httpd_req_t *req ) {
   json.startObject();
   
   json.startObject("auth");
-  
-  myOSSwarm.lock();
 
   if (provided) {
     status = myOSSwarm.apiPeekIsAuthorized(token);    
@@ -348,7 +346,6 @@ esp_err_t apiGetSwarm(httpd_req_t *req ) {
   json.assign();
 
   myOSSwarm.jsonize(&json);
-  myOSSwarm.unlock();
 
   json.endObject();
 
@@ -364,9 +361,7 @@ esp_err_t apiGetToken(httpd_req_t *req ) {
 
   JSONize json(req);
 
-  myOSSwarm.lock();
   myOSSwarm.getToken(&json);
-  myOSSwarm.unlock();
   
   httpd_resp_sendstr_chunk(req, NULL);
 
@@ -415,11 +410,9 @@ esp_err_t apiActor( httpd_req_t *req ) {
   // cleanup
   cJSON_Delete( root );
 
-  // let's do it
-  myOSSwarm.lock();  
+  // let's do it 
   if ( hasCmd )   status = myOSSwarm.apiActorCmd( token, id, cmd, !hasSpeed );
   if ( hasSpeed ) status = myOSSwarm.apiActorSpeed( token, id, speed, true); 
-  myOSSwarm.unlock();
 
   return sendResponse( req, status );
 
@@ -453,10 +446,8 @@ esp_err_t apiLED( httpd_req_t *req ) {
   cJSON_Delete(root);
 
   // let's do it
-  myOSSwarm.lock();
   if ( hasBrightness ) status = myOSSwarm.apiLEDBrightness( token, id, brightness, !hasColor );
   if ( hasColor )      status = myOSSwarm.apiLEDColor( token, id, color, true );
-  myOSSwarm.unlock();
   
   return sendResponse( req, status );
 
@@ -490,10 +481,8 @@ esp_err_t apiServo(httpd_req_t *req ) {
   cJSON_Delete(root);
   
   // let's do it
-  myOSSwarm.lock();
   if (hasOffset)   status = myOSSwarm.apiServoOffset( token, id, offset, !hasPosition);
   if (hasPosition) status = myOSSwarm.apiServoPosition( token, id, position, true );
-  myOSSwarm.unlock();
 
   return sendResponse( req, status );
 
@@ -520,7 +509,6 @@ esp_err_t apiCam(httpd_req_t *req ) {
   }
 
   // let's do it
-  myOSSwarm.lock();
   if ( getParameter( req, root, "streaming", &value, false) )      status = myOSSwarm.apiCAMStreaming( token, id, value>0, false );
   if ( getParameter( req, root, "framesize", &value, false) )      status = myOSSwarm.apiCAMFramesize( token, id, value, false );
   if ( getParameter( req, root, "quality", &value, false) )        status = myOSSwarm.apiCAMQuality( token, id, value, false );
@@ -531,7 +519,6 @@ esp_err_t apiCam(httpd_req_t *req ) {
   if ( getParameter( req, root, "wbMode", &value, false) )         status = myOSSwarm.apiCAMWbMode( token, id, value, false );
   if ( getParameter( req, root, "hMirror", &value, false) )        status = myOSSwarm.apiCAMHMirror( token, id, value, false );
   if ( getParameter( req, root, "vFlip", &value, false) )          status = myOSSwarm.apiCAMVFlip( token, id, value, false );
-  myOSSwarm.unlock(); 
   
   // cleanup
   cJSON_Delete(root);
@@ -558,9 +545,7 @@ esp_err_t apiIsAuthorized( httpd_req_t *req ) {
   // cleanup
   cJSON_Delete(root);
 
-  myOSSwarm.lock();
   uint16_t status = myOSSwarm.apiIsAuthorized( token, true );
-  myOSSwarm.unlock();
 
   return sendResponse( req, status );
 

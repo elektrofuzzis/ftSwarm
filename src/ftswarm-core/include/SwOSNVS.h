@@ -14,7 +14,6 @@
 #include <stdint.h>
 
 #define MAXNVSEVENT 36
-#define MAXSWARM    32
 
 class NVSEvent {
   public:
@@ -41,7 +40,7 @@ class SwOSNVS {
   public:
     void initialSetup();   // ask user for HW details
 	  int32_t               version;
-	  FtSwarmControler_t    controlerType;
+	  FtSwarmController_t   controllerType;
 	  FtSwarmVersion_t      CPU;
 	  FtSwarmSerialNumber_t serialNumber;
     uint8_t               channel;
@@ -56,7 +55,8 @@ class SwOSNVS {
     bool                  webUI;
     bool                  IAmKelda;
     FtSwarmCommunication_t swarmCommunication;
-    FtSwarmSerialNumber_t swarmMembers[MAXSWARM];
+    FtSwarmSerialNumber_t swarmMember[MAXCTRL];
+    uint8_t               swarmSpeed = 4;
     FtSwarmExtMode_t      extentionPort;
     bool                  gyro;
     uint8_t               I2CAddr;
@@ -67,6 +67,10 @@ class SwOSNVS {
 	  void save( bool writeAll = false );    // save config to flash
     void saveAndRestart();                 // save config & restart
     void createSwarm( char *name, uint16_t pin ); // create a new swarm
+    bool addController( FtSwarmSerialNumber_t serialNumber );                       // add a controller
+    bool deleteController( FtSwarmSerialNumber_t serialNumber );                    // delete a controller
+    void deleteAllControllers( void );
+    uint8_t swarmMembers( void ) ;         // number of swarm members
     void factorySettings( void );          // reset to factory settings
     bool RS485Available( void );           // true if board has RS485
     void printNVS();                       // print settings for debugging only  

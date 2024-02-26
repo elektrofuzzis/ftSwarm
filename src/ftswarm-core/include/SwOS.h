@@ -41,13 +41,20 @@
 // max I2C Register
 #define MAXI2CREGISTERS 8
 
-// max # of controlers in swarm
+// max # of controllers in swarm
 #define MAXCTRL 32
 
 typedef uint16_t FtSwarmSerialNumber_t;
 typedef uint8_t  FtSwarmPort_t;
 
+// some delays
+#define shortDelay()  vTaskDelay( 25 / portTICK_PERIOD_MS )
+#define longDelay()   vTaskDelay( 1000 / portTICK_PERIOD_MS )
+
 // **** enumerations ****
+
+// error types
+typedef enum { SWOS_OK, SWOS_TIMEOUT, SWOS_DENY } SwOSError_t;
 
 // communication
 typedef enum { swarmComWifi = 1, swarmComRS485 = 2, swarmComBoth= 3 } FtSwarmCommunication_t; 
@@ -55,8 +62,8 @@ typedef enum { swarmComWifi = 1, swarmComRS485 = 2, swarmComBoth= 3 } FtSwarmCom
 // IO types
 typedef enum { FTSWARM_UNDEF = -1, FTSWARM_INPUT, FTSWARM_DIGITALINPUT, FTSWARM_ANALOGINPUT, FTSWARM_ACTOR, FTSWARM_BUTTON, FTSWARM_JOYSTICK, FTSWARM_PIXEL, FTSWARM_SERVO,  FTSWARM_OLED, FTSWARM_GYRO, FTSWARM_HC165, FTSWARM_I2C, FTSWARM_CAM, FTSWARM_COUNTERINPUT, FTSWARM_FREQUENCYINPUT, FTSWARM_MAXIOTYPE } FtSwarmIOType_t ;
 
-// controler types
-typedef enum { FTSWARM_NOCTRL = -1, FTSWARM = 0, FTSWARMCONTROL, FTSWARMCAM, FTSWARMPWRDRIVE, FTSWARMDUINO } FtSwarmControler_t;
+// controller types
+typedef enum { FTSWARM_NOCTRL = -1, FTSWARM = 0, FTSWARMCONTROL, FTSWARMCAM, FTSWARMPWRDRIVE, FTSWARMDUINO } FtSwarmController_t;
 
 // sensor types
 typedef enum { FTSWARM_DIGITAL, FTSWARM_ANALOG, FTSWARM_SWITCH, FTSWARM_REEDSWITCH, FTSWARM_LIGHTBARRIER, FTSWARM_VOLTMETER, FTSWARM_OHMMETER, FTSWARM_THERMOMETER, FTSWARM_LDR, FTSWARM_TRAILSENSOR, FTSWARM_COLORSENSOR, FTSWARM_ULTRASONIC, FTSWARM_CAMSENSOR, FTSWARM_COUNTER, FTSWARM_ROTARYENCODER, FTSWARM_FREQUENCYMETER, FTSWARM_MAXSENSOR } FtSwarmSensor_t;
@@ -198,7 +205,7 @@ class FtSwarmInput : public FtSwarmIO {
 // **** input / actor classes to use in your sketch ****
 
 class FtSwarmDigitalInput : public FtSwarmInput {
-  // digital inputs. ports A1..A4, all controler types
+  // digital inputs. ports A1..A4, all controller types
 
   protected:
     FtSwarmDigitalInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmSensor_t sensorType, bool normallyOpen = true);
@@ -218,7 +225,7 @@ class FtSwarmDigitalInput : public FtSwarmInput {
 };
 
 class FtSwarmSwitch : public FtSwarmDigitalInput {
-  // all kind of mechanical switches, A1..A4 all controlers
+  // all kind of mechanical switches, A1..A4 all controllers
   // fischertechnik switches: 1-3 is normally open, 1-2 is normally closed
   public:
     FtSwarmSwitch( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool normallyOpen = true);
@@ -226,14 +233,14 @@ class FtSwarmSwitch : public FtSwarmDigitalInput {
 };
 
 class FtSwarmReedSwitch : public FtSwarmDigitalInput {
-  // reed switches, A1..A4 all controlers
+  // reed switches, A1..A4 all controllers
   public:
     FtSwarmReedSwitch( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool normallyOpen = true);
     FtSwarmReedSwitch( const char *name, bool normallyOpen = true);
 };
 
 class FtSwarmLightBarrier: public FtSwarmDigitalInput {
-  // photo transistor as light barrier, A1..A4 all controlers
+  // photo transistor as light barrier, A1..A4 all controllers
   public:
     FtSwarmLightBarrier( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool normallyOpen = true);
     FtSwarmLightBarrier( const char *name, bool normallyOpen = true);
@@ -596,7 +603,6 @@ class FtSwarm {
     
   public:
     FtSwarmSerialNumber_t begin( bool verbose = false );   // start my swarm
-    void setReadDelay( uint16_t readDelay );               // set delay between two measures
     void halt( void );                                     // stop all actors
     bool waitOnUserEvent( int parameter[10], TickType_t xTicksToWait = 512 );
     bool sendEventData( uint8_t *buffer, size_t size );

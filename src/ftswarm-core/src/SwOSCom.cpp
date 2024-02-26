@@ -1,7 +1,7 @@
 /*
  * SwOSCom.cpp
  *
- * Communication between your controlers
+ * Communication between your controllers
  * 
  * (C) 2021/22 Christian Bergschneider & Stefan Fuss
  * 
@@ -43,11 +43,12 @@
 #define RS485_REB       GPIO_NUM_7
 #define RS485_DE        GPIO_NUM_17
 #define RS485_UART      UART_NUM_2
-#define RS485_BAUD_RATE 1843200 
-#define RS485_BUF_SIZE  (1024)
+#define RS485_BUF_SIZE  4096
 #define PATTERN_CHR_NUM (3) 
 
 #define RS485_MAXDELAY  100
+
+const uint32_t BAUDRATE[5] = { 115200, 230400, 460800, 921600, 1843200};
 
 typedef struct {
     uint8_t macAddr;
@@ -165,22 +166,23 @@ SwOSCom::SwOSCom( MacAddr macAddr, const uint8_t *buffer, int length):SwOSCom() 
   bzero( &data, sizeof( SwOSDatagram_t ) );
   memcpy( &data, buffer, min( length, sizeof(data) ) );
 
-  bool isJoin    = ( ( data.secret == DEFAULTSECRET ) && ( data.cmd == CMD_SWARMJOIN )    && ( data.joinCmd.pin == myOSNetwork.pin ) && ( myOSNetwork.pin != 0 ) ) ;
-  bool isJoinAck = ( ( data.secret == DEFAULTSECRET ) && ( data.cmd == CMD_SWARMJOINACK ) && ( data.joinCmd.pin == myOSNetwork.pin ) && ( myOSNetwork.pin != 0 ) ) ;
+  // bool isJoin = ( ( data.secret == DEFAULTSECRET ) && ( data.cmd == CMD_SWARMJOIN ) && ( data.joinCmd.pin == myOSNetwork.pin ) && ( myOSNetwork.pin != 0 ) ) ;
+  bool isJoin = ( data.secret == DEFAULTSECRET ) && ( data.cmd == CMD_SWARMJOIN );
+  bool isAck  = ( ( data.secret == DEFAULTSECRET ) && ( data.cmd == CMD_ACK ) );
 
   #ifdef DEBUG_COMMUNICATION
-    printf("isvalid: isJoin = %d, isJoinAck = %d, length = %d, size = %d, cmd = %d, version = %d\n",
-            isJoin, isJoinAck, length, size(), data.cmd, data.version);
+    printf("isvalid: isJoin = %d, isAck = %d, length = %d, size = %d, cmd = %d, version = %d\n",
+            isJoin, isAck, length, size(), data.cmd, data.version);
   #endif
 
-  _isValid = ( ( ( data.secret == myOSNetwork.secret ) || isJoin || isJoinAck ) &&
+  _isValid = ( ( ( data.secret == myOSNetwork.secret ) || isJoin || isAck ) &&
                ( length == size( ) ) &&
                ( data.cmd < CMD_MAX ) &&
                ( data.version == VERSIONDATA ) );
 /*
   if ( data.cmd != 8 )
-    printf("SN = %d %d secret = %d %d _isvalid = %d isJoin = %d, isJoinAck = %d, length = %d, size = %d, cmd = %d, version = %d\n",
-            data.sourceSN, data.affectedSN, data.secret, myOSNetwork.secret, _isValid, isJoin, isJoinAck, length, size(), data.cmd, data.version);
+    printf("SN = %d %d secret = %d %d _isvalid = %d isJoin = %d, isAck = %d, length = %d, size = %d, cmd = %d, version = %d\n",
+            data.sourceSN, data.affectedSN, data.secret, myOSNetwork.secret, _isValid, isJoin, isAck, length, size(), data.cmd, data.version);
 */
 
 }
@@ -725,7 +727,7 @@ bool SwOSNetwork::_StartRS485( void ) {
 
     // UART configuration
     uart_config_t uart_config = {
-        .baud_rate = RS485_BAUD_RATE,
+        .baud_rate = BAUDRATE[nvs.swarmSpeed],
         .data_bits = UART_DATA_8_BITS,
         .parity    = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,

@@ -183,7 +183,7 @@ char * SwOSObj::getAlias( ) {
 
 SwOSIO::SwOSIO( const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSObj( name ) {
 
-  // store local port and controler 
+  // store local port and controller 
   _port  = port;
   _ctrl  = ctrl;
 
@@ -200,6 +200,14 @@ SwOSIO::SwOSIO( const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSObj( name
 }
 
 SwOSIO::SwOSIO( const char *name, SwOSCtrl *ctrl ) : SwOSIO( name, 255, ctrl ) {
+}
+
+void SwOSIO::lock( void ) {
+  if (_ctrl) _ctrl->lock();
+}
+
+void SwOSIO::unlock( void ) {
+  if (_ctrl) _ctrl->unlock();
 }
 
 void SwOSIO::jsonize( JSONize *json, uint8_t id) {
@@ -2687,17 +2695,23 @@ void SwOSCAM::setHMirror( bool hMirror, bool dontSendToRemote ) {
  *
  ***************************************************/
 
-SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, FtSwarmExtMode_t extentionPort  ):SwOSObj() {
+SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extentionPort  ):SwOSObj() {
 
   // copy master data
-  this->IAmAKelda = IAmAKelda;
+  this->IAmKelda = IAmKelda;
   serialNumber = SN;
   this->macAddr.set( macAddr );
   _local = local;
   _CPU = CPU;
 
+  // set my name 
+  char buffer[32];
+  sprintf( buffer, "ftSwarm%d", SN);
+  setName( buffer );
+
   // # of inputs & actors
   switch (CPU) {
+    case FTSWARM_NOVERSION:     inputs = 0; actors = 0; leds = 0; break;
     case FTSWARMRS_2V0:
     case FTSWARMRS_2V1:         inputs = 6; actors = 2; leds = 2;
                                 if ( extentionPort == FTSWARM_EXT_OUTPUT ) actors = 4; 
@@ -2770,9 +2784,22 @@ SwOSCtrl::~SwOSCtrl() {
   
 }
 
+void SwOSCtrl::lock( void ) {
+
+   xSemaphoreTake( _xAccessLock, portMAX_DELAY );
+
+}
+
+
+void SwOSCtrl::unlock( void ) {
+
+   xSemaphoreGive( _xAccessLock );
+
+}
+
+
 void SwOSCtrl::halt( void ) {
 
-  printf("halt %s\n", getName() );
 
   for (uint8_t i=0; i<MAXACTORS; i++) { 
     if ( actor[i] ) { actor[i]->setSpeed(0); actor[i]->apply(); }
@@ -2892,7 +2919,7 @@ char* SwOSCtrl::myType() {
   return (char *) "UNDEFINED";
 }
 
-FtSwarmControler_t SwOSCtrl::getType() {
+FtSwarmController_t SwOSCtrl::getType() {
   return FTSWARM_NOCTRL;
 }
 
@@ -2905,6 +2932,16 @@ void SwOSCtrl::read() {
   for (uint8_t i=0; i<actors; i++) { if (actor[i]) actor[i]->read(); }
 
 }
+
+bool SwOSCtrl::isInUse( void ) {
+
+  for (uint8_t i=0; i<inputs; i++) { if ( (input[i]) && (input[i]->isInUse() ) ) return true; }
+  for (uint8_t i=0; i<actors; i++) { if ( (actor[i]) && (actor[i]->isInUse() ) ) return true; }
+
+  return false;
+
+}
+
 
 bool SwOSCtrl::isI2CSwarmCtrl( void ) {
 
@@ -3143,7 +3180,7 @@ bool SwOSCtrl::maintenanceMode() {
 }
 
 void SwOSCtrl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
-  // visualizes controler's state like booting, error,...
+  // visualizes controller's state like booting, error,...
   
   if (led[0]) led[0]->setColor( LEDCOLOR0[state] );
   if (led[1]) led[1]->setColor( LEDCOLOR1[state] );
@@ -3311,7 +3348,7 @@ void SwOSCtrl::registerMe( SwOSCom *com ){
   // meta data
   com->data.registerCmd.ctrlType   = getType();
   com->data.registerCmd.versionCPU = getCPU();
-  com->data.registerCmd.IAmAKelda  = IAmAKelda;
+  com->data.registerCmd.IAmKelda  = IAmKelda;
 
   // extention port
   com->data.registerCmd.extentionPort = nvs.extentionPort;
@@ -3368,7 +3405,7 @@ void SwOSCtrl::sendAlias( MacAddr destination ) {
  *
  ***************************************************/
 
-SwOSSwarmI2CCtrl::SwOSSwarmI2CCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda ): SwOSCtrl (SN, macAddr, local, CPU,  IAmAKelda, FTSWARM_EXT_OFF ) {
+SwOSSwarmI2CCtrl::SwOSSwarmI2CCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda ): SwOSCtrl (SN, macAddr, local, CPU,  IAmKelda, FTSWARM_EXT_OFF ) {
 
   Wire.begin( 5, 4);
 
@@ -3384,7 +3421,7 @@ SwOSSwarmI2CCtrl::~SwOSSwarmI2CCtrl() {
  *
  ***************************************************/
 
-SwOSSwarmPwrDrive::SwOSSwarmPwrDrive( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda ): SwOSSwarmI2CCtrl (SN, macAddr, local, CPU,  IAmAKelda ) {
+SwOSSwarmPwrDrive::SwOSSwarmPwrDrive( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda ): SwOSSwarmI2CCtrl (SN, macAddr, local, CPU,  IAmKelda ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
@@ -3394,7 +3431,7 @@ SwOSSwarmPwrDrive::SwOSSwarmPwrDrive( FtSwarmSerialNumber_t SN, MacAddr macAddr,
   
 }
 
-SwOSSwarmPwrDrive::SwOSSwarmPwrDrive( SwOSCom *com ):SwOSSwarmPwrDrive( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmAKelda ) {
+SwOSSwarmPwrDrive::SwOSSwarmPwrDrive( SwOSCom *com ):SwOSSwarmPwrDrive( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmKelda ) {
   
 }
 
@@ -3406,7 +3443,7 @@ char* SwOSSwarmPwrDrive::myType() {
   return (char *) "FTSWARMPWRDRIVE";
 }
 
-FtSwarmControler_t SwOSSwarmPwrDrive::getType() {
+FtSwarmController_t SwOSSwarmPwrDrive::getType() {
   return FTSWARMPWRDRIVE;
 }
 
@@ -3525,7 +3562,7 @@ bool SwOSSwarmPwrDrive::OnDataRecv( SwOSCom *com ) {
  *
  ***************************************************/
 
-SwOSSwarmDuino::SwOSSwarmDuino( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda ): SwOSSwarmI2CCtrl (SN, macAddr, local, CPU,  IAmAKelda ) {
+SwOSSwarmDuino::SwOSSwarmDuino( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda ): SwOSSwarmI2CCtrl (SN, macAddr, local, CPU,  IAmKelda ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
@@ -3535,7 +3572,7 @@ SwOSSwarmDuino::SwOSSwarmDuino( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool 
 
 }
 
-SwOSSwarmDuino::SwOSSwarmDuino( SwOSCom *com ):SwOSSwarmDuino( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmAKelda ) {
+SwOSSwarmDuino::SwOSSwarmDuino( SwOSCom *com ):SwOSSwarmDuino( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmKelda ) {
   
 }
 
@@ -3549,7 +3586,7 @@ char* SwOSSwarmDuino::myType() {
   return (char *) "FTSWARMDUINO";
 }
 
-FtSwarmControler_t SwOSSwarmDuino::getType() {
+FtSwarmController_t SwOSSwarmDuino::getType() {
   return FTSWARMDUINO;
 }
 
@@ -3580,7 +3617,7 @@ void SwOSSwarmDuino::read() {
  *
  ***************************************************/
 
-SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, FtSwarmExtMode_t extentionPort ) : SwOSCtrl (SN, macAddr, local, CPU, IAmAKelda, extentionPort ) {
+SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extentionPort ) : SwOSCtrl (SN, macAddr, local, CPU, IAmKelda, extentionPort ) {
 
   gyro = NULL;
   I2C  = NULL;
@@ -3668,6 +3705,17 @@ bool SwOSSwarmXX::OnDataRecv(SwOSCom *com ) {
 
 }
 
+bool SwOSSwarmXX::isInUse( void ) {
+
+  if (SwOSCtrl::isInUse() ) return true;
+
+  if ( ( gyro ) && ( gyro->isInUse() ) ) return true;
+  if ( ( I2C )  && ( I2C->isInUse() ) )  return true;
+
+  return false;
+
+}
+
 
 void SwOSSwarmXX::_sendAlias( SwOSCom *alias ) {
 
@@ -3732,7 +3780,7 @@ bool SwOSSwarmXX::changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarm
  *
  ***************************************************/
 
-SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, uint8_t xLeds, FtSwarmExtMode_t extentionPort ):SwOSSwarmXX( SN, macAddr, local, CPU, IAmAKelda, extentionPort ) {
+SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, uint8_t xLeds, FtSwarmExtMode_t extentionPort ):SwOSSwarmXX( SN, macAddr, local, CPU, IAmKelda, extentionPort ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
@@ -3763,13 +3811,22 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
 
 }
 
-SwOSSwarmJST::SwOSSwarmJST( SwOSCom *com ):SwOSSwarmJST( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmAKelda, com->data.registerCmd.leds, com->data.registerCmd.extentionPort ) {
+SwOSSwarmJST::SwOSSwarmJST( SwOSCom *com ):SwOSSwarmJST( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmKelda, com->data.registerCmd.leds, com->data.registerCmd.extentionPort ) {
   
 }
 
 SwOSSwarmJST::~SwOSSwarmJST() {
   
   for ( uint8_t i=0; i<MAXSERVOS; i++ ) { if ( servo[i] ) delete servo[i]; }
+
+}
+
+bool SwOSSwarmJST::isInUse( void ) {
+
+  if ( SwOSSwarmXX::isInUse() ) return true;
+  for ( uint8_t i=0; i<MAXSERVOS; i++ ) { if ( ( servo[i] ) && ( servo[i]->isInUse() ) ) return true; }
+
+  return false;
 
 }
 
@@ -3824,7 +3881,7 @@ char* SwOSSwarmJST::myType() {
   return (char *) "ftSwarm";
 }
 
-FtSwarmControler_t SwOSSwarmJST::getType() {
+FtSwarmController_t SwOSSwarmJST::getType() {
   return FTSWARM;
 }
 
@@ -3923,7 +3980,7 @@ void SwOSSwarmJST::loadAliasFromNVS( nvs_handle_t my_handle ) {
  *
  ***************************************************/
 
-SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, int16_t zero[2][2], uint8_t displayType ):SwOSSwarmXX( SN, macAddr, local, CPU,  IAmAKelda, FTSWARM_EXT_OFF ) {
+SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, int16_t zero[2][2], uint8_t displayType ):SwOSSwarmXX( SN, macAddr, local, CPU,  IAmKelda, FTSWARM_EXT_OFF ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
@@ -3942,7 +3999,7 @@ SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, MacAddr macAddr, b
 
 }
 
-SwOSSwarmControl::SwOSSwarmControl( SwOSCom *com ):SwOSSwarmControl( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmAKelda, NULL, 1 ) {
+SwOSSwarmControl::SwOSSwarmControl( SwOSCom *com ):SwOSSwarmControl( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmKelda, NULL, 1 ) {
   
 }
 
@@ -3957,6 +4014,19 @@ void SwOSSwarmControl::unsubscribe( void ) {
   for ( uint8_t i=0; i<8; i++ ) { if ( button[i] ) button[i]->unsubscribe(); }
   for ( uint8_t i=0; i<2; i++ ) { if ( joystick[i] ) joystick[i]->unsubscribe(); }
   if ( oled  ) oled->unsubscribe();
+
+}
+
+bool SwOSSwarmControl::isInUse( void ) {
+
+  if ( SwOSSwarmXX::isInUse() ) return true;
+  
+  for ( uint8_t i=0; i<8; i++ ) { if ( ( button[i] )   && ( button[i]->isInUse() ) ) return true; }
+  for ( uint8_t i=0; i<2; i++ ) { if ( ( joystick[i] ) && ( joystick[i]->isInUse() ) ) return true; }
+
+  if ( ( oled ) && ( oled->isInUse() ) ) return true;
+
+  return false;
 
 }
 
@@ -4020,7 +4090,7 @@ char* SwOSSwarmControl::myType() {
   return (char *) "ftSwarmControl";
 }
 
-FtSwarmControler_t SwOSSwarmControl::getType() {
+FtSwarmController_t SwOSSwarmControl::getType() {
   return FTSWARMCONTROL;
 }
 
@@ -4058,7 +4128,7 @@ void SwOSSwarmControl::read() {
 }
 
 void SwOSSwarmControl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
-  // visualizes controler's state like booting, error,...
+  // visualizes controller's state like booting, error,...
 
 
   if (!oled) return;
@@ -4091,7 +4161,7 @@ void SwOSSwarmControl::setState( SwOSState_t state, uint8_t members, char *SSID 
   }
 
   // Kelda
-  if (IAmAKelda) oled->write( (char *) "K", 0, -YELLOWPIXELS, FTSWARM_ALIGNLEFT, false );
+  if (IAmKelda) oled->write( (char *) "K", 0, -YELLOWPIXELS, FTSWARM_ALIGNLEFT, false );
 
   // cool line
   oled->drawLine( 0, -5, w, -5, true );
@@ -4201,7 +4271,7 @@ void SwOSSwarmControl::setRemoteControl( boolean remoteControl ) {
  *
  ***************************************************/
 
-SwOSSwarmCAM::SwOSSwarmCAM( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda ):SwOSCtrl( SN, macAddr, local, CPU,  IAmAKelda, FTSWARM_EXT_OFF ) {
+SwOSSwarmCAM::SwOSSwarmCAM( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda ):SwOSCtrl( SN, macAddr, local, CPU,  IAmKelda, FTSWARM_EXT_OFF ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
@@ -4211,7 +4281,7 @@ SwOSSwarmCAM::SwOSSwarmCAM( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
 
 }
 
-SwOSSwarmCAM::SwOSSwarmCAM( SwOSCom *com ):SwOSSwarmCAM( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmAKelda ) {
+SwOSSwarmCAM::SwOSSwarmCAM( SwOSCom *com ):SwOSSwarmCAM( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmKelda ) {
  
 }
 
@@ -4260,7 +4330,7 @@ char* SwOSSwarmCAM::myType() {
   return (char *) "ftSwarmCAM";
 }
 
-FtSwarmControler_t SwOSSwarmCAM::getType() {
+FtSwarmController_t SwOSSwarmCAM::getType() {
   return FTSWARMCAM;
 }
 
@@ -4274,7 +4344,7 @@ void SwOSSwarmCAM::jsonizeIO( JSONize *json, uint8_t id) {
 
 
 void SwOSSwarmCAM::setState( SwOSState_t state, uint8_t members, char *SSID ) {
-  // visualizes controler's state like booting, error,...
+  // visualizes controller's state like booting, error,...
    
 }
 

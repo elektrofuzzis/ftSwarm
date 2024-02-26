@@ -43,16 +43,16 @@ void SwOSNVS::initialSetup( void ) {
 
   version = 2;
 
-  switch ( enterNumber(("Controler Type\n (1) ftSwarm\n (2) ftSwarmRS\n (3) ftSwarmControl\n (4) ftSwarmCAM\n (5) ftSwarmPwrDrive\n (6) ftSwarmDuino\n (7) ftSwarmXL\n (8) special config\n>"), 0, 1, 8 ) ) {
-    case 1:  controlerType = FTSWARM;         CPU = FTSWARMJST_1V15;       break;
-    case 2:  controlerType = FTSWARM;         CPU = FTSWARMRS_2V1;         break;
-    case 3:  controlerType = FTSWARMCONTROL;  CPU = FTSWARMCONTROL_1V3;    break;
-    case 4:  controlerType = FTSWARMCAM;      CPU = FTSWARMCAM_2V11;       break;
-    case 5:  controlerType = FTSWARMPWRDRIVE; CPU = FTSWARMPWRDRIVE_1V141; break;
-    case 6:  controlerType = FTSWARMDUINO;    CPU = FTSWARMDUINO_1V141;    break;
-    case 7:  controlerType = FTSWARM;         CPU = FTSWARMXL_1V00;        break;
+  switch ( enterNumber(("Controller Type\n (1) ftSwarm\n (2) ftSwarmRS\n (3) ftSwarmControl\n (4) ftSwarmCAM\n (5) ftSwarmPwrDrive\n (6) ftSwarmDuino\n (7) ftSwarmXL\n (8) special config\n>"), 0, 1, 8 ) ) {
+    case 1:  controllerType = FTSWARM;         CPU = FTSWARMJST_1V15;       break;
+    case 2:  controllerType = FTSWARM;         CPU = FTSWARMRS_2V1;         break;
+    case 3:  controllerType = FTSWARMCONTROL;  CPU = FTSWARMCONTROL_1V3;    break;
+    case 4:  controllerType = FTSWARMCAM;      CPU = FTSWARMCAM_2V11;       break;
+    case 5:  controllerType = FTSWARMPWRDRIVE; CPU = FTSWARMPWRDRIVE_1V141; break;
+    case 6:  controllerType = FTSWARMDUINO;    CPU = FTSWARMDUINO_1V141;    break;
+    case 7:  controllerType = FTSWARM;         CPU = FTSWARMXL_1V00;        break;
     default: // manual configuration
-             controlerType = (FtSwarmControler_t) (enterNumber(("Controler Type\n (1) ftSwarm\n (2) ftSwarmControl\n (3) ftSwarmCAM\n (4) ftSwarmPwrDrive\n (5) ftSwarmDuino\n\n>"), 0, 1, 5 ) - 1 );
+             controllerType = (FtSwarmController_t) (enterNumber(("controller Type\n (1) ftSwarm\n (2) ftSwarmControl\n (3) ftSwarmCAM\n (4) ftSwarmPwrDrive\n (5) ftSwarmDuino\n\n>"), 0, 1, 5 ) - 1 );
              CPU = ( FtSwarmVersion_t ) ( enterNumber(("CPU Version\n (1) FTSWARMJST_1V0\n (2) FTSWARMCONTROL_1V3\n (3) FTSWARMJST_1V15\n (4) FTSWARMRS_2V0\n (5) FTSWARMRS_2V1\n (6) FTSWARMCAM_1V0\n (7) FTSWARMDUINO_1V141\n (8) FTSWARMPWRDRIVE_1V141\n (9) FTSWARMXL_1V00"), 0, 1, 9 ) -1 );
   }
 
@@ -86,7 +86,7 @@ SwOSNVS::SwOSNVS() {
 
 	// initialize to undefined
 	version            = -1;
-	controlerType      = FTSWARM_NOCTRL;
+	controllerType      = FTSWARM_NOCTRL;
 	serialNumber       = 0;
 	CPU                = FTSWARM_NOVERSION;
 	wifiSSID[0]        = '\0';
@@ -97,8 +97,8 @@ SwOSNVS::SwOSNVS() {
   swarmName[0]       = '\0';
   webUI              = true;
   swarmCommunication = swarmComWifi;
-  IAmKelda           = false;
-  memset( &swarmMembers, 0, sizeof( swarmMembers ) );
+  IAmKelda           = true;
+  memset( &swarmMember, 0, sizeof( swarmMember ) );
   extentionPort      = FTSWARM_EXT_OFF;
   I2CAddr            = 0x66;
   gyro               = false;
@@ -143,14 +143,14 @@ bool SwOSNVS::load() {
   }
      
   // start with HW configuration
-  nvs_get_u32( my_handle, "controlerType", (uint32_t *) &controlerType );
+  nvs_get_u32( my_handle, "controlerType", (uint32_t *) &controllerType );
 
   uint32_t ui32;
   nvs_get_u16( my_handle, "serialNumber",  (uint16_t *) &serialNumber );
   nvs_get_u32( my_handle, "CPU",           (uint32_t *) &CPU );
 
   // check on valid hw data
-  if ( ( controlerType == FTSWARM_NOCTRL ) ||
+  if ( ( controllerType == FTSWARM_NOCTRL ) ||
        ( serialNumber == 0 ) ||
        ( CPU == FTSWARM_NOVERSION ) ) {
     return false;
@@ -159,7 +159,7 @@ bool SwOSNVS::load() {
   // joystick zero position & # RGB Leds
 
   // ftSwarmControl
-  if ( controlerType == FTSWARMCONTROL ) {
+  if ( controllerType == FTSWARMCONTROL ) {
     nvs_get_i16( my_handle, "joyZero00", &joyZero[0][0]);
     nvs_get_i16( my_handle, "joyZero01", &joyZero[0][1]);
     nvs_get_i16( my_handle, "joyZero10", &joyZero[1][0]);
@@ -186,6 +186,7 @@ bool SwOSNVS::load() {
   nvs_get_u16( my_handle, "swarmSecret",               &swarmSecret );
   nvs_get_u16( my_handle, "swarmPIN",                  &swarmPIN );
   dummy = sizeof( swarmName );  nvs_get_str( my_handle, "swarmName", swarmName, &dummy );
+  nvs_get_u8(  my_handle, "swarmSpeed",                &swarmSpeed );
 
   // events
   dummy = sizeof( eventList );  nvs_get_blob( my_handle, "eventList", &eventList, &dummy );
@@ -193,7 +194,7 @@ bool SwOSNVS::load() {
   // Kelda & swarmMembers
   nvs_get_u8 ( my_handle, "IAmKelda", (uint8_t *) &IAmKelda );
   nvs_get_u32( my_handle, "swarmCom", (uint32_t *) &swarmCommunication);
-  dummy = sizeof( swarmMembers );  nvs_get_blob( my_handle, "swarmMembers", &swarmMembers, &dummy );
+  dummy = sizeof( swarmMember );  nvs_get_blob( my_handle, "swarmMember", &swarmMember, &dummy );
 
   // webUI
   nvs_get_u8 ( my_handle, "webUI", (uint8_t *) &webUI );
@@ -207,6 +208,12 @@ bool SwOSNVS::load() {
 
 }
 
+void SwOSNVS::deleteAllControllers( void ) {
+
+  bzero( swarmMember, MAXCTRL );
+
+}
+
 void SwOSNVS::save( bool writeAll ) {
 
   // Open
@@ -216,13 +223,13 @@ void SwOSNVS::save( bool writeAll ) {
   // Write
   if (writeAll) {
     ESP_ERROR_CHECK( nvs_set_i32( my_handle, "NVSVersion", version ) );
-    ESP_ERROR_CHECK( nvs_set_u32( my_handle, "controlerType", (uint32_t) controlerType ) );
+    ESP_ERROR_CHECK( nvs_set_u32( my_handle, "controlerType", (uint32_t) controllerType ) );
     ESP_ERROR_CHECK( nvs_set_u16( my_handle, "serialNumber", (FtSwarmSerialNumber_t) serialNumber ) );
     ESP_ERROR_CHECK( nvs_set_u32( my_handle, "CPU", (uint32_t) CPU ) );
   }
 
   // ftSwarmControl: set joystick calibration
-  if ( controlerType == FTSWARMCONTROL ) {
+  if ( controllerType == FTSWARMCONTROL ) {
     ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero00", joyZero[0][0]) );
     ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero01", joyZero[0][1]) );
     ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero10", joyZero[1][0]) );
@@ -248,9 +255,10 @@ void SwOSNVS::save( bool writeAll ) {
   ESP_ERROR_CHECK( nvs_set_blob( my_handle, "eventList",  (void *)&eventList, sizeof( eventList ) ) );
    
   // Kelda & swarmMembers
-  ESP_ERROR_CHECK( nvs_set_u8 ( my_handle,  "IAmKelda",     (uint8_t) IAmKelda ) );
-  ESP_ERROR_CHECK( nvs_set_u32( my_handle,  "swarmCom",     swarmCommunication ) );
-  ESP_ERROR_CHECK( nvs_set_blob( my_handle, "swarmMembers", (void *)&swarmMembers, sizeof( swarmMembers ) ) );
+  ESP_ERROR_CHECK( nvs_set_u8  ( my_handle, "IAmKelda",     (uint8_t) IAmKelda ) );
+  ESP_ERROR_CHECK( nvs_set_u32 ( my_handle, "swarmCom",     swarmCommunication ) );
+  ESP_ERROR_CHECK( nvs_set_blob( my_handle, "swarmMember",  (void *)&swarmMember, sizeof( swarmMember ) ) );
+  ESP_ERROR_CHECK( nvs_set_u8  ( my_handle, "swarmSpeed",   swarmSpeed ) );
 
   // webUI
   ESP_ERROR_CHECK( nvs_set_u8 ( my_handle,  "webUI",   (uint8_t) webUI ) );
@@ -259,7 +267,6 @@ void SwOSNVS::save( bool writeAll ) {
   ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "I2CAddr", I2CAddr ) );
   ESP_ERROR_CHECK( nvs_set_u32( my_handle, "extentionPort", (uint32_t) extentionPort) );
   ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "Gyro",    (uint8_t)  gyro) );
-
 
   // commit
   ESP_ERROR_CHECK( nvs_commit( my_handle ) );
@@ -292,7 +299,7 @@ void SwOSNVS::factorySettings( void ) {
   strcpy( swarmName, wifiSSID );
   swarmSecret        = generateSecret( serialNumber ); 
   swarmPIN           = serialNumber;
-  IAmKelda           = false;
+  IAmKelda           = true;
   swarmCommunication = swarmComWifi;
 
   displayType        = 1;
@@ -312,6 +319,9 @@ void SwOSNVS::createSwarm( char *name, uint16_t pin ) {
   strncpy( swarmName, name, MAXIDENTIFIER ); swarmName[MAXIDENTIFIER] = '\0';
   swarmPIN = pin;
 
+  // kill all old swarm members
+  bzero( swarmMember, sizeof( swarmMember ) );
+
   // genenerate a really new secret
   uint16_t newSecret;
   while (1) {
@@ -322,11 +332,66 @@ void SwOSNVS::createSwarm( char *name, uint16_t pin ) {
   
 }
 
+bool SwOSNVS::addController( FtSwarmSerialNumber_t serialNumber ) {
+
+  for (int8_t i=0; i<MAXCTRL; i++ ) {
+
+    // already in list? done.
+    if ( swarmMember[i] == serialNumber ) {
+      return false;
+    }
+
+  }
+
+  for (int8_t i=0; i<MAXCTRL; i++ ) {
+
+    // free space in list? save index
+    if ( swarmMember[i] == 0 ) {
+      swarmMember[i] = serialNumber;
+      return true;
+    };
+
+  }
+
+  // no free space? error
+  printf("no space\n");
+  return false;
+
+}
+
+bool SwOSNVS::deleteController( FtSwarmSerialNumber_t serialNumber ) {
+
+  for (uint8_t i=0; i<MAXCTRL; i++) {
+
+    // serialNumber found? kill it
+    if (swarmMember[i] == serialNumber) {
+      swarmMember[i] = 0;
+      return true;
+    }
+
+  }
+
+  // didn't find serialNumber? error.
+  return false;
+
+}
+
+uint8_t SwOSNVS::swarmMembers( void ) {
+
+  uint8_t result = 0;
+  for (uint8_t i=0; i<MAXCTRL; i++ ) {
+    if ( swarmMember[i] ) result++;
+  }
+
+  return result;
+
+}
+
 void SwOSNVS::printNVS() {
 
   printf( "NVSVersion: %d\n", version );
   printf( "CPU: %d\n", CPU );
-  printf( "controlerType: %d\n", controlerType );
+  printf( "controllerType: %d\n", controllerType );
   printf( "serialNumber: %d\n", serialNumber );
   printf( "wifiMode: %d\n", wifiMode );
   printf( "wifiSSID: >%s<\n", wifiSSID );
@@ -338,6 +403,11 @@ void SwOSNVS::printNVS() {
   printf( "swarmCommunication %d\n", swarmCommunication );
   printf( "RGBLeds: %d\n", RGBLeds );
   printf( "displayType: %d\n", displayType );
+
+  printf( "swarm members:");
+  for (uint8_t i=0; i<MAXCTRL; i++) { if (swarmMember[i]) printf(" %d", swarmMember[i]); }
+  printf( "\n");
+
  
  
 }
