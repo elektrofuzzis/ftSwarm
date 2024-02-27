@@ -18,10 +18,16 @@ const char EXTMODE[5][13] = { "off", "I2C-Master", "I2C-Slave", "Gyro MCU6040", 
 const char ONOFF[2][5]    = { "off", "on" };
 const char WIFI[3][12]    = { "off", "AP-Mode", "Client-Mode"};
 
+#define EXTMENUMODE 1
+#define EXTMENUGYRO 2
+#define EXTMENUI2C  3
+
 void ExtentionMenu() {
 
   bool    anythingChanged = false;
   char    prompt[255];
+
+  Menu menu;
 
   while (1) {
 
@@ -41,10 +47,14 @@ void ExtentionMenu() {
 
     // printf( "I2C mode: %d\ngyro: %d\n", nvs.I2CMode, nvs.gyro);
 
-    printf("\n\nExtention Port Settings\n\n");
-    sprintf(prompt, "(1) Mode: %s\n(2) Gyro: %s\n(3) I2C Address: %d\n\n(0) exit\nExtention>", EXTMODE[ nvs.extentionPort], ONOFF[nvs.gyro], nvs.I2CAddr );
-    
-    switch( enterNumber( prompt, 0, 0, 3) ) {
+    menu.start("Extention Port", 15);
+
+    menu.add("Mode", EXTMODE[ nvs.extentionPort] , EXTMENUMODE );
+
+    menu.add("Gyro", ONOFF[nvs.gyro] , EXTMENUGYRO );
+    menu.add("I2C Address", nvs.I2CAddr, EXTMENUI2C);
+
+    switch( menu.userChoice() ) {
       
       case 0: // exit
         if ( ( anythingChanged) && ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) ) {
@@ -54,17 +64,17 @@ void ExtentionMenu() {
           return;
         }
         
-      case 1: // ExtMode
+      case EXTMENUMODE: // ExtMode
         anythingChanged = true;
         nvs.extentionPort = (FtSwarmExtMode_t) enterNumber( "(0) off (1) I2C-Master (2) I2C-Slave (3) Gyro MCU6040 (4) Outputs: ", nvs.extentionPort, 0, 4 );
         break;
 
-      case 2: // Gyro
+      case EXTMENUGYRO: // Gyro
         anythingChanged = true;
         nvs.gyro = (bool) enterNumber( "(0) off (1) on: ", nvs.gyro, 0, 1 );
         break;
 
-      case 3: // I2C Addr
+      case EXTMENUI2C: // I2C Addr
         anythingChanged = true;
         nvs.I2CAddr = (uint8_t) enterNumber( "[16..127]: ", nvs.I2CAddr, 16, 127 );
         break;
@@ -123,11 +133,11 @@ void wifiMenu( void ) {
   while(1) {
 
     switch ( nvs.wifiMode ) {
-    case wifiAP:      sprintf(info, "hostname: %s  \nip-address: %d.%d.%d.%d\n\n", myOSSwarm.Ctrl[0]->getHostname(), WiFi.softAPIP()[0], WiFi.softAPIP()[1], WiFi.softAPIP()[2], WiFi.softAPIP()[3]);
+    case wifiAP:      sprintf(info, "hostname:           %s\nip-address:         %d.%d.%d.%d\n\n", myOSSwarm.Ctrl[0]->getHostname(), WiFi.softAPIP()[0], WiFi.softAPIP()[1], WiFi.softAPIP()[2], WiFi.softAPIP()[3]);
                       break;
-    case wifiClient:  sprintf(info, "hostname: %s  \nip-address: %d.%d.%d.%d\n\n", myOSSwarm.Ctrl[0]->getHostname(), WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
+    case wifiClient:  sprintf(info, "hostname:           %s\nip-address:         %d.%d.%d.%d\n\n", myOSSwarm.Ctrl[0]->getHostname(), WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
                       break;
-    default:          sprintf(info, "hostname: %s  \nip-address: none\n\n",myOSSwarm.Ctrl[0]->getHostname());
+    default:          sprintf(info, "hostname:           %s\nip-address:         none\n\n",myOSSwarm.Ctrl[0]->getHostname());
     }
 
     // build menu
@@ -420,37 +430,36 @@ void swarmMenu( void ) {
 
 void aliasMenu( void ) {
 
-  SwOSObj *OSObj[20];
+  SwOSObj *OSObj[99];
   bool    anythingChanged = false;
+
+  Menu    menu;
 
   while (1) {
 
     uint8_t item = 0;
-    printf("\n\nalias controller menu:\n\n");
+    menu.start( "alias controller menu:", 10);
     
     OSObj[item++] = myOSSwarm.Ctrl[0]; 
-    printf("(%2d) hostname %s - %s\n", item, myOSSwarm.Ctrl[0]->getName(), myOSSwarm.Ctrl[0]->getAlias() );
+    menu.add( myOSSwarm.Ctrl[0]->getName(), myOSSwarm.Ctrl[0]->getAlias(), item, true );
 
     // list inputs
     for (uint8_t i=0; i<myOSSwarm.Ctrl[0]->inputs; i++ ) { 
       OSObj[item++] = myOSSwarm.Ctrl[0]->input[i];
-      printf("(%2d) %-4s - %-32s\n", 
-              item, myOSSwarm.Ctrl[0]->input[i]->getName(), myOSSwarm.Ctrl[0]->input[i]->getAlias());
+      menu.add( myOSSwarm.Ctrl[0]->input[i]->getName(), myOSSwarm.Ctrl[0]->input[i]->getAlias(), item, true );
     }
 
     // list actors
     for (uint8_t i=0; i<myOSSwarm.Ctrl[0]->actors; i++ ) {
       OSObj[item++] = myOSSwarm.Ctrl[0]->actor[i];
-      printf("(%2d) %-4s - %-32s\n", 
-             item, myOSSwarm.Ctrl[0]->actor[i]->getName(), myOSSwarm.Ctrl[0]->actor[i]->getAlias());
+      menu.add( myOSSwarm.Ctrl[0]->actor[i]->getName(), myOSSwarm.Ctrl[0]->actor[i]->getAlias(), item, true );
     }
 
     // list LEDs
     for (uint8_t i=0; i<nvs.RGBLeds; i++ ) {
       if ( myOSSwarm.Ctrl[0]->led[i]) {
         OSObj[item++] =  myOSSwarm.Ctrl[0]->led[i];
-        printf("(%2d) %-4s - %-32s\n", 
-               item,  myOSSwarm.Ctrl[0]->led[i]->getName(),  myOSSwarm.Ctrl[0]->led[i]->getAlias());
+        menu.add( myOSSwarm.Ctrl[0]->led[i]->getName(),  myOSSwarm.Ctrl[0]->led[i]->getAlias(), item, true );
       }
     }
 
@@ -466,13 +475,13 @@ void aliasMenu( void ) {
                             for (uint8_t i=0; i<ftSwarm->servos; i++ ) {
                               if (ftSwarm->servo[i]) {
                                 OSObj[item++] = ftSwarm->servo[i];
-                                printf("(%2d) %-4s - %-32s\n", item, ftSwarm->servo[i]->getName(), ftSwarm->servo[i]->getAlias());
+                                menu.add( ftSwarm->servo[i]->getName(), ftSwarm->servo[i]->getAlias(), item, true );
                               }
                             }
                             // list gyro
                             if (ftSwarm->gyro) {
                               OSObj[item++] = ftSwarm->gyro;
-                              printf("(%2d) %-4s - %-32s\n", item, ftSwarm->gyro->getName(), ftSwarm->gyro->getAlias() );
+                              menu.add( ftSwarm->gyro->getName(), ftSwarm->gyro->getAlias(), item, true );
                             }
                             break;
 
@@ -480,23 +489,23 @@ void aliasMenu( void ) {
                             // buttons
                             for (uint8_t i=0; i<8; i++ ) {
                               OSObj[item++] = ftSwarmControl->button[i];
-                              printf("(%2d) %-4s - %-32s\n", item, ftSwarmControl->button[i]->getName(),   ftSwarmControl->button[i]->getAlias() );
+                             menu.add( ftSwarmControl->button[i]->getName(),   ftSwarmControl->button[i]->getAlias(), item, true );
                             }
                             // joysticks
                             for (uint8_t i=0; i<2; i++ ) {
                               OSObj[item++] = ftSwarmControl->joystick[i];
-                              printf("(%2d) %-4s - %-32s\n", item, ftSwarmControl->joystick[i]->getName(), ftSwarmControl->joystick[i]->getAlias());
+                              menu.add( ftSwarmControl->joystick[i]->getName(), ftSwarmControl->joystick[i]->getAlias(), item , true);
                             }
                             if (ftSwarmControl->oled) {
                               OSObj[item++] = ftSwarmControl->oled;
-                              printf("(%2d) %-4s - %-32s\n", item, ftSwarmControl->oled->getName(), ftSwarmControl->oled->getAlias() );
+                              menu.add( ftSwarmControl->oled->getName(), ftSwarmControl->oled->getAlias(), item, true );
                             }
                             break;
 
       case FTSWARMCAM:      ftSwarmCAM = static_cast<SwOSSwarmCAM *>(myOSSwarm.Ctrl[0]);
                             if (ftSwarmCAM->cam) {
                               OSObj[item++] = ftSwarmCAM->cam;
-                              printf("(%2d) %-4s - %-32s\n", item, ftSwarmCAM->cam->getName(), ftSwarmCAM->cam->getAlias() );
+                              menu.add( ftSwarmCAM->cam->getName(), ftSwarmCAM->cam->getAlias(), item, true );
                             }
                             break;
 
@@ -504,10 +513,11 @@ void aliasMenu( void ) {
     }
 
     // User's choice
-    uint8_t choice = enterNumber("\n(0) exit\nalias>", 0, 0, item );
+    uint8_t choice = menu.userChoice( );
 
     // exit?
     if ( choice == 0 ) {
+
       if ( ( anythingChanged )  &&  yesNo( "Save changes? (Y/N)?" ) ) {
 
         // Open
@@ -527,13 +537,15 @@ void aliasMenu( void ) {
       return;
 
     // set name
-    } else {
+    } else if ( choice > 0 ) {
+
       char alias[MAXIDENTIFIER];
       char prompt[250];
       sprintf( prompt, "%s - please enter new alias: ", OSObj[choice-1]->getName() );
       enterIdentifier( prompt, alias, MAXIDENTIFIER );
       OSObj[choice-1]->setAlias( alias );
       anythingChanged = true;
+    
     }
     
   }
@@ -744,7 +756,7 @@ void remoteControl( void ) {
     eventPtr[0] = 255;
 
     // list events
-    printf("remote control menu:\n\n");
+    printf("\n\n***** Remote Control *****\n\n");
     printf("     sensor             event       actor           value\n");
 
     for ( uint8_t i=0; i<MAXNVSEVENT; i++ ) {

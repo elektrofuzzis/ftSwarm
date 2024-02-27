@@ -43,7 +43,7 @@ class Menu {
 
   public:
     void   start( const char *prompt, uint8_t spacer );
-    void   add( const char *item, const char *value, uint8_t id );
+    void   add( const char *item, const char *value, uint8_t id, bool staticDelimiter = false );
     void   add( const char *item, int value, uint8_t id );
     int8_t userChoice( void );
 };

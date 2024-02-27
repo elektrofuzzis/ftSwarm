@@ -171,7 +171,7 @@ void Menu::start( const char *prompt, uint8_t spacer ) {
   strcpy( this->prompt, (char *) prompt ); 
 
   // print Headline
-  printf( "\n\n%s\n\n", this->prompt );
+  printf( "\n\n***** %s *****\n\n", this->prompt );
 
 };
 
@@ -182,12 +182,12 @@ void Menu::add( const char *item, int value, uint8_t id ) {
   add( item, dummy, id );
 }
 
-void Menu::add( const char *item, const char *value, uint8_t id ){
+void Menu::add( const char *item, const char *value, uint8_t id, bool staticDelimiter ){
 
   maxItem++;
-  printf( "(%d) %s", maxItem, item );
+  printf( "(%2d) %s", maxItem, item );
   
-  if ( value[0] != '\0' ) {
+  if ( ( value[0] != '\0' ) || ( staticDelimiter ) ) {
     printf(": ");
     for (uint8_t i=strlen( item ); i<spacer; i++)  printf( " " );
     printf( "%s\n", value );
@@ -201,7 +201,7 @@ void Menu::add( const char *item, const char *value, uint8_t id ){
 
 int8_t Menu::userChoice( void ) {
 
-  printf("\n(0) exit\n%s", prompt);
+  printf("\n( 0) exit\n%s", prompt);
   
   // asking user
   uint16_t choice = enterNumber( ">", maxItem+1, 0, maxItem );
