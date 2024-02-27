@@ -48,7 +48,7 @@
 
 #define RS485_MAXDELAY  100
 
-const uint32_t BAUDRATE[5] = { 115200, 230400, 460800, 921600, 1843200};
+const int BAUDRATE[5] = { 115200, 230400, 460800, 921600, 1843200};
 
 typedef struct {
     uint8_t macAddr;

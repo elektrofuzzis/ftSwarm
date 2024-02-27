@@ -96,7 +96,7 @@ struct SwOSDatagram_t {
   union {
     registerCmd_t registerCmd;
     struct { uint16_t pin; uint16_t swarmSecret; char swarmName[MAXIDENTIFIER]; bool IAmKelda; } joinCmd;
-    struct { SwOSCommand_t cmd; SwOSError_t error; uint8_t secret; } ackCmd;
+    struct { SwOSCommand_t cmd; SwOSError_t error; uint16_t secret; } ackCmd;
     struct { uint32_t inputValue[MAXINPUTS]; int16_t LR[2]; int16_t FB[2]; uint8_t hc165;} stateCmd;
     struct { bool isHoming[4]; bool isRunning[4]; uint32_t inputValue[5]; long distance[4]; long position[4];} stepperStateCmd;
     struct { uint8_t index; FtSwarmSensor_t sensorType; bool normallyOpen; } sensorCmd __attribute__((packed));

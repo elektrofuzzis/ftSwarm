@@ -344,6 +344,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
   // initialize nvs
   nvs.begin();
+  nvs.printNVS();
   if ( ( nvs.IAmKelda ) && ( this->verbose ) ) { printf( "I am KELDA!\n"); }
 
 	// create local controller
@@ -1103,9 +1104,10 @@ void SwOSSwarm::cmdJoin( SwOSCom *com, uint8_t source, uint8_t affected ) {
     result = ( ( nvs.swarmPIN == com->data.joinCmd.pin ) && ( strcmp( com->data.joinCmd.swarmName, nvs.swarmName ) == 0 ) )? SWOS_OK : SWOS_DENY;
 
     // join?
-    if ( ( result == SWOS_OK )  && ( nvs.addController( com->data.affectedSN ) ) ) {  
-      Ctrl[source] = new SwOSCtrl( com->data.affectedSN, MacAddr( broadcast ), false, FTSWARM_NOVERSION, false, FTSWARM_EXT_OFF );
+    if ( ( result == SWOS_OK )  && ( nvs.addController( com->data.sourceSN ) ) ) {  
+      Ctrl[source] = new SwOSCtrl( com->data.sourceSN, com->macAddr, false, FTSWARM_NOVERSION, false, FTSWARM_EXT_OFF );
       nvs.save();
+      Ctrl[source]->comState = ASKFORDETAILS;
     }
 
   // case 2: Kelda asks Kelda:  Join, if I'm not connected to a swarm.
@@ -1165,7 +1167,7 @@ void SwOSSwarm::cmdAck( SwOSCom *com, uint8_t source, uint8_t affected ) {
   SwOSCtrl *ctrl;
 
   if (!Ctrl[source]) {
-  
+
     // member asked kelda without knowing keldas SN and used boradcastSN instead?
     ctrl = (SwOSCtrl *) getController( broadcastSN );
 
@@ -1227,7 +1229,7 @@ void SwOSSwarm::cmdLeave( SwOSCom *com, uint8_t source, uint8_t affected ) {
     // ack, reset to Default swarm and reboot  
     sendAck( com->data.sourceSN, CMD_SWARMLEAVE, SWOS_OK, myOSNetwork.secret );
     shortDelay();
-    nvs.createSwarm( Ctrl[0]->getHostname(), Ctrl[0]->serialNumber );
+    nvs.createSwarm( Ctrl[0]->getName(), Ctrl[0]->serialNumber );
     nvs.save();
     ESP.restart();
 
@@ -1411,7 +1413,14 @@ SwOSError_t SwOSSwarm::rejectController( FtSwarmSerialNumber_t serialNumber ) {
   if ( Ctrl[affected]->lastAck.cmd == CMD_SWARMLEAVE ) result = Ctrl[affected]->lastAck.error;
 
   // delete him, if possible
-  if ( result == SWOS_OK ) { delete Ctrl[affected]; Ctrl[affected] = NULL; }
+  if ( result == SWOS_OK ) { 
+
+    Ctrl[affected]->lock();
+    SwOSCtrl *old = Ctrl[affected];
+    Ctrl[affected] = NULL;
+    old->unlock();
+    delete old;
+  }
 
   return result;
 
@@ -1495,6 +1504,7 @@ SwOSError_t SwOSSwarm::joinSwarm( char *name, uint16_t pin ) {
   joinMsg.data.joinCmd.pin = pin;
   strcpy( joinMsg.data.joinCmd.swarmName, name );
   joinMsg.data.joinCmd.swarmSecret = DEFAULTSECRET;
+  joinMsg.data.secret = DEFAULTSECRET;
   joinMsg.send();
 
   // wait for replys
@@ -1505,16 +1515,23 @@ SwOSError_t SwOSSwarm::joinSwarm( char *name, uint16_t pin ) {
   if (Ctrl[newMember]->lastAck.cmd == CMD_SWARMJOIN) result = Ctrl[newMember]->lastAck.error;
 
   // delete new Controller in case of any error
-  if ( result != SWOS_OK ) { delete Ctrl[newMember]; Ctrl[newMember] = NULL; return result; }
+  if ( result != SWOS_OK ) {
+    Ctrl[newMember]->lock();
+    SwOSCtrl *temp = Ctrl[newMember];
+    Ctrl[newMember] = NULL;
+    temp->unlock();
+    delete temp; 
+    return result;
+  }
 
   // setup new swarm
-  Kelda              = NULL;
   nvs.IAmKelda       = false;
   Ctrl[0]->IAmKelda  = false; 
   nvs.swarmPIN       = pin;
   nvs.swarmSecret    = Ctrl[newMember]->lastAck.secret;
   strcpy( nvs.swarmName, name );
   myOSNetwork.setSecret( Ctrl[newMember]->lastAck.secret, pin );
+  Kelda              = Ctrl[newMember];
 
   // continue starting up
   Ctrl[newMember]->comState = ASKFORDETAILS;

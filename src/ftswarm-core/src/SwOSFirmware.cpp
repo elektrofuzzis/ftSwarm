@@ -246,8 +246,7 @@ void joinSwarm( boolean createNewSwarm ) {
   // leave old swarm
   SwOSError_t err = myOSSwarm.leaveSwarm();
   if ( ( err == SWOS_TIMEOUT ) && (!yesNo( "I couldn't inform all swarm members. Continue anyway [Y/N]?" ) ) ) return;
-  if ( err != SWOS_OK ) { printf("Internal error %d during leaveSwarm.\n", err ); return; }
-
+ 
   // new swarm?
   if ( createNewSwarm ) {
     err = myOSSwarm.createSwarm( name, pin );
@@ -264,8 +263,7 @@ void joinSwarm( boolean createNewSwarm ) {
     err = myOSSwarm.joinSwarm( name, pin );
     switch ( err ) {
       case SWOS_OK:       printf("%s successfully joined.\n", name ); 
-                          nvs.deleteAllControllers(); 
-                          nvs.save(); 
+                          nvs.save();
                           return;
 
       case SWOS_DENY:     printf("Kelda refused you.\n"); 
@@ -319,7 +317,7 @@ void rejectControllerFromSwarm( void ) {
     return;
   }
 
-  if ( myOSSwarm.rejectController( SN ) ) {
+  if ( myOSSwarm.rejectController( SN ) == SWOS_OK ) {
     printf("Device %d left the swarm successfully.\n", SN);
     nvs.deleteController( SN );
     nvs.save();
@@ -405,6 +403,7 @@ void swarmMenu( void ) {
       case MENUSWARMSPEED:
         nvs.swarmSpeed = enterNumber( "(0) low ... (4) highspeed (max. 50m)>", nvs.swarmSpeed, 0, 4 );
         if ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) nvs.saveAndRestart();
+        break;
 
       case MENUCREATESWARM:
         joinSwarm( true ); 
