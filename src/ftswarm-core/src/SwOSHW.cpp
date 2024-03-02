@@ -3360,18 +3360,17 @@ void SwOSCtrl::registerMe( SwOSCom *com ){
 void SwOSCtrl::saveAliasToNVS( nvs_handle_t my_handle ) {
 
   SwOSObj::saveAliasToNVS( my_handle );
-  for (uint8_t i=0; i<inputs; i++ )  input[i]->saveAliasToNVS( my_handle );
-  for (uint8_t i=0; i<actors; i++ )  actor[i]->saveAliasToNVS( my_handle );
-  for (uint8_t i=0; i<MAXLEDS; i++ ) if (led[i]) led[i]->saveAliasToNVS( my_handle );
-  
+  for (uint8_t i=0; i<inputs; i++ )  if (input[i]) input[i]->saveAliasToNVS( my_handle );
+  for (uint8_t i=0; i<actors; i++ )  if (actor[i]) actor[i]->saveAliasToNVS( my_handle );
+  for (uint8_t i=0; i<MAXLEDS; i++ ) if (led[i])   led[i]->saveAliasToNVS( my_handle );
 }
 
 void SwOSCtrl::loadAliasFromNVS( nvs_handle_t my_handle ) {
 
   SwOSObj::loadAliasFromNVS( my_handle );
-  for (uint8_t i=0; i<inputs; i++ )  input[i]->loadAliasFromNVS( my_handle );
-  for (uint8_t i=0; i<actors; i++ )  actor[i]->loadAliasFromNVS( my_handle );
-  for (uint8_t i=0; i<MAXLEDS; i++ ) if (led[i]) led[i]->loadAliasFromNVS( my_handle );
+  for (uint8_t i=0; i<inputs; i++ )  if (input[i]) input[i]->loadAliasFromNVS( my_handle );
+  for (uint8_t i=0; i<actors; i++ )  if (actor[i]) actor[i]->loadAliasFromNVS( my_handle );
+  for (uint8_t i=0; i<MAXLEDS; i++ ) if (led[i])   led[i]->loadAliasFromNVS( my_handle );
 }
 
 void SwOSCtrl::_sendAlias( SwOSCom *alias ) {
@@ -3962,6 +3961,7 @@ void SwOSSwarmJST::saveAliasToNVS( nvs_handle_t my_handle ) {
   SwOSSwarmXX::saveAliasToNVS( my_handle );
 
   if (gyro) gyro->saveAliasToNVS( my_handle );
+  for (uint8_t i=0; i<MAXSERVOS; i++ ) if (servo[i]) servo[i]->saveAliasToNVS( my_handle );
   
 }
 

@@ -7,8 +7,6 @@
  * 
  */
 
-
-
 #include <nvs.h>
 #include <nvs_flash.h>
 #include <esp_err.h>
@@ -41,7 +39,7 @@ uint16_t generateSecret( FtSwarmSerialNumber_t serialNumber ) {
 
 void SwOSNVS::initialSetup( void ) {
 
-  version = 2;
+  version = NVSVERSION;
 
   switch ( enterNumber(("Controller Type\n (1) ftSwarm\n (2) ftSwarmRS\n (3) ftSwarmControl\n (4) ftSwarmCAM\n (5) ftSwarmPwrDrive\n (6) ftSwarmDuino\n (7) ftSwarmXL\n (8) special config\n>"), 0, 1, 8 ) ) {
     case 1:  controllerType = FTSWARM;         CPU = FTSWARMJST_1V15;       break;
@@ -85,8 +83,8 @@ void SwOSNVS::initialSetup( void ) {
 SwOSNVS::SwOSNVS() {
 
 	// initialize to undefined
-	version            = -1;
-	controllerType      = FTSWARM_NOCTRL;
+	version            = NVSVERSION;
+	controllerType     = FTSWARM_NOCTRL;
 	serialNumber       = 0;
 	CPU                = FTSWARM_NOVERSION;
 	wifiSSID[0]        = '\0';
@@ -141,7 +139,7 @@ bool SwOSNVS::load() {
     // no version data, or old version 1
     return false;
   }
-     
+
   // start with HW configuration
   nvs_get_u32( my_handle, "controlerType", (uint32_t *) &controllerType );
 
@@ -189,7 +187,8 @@ bool SwOSNVS::load() {
   nvs_get_u8(  my_handle, "swarmSpeed",                &swarmSpeed );
 
   // events
-  dummy = sizeof( eventList );  nvs_get_blob( my_handle, "eventList", &eventList, &dummy );
+  dummy = sizeof( eventList );
+  nvs_get_blob( my_handle, "eventList", &eventList, &dummy );
 
   // Kelda & swarmMembers
   nvs_get_u8 ( my_handle, "IAmKelda", (uint8_t *) &IAmKelda );
@@ -301,6 +300,7 @@ void SwOSNVS::factorySettings( void ) {
   swarmPIN           = serialNumber;
   IAmKelda           = true;
   swarmCommunication = swarmComWifi;
+  swarmSpeed         = 4;
 
   displayType        = 1;
   RGBLeds            = 2;
@@ -310,6 +310,8 @@ void SwOSNVS::factorySettings( void ) {
   gyro               = false;
 
   eventList.reset();
+
+  bzero(swarmMember, sizeof(swarmMember));
 
 }
 

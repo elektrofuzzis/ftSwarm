@@ -14,6 +14,7 @@
 #include <stdint.h>
 
 #define MAXNVSEVENT 36
+#define NVSVERSION  2
 
 class NVSEvent {
   public:
@@ -39,7 +40,7 @@ typedef enum { wifiOFF, wifiAP, wifiClient } FtSwarmWifi_t;
 class SwOSNVS {
   public:
     void initialSetup();   // ask user for HW details
-	  int32_t               version;
+	  int32_t               version = NVSVERSION;
 	  FtSwarmController_t   controllerType;
 	  FtSwarmVersion_t      CPU;
 	  FtSwarmSerialNumber_t serialNumber;

@@ -365,9 +365,10 @@ void swarmMenu( void ) {
 
     printf("\n");
 
-    if ( nvs.RS485Available() ) menu.add( "swarm communication", SWARMCOMMUNICATION[nvs.swarmCommunication], MENUSWARMCOMMUNICATION );
-
-    menu.add( "swarm speed", nvs.swarmSpeed, MENUSWARMSPEED);
+    if ( nvs.RS485Available() ) {
+      menu.add( "swarm communication", SWARMCOMMUNICATION[nvs.swarmCommunication], MENUSWARMCOMMUNICATION );
+      menu.add( "swarm speed", nvs.swarmSpeed, MENUSWARMSPEED);
+    }
     
     menu.add( "create a new swarm", "", MENUCREATESWARM );
     menu.add( "join another swarm", "", MENUJOINSWARM );
@@ -594,20 +595,14 @@ bool changeEvent( NVSEvent *event ) {
     enterString( "sensor: ", sensor, sizeof(sensor) );
     newSensor = myOSSwarm.getIO( sensor, FTSWARM_UNDEF );
     
-    if (newSensor) printf("%d\n", newSensor->getIOType());
-    
     if (sensor[0] == '\0' ) 
       return false;
 
     else if (!newSensor) 
       printf("sensor %s doesn't exist in the swarm.\n", sensor);
     
-    else if ( !( (newSensor->getIOType() == FTSWARM_INPUT ) || 
-                 (newSensor->getIOType() == FTSWARM_DIGITALINPUT ) || 
-                 (newSensor->getIOType() == FTSWARM_ANALOGINPUT ) ||
-                 (newSensor->getIOType() == FTSWARM_BUTTON ) || 
-                 (newSensor->getIOType() == FTSWARM_JOYSTICK ) ) )
-      printf("%s needs to be an input, a button or a joystick.\n", sensor);
+    else if ( !newSensor->isSensor() )
+      printf("%s needs to be a sensor.\n", sensor);
 
     else
       // now, I'm fine
@@ -616,7 +611,7 @@ bool changeEvent( NVSEvent *event ) {
 
   // which poti?
   if ( newSensor->getIOType() == FTSWARM_JOYSTICK ) 
-    LR = enterNumber( "joystick direction: (1) left/right (2) forward/backward", 1, 1, 2 );
+    LR = enterNumber( "joystick direction: (1) left/right (2) forward/backward: ", 1, 1, 2 );
   else
     LR = 0;
   
@@ -626,7 +621,7 @@ bool changeEvent( NVSEvent *event ) {
   // enter actor
   while (true) {
     enterString( "actor: ", actor, sizeof(actor) );
-    newActor = myOSSwarm.getIO( actor, FTSWARM_ACTOR );
+    newActor = myOSSwarm.getIO( actor, FTSWARM_UNDEF );
     
     if (actor[0] == '\0' ) 
       return false;
@@ -634,7 +629,7 @@ bool changeEvent( NVSEvent *event ) {
     else if (!newActor) 
       printf("actor %s doesn't exist in the swarm.\n", actor);
 
-    else if ( !( (newActor->getIOType() == FTSWARM_ACTOR ) || (newActor->getIOType() == FTSWARM_PIXEL ) || (newActor->getIOType() == FTSWARM_SERVO ) ) )
+    else if ( !newActor->isActor() )
       printf("%s needs to be an actor, a LED or a servo.\n", actor);
     
     else
@@ -647,37 +642,21 @@ bool changeEvent( NVSEvent *event ) {
   if (!usePortValue) parameter = enterNumberI32( "Which value should be set? ", 0, 0, 0xFFFFFF );
 
   // delete old trigger
-  SwOSIO *oldSensor = myOSSwarm.getIO( event->sensor, FTSWARM_INPUT );
+  SwOSIO *oldSensor = myOSSwarm.getIO( event->sensor, FTSWARM_UNDEF );
   
   if ( oldSensor != NULL ) {
   
     switch ( oldSensor->getIOType() ) {
     
-      case FTSWARM_INPUT: 
-        static_cast<SwOSInput *>(oldSensor)->unregisterEvent( trigger ); 
-        break;
-      
-      case FTSWARM_DIGITALINPUT: 
-        static_cast<SwOSDigitalInput *>(oldSensor)->unregisterEvent( trigger ); 
-        break;
-
-      case FTSWARM_ANALOGINPUT: 
-        static_cast<SwOSAnalogInput *>(oldSensor)->unregisterEvent( trigger ); 
-        break;
-
-      case FTSWARM_BUTTON: 
-        static_cast<SwOSButton *>(oldSensor)->unregisterEvent( trigger ); 
-        break;
-        
       case FTSWARM_JOYSTICK: 
         if ( LR == 1 ) static_cast<SwOSJoystick *>(oldSensor)->triggerLR.unregisterEvent( trigger );
         else           static_cast<SwOSJoystick *>(oldSensor)->triggerFB.unregisterEvent( trigger );
         break; 
         
       default: 
-        printf("error saving your event.\n"); 
-        return false;
-
+        static_cast<SwOSInput *>(oldSensor)->unregisterEvent( trigger ); 
+        break;
+        
     }
 
   }
@@ -685,30 +664,14 @@ bool changeEvent( NVSEvent *event ) {
   // modify trigger
   switch ( newSensor->getIOType() ) {
     
-    case FTSWARM_INPUT: 
-      static_cast<SwOSInput *>(newSensor)->registerEvent( trigger, newActor, usePortValue, parameter ); 
-      break;
-    
-    case FTSWARM_DIGITALINPUT: 
-      static_cast<SwOSDigitalInput *>(newSensor)->registerEvent( trigger, newActor, usePortValue, parameter ); 
-      break;
-    
-    case FTSWARM_ANALOGINPUT: 
-      static_cast<SwOSAnalogInput *>(newSensor)->registerEvent( trigger, newActor, usePortValue, parameter ); 
-      break;
-    
-    case FTSWARM_BUTTON: 
-      static_cast<SwOSButton *>(newSensor)->registerEvent( trigger, newActor, usePortValue, parameter ); 
-      break;
-    
     case FTSWARM_JOYSTICK: 
       if ( LR == 1 ) static_cast<SwOSJoystick *>(newSensor)->triggerLR.registerEvent( trigger, newActor, usePortValue, parameter );
       else           static_cast<SwOSJoystick *>(newSensor)->triggerFB.registerEvent( trigger, newActor, usePortValue, parameter );
       break;
 
     default: 
-      printf("error saving your event.\n"); 
-      return false;
+      static_cast<SwOSInput *>(newSensor)->registerEvent( trigger, newActor, usePortValue, parameter ); 
+      break;
   }
 
   // change event

@@ -102,6 +102,12 @@ public:
   virtual void            give( void ) { if (_useCounter>0) _useCounter--; };   // unregister an instance using this IO
   virtual bool            isInUse( void ) { return _useCounter > 0; };          // test, if an IO is used by some user elements
   
+  // Test, if I'm an Actor
+  virtual bool            isActor( void ) { return false; };
+
+  // Test, if I', an Sensor
+  virtual bool            isSensor( void ) { return false; };
+
   virtual void read( void ) { };
   virtual void onTrigger( int32_t value );
 
@@ -172,6 +178,9 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
     virtual FtSwarmSensor_t getSensorType() { return _sensorType; };
     virtual char *getIcon();
 	  virtual void jsonize( JSONize *json, uint8_t id) {};               // just a placeholder
+
+    // Test, if I', an Sensor
+    virtual bool            isSensor( void ) { return true; };
 
     // read sensor
 	  virtual void read() {};
@@ -377,6 +386,9 @@ public:
   virtual void            onTrigger( int32_t value );
   virtual void            read( void );
 
+  // Test, if I'm an Actor
+  virtual bool            isActor( void ) { return true; };
+
   // commands
   virtual void            setActorType( FtSwarmActor_t actorType, bool highResolution, bool dontSendToRemote );    // set actor type
   virtual void            setValue( FtSwarmMotion_t motionType, int16_t speed ) { _motionType = motionType; _speed = speed; };  // set values
@@ -442,6 +454,9 @@ public:
   virtual char *getIcon() { return (char *) "11_joystick.svg"; };
 	virtual void jsonize( JSONize *json, uint8_t id);
   
+  // Test, if I', an Sensor
+  virtual bool            isSensor( void ) { return true; }
+
   // read
   virtual void subscription();
 	virtual void read();
@@ -480,7 +495,10 @@ public:
   virtual char *getIcon()   { return (char *) "15_rgbled.svg"; };
   virtual void jsonize( JSONize *json, uint8_t id);
   virtual void onTrigger( int32_t value );
-    
+
+  // Test, if I'm an Actor
+  virtual bool     isActor( void ) { return true; }
+
   // commands
 	virtual uint32_t getColor()      { return _color; };
 	virtual uint8_t  getBrightness() { return _brightness; };
@@ -518,6 +536,9 @@ class SwOSServo : public SwOSIO {
     virtual char *    getIcon() { return (char *) "14_servo.svg"; };
     virtual void jsonize( JSONize *json, uint8_t id);
     virtual void onTrigger( int32_t value );
+
+    // Test, if I'm an Actor
+    virtual bool            isActor( void ) { return true; }
     
     // commands
 	  virtual int16_t getOffset( )   { return _offset; };
@@ -549,6 +570,9 @@ class SwOSGyro : public SwOSIO {
 	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_GYRO; };
     virtual char *getIcon() { return (char *) "25_gyro.svg"; };
     virtual void jsonize( JSONize *json, uint8_t id);
+
+    // Test, if I'm an Sensor
+    virtual bool            isSensor( void ) { return true; }
 
     // read sensor
     virtual void     read();

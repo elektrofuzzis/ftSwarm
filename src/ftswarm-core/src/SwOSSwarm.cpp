@@ -196,8 +196,13 @@ bool SwOSSwarm::startEvents( void ) {
     if ( ( event->sensor[0] != '\0' ) && ( event->actor[0] != '\0' ) ) {
 
       // get IOs and stop on error
-      sensor = waitFor( event->sensor, FTSWARM_UNDEF ); if (!sensor) return false;
-      actor  = waitFor( event->actor,  FTSWARM_ACTOR );  if (!actor)  return false;
+      sensor = waitFor( event->sensor, FTSWARM_UNDEF );  
+      if (!sensor) return false;
+      if (!sensor->isSensor()) return false;
+      
+      actor  = waitFor( event->actor,  FTSWARM_UNDEF );  
+      if (!actor)  return false;
+      if (!actor->isActor()) return false;
 
       switch ( sensor->getIOType() ) {
     
@@ -344,7 +349,6 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
   // initialize nvs
   nvs.begin();
-  nvs.printNVS();
   if ( ( nvs.IAmKelda ) && ( this->verbose ) ) { printf( "I am KELDA!\n"); }
 
 	// create local controller
@@ -420,6 +424,9 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   setState( RUNNING );
 
   if (verbose) printf("Start normal operation.\n");
+
+  if ( ( nvs.IAmKelda) && ( nvs.wifiMode == wifiAP ) ) 
+    printf("\n\n*** WARNING ***:\nA swarm using wifi ap mode provided by the Kelda isn't stable.\nBest practice is to use your local wifi or to provide the AP via a swarm member.\n\n");
 
   initialized = true;
   return Ctrl[0]->serialNumber;
