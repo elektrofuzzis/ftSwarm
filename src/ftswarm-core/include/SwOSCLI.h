@@ -93,7 +93,7 @@ class SwOSCLI {
     void executePixelCmd( void );
     void executeI2CCmd( void );
     void executeIOCommand( void );
-    void executeControlerCmd( void );
+    void executeControllerCmd( void );
     bool eval( void );
     void help( void );
     void startCLI( bool noEcho );

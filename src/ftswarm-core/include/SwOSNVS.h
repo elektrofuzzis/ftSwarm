@@ -14,7 +14,7 @@
 #include <stdint.h>
 
 #define MAXNVSEVENT 36
-#define MAXSWARM    32
+#define NVSVERSION  2
 
 class NVSEvent {
   public:
@@ -25,11 +25,13 @@ class NVSEvent {
     bool             usePortValue;
     int32_t          parameter;
     NVSEvent();
+    void reset( void );
 };
 
 class NVSEventList {
   public:
     NVSEvent event[MAXNVSEVENT];
+    void reset( void );
 };
 
 // wifi types
@@ -38,8 +40,8 @@ typedef enum { wifiOFF, wifiAP, wifiClient } FtSwarmWifi_t;
 class SwOSNVS {
   public:
     void initialSetup();   // ask user for HW details
-	  int32_t               version;
-	  FtSwarmControler_t    controlerType;
+	  int32_t               version = NVSVERSION;
+	  FtSwarmController_t   controllerType;
 	  FtSwarmVersion_t      CPU;
 	  FtSwarmSerialNumber_t serialNumber;
     uint8_t               channel;
@@ -54,7 +56,8 @@ class SwOSNVS {
     bool                  webUI;
     bool                  IAmKelda;
     FtSwarmCommunication_t swarmCommunication;
-    FtSwarmSerialNumber_t swarmMembers[MAXSWARM];
+    FtSwarmSerialNumber_t swarmMember[MAXCTRL];
+    uint8_t               swarmSpeed = 4;
     FtSwarmExtMode_t      extentionPort;
     bool                  gyro;
     uint8_t               I2CAddr;
@@ -65,6 +68,10 @@ class SwOSNVS {
 	  void save( bool writeAll = false );    // save config to flash
     void saveAndRestart();                 // save config & restart
     void createSwarm( char *name, uint16_t pin ); // create a new swarm
+    bool addController( FtSwarmSerialNumber_t serialNumber );                       // add a controller
+    bool deleteController( FtSwarmSerialNumber_t serialNumber );                    // delete a controller
+    void deleteAllControllers( void );
+    uint8_t swarmMembers( void ) ;         // number of swarm members
     void factorySettings( void );          // reset to factory settings
     bool RS485Available( void );           // true if board has RS485
     void printNVS();                       // print settings for debugging only  

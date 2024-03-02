@@ -116,7 +116,7 @@ uint16_t enterNumber( const char *prompt, uint16_t defaultValue, uint16_t minVal
 
     // get number and check on defaults
     if ( ( !enterSomething( prompt, str, 6, false, isdigit ) ) || ( str[0] == '\0' ) ) {
-      i = defaultValue;
+      return defaultValue;
     } else {
       i = atoi( str );
     }
@@ -137,7 +137,7 @@ int32_t enterNumberI32( const char *prompt, uint16_t defaultValue, int32_t minVa
 
     // get number and check on defaults
     if ( ( !enterSomething( prompt, str, 10, false, isdigit ) ) || ( str[0] == '\0' ) ) {
-      i = defaultValue;
+      return defaultValue;
     } else {
       i = atoi( str );
     }
@@ -159,5 +159,55 @@ bool yesNo( const char *prompt, bool defaultValue ) {
   if ( (!enterSomething( prompt, str, 2, false, YN ) ) || ( strlen( str ) == 0 ) ) return defaultValue;
 
   return ( str[0] == 'y' ) || ( str[0] == 'Y' ) ;
+
+}
+
+
+void Menu::start( const char *prompt, uint8_t spacer ) { 
+
+  maxItem = 0; 
+  id[0]   = 0;
+  this->spacer = spacer;
+  strcpy( this->prompt, (char *) prompt ); 
+
+  // print Headline
+  printf( "\n\n***** %s *****\n\n", this->prompt );
+
+};
+
+void Menu::add( const char *item, int value, uint8_t id ) {
+
+  char dummy[40];
+  sprintf( dummy, "%d", value );
+  add( item, dummy, id );
+}
+
+void Menu::add( const char *item, const char *value, uint8_t id, bool staticDelimiter ){
+
+  maxItem++;
+  printf( "(%2d) %s", maxItem, item );
+  
+  if ( ( value[0] != '\0' ) || ( staticDelimiter ) ) {
+    printf(": ");
+    for (uint8_t i=strlen( item ); i<spacer; i++)  printf( " " );
+    printf( "%s\n", value );
+  } else {
+    printf("\n");
+  }
+
+  this->id[maxItem] = id;
+
+}
+
+int8_t Menu::userChoice( void ) {
+
+  printf("\n( 0) exit\n%s", prompt);
+  
+  // asking user
+  uint16_t choice = enterNumber( ">", maxItem+1, 0, maxItem );
+  if ( choice > maxItem ) 
+    return -1; 
+  else 
+    return id[ choice ];
 
 }

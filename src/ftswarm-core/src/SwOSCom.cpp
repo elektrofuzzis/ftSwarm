@@ -1,7 +1,7 @@
 /*
  * SwOSCom.cpp
  *
- * Communication between your controlers
+ * Communication between your controllers
  * 
  * (C) 2021/22 Christian Bergschneider & Stefan Fuss
  * 
@@ -26,6 +26,11 @@
 
 #include <esp_debug_helpers.h>
 
+// Debug options:
+// DEBUG_COMMUNICATION    show RX-Communication
+// DEBUG_TXCOMMUNICATION  show TX-Connumication
+// DEBUG_MONITOR          just monitor the bus and show communication
+
 // #define DEBUG_COMMUNICATION
 // #define DEBUG_TXCOMMUNICATION
 // #define DEBUG_MONITOR
@@ -38,11 +43,12 @@
 #define RS485_REB       GPIO_NUM_7
 #define RS485_DE        GPIO_NUM_17
 #define RS485_UART      UART_NUM_2
-#define RS485_BAUD_RATE 1843200 
-#define RS485_BUF_SIZE  (1024)
+#define RS485_BUF_SIZE  4096
 #define PATTERN_CHR_NUM (3) 
 
 #define RS485_MAXDELAY  100
+
+const int BAUDRATE[5] = { 115200, 230400, 460800, 921600, 1843200};
 
 typedef struct {
     uint8_t macAddr;
@@ -160,18 +166,24 @@ SwOSCom::SwOSCom( MacAddr macAddr, const uint8_t *buffer, int length):SwOSCom() 
   bzero( &data, sizeof( SwOSDatagram_t ) );
   memcpy( &data, buffer, min( length, sizeof(data) ) );
 
-  bool isJoin    = ( ( data.secret == DEFAULTSECRET ) && ( data.cmd == CMD_SWARMJOIN )    && ( data.joinCmd.pin == myOSNetwork.pin ) && ( myOSNetwork.pin != 0 ) ) ;
-  bool isJoinAck = ( ( data.secret == DEFAULTSECRET ) && ( data.cmd == CMD_SWARMJOINACK ) && ( data.joinCmd.pin == myOSNetwork.pin ) && ( myOSNetwork.pin != 0 ) ) ;
+  // bool isJoin = ( ( data.secret == DEFAULTSECRET ) && ( data.cmd == CMD_SWARMJOIN ) && ( data.joinCmd.pin == myOSNetwork.pin ) && ( myOSNetwork.pin != 0 ) ) ;
+  bool isJoin = ( data.secret == DEFAULTSECRET ) && ( data.cmd == CMD_SWARMJOIN );
+  bool isAck  = ( ( data.secret == DEFAULTSECRET ) && ( data.cmd == CMD_ACK ) );
 
   #ifdef DEBUG_COMMUNICATION
-    printf("isvalid: isJoin = %d, isJoinAck = %d, length = %d, size = %d, cmd = %d, version = %d\n",
-            isJoin, isJoinAck, length, size(), data.cmd, data.version);
+    printf("isvalid: isJoin = %d, isAck = %d, length = %d, size = %d, cmd = %d, version = %d\n",
+            isJoin, isAck, length, size(), data.cmd, data.version);
   #endif
 
-  _isValid = ( ( ( data.secret == myOSNetwork.secret ) || isJoin || isJoinAck ) &&
+  _isValid = ( ( ( data.secret == myOSNetwork.secret ) || isJoin || isAck ) &&
                ( length == size( ) ) &&
                ( data.cmd < CMD_MAX ) &&
                ( data.version == VERSIONDATA ) );
+/*
+  if ( data.cmd != 8 )
+    printf("SN = %d %d secret = %d %d _isvalid = %d isJoin = %d, isAck = %d, length = %d, size = %d, cmd = %d, version = %d\n",
+            data.sourceSN, data.affectedSN, data.secret, myOSNetwork.secret, _isValid, isJoin, isAck, length, size(), data.cmd, data.version);
+*/
 
 }
 
@@ -280,7 +292,7 @@ void SwOSCom::send( void ) {
 
   #ifdef DEBUG_MONITOR
     // Monitor mode, don't send data
-    return ESP_OK;
+    return;
   #endif
 
   // header
@@ -430,6 +442,10 @@ static void tx_RS485( SwOSCom *com ) {
     ets_delay_us( myOSNetwork.delayTime ); 
 
   }
+
+  #ifdef DEBUG_TXCOMMUNICATION
+    printf("\n****\nsend rs485 end\n");
+  #endif
     
 }
 
@@ -591,6 +607,10 @@ int RS485GetPayload( uint8_t *buffer, int buflen, uint8_t **payload, int *sizePa
 }
 
 static void RS485_rx_task(void *pvParameters) {
+
+  #ifdef DEBUG_COMMUNICATION
+    printf("RS485_rx_task started\n");
+  #endif
   
   uart_event_t   event;
   uint8_t        *buffer = (uint8_t *) calloc(1, RS485_BUF_SIZE);
@@ -603,6 +623,10 @@ static void RS485_rx_task(void *pvParameters) {
 
     // wait for data
     if( pdTRUE == xQueueReceive(myOSNetwork.RS485_rx_queue, (void * )&event, portMAX_DELAY ) ) { 
+
+      #ifdef DEBUG_COMMUNICATION
+        printf("RS485_rx_task event %d size %d\n", event.type, event.size);
+      #endif
 
       switch (event.type) {
         
@@ -688,10 +712,11 @@ bool SwOSNetwork::_StartRS485( void ) {
   // Initialize RS485 communication stack
 
   # if !defined(CONFIG_IDF_TARGET_ESP32S3)
-    return true; // ftSwarmRS only
+    // ftSwarmJST, ftSwarmControl: no RS485
+    return true; 
 
   #else
-
+    // ftSwarmRS, XL, PwrDrive, Duino
     RS485_rx_queue = xQueueCreate(10, sizeof( SwOSDatagram_t ) );
 
     // REB & DE
@@ -702,7 +727,7 @@ bool SwOSNetwork::_StartRS485( void ) {
 
     // UART configuration
     uart_config_t uart_config = {
-        .baud_rate = RS485_BAUD_RATE,
+        .baud_rate = BAUDRATE[nvs.swarmSpeed],
         .data_bits = UART_DATA_8_BITS,
         .parity    = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
@@ -785,7 +810,7 @@ void SwOSNetwork::setSecret( uint16_t swarmSecret, uint16_t swarmPIN ) {
 }
 
 bool SwOSNetwork::hasJoinedASwarm( void ) {
-  return secret == DEFAULTSECRET;
+  return secret != DEFAULTSECRET;
 }
 
 SwOSNetwork myOSNetwork;

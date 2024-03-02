@@ -32,6 +32,9 @@ class SwOSCtrl; // forward declaration
 // state
 typedef enum { BOOTING, STARTWIFI, RUNNING, ERROR, WAITING, IDENTIFY, MAXSTATE } SwOSState_t;
 
+// comState
+typedef enum { INITIALIZING, ASKFORDETAILS, UP } SwOSComState_t;
+
 /***************************************************
  *
  *   SwOSObj - Base class for all SwOS objects.
@@ -82,10 +85,12 @@ protected:
 
 public:
   // Constructors
-	SwOSIO(const char *name, SwOSCtrl *ctrl);                 // constructor name, pointer to overlying controler
-	SwOSIO(const char *name, uint8_t port, SwOSCtrl *ctrl);   // constructor name, port, pointer to overlying controler
+	SwOSIO(const char *name, SwOSCtrl *ctrl);                 // constructor name, pointer to overlying controller
+	SwOSIO(const char *name, uint8_t port, SwOSCtrl *ctrl);   // constructor name, port, pointer to overlying controller
 
   // Administrative stuff
+  virtual void            lock(void);
+  virtual void            unlock(void);
   virtual char*           subscribe( char *IOName, uint32_t hysteresis ); // subscribe sensor to display value changes as console outputs 
 	virtual void            unsubscribe();                                  // clear subscription
   virtual uint8_t         getPort() { return _port; };
@@ -97,6 +102,12 @@ public:
   virtual void            give( void ) { if (_useCounter>0) _useCounter--; };   // unregister an instance using this IO
   virtual bool            isInUse( void ) { return _useCounter > 0; };          // test, if an IO is used by some user elements
   
+  // Test, if I'm an Actor
+  virtual bool            isActor( void ) { return false; };
+
+  // Test, if I', an Sensor
+  virtual bool            isSensor( void ) { return false; };
+
   virtual void read( void ) { };
   virtual void onTrigger( int32_t value );
 
@@ -168,8 +179,12 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
     virtual char *getIcon();
 	  virtual void jsonize( JSONize *json, uint8_t id) {};               // just a placeholder
 
+    // Test, if I', an Sensor
+    virtual bool            isSensor( void ) { return true; };
+
     // read sensor
-	  virtual void     read() {};
+	  virtual void read() {};
+    virtual void setReading( int32_t newValue ) {};
 
     // external commands
     virtual void            setSensorType( FtSwarmSensor_t sensorType );  // set sensor type
@@ -205,7 +220,8 @@ class SwOSDigitalInput : public SwOSInput {
     virtual void jsonize( JSONize *json, uint8_t id);
 
     // read sensor
-	  virtual void     read();
+	  virtual void read();
+    virtual void setReading( int32_t newValue );
 
     // external commands
     virtual void            setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen );  // set sensor type
@@ -259,7 +275,7 @@ class SwOSFrequencymeter : public SwOSInput {
     gpio_num_t _CONTROL  = GPIO_NUM_NC;
     uint8_t    _portControl = 255;
 
-    unsigned long _lastTick = 0;
+    int64_t                  _lastTick = 0;
     QueueHandle_t _freqQueue = NULL;
 
     virtual void _setupLocal();
@@ -305,6 +321,7 @@ class SwOSAnalogInput : public SwOSInput {
 
     // read sensor
 	  virtual void     read();
+    virtual void setReading( int32_t newValue );
 
     // external commands
     virtual void   setValue( int32_t value );                    // set value by an external call
@@ -326,9 +343,11 @@ class SwOSActor : public SwOSIO {
 protected:
 
   // DC motors
-	gpio_num_t     _IN1, _IN2;
-	ledc_channel_t _channelIN1, _channelIN2;
-  uint32_t       _rampUpT, _rampUpY;
+	gpio_num_t     _IN1 = GPIO_NUM_NC;
+  gpio_num_t     _IN2 = GPIO_NUM_NC;
+  ledc_channel_config_t *ledc_channel = NULL;
+  uint32_t       _rampUpT = 0;
+  uint32_t       _rampUpY = 0;
 
   // stepper motors
   long           _distance;
@@ -338,7 +357,7 @@ protected:
   bool           _isRunning;
 
   // generics
-  FtSwarmActor_t  _actorType;
+  FtSwarmActor_t  _actorType = FTSWARM_MOTOR;
 	FtSwarmMotion_t _motionType = FTSWARM_COAST;
 	int16_t         _speed = 0;
 
@@ -347,13 +366,17 @@ protected:
   virtual void _setupLocal(); // initializes local HW
   virtual void _setLocalI2C();   // start moving locally
   virtual void _setLocalLHW();   // start moving locally
+  virtual void setPWM( int16_t in1, int16_t in2, gpio_num_t pwm, uint32_t duty );
 
   // remote HW procedures
   virtual void _setRemote();  // start moving remotely 
 
 public:
+  bool           _highResolution = false;
+
   // Constructors
 	SwOSActor(const char *name, uint8_t port, SwOSCtrl *ctrl );
+  ~SwOSActor( );
 
   // adminstrative stuff
 	virtual FtSwarmIOType_t getIOType()  { return FTSWARM_ACTOR; };
@@ -363,10 +386,14 @@ public:
   virtual void            onTrigger( int32_t value );
   virtual void            read( void );
 
+  // Test, if I'm an Actor
+  virtual bool            isActor( void ) { return true; };
+
   // commands
-  virtual void            setActorType( FtSwarmActor_t actorType, bool dontSendToRemote );    // set actor type
+  virtual void            setActorType( FtSwarmActor_t actorType, bool highResolution, bool dontSendToRemote );    // set actor type
   virtual void            setValue( FtSwarmMotion_t motionType, int16_t speed ) { _motionType = motionType; _speed = speed; };  // set values
 	virtual void            setSpeed( int16_t speed );                                 // set speed
+  virtual void            apply( void );                                             // apply speed/setAcceleration/setMotionType
   virtual int16_t         getSpeed() { return _speed; };                             // get speed
   virtual void            setAcceleration( uint32_t rampUpT,  uint32_t rampUpY );    // set acceleration ramp
   virtual void            getAcceleration( uint32_t *rampUpT, uint32_t *rampUpY );   // get acceleration ramp
@@ -427,6 +454,9 @@ public:
   virtual char *getIcon() { return (char *) "11_joystick.svg"; };
 	virtual void jsonize( JSONize *json, uint8_t id);
   
+  // Test, if I', an Sensor
+  virtual bool            isSensor( void ) { return true; }
+
   // read
   virtual void subscription();
 	virtual void read();
@@ -465,7 +495,10 @@ public:
   virtual char *getIcon()   { return (char *) "15_rgbled.svg"; };
   virtual void jsonize( JSONize *json, uint8_t id);
   virtual void onTrigger( int32_t value );
-    
+
+  // Test, if I'm an Actor
+  virtual bool     isActor( void ) { return true; }
+
   // commands
 	virtual uint32_t getColor()      { return _color; };
 	virtual uint8_t  getBrightness() { return _brightness; };
@@ -503,6 +536,9 @@ class SwOSServo : public SwOSIO {
     virtual char *    getIcon() { return (char *) "14_servo.svg"; };
     virtual void jsonize( JSONize *json, uint8_t id);
     virtual void onTrigger( int32_t value );
+
+    // Test, if I'm an Actor
+    virtual bool            isActor( void ) { return true; }
     
     // commands
 	  virtual int16_t getOffset( )   { return _offset; };
@@ -534,6 +570,9 @@ class SwOSGyro : public SwOSIO {
 	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_GYRO; };
     virtual char *getIcon() { return (char *) "25_gyro.svg"; };
     virtual void jsonize( JSONize *json, uint8_t id);
+
+    // Test, if I'm an Sensor
+    virtual bool            isSensor( void ) { return true; }
 
     // read sensor
     virtual void     read();
@@ -731,19 +770,30 @@ class SwOSCAM : public SwOSIO {
  *
  ***************************************************/
 
+struct SwOSAckState_t {
+  SwOSCommand_t cmd;
+  SwOSError_t   error;
+  uint16_t      secret;
+};
+
 class SwOSCtrl : public SwOSObj {
 protected:
+  SemaphoreHandle_t _xAccessLock = xSemaphoreCreateMutex();
 	FtSwarmVersion_t _CPU;
   bool             _local;
   unsigned long    _lastContact = 0;
   bool             _isSubscribed = false;
   char             *_subscribedCtrlName = NULL;
+
 	const char *     version( FtSwarmVersion_t v);
   virtual void     _sendAlias( SwOSCom *alias );
+
 public:
 	FtSwarmSerialNumber_t serialNumber;
   MacAddr               macAddr;
-  bool                  IAmAKelda;
+  bool                  IAmKelda;
+  SwOSAckState_t        lastAck = { CMD_MAX, SWOS_OK, DEFAULTSECRET };
+  SwOSComState_t        comState = INITIALIZING;
   
   // common hardware
 	SwOSInput    *input[MAXINPUTS];
@@ -751,26 +801,31 @@ public:
 	SwOSPixel    *led[MAXLEDS];
   uint8_t      inputs, actors, leds;
 	
-  // constructor, destructor
-  SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, FtSwarmExtMode_t extentionPort );
+  // constructor
+  SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extentionPort );
+  
+  // destructor
   ~SwOSCtrl();
 
   // administrative stuff
+  virtual void lock( void );
+  virtual void unlock( void );
+  virtual bool isInUse( void );
   virtual bool cmdAlias( const char *obj, const char *alias);            // set an alias for this board or IO device
 	virtual bool cmdAlias( char *device, uint8_t port, const char *alias); // set an alias for a IO device
   virtual SwOSIO *getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port);    // get a pointer to an IO port via address
 	virtual SwOSIO *getIO( const char *name);                              // get a pointer to an IO port via name or alias
-  virtual FtSwarmControler_t getType();                                  // what I am?
+  virtual FtSwarmController_t getType();                                  // what I am?
 	virtual char*              myType();                                   // what I am?
   virtual FtSwarmVersion_t   getCPU() { return _CPU; };                  // my CPU type
 	virtual const char *       getVersionCPU();                            // my CPU type as string
   virtual bool               isLocal() { return _local; };               // local or remote?
 	virtual char *             getHostname( );                             // hostname
-	        void               jsonize( JSONize *json, uint8_t id);        // send board & IO device information as a json string
+	virtual void               jsonize( JSONize *json, uint8_t id);        // send board & IO device information as a json string
   virtual void               jsonizeIO( JSONize *json, uint8_t id);      // send IO device information as a json string
   virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
   virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
-  virtual void setState( SwOSState_t state, uint8_t members = 0, char *SSID = NULL ); // visualizes controler's state like booting, error,...
+  virtual void setState( SwOSState_t state, uint8_t members = 0, char *SSID = NULL ); // visualizes controller's state like booting, error,...
   virtual void factorySettings( void );                                  // reset factory settings
   virtual void halt( void );                                             // stop all actors
   virtual void unsubscribe( bool cascade );                              // unsubscribe userevents and if cascade = true all IOs
@@ -782,7 +837,7 @@ public:
 
   virtual void read(); // run measurements
 
-  // API commnds
+  // API commands
 	virtual bool apiActorCmd( char *id, int cmd );                 // send an actor's command (from api)
   virtual bool apiActorSpeed( char *id, int speed );             // send an actors's speed (from api)
 	virtual bool apiLEDBrightness( char *id, int brightness );     // send a LED command (from api)
@@ -821,7 +876,7 @@ class SwOSSwarmI2CCtrl : public SwOSCtrl {
   public:
 
     // constructor, destructor
-    SwOSSwarmI2CCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
+    SwOSSwarmI2CCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda );
     ~SwOSSwarmI2CCtrl();
 
 };
@@ -837,12 +892,12 @@ class SwOSSwarmPwrDrive : public SwOSSwarmI2CCtrl {
     uint8_t _microstepMode = 0;
   public:
     // constructor, destructor
-    SwOSSwarmPwrDrive( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
+    SwOSSwarmPwrDrive( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda );
     SwOSSwarmPwrDrive( SwOSCom *com ); 
     ~SwOSSwarmPwrDrive();
 
     virtual char*              myType();                                   // what I am?
-	  virtual FtSwarmControler_t getType();                                  // what I am?
+	  virtual FtSwarmController_t getType();                                  // what I am?
     virtual SwOSCom *          state2Com( MacAddr destination );
     virtual bool               recvState( SwOSCom *com );                  // receive state from another ftSwarmXX
     virtual void               read( void );
@@ -867,13 +922,18 @@ class SwOSSwarmPwrDrive : public SwOSSwarmI2CCtrl {
  ***************************************************/
 
 class SwOSSwarmDuino : public SwOSSwarmI2CCtrl {
+
+  private:
+    uint8_t i2cerror = 0; 
+
   public:
     // constructor, destructor
-    SwOSSwarmDuino( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda );
+    SwOSSwarmDuino( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda );
+    SwOSSwarmDuino( SwOSCom *com ); 
     ~SwOSSwarmDuino();
 
     virtual char* myType();                                                // what I am?
-	  virtual FtSwarmControler_t getType();                                  // what I am?
+	  virtual FtSwarmController_t getType();                                  // what I am?
 	  virtual void read();                                                   // run measurements
 
 };
@@ -892,9 +952,11 @@ class SwOSSwarmXX : public SwOSCtrl {
     SwOSI2C      *I2C;
     
     // constructor, destructor
-    SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, FtSwarmExtMode_t extentionPort );
+    SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extentionPort );
     ~SwOSSwarmXX();
-    
+
+    virtual bool isInUse( void );
+
     virtual SwOSIO *getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port);    // get a pointer to an IO port via address
 	  virtual SwOSIO *getIO( const char *name);                              // get a pointer to an IO port via name or alias
     virtual void factorySettings( void );                                  // reset factory settings  
@@ -922,15 +984,16 @@ class SwOSSwarmJST : public SwOSSwarmXX {
 	  SwOSServo *servo[MAXSERVOS];
 
     // constructor, destructor
-	  SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, uint8_t xLed, FtSwarmExtMode_t extentionPort );
+	  SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, uint8_t xLed, FtSwarmExtMode_t extentionPort );
     SwOSSwarmJST( SwOSCom *com ); // constructor
     ~SwOSSwarmJST();
   
     // administrative stuff
+    virtual bool isInUse( void );
 	  virtual bool cmdAlias( char *device, uint8_t port, const char *alias); // set an alias for a IO device
     virtual SwOSIO *getIO( FtSwarmIOType_t ioType,  FtSwarmPort_t port);   // get an pointer to the requested IO Device via type&port
 	  virtual SwOSIO *getIO( const char *name);                              // get an pointer to the requested IO Device via name or alias
-	  virtual FtSwarmControler_t getType();                                  // what I am?
+	  virtual FtSwarmController_t getType();                                  // what I am?
 	  virtual char* myType();                                                // what I am?
 	  virtual void jsonizeIO( JSONize *json, uint8_t id);                    // send IO device information as a json string
     virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
@@ -968,20 +1031,21 @@ class SwOSSwarmControl : public SwOSSwarmXX {
 
     SwOSOLED     *oled;
  
-	  SwOSSwarmControl(FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda, int16_t zero[2][2], uint8_t displayType ); // constructor
+	  SwOSSwarmControl(FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, int16_t zero[2][2], uint8_t displayType ); // constructor
     SwOSSwarmControl( SwOSCom *com ); // constructor
     ~SwOSSwarmControl(); // destructor
   
     // administrative stuff
+    virtual bool isInUse( void );
 	  virtual bool cmdAlias( char *device, uint8_t port, const char *alias); // set an alias for a IO device
     virtual SwOSIO *getIO( FtSwarmIOType_t ioType,  FtSwarmPort_t port);   // get a pointer to the requested IO Device via type & port
 	  virtual SwOSIO *getIO( const char *name);                              // get a pointer to the requested IO Device via name or alias
 	  virtual char* myType();                                                // what I am?
-	  virtual FtSwarmControler_t getType();                                  // what I am?
+	  virtual FtSwarmController_t getType();                                  // what I am?
 	  virtual void jsonizeIO( JSONize *json, uint8_t id);                    // send IO device information as a json string
     virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
     virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
-    virtual void setState( SwOSState_t state, uint8_t members = 0, char *SSID = NULL ); // visualizes controler's state like booting, error,...
+    virtual void setState( SwOSState_t state, uint8_t members = 0, char *SSID = NULL ); // visualizes controller's state like booting, error,...
     virtual void factorySettings( void );                                  // reset factory settings
     virtual boolean getRemoteControl( void );                              // get remote control setting
     virtual void setRemoteControl( boolean remoteControl );                // set remote control setting
@@ -1009,7 +1073,7 @@ class SwOSSwarmCAM : public SwOSCtrl {
   public:
     SwOSCAM *cam = NULL;
 
-    SwOSSwarmCAM(FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmAKelda ); // constructor
+    SwOSSwarmCAM(FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda ); // constructor
     SwOSSwarmCAM( SwOSCom *com ); // constructor
     ~SwOSSwarmCAM(); // destructor
   
@@ -1018,11 +1082,11 @@ class SwOSSwarmCAM : public SwOSCtrl {
     virtual SwOSIO *getIO( FtSwarmIOType_t ioType,  FtSwarmPort_t port);   // get a pointer to the requested IO Device via type & port
     virtual SwOSIO *getIO( const char *name);                              // get a pointer to the requested IO Device via name or alias
     virtual char* myType();                                                // what I am?
-    virtual FtSwarmControler_t getType();                                  // what I am?
+    virtual FtSwarmController_t getType();                                  // what I am?
     virtual void jsonizeIO( JSONize *json, uint8_t id);                    // send IO device information as a json string
     virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
     virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
-    virtual void setState( SwOSState_t state, uint8_t members = 0, char *SSID = NULL ); // visualizes controler's state like booting, error,...
+    virtual void setState( SwOSState_t state, uint8_t members = 0, char *SSID = NULL ); // visualizes controller's state like booting, error,...
 
     // api commands
     virtual bool apiCAMStreaming(  char *id, bool onOff );           // start/stops CAM streaming

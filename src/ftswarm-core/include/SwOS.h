@@ -18,7 +18,7 @@
 #define MAXIDENTIFIER 32
 #define MAXACTORS 8
 #define MAXINPUTS 8
-#define SWOSVERSION "0.5.4"
+#define SWOSVERSION "0.6.0"
 
 #include <stdint.h>
 #include <cstddef>
@@ -41,13 +41,20 @@
 // max I2C Register
 #define MAXI2CREGISTERS 8
 
-// max # of controlers in swarm
+// max # of controllers in swarm
 #define MAXCTRL 32
 
 typedef uint16_t FtSwarmSerialNumber_t;
 typedef uint8_t  FtSwarmPort_t;
 
+// some delays
+#define shortDelay()  vTaskDelay( 25 / portTICK_PERIOD_MS )
+#define longDelay()   vTaskDelay( 1000 / portTICK_PERIOD_MS )
+
 // **** enumerations ****
+
+// error types
+typedef enum { SWOS_OK, SWOS_TIMEOUT, SWOS_DENY } SwOSError_t;
 
 // communication
 typedef enum { swarmComWifi = 1, swarmComRS485 = 2, swarmComBoth= 3 } FtSwarmCommunication_t; 
@@ -55,8 +62,8 @@ typedef enum { swarmComWifi = 1, swarmComRS485 = 2, swarmComBoth= 3 } FtSwarmCom
 // IO types
 typedef enum { FTSWARM_UNDEF = -1, FTSWARM_INPUT, FTSWARM_DIGITALINPUT, FTSWARM_ANALOGINPUT, FTSWARM_ACTOR, FTSWARM_BUTTON, FTSWARM_JOYSTICK, FTSWARM_PIXEL, FTSWARM_SERVO,  FTSWARM_OLED, FTSWARM_GYRO, FTSWARM_HC165, FTSWARM_I2C, FTSWARM_CAM, FTSWARM_COUNTERINPUT, FTSWARM_FREQUENCYINPUT, FTSWARM_MAXIOTYPE } FtSwarmIOType_t ;
 
-// controler types
-typedef enum { FTSWARM_NOCTRL = -1, FTSWARM = 0, FTSWARMCONTROL, FTSWARMCAM, FTSWARMPWRDRIVE, FTSWARMDUINO } FtSwarmControler_t;
+// controller types
+typedef enum { FTSWARM_NOCTRL = -1, FTSWARM = 0, FTSWARMCONTROL, FTSWARMCAM, FTSWARMPWRDRIVE, FTSWARMDUINO } FtSwarmController_t;
 
 // sensor types
 typedef enum { FTSWARM_DIGITAL, FTSWARM_ANALOG, FTSWARM_SWITCH, FTSWARM_REEDSWITCH, FTSWARM_LIGHTBARRIER, FTSWARM_VOLTMETER, FTSWARM_OHMMETER, FTSWARM_THERMOMETER, FTSWARM_LDR, FTSWARM_TRAILSENSOR, FTSWARM_COLORSENSOR, FTSWARM_ULTRASONIC, FTSWARM_CAMSENSOR, FTSWARM_COUNTER, FTSWARM_ROTARYENCODER, FTSWARM_FREQUENCYMETER, FTSWARM_MAXSENSOR } FtSwarmSensor_t;
@@ -74,7 +81,8 @@ typedef enum {
   FTSWARMRS_2V1,
   FTSWARMCAM_2V11,
   FTSWARMDUINO_1V141,
-  FTSWARMPWRDRIVE_1V141 } FtSwarmVersion_t;
+  FTSWARMPWRDRIVE_1V141,
+  FTSWARMXL_1V00 } FtSwarmVersion_t;
 
 // how to move
 typedef enum { FTSWARM_COAST, FTSWARM_BRAKE, FTSWARM_ON, FTSWARM_MAXMOTION } FtSwarmMotion_t;
@@ -102,7 +110,7 @@ typedef enum {
     Black      = 0x000000
 } FtSwarmColor;
 
-#define MAXSPEED256  256 
+#define MAXSPEED256  255 
 #define MAXSPEED4096 4095 
 
 // **** port definitions ****
@@ -197,7 +205,7 @@ class FtSwarmInput : public FtSwarmIO {
 // **** input / actor classes to use in your sketch ****
 
 class FtSwarmDigitalInput : public FtSwarmInput {
-  // digital inputs. ports A1..A4, all controler types
+  // digital inputs. ports A1..A4, all controller types
 
   protected:
     FtSwarmDigitalInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmSensor_t sensorType, bool normallyOpen = true);
@@ -217,7 +225,7 @@ class FtSwarmDigitalInput : public FtSwarmInput {
 };
 
 class FtSwarmSwitch : public FtSwarmDigitalInput {
-  // all kind of mechanical switches, A1..A4 all controlers
+  // all kind of mechanical switches, A1..A4 all controllers
   // fischertechnik switches: 1-3 is normally open, 1-2 is normally closed
   public:
     FtSwarmSwitch( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool normallyOpen = true);
@@ -225,14 +233,14 @@ class FtSwarmSwitch : public FtSwarmDigitalInput {
 };
 
 class FtSwarmReedSwitch : public FtSwarmDigitalInput {
-  // reed switches, A1..A4 all controlers
+  // reed switches, A1..A4 all controllers
   public:
     FtSwarmReedSwitch( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool normallyOpen = true);
     FtSwarmReedSwitch( const char *name, bool normallyOpen = true);
 };
 
 class FtSwarmLightBarrier: public FtSwarmDigitalInput {
-  // photo transistor as light barrier, A1..A4 all controlers
+  // photo transistor as light barrier, A1..A4 all controllers
   public:
     FtSwarmLightBarrier( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool normallyOpen = true);
     FtSwarmLightBarrier( const char *name, bool normallyOpen = true);
@@ -346,8 +354,8 @@ class FtSwarmLDR : public FtSwarmAnalogInput {
 class FtSwarmActor : public FtSwarmIO {
   // an actor base class, don't use this class at all
   protected:
-    FtSwarmActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType );
-    FtSwarmActor( const char *name, FtSwarmActor_t actorType );
+    FtSwarmActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType, bool highResolution );
+    FtSwarmActor( const char *name, FtSwarmActor_t actorType, bool highResolution );
 };
 
 
@@ -355,12 +363,12 @@ class FtSwarmMotor : public FtSwarmActor {
   // general motor class, use this class for (old) gray motors, mini motors, XS motors
   // M1..M2 all contollers - keep power budget in mind!
   protected:
-    FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType );
-    FtSwarmMotor( const char *name, FtSwarmActor_t actorType );
+    FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType, bool highResolution );
+    FtSwarmMotor( const char *name, FtSwarmActor_t actorType, bool highResolution );
   public:
-    FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port ):FtSwarmMotor( serialNumber, port, FTSWARM_MOTOR ) {};
-    FtSwarmMotor( const char *name ):FtSwarmMotor( name, FTSWARM_MOTOR ) {};    
-    void     setSpeed( int16_t speed );                                // speed +/- 255 or +/-4095 dependend on speedRange, speed 0 motor stopss
+    FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool highResolution = false ):FtSwarmMotor( serialNumber, port, FTSWARM_MOTOR, highResolution ) {};
+    FtSwarmMotor( const char *name, bool highResolution = false ):FtSwarmMotor( name, FTSWARM_MOTOR, highResolution ) {};  
+    void     setSpeed( int16_t speed );                                // speed +/- 255 or +/-4095 dependend on resolution, speed 0 motor stopss
     uint16_t getSpeed();                                               // actual speed
     void     setAcceleration( uint32_t rampUpT,  uint32_t rampUpY );  
     void     getAcceleration( uint32_t *rampUpT, uint32_t *rampUpY );
@@ -371,12 +379,12 @@ class FtSwarmTractorMotor : public FtSwarmMotor {
   // tractor & XM motor
   // M1..M2 all contollers - keep power budget in mind!
   protected:
-    FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType );
-    FtSwarmTractorMotor( const char * name, FtSwarmActor_t actorType );
+    FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType, bool highResolution );
+    FtSwarmTractorMotor( const char * name, FtSwarmActor_t actorType, bool highResolution );
       
   public:
-    FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
-    FtSwarmTractorMotor( const char * name );
+    FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool highResolution = false );
+    FtSwarmTractorMotor( const char * name, bool highResolution = false );
 
     // FtSwarmTractor has different options for stopping motor:
     virtual void setMotionType( FtSwarmMotion_t motionType );
@@ -389,8 +397,8 @@ class FtSwarmXMMotor : public FtSwarmTractorMotor {
   // xm motor
   // M1..M2 all contollers - keep power budget in mind!
   public:
-    FtSwarmXMMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
-    FtSwarmXMMotor( const char * name );
+    FtSwarmXMMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool highResolution = false);
+    FtSwarmXMMotor( const char * name, bool highResolution = false );
 };
 
 class FtSwarmEncoderMotor : public FtSwarmTractorMotor {
@@ -398,8 +406,8 @@ class FtSwarmEncoderMotor : public FtSwarmTractorMotor {
   // M1..M2 all contollers - keep power budget in mind!
   // TODO: implement encoder input
   public:
-    FtSwarmEncoderMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
-    FtSwarmEncoderMotor( const char * name );
+    FtSwarmEncoderMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool highResolution = false );
+    FtSwarmEncoderMotor( const char * name, bool highResolution = false );
 };
 
 class FtSwarmStepperMotor : public FtSwarmTractorMotor {
@@ -595,10 +603,10 @@ class FtSwarm {
     
   public:
     FtSwarmSerialNumber_t begin( bool verbose = false );   // start my swarm
-    void setReadDelay( uint16_t readDelay );               // set delay between two measures
     void halt( void );                                     // stop all actors
     bool waitOnUserEvent( int parameter[10], TickType_t xTicksToWait = 512 );
     bool sendEventData( uint8_t *buffer, size_t size );
+    bool IOAvaliable( const char *name ) { return false; };
 };
 
 // There is one only

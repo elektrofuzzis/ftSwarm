@@ -1,7 +1,7 @@
 /*
  * SwOSCom.h
  *
- * Communication between your controlers
+ * Communication between your controllers
  * 
  * (C) 2021/22 Christian Bergschneider & Stefan Fuss
  *
@@ -20,13 +20,13 @@
 
 #define ESPNOW_MAXDELAY     128
 #define DEFAULTSECRET       0x2506
-#define VERSIONDATA         6
+#define VERSIONDATA         7
 #define MAXALIAS            5
 #define MAXUSEREVENTPAYLOAD 128
 
 typedef enum {
   CMD_SWARMJOIN,              // I want to join a swarm
-  CMD_SWARMJOINACK,           // Acknowledge on join swarm
+  CMD_ACK,                    // Acknowledge a cmd
   CMD_SWARMLEAVE,             // leave swarm
   CMD_ANYBODYOUTTHERE,        // Broadcast to get known by everybody 
   CMD_GOTYOU,                 // anybody's reply on ANYBODYOUTTHERE
@@ -78,9 +78,9 @@ struct registerControl_t {
 } __attribute__((packed));
 
 struct registerCmd_t { 
-  FtSwarmControler_t ctrlType; 
+  FtSwarmController_t ctrlType; 
   FtSwarmVersion_t versionCPU; 
-  bool IAmAKelda; 
+  bool IAmKelda; 
   FtSwarmExtMode_t extentionPort;
   uint8_t leds;
 } __attribute__((packed));
@@ -95,14 +95,15 @@ struct SwOSDatagram_t {
   SwOSCommand_t         cmd;
   union {
     registerCmd_t registerCmd;
-    struct { uint16_t pin; uint16_t swarmSecret; char swarmName[MAXIDENTIFIER]; } joinCmd;
+    struct { uint16_t pin; uint16_t swarmSecret; char swarmName[MAXIDENTIFIER]; bool IAmKelda; } joinCmd;
+    struct { SwOSCommand_t cmd; SwOSError_t error; uint16_t secret; } ackCmd;
     struct { uint32_t inputValue[MAXINPUTS]; int16_t LR[2]; int16_t FB[2]; uint8_t hc165;} stateCmd;
     struct { bool isHoming[4]; bool isRunning[4]; uint32_t inputValue[5]; long distance[4]; long position[4];} stepperStateCmd;
     struct { uint8_t index; FtSwarmSensor_t sensorType; bool normallyOpen; } sensorCmd __attribute__((packed));
     struct { uint8_t index; int16_t offset; int16_t position; } servoCmd;
     struct { uint8_t index; FtSwarmMotion_t motionType; int16_t speed;  uint32_t rampUpT; uint32_t rampUpY; } actorSpeedCmd;
     struct { uint8_t index; long paraml; bool paramb; } actorStepperCmd;
-    struct { uint8_t index; FtSwarmActor_t actorType; } actorTypeCmd;
+    struct { uint8_t index; FtSwarmActor_t actorType; bool highResolution; } actorTypeCmd;
     struct { uint8_t index; uint8_t brightness; uint32_t color; } ledCmd;
     struct { Alias_t alias[MAXALIAS]; } aliasCmd;
     struct { uint8_t reg; uint8_t value; } I2CRegisterCmd;

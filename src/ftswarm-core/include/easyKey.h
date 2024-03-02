@@ -31,3 +31,19 @@ void enterString( const char *prompt, char *s, uint16_t size, bool hidden = fals
 
 void enterIdentifier( const char *prompt, char *s, uint16_t size );
 // write a prompt and read an identifier from serial
+
+#define MAXMENUITEMS 40
+
+class Menu {
+  private:
+    uint8_t maxItem = 0;
+    uint8_t spacer = 0;
+    uint8_t id[MAXMENUITEMS];
+    char    prompt[40];
+
+  public:
+    void   start( const char *prompt, uint8_t spacer );
+    void   add( const char *item, const char *value, uint8_t id, bool staticDelimiter = false );
+    void   add( const char *item, int value, uint8_t id );
+    int8_t userChoice( void );
+};

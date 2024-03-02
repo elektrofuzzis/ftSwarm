@@ -136,7 +136,7 @@ long ftPwrDrive::getMaxSpeed( uint8_t motor ) {
 
 void ftPwrDrive::startMoving( uint8_t motor, boolean disableOnStop ) {
   // start motor moving, disableOnStop disables the motor driver at the end of the movement
-  i2c.sendData( i2cAddress, CMD_STARTMOVING, motor, disableOnStop );
+  i2c.sendData( i2cAddress, CMD_STARTMOVING, motor, (uint8_t) disableOnStop );
 }
 
 void ftPwrDrive::startMovingAll( uint8_t maskMotor, uint8_t maskDisableOnStop  ) {
@@ -270,7 +270,7 @@ void ftPwrDrive::getServoOffsetAll( long *o1, long *o2, long *o3, long *o4 ) {
 
 void ftPwrDrive::setServoOnOff( uint8_t servo, boolean on ) {
   // set servo pin On or Off without PWM
-  i2c.sendData( i2cAddress, CMD_SETSERVOONOFF, servo, on );
+  i2c.sendData( i2cAddress, CMD_SETSERVOONOFF, servo, (uint8_t) on );
 }
 
 void ftPwrDrive::homing( uint8_t motor, long maxDistance, boolean disableOnStop ) {

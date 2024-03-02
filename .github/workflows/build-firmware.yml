@@ -1,0 +1,43 @@
+name: PlatformIO CI
+'on':
+  push:
+    branches:
+      - "master"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        targets:
+          - firmware-cam
+          - firmware-control
+          - firmware-duino
+          - firmware-jst
+          - firmware-pwrdrive
+          - firmware-rs
+          - firmware-xl
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: '${{ runner.os }}-${{ matrix.targets }}-pio'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+      - name: Copy target-specific files
+        run: cd ./src/${{ matrix.targets }} && cp platformio.ini ../ftswarm-core && cp src/main.cpp ../ftswarm-core/src
+      - name: Download dependencies
+        run: cd ./src/ftswarm-core && pio pkg install
+      - name: Build firmware
+        run: cd ./src/ftswarm-core && pio run
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ matrix.targets }}
+          path: ./src/ftswarm-core/.pio/build/${{ matrix.targets }}/firmware.bin

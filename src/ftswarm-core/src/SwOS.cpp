@@ -42,10 +42,8 @@ FtSwarmIO::FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, Ft
   while (!me) {
 
     // check, if IO is online
-    myOSSwarm.lock(); 
     me = (SwOSIOHandle_t) myOSSwarm.getIO( serialNumber, port, ioType);
-    myOSSwarm.unlock();
-
+    
     // no success, wait 25 ms
     if ( (!me) && ( firstTry ) ) {
       ESP_LOGD( LOGFTSWARM, "waiting on device" );
@@ -57,9 +55,9 @@ FtSwarmIO::FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, Ft
   }
 
   // register myself
-  myOSSwarm.lock(); 
+  static_cast<SwOSIO *>(me)->lock();
   static_cast<SwOSIO *>(me)->take();
-  myOSSwarm.unlock(); 
+  static_cast<SwOSIO *>(me)->unlock(); 
   
 };
 
@@ -74,7 +72,6 @@ FtSwarmIO::FtSwarmIO( const char *name, FtSwarmIOType_t ioType ) {
 
   while (!me) {
 
-    myOSSwarm.lock();
     me = myOSSwarm.getIO( name, ioType );
 
     // no success, wait 25 ms
@@ -84,16 +81,14 @@ FtSwarmIO::FtSwarmIO( const char *name, FtSwarmIOType_t ioType ) {
       firstTry = false;
     }
     
-    myOSSwarm.unlock();
-
     if (!me) vTaskDelay( 25 / portTICK_PERIOD_MS );
  
   }
 
   // register myself
-  myOSSwarm.lock(); 
+  static_cast<SwOSIO *>(me)->lock(); 
   static_cast<SwOSIO *>(me)->take();
-  myOSSwarm.unlock(); 
+  static_cast<SwOSIO *>(me)->unlock(); 
   
 }
 
@@ -101,9 +96,9 @@ FtSwarmIO::~FtSwarmIO() {
 
   // unregister myself
   if (me) {
-    myOSSwarm.lock(); 
+    static_cast<SwOSIO *>(me)->lock(); 
     static_cast<SwOSIO *>(me)->give();
-    myOSSwarm.unlock(); 
+    static_cast<SwOSIO *>(me)->unlock(); 
   }
 }
 
@@ -129,9 +124,9 @@ void FtSwarmInput::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, i
 
   // set trigger using static values
   if ( (me) && (actor) ) {
-    myOSSwarm.lock();
+    static_cast<SwOSInput *>(me)->lock();
     static_cast<SwOSInput *>(me)->registerEvent( triggerEvent, (SwOSIO *)actor->me, false, p1 );
-    myOSSwarm.unlock();
+    static_cast<SwOSInput *>(me)->unlock();
   }
 
 };
@@ -140,9 +135,9 @@ void FtSwarmInput::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor ) 
 
   // set trigger using port's value
   if ( (me) && (actor) ) {
-    myOSSwarm.lock();
+    static_cast<SwOSInput *>(me)->lock();
     static_cast<SwOSInput *>(me)->registerEvent( triggerEvent, (SwOSIO *)actor->me, true, 0 );
-    myOSSwarm.unlock();
+    static_cast<SwOSInput *>(me)->unlock();
   }
 
 };
@@ -154,9 +149,9 @@ void FtSwarmDigitalInput::setSensorType( FtSwarmSensor_t sensorType, bool normal
 
   // set sensor type
   if (me) {
-    myOSSwarm.lock();
+    static_cast<SwOSInput *>(me)->lock();
     static_cast<SwOSDigitalInput *>(me)->setSensorType( sensorType, normallyOpen );
-    myOSSwarm.unlock();
+    static_cast<SwOSInput *>(me)->unlock();
   }
 
 }
@@ -197,9 +192,9 @@ FtSwarmToggle_t FtSwarmDigitalInput::getToggle() {
 
   if (!me) return FTSWARM_NOTOGGLE;
 
-  myOSSwarm.lock();
+  static_cast<SwOSDigitalInput *>(me)->lock();
   FtSwarmToggle_t xReturn = static_cast<SwOSDigitalInput *>(me)->getToggle();
-  myOSSwarm.unlock();
+  static_cast<SwOSDigitalInput *>(me)->unlock();
 
   return xReturn;
 };
@@ -208,9 +203,9 @@ bool FtSwarmDigitalInput::getState() {
 
   if (!me) return false;
 
-  myOSSwarm.lock();
+  static_cast<SwOSDigitalInput *>(me)->lock();
   bool xReturn = (static_cast<SwOSDigitalInput *>(me)->getValueI32()>0);
-  myOSSwarm.unlock();
+  static_cast<SwOSDigitalInput *>(me)->unlock();
 
   return xReturn;
 };
@@ -241,9 +236,9 @@ void FtSwarmButton::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, 
 
   // set trigger using static values
   if ( (me) && (actor) ) {
-    myOSSwarm.lock();
+    static_cast<SwOSInput *>(me)->lock();
     static_cast<SwOSInput *>(me)->registerEvent( triggerEvent, (SwOSIO *)actor->me, false, p1 );
-    myOSSwarm.unlock();
+    static_cast<SwOSInput *>(me)->unlock();
   }
 
 };
@@ -252,9 +247,9 @@ void FtSwarmButton::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor )
 
   // set trigger using port's value
   if ( (me) && (actor) ) {
-    myOSSwarm.lock();
+    static_cast<SwOSInput *>(me)->lock();
     static_cast<SwOSInput *>(me)->registerEvent( triggerEvent, (SwOSIO *)actor->me, true, 0 );
-    myOSSwarm.unlock();
+    static_cast<SwOSInput *>(me)->unlock();
   }
 
 };
@@ -263,9 +258,9 @@ FtSwarmToggle_t FtSwarmButton::FtSwarmButton::getToggle() {
 
   if (!me) return FTSWARM_NOTOGGLE;
 
-  myOSSwarm.lock();
+  static_cast<SwOSButton *>(me)->lock();
   FtSwarmToggle_t xReturn = static_cast<SwOSButton *>(me)->getToggle();
-  myOSSwarm.unlock();
+  static_cast<SwOSButton *>(me)->unlock();
 
   return xReturn;
 };
@@ -274,9 +269,9 @@ bool FtSwarmButton::getState() {
 
   if (!me) return false;
 
-  myOSSwarm.lock();
+  static_cast<SwOSButton *>(me)->lock();
   bool xReturn = (static_cast<SwOSButton *>(me)->getState());
-  myOSSwarm.unlock();
+  static_cast<SwOSButton *>(me)->unlock();
 
   return xReturn;
 };
@@ -293,9 +288,9 @@ void FtSwarmCounter::setSensorType( FtSwarmSensor_t sensorType ) {
 
   // set sensor type
   if (me) {
-    myOSSwarm.lock();
+    static_cast<SwOSCounter *>(me)->lock();
     static_cast<SwOSCounter *>(me)->setSensorType( sensorType );
-    myOSSwarm.unlock();
+    static_cast<SwOSCounter *>(me)->unlock();
   }
 
 }
@@ -324,18 +319,18 @@ int16_t FtSwarmCounter::getCounter() {
 
   if (!me) return 0;
 
-  myOSSwarm.lock();
+  static_cast<SwOSCounter *>(me)->lock();
   uint16_t xReturn = (static_cast<SwOSCounter *>(me)->getValueI32());
-  myOSSwarm.unlock();
+  static_cast<SwOSCounter *>(me)->unlock();
 
   return xReturn;
 };
 
 void FtSwarmCounter::resetCounter( void ) {
 
-  myOSSwarm.lock();
+  static_cast<SwOSCounter *>(me)->lock();
   static_cast<SwOSCounter *>(me)->resetCounter();
-  myOSSwarm.unlock();
+  static_cast<SwOSCounter *>(me)->unlock();
 
 };
 
@@ -353,9 +348,9 @@ int16_t FtSwarmFrequencymeter::getFrequency() {
 
   if (!me) return 0;
 
-  myOSSwarm.lock();
+  static_cast<SwOSFrequencymeter *>(me)->lock();
   uint16_t xReturn = (static_cast<SwOSFrequencymeter *>(me)->getValueI32());
-  myOSSwarm.unlock();
+  static_cast<SwOSFrequencymeter *>(me)->unlock();
 
   return xReturn;
 };
@@ -366,9 +361,9 @@ void FtSwarmAnalogInput::setSensorType( FtSwarmSensor_t sensorType ) {
 
   // set sensor type
   if (me) {
-    myOSSwarm.lock();
+    static_cast<SwOSAnalogInput *>(me)->lock();
     static_cast<SwOSAnalogInput *>(me)->setSensorType( sensorType );
-    myOSSwarm.unlock();
+    static_cast<SwOSAnalogInput *>(me)->unlock();
   }
 
 }
@@ -402,9 +397,9 @@ int32_t FtSwarmAnalogInput::getValue() {
 
   if (!me) return 0;
 
-  myOSSwarm.lock();
+  static_cast<SwOSInput *>(me)->lock();
   uint16_t xReturn = (static_cast<SwOSInput *>(me)->getValueI32());
-  myOSSwarm.unlock();
+  static_cast<SwOSInput *>(me)->unlock();
 
   return xReturn;
 };
@@ -418,9 +413,9 @@ float FtSwarmVoltmeter::getVoltage() {
 
   if (!me) return 0;
 
-  myOSSwarm.lock();
+  static_cast<SwOSAnalogInput *>(me)->lock();
   float xReturn = (static_cast<SwOSAnalogInput *>(me)->getVoltage());
-  myOSSwarm.unlock();
+  static_cast<SwOSAnalogInput *>(me)->unlock();
 
   return xReturn;
 };
@@ -434,9 +429,9 @@ float FtSwarmOhmmeter::getResistance() {
 
   if (!me) return 0;
 
-  myOSSwarm.lock();
+  static_cast<SwOSAnalogInput *>(me)->lock();
   float xReturn = (static_cast<SwOSAnalogInput *>(me)->getResistance());
-  myOSSwarm.unlock();
+  static_cast<SwOSAnalogInput *>(me)->unlock();
 
   return xReturn;
 };
@@ -450,9 +445,9 @@ float FtSwarmThermometer::getCelcius() {
 
   if (!me) return 0;
 
-  myOSSwarm.lock();
+  static_cast<SwOSAnalogInput *>(me)->lock();
   float xReturn = (static_cast<SwOSAnalogInput *>(me)->getCelcius());
-  myOSSwarm.unlock();
+  static_cast<SwOSAnalogInput *>(me)->unlock();
 
   return xReturn;
 };
@@ -460,9 +455,9 @@ float FtSwarmThermometer::getCelcius() {
 float FtSwarmThermometer::getKelvin() {
   if (!me) return 0;
 
-  myOSSwarm.lock();
+  static_cast<SwOSAnalogInput *>(me)->lock();
   float xReturn = (static_cast<SwOSAnalogInput *>(me)->getKelvin());
-  myOSSwarm.unlock();
+  static_cast<SwOSAnalogInput *>(me)->unlock();
 
   return xReturn;
 }
@@ -470,9 +465,9 @@ float FtSwarmThermometer::getKelvin() {
 float FtSwarmThermometer::getFahrenheit() {
   if (!me) return 0;
 
-  myOSSwarm.lock();
+  static_cast<SwOSAnalogInput *>(me)->lock();
   float xReturn = (static_cast<SwOSAnalogInput *>(me)->getFahrenheit());
-  myOSSwarm.unlock();
+  static_cast<SwOSAnalogInput *>(me)->unlock();
 
   return xReturn;
 }
@@ -485,40 +480,41 @@ FtSwarmLDR::FtSwarmLDR( const char *name ):FtSwarmAnalogInput( name, FTSWARM_LDR
 
 // **** FtSwarmActor
 
-FtSwarmActor::FtSwarmActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType ):FtSwarmIO(serialNumber, port, FTSWARM_ACTOR ) {
+FtSwarmActor::FtSwarmActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType, bool highResolution ):FtSwarmIO(serialNumber, port, FTSWARM_ACTOR ) {
   // constructor: register at myOSSwarm and get a pointer to myself 
 
   // set sensor type
   if (me) {
-    myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setActorType( actorType, false );
-    myOSSwarm.unlock();
+    static_cast<SwOSActor *>(me)->lock();
+    static_cast<SwOSActor *>(me)->setActorType( actorType, highResolution, false );
+    static_cast<SwOSActor *>(me)->unlock();
   }
 
 };
 
-FtSwarmActor::FtSwarmActor( const char *name, FtSwarmActor_t actorType ):FtSwarmIO( name, FTSWARM_ACTOR ) {
+FtSwarmActor::FtSwarmActor( const char *name, FtSwarmActor_t actorType, bool highResolution ):FtSwarmIO( name, FTSWARM_ACTOR ) {
   // constructor: register at myOSSwarm and get a pointer to myself 
 
   // set sensor type
   if (me) {
-    myOSSwarm.lock();
-    static_cast<SwOSActor *>(me)->setActorType( actorType, false );
-    myOSSwarm.unlock();
+    static_cast<SwOSActor *>(me)->lock();
+    static_cast<SwOSActor *>(me)->setActorType( actorType, highResolution, false );
+    static_cast<SwOSActor *>(me)->unlock();
   }
 
 };
 
 // **** FtSwarmMotor ****
 
-FtSwarmMotor::FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType):FtSwarmActor( serialNumber, port, actorType) {};
-FtSwarmMotor::FtSwarmMotor( const char *name, FtSwarmActor_t actorType):FtSwarmActor( name, actorType ) {};
+FtSwarmMotor::FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType, bool highResolution):FtSwarmActor( serialNumber, port, actorType, highResolution) {};
+FtSwarmMotor::FtSwarmMotor( const char *name, FtSwarmActor_t actorType, bool highResolution):FtSwarmActor( name, actorType, highResolution ) {};
     
 void FtSwarmMotor::setSpeed( int16_t speed ) {
   if (me) {
-    myOSSwarm.lock();
+    static_cast<SwOSActor *>(me)->lock();
     static_cast<SwOSActor *>(me)->setSpeed( speed );
-    myOSSwarm.unlock();
+    static_cast<SwOSActor *>(me)->apply();
+    static_cast<SwOSActor *>(me)->unlock();
   }
 }
 
@@ -526,18 +522,18 @@ uint16_t FtSwarmMotor::getSpeed() {
 
   if (!me) return 0;
 
-  myOSSwarm.lock();
+  static_cast<SwOSActor *>(me)->lock();
   uint16_t xReturn = (static_cast<SwOSActor *>(me)->getSpeed());
-  myOSSwarm.unlock();
+  static_cast<SwOSActor *>(me)->unlock();
 
   return xReturn;
 };
 
 void FtSwarmMotor::setAcceleration( uint32_t rampUpT, uint32_t rampUpY ) {
   if (me) {
-    myOSSwarm.lock();
+    static_cast<SwOSActor *>(me)->lock();
     static_cast<SwOSActor *>(me)->setAcceleration( rampUpT, rampUpY );
-    myOSSwarm.unlock();
+    static_cast<SwOSActor *>(me)->unlock();
   }
 }
 
@@ -545,24 +541,24 @@ void FtSwarmMotor::getAcceleration( uint32_t *rampUpT, uint32_t *rampUpY ) {
 
   if (!me) return;
 
-  myOSSwarm.lock();
+  static_cast<SwOSActor *>(me)->lock();
   static_cast<SwOSActor *>(me)->getAcceleration( rampUpT, rampUpY );
-  myOSSwarm.unlock();
+  static_cast<SwOSActor *>(me)->unlock();
 
 };
 
 // **** FtSwarmTractorMotor
 
-FtSwarmTractorMotor::FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType):FtSwarmMotor( serialNumber, port, actorType) {};
-FtSwarmTractorMotor::FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmMotor( serialNumber, port, FTSWARM_TRACTOR) {};
-FtSwarmTractorMotor::FtSwarmTractorMotor( const char *name, FtSwarmActor_t actorType ):FtSwarmMotor( name, actorType ) {};
-FtSwarmTractorMotor::FtSwarmTractorMotor( const char *name ):FtSwarmMotor( name, FTSWARM_TRACTOR ) {};
+FtSwarmTractorMotor::FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType, bool highResolution):FtSwarmMotor( serialNumber, port, actorType, highResolution) {};
+FtSwarmTractorMotor::FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool highResolution):FtSwarmMotor( serialNumber, port, FTSWARM_TRACTOR, highResolution) {};
+FtSwarmTractorMotor::FtSwarmTractorMotor( const char *name, FtSwarmActor_t actorType, bool highResolution ):FtSwarmMotor( name, actorType, highResolution ) {};
+FtSwarmTractorMotor::FtSwarmTractorMotor( const char *name, bool highResolution ):FtSwarmMotor( name, FTSWARM_TRACTOR, highResolution ) {};
 
 void FtSwarmTractorMotor::setMotionType( FtSwarmMotion_t motionType ) {
   if (me) {
-    myOSSwarm.lock();
+    static_cast<SwOSActor *>(me)->lock();
     static_cast<SwOSActor *>(me)->setMotionType( motionType );
-    myOSSwarm.unlock();
+    static_cast<SwOSActor *>(me)->unlock();
   }
 }
 
@@ -571,9 +567,9 @@ FtSwarmMotion_t FtSwarmTractorMotor::getMotionType( void ) {
   FtSwarmMotion_t motionType = FTSWARM_COAST;
   
   if (me) {
-    myOSSwarm.lock();
+    static_cast<SwOSActor *>(me)->lock();
     motionType = static_cast<SwOSActor *>(me)->getMotionType( );
-    myOSSwarm.unlock();
+    static_cast<SwOSActor *>(me)->unlock();
   }
 
   return motionType;
@@ -582,25 +578,25 @@ FtSwarmMotion_t FtSwarmTractorMotor::getMotionType( void ) {
 
 // **** FtSwarmXMMotor
 
-FtSwarmXMMotor::FtSwarmXMMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmTractorMotor( serialNumber, port, FTSWARM_XMMOTOR ) {};
-FtSwarmXMMotor::FtSwarmXMMotor( const char *name ):FtSwarmTractorMotor( name, FTSWARM_XMMOTOR ) {};
+FtSwarmXMMotor::FtSwarmXMMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool highResolution):FtSwarmTractorMotor( serialNumber, port, FTSWARM_XMMOTOR, highResolution ) {};
+FtSwarmXMMotor::FtSwarmXMMotor( const char *name, bool highResolution ):FtSwarmTractorMotor( name, FTSWARM_XMMOTOR, highResolution ) {};
 
 // **** FtSwarmEncoderMotor
 
-FtSwarmEncoderMotor::FtSwarmEncoderMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmTractorMotor( serialNumber, port, FTSWARM_ENCODER ) {};
-FtSwarmEncoderMotor::FtSwarmEncoderMotor( const char *name ):FtSwarmTractorMotor( name, FTSWARM_ENCODER ) {};
+FtSwarmEncoderMotor::FtSwarmEncoderMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool highResolution):FtSwarmTractorMotor( serialNumber, port, FTSWARM_ENCODER, highResolution ) {};
+FtSwarmEncoderMotor::FtSwarmEncoderMotor( const char *name, bool highResolution ):FtSwarmTractorMotor( name, FTSWARM_ENCODER, highResolution ) {};
 
 // **** FtSwarmStepperMotor
 
-FtSwarmStepperMotor::FtSwarmStepperMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmTractorMotor( serialNumber, port, FTSWARM_STEPPER ) {};
-FtSwarmStepperMotor::FtSwarmStepperMotor( const char * name ):FtSwarmTractorMotor( name, FTSWARM_STEPPER ) {};
+FtSwarmStepperMotor::FtSwarmStepperMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmTractorMotor( serialNumber, port, FTSWARM_STEPPER, true ) {};
+FtSwarmStepperMotor::FtSwarmStepperMotor( const char * name ):FtSwarmTractorMotor( name, FTSWARM_STEPPER, true ) {};
 
 void FtSwarmStepperMotor::setDistance( long distance, bool relative ) {
 
   if (me) {
-    myOSSwarm.lock();
+    static_cast<SwOSActor *>(me)->lock();
     static_cast<SwOSActor *>(me)->setDistance( distance, relative, false );
-    myOSSwarm.unlock();
+    static_cast<SwOSActor *>(me)->unlock();
   }
 
 }
@@ -610,9 +606,9 @@ long FtSwarmStepperMotor::getDistance( void ) {
   long distance = 0;
 
   if (me) {
-    myOSSwarm.lock();
+    static_cast<SwOSActor *>(me)->lock();
     distance = static_cast<SwOSActor *>(me)->getDistance( );
-    myOSSwarm.unlock();
+    static_cast<SwOSActor *>(me)->unlock();
   }
 
   return distance;
@@ -624,9 +620,9 @@ bool FtSwarmStepperMotor::isRunning( void ) {
   bool result = false;
 
   if (me) {
-    myOSSwarm.lock();
+    static_cast<SwOSActor *>(me)->lock();
     result = static_cast<SwOSActor *>(me)->isRunning( );
-    myOSSwarm.unlock();
+    static_cast<SwOSActor *>(me)->unlock();
   }
 
   return result;
@@ -636,9 +632,9 @@ bool FtSwarmStepperMotor::isRunning( void ) {
 void FtSwarmStepperMotor::run( void ) {
 
   if (me) {
-    myOSSwarm.lock();
+    static_cast<SwOSActor *>(me)->lock();
     static_cast<SwOSActor *>(me)->startStop( true );
-    myOSSwarm.unlock();
+    static_cast<SwOSActor *>(me)->unlock();
   }
 
 }
@@ -646,9 +642,9 @@ void FtSwarmStepperMotor::run( void ) {
 void FtSwarmStepperMotor::stop( void ) {
 
   if (me) {
-    myOSSwarm.lock();
+    static_cast<SwOSActor *>(me)->lock();
     static_cast<SwOSActor *>(me)->startStop( false );
-    myOSSwarm.unlock();
+    static_cast<SwOSActor *>(me)->unlock();
   }
 
 }
@@ -656,9 +652,9 @@ void FtSwarmStepperMotor::stop( void ) {
 void FtSwarmStepperMotor::setPosition( long position ) {
 
   if (me) {
-    myOSSwarm.lock();
+    static_cast<SwOSActor *>(me)->lock();
     static_cast<SwOSActor *>(me)->setPosition( position, false );
-    myOSSwarm.unlock();
+    static_cast<SwOSActor *>(me)->unlock();
   }
 
 }
@@ -668,9 +664,9 @@ long FtSwarmStepperMotor::getPosition( void ) {
   long position = 0;
 
   if (me) {
-    myOSSwarm.lock();
+    static_cast<SwOSActor *>(me)->lock();
     position = static_cast<SwOSActor *>(me)->getPosition( );
-    myOSSwarm.unlock();
+    static_cast<SwOSActor *>(me)->unlock();
   }
 
   return position;
@@ -682,9 +678,9 @@ bool FtSwarmStepperMotor::isHoming( void ) {
   bool result = false;
 
   if (me) {
-    myOSSwarm.lock();
+    static_cast<SwOSActor *>(me)->lock();
     result = static_cast<SwOSActor *>(me)->isHoming( );
-    myOSSwarm.unlock();
+    static_cast<SwOSActor *>(me)->unlock();
   }
 
   return result;
@@ -694,9 +690,9 @@ bool FtSwarmStepperMotor::isHoming( void ) {
 void FtSwarmStepperMotor::homing( long maxDistance ) {
 
   if (me) {
-    myOSSwarm.lock();
+    static_cast<SwOSActor *>(me)->lock();
     static_cast<SwOSActor *>(me)->homing( maxDistance );
-    myOSSwarm.unlock();
+    static_cast<SwOSActor *>(me)->unlock();
   }
 
 }
@@ -704,23 +700,24 @@ void FtSwarmStepperMotor::homing( long maxDistance ) {
 void FtSwarmStepperMotor::setHomingOffset( long offset ) {
 
   if (me) {
-    myOSSwarm.lock();
+    static_cast<SwOSActor *>(me)->lock();
     static_cast<SwOSActor *>(me)->setHomingOffset( offset );
-    myOSSwarm.unlock();
+    static_cast<SwOSActor *>(me)->unlock();
   }
 
 }
 
 // **** FtSwarmOnOffActor ****
 
-FtSwarmOnOffActor::FtSwarmOnOffActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType):FtSwarmActor( serialNumber, port, actorType ) {};
-FtSwarmOnOffActor::FtSwarmOnOffActor( const char *name, FtSwarmActor_t actorType ):FtSwarmActor( name, actorType ) {};
+FtSwarmOnOffActor::FtSwarmOnOffActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType):FtSwarmActor( serialNumber, port, actorType, false ) {};
+FtSwarmOnOffActor::FtSwarmOnOffActor( const char *name, FtSwarmActor_t actorType ):FtSwarmActor( name, actorType, false ) {};
 
 void FtSwarmOnOffActor::on( int16_t speed ) {
   if (me) {
-    myOSSwarm.lock();
+    static_cast<SwOSActor *>(me)->lock();
     static_cast<SwOSActor *>(me)->setSpeed( speed);
-    myOSSwarm.unlock();
+    static_cast<SwOSActor *>(me)->apply();
+    static_cast<SwOSActor *>(me)->unlock();
   }
 }
 
@@ -800,19 +797,19 @@ void FtSwarmJoystick::getValue( int16_t *FB, int16_t *LR, boolean *buttonState )
 
   if (!me) return;
 
-  myOSSwarm.lock();
+  static_cast<SwOSJoystick *>(me)->lock();
   static_cast<SwOSJoystick *>(me)->getValue(FB, LR);
   if (button) *buttonState = static_cast<SwOSButton *>(button)->getState();
-  myOSSwarm.unlock();
+  static_cast<SwOSJoystick *>(me)->unlock();
 }
 
 void FtSwarmJoystick::onTriggerLR( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 ) {
 
   // set trigger using static values
   if ( (me) && (actor) ) {
-    myOSSwarm.lock();
+    static_cast<SwOSJoystick*>(me)->lock();
     static_cast<SwOSJoystick *>(me)->triggerLR.registerEvent( triggerEvent, (SwOSIO *)actor->me, false, p1 );
-    myOSSwarm.unlock();
+    static_cast<SwOSJoystick*>(me)->unlock();
   }
 
 };
@@ -821,9 +818,9 @@ void FtSwarmJoystick::onTriggerLR( FtSwarmTrigger_t triggerEvent, FtSwarmIO *act
 
   // set trigger using port's value
   if ( (me) && (actor) ) {
-    myOSSwarm.lock();
+    static_cast<SwOSJoystick*>(me)->lock();
     static_cast<SwOSJoystick *>(me)->triggerLR.registerEvent( triggerEvent, (SwOSIO *)actor->me, true, 0 );
-    myOSSwarm.unlock();
+    static_cast<SwOSJoystick*>(me)->unlock();
   }
 
 };
@@ -832,9 +829,9 @@ void FtSwarmJoystick::onTriggerFB( FtSwarmTrigger_t triggerEvent, FtSwarmIO *act
 
   // set trigger using static values
   if ( (me) && (actor) ) {
-    myOSSwarm.lock();
+    static_cast<SwOSJoystick*>(me)->lock();
     static_cast<SwOSJoystick *>(me)->triggerFB.registerEvent( triggerEvent, (SwOSIO *)actor->me, false, p1 );
-    myOSSwarm.unlock();
+    static_cast<SwOSJoystick*>(me)->unlock();
   }
 
 };
@@ -843,9 +840,9 @@ void FtSwarmJoystick::onTriggerFB( FtSwarmTrigger_t triggerEvent, FtSwarmIO *act
 
   // set trigger using port's value
   if ( (me) && (actor) ) {
-    myOSSwarm.lock();
+    static_cast<SwOSJoystick*>(me)->lock();
     static_cast<SwOSJoystick *>(me)->triggerFB.registerEvent( triggerEvent, (SwOSIO *)actor->me, true, 0 );
-    myOSSwarm.unlock();
+    static_cast<SwOSJoystick*>(me)->unlock();
   }
 
 };
@@ -859,9 +856,9 @@ uint8_t FtSwarmPixel::getBrightness() {
 
   if (!me) return 0;
   
-  myOSSwarm.lock();
+  static_cast<SwOSPixel*>(me)->lock();
   uint8_t xReturn = (static_cast<SwOSPixel *>(me)->getBrightness());
-  myOSSwarm.unlock();
+  static_cast<SwOSPixel*>(me)->unlock();
 
   return xReturn;
 };
@@ -870,18 +867,18 @@ void FtSwarmPixel::setBrightness(uint8_t brightness) {
 
   if (!me) return;
 
-  myOSSwarm.lock();
+  static_cast<SwOSPixel*>(me)->lock();
   static_cast<SwOSPixel *>(me)->setBrightness(brightness);
-  myOSSwarm.unlock();
+  static_cast<SwOSPixel*>(me)->unlock();
 }
 
 uint32_t FtSwarmPixel::getColor() {
 
   if (!me) return 0;
   
-  myOSSwarm.lock();
+  static_cast<SwOSPixel*>(me)->lock();
   uint32_t xReturn = (static_cast<SwOSPixel *>(me)->getColor());
-  myOSSwarm.unlock();
+  static_cast<SwOSPixel*>(me)->unlock();
 
   return xReturn;
 };
@@ -890,9 +887,9 @@ void FtSwarmPixel::setColor(uint32_t color) {
 
   if (!me) return;
 
-  myOSSwarm.lock();
+  static_cast<SwOSPixel*>(me)->lock();
   static_cast<SwOSPixel *>(me)->setColor(color);
-  myOSSwarm.unlock();
+  static_cast<SwOSPixel*>(me)->unlock();
 }
 
 // **** FtSwarmI2C   ****
@@ -907,9 +904,9 @@ uint8_t FtSwarmI2C::getRegister(uint8_t reg) {
     
   if (!me) return 0;
   
-  myOSSwarm.lock();
+  static_cast<SwOSI2C*>(me)->lock();
   uint8_t xReturn = (static_cast<SwOSI2C *>(me)->getRegister( reg ));
-  myOSSwarm.unlock();
+  static_cast<SwOSI2C*>(me)->unlock();
 
   return xReturn;
 }
@@ -918,18 +915,18 @@ void  FtSwarmI2C::setRegister(uint8_t reg, uint8_t value) {
 
   if (!me) return;
 
-  myOSSwarm.lock();
+  static_cast<SwOSI2C*>(me)->lock();
   static_cast<SwOSI2C *>(me)->setRegister(reg, value);
-  myOSSwarm.unlock();
+  static_cast<SwOSI2C*>(me)->unlock();
 }
 
 void FtSwarmI2C::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 ) {
 
   // set trigger using static values
   if ( (me) && (actor) ) {
-    myOSSwarm.lock();
+    static_cast<SwOSI2C*>(me)->lock();
     static_cast<SwOSI2C *>(me)->registerEvent( triggerEvent, (SwOSIO *)actor->me, false, p1 );
-    myOSSwarm.unlock();
+    static_cast<SwOSI2C*>(me)->unlock();
   }
 
 };
@@ -943,9 +940,9 @@ int16_t FtSwarmServo::getPosition() {
 
   if (!me) return 0;
   
-  myOSSwarm.lock();
+  static_cast<SwOSServo*>(me)->lock();
   int16_t xReturn = (static_cast<SwOSServo *>(me)->getPosition());
-  myOSSwarm.unlock();
+  static_cast<SwOSServo*>(me)->unlock();
 
   return xReturn;
 };
@@ -954,18 +951,18 @@ void FtSwarmServo::setPosition(int16_t position) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSServo*>(me)->lock();
   static_cast<SwOSServo *>(me)->setPosition(position, false);
-  myOSSwarm.unlock();
+  static_cast<SwOSServo*>(me)->unlock();
 }
 
 int16_t FtSwarmServo::getOffset() {
 
   if (!me) return 0;
   
-  myOSSwarm.lock();
+  static_cast<SwOSServo*>(me)->lock();
   int16_t xReturn = (static_cast<SwOSServo *>(me)->getOffset());
-  myOSSwarm.unlock();
+  static_cast<SwOSServo*>(me)->unlock();
 
   return xReturn;
 };
@@ -974,9 +971,9 @@ void FtSwarmServo::setOffset(int16_t offset) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSServo*>(me)->lock();
   static_cast<SwOSServo *>(me)->setOffset(offset, false);
-  myOSSwarm.unlock();
+  static_cast<SwOSServo*>(me)->unlock();
 }
 
 // **** FtSwarmOLED ****
@@ -988,180 +985,180 @@ void FtSwarmOLED::display(void) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   static_cast<SwOSOLED*>(me)->display();
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 }
 
 void FtSwarmOLED::invertDisplay(bool i) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   static_cast<SwOSOLED*>(me)->invertDisplay( i );
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 }
 
 void FtSwarmOLED::dim(bool dim) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   static_cast<SwOSOLED*>(me)->dim( dim );
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 }
 
 void FtSwarmOLED::drawPixel(int16_t x, int16_t y, bool white ) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   static_cast<SwOSOLED*>(me)->drawPixel( x, y, white );
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 }
 
 void FtSwarmOLED::setRotation(uint8_t r) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   static_cast<SwOSOLED*>(me)->setRotation( r );
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 }
 
 void FtSwarmOLED::fillScreen(bool white) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   static_cast<SwOSOLED*>(me)->fillScreen( white );
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 }
 
 void FtSwarmOLED::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool white ) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   static_cast<SwOSOLED*>(me)->drawLine( x0, y0, x1, y1, white );
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 }
 
 void FtSwarmOLED::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, bool fill, bool white ) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   static_cast<SwOSOLED*>(me)->drawRect( x, y, w, h, fill, white );
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 }
 
 void FtSwarmOLED::drawCircle(int16_t x0, int16_t y0, int16_t r, bool fill, bool white ) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   static_cast<SwOSOLED*>(me)->drawCircle( x0, y0, r, fill, white );
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 }
 
 void FtSwarmOLED::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool fill, bool white ) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   static_cast<SwOSOLED*>(me)->drawTriangle( x0, y0, x1, y1, x2, y2, fill, white );
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 }
 
 void FtSwarmOLED::drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, bool fill, bool white ) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   static_cast<SwOSOLED*>(me)->drawRoundRect( x0, y0, w, h, radius, fill, white );
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 }
 
 void FtSwarmOLED::drawChar(int16_t x, int16_t y, unsigned char c, bool color, bool bg, uint8_t size_x, uint8_t size_y) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   static_cast<SwOSOLED*>(me)->drawChar(x, y, c, color, bg, size_x, size_y );
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 }
 
 void FtSwarmOLED::getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   static_cast<SwOSOLED*>(me)->getTextBounds( string, x, y, x1, y1, w, h );
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 }
 
 void FtSwarmOLED::setTextSize(uint8_t sx, uint8_t sy) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   static_cast<SwOSOLED*>(me)->setTextSize( sx, sy );
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 }
 
 void FtSwarmOLED::setCursor(int16_t x, int16_t y) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   static_cast<SwOSOLED*>(me)->setCursor( x, y );
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 }
  
 void FtSwarmOLED::setTextColor(bool c, bool bg) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   static_cast<SwOSOLED*>(me)->setTextColor( c, bg );
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 }
 
 void FtSwarmOLED::setTextWrap(bool w) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   static_cast<SwOSOLED*>(me)->setTextWrap( w );
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 }
 
 void FtSwarmOLED::write( char *str, int16_t x, int16_t y, FtSwarmAlign_t align, bool fill ) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   static_cast<SwOSOLED*>(me)->write( str, x, y, align, fill );
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 }
 
 void FtSwarmOLED::write( char *str ) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   static_cast<SwOSOLED*>(me)->write( str );
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 }
 
 int16_t FtSwarmOLED::getWidth(void) {
 
   if (!me) return 0;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   int16_t result = static_cast<SwOSOLED*>(me)->getWidth( );
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 
   return result;
 }
@@ -1170,9 +1167,9 @@ int16_t FtSwarmOLED::getHeight(void) {
 
   if (!me) return 0;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   int16_t result = static_cast<SwOSOLED*>(me)->getHeight( );
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 
   return result;
 }
@@ -1181,9 +1178,9 @@ uint8_t FtSwarmOLED::getRotation(void) {
 
   if (!me) return 0;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   uint8_t result = static_cast<SwOSOLED*>(me)->getRotation( );
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 
   return result;
 }
@@ -1192,9 +1189,9 @@ void FtSwarmOLED::getCursor(int16_t *x, int16_t *y) {
 
   if (!me) return;
   
-  myOSSwarm.lock();
+  static_cast<SwOSOLED*>(me)->lock();
   static_cast<SwOSOLED*>(me)->getCursor( x, y);
-  myOSSwarm.unlock();
+  static_cast<SwOSOLED*>(me)->unlock();
 
 }
 
@@ -1207,90 +1204,90 @@ void FtSwarmCAM::streaming( bool onOff ) {
 
   if (!me) return;
 
-  myOSSwarm.lock();
+  static_cast<SwOSCAM*>(me)->lock();
   static_cast<SwOSCAM *>(me)->streaming( onOff, false);
-  myOSSwarm.unlock();
+  static_cast<SwOSCAM*>(me)->unlock();
 }
 
 void FtSwarmCAM::setFramesize( framesize_t framesize ) {
 
   if (!me) return;
 
-  myOSSwarm.lock();
+  static_cast<SwOSCAM*>(me)->lock();
   static_cast<SwOSCAM *>(me)->setFramesize(framesize, false);
-  myOSSwarm.unlock();
+  static_cast<SwOSCAM*>(me)->unlock();
 }
 
 void FtSwarmCAM::setQuality( int quality ) {
 
   if (!me) return;
 
-  myOSSwarm.lock();
+  static_cast<SwOSCAM*>(me)->lock();
   static_cast<SwOSCAM *>(me)->setQuality( quality, false );
-  myOSSwarm.unlock();
+  static_cast<SwOSCAM*>(me)->unlock();
 }
 
 void FtSwarmCAM::setBrightness( int brightness ) {
 
   if (!me) return;
 
-  myOSSwarm.lock();
+  static_cast<SwOSCAM*>(me)->lock();
   static_cast<SwOSCAM *>(me)->setBrightness(brightness, false);
-  myOSSwarm.unlock();
+  static_cast<SwOSCAM*>(me)->unlock();
 }
 
 void FtSwarmCAM::setContrast( int contrast ) {
 
   if (!me) return;
 
-  myOSSwarm.lock();
+  static_cast<SwOSCAM*>(me)->lock();
   static_cast<SwOSCAM *>(me)->setContrast(contrast, false);
-  myOSSwarm.unlock();
+  static_cast<SwOSCAM*>(me)->unlock();
 }
 
 void FtSwarmCAM::setSaturation( int saturation ) {
 
   if (!me) return;
 
-  myOSSwarm.lock();
+  static_cast<SwOSCAM*>(me)->lock();
   static_cast<SwOSCAM *>(me)->setSaturation(saturation, false);
-  myOSSwarm.unlock();
+  static_cast<SwOSCAM*>(me)->unlock();
 }
 
 void FtSwarmCAM::setSpecialEffect( int specialEffect ) {
 
   if (!me) return;
 
-  myOSSwarm.lock();
+  static_cast<SwOSCAM*>(me)->lock();
   static_cast<SwOSCAM *>(me)->setSpecialEffect(specialEffect, false);
-  myOSSwarm.unlock();
+  static_cast<SwOSCAM*>(me)->unlock();
 }
 
 void FtSwarmCAM::setWbMode( int wbMode ) {
 
   if (!me) return;
 
-  myOSSwarm.lock();
+  static_cast<SwOSCAM*>(me)->lock();
   static_cast<SwOSCAM *>(me)->setWbMode(wbMode, false);
-  myOSSwarm.unlock();
+  static_cast<SwOSCAM*>(me)->unlock();
 }
 
 void FtSwarmCAM::setHMirror( bool hMirror ) {
 
   if (!me) return;
 
-  myOSSwarm.lock();
+  static_cast<SwOSCAM*>(me)->lock();
   static_cast<SwOSCAM *>(me)->setHMirror(hMirror, false);
-  myOSSwarm.unlock();
+  static_cast<SwOSCAM*>(me)->unlock();
 }
 
 void FtSwarmCAM::setVFlip( bool vFlip ) {
 
   if (!me) return;
 
-  myOSSwarm.lock();
+  static_cast<SwOSCAM*>(me)->lock();
   static_cast<SwOSCAM *>(me)->setVFlip(vFlip, false);
-  myOSSwarm.unlock();
+  static_cast<SwOSCAM*>(me)->unlock();
 }
 
 
@@ -1301,7 +1298,7 @@ FtSwarmSerialNumber_t FtSwarm::begin( bool verbose ) {
   FtSwarmSerialNumber_t result = myOSSwarm.begin( verbose );
 
   if (!nvs.IAmKelda) {
-    printf("ERROR: Please configure this controler as Kelda.\n");
+    printf("ERROR: Please configure this controller as Kelda.\n");
     myOSSwarm.setState( ERROR );
     firmware();
     ESP.restart();
@@ -1311,19 +1308,9 @@ FtSwarmSerialNumber_t FtSwarm::begin( bool verbose ) {
 
 }
 
-void FtSwarm::setReadDelay( uint16_t readDelay ) {
-
-  myOSSwarm.lock();
-  myOSSwarm.setReadDelay( readDelay);
-  myOSSwarm.unlock();
-
-}
-
 void FtSwarm::halt( void ) {
 
-  myOSSwarm.lock();
   myOSSwarm.halt( );
-  myOSSwarm.unlock();
 
 }
 
