@@ -1163,6 +1163,8 @@ void SwOSActor::_setupLocal() {
   };
   ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
 
+  printf("setupActor %d\n", _port);
+
   // just prepare led channel, don't register yet
   ledc_channel = (ledc_channel_config_t *) calloc( sizeof( ledc_channel_config_t ), 1 );
   ledc_channel->gpio_num       = _IN1;
@@ -1841,7 +1843,7 @@ void SwOSServo::_setupLocal() {
       .speed_mode       = LEDC_LOW_SPEED_MODE,
       .duty_resolution  = LEDC_TIMER_10_BIT,
       .timer_num        = LEDC_TIMER_1,
-      .freq_hz          = 40,  // Set output frequency to 40Hz
+      .freq_hz          = 50,  // Set output frequency to 40Hz
       .clk_cfg          = LEDC_AUTO_CLK
     };
     ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
@@ -1852,7 +1854,7 @@ void SwOSServo::_setupLocal() {
       .speed_mode     = LEDC_LOW_SPEED_MODE,
       .channel        = _channelSERVO,
       .intr_type      = LEDC_INTR_DISABLE,
-      .timer_sel      = LEDC_TIMER_0,
+      .timer_sel      = LEDC_TIMER_1,
       .duty           = 0, // Set duty to 0%
       .hpoint         = 0
     };
@@ -1865,13 +1867,18 @@ void SwOSServo::_setupLocal() {
 
 void SwOSServo::_setLocal() {
 
+  printf("Servo: _setlocal _port=%d _servo=%d _channelSERVO=%d\n", _port, _SERVO, _channelSERVO);
+
   // calc duty
   float p = _offset + _position;
   if (p <   0 ) p =   0;
   if (p > 255 ) p = 255;
 
   // maxduty 255 = 3ms = 123 ticks
-  float ticks = p/256*123;
+  // float ticks = p/256*123;
+  float ticks = 0.2*p+51;
+
+  printf("ticks %d %d\n", (uint16_t)p, (uint16_t)ticks);
 
   // set duty
   ESP_ERROR_CHECK(ledc_set_duty(LEDC_LOW_SPEED_MODE, _channelSERVO, (uint16_t)ticks));
