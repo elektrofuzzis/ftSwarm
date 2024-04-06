@@ -18,7 +18,7 @@
 #define MAXIDENTIFIER 32
 #define MAXACTORS 8
 #define MAXINPUTS 8
-#define SWOSVERSION "0.6.0"
+#define SWOSVERSION "0.6.1"
 
 #include <stdint.h>
 #include <cstddef>

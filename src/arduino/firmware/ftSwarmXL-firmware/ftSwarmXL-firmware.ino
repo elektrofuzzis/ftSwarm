@@ -1,6 +1,6 @@
 
 /*
- * ftSwarm.ino
+ * ftSwarmXL-firmware.ino
  *
  * ftSwarm Firmware
  * 
@@ -8,9 +8,9 @@
  * 
  */
 
-/*  needed Arduino IDE settings:
+ /*  needed Arduino IDE settings:
 
-    Board: "ESP32 Dev Module"
+    Board: "ESP32S3 Dev Module"
     Core Debug Level: "None"
     Events Runs On: 0
     Arduino Runs On: 1
@@ -18,7 +18,7 @@
 
 */
 
-#include "ftSwarm.h"
+#include "ftSwarmXL.h"
 
 void setup() {
 

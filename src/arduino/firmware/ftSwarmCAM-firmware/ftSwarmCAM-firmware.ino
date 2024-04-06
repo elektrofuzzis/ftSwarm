@@ -1,6 +1,6 @@
 
 /*
- * ftSwarmPwrDrive.ino
+ * ftSwarmCAM-firmware.ino
  *
  * ftSwarm Firmware
  * 
@@ -10,15 +10,15 @@
 
  /*  needed Arduino IDE settings:
 
-    Board: "ESP32S3 Dev Module"
+    Board: "ESP32SCAM"
     Core Debug Level: "None"
-    Events Runs On: 0
+    Events Runs On: 1
     Arduino Runs On: 1
     PSRAM: "enabled"
 
 */
 
-#include "ftSwarmPwrDrive.h"
+#include "ftSwarmCAM.h"
 
 void setup() {
 
