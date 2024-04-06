@@ -653,6 +653,7 @@ class SwOSI2C : public SwOSIO, public SwOSEventInput {
     SwOSI2C( const char *name, SwOSCtrl *ctrl, uint8_t I2CAddress);
 
     virtual void read();
+    virtual FtSwarmIOType_t getIOType() { return FTSWARM_I2C; };
 
     virtual void setRegister( uint8_t reg, uint8_t value );
     virtual uint8_t getRegister( uint8_t reg );

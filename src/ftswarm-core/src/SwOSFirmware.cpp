@@ -483,6 +483,11 @@ void aliasMenu( void ) {
                               OSObj[item++] = ftSwarm->gyro;
                               menu.add( ftSwarm->gyro->getName(), ftSwarm->gyro->getAlias(), item, true );
                             }
+                            // list i2c
+                            if (ftSwarm->I2C) {
+                              OSObj[item++] = ftSwarm->I2C;
+                              menu.add( ftSwarm->I2C->getName(), ftSwarm->I2C->getAlias(), item, true );
+                            }
                             break;
 
       case FTSWARMCONTROL:  ftSwarmControl = static_cast<SwOSSwarmControl *>(myOSSwarm.Ctrl[0]);

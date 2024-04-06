@@ -3849,7 +3849,8 @@ bool SwOSSwarmJST::cmdAlias( char *device, uint8_t port, const char *alias) {
 
   // test on my specific hardware
   if      ( ( strcmp(device, "SERVO") == 0 ) && (port < MAXSERVOS ) && (servo[port])) { servo[port]->setAlias(alias); return true; }
-  else if ( ( strcmp(device, "GYRO") == 0 )  && (port = 255) && (gyro) )              { gyro->setAlias(alias);        return true; }
+  else if ( ( strcmp(device, "GYRO")  == 0 ) && (port = 255) && (gyro) )              { gyro->setAlias(alias);        return true; }
+  else if ( ( strcmp(device, "I2C")   == 0 ) && (port = 255) && (I2C) )               { I2C->setAlias(alias);         return true; }
   else return false;
 
 }
@@ -3863,6 +3864,8 @@ SwOSIO *SwOSSwarmJST::getIO( const char *name) {
   // check on specific hardware
   for (uint8_t i=0;i<MAXSERVOS;i++) { if ( (servo[i]) && ( servo[i]->equals(name) ) ) { return servo[i]; } }
 
+  if ( (I2C) && ( I2C->equals(name) ) ) { return I2C; }
+
   return NULL;
 
 }
@@ -3874,7 +3877,8 @@ SwOSIO *SwOSSwarmJST::getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port) {
   if ( IO != NULL ) { return IO; }
 
   if ( ioType == FTSWARM_SERVO) return ( (port<MAXSERVOS)?servo[port]:NULL);
-
+  if ( ioType == FTSWARM_I2C)   return ( I2C );
+  
   return NULL;
 
 }
