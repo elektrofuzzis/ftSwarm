@@ -1,6 +1,6 @@
 
 /*
- * ftSwarmRS.ino
+ * ftSwarmControl-firmware.ino
  *
  * ftSwarm Firmware
  * 
@@ -10,7 +10,7 @@
 
  /*  needed Arduino IDE settings:
 
-    Board: "ESP32S3 Dev Module"
+    Board: "ESP32 Dev Module"
     Core Debug Level: "None"
     Events Runs On: 0
     Arduino Runs On: 1
@@ -18,7 +18,7 @@
 
 */
 
-#include "ftSwarmRS.h"
+#include "ftSwarmControl.h"
 
 void setup() {
 

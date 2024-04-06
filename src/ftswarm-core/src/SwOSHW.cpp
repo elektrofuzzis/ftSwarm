@@ -1841,7 +1841,7 @@ void SwOSServo::_setupLocal() {
       .speed_mode       = LEDC_LOW_SPEED_MODE,
       .duty_resolution  = LEDC_TIMER_10_BIT,
       .timer_num        = LEDC_TIMER_1,
-      .freq_hz          = 40,  // Set output frequency to 40Hz
+      .freq_hz          = 50,  // Set output frequency to 40Hz
       .clk_cfg          = LEDC_AUTO_CLK
     };
     ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
@@ -1852,7 +1852,7 @@ void SwOSServo::_setupLocal() {
       .speed_mode     = LEDC_LOW_SPEED_MODE,
       .channel        = _channelSERVO,
       .intr_type      = LEDC_INTR_DISABLE,
-      .timer_sel      = LEDC_TIMER_0,
+      .timer_sel      = LEDC_TIMER_1,
       .duty           = 0, // Set duty to 0%
       .hpoint         = 0
     };
@@ -1870,8 +1870,8 @@ void SwOSServo::_setLocal() {
   if (p <   0 ) p =   0;
   if (p > 255 ) p = 255;
 
-  // maxduty 255 = 3ms = 123 ticks
-  float ticks = p/256*123;
+  // 1 .. 2 ms pulse
+  float ticks = 0.2*p+51;
 
   // set duty
   ESP_ERROR_CHECK(ledc_set_duty(LEDC_LOW_SPEED_MODE, _channelSERVO, (uint16_t)ticks));
@@ -2148,6 +2148,14 @@ void SwOSI2C::_setupLocal(uint8_t I2CAddress) {
   int i2c_slave_port = I2C_SLAVE_NUM;
   i2c_config_t conf_slave;
 
+  conf_slave.sda_pullup_en       = GPIO_PULLUP_ENABLE;
+  conf_slave.scl_pullup_en       = GPIO_PULLUP_ENABLE;
+  conf_slave.mode                = I2C_MODE_SLAVE;
+  conf_slave.slave.addr_10bit_en = 0;
+  conf_slave.slave.slave_addr    = I2CAddress;        
+  conf_slave.slave.maximum_speed = 400000;
+  conf_slave.clk_flags           = 0;
+
   switch ( _ctrl->getCPU() ) {
     case FTSWARMRS_2V1:
       // ftSwarmRS final
@@ -2166,12 +2174,7 @@ void SwOSI2C::_setupLocal(uint8_t I2CAddress) {
       break;
     }
     
-    conf_slave.clk_flags = I2C_SCLK_SRC_FLAG_FOR_NOMAL;
-    conf_slave.sda_pullup_en = GPIO_PULLUP_ENABLE;
-    conf_slave.scl_pullup_en = GPIO_PULLUP_ENABLE;
-    conf_slave.mode = I2C_MODE_SLAVE;
-    conf_slave.slave.addr_10bit_en = 0;
-    conf_slave.slave.slave_addr = I2CAddress;
+
     i2c_param_config(i2c_slave_port, &conf_slave);
     i2c_driver_install(i2c_slave_port,  I2C_MODE_SLAVE, I2C_SLAVE_RX_BUF_LEN, I2C_SLAVE_TX_BUF_LEN, 0);
 
