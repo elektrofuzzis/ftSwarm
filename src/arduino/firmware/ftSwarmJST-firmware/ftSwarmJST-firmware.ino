@@ -1,6 +1,6 @@
 
 /*
- * ftSwarCAM.ino
+ * ftSwarmJST-firmware.ino
  *
  * ftSwarm Firmware
  * 
@@ -8,17 +8,17 @@
  * 
  */
 
- /*  needed Arduino IDE settings:
+/*  needed Arduino IDE settings:
 
-    Board: "ESP32SCAM"
+    Board: "ESP32 Dev Module"
     Core Debug Level: "None"
-    Events Runs On: 1
+    Events Runs On: 0
     Arduino Runs On: 1
     PSRAM: "enabled"
 
 */
 
-#include "ftSwarmCAM.h"
+#include "ftSwarm.h"
 
 void setup() {
 
