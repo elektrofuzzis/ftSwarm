@@ -1399,7 +1399,6 @@ SwOSError_t SwOSSwarm::leaveSwarm( void ) {
 }
 
 SwOSError_t SwOSSwarm::rejectController( FtSwarmSerialNumber_t serialNumber ) {
-
   uint8_t affected = getIndex( serialNumber );
 
   // do I know the controller?
@@ -1421,7 +1420,6 @@ SwOSError_t SwOSSwarm::rejectController( FtSwarmSerialNumber_t serialNumber ) {
 
   // delete him, if possible
   if ( result == SWOS_OK ) { 
-
     Ctrl[affected]->lock();
     SwOSCtrl *old = Ctrl[affected];
     Ctrl[affected] = NULL;

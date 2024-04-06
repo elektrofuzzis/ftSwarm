@@ -322,7 +322,7 @@ void rejectControllerFromSwarm( void ) {
     nvs.deleteController( SN );
     nvs.save();
   } else {
-    printf("Couldn't connect to device %s,\n", SN);
+    printf("Couldn't connect to device %d,\n", SN);
   }
 
 }
