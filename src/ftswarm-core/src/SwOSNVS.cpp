@@ -100,6 +100,8 @@ SwOSNVS::SwOSNVS() {
   extentionPort      = FTSWARM_EXT_OFF;
   I2CAddr            = 0x66;
   interruptLine      = 0;
+  interruptOnOff[0]  = 0;
+  interruptOnOff[1]  = 255;
   gyro               = false;
 
   // initialize zero positions
@@ -202,6 +204,8 @@ bool SwOSNVS::load() {
   // extentionPort
   nvs_get_u8 ( my_handle, "I2CAddr", &I2CAddr );
   nvs_get_u8 ( my_handle, "interruptLine", &interruptLine );
+  nvs_get_i16( my_handle, "interruptLow",  &interruptOnOff[0] );
+  nvs_get_i16( my_handle, "interruptHight", &interruptOnOff[1] );
   nvs_get_u32( my_handle, "extentionPort", (uint32_t *) &extentionPort);
   nvs_get_u8 ( my_handle, "Gyro",    (uint8_t *) &gyro);
 
@@ -267,6 +271,8 @@ void SwOSNVS::save( bool writeAll ) {
   // extentionPort
   ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "I2CAddr", I2CAddr ) );
   ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "interruptLine", interruptLine ) );
+  ESP_ERROR_CHECK( nvs_set_i16( my_handle, "interruptLow", interruptOnOff[0] ) );
+  ESP_ERROR_CHECK( nvs_set_i16( my_handle, "interruptHigh", interruptOnOff[1] ) );
   ESP_ERROR_CHECK( nvs_set_u32( my_handle, "extentionPort", (uint32_t) extentionPort) );
   ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "Gyro",    (uint8_t)  gyro) );
 

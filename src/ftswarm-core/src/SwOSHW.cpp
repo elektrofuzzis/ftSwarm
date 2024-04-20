@@ -2268,7 +2268,12 @@ void SwOSI2C::read( ) {
   
   for( uint8_t i=0; i<MAXI2CREGISTERS; i++) _myRegister[i] = I2CSlave_value[i];
 
-  if ( (I2CSlave_read) && ( nvs.interruptLine ) ) { I2CSlave_read=false; _ctrl->actor[nvs.interruptLine-1]->setSpeed(0); }
+  if ( (I2CSlave_read) && ( nvs.interruptLine ) ) { 
+    printf("reset\n"); 
+    I2CSlave_read=false; 
+    _ctrl->actor[nvs.interruptLine-1]->setSpeed(nvs.interruptOnOff[0]);
+    _ctrl->actor[nvs.interruptLine-1]->apply();
+  }
 
 }
 
@@ -2310,8 +2315,14 @@ void SwOSI2C::_setRemote( uint8_t reg, uint8_t value ) {
 
 void SwOSI2C::_setLocal( uint8_t reg, uint8_t value ) {
 
+  printf("setLocal nvs.interruptLine %d I2CSlave_read=%d\n", nvs.interruptLine, I2CSlave_read);
+
   I2CSlave_value[reg] = value;
-  if ( nvs.interruptLine ) { I2CSlave_read=false; _ctrl->actor[nvs.interruptLine-1]->setSpeed(255); }
+  if ( nvs.interruptLine ) { 
+    I2CSlave_read=false; 
+    _ctrl->actor[nvs.interruptLine-1]->setSpeed( nvs.interruptOnOff[1] );
+    _ctrl->actor[nvs.interruptLine-1]->apply();
+  }
 
 }
 
@@ -3769,6 +3780,7 @@ void SwOSSwarmXX::factorySettings( void ) {
 
   SwOSCtrl::factorySettings();
   if (gyro) gyro->setAlias("");
+  if (I2C)  I2C->setAlias("");
   
 }
 
@@ -3777,8 +3789,12 @@ SwOSIO *SwOSSwarmXX::getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port) {
   SwOSIO *result = SwOSCtrl::getIO( ioType, port );
   if (result) return result;
 
-  if (ioType == FTSWARM_GYRO ) return gyro;
-  else                         return NULL;
+  switch (ioType) {
+    case FTSWARM_GYRO: return gyro;
+    case FTSWARM_I2C:  return I2C;
+  }
+
+  return NULL;
 
 }
 
@@ -3788,9 +3804,10 @@ SwOSIO *SwOSSwarmXX::getIO( const char *name ) {
   SwOSIO *result = SwOSCtrl::getIO( name );
   if (result) return result;
 
-  if      (!gyro)               return NULL;
-  else if (gyro->equals(name) ) return gyro;
-  else                          return NULL;
+  if ( (gyro) && (gyro->equals(name) ) ) return gyro;
+  if ( (I2C)  && (I2C->equals(name) ) )  return I2C;
+
+  return NULL;
 
 }
 
@@ -4070,6 +4087,7 @@ void SwOSSwarmJST::saveAliasToNVS( nvs_handle_t my_handle ) {
   SwOSSwarmXX::saveAliasToNVS( my_handle );
 
   if (gyro) gyro->saveAliasToNVS( my_handle );
+  if (I2C)  I2C->saveAliasToNVS( my_handle );
   for (uint8_t i=0; i<MAXSERVOS; i++ ) if (servo[i]) servo[i]->saveAliasToNVS( my_handle );
   
 }
@@ -4079,6 +4097,7 @@ void SwOSSwarmJST::loadAliasFromNVS( nvs_handle_t my_handle ) {
   SwOSSwarmXX::loadAliasFromNVS( my_handle );
 
   if (gyro) gyro->loadAliasFromNVS( my_handle );
+  if (I2C)  I2C->loadAliasFromNVS( my_handle );
   for (uint8_t i=0; i<MAXSERVOS; i++ ) if (servo[i]) servo[i]->loadAliasFromNVS( my_handle );
   
 }

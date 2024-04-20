@@ -23,6 +23,8 @@ const char WIFI[3][12]    = { "off", "AP-Mode", "Client-Mode"};
 #define EXTMENUGYRO 2
 #define EXTMENUI2C  3
 #define EXTMENUINT  4
+#define EXTMENUINT0 5
+#define EXTMENUINT1 6
 
 void ExtentionMenu() {
 
@@ -49,7 +51,7 @@ void ExtentionMenu() {
 
     // printf( "I2C mode: %d\ngyro: %d\n", nvs.I2CMode, nvs.gyro);
 
-    menu.start("Extention Port", 17);
+    menu.start("Extention Port", 20);
 
     menu.add("Mode", EXTMODE[ nvs.extentionPort] , EXTMENUMODE );
 
@@ -57,6 +59,8 @@ void ExtentionMenu() {
     if ( nvs.extentionPort == FTSWARM_EXT_I2C_SLAVE ) {
       menu.add("I2C Slave Address", nvs.I2CAddr, EXTMENUI2C);
       menu.add("Interrupt Line", OFFM1M2[nvs.interruptLine], EXTMENUINT);
+      menu.add("Interrupt Low Value",  nvs.interruptOnOff[0], EXTMENUINT0);
+      menu.add("Interrupt High Value", nvs.interruptOnOff[1], EXTMENUINT1);
     }
 
     // internal gyro is only available at ftSwarmRS
@@ -90,6 +94,16 @@ void ExtentionMenu() {
       case EXTMENUINT: // Interrupt Line
         anythingChanged = true;
         nvs.interruptLine = (uint8_t) enterNumber( "(0) off, (1) M1, (2) M2:", nvs.interruptLine, 0, 2 );
+        break;
+
+      case EXTMENUINT0: // Interrupt Line Low
+        anythingChanged = true;
+        nvs.interruptOnOff[0] = (int16_t) enterNumberI32( "[-255..255]", nvs.interruptOnOff[0], -255, 255 );
+        break;
+
+      case EXTMENUINT1: // Interrupt Line High
+        anythingChanged = true;
+        nvs.interruptOnOff[1] = (int16_t) enterNumberI32( "[-255..255]", nvs.interruptOnOff[1], -255, 255 );
         break;
 
     }

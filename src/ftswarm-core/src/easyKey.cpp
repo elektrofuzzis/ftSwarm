@@ -91,6 +91,10 @@ int printable( int ch ) {
   return (ch>=32) && (ch <= 126);
 }
 
+int isdigitExt( int ch ) {
+  return isdigit( ch ) || ( ch == '-') ;
+}
+
 void enterString( const char *prompt, char *s, uint16_t size, bool hidden ) {
 
   if (!enterSomething( prompt, s, size, hidden, printable ) ) s[0] = '\0';
@@ -136,7 +140,7 @@ int32_t enterNumberI32( const char *prompt, uint16_t defaultValue, int32_t minVa
   while (1) {
 
     // get number and check on defaults
-    if ( ( !enterSomething( prompt, str, 10, false, isdigit ) ) || ( str[0] == '\0' ) ) {
+    if ( ( !enterSomething( prompt, str, 10, false, isdigitExt ) ) || ( str[0] == '\0' ) ) {
       return defaultValue;
     } else {
       i = atoi( str );
