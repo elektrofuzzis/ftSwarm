@@ -131,6 +131,8 @@ void SwOSSwarm::connect( void ) {
 
   for (uint8_t i=0; i<=maxCtrl; i++) {
 
+    if ( ( Ctrl[i] ) && ( Ctrl[i]->networkAge() > 1000L ) ) Ctrl[i]->comState = ASKFORDETAILS;
+
     if ( ( Ctrl[i] ) && ( Ctrl[i]->comState == ASKFORDETAILS ) ) {
       
       registerMe( MacAddr( broadcast ), Ctrl[i]->serialNumber );
@@ -1290,7 +1292,7 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
     #endif
 
     // check on unkown controller
-    if ( ( !Ctrl[source] ) || ( Ctrl[source]->comState == ASKFORDETAILS ) ) {
+    if ( ( !Ctrl[source] )  ) {
 
       #ifdef DEBUG_COMMUNICATION
       printf( "add a new controller type %d at %d\n", com->data.registerCmd.ctrlType, source);

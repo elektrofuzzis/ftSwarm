@@ -61,6 +61,7 @@ class SwOSNVS {
     FtSwarmExtMode_t      extentionPort;
     bool                  gyro;
     uint8_t               I2CAddr;
+    uint8_t               interruptLine; // 0 off, 1 M1, 2 M2
 
 	  SwOSNVS();                             // constructor
 	  void begin();                          // read data from nvs & run an _initialSetup if needed

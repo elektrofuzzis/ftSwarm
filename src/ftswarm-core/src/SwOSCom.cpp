@@ -424,8 +424,10 @@ static void tx_RS485( SwOSCom *com ) {
   // crc 
   frame.crc = (~crc32_le((uint32_t)~(0xffffffff), (const uint8_t*)&frame, frame.size))^0xffffffff;
   
+  bool datasent = false;
+
   // try 3 times to send data
-  for ( uint8_t retry=0; retry<3; retry++ ) {
+  for ( uint8_t retry=0; retry<5; retry++ ) {
 
     // send data
     digitalWrite( RS485_DE, 1 );
@@ -436,12 +438,14 @@ static void tx_RS485( SwOSCom *com ) {
     uart_get_collision_flag(RS485_UART, &collision );
 
     // stop on correct transmission
-    if ( !collision ) break;
+    if ( !collision ) { datasent = true; break; }
 
     // wait a random time to start retransmission
-    ets_delay_us( myOSNetwork.delayTime ); 
+    ets_delay_us( 2*myOSNetwork.delayTime ); 
 
   }
+
+  if (!datasent) printf("[not sent]\n");
 
   #ifdef DEBUG_TXCOMMUNICATION
     printf("\n****\nsend rs485 end\n");

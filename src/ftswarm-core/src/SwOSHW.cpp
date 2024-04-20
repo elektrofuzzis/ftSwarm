@@ -2111,9 +2111,10 @@ void SwOSHC165::read( ) {
  *
  ***************************************************/
 
-#define I2C_DATA_LENGTH 512                        /*!< Data buffer length of test buffer */
-#define I2C_SLAVE_TX_BUF_LEN (2 * I2C_DATA_LENGTH)  /*!< I2C slave tx buffer size */
-#define I2C_SLAVE_RX_BUF_LEN (2 * I2C_DATA_LENGTH)  /*!< I2C slave rx buffer size */
+/*
+#define I2C_DATA_LENGTH 512                         -- Data buffer length of test buffer
+#define I2C_SLAVE_TX_BUF_LEN (2 * I2C_DATA_LENGTH)  -- I2C slave tx buffer size
+#define I2C_SLAVE_RX_BUF_LEN (2 * I2C_DATA_LENGTH)  -- I2C slave rx buffer size
 #define I2C_SLAVE_NUM I2C_NUM_1
 
 void SwOSI2C::read(  ) {
@@ -2212,6 +2213,106 @@ void SwOSI2C::_setRemote( uint8_t reg, uint8_t value ) {
 void SwOSI2C::_setLocal( uint8_t reg, uint8_t value ) {
   _myRegister[reg] = value;
   trigger( FTSWARM_TRIGGERI2CWRITE, 0 );
+}
+
+uint8_t SwOSI2C::getRegister( uint8_t reg ) {
+
+  if (reg>=MAXI2CREGISTERS) return 0;
+  else return _myRegister[reg];
+
+} */
+
+// internal copy of the registers
+uint8_t I2CSlave_register = 0;
+uint8_t I2CSlave_value[MAXI2CREGISTERS];
+bool    I2CSlave_read = false;
+
+void I2CReceiveEvent(int bytesReceived){
+  // is called when I2C data is received
+
+  uint8_t value;
+  
+  // 0 bytes shouldn't happen at all
+  // 1 byte  - it's a register read, need to send the requested data
+  // 2 bytes - it's a register write, neeed to inform Kelda
+  // > bytes - ignore
+
+  switch (bytesReceived) {
+
+    case 1:   // Read register
+              I2CSlave_register = Wire.read();
+              I2CSlave_read     = true;
+              break;
+
+    case 2:   // Write register
+              I2CSlave_register = Wire.read();
+              value = Wire.read();
+              if (I2CSlave_register<MAXI2CREGISTERS) I2CSlave_value[ I2CSlave_register ] = value;
+              break;
+
+    default:  for (uint8_t i=0; i<bytesReceived; i++) Wire.read();
+              break;
+
+  }
+
+}
+
+void I2CRequestEvent() {
+  // i2C-Interrupt to send data to master
+
+  Wire.write( I2CSlave_value[I2CSlave_register] );
+  
+}
+
+void SwOSI2C::read( ) {
+  
+  for( uint8_t i=0; i<MAXI2CREGISTERS; i++) _myRegister[i] = I2CSlave_value[i];
+
+  if ( (I2CSlave_read) && ( nvs.interruptLine ) ) { I2CSlave_read=false; _ctrl->actor[nvs.interruptLine-1]->setSpeed(0); }
+
+}
+
+void SwOSI2C::_setupLocal(uint8_t I2CAddress) {
+
+  Wire.begin(I2CAddress);
+  Wire.onReceive(I2CReceiveEvent);
+  Wire.onRequest(I2CRequestEvent);
+
+}
+
+SwOSI2C::SwOSI2C( const char *name, SwOSCtrl *ctrl, uint8_t I2CAddress):SwOSIO( name, ctrl ) {
+
+  memset(_myRegister, 0, sizeof(_myRegister));
+  
+  if (ctrl->isLocal()) _setupLocal(I2CAddress);
+
+}
+
+void SwOSI2C::setRegister( uint8_t reg, uint8_t value ) {
+
+  // check on boundaries
+  if (reg>=MAXI2CREGISTERS) return;
+  
+  _myRegister[reg] = value;
+
+  if (_ctrl->isLocal()) _setLocal( reg, value );
+  else                  _setRemote( reg, value );
+
+}
+
+void SwOSI2C::_setRemote( uint8_t reg, uint8_t value ) {
+  
+  SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_I2CREGISTER );
+  cmd.data.I2CRegisterCmd.reg   = reg;
+  cmd.data.I2CRegisterCmd.value = value;
+  cmd.send( );
+}
+
+void SwOSI2C::_setLocal( uint8_t reg, uint8_t value ) {
+
+  I2CSlave_value[reg] = value;
+  if ( nvs.interruptLine ) { I2CSlave_read=false; _ctrl->actor[nvs.interruptLine-1]->setSpeed(255); }
+
 }
 
 uint8_t SwOSI2C::getRegister( uint8_t reg ) {
@@ -3237,6 +3338,7 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
       return true;
 
     case CMD_SETACTORSPEED:
+    com->print();
       actor[com->data.actorSpeedCmd.index]->setMotionType( com->data.actorSpeedCmd.motionType );
       actor[com->data.actorSpeedCmd.index]->setAcceleration( com->data.actorSpeedCmd.rampUpT, com->data.actorSpeedCmd.rampUpY );
       actor[com->data.actorSpeedCmd.index]->setSpeed( com->data.actorSpeedCmd.speed );

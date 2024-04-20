@@ -16,11 +16,13 @@
 
 const char EXTMODE[5][13] = { "off", "I2C-Master", "I2C-Slave", "Gyro MCU6040", "Outputs" };
 const char ONOFF[2][5]    = { "off", "on" };
+const char OFFM1M2[3][5]  = { "off", "M1", "M2" };
 const char WIFI[3][12]    = { "off", "AP-Mode", "Client-Mode"};
 
 #define EXTMENUMODE 1
 #define EXTMENUGYRO 2
 #define EXTMENUI2C  3
+#define EXTMENUINT  4
 
 void ExtentionMenu() {
 
@@ -47,12 +49,18 @@ void ExtentionMenu() {
 
     // printf( "I2C mode: %d\ngyro: %d\n", nvs.I2CMode, nvs.gyro);
 
-    menu.start("Extention Port", 15);
+    menu.start("Extention Port", 17);
 
     menu.add("Mode", EXTMODE[ nvs.extentionPort] , EXTMENUMODE );
 
-    menu.add("Gyro", ONOFF[nvs.gyro] , EXTMENUGYRO );
-    menu.add("I2C Address", nvs.I2CAddr, EXTMENUI2C);
+    // I2C Slave Mode. Options I2C Slave Address and Interrupt Line
+    if ( nvs.extentionPort == FTSWARM_EXT_I2C_SLAVE ) {
+      menu.add("I2C Slave Address", nvs.I2CAddr, EXTMENUI2C);
+      menu.add("Interrupt Line", OFFM1M2[nvs.interruptLine], EXTMENUINT);
+    }
+
+    // internal gyro is only available at ftSwarmRS
+    if ( ( nvs.CPU == FTSWARMRS_2V0 ) || ( nvs.CPU == FTSWARMRS_2V1 ) ) menu.add("internal Gyro", ONOFF[nvs.gyro], EXTMENUGYRO );
 
     switch( menu.userChoice() ) {
       
@@ -79,6 +87,11 @@ void ExtentionMenu() {
         nvs.I2CAddr = (uint8_t) enterNumber( "[16..127]: ", nvs.I2CAddr, 16, 127 );
         break;
         
+      case EXTMENUINT: // Interrupt Line
+        anythingChanged = true;
+        nvs.interruptLine = (uint8_t) enterNumber( "(0) off, (1) M1, (2) M2:", nvs.interruptLine, 0, 2 );
+        break;
+
     }
   }
 
@@ -360,6 +373,11 @@ void swarmMenu( void ) {
     } else {
 
       printf( "%s is connected to swarm \"%s\".\nSwarm PIN is %d.\n", myOSSwarm.Ctrl[0]->getHostname(), nvs.swarmName, nvs.swarmPIN );
+      if (myOSSwarm.Kelda) {
+        printf("Kelda SN %d is online\n", myOSSwarm.Kelda->serialNumber );
+      } else {
+        printf("Kelda is offline\n");
+      }
 
     }
 

@@ -99,6 +99,7 @@ SwOSNVS::SwOSNVS() {
   memset( &swarmMember, 0, sizeof( swarmMember ) );
   extentionPort      = FTSWARM_EXT_OFF;
   I2CAddr            = 0x66;
+  interruptLine      = 0;
   gyro               = false;
 
   // initialize zero positions
@@ -200,6 +201,7 @@ bool SwOSNVS::load() {
 
   // extentionPort
   nvs_get_u8 ( my_handle, "I2CAddr", &I2CAddr );
+  nvs_get_u8 ( my_handle, "interruptLine", &interruptLine );
   nvs_get_u32( my_handle, "extentionPort", (uint32_t *) &extentionPort);
   nvs_get_u8 ( my_handle, "Gyro",    (uint8_t *) &gyro);
 
@@ -264,6 +266,7 @@ void SwOSNVS::save( bool writeAll ) {
 
   // extentionPort
   ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "I2CAddr", I2CAddr ) );
+  ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "interruptLine", interruptLine ) );
   ESP_ERROR_CHECK( nvs_set_u32( my_handle, "extentionPort", (uint32_t) extentionPort) );
   ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "Gyro",    (uint8_t)  gyro) );
 
