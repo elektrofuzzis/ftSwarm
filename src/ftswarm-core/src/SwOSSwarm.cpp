@@ -1292,7 +1292,8 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
     #endif
 
     // check on unkown controller
-    if ( ( !Ctrl[source] )  ) {
+    if ( ( !Ctrl[source] ) || 
+         ( ( Ctrl[source]->comState == ASKFORDETAILS ) && nvs.IAmKelda ) ) {
 
       #ifdef DEBUG_COMMUNICATION
       printf( "add a new controller type %d at %d\n", com->data.registerCmd.ctrlType, source);
