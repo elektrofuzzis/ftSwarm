@@ -25,6 +25,7 @@ const char WIFI[3][12]    = { "off", "AP-Mode", "Client-Mode"};
 #define EXTMENUINT  4
 #define EXTMENUINT0 5
 #define EXTMENUINT1 6
+#define EXTMENUREG  7
 
 void ExtentionMenu() {
 
@@ -61,6 +62,7 @@ void ExtentionMenu() {
       menu.add("Interrupt Line", OFFM1M2[nvs.interruptLine], EXTMENUINT);
       menu.add("Interrupt Low Value",  nvs.interruptOnOff[0], EXTMENUINT0);
       menu.add("Interrupt High Value", nvs.interruptOnOff[1], EXTMENUINT1);
+      menu.add("I2C Registers", nvs.I2CRegisters, EXTMENUREG);
     }
 
     // internal gyro is only available at ftSwarmRS
@@ -98,12 +100,17 @@ void ExtentionMenu() {
 
       case EXTMENUINT0: // Interrupt Line Low
         anythingChanged = true;
-        nvs.interruptOnOff[0] = (int16_t) enterNumberI32( "[-255..255]", nvs.interruptOnOff[0], -255, 255 );
+        nvs.interruptOnOff[0] = (int16_t) enterNumberI32( "Low value [-255..255]", nvs.interruptOnOff[0], -255, 255 );
         break;
 
       case EXTMENUINT1: // Interrupt Line High
         anythingChanged = true;
-        nvs.interruptOnOff[1] = (int16_t) enterNumberI32( "[-255..255]", nvs.interruptOnOff[1], -255, 255 );
+        nvs.interruptOnOff[1] = (int16_t) enterNumberI32( "High Value [-255..255]", nvs.interruptOnOff[1], -255, 255 );
+        break;
+
+      case EXTMENUREG: // Max I2CRegisters
+        anythingChanged = true;
+        nvs.I2CRegisters = (uint8_t) enterNumber( "I2C Registers [1..8]", nvs.I2CRegisters, 1, MAXI2CREGISTERS);
         break;
 
     }

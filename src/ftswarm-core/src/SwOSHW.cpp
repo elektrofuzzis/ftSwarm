@@ -2237,17 +2237,18 @@ void I2CReceiveEvent(int bytesReceived){
   // 2 bytes - it's a register write, neeed to inform Kelda
   // > bytes - ignore
 
-  printf("br %d\n", bytesReceived);
-
   switch (bytesReceived) {
 
+/* ftSeilbahn Fix
     case 1:   // Read register
               I2CSlave_register = Wire.read();
               break;
+*/
 
     case 2:   // Write register
               I2CSlave_register = Wire.read();
               value = Wire.read();
+              printf("Write %d %d\n", I2CSlave_register, value );
               if (I2CSlave_register<MAXI2CREGISTERS) I2CSlave_value[ I2CSlave_register ] = value;
               break;
 
@@ -2261,9 +2262,8 @@ void I2CReceiveEvent(int bytesReceived){
 void I2CRequestEvent() {
   // i2C-Interrupt to send data to master
 
-  Wire.write( I2CSlave_value[I2CSlave_register] );
+  for (uint8_t i=0; i<nvs.I2CRegisters; i++) Wire.write( I2CSlave_value[i] );
   I2CSlave_read = true;
-  printf("I2CRequestEvent\n");
   
 }
 
@@ -2272,7 +2272,6 @@ void SwOSI2C::read( ) {
   for( uint8_t i=0; i<MAXI2CREGISTERS; i++) _myRegister[i] = I2CSlave_value[i];
 
   if ( (I2CSlave_read) && ( nvs.interruptLine ) ) { 
-    printf("reset\n"); 
     I2CSlave_read=false; 
     _ctrl->actor[nvs.interruptLine-1]->setSpeed(nvs.interruptOnOff[0]);
     _ctrl->actor[nvs.interruptLine-1]->apply();
@@ -2285,6 +2284,12 @@ void SwOSI2C::_setupLocal(uint8_t I2CAddress) {
   Wire.begin(I2CAddress);
   Wire.onReceive(I2CReceiveEvent);
   Wire.onRequest(I2CRequestEvent);
+  
+  if ( nvs.interruptLine ) { 
+    I2CSlave_read=false; 
+    _ctrl->actor[nvs.interruptLine-1]->setSpeed( nvs.interruptOnOff[0] );
+    _ctrl->actor[nvs.interruptLine-1]->apply();
+  }
 
 }
 
@@ -2319,10 +2324,24 @@ void SwOSI2C::_setRemote( uint8_t reg, uint8_t value ) {
 void SwOSI2C::_setLocal( uint8_t reg, uint8_t value ) {
 
   I2CSlave_value[reg] = value;
+
   if ( nvs.interruptLine ) { 
-    I2CSlave_read=false; 
+    // Use M1/M2 as interrupt line
+    
+    // reset read semaphore
+    I2CSlave_read = false;
+
+    // if the remote controller didn't ack the last interrupt, so I need to reset the interupt line first 
+    if ( _ctrl->actor[nvs.interruptLine-1]->getSpeed() != nvs.interruptOnOff[0] ) {
+      _ctrl->actor[nvs.interruptLine-1]->setSpeed( nvs.interruptOnOff[0] );
+      _ctrl->actor[nvs.interruptLine-1]->apply();
+      delay(1);
+    }
+
+    // set interrupt
     _ctrl->actor[nvs.interruptLine-1]->setSpeed( nvs.interruptOnOff[1] );
     _ctrl->actor[nvs.interruptLine-1]->apply();
+
   }
 
 }
