@@ -2237,11 +2237,12 @@ void I2CReceiveEvent(int bytesReceived){
   // 2 bytes - it's a register write, neeed to inform Kelda
   // > bytes - ignore
 
+  printf("br %d\n", bytesReceived);
+
   switch (bytesReceived) {
 
     case 1:   // Read register
               I2CSlave_register = Wire.read();
-              I2CSlave_read     = true;
               break;
 
     case 2:   // Write register
@@ -2261,6 +2262,8 @@ void I2CRequestEvent() {
   // i2C-Interrupt to send data to master
 
   Wire.write( I2CSlave_value[I2CSlave_register] );
+  I2CSlave_read = true;
+  printf("I2CRequestEvent\n");
   
 }
 
@@ -2314,8 +2317,6 @@ void SwOSI2C::_setRemote( uint8_t reg, uint8_t value ) {
 }
 
 void SwOSI2C::_setLocal( uint8_t reg, uint8_t value ) {
-
-  printf("setLocal nvs.interruptLine %d I2CSlave_read=%d\n", nvs.interruptLine, I2CSlave_read);
 
   I2CSlave_value[reg] = value;
   if ( nvs.interruptLine ) { 
@@ -3766,6 +3767,13 @@ SwOSSwarmXX::~SwOSSwarmXX() {
 
   if (gyro) delete( gyro );
   if (I2C)  delete( I2C );
+
+}
+
+void SwOSSwarmXX::read( void ) {
+
+  SwOSCtrl::read();
+  if (I2C) I2C->read();
 
 }
 

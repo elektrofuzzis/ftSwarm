@@ -344,13 +344,31 @@ void rejectControllerFromSwarm( void ) {
     return;
   }
 
-  if ( myOSSwarm.rejectController( SN ) == SWOS_OK ) {
-    printf("Device %d left the swarm successfully.\n", SN);
-    nvs.deleteController( SN );
-    nvs.save();
-  } else {
-    printf("Couldn't connect to device %d,\n", SN);
-  }
+  bool force = false;
+
+  while (1) {
+
+    switch ( myOSSwarm.rejectController( SN, force ) ) {
+
+      case SWOS_OK:       printf( "Device %d left the swarm.\n", SN);
+                          nvs.deleteController( SN );
+                          nvs.save();
+                          return;
+      
+      case SWOS_TIMEOUT:  printf( "Couldn't connect to device %d,\n", SN);
+                          if (!yesNo("Delete it anyway [Y/N]?" ) ) return;
+                          force = true;
+                          break;
+
+      case SWOS_DENY:     printf( "This device is used actively. Stop yout program first.\n");
+                          return;
+
+      default:            printf( "Error: unexpected swarm behaviour.\n");
+                          return;
+
+    }
+    
+  } 
 
 }
 
@@ -399,7 +417,7 @@ void swarmMenu( void ) {
 
     if ( nvs.RS485Available() ) {
       menu.add( "swarm communication", SWARMCOMMUNICATION[nvs.swarmCommunication], MENUSWARMCOMMUNICATION );
-      menu.add( "swarm speed", nvs.swarmSpeed, MENUSWARMSPEED);
+      if ( nvs.swarmCommunication != swarmComWifi ) menu.add( "swarm speed", nvs.swarmSpeed, MENUSWARMSPEED);
     }
     
     menu.add( "create a new swarm", "", MENUCREATESWARM );

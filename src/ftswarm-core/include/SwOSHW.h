@@ -965,6 +965,7 @@ class SwOSSwarmXX : public SwOSCtrl {
     virtual bool changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarmIOType_t newIOType ); // change port's IO Type if possible
 
     virtual bool OnDataRecv( SwOSCom *com );     // data via espnow revceived
+	  virtual void read();                                                   // run measurements
 
 };
 

@@ -26,14 +26,7 @@
 
 #include <esp_debug_helpers.h>
 
-// Debug options:
-// DEBUG_COMMUNICATION    show RX-Communication
-// DEBUG_TXCOMMUNICATION  show TX-Connumication
-// DEBUG_MONITOR          just monitor the bus and show communication
-
-// #define DEBUG_COMMUNICATION
-// #define DEBUG_TXCOMMUNICATION
-// #define DEBUG_MONITOR
+#include <debug.h>
 
 #define min(a,b) ((a)<(b)?(a):(b))
 #define max(a,b) ((a)>(b)?(a):(b))
@@ -441,15 +434,13 @@ static void tx_RS485( SwOSCom *com ) {
     if ( !collision ) { datasent = true; break; }
 
     // wait a random time to start retransmission
-    ets_delay_us( 2*myOSNetwork.delayTime ); 
+    ets_delay_us( (retry+1)*myOSNetwork.delayTime ); 
 
   }
 
-  if (!datasent) printf("[not sent]\n");
-
-  #ifdef DEBUG_TXCOMMUNICATION
-    printf("\n****\nsend rs485 end\n");
-  #endif
+  if (!datasent) {
+    printf("[not sent]\n"); com->print();
+  }
     
 }
 
@@ -482,7 +473,7 @@ static void tx_Wifi( SwOSCom *com ) {
   sendNotificationEvent_t event;
 
   if ( com->macAddr.isNull() ) {
-    printf( "ERROR: try rto send data via wifi to MAC 00:00:00:00\n" );
+    printf( "ERROR: try to send data via wifi to MAC 00:00:00:00\n" );
     com->print();
     while (1) delay(50);
   }
@@ -497,10 +488,6 @@ static void tx_Wifi( SwOSCom *com ) {
       waitAck--;
     }
   }
-
-  #ifdef DEBUG_TXCOMMUNICATION
-    printf("\n****\nsend wifi end\n");
-  #endif
 
 }
 
@@ -660,6 +647,7 @@ static void RS485_rx_task(void *pvParameters) {
                                   
                                   uart_read_bytes(RS485_UART, &buffer[buflen], event.size, portMAX_DELAY);
                                   #ifdef DEBUG_MONITOR
+                                    printf("DEBUG MONITOR: incoming data:\n");
                                     dumpBuffer( &buffer[buflen], event.size );
                                   #endif
                                   buflen += event.size;
@@ -672,8 +660,16 @@ static void RS485_rx_task(void *pvParameters) {
                                     result = RS485GetPayload( buffer, buflen, &payload, &sizePayload, &cleanup );
 
                                     if ( result ==  RS485_PAYLOAD ) {
+
                                       // copy payload to a SwOSCom packet
                                       SwOSCom packet( MacAddr( noMac), payload, sizePayload );
+
+                                      // if needed show the packet
+                                      #ifdef DEBUG_MONITOR
+                                        printf("DEBUG MONITOR: Packet identified:\n");
+                                        packet.print();
+                                      #endif
+
                                       // process packet
                                       _OnDataRecv( &packet );
                                     } 

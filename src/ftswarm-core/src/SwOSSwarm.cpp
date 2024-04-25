@@ -29,10 +29,9 @@
 // There can only be once!
 SwOSSwarm myOSSwarm;
 
-// #define DEBUG_COMMUNICATION
-// #define DEBUG_READTASK
+#include <debug.h>
 
-#define CONNECTDELAY 500
+#define CONNECTDELAY 2500
 
 /***************************************************
  *
@@ -95,7 +94,10 @@ static void readTask( void *parameter ) {
     myOSSwarm.Ctrl[0]->unlock();
     
     // send data and cleanup
-    if (com) { com->send(); delete com; com = NULL; }
+    if (com) { 
+      com->send();
+      delete com; 
+      com = NULL; }
     
     // calc delay time
     #ifdef DEBUG_READTASK
@@ -129,7 +131,9 @@ static void connectTask( void *Parameter ) {
 
 void SwOSSwarm::connect( void ) {
 
-  for (uint8_t i=0; i<=maxCtrl; i++) {
+  if (!nvs.IAmKelda) return;
+
+  for (uint8_t i=1; i<=maxCtrl; i++) {
 
     if ( ( Ctrl[i] ) && ( Ctrl[i]->networkAge() > 1000L ) ) Ctrl[i]->comState = ASKFORDETAILS;
 
@@ -1401,7 +1405,7 @@ SwOSError_t SwOSSwarm::leaveSwarm( void ) {
 
 }
 
-SwOSError_t SwOSSwarm::rejectController( FtSwarmSerialNumber_t serialNumber ) {
+SwOSError_t SwOSSwarm::rejectController( FtSwarmSerialNumber_t serialNumber, bool force ) {
   uint8_t affected = getIndex( serialNumber );
 
   // do I know the controller?
@@ -1422,12 +1426,13 @@ SwOSError_t SwOSSwarm::rejectController( FtSwarmSerialNumber_t serialNumber ) {
   if ( Ctrl[affected]->lastAck.cmd == CMD_SWARMLEAVE ) result = Ctrl[affected]->lastAck.error;
 
   // delete him, if possible
-  if ( result == SWOS_OK ) { 
+  if ( ( result == SWOS_OK ) || force ) { 
     Ctrl[affected]->lock();
     SwOSCtrl *old = Ctrl[affected];
     Ctrl[affected] = NULL;
     old->unlock();
     delete old;
+    result = SWOS_OK;
   }
 
   return result;
