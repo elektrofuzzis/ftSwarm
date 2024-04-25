@@ -309,7 +309,7 @@ class SwOSAnalogInput : public SwOSInput {
 	
     bool isXMeter();
     virtual void _setupLocal();
-    virtual void _setSensorTypeLocal( FtSwarmSensor_t sensorType );  // set sensor type
+    virtual void setSensorTypeLocal( FtSwarmSensor_t sensorType );  // set sensor type
 
   public:
  

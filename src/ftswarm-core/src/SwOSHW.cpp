@@ -934,7 +934,7 @@ bool SwOSAnalogInput::isXMeter() {
 
 }
 
-void SwOSAnalogInput::_setSensorTypeLocal( FtSwarmSensor_t sensorType ) {
+void SwOSAnalogInput::setSensorTypeLocal( FtSwarmSensor_t sensorType ) {
 
   // analog calibration if needed
   if ( ( isXMeter() ) && (!_adc_chars) ) {

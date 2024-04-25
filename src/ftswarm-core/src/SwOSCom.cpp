@@ -438,9 +438,11 @@ static void tx_RS485( SwOSCom *com ) {
 
   }
 
+  #ifdef DEBUG_COMMUNICATION
   if (!datasent) {
     printf("[not sent]\n"); com->print();
   }
+  #endif
     
 }
 
