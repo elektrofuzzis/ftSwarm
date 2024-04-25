@@ -2248,7 +2248,6 @@ void I2CReceiveEvent(int bytesReceived){
     case 2:   // Write register
               I2CSlave_register = Wire.read();
               value = Wire.read();
-              printf("Write %d %d\n", I2CSlave_register, value );
               if (I2CSlave_register<MAXI2CREGISTERS) I2CSlave_value[ I2CSlave_register ] = value;
               break;
 
