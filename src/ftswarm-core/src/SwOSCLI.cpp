@@ -443,6 +443,12 @@ void SwOSCLI::executeInputCmd( void ) {
                                 } else if (io->getIOType() == FTSWARM_DIGITALINPUT ) {
                                   ((SwOSDigitalInput *)io)->setSensorType( (FtSwarmSensor_t)_parameter[0].getValue(), (bool)_parameter[1].getValue() );
                                   printf("R: ok\n");
+                                } else if (io->getIOType() == FTSWARM_COUNTERINPUT ) {
+                                  ((SwOSCounter *)io)->setSensorType( (FtSwarmSensor_t)_parameter[0].getValue() );
+                                  printf("R: ok\n");
+                                } else if (io->getIOType() == FTSWARM_FREQUENCYINPUT ) {
+                                  ((SwOSFrequencymeter *)io)->setSensorType( (FtSwarmSensor_t)_parameter[0].getValue() );
+                                  printf("R: ok\n");
                                 } else {
                                   printf("ERROR: wrong iotype.\n");
                                 }

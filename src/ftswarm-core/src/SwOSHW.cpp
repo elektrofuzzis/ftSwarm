@@ -791,6 +791,25 @@ void SwOSCounter::resetCounter( void ) {
 
 }
 
+void SwOSCounter::setValue( int32_t value ) {
+
+  // nothing ToDo on real local HW
+  if ( ( _ctrl->isLocal()) && (!_ctrl->isI2CSwarmCtrl() ) ) return;
+
+  // check if it's toggled?
+  if ( _lastRawValue != value) { 
+
+    // trigger value event
+    trigger( FTSWARM_TRIGGERVALUE, value );
+    
+  }
+  
+  _lastRawValue = value;
+
+  subscription();
+
+}
+
 void SwOSCounter::jsonize( JSONize *json, uint8_t id) {
   json->startObject();
   SwOSIO::jsonize(json, id);
@@ -883,6 +902,25 @@ void SwOSFrequencymeter::read( void ) {
     // no tick for more than a second
     _lastRawValue = 0;
   }
+
+  subscription();
+
+}
+
+void SwOSFrequencymeter::setValue( int32_t value ) {
+
+  // nothing ToDo on real local HW
+  if ( ( _ctrl->isLocal()) && (!_ctrl->isI2CSwarmCtrl() ) ) return;
+
+  // check if it's toggled?
+  if ( _lastRawValue != value) { 
+
+    // trigger value event
+    trigger( FTSWARM_TRIGGERVALUE, value );
+    
+  }
+  
+  _lastRawValue = value;
 
   subscription();
 
@@ -2127,14 +2165,14 @@ void SwOSI2C::read(  ) {
   if ( bytes_read == 1 ) {
     // read a register
     uint8_t result = 0;
-    if (data[0]<MAXI2CREGISTERS) result = _myRegister[data[0]];
+    if (data[0]<MAXI2CREGISTERS) result = myRegister[data[0]];
     i2c_reset_tx_fifo(I2C_SLAVE_NUM);
     i2c_slave_write_buffer(I2C_SLAVE_NUM, &result, 1, portMAX_DELAY);
       
   } else if ( bytes_read == 2 ) {
     // write a register
     if (data[0]<MAXI2CREGISTERS) {
-      _myRegister[data[0]] = data[1];
+      myRegister[data[0]] = data[1];
     }
   }
 
@@ -2184,7 +2222,7 @@ void SwOSI2C::_setupLocal(uint8_t I2CAddress) {
 
 SwOSI2C::SwOSI2C( const char *name, SwOSCtrl *ctrl, uint8_t I2CAddress):SwOSIO( name, ctrl ) {
 
-  memset(_myRegister, 0, sizeof(_myRegister));
+  memset(myRegister, 0, sizeof(myRegister));
   
   if (ctrl->isLocal()) _setupLocal(I2CAddress);
 
@@ -2195,7 +2233,7 @@ void SwOSI2C::setRegister( uint8_t reg, uint8_t value ) {
   // check on boundaries
   if (reg>=MAXI2CREGISTERS) return;
   
-  _myRegister[reg] = value;
+  myRegister[reg] = value;
 
   if (_ctrl->isLocal()) _setLocal( reg, value );
   else                  _setRemote( reg, value );
@@ -2211,14 +2249,14 @@ void SwOSI2C::_setRemote( uint8_t reg, uint8_t value ) {
 }
 
 void SwOSI2C::_setLocal( uint8_t reg, uint8_t value ) {
-  _myRegister[reg] = value;
+  myRegister[reg] = value;
   trigger( FTSWARM_TRIGGERI2CWRITE, 0 );
 }
 
 uint8_t SwOSI2C::getRegister( uint8_t reg ) {
 
   if (reg>=MAXI2CREGISTERS) return 0;
-  else return _myRegister[reg];
+  else return myRegister[reg];
 
 } */
 
@@ -2268,7 +2306,7 @@ void I2CRequestEvent() {
 
 void SwOSI2C::read( ) {
   
-  for( uint8_t i=0; i<MAXI2CREGISTERS; i++) _myRegister[i] = I2CSlave_value[i];
+  for( uint8_t i=0; i<MAXI2CREGISTERS; i++) myRegister[i] = I2CSlave_value[i];
 
   if ( (I2CSlave_read) && ( nvs.interruptLine ) ) { 
     I2CSlave_read=false; 
@@ -2294,7 +2332,7 @@ void SwOSI2C::_setupLocal(uint8_t I2CAddress) {
 
 SwOSI2C::SwOSI2C( const char *name, SwOSCtrl *ctrl, uint8_t I2CAddress):SwOSIO( name, ctrl ) {
 
-  memset(_myRegister, 0, sizeof(_myRegister));
+  memset(myRegister, 0, sizeof(myRegister));
   
   if (ctrl->isLocal()) _setupLocal(I2CAddress);
 
@@ -2305,7 +2343,7 @@ void SwOSI2C::setRegister( uint8_t reg, uint8_t value ) {
   // check on boundaries
   if (reg>=MAXI2CREGISTERS) return;
   
-  _myRegister[reg] = value;
+  myRegister[reg] = value;
 
   if (_ctrl->isLocal()) _setLocal( reg, value );
   else                  _setRemote( reg, value );
@@ -2348,7 +2386,7 @@ void SwOSI2C::_setLocal( uint8_t reg, uint8_t value ) {
 uint8_t SwOSI2C::getRegister( uint8_t reg ) {
 
   if (reg>=MAXI2CREGISTERS) return 0;
-  else return _myRegister[reg];
+  else return myRegister[reg];
 
 }
 
@@ -3034,7 +3072,8 @@ SwOSIO *SwOSCtrl::getIO( const char *name) {
 SwOSIO *SwOSCtrl::getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port) {
 
   switch (ioType) {
-    case FTSWARM_COUNTER:
+    case FTSWARM_COUNTERINPUT:
+    case FTSWARM_FREQUENCYINPUT:
     case FTSWARM_INPUT: 
     case FTSWARM_DIGITALINPUT:
     case FTSWARM_ANALOGINPUT : return ( (port<inputs)?input[ port ]:NULL);
@@ -3368,7 +3407,6 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
       return true;
 
     case CMD_SETACTORSPEED:
-    com->print();
       actor[com->data.actorSpeedCmd.index]->setMotionType( com->data.actorSpeedCmd.motionType );
       actor[com->data.actorSpeedCmd.index]->setAcceleration( com->data.actorSpeedCmd.rampUpT, com->data.actorSpeedCmd.rampUpY );
       actor[com->data.actorSpeedCmd.index]->setSpeed( com->data.actorSpeedCmd.speed );
@@ -3765,10 +3803,11 @@ SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local,
       case FTSWARMCONTROL_1V3: 
       case FTSWARMJST_1V15:     Wire.begin( 21, 22 ); break;
 
-      case FTSWARMXL_1V00:      Wire.begin( 5, 4 ); break;
+      case FTSWARMXL_1V00:      Wire.begin( 33, 21 ); break;
 
       case FTSWARMRS_2V0: 
-      case FTSWARMRS_2V1:       if ( ( nvs.extentionPort != FTSWARM_EXT_I2C_SLAVE ) && ( nvs.extentionPort != FTSWARM_EXT_OFF ) ) Wire.begin( 8, 9 ); 
+      case FTSWARMRS_2V1:       // use nvs parameters, since it's a local one
+                                if ( ( nvs.extentionPort != FTSWARM_EXT_I2C_SLAVE ) && ( nvs.extentionPort != FTSWARM_EXT_OFF ) ) Wire.begin( 8, 9 ); 
                                 break;
   
       default:                  break;
@@ -3777,7 +3816,8 @@ SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local,
 
   }
 
-  if ( nvs.extentionPort == FTSWARM_EXT_I2C_SLAVE ) { I2C = new SwOSI2C ( "I2C", this, nvs.I2CAddr ); };
+  // use parameter to handle remote devices correctly
+  if ( extentionPort == FTSWARM_EXT_I2C_SLAVE ) { I2C = new SwOSI2C ( "I2C", this, nvs.I2CAddr ); };
 
 }
 
@@ -3920,6 +3960,26 @@ bool SwOSSwarmXX::changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarm
   return true;
 
 }
+
+SwOSCom *SwOSSwarmXX::state2Com( MacAddr destination ) {
+
+  SwOSCom *com = SwOSCtrl::state2Com( destination );
+
+  // copy I2C registers
+  if (I2C) memcpy( com->data.stateCmd.i2cValue, I2C->myRegister, MAXI2CREGISTERS );
+
+  return com;
+
+}
+
+bool SwOSSwarmXX::recvState( SwOSCom *com ) {
+
+  if (!SwOSCtrl::recvState(com) ) return false;
+
+  if (I2C) memcpy( I2C->myRegister,  com->data.stateCmd.i2cValue, MAXI2CREGISTERS );
+  return true;
+ 
+} 
 
 /***************************************************
  *
