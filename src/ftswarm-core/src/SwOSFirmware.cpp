@@ -14,7 +14,7 @@
 #include "easyKey.h"
 #include "SwOSCLI.h"
 
-const char EXTMODE[5][13] = { "off", "I2C-Master", "I2C-Slave", "Gyro MCU6040", "Outputs" };
+const char EXTMODE[5][14] = { "off", "I2C-Master", "I2C-Slave", "Gyro MPU-6050", "Outputs" };
 const char ONOFF[2][5]    = { "off", "on" };
 const char OFFM1M2[3][5]  = { "off", "M1", "M2" };
 const char WIFI[3][12]    = { "off", "AP-Mode", "Client-Mode"};
@@ -27,7 +27,7 @@ const char WIFI[3][12]    = { "off", "AP-Mode", "Client-Mode"};
 #define EXTMENUINT1 6
 #define EXTMENUREG  7
 
-void ExtentionMenu() {
+void ExtensionMenu() {
 
   bool    anythingChanged = false;
   char    prompt[255];
@@ -52,12 +52,12 @@ void ExtentionMenu() {
 
     // printf( "I2C mode: %d\ngyro: %d\n", nvs.I2CMode, nvs.gyro);
 
-    menu.start("Extention Port", 20);
+    menu.start("Extension Port", 20);
 
-    menu.add("Mode", EXTMODE[ nvs.extentionPort] , EXTMENUMODE );
+    menu.add("Mode", EXTMODE[ nvs.extensionPort] , EXTMENUMODE );
 
     // I2C Slave Mode. Options I2C Slave Address and Interrupt Line
-    if ( nvs.extentionPort == FTSWARM_EXT_I2C_SLAVE ) {
+    if ( nvs.extensionPort == FTSWARM_EXT_I2C_SLAVE ) {
       menu.add("I2C Slave Address", nvs.I2CAddr, EXTMENUI2C);
       menu.add("Interrupt Line", OFFM1M2[nvs.interruptLine], EXTMENUINT);
       menu.add("Interrupt Low Value",  nvs.interruptOnOff[0], EXTMENUINT0);
@@ -80,7 +80,11 @@ void ExtentionMenu() {
         
       case EXTMENUMODE: // ExtMode
         anythingChanged = true;
-        nvs.extentionPort = (FtSwarmExtMode_t) enterNumber( "(0) off (1) I2C-Master (2) I2C-Slave (3) Gyro MCU6040 (4) Outputs: ", nvs.extentionPort, 0, 4 );
+        if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
+          nvs.extensionPort = (FtSwarmExtMode_t) enterNumber( "(0) off (1) I2C-Master: ", nvs.extensionPort, 0, 1 );
+        } else {
+          nvs.extensionPort = (FtSwarmExtMode_t) enterNumber( "(0) off (1) I2C-Master (2) I2C-Slave (3) Gyro MCU6040 (4) Outputs: ", nvs.extensionPort, 0, 4 );
+        }
         break;
 
       case EXTMENUGYRO: // Gyro
@@ -863,7 +867,7 @@ void remoteControl( void ) {
 #define MAINMENUALIAS     3
 #define MAINMENUFACTORY   4
 #define MAINMEUREMOTE     5
-#define MAINMENUEXTENTION 6
+#define MAINMENUEXTENSION 6
 #define MAINMENUSWARMCTRL 7
 
 void mainMenu( void ) {
@@ -883,10 +887,10 @@ void mainMenu( void ) {
     // special HW
     switch (myOSSwarm.Ctrl[0]->getType()) {
 
-      case FTSWARM:         menu.add("Extention Port", "", MAINMENUEXTENTION );
+      case FTSWARM:         menu.add("Extension Port", "", MAINMENUEXTENSION );
                             break;
 
-      case FTSWARMCONTROL:  menu.add("Extention Port", "", MAINMENUEXTENTION );
+      case FTSWARMCONTROL:  menu.add("Extension Port", "", MAINMENUEXTENSION );
                             menu.add("ftSwarmControl", "", MAINMENUSWARMCTRL );
                             break;
 
@@ -899,7 +903,7 @@ void mainMenu( void ) {
       case MAINMENUALIAS:     aliasMenu();        break;
       case MAINMENUFACTORY:   factorySettings();  break;
       case MAINMEUREMOTE:     remoteControl();    break;
-      case MAINMENUEXTENTION: ExtentionMenu();    break;
+      case MAINMENUEXTENSION: ExtensionMenu();    break;
       case MAINMENUSWARMCTRL: SwarmControlMenu(); break;
     }
     

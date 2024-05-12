@@ -81,7 +81,7 @@ struct registerCmd_t {
   FtSwarmController_t ctrlType; 
   FtSwarmVersion_t versionCPU; 
   bool IAmKelda; 
-  FtSwarmExtMode_t extentionPort;
+  FtSwarmExtMode_t extensionPort;
   uint8_t leds;
 } __attribute__((packed));
 

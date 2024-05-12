@@ -360,7 +360,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 	// create local controller
 	maxCtrl++;
   switch (nvs.controllerType) {
-  case FTSWARM:         Ctrl[maxCtrl] = new SwOSSwarmJST( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda, nvs.RGBLeds, nvs.extentionPort );
+  case FTSWARM:         Ctrl[maxCtrl] = new SwOSSwarmJST( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda, nvs.RGBLeds, nvs.extensionPort );
                         break;
 	case FTSWARMCONTROL:  Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda, nvs.joyZero, nvs.displayType );
                         break;

@@ -2867,7 +2867,7 @@ void SwOSCAM::setHMirror( bool hMirror, bool dontSendToRemote ) {
  *
  ***************************************************/
 
-SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extentionPort  ):SwOSObj() {
+SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extensionPort  ):SwOSObj() {
 
   // copy master data
   this->IAmKelda = IAmKelda;
@@ -2886,7 +2886,7 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwa
     case FTSWARM_NOVERSION:     inputs = 0; actors = 0; leds = 0; break;
     case FTSWARMRS_2V0:
     case FTSWARMRS_2V1:         inputs = 6; actors = 2; leds = 2;
-                                if ( extentionPort == FTSWARM_EXT_OUTPUT ) actors = 4; 
+                                if ( extensionPort == FTSWARM_EXT_OUTPUT ) actors = 4; 
                                 break;
     case FTSWARMCAM_2V11:       inputs = 3; actors = 2; leds = 0; break;
     case FTSWARMDUINO_1V141:    inputs = 8; actors = 4; leds = 2; break;
@@ -3524,7 +3524,7 @@ void SwOSCtrl::registerMe( SwOSCom *com ){
   com->data.registerCmd.IAmKelda  = IAmKelda;
 
   // extention port
-  com->data.registerCmd.extentionPort = nvs.extentionPort;
+  com->data.registerCmd.extensionPort = nvs.extensionPort;
 
   if ( getType() != FTSWARMCONTROL ) com->data.registerCmd.leds = leds;
 
@@ -3789,7 +3789,7 @@ void SwOSSwarmDuino::read() {
  *
  ***************************************************/
 
-SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extentionPort ) : SwOSCtrl (SN, macAddr, local, CPU, IAmKelda, extentionPort ) {
+SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extensionPort ) : SwOSCtrl (SN, macAddr, local, CPU, IAmKelda, extensionPort ) {
 
   gyro = NULL;
   I2C  = NULL;
@@ -3807,7 +3807,7 @@ SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local,
 
       case FTSWARMRS_2V0: 
       case FTSWARMRS_2V1:       // use nvs parameters, since it's a local one
-                                if ( ( nvs.extentionPort != FTSWARM_EXT_I2C_SLAVE ) && ( nvs.extentionPort != FTSWARM_EXT_OFF ) ) Wire.begin( 8, 9 ); 
+                                if ( ( nvs.extensionPort != FTSWARM_EXT_I2C_SLAVE ) && ( nvs.extensionPort != FTSWARM_EXT_OFF ) ) Wire.begin( 8, 9 ); 
                                 break;
   
       default:                  break;
@@ -3817,7 +3817,7 @@ SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local,
   }
 
   // use parameter to handle remote devices correctly
-  if ( extentionPort == FTSWARM_EXT_I2C_SLAVE ) { I2C = new SwOSI2C ( "I2C", this, nvs.I2CAddr ); };
+  if ( extensionPort == FTSWARM_EXT_I2C_SLAVE ) { I2C = new SwOSI2C ( "I2C", this, nvs.I2CAddr ); };
 
 }
 
@@ -3987,7 +3987,7 @@ bool SwOSSwarmXX::recvState( SwOSCom *com ) {
  *
  ***************************************************/
 
-SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, uint8_t xLeds, FtSwarmExtMode_t extentionPort ):SwOSSwarmXX( SN, macAddr, local, CPU, IAmKelda, extentionPort ) {
+SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, uint8_t xLeds, FtSwarmExtMode_t extensionPort ):SwOSSwarmXX( SN, macAddr, local, CPU, IAmKelda, extensionPort ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
@@ -4018,7 +4018,7 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
 
 }
 
-SwOSSwarmJST::SwOSSwarmJST( SwOSCom *com ):SwOSSwarmJST( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmKelda, com->data.registerCmd.leds, com->data.registerCmd.extentionPort ) {
+SwOSSwarmJST::SwOSSwarmJST( SwOSCom *com ):SwOSSwarmJST( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmKelda, com->data.registerCmd.leds, com->data.registerCmd.extensionPort ) {
   
 }
 
