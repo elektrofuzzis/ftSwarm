@@ -150,29 +150,31 @@ def gen_pio_examples():
 
 def gen_arduino_lib(type):
     folder = os.path.join("src", "arduino", "library-" + type)
+    folder2 = os.path.join("src", "arduino", "library-" + type, "ftSwarm-" + type)
+    print(folder2)
     if os.path.exists(folder):
         shutil.rmtree(folder)
-    shutil.copytree(os.path.join("src", "arduino", "library-template"), folder)
-    shutil.copytree("examples", os.path.join(folder, "examples"))
+    shutil.copytree(os.path.join("src", "arduino", "library-template"), folder2)
+    shutil.copytree("examples", os.path.join(folder2, "examples"))
 
     # copy core/src to library/src
-    shutil.copytree(os.path.join("src", "ftswarm-core", "src"), os.path.join(folder, "src"))
-    shutil.copytree(os.path.join("src", "ftswarm-core", "include"), os.path.join(folder, "src"), dirs_exist_ok=True)
+    shutil.copytree(os.path.join("src", "ftswarm-core", "src"), os.path.join(folder2, "src"))
+    shutil.copytree(os.path.join("src", "ftswarm-core", "include"), os.path.join(folder2, "src"), dirs_exist_ok=True)
 
     # copy ftswarm-type/include to library/src
-    shutil.copytree(os.path.join("src", "ftswarm-" + type, "include"), os.path.join(folder, "src"), dirs_exist_ok=True)
+    shutil.copytree(os.path.join("src", "ftswarm-" + type, "include"), os.path.join(folder2, "src"), dirs_exist_ok=True)
 
     # modify library.json
-    with open(os.path.join(folder, "library.json")) as f:
+    with open(os.path.join(folder2, "library.json")) as f:
         lines = json.load(f)
         lines["name"] = "ftswarm-" + type
         lines["version"] = eval_current_version()
 
-    with open(os.path.join(folder, "library.json"), "w") as f:
+    with open(os.path.join(folder2, "library.json"), "w") as f:
         json.dump(lines, f, indent=4)
 
     # modify library.properties
-    with open(os.path.join(folder, "library.properties")) as f:
+    with open(os.path.join(folder2, "library.properties")) as f:
         lines = f.readlines()
         for i, line in enumerate(lines):
             if line.startswith("version"):
@@ -180,12 +182,12 @@ def gen_arduino_lib(type):
             elif line.startswith("name"):
                 lines[i] = "name=ftswarm-" + type + "\n"
 
-    with open(os.path.join(folder, "library.properties"), "w") as f:
+    with open(os.path.join(folder2, "library.properties"), "w") as f:
         f.writelines(lines)
 
     # list library/src files to find the one with ftSwarm{??}.h, get the ??
     ftswarm_header = ""
-    for file in os.listdir(os.path.join(folder, "src")):
+    for file in os.listdir(os.path.join(folder2, "src")):
         if file.startswith("ftSwarm") and file.endswith(".h"):
             ftswarm_header = file
             break
@@ -193,7 +195,7 @@ def gen_arduino_lib(type):
     print("[ino] For ftswarm-" + type + " found header: " + ftswarm_header)
 
     # Modify examples to include the correct header (Replace #include <ftSwarm.h> with #include <ftSwarm{??}.h>)
-    for example in os.walk(os.path.join(folder, "examples")):
+    for example in os.walk(os.path.join(folder2, "examples")):
         for file in example[2]:
             if file.endswith(".ino"):
                 with open(os.path.join(example[0], file)) as f:
@@ -231,7 +233,7 @@ def build_local_libs():
     for lib in os.listdir("src"):
         if lib.startswith("ftswarm-") and lib != "ftswarm-core":
             gen_arduino_lib(lib[8:])
-            gen_pio_tarball(lib[8:])
+            #gen_pio_tarball(lib[8:])
 
 
 def upload_platformio():

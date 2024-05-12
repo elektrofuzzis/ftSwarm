@@ -30,12 +30,12 @@ protected:
   bool     verbose = false;
   bool     initialized = false;
 
-  uint8_t getIndex( FtSwarmSerialNumber_t serialNumber );               // return index of controller with this s/n or are free slot if not found
-	bool    splitID( char *id, uint8_t *index, char *io, size_t sizeIO);  // split identifier
+  uint8_t  getIndex( FtSwarmSerialNumber_t serialNumber );               // return index of controller with this s/n or are free slot if not found
+	bool     splitID( char *id, uint8_t *index, char *io, size_t sizeIO);  // split identifier
   uint16_t nextToken( bool rotateToken);
-  SwOSIO *waitFor( char *alias, FtSwarmIOType_t ioType );
-  bool    startEvents( void );
-  void    startWifi( void );
+  SwOSIO  *waitFor( char *alias, FtSwarmIOType_t ioType );
+  bool     startEvents( void );
+  void     startWifi( void );
 
   // internal function to handle CMD_SWARMJOIN
   void cmdJoin( SwOSCom *com, uint8_t source, uint8_t affected );
@@ -121,7 +121,7 @@ public:
   SwOSError_t leaveSwarm( void );
 
   // Kelda rejects/deletes a controller
-  SwOSError_t rejectController( FtSwarmSerialNumber_t serialNumber );
+  SwOSError_t rejectController( FtSwarmSerialNumber_t serialNumber, bool force );
 
   // create a new swarm using defaults. Call leaveSwarm before using it.
   SwOSError_t createSwarm( void );

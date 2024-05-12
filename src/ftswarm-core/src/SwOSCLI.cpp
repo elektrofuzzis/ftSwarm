@@ -443,6 +443,12 @@ void SwOSCLI::executeInputCmd( void ) {
                                 } else if (io->getIOType() == FTSWARM_DIGITALINPUT ) {
                                   ((SwOSDigitalInput *)io)->setSensorType( (FtSwarmSensor_t)_parameter[0].getValue(), (bool)_parameter[1].getValue() );
                                   printf("R: ok\n");
+                                } else if (io->getIOType() == FTSWARM_COUNTERINPUT ) {
+                                  ((SwOSCounter *)io)->setSensorType( (FtSwarmSensor_t)_parameter[0].getValue() );
+                                  printf("R: ok\n");
+                                } else if (io->getIOType() == FTSWARM_FREQUENCYINPUT ) {
+                                  ((SwOSFrequencymeter *)io)->setSensorType( (FtSwarmSensor_t)_parameter[0].getValue() );
+                                  printf("R: ok\n");
                                 } else {
                                   printf("ERROR: wrong iotype.\n");
                                 }
@@ -783,7 +789,7 @@ void SwOSCLI::executeI2CCmd( void ) {
   SwOSI2C *io = (SwOSI2C *)_io;
   
   switch ( _cmd ) {
-    case CLICMD_setRegister:     if ( (_parameter[0].inRange( "register", 0, MAXI2CREGISTERS ) ) &&
+    case CLICMD_setRegister:    if ( (_parameter[0].inRange( "register", 0, MAXI2CREGISTERS ) ) &&
                                    (_parameter[1].inRange( "value", 0, 255 ) ) ) { 
                                   printf("R: ok\n");
                                   io->lock(); 
@@ -792,7 +798,7 @@ void SwOSCLI::executeI2CCmd( void ) {
                                 }
                                 break;
 
-    case CLICMD_getRegister:     if (_parameter[0].inRange( "register", 0, MAXI2CREGISTERS ) ) {
+    case CLICMD_getRegister:    if (_parameter[0].inRange( "register", 0, MAXI2CREGISTERS ) ) {
                                   io->lock();
                                   printf("R: %d\n", io->getRegister( (uint8_t) _parameter[0].getValue() ) ); 
                                   io->unlock();

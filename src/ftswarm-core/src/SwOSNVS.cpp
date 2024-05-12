@@ -97,8 +97,12 @@ SwOSNVS::SwOSNVS() {
   swarmCommunication = swarmComWifi;
   IAmKelda           = true;
   memset( &swarmMember, 0, sizeof( swarmMember ) );
-  extentionPort      = FTSWARM_EXT_OFF;
+  extensionPort      = FTSWARM_EXT_OFF;
   I2CAddr            = 0x66;
+  interruptLine      = 0;
+  interruptOnOff[0]  = 0;
+  interruptOnOff[1]  = 255;
+  I2CRegisters       = MAXI2CREGISTERS;
   gyro               = false;
 
   // initialize zero positions
@@ -198,9 +202,13 @@ bool SwOSNVS::load() {
   // webUI
   nvs_get_u8 ( my_handle, "webUI", (uint8_t *) &webUI );
 
-  // extentionPort
+  // sPort
   nvs_get_u8 ( my_handle, "I2CAddr", &I2CAddr );
-  nvs_get_u32( my_handle, "extentionPort", (uint32_t *) &extentionPort);
+  nvs_get_u8 ( my_handle, "interruptLine", &interruptLine );
+  nvs_get_i16( my_handle, "interruptLow",  &interruptOnOff[0] );
+  nvs_get_i16( my_handle, "interruptHigh", &interruptOnOff[1] );
+  nvs_get_u8 ( my_handle, "I2CRegisters", &I2CRegisters );
+  nvs_get_u32( my_handle, "extensionPort", (uint32_t *) &extensionPort);
   nvs_get_u8 ( my_handle, "Gyro",    (uint8_t *) &gyro);
 
   return true;
@@ -262,9 +270,13 @@ void SwOSNVS::save( bool writeAll ) {
   // webUI
   ESP_ERROR_CHECK( nvs_set_u8 ( my_handle,  "webUI",   (uint8_t) webUI ) );
 
-  // extentionPort
+  // extensionPort
   ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "I2CAddr", I2CAddr ) );
-  ESP_ERROR_CHECK( nvs_set_u32( my_handle, "extentionPort", (uint32_t) extentionPort) );
+  ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "interruptLine", interruptLine ) );
+  ESP_ERROR_CHECK( nvs_set_i16( my_handle, "interruptLow", interruptOnOff[0] ) );
+  ESP_ERROR_CHECK( nvs_set_i16( my_handle, "interruptHigh", interruptOnOff[1] ) );
+  ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "I2CRegisters", I2CRegisters ) );
+  ESP_ERROR_CHECK( nvs_set_u32( my_handle, "extensionPort", (uint32_t) extensionPort) );
   ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "Gyro",    (uint8_t)  gyro) );
 
   // commit
@@ -305,7 +317,7 @@ void SwOSNVS::factorySettings( void ) {
   displayType        = 1;
   RGBLeds            = 2;
   
-  extentionPort      = FTSWARM_EXT_OFF;
+  extensionPort      = FTSWARM_EXT_OFF;
   I2CAddr            = 0x66;
   gyro               = false;
 

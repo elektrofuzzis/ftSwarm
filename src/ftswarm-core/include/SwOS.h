@@ -18,7 +18,7 @@
 #define MAXIDENTIFIER 32
 #define MAXACTORS 8
 #define MAXINPUTS 8
-#define SWOSVERSION "0.6.1"
+#define SWOSVERSION "0.6.2"
 
 #include <stdint.h>
 #include <cstddef>
@@ -138,6 +138,10 @@ typedef enum {
 #define FTSWARM_M2 1 
 #define FTSWARM_M3 2 
 #define FTSWARM_M4 3 
+#define FTSWARM_M5 4
+#define FTSWARM_M6 5 
+#define FTSWARM_M7 6 
+#define FTSWARM_M8 7 
 
 // joysticks
 #define FTSWARM_JOY1 0

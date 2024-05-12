@@ -259,6 +259,7 @@ class SwOSCounter : public SwOSInput {
 
     // external commands
     virtual void resetCounter( void );
+    virtual void setValue( int32_t value );                 // set value by an external call
 
 };
 
@@ -291,6 +292,7 @@ class SwOSFrequencymeter : public SwOSInput {
 
     // read sensor
 	  virtual void read();
+    virtual void setValue( int32_t value );                 // set value by an external call
     
 };
 
@@ -309,7 +311,7 @@ class SwOSAnalogInput : public SwOSInput {
 	
     bool isXMeter();
     virtual void _setupLocal();
-    virtual void _setSensorTypeLocal( FtSwarmSensor_t sensorType );  // set sensor type
+    virtual void setSensorTypeLocal( FtSwarmSensor_t sensorType );  // set sensor type
 
   public:
  
@@ -642,17 +644,18 @@ public:
 
 class SwOSI2C : public SwOSIO, public SwOSEventInput {
   protected:
-    uint8_t _myRegister[MAXI2CREGISTERS];
-
+    
     virtual void _setupLocal(uint8_t I2CAddress); // initializes local HW
     virtual void _setLocal( uint8_t reg, uint8_t value );
     virtual void _setRemote(uint8_t reg, uint8_t value );
 
   public:
 
+    uint8_t myRegister[MAXI2CREGISTERS];
     SwOSI2C( const char *name, SwOSCtrl *ctrl, uint8_t I2CAddress);
 
     virtual void read();
+    virtual FtSwarmIOType_t getIOType() { return FTSWARM_I2C; };
 
     virtual void setRegister( uint8_t reg, uint8_t value );
     virtual uint8_t getRegister( uint8_t reg );
@@ -964,7 +967,10 @@ class SwOSSwarmXX : public SwOSCtrl {
     virtual bool changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarmIOType_t newIOType ); // change port's IO Type if possible
 
     virtual bool OnDataRecv( SwOSCom *com );     // data via espnow revceived
-
+	  virtual void read();                                                   // run measurements
+    virtual SwOSCom *state2Com( MacAddr destination );                     // copy my state in a com struct
+    virtual bool recvState( SwOSCom *com );                                // receive state from another ftSwarmXX
+  
 };
 
 /***************************************************

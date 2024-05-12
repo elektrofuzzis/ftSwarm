@@ -14,15 +14,20 @@
 #include "easyKey.h"
 #include "SwOSCLI.h"
 
-const char EXTMODE[5][13] = { "off", "I2C-Master", "I2C-Slave", "Gyro MCU6040", "Outputs" };
+const char EXTMODE[5][14] = { "off", "I2C-Master", "I2C-Slave", "Gyro MPU-6050", "Outputs" };
 const char ONOFF[2][5]    = { "off", "on" };
+const char OFFM1M2[3][5]  = { "off", "M1", "M2" };
 const char WIFI[3][12]    = { "off", "AP-Mode", "Client-Mode"};
 
 #define EXTMENUMODE 1
 #define EXTMENUGYRO 2
 #define EXTMENUI2C  3
+#define EXTMENUINT  4
+#define EXTMENUINT0 5
+#define EXTMENUINT1 6
+#define EXTMENUREG  7
 
-void ExtentionMenu() {
+void ExtensionMenu() {
 
   bool    anythingChanged = false;
   char    prompt[255];
@@ -47,12 +52,21 @@ void ExtentionMenu() {
 
     // printf( "I2C mode: %d\ngyro: %d\n", nvs.I2CMode, nvs.gyro);
 
-    menu.start("Extention Port", 15);
+    menu.start("Extension Port", 20);
 
-    menu.add("Mode", EXTMODE[ nvs.extentionPort] , EXTMENUMODE );
+    menu.add("Mode", EXTMODE[ nvs.extensionPort] , EXTMENUMODE );
 
-    menu.add("Gyro", ONOFF[nvs.gyro] , EXTMENUGYRO );
-    menu.add("I2C Address", nvs.I2CAddr, EXTMENUI2C);
+    // I2C Slave Mode. Options I2C Slave Address and Interrupt Line
+    if ( nvs.extensionPort == FTSWARM_EXT_I2C_SLAVE ) {
+      menu.add("I2C Slave Address", nvs.I2CAddr, EXTMENUI2C);
+      menu.add("Interrupt Line", OFFM1M2[nvs.interruptLine], EXTMENUINT);
+      menu.add("Interrupt Low Value",  nvs.interruptOnOff[0], EXTMENUINT0);
+      menu.add("Interrupt High Value", nvs.interruptOnOff[1], EXTMENUINT1);
+      menu.add("I2C Registers", nvs.I2CRegisters, EXTMENUREG);
+    }
+
+    // internal gyro is only available at ftSwarmRS
+    if ( ( nvs.CPU == FTSWARMRS_2V0 ) || ( nvs.CPU == FTSWARMRS_2V1 ) ) menu.add("internal Gyro", ONOFF[nvs.gyro], EXTMENUGYRO );
 
     switch( menu.userChoice() ) {
       
@@ -66,7 +80,11 @@ void ExtentionMenu() {
         
       case EXTMENUMODE: // ExtMode
         anythingChanged = true;
-        nvs.extentionPort = (FtSwarmExtMode_t) enterNumber( "(0) off (1) I2C-Master (2) I2C-Slave (3) Gyro MCU6040 (4) Outputs: ", nvs.extentionPort, 0, 4 );
+        if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
+          nvs.extensionPort = (FtSwarmExtMode_t) enterNumber( "(0) off (1) I2C-Master: ", nvs.extensionPort, 0, 1 );
+        } else {
+          nvs.extensionPort = (FtSwarmExtMode_t) enterNumber( "(0) off (1) I2C-Master (2) I2C-Slave (3) Gyro MCU6040 (4) Outputs: ", nvs.extensionPort, 0, 4 );
+        }
         break;
 
       case EXTMENUGYRO: // Gyro
@@ -79,6 +97,26 @@ void ExtentionMenu() {
         nvs.I2CAddr = (uint8_t) enterNumber( "[16..127]: ", nvs.I2CAddr, 16, 127 );
         break;
         
+      case EXTMENUINT: // Interrupt Line
+        anythingChanged = true;
+        nvs.interruptLine = (uint8_t) enterNumber( "(0) off, (1) M1, (2) M2:", nvs.interruptLine, 0, 2 );
+        break;
+
+      case EXTMENUINT0: // Interrupt Line Low
+        anythingChanged = true;
+        nvs.interruptOnOff[0] = (int16_t) enterNumberI32( "Low value [-255..255]", nvs.interruptOnOff[0], -255, 255 );
+        break;
+
+      case EXTMENUINT1: // Interrupt Line High
+        anythingChanged = true;
+        nvs.interruptOnOff[1] = (int16_t) enterNumberI32( "High Value [-255..255]", nvs.interruptOnOff[1], -255, 255 );
+        break;
+
+      case EXTMENUREG: // Max I2CRegisters
+        anythingChanged = true;
+        nvs.I2CRegisters = (uint8_t) enterNumber( "I2C Registers [1..8]", nvs.I2CRegisters, 1, MAXI2CREGISTERS);
+        break;
+
     }
   }
 
@@ -317,13 +355,31 @@ void rejectControllerFromSwarm( void ) {
     return;
   }
 
-  if ( myOSSwarm.rejectController( SN ) == SWOS_OK ) {
-    printf("Device %d left the swarm successfully.\n", SN);
-    nvs.deleteController( SN );
-    nvs.save();
-  } else {
-    printf("Couldn't connect to device %s,\n", SN);
-  }
+  bool force = false;
+
+  while (1) {
+
+    switch ( myOSSwarm.rejectController( SN, force ) ) {
+
+      case SWOS_OK:       printf( "Device %d left the swarm.\n", SN);
+                          nvs.deleteController( SN );
+                          nvs.save();
+                          return;
+      
+      case SWOS_TIMEOUT:  printf( "Couldn't connect to device %d,\n", SN);
+                          if (!yesNo("Delete it anyway [Y/N]?" ) ) return;
+                          force = true;
+                          break;
+
+      case SWOS_DENY:     printf( "This device is used actively. Stop yout program first.\n");
+                          return;
+
+      default:            printf( "Error: unexpected swarm behaviour.\n");
+                          return;
+
+    }
+    
+  } 
 
 }
 
@@ -360,6 +416,11 @@ void swarmMenu( void ) {
     } else {
 
       printf( "%s is connected to swarm \"%s\".\nSwarm PIN is %d.\n", myOSSwarm.Ctrl[0]->getHostname(), nvs.swarmName, nvs.swarmPIN );
+      if (myOSSwarm.Kelda) {
+        printf("Kelda SN %d is online\n", myOSSwarm.Kelda->serialNumber );
+      } else {
+        printf("Kelda is offline\n");
+      }
 
     }
 
@@ -367,7 +428,7 @@ void swarmMenu( void ) {
 
     if ( nvs.RS485Available() ) {
       menu.add( "swarm communication", SWARMCOMMUNICATION[nvs.swarmCommunication], MENUSWARMCOMMUNICATION );
-      menu.add( "swarm speed", nvs.swarmSpeed, MENUSWARMSPEED);
+      if ( nvs.swarmCommunication != swarmComWifi ) menu.add( "swarm speed", nvs.swarmSpeed, MENUSWARMSPEED);
     }
     
     menu.add( "create a new swarm", "", MENUCREATESWARM );
@@ -482,6 +543,11 @@ void aliasMenu( void ) {
                             if (ftSwarm->gyro) {
                               OSObj[item++] = ftSwarm->gyro;
                               menu.add( ftSwarm->gyro->getName(), ftSwarm->gyro->getAlias(), item, true );
+                            }
+                            // list i2c
+                            if (ftSwarm->I2C) {
+                              OSObj[item++] = ftSwarm->I2C;
+                              menu.add( ftSwarm->I2C->getName(), ftSwarm->I2C->getAlias(), item, true );
                             }
                             break;
 
@@ -801,7 +867,7 @@ void remoteControl( void ) {
 #define MAINMENUALIAS     3
 #define MAINMENUFACTORY   4
 #define MAINMEUREMOTE     5
-#define MAINMENUEXTENTION 6
+#define MAINMENUEXTENSION 6
 #define MAINMENUSWARMCTRL 7
 
 void mainMenu( void ) {
@@ -821,10 +887,10 @@ void mainMenu( void ) {
     // special HW
     switch (myOSSwarm.Ctrl[0]->getType()) {
 
-      case FTSWARM:         menu.add("Extention Port", "", MAINMENUEXTENTION );
+      case FTSWARM:         menu.add("Extension Port", "", MAINMENUEXTENSION );
                             break;
 
-      case FTSWARMCONTROL:  menu.add("Extention Port", "", MAINMENUEXTENTION );
+      case FTSWARMCONTROL:  menu.add("Extension Port", "", MAINMENUEXTENSION );
                             menu.add("ftSwarmControl", "", MAINMENUSWARMCTRL );
                             break;
 
@@ -837,7 +903,7 @@ void mainMenu( void ) {
       case MAINMENUALIAS:     aliasMenu();        break;
       case MAINMENUFACTORY:   factorySettings();  break;
       case MAINMEUREMOTE:     remoteControl();    break;
-      case MAINMENUEXTENTION: ExtentionMenu();    break;
+      case MAINMENUEXTENSION: ExtensionMenu();    break;
       case MAINMENUSWARMCTRL: SwarmControlMenu(); break;
     }
     

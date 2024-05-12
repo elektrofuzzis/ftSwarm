@@ -21,6 +21,8 @@ FtSwarmDigitalInput 		KEYWORD1
 FtSwarmSwitch			KEYWORD1
 FtSwarmReedSwitch		KEYWORD1
 FtSwarmButton			KEYWORD1
+FtSwarmCounter			KEYWORD1
+FtSwarmFrequencymeter		KEYWORD1
 FtSwarmAnalogInput 		KEYWORD1
 FtSwarmVoltmeter		KEYWORD1
 FtSwarmOhmmeter			KEYWORD1
@@ -30,16 +32,21 @@ FtSwarmActor			KEYWORD1
 FtSwarmMotor			KEYWORD1
 FtSwarmTractorMotor		KEYWORD1
 FtSwarmEncoderMotor		KEYWORD1
+FtSwarmXMMotor			KEYWORD1
+FtSwarmStepperMotor		KEYWORD1
+FtSwarmOnOffActor		KEYWORD1
 FtSwarmLamp			KEYWORD1
+FtSwarmValve			KEYWORD1
+FtSwarmCompressor		KEYWORD1
+FtSwarmBuzzer			KEYWORD1
 FtSwarmJoystick			KEYWORD1
-FtSwarmLED 			KEYWORD1
 FtSwarmServo			KEYWORD1
 FtSwarmOLED			KEYWORD1
 FtSwarm				KEYWORD1
 FtSwarmLightBarrier		KEYWORD1
-FtSwarmValve			KEYWORD1
-FtSwarmCompressor		KEYWORD1
-FtSwarmBuzzer			KEYWORD1
+FtSwarmPixel			KEYWORD1
+FtSwarmI2C			KEYWORD1
+FtSwarmCAM			KEYWORD1
 
 #######################################
 #Methods and Functions(KEYWORD2)
@@ -47,6 +54,8 @@ FtSwarmBuzzer			KEYWORD1
 
 isOnline			KEYWORD2
 onTrigger			KEYWORD2
+onTriggerLR			KEYWORD2
+onTriggerFB			KEYWORD2
 
 # ftSwarm*Switch
 isPressed			KEYWORD2
@@ -56,6 +65,13 @@ hasToggledDown			KEYWORD2
 getState			KEYWORD2
 getToggle			KEYWORD2
 getValue			KEYWORD2
+
+# ftSwarmCounter
+getCounter			KEYWORD2
+resetCounter			KEYWORD2
+
+#FtSwarmFrequencymeter
+getFrequency			KEYWORD2
 
 # ftSwarmVoltmeter
 getVoltage			KEYWORD2
@@ -71,19 +87,31 @@ getFahrenheit			KEYWORD2
 # ftSwarm*Motor
 setSpeed			KEYWORD2
 getSpeed			KEYWORD2
+setAcceleration			KEYWORD2
+getAcceleration			KEYWORD2
 setMotionType			KEYWORD2
 getMotionType			KEYWORD2
 coast				KEYWORD2
 brake				KEYWORD2
 on				KEYWORD2
 off				KEYWORD2
+setDistance			KEYWORD2
+getDistance			KEYWORD2
+run				KEYWORD2
+isRunning			KEYWORD2
+stop				KEYWORD2
+setPosition			KEYWORD2
+getPosition			KEYWORD2
+homing				KEYWORD2
+isHoming			KEYWORD2
+setHomingOffset			KEYWORD2
 
 # ftSwarmJoystick
 getFB				KEYWORD2
 getLR				KEYWORD2
 getButtonState			KEYWORD2
 
-# ftSwarmLED
+# ftSwarmPixel
 getBrightness			KEYWORD2
 setBrightness			KEYWORD2
 getColor			KEYWORD2
@@ -95,11 +123,27 @@ setPosition			KEYWORD2
 getOffset			KEYWORD2
 setOffset			KEYWORD2
 
+# FtSwarmI2C
+getRegister			KEYWORD2
+setRegister			KEYWORD2
+
+# FtSwarmCAM
+streaming			KEYWORD2
+setFramesize			KEYWORD2
+setQuality			KEYWORD2
+setBrightness			KEYWORD2
+setContrast			KEYWORD2
+setSaturation			KEYWORD2
+setSpecialEffect		KEYWORD2
+setWbMode			KEYWORD2
+setHMirror			KEYWORD2
+setVFlip			KEYWORD2
+
 # ftSwarmOLED
 display				KEYWORD2
-invertDisplay		KEYWORD2
+invertDisplay			KEYWORD2
 fillScreen			KEYWORD2
-dim					KEYWORD2
+dim				KEYWORD2
 setContrast			KEYWORD2
 getWidth			KEYWORD2
 getHeight			KEYWORD2
@@ -107,25 +151,30 @@ drawPixel			KEYWORD2
 drawLine			KEYWORD2
 drawRect			KEYWORD2
 drawCircle			KEYWORD2
-drawTriangle		KEYWORD2
-drawRoundRect		KEYWORD2
+drawTriangle			KEYWORD2
+drawRoundRect			KEYWORD2
 drawChar			KEYWORD2
 write				KEYWORD2
 setCursor			KEYWORD2
 getCursor			KEYWORD2
-setTextColor		KEYWORD2
+setTextColor			KEYWORD2
 setTextWrap			KEYWORD2
 setRotation			KEYWORD2
 getRotation			KEYWORD2
 setTextSize			KEYWORD2
 getTextSize			KEYWORD2
-getTextBounds		KEYWORD2
+getTextBounds			KEYWORD2
 
 # FtSwarm
 begin				KEYWORD2
-verbose				KEYWORD2
-setReadDelay			KEYWORD2
+halt				KEYWORD2
+waitOnUserEvent			KEYWORD2
+sendEventData			KEYWORD2
+IOAvaliable			KEYWORD2
+
+# firmware
 setup				KEYWORD2
+firmware			KEYWORD2
 
 #######################################
 #Constants(LITERAL1)
@@ -191,8 +240,15 @@ FTSWARM_A1			LITERAL1
 FTSWARM_A2			LITERAL1
 FTSWARM_A3			LITERAL1
 FTSWARM_A4			LITERAL1
+FTSWARM_A5			LITERAL1
+FTSWARM_A6			LITERAL1
 FTSWARM_M1			LITERAL1
 FTSWARM_M2			LITERAL1
+FTSWARM_M3			LITERAL1
+FTSWARM_M4			LITERAL1
+FTSWARM_M5			LITERAL1
+FTSWARM_M6			LITERAL1
+FTSWARM_M7			LITERAL1
 FTSWARM_JOY1			LITERAL1
 FTSWARM_JOY2			LITERAL1
 FTSWARM_LED1			LITERAL1
@@ -213,6 +269,8 @@ FTSWARM_LED15			LITERAL1
 FTSWARM_LED16			LITERAL1
 FTSWARM_LED17			LITERAL1
 FTSWARM_LED18			LITERAL1
+FTSWARM_SERVO1			LITERAL1
+FTSWARM_SERVO2			LITERAL1
 FTSWARM_ALIGNLEFT		LITERAL1
 FTSWARM_ALIGNCENTER		LITERAL1
 FTSWARM_ALIGNRIGHT		LITERAL1

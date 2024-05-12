@@ -29,10 +29,9 @@
 // There can only be once!
 SwOSSwarm myOSSwarm;
 
-// #define DEBUG_COMMUNICATION
-// #define DEBUG_READTASK
+#include <debug.h>
 
-#define CONNECTDELAY 500
+#define CONNECTDELAY 2500
 
 /***************************************************
  *
@@ -95,7 +94,10 @@ static void readTask( void *parameter ) {
     myOSSwarm.Ctrl[0]->unlock();
     
     // send data and cleanup
-    if (com) { com->send(); delete com; com = NULL; }
+    if (com) { 
+      com->send();
+      delete com; 
+      com = NULL; }
     
     // calc delay time
     #ifdef DEBUG_READTASK
@@ -129,7 +131,11 @@ static void connectTask( void *Parameter ) {
 
 void SwOSSwarm::connect( void ) {
 
-  for (uint8_t i=0; i<=maxCtrl; i++) {
+  if (!nvs.IAmKelda) return;
+
+  for (uint8_t i=1; i<=maxCtrl; i++) {
+
+    if ( ( Ctrl[i] ) && ( Ctrl[i]->networkAge() > 1000L ) ) Ctrl[i]->comState = ASKFORDETAILS;
 
     if ( ( Ctrl[i] ) && ( Ctrl[i]->comState == ASKFORDETAILS ) ) {
       
@@ -354,7 +360,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 	// create local controller
 	maxCtrl++;
   switch (nvs.controllerType) {
-  case FTSWARM:         Ctrl[maxCtrl] = new SwOSSwarmJST( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda, nvs.RGBLeds, nvs.extentionPort );
+  case FTSWARM:         Ctrl[maxCtrl] = new SwOSSwarmJST( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda, nvs.RGBLeds, nvs.extensionPort );
                         break;
 	case FTSWARMCONTROL:  Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda, nvs.joyZero, nvs.displayType );
                         break;
@@ -1290,7 +1296,8 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
     #endif
 
     // check on unkown controller
-    if ( ( !Ctrl[source] ) || ( Ctrl[source]->comState == ASKFORDETAILS ) ) {
+    if ( ( !Ctrl[source] ) || 
+         ( ( Ctrl[source]->comState == ASKFORDETAILS ) && nvs.IAmKelda ) ) {
 
       #ifdef DEBUG_COMMUNICATION
       printf( "add a new controller type %d at %d\n", com->data.registerCmd.ctrlType, source);
@@ -1398,8 +1405,7 @@ SwOSError_t SwOSSwarm::leaveSwarm( void ) {
 
 }
 
-SwOSError_t SwOSSwarm::rejectController( FtSwarmSerialNumber_t serialNumber ) {
-
+SwOSError_t SwOSSwarm::rejectController( FtSwarmSerialNumber_t serialNumber, bool force ) {
   uint8_t affected = getIndex( serialNumber );
 
   // do I know the controller?
@@ -1420,13 +1426,13 @@ SwOSError_t SwOSSwarm::rejectController( FtSwarmSerialNumber_t serialNumber ) {
   if ( Ctrl[affected]->lastAck.cmd == CMD_SWARMLEAVE ) result = Ctrl[affected]->lastAck.error;
 
   // delete him, if possible
-  if ( result == SWOS_OK ) { 
-
+  if ( ( result == SWOS_OK ) || force ) { 
     Ctrl[affected]->lock();
     SwOSCtrl *old = Ctrl[affected];
     Ctrl[affected] = NULL;
     old->unlock();
     delete old;
+    result = SWOS_OK;
   }
 
   return result;
