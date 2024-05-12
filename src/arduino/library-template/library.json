@@ -14,15 +14,16 @@
             "maintainer": true
         }
     ],
+    "depends": "Adafruit GFX Library, Adafruit SSD1306, FastLED, STM32duino LSM6DSR",
     "repository": {
         "type": "git",
         "url": "https://github.com/elektrofuzzis/ftSwarm"
     },
-    "version": "0.6.1",
+    "version": "0.6.2",
     "license": "MIT",
     "homepage": "https://elektrofuzzis.githib.io/ftSwarm",
     "frameworks": "arduino",
-    "platforms": "atmelavr, atmelsam, freescalekinetis, nordicnrf51, nxplpc, ststm32, teensy, espressif8266, espressif32, nordicnrf52",
+    "platforms": "espressif32",
     "build": {
         "srcFilter": [
             "+<*.c>",
