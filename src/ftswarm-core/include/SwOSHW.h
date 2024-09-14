@@ -990,7 +990,7 @@ class SwOSSwarmJST : public SwOSSwarmXX {
 	  SwOSServo *servo[MAXSERVOS];
 
     // constructor, destructor
-	  SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, uint8_t xLed, FtSwarmExtMode_t extentionPort );
+	  SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extentionPort );
     SwOSSwarmJST( SwOSCom *com ); // constructor
     ~SwOSSwarmJST();
   
@@ -1072,7 +1072,7 @@ class SwOSSwarmControl : public SwOSSwarmXX {
  *
  ***************************************************/
 
-class SwOSSwarmCAM : public SwOSCtrl {
+class SwOSSwarmCAM : public SwOSSwarmXX {
 
   protected:
 

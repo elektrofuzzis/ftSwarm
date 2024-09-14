@@ -10,7 +10,7 @@
     "license": "MIT",
     "homepage": "https://elektrofuzzis.github.io/en/index.html#top",
     "dependencies": {
-        "Elektrofuzzis/ftswarm-core": "0.6.2"
+        "Elektrofuzzis/ftswarm-core": "symlink://../ftswarm-core"
     },
     "frameworks": "arduino",
     "platforms": "espressif32"

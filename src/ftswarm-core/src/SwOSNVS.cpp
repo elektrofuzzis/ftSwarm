@@ -42,16 +42,16 @@ void SwOSNVS::initialSetup( void ) {
   version = NVSVERSION;
 
   switch ( enterNumber(("Controller Type\n (1) ftSwarm\n (2) ftSwarmRS\n (3) ftSwarmControl\n (4) ftSwarmCAM\n (5) ftSwarmPwrDrive\n (6) ftSwarmDuino\n (7) ftSwarmXL\n (8) special config\n>"), 0, 1, 8 ) ) {
-    case 1:  controllerType = FTSWARM;         CPU = FTSWARMJST_1V15;       break;
-    case 2:  controllerType = FTSWARM;         CPU = FTSWARMRS_2V1;         break;
-    case 3:  controllerType = FTSWARMCONTROL;  CPU = FTSWARMCONTROL_1V3;    break;
-    case 4:  controllerType = FTSWARMCAM;      CPU = FTSWARMCAM_2V11;       break;
-    case 5:  controllerType = FTSWARMPWRDRIVE; CPU = FTSWARMPWRDRIVE_1V141; break;
-    case 6:  controllerType = FTSWARMDUINO;    CPU = FTSWARMDUINO_1V141;    break;
-    case 7:  controllerType = FTSWARM;         CPU = FTSWARMXL_1V00;        break;
+    case 1:  controllerType = FTSWARM;         CPU = FTSWARMJST_1V15;       RGBLeds = 2; break;
+    case 2:  controllerType = FTSWARM;         CPU = FTSWARMRS_2V1;         RGBLeds = 2; break;
+    case 3:  controllerType = FTSWARMCONTROL;  CPU = FTSWARMCONTROL_1V3;    RGBLeds = 2; break;
+    case 4:  controllerType = FTSWARMCAM;      CPU = FTSWARMCAM_3V12;       RGBLeds = 0; break;
+    case 5:  controllerType = FTSWARMPWRDRIVE; CPU = FTSWARMPWRDRIVE_1V141; RGBLeds = 2; break;
+    case 6:  controllerType = FTSWARMDUINO;    CPU = FTSWARMDUINO_1V141;    RGBLeds = 2; break;
+    case 7:  controllerType = FTSWARM;         CPU = FTSWARMXL_1V00;        RGBLeds = 2; break;
     default: // manual configuration
              controllerType = (FtSwarmController_t) (enterNumber(("controller Type\n (1) ftSwarm\n (2) ftSwarmControl\n (3) ftSwarmCAM\n (4) ftSwarmPwrDrive\n (5) ftSwarmDuino\n\n>"), 0, 1, 5 ) - 1 );
-             CPU = ( FtSwarmVersion_t ) ( enterNumber(("CPU Version\n (1) FTSWARMJST_1V0\n (2) FTSWARMCONTROL_1V3\n (3) FTSWARMJST_1V15\n (4) FTSWARMRS_2V0\n (5) FTSWARMRS_2V1\n (6) FTSWARMCAM_1V0\n (7) FTSWARMDUINO_1V141\n (8) FTSWARMPWRDRIVE_1V141\n (9) FTSWARMXL_1V00"), 0, 1, 9 ) -1 );
+             CPU = ( FtSwarmVersion_t ) ( enterNumber(("CPU Version\n (1) FTSWARMJST_1V0\n (2) FTSWARMCONTROL_1V3\n (3) FTSWARMJST_1V15\n (4) FTSWARMRS_2V0\n (5) FTSWARMRS_2V1\n (6) FTSWARMCAM_3V12\n (7) FTSWARMDUINO_1V141\n (8) FTSWARMPWRDRIVE_1V141\n (9) FTSWARMXL_1V00"), 0, 1, 9 ) -1 );
   }
 
   serialNumber = enterNumber("Serial number [1..65535]>", 0, 1, 65535 );
@@ -161,20 +161,14 @@ bool SwOSNVS::load() {
   // joystick zero position & # RGB Leds
 
   // ftSwarmControl
-  if ( controllerType == FTSWARMCONTROL ) {
-    nvs_get_i16( my_handle, "joyZero00", &joyZero[0][0]);
-    nvs_get_i16( my_handle, "joyZero01", &joyZero[0][1]);
-    nvs_get_i16( my_handle, "joyZero10", &joyZero[1][0]);
-    nvs_get_i16( my_handle, "joyZero11", &joyZero[1][1]);
-    nvs_get_u8(  my_handle, "displayType", &displayType);
-    RGBLeds = 0;
+  nvs_get_i16( my_handle, "joyZero00", &joyZero[0][0]);
+  nvs_get_i16( my_handle, "joyZero01", &joyZero[0][1]);
+  nvs_get_i16( my_handle, "joyZero10", &joyZero[1][0]);
+  nvs_get_i16( my_handle, "joyZero11", &joyZero[1][1]);
+  nvs_get_u8(  my_handle, "displayType", &displayType);
 
-  // ftSwarm
-  } else {
-    nvs_get_u8( my_handle, "RGBLeds", &RGBLeds );
-    if ( ( RGBLeds < 2 ) || ( RGBLeds > MAXLEDS ) ) RGBLeds = 2;
-
-  }
+  // RGBLeds
+  nvs_get_u8( my_handle, "RGBLeds", &RGBLeds );
   
   size_t dummy;
        
@@ -236,16 +230,14 @@ void SwOSNVS::save( bool writeAll ) {
   }
 
   // ftSwarmControl: set joystick calibration
-  if ( controllerType == FTSWARMCONTROL ) {
-    ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero00", joyZero[0][0]) );
-    ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero01", joyZero[0][1]) );
-    ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero10", joyZero[1][0]) );
-    ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero11", joyZero[1][1]) );
-    ESP_ERROR_CHECK( nvs_set_u8(  my_handle, "displayType", displayType) );
-    
-  } else { // FtSwarm RGBLeds
-    ESP_ERROR_CHECK( nvs_set_u8( my_handle, "RGBLeds", RGBLeds ) );
-  }
+  ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero00", joyZero[0][0]) );
+  ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero01", joyZero[0][1]) );
+  ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero10", joyZero[1][0]) );
+  ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero11", joyZero[1][1]) );
+  ESP_ERROR_CHECK( nvs_set_u8(  my_handle, "displayType", displayType) );
+
+  // RGBLeds
+  ESP_ERROR_CHECK( nvs_set_u8( my_handle, "RGBLeds", RGBLeds ) );
 
   // wifi
   ESP_ERROR_CHECK( nvs_set_u32( my_handle, "wifiMode", wifiMode ) );
@@ -315,8 +307,13 @@ void SwOSNVS::factorySettings( void ) {
   swarmSpeed         = 4;
 
   displayType        = 1;
-  RGBLeds            = 2;
-  
+
+  if ( CPU == FTSWARMCAM_3V12 ) {
+    RGBLeds            = 0;
+  } else {
+    RGBLeds            = 2;
+  }
+
   extensionPort      = FTSWARM_EXT_OFF;
   I2CAddr            = 0x66;
   gyro               = false;
