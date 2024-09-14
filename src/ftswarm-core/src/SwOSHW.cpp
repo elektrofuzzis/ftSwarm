@@ -27,7 +27,23 @@
 #include "SwOSCom.h"
 #include "ftDuino.h"
 
-const char IOTYPE[FTSWARM_MAXIOTYPE][15] = { "INPUT", "DIGITALINPUT", "ANALOGINPUT", "ACTOR", "BUTTON", "JOYSTICK", "LED", "SERVO", "OLED", "GYRO", "HC165", "I2C", "CAM",  "COUNTER", "FREQUENCYMETER" };
+const char IOTYPE[FTSWARM_MAXIOTYPE][15] = { 
+  "INPUT", 
+  "DIGITALINPUT", 
+  "ANALOGINPUT", 
+  "ACTOR", 
+  "BUTTON", 
+  "JOYSTICK", 
+  "LED", 
+  "SERVO", 
+  "OLED", 
+  "GYRO", 
+  "HC165", 
+  "I2C", 
+  "CAM",  
+  "COUNTER", 
+  "COUNTER", 
+  "COUNTER" };
 
 const char EMPTYSTRING[] = "";
 
@@ -50,7 +66,23 @@ const char SENSORICON[FTSWARM_MAXSENSOR][21] = {
   "28_frequency.svg"
 };
 
-const char SENSORTYPE[FTSWARM_MAXSENSOR][20] = { "DIGITAL", "ANALOG", "SWITCH", "REEDSWITCH", "LIGHTBARRIER", "VOLTMETER", "OHMMETER", "THERMOMETER", "LDR", "TRAILSENSOR", "COLORSENSOR", "ULTRASONIC", "CAM", "COUNTER", "ROTARY", "FREQUENCYMETER" };
+const char SENSORTYPE[FTSWARM_MAXSENSOR][20] = { 
+  "DIGITAL", 
+  "ANALOG", 
+  "SWITCH", 
+  "REEDSWITCH", 
+  "LIGHTBARRIER", 
+  "VOLTMETER", 
+  "OHMMETER", 
+  "THERMOMETER", 
+  "LDR", 
+  "TRAILSENSOR", 
+  "COLORSENSOR", 
+  "ULTRASONIC", 
+  "CAM", 
+  "COUNTER", 
+  "ROTARYENCODER", 
+  "FREQUENCYMETER" };
 
 const char ACTORICON[FTSWARM_MAXACTOR][20] = {
   "16_xmotor.svg",
@@ -634,6 +666,9 @@ void SwOSDigitalInput::jsonize( JSONize *json, uint8_t id) {
 SwOSCounter::SwOSCounter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl ) : SwOSInput( name, port1, ctrl, FTSWARM_COUNTER ) {
 
   _portControl = port2;
+
+  // rotary?
+  if ( port2 < 255 ) _sensorType = FTSWARM_ROTARYENCODER;
   
   // initialize local HW
   if ( _ctrl->isLocal() ) _setupLocal();
@@ -646,9 +681,11 @@ void SwOSCounter::_setupLocal() {
   // setup _GPIO / Counter Input
   SwOSInput::_setupLocal( );
 
-  // setup _CONTROL Input if needed
-  if ( _portControl != 255 ) { 
-    
+  // setup _CONTROL Input if needed.
+  // counter: _portControl = 255 -> no _CONTROL
+  // encode:  if counter post is the highest input port, _portControl = _ctrl->inputs  -> no _CONTROL
+  if ( _portControl < _ctrl->inputs ) { 
+
     _CONTROL = (gpio_num_t) GPIO_INPUT[_ctrl->getCPU()][_portControl][0];
 
     gpio_config_t io_conf = {};
@@ -719,6 +756,15 @@ void SwOSCounter::_setupLocal() {
   pcnt_counter_resume(_unit);
 
 }
+
+FtSwarmIOType_t SwOSCounter::getIOType() { 
+
+  if ( _sensorType == FTSWARM_ROTARYENCODER )
+    return FTSWARM_ROTARYINPUT;
+  else
+    return FTSWARM_COUNTERINPUT; 
+};
+
 
 void SwOSCounter::read( void ) {
 
@@ -3017,6 +3063,7 @@ SwOSIO *SwOSCtrl::getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port) {
 
   switch (ioType) {
     case FTSWARM_COUNTERINPUT:
+    case FTSWARM_ROTARYINPUT:
     case FTSWARM_FREQUENCYINPUT:
     case FTSWARM_INPUT: 
     case FTSWARM_DIGITALINPUT:
@@ -3861,6 +3908,7 @@ bool isInputType( FtSwarmIOType_t ioType ) {
 
   return ( ioType == FTSWARM_DIGITALINPUT ) ||
          ( ioType == FTSWARM_ANALOGINPUT ) ||
+         ( ioType == FTSWARM_ROTARYINPUT ) ||
          ( ioType == FTSWARM_COUNTERINPUT ) ||
          ( ioType == FTSWARM_FREQUENCYINPUT );
 }
@@ -3874,10 +3922,27 @@ bool SwOSSwarmXX::changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarm
   // register the new one
   SwOSInput *io;
   switch ( newIOType ) {
-    case FTSWARM_DIGITALINPUT:   io = new SwOSDigitalInput("A", port, this ); break;
-    case FTSWARM_ANALOGINPUT:    io = new SwOSAnalogInput("A", port, this ); break;
-    case FTSWARM_COUNTERINPUT:   io = new SwOSCounter("A", port, 255, this ); break;
-    case FTSWARM_FREQUENCYINPUT: io = new SwOSFrequencymeter("A", port, 255, this ); break;
+
+    case FTSWARM_DIGITALINPUT:    io = new SwOSDigitalInput("A", port, this ); 
+                                  break;
+
+    case FTSWARM_ANALOGINPUT:     io = new SwOSAnalogInput("A", port, this );
+                                  break;
+
+    case FTSWARM_COUNTERINPUT:    io = new SwOSCounter("A", port, 255, this ); 
+                                  break;
+
+    case FTSWARM_ROTARYENCODER:   io = new SwOSCounter("A", port, port+1, this ); 
+                                  if ( port+1 < inputs ) { 
+                                    // cleanup next input, it's used now
+                                    SwOSInput *old = input[port+1];
+                                    input[port+1] = NULL;
+                                    if ( old ) delete old;
+                                  }
+                                  break;
+
+    case FTSWARM_FREQUENCYINPUT:  io = new SwOSFrequencymeter("A", port, 255, this ); 
+                                  break;
     default: return false;
   }
 

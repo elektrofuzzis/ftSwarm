@@ -60,7 +60,7 @@ typedef enum { SWOS_OK, SWOS_TIMEOUT, SWOS_DENY } SwOSError_t;
 typedef enum { swarmComWifi = 1, swarmComRS485 = 2, swarmComBoth= 3 } FtSwarmCommunication_t; 
 
 // IO types
-typedef enum { FTSWARM_UNDEF = -1, FTSWARM_INPUT, FTSWARM_DIGITALINPUT, FTSWARM_ANALOGINPUT, FTSWARM_ACTOR, FTSWARM_BUTTON, FTSWARM_JOYSTICK, FTSWARM_PIXEL, FTSWARM_SERVO,  FTSWARM_OLED, FTSWARM_GYRO, FTSWARM_HC165, FTSWARM_I2C, FTSWARM_CAM, FTSWARM_COUNTERINPUT, FTSWARM_FREQUENCYINPUT, FTSWARM_MAXIOTYPE } FtSwarmIOType_t ;
+typedef enum { FTSWARM_UNDEF = -1, FTSWARM_INPUT, FTSWARM_DIGITALINPUT, FTSWARM_ANALOGINPUT, FTSWARM_ACTOR, FTSWARM_BUTTON, FTSWARM_JOYSTICK, FTSWARM_PIXEL, FTSWARM_SERVO,  FTSWARM_OLED, FTSWARM_GYRO, FTSWARM_HC165, FTSWARM_I2C, FTSWARM_CAM, FTSWARM_COUNTERINPUT, FTSWARM_ROTARYINPUT, FTSWARM_FREQUENCYINPUT, FTSWARM_MAXIOTYPE } FtSwarmIOType_t ;
 
 // controller types
 typedef enum { FTSWARM_NOCTRL = -1, FTSWARM = 0, FTSWARMCONTROL, FTSWARMCAM, FTSWARMPWRDRIVE, FTSWARMDUINO } FtSwarmController_t;
@@ -281,6 +281,20 @@ class FtSwarmCounter : public FtSwarmInput {
 
 };
 
+class FtSwarmRotaryEncoder : public FtSwarmInput {
+  // rotary input is available at all ports
+  protected:
+    virtual void setSensorType( FtSwarmSensor_t sensorType);
+    FtSwarmRotaryEncoder( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmSensor_t sensorType );
+    FtSwarmRotaryEncoder( const char *name, FtSwarmSensor_t sensorType );
+  public:
+    FtSwarmRotaryEncoder( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
+    FtSwarmRotaryEncoder( const char *name );
+
+    int16_t getCounter( void );
+    void resetCounter( void );
+};
+
 class FtSwarmFrequencymeter : public FtSwarmInput {
   // FtSwarmFrequencymeter is available at all input ports
   public:
@@ -289,19 +303,6 @@ class FtSwarmFrequencymeter : public FtSwarmInput {
     virtual int16_t getFrequency( void );
 
 };
-
-/* 
-class FtSwarmRotaryEncoder : public FtSwarmInput {
-
-  public:
-    FtSwarmCounter( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port1, FtSwarmPort_t port2 );
-    FtSwarmCounter( const char *name1, const char *name1 );
-
-    int32_t getValue( void );
-    void reset( void );
-
-};
-*/
 
 class FtSwarmAnalogInput : public FtSwarmInput { 
   // general analog input, A1..A4 ftSwarm only

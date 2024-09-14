@@ -21,7 +21,8 @@ FtSwarmIOType_t sensorType2IOType( FtSwarmSensor_t sensor2IOType ) {
     
     case FTSWARM_FREQUENCYMETER: return FTSWARM_FREQUENCYINPUT;
 
-    case FTSWARM_ROTARYENCODER:
+    case FTSWARM_ROTARYENCODER:  return FTSWARM_ROTARYINPUT;
+
     case FTSWARM_COUNTER:        return FTSWARM_COUNTERINPUT;
     
     default:                     return FTSWARM_ANALOGINPUT;
@@ -36,7 +37,6 @@ FtSwarm ftSwarm;
 
 FtSwarmIO::FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmIOType_t ioType ) {
   // constructor: register at myOSSwarm and get a pointer to myself
-
   bool firstTry = true;
 
   while (!me) {
@@ -46,7 +46,7 @@ FtSwarmIO::FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, Ft
     
     // no success, wait 25 ms
     if ( (!me) && ( firstTry ) ) {
-      ESP_LOGD( LOGFTSWARM, "waiting on device" );
+      ESP_LOGD( LOGFTSWARM, "waiting on device - SN controler: %d port: %d ioType: %d", serialNumber, port, ioType );
       myOSSwarm.setState( WAITING );
       firstTry = false;
     }
@@ -327,6 +327,58 @@ int16_t FtSwarmCounter::getCounter() {
 };
 
 void FtSwarmCounter::resetCounter( void ) {
+
+  static_cast<SwOSCounter *>(me)->lock();
+  static_cast<SwOSCounter *>(me)->resetCounter();
+  static_cast<SwOSCounter *>(me)->unlock();
+
+};
+
+// **** FtSwarmRotaryEncoder
+
+void FtSwarmRotaryEncoder::setSensorType( FtSwarmSensor_t sensorType ) {
+
+  // set sensor type
+  if (me) {
+    static_cast<SwOSCounter *>(me)->lock();
+    static_cast<SwOSCounter *>(me)->setSensorType( sensorType );
+    static_cast<SwOSCounter *>(me)->unlock();
+  }
+
+}
+
+FtSwarmRotaryEncoder::FtSwarmRotaryEncoder( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmSensor_t sensorType ):FtSwarmInput( serialNumber, port, FTSWARM_ROTARYINPUT ) {
+
+  setSensorType( sensorType );
+
+};
+
+FtSwarmRotaryEncoder::FtSwarmRotaryEncoder( const char *name, FtSwarmSensor_t sensorType ):FtSwarmInput( name, FTSWARM_ROTARYINPUT ) {
+
+  setSensorType( sensorType );
+  
+};
+
+FtSwarmRotaryEncoder::FtSwarmRotaryEncoder( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmRotaryEncoder( serialNumber, port, FTSWARM_ROTARYENCODER ) {
+
+};
+
+FtSwarmRotaryEncoder::FtSwarmRotaryEncoder( const char *name):FtSwarmRotaryEncoder( name, FTSWARM_ROTARYENCODER ) {
+
+};
+
+int16_t FtSwarmRotaryEncoder::getCounter() {
+
+  if (!me) return 0;
+
+  static_cast<SwOSCounter *>(me)->lock();
+  uint16_t xReturn = (static_cast<SwOSCounter *>(me)->getValueI32());
+  static_cast<SwOSCounter *>(me)->unlock();
+
+  return xReturn;
+};
+
+void FtSwarmRotaryEncoder::resetCounter( void ) {
 
   static_cast<SwOSCounter *>(me)->lock();
   static_cast<SwOSCounter *>(me)->resetCounter();
@@ -1353,7 +1405,6 @@ bool FtSwarm::sendEventData( uint8_t *buffer, size_t size ) {
   return true;
 
 }
-
 
 void forever( char *prompt) {
   printf("%s\n", prompt); while(1) delay(500);
