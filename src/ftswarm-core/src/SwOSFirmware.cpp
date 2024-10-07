@@ -83,7 +83,7 @@ void ExtensionMenu() {
         if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
           nvs.extensionPort = (FtSwarmExtMode_t) enterNumber( "(0) off (1) I2C-Master: ", nvs.extensionPort, 0, 1 );
         } else {
-          nvs.extensionPort = (FtSwarmExtMode_t) enterNumber( "(0) off (1) I2C-Master (2) I2C-Slave (3) Gyro MCU6040 (4) Outputs: ", nvs.extensionPort, 0, 4 );
+          nvs.extensionPort = (FtSwarmExtMode_t) enterNumber( "(0) off (1) I2C-Master (2) I2C-Slave (3) Gyro MCU6040 (4) Outputs (5) Servos: ", nvs.extensionPort, 0, 5 );
         }
         break;
 

@@ -425,7 +425,8 @@ void SwOSCLI::executeControllerCmd(void ) {
 
 void SwOSCLI::executeInputCmd( void ) {
 
-  SwOSInput        *io = (SwOSInput *)_io;
+  SwOSInput       *io = (SwOSInput *)_io;
+  FtSwarmSensor_t newSensorType;
 
   switch ( _cmd ) {
     case CLICMD_getSensorType:  _io->lock();
@@ -433,26 +434,33 @@ void SwOSCLI::executeInputCmd( void ) {
                                 _io->unlock();
                                 break;
 
-    case CLICMD_setSensorType: if ( ( _parameter[0].inRange( "sensorType", 0, FTSWARM_MAXSENSOR-1 ) ) && 
-                                   ( _parameter[1].inRange( "normallyOpen", 0, 1 ) ) ) {
-                                io = (SwOSInput *) myOSSwarm.getIO( io->getCtrl()->serialNumber, io->getPort(), sensorType2IOType( (FtSwarmSensor_t) _parameter[0].getValue() ) );
-                                io->lock();
-                                if (io->getIOType() == FTSWARM_ANALOGINPUT ) {
-                                  ((SwOSAnalogInput *)io)->setSensorType( (FtSwarmSensor_t)_parameter[0].getValue() );
+    case CLICMD_setSensorType:  if ( ( _parameter[0].inRange( "sensorType", 0, FTSWARM_MAXSENSOR-1 ) ) && 
+                                     ( _parameter[1].inRange( "normallyOpen", 0, 1 ) ) ) {
+                                  
+                                  // which sensor type?
+                                  newSensorType =  (FtSwarmSensor_t) _parameter[0].getValue();
+                                  
+                                  // now change it
+                                  io->lock();
+                                  
+                                  // get the sensor
+                                  io = (SwOSInput *) myOSSwarm.getIO( io->getCtrl()->serialNumber, io->getPort(), sensorType2IOType( newSensorType ) );
+                                  
+                                  // digital input has 2 params
+                                  if (io->getIOType() == FTSWARM_DIGITALINPUT ) {
+                                    ((SwOSDigitalInput *)io)->setSensorType( (FtSwarmSensor_t)_parameter[0].getValue(), (bool)_parameter[1].getValue() );
+                                  
+                                  // set others only, if not already set
+                                  } else if ( newSensorType != io->getSensorType() ) {
+                                    io->setSensorType( (FtSwarmSensor_t)_parameter[0].getValue() );
+                                  }
+
+                                  io->unlock();
+
                                   printf("R: ok\n");
-                                } else if (io->getIOType() == FTSWARM_DIGITALINPUT ) {
-                                  ((SwOSDigitalInput *)io)->setSensorType( (FtSwarmSensor_t)_parameter[0].getValue(), (bool)_parameter[1].getValue() );
-                                  printf("R: ok\n");
-                                } else if (io->getIOType() == FTSWARM_COUNTERINPUT ) {
-                                  ((SwOSCounter *)io)->setSensorType( (FtSwarmSensor_t)_parameter[0].getValue() );
-                                  printf("R: ok\n");
-                                } else if (io->getIOType() == FTSWARM_FREQUENCYINPUT ) {
-                                  ((SwOSFrequencymeter *)io)->setSensorType( (FtSwarmSensor_t)_parameter[0].getValue() );
-                                  printf("R: ok\n");
-                                } else {
-                                  printf("ERROR: wrong iotype.\n");
-                                }
-                                io->unlock();
+
+                              } else {
+                                printf("ERROR: wrong sensor type %d\n", newSensorType );
                               }
                               break;
 
@@ -839,6 +847,9 @@ void SwOSCLI::executeIOCommand( void ) {
     switch (_io->getIOType() ) {
       case FTSWARM_DIGITALINPUT:
       case FTSWARM_ANALOGINPUT:
+      case FTSWARM_COUNTERINPUT:
+      case FTSWARM_ROTARYINPUT:
+      case FTSWARM_FREQUENCYINPUT:
       case FTSWARM_INPUT:       executeInputCmd(); break;
       case FTSWARM_ACTOR:       executeActorCmd(); break;
       case FTSWARM_JOYSTICK:    executeJoystickCmd(); break;

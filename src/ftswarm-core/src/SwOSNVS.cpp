@@ -45,7 +45,7 @@ void SwOSNVS::initialSetup( void ) {
     case 1:  controllerType = FTSWARM;         CPU = FTSWARMJST_1V15;       RGBLeds = 2; break;
     case 2:  controllerType = FTSWARM;         CPU = FTSWARMRS_2V1;         RGBLeds = 2; break;
     case 3:  controllerType = FTSWARMCONTROL;  CPU = FTSWARMCONTROL_1V3;    RGBLeds = 2; break;
-    case 4:  controllerType = FTSWARMCAM;      CPU = FTSWARMCAM_3V12;       RGBLeds = 0; break;
+    case 4:  controllerType = FTSWARMCAM;      CPU = FTSWARMCAM_3V12;       RGBLeds = 2; break;
     case 5:  controllerType = FTSWARMPWRDRIVE; CPU = FTSWARMPWRDRIVE_1V141; RGBLeds = 2; break;
     case 6:  controllerType = FTSWARMDUINO;    CPU = FTSWARMDUINO_1V141;    RGBLeds = 2; break;
     case 7:  controllerType = FTSWARM;         CPU = FTSWARMXL_1V00;        RGBLeds = 2; break;
@@ -308,11 +308,7 @@ void SwOSNVS::factorySettings( void ) {
 
   displayType        = 1;
 
-  if ( CPU == FTSWARMCAM_3V12 ) {
-    RGBLeds            = 0;
-  } else {
-    RGBLeds            = 2;
-  }
+  RGBLeds            = 2;
 
   extensionPort      = FTSWARM_EXT_OFF;
   I2CAddr            = 0x66;

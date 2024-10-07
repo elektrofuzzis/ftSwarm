@@ -13,7 +13,9 @@
 // inter swarm communication deep debugging 
 // #define DEBUG_COMMUNICATION
 // #define DEBUG_READTASK
-    
+
+#define ARDUHAL_LOG_LEVEL_VERBOSE (5)
+
 #define LOGFTSWARM  "FTSWARM"
 #define MAXIDENTIFIER 32
 #define MAXACTORS 8
@@ -26,7 +28,7 @@
 #include <FastLED.h>
 #include <LSM6DSRSensor.h>
 #include <ftPwrDrive/ftPwrDrive.h>
-#include <esp_camera.h>
+#include "esp_camera.h"
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
@@ -94,7 +96,7 @@ typedef enum { FTSWARM_NOTOGGLE, FTSWARM_TOGGLEUP, FTSWARM_TOGGLEDOWN } FtSwarmT
 typedef enum { FTSWARM_ALIGNLEFT, FTSWARM_ALIGNCENTER, FTSWARM_ALIGNRIGHT } FtSwarmAlign_t;
 
 // Ext Port modes
-typedef enum { FTSWARM_EXT_OFF, FTSWARM_EXT_I2C_MASTER, FTSWARM_EXT_I2C_SLAVE, FTSWARM_EXT_MCU6040, FTSWARM_EXT_OUTPUT  } FtSwarmExtMode_t;
+typedef enum { FTSWARM_EXT_OFF, FTSWARM_EXT_I2C_MASTER, FTSWARM_EXT_I2C_SLAVE, FTSWARM_EXT_MCU6040, FTSWARM_EXT_OUTPUT, FTSWARM_EXT_SERVO } FtSwarmExtMode_t;
 
 // trigger events
 typedef enum { FTSWARM_TRIGGERUP, FTSWARM_TRIGGERDOWN, FTSWARM_TRIGGERVALUE, FTSWARM_TRIGGERI2CREAD, FTSWARM_TRIGGERI2CWRITE, FTSWARM_MAXTRIGGER } FtSwarmTrigger_t;

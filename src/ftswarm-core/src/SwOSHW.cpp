@@ -2672,9 +2672,106 @@ SwOSCAM::SwOSCAM(const char *name, SwOSCtrl *ctrl ) : SwOSIO( name, ctrl ) {
   }
 
 }
+/*
+
+esp_err_t xclk_timer_conf2(int ledc_timer, int xclk_freq_hz)
+{
+    ledc_timer_config_t timer_conf;
+    timer_conf.duty_resolution = LEDC_TIMER_1_BIT;
+    timer_conf.freq_hz = xclk_freq_hz;
+    timer_conf.speed_mode = LEDC_LOW_SPEED_MODE;
+
+#if ESP_IDF_VERSION_MAJOR >= 4
+    timer_conf.clk_cfg = LEDC_AUTO_CLK;
+#endif
+    timer_conf.timer_num = (ledc_timer_t)ledc_timer;
+    esp_err_t err = ledc_timer_config(&timer_conf);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "ledc_timer_config failed for freq %d, rc=%x", xclk_freq_hz, err);
+    }
+    return err;
+}
+
+esp_err_t camera_enable_out_clock2(const camera_config_t* config)
+{
+    esp_err_t err = xclk_timer_conf2(config->ledc_timer, config->xclk_freq_hz);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "ledc_timer_config failed, rc=%x", err);
+        return err;
+    }
+
+    // g_ledc_channel = config->ledc_channel;
+    ledc_channel_config_t ch_conf;
+    ch_conf.gpio_num = config->pin_xclk;
+    ch_conf.speed_mode = LEDC_LOW_SPEED_MODE;
+    ch_conf.channel = config->ledc_channel;
+    ch_conf.intr_type = LEDC_INTR_DISABLE;
+    ch_conf.timer_sel = config->ledc_timer;
+    ch_conf.duty = 1;
+    ch_conf.hpoint = 0;
+    err = ledc_channel_config(&ch_conf);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "ledc_channel_config failed, rc=%x", err);
+        return err;
+    }
+    return ESP_OK;
+}
+
+void blubber() {
+  // initialize local HW
+
+  ledc_channel_config_t *ledc_channel = NULL;
+  
+  // set digital ports _in1 & in2 to output
+  gpio_config_t io_conf = {
+    .pin_bit_mask = 0,
+    .mode = GPIO_MODE_OUTPUT,
+    .pull_up_en = GPIO_PULLUP_DISABLE,
+    .pull_down_en = GPIO_PULLDOWN_DISABLE,
+    .intr_type = GPIO_INTR_DISABLE,
+  };
+  io_conf.pin_bit_mask = io_conf.pin_bit_mask | (1ULL << GPIO_NUM_4);
+  gpio_config(&io_conf);
+  
+  // set motor driver off
+  gpio_set_level( GPIO_NUM_4, 0 );
+
+  // use Timer 0
+  ledc_timer_config_t ledc_timer = {
+    .speed_mode       = LEDC_LOW_SPEED_MODE,
+    .duty_resolution  = LEDC_TIMER_12_BIT,
+    .timer_num        = LEDC_TIMER_3,
+    .freq_hz          = 10000,
+    .clk_cfg          = LEDC_AUTO_CLK,
+  };
+  ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
+
+  // just prepare led channel, don't register yet
+  ledc_channel = (ledc_channel_config_t *) calloc( sizeof( ledc_channel_config_t ), 1 );
+  ledc_channel->gpio_num       = GPIO_NUM_4;
+  ledc_channel->speed_mode     = LEDC_LOW_SPEED_MODE;
+  ledc_channel->channel        = LEDC_CHANNEL_5;
+  ledc_channel->intr_type      = LEDC_INTR_DISABLE;
+  ledc_channel->timer_sel      = LEDC_TIMER_3;
+  ledc_channel->duty           = 0; 
+  ledc_channel->hpoint         = 0;
+  ledc_channel->flags.output_invert = 1;
+
+  gpio_reset_pin( (gpio_num_t) ledc_channel->gpio_num );
+  ledc_channel_config( ledc_channel );
+  ESP_ERROR_CHECK( ledc_set_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel, 128 ) );
+  ESP_ERROR_CHECK( ledc_update_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel ) );
+  gpio_set_level( GPIO_NUM_4, 1 );
+
+}
+
+*/
 
 void SwOSCAM::_setupLocal() {
 
+  return;
+
+/*
 camera_config_t config;
 config.ledc_channel = LEDC_CHANNEL_5;
 config.ledc_timer = LEDC_TIMER_3;
@@ -2715,6 +2812,42 @@ if(config.pixel_format == PIXFORMAT_JPEG){
   // Best option for face detection/recognition
   config.frame_size = FRAMESIZE_240X240;
 }
+*/
+
+camera_config_t config;
+config.ledc_channel = LEDC_CHANNEL_5;
+config.ledc_timer = LEDC_TIMER_3;
+config.pin_d0 = Y2_GPIO_NUM;
+config.pin_d1 = Y3_GPIO_NUM;
+config.pin_d2 = Y4_GPIO_NUM;
+config.pin_d3 = Y5_GPIO_NUM;
+config.pin_d4 = Y6_GPIO_NUM;
+config.pin_d5 = Y7_GPIO_NUM;
+config.pin_d6 = Y8_GPIO_NUM;
+config.pin_d7 = Y9_GPIO_NUM;
+config.pin_xclk = XCLK_GPIO_NUM;
+config.pin_pclk = PCLK_GPIO_NUM;
+config.pin_vsync = VSYNC_GPIO_NUM;
+config.pin_href = HREF_GPIO_NUM;
+config.pin_sccb_sda = SIOC_GPIO_NUM;
+config.pin_sccb_scl = SIOD_GPIO_NUM;
+config.pin_pwdn = PWDN_GPIO_NUM;
+config.pin_reset = RESET_GPIO_NUM;
+config.xclk_freq_hz = 20000000;
+//config.xclk_freq_hz = 10000;
+config.frame_size = FRAMESIZE_SVGA;
+config.pixel_format = PIXFORMAT_JPEG; // for streaming
+config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
+config.fb_location = CAMERA_FB_IN_DRAM;
+config.jpeg_quality = 12;
+config.fb_count = 1;
+
+// analogWrite( 4, 128 );
+// blubber();
+// return;
+
+// camera_enable_out_clock2(&config);
+// return;
 
 // camera init
 esp_err_t err = esp_camera_init(&config);
@@ -2883,7 +3016,7 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwa
     case FTSWARMDUINO_1V141:    inputs = 8; actors = 4; leds = 2; break;
     case FTSWARMPWRDRIVE_1V141: inputs = 5; actors = 4; leds = 2; break;
     case FTSWARMXL_1V00:        inputs = 8; actors = 8; leds = 2; break;
-    default:                    inputs = 4; actors = 2; leds = 0; break;
+    default:                    inputs = 4; actors = 2; leds = 2; break;
   }
 
   // define common hardware
@@ -3169,9 +3302,9 @@ void SwOSCtrl::jsonize( JSONize *json, uint8_t id) {
 
 void SwOSCtrl::jsonizeIO( JSONize *json, uint8_t id ) {
   
-  for (uint8_t i=0; i<inputs; i++) { if ( input[i] ) input[i]->jsonize( json, id ); }
-  for (uint8_t i=0; i<actors; i++) { if ( actor[i] ) actor[i]->jsonize( json, id ); }
-  for (uint8_t i=0; i<leds;   i++) { if ( led[i]   ) led[i]->jsonize( json, id ); }
+  for (uint8_t i=0; i<inputs; i++)      { if ( input[i] ) input[i]->jsonize( json, id ); }
+  for (uint8_t i=0; i<actors; i++)      { if ( actor[i] ) actor[i]->jsonize( json, id ); }
+  for (uint8_t i=0; i<nvs.RGBLeds; i++) { if ( led[i]   ) led[i]->jsonize( json, id ); }
 
 }
 
@@ -3792,13 +3925,15 @@ SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local,
       case FTSWARMJST_1V0:      Wire.begin( 13, 12 ); break;
 
       case FTSWARMCONTROL_1V3: 
-      case FTSWARMJST_1V15:     Wire.begin( 21, 22 ); break;
+      case FTSWARMJST_1V15:     Wire.begin( 21, 22 ); break;  
 
       case FTSWARMXL_1V00:      Wire.begin( 33, 21 ); break;
 
       case FTSWARMRS_2V0: 
       case FTSWARMRS_2V1:       // use nvs parameters, since it's a local one
-                                if ( ( nvs.extensionPort != FTSWARM_EXT_I2C_SLAVE ) && ( nvs.extensionPort != FTSWARM_EXT_OFF ) ) Wire.begin( 8, 9 ); 
+                                if ( ( nvs.extensionPort != FTSWARM_EXT_I2C_MASTER ) ||
+                                     ( nvs.extensionPort != FTSWARM_EXT_MCU6040 ) ) 
+                                    Wire.begin( 8, 9 ); 
                                 break;
   
       default:                  break;
@@ -4005,18 +4140,23 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
   // define specific hardware
   for (uint8_t i=0; i<MAXSERVOS; i++) servo[i] = NULL;
   switch ( CPU ) {
-    case FTSWARMRS_2V1:     servo[0] = new SwOSServo("SERVO", 0, this);
-                            servo[1] = new SwOSServo("SERVO", 1, this);
-                            servos = 2;
+    case FTSWARMRS_2V1:     servos = ( extensionPort == FTSWARM_EXT_SERVO ) ? 4:2;
                             break;
 
     case FTSWARMRS_2V0:
-    case FTSWARMJST_1V15:   servo[0] = new SwOSServo("SERVO", 0, this);
-                            servos = 1;
+    case FTSWARMJST_1V15:   servos = ( extensionPort == FTSWARM_EXT_SERVO ) ? 3:1;
                             break;
 
     default:                servos = 0;
                             break;
+  }
+
+  for (uint8_t i=0; i<MAXSERVOS; i++) {
+    if ( i>= MAXSERVOS ) {
+      servo[i] = NULL;
+    } else {
+      servo[i] = new SwOSServo("SERVO", i, this);
+    }
   }
 
 }
