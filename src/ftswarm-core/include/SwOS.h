@@ -38,7 +38,7 @@
 #define MAXLEDS 18
 
 // max Servos
-#define MAXSERVOS 2
+#define MAXSERVOS 4
 
 // max I2C Register
 #define MAXI2CREGISTERS 8

@@ -4138,7 +4138,6 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
   setName( buffer );
 
   // define specific hardware
-  for (uint8_t i=0; i<MAXSERVOS; i++) servo[i] = NULL;
   switch ( CPU ) {
     case FTSWARMRS_2V1:     servos = ( extensionPort == FTSWARM_EXT_SERVO ) ? 4:2;
                             break;
@@ -4152,7 +4151,7 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
   }
 
   for (uint8_t i=0; i<MAXSERVOS; i++) {
-    if ( i>= MAXSERVOS ) {
+    if ( i>= servos ) {
       servo[i] = NULL;
     } else {
       servo[i] = new SwOSServo("SERVO", i, this);

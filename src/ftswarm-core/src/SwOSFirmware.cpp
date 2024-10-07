@@ -14,7 +14,7 @@
 #include "easyKey.h"
 #include "SwOSCLI.h"
 
-const char EXTMODE[5][14] = { "off", "I2C-Master", "I2C-Slave", "Gyro MPU-6050", "Outputs" };
+const char EXTMODE[6][14] = { "off", "I2C-Master", "I2C-Slave", "Gyro MPU-6050", "Outputs", "Servos" };
 const char ONOFF[2][5]    = { "off", "on" };
 const char OFFM1M2[3][5]  = { "off", "M1", "M2" };
 const char WIFI[3][12]    = { "off", "AP-Mode", "Client-Mode"};
