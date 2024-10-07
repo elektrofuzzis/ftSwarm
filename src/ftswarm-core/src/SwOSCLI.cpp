@@ -847,15 +847,13 @@ void SwOSCLI::executeIOCommand( void ) {
     switch (_io->getIOType() ) {
       case FTSWARM_DIGITALINPUT:
       case FTSWARM_ANALOGINPUT:
-      case FTSWARM_COUNTERINPUT:
-      case FTSWARM_ROTARYINPUT:
-      case FTSWARM_FREQUENCYINPUT:
       case FTSWARM_INPUT:       executeInputCmd(); break;
       case FTSWARM_ACTOR:       executeActorCmd(); break;
       case FTSWARM_JOYSTICK:    executeJoystickCmd(); break;
       case FTSWARM_SERVO:       executeServoCmd(); break;
       case FTSWARM_PIXEL:       executePixelCmd(); break;
       case FTSWARM_I2C:         executeI2CCmd(); break;
+      
       //case FTSWARM_BUTTON:
       //case FTSWARM_OLED:
       //case FTSWARM_GYRO:

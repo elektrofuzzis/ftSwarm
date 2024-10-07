@@ -1127,6 +1127,7 @@ SwOSActor::SwOSActor(const char *name, uint8_t port, SwOSCtrl *ctrl):SwOSIO(name
 
   // ftPwrDrive has a bitmap motor representation, so precalc the Mx values
   _pwrDriveMotor = 1 << _port;
+  if ( _ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) _highResolution = true;
 
   // initialize local HW
   if (_ctrl->isLocal()) {
@@ -3027,14 +3028,7 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwa
   for (uint8_t i=0; i<MAXACTORS; i++) { 
     
     if ( i< actors ) {
-    
-      if (CPU == FTSWARMPWRDRIVE_1V141 ) {
-        actor[i] = new SwOSActor("Stepper", i, this );
-    
-      } else {
         actor[i] = new SwOSActor("M", i, this );
-    
-      } 
     
     } else {
       actor[i] = NULL;
