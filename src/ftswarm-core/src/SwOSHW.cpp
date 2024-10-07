@@ -474,7 +474,13 @@ float SwOSInput::getValueF() {
 SwOSDigitalInput::SwOSDigitalInput(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSInput( name, port, ctrl, FTSWARM_DIGITAL ) {
   
   // initialize local HW
-  if ( _ctrl->isLocal() ) _setupLocal();
+  if (_ctrl->isLocal()) {
+    if ( _ctrl->isI2CSwarmCtrl() ) {
+      // _setupI2C();
+    } else {
+      _setupLocal();
+    }
+  }
 
 }
 
@@ -489,32 +495,6 @@ void SwOSDigitalInput::_setupLocal() {
 
   if ( _port == 0 ) _USTX = USTCPUA[_ctrl->getCPU()][0];
   if ( ( _ctrl->getType() == FTSWARM ) && ( _port == 1 ) ) { _PUA2 = USTCPUA[_ctrl->getCPU()][1]; }      
- 
- /*
-  switch (_ctrl->getCPU() ) {
-    case FTSWARMCAM_3V12:     if ( _port == 0 ) _USTX = xGPIO_NUM_3;
-                              break;
-
-    case FTSWARMRS_2V1:       if ( _port == 0 ) _USTX = xGPIO_NUM_42;
-                              if ( ( _ctrl->getType() == FTSWARM ) && ( _port == 2 ) ) { _PUA2 = xGPIO_NUM_41; }                       
-                              break;
-    
-    case FTSWARMRS_2V0:       if ( _port == 0 ) _USTX = xGPIO_NUM_42;
-                              if ( ( _ctrl->getType() == FTSWARM ) && ( _port == 2 ) ) { _PUA2 = xGPIO_NUM_41; }                       
-                              break;
-    
-    case FTSWARMJST_1V15:     if ( _port == 0 ) _USTX = GPIO_NUM_15;
-                              if ( ( _ctrl->getType() == FTSWARM ) && ( _port == 2 ) ) { _PUA2 = GPIO_NUM_14; }
-                              break;
-    
-    case FTSWARMCONTROL_1V3:  if ( _port == 0 ) _USTX = GPIO_NUM_15;
-                              if ( ( _ctrl->getType() == FTSWARM ) && ( _port == 2 ) ) { _PUA2 = GPIO_NUM_14; }
-                              break;
-
-    default:           
-                       break;
-  }
-  */
 
   gpio_config_t io_conf = {};
   

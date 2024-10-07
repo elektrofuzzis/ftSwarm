@@ -46,7 +46,7 @@ FtSwarmIO::FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, Ft
     
     // no success, wait 25 ms
     if ( (!me) && ( firstTry ) ) {
-      ESP_LOGD( LOGFTSWARM, "waiting on device - SN controler: %d port: %d ioType: %d", serialNumber, port, ioType );
+      printf("# INFO: waiting on device - SN controler: %d port: %d ioType: %d\n", serialNumber, port, ioType );
       myOSSwarm.setState( WAITING );
       firstTry = false;
     }
@@ -76,7 +76,7 @@ FtSwarmIO::FtSwarmIO( const char *name, FtSwarmIOType_t ioType ) {
 
     // no success, wait 25 ms
     if ( (!me) && ( firstTry ) ) {
-      ESP_LOGD( LOGFTSWARM, "waiting on device" );
+      printf("# INFO: waiting on device - IO: %s port ioType: %d\n", name, ioType );
       myOSSwarm.setState( WAITING );
       firstTry = false;
     }

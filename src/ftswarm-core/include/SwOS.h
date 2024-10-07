@@ -398,6 +398,7 @@ class FtSwarmTractorMotor : public FtSwarmMotor {
     FtSwarmMotion_t getMotionType();
     virtual void coast( void ) { setMotionType( FTSWARM_COAST ); };
     virtual void brake( void ) { setMotionType( FTSWARM_BRAKE ); };
+    virtual void run(void) { setMotionType( FTSWARM_ON ); };
 };
 
 class FtSwarmXMMotor : public FtSwarmTractorMotor {

@@ -357,7 +357,6 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   nvs.begin();
   if ( ( nvs.IAmKelda ) && ( this->verbose ) ) { printf( "I am KELDA!\n"); }
 
-
 	// create local controller
 	maxCtrl++;
   switch (nvs.controllerType) {
