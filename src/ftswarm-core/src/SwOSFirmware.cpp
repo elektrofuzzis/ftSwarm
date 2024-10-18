@@ -14,7 +14,7 @@
 #include "easyKey.h"
 #include "SwOSCLI.h"
 
-const char EXTMODE[6][14] = { "off", "I2C-Master", "I2C-Slave", "Gyro MPU-6050", "Outputs", "Servos" };
+const char EXTMODE[7][14] = { "off", "I2C-Master", "I2C-Slave", "Gyro MPU-6050", "Outputs", "Servos", "Lidar" };
 const char ONOFF[2][5]    = { "off", "on" };
 const char OFFM1M2[3][5]  = { "off", "M1", "M2" };
 const char WIFI[3][12]    = { "off", "AP-Mode", "Client-Mode"};
@@ -83,7 +83,7 @@ void ExtensionMenu() {
         if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
           nvs.extensionPort = (FtSwarmExtMode_t) enterNumber( "(0) off (1) I2C-Master: ", nvs.extensionPort, 0, 1 );
         } else {
-          nvs.extensionPort = (FtSwarmExtMode_t) enterNumber( "(0) off (1) I2C-Master (2) I2C-Slave (3) Gyro MCU6040 (4) Outputs (5) Servos: ", nvs.extensionPort, 0, 5 );
+          nvs.extensionPort = (FtSwarmExtMode_t) enterNumber( "(0) off (1) I2C-Master (2) I2C-Slave (3) Gyro MCU6040 (4) Outputs (5) Servos (6) Lidar: ", nvs.extensionPort, 0, 6 );
         }
         break;
 
@@ -878,7 +878,9 @@ void mainMenu( void ) {
 
     menu.start( "Main Menu", 14 );
     menu.add("Wifi & Web UI", "", MAINMENUWEB );
-    menu.add("Swarm Configuration", "", MAINMENUSWARM );
+    if (WiFi.status() == WL_CONNECTED) {
+      menu.add("Swarm Configuration", "", MAINMENUSWARM );
+    }
     menu.add("Alias Names", "", MAINMENUALIAS );
     menu.add("Factory Reset", "", MAINMENUFACTORY );
 

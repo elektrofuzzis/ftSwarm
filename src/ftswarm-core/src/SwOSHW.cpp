@@ -20,6 +20,7 @@
 #include <esp_now.h>
 #include <esp_log.h>
 #include <freertos/semphr.h>
+#include <VL53L0X.h>
 
 #include "SwOS.h"
 #include "SwOSHAL.h"
@@ -82,7 +83,8 @@ const char SENSORTYPE[FTSWARM_MAXSENSOR][20] = {
   "CAM", 
   "COUNTER", 
   "ROTARYENCODER", 
-  "FREQUENCYMETER" };
+  "FREQUENCYMETER",
+  "LIDAR" };
 
 const char ACTORICON[FTSWARM_MAXACTOR][20] = {
   "16_xmotor.svg",
@@ -627,6 +629,105 @@ FtSwarmToggle_t SwOSDigitalInput::getToggle() {
 }
 
 void SwOSDigitalInput::jsonize( JSONize *json, uint8_t id) {
+  json->startObject();
+  SwOSIO::jsonize(json, id);
+  json->variableUI32("sensorType", _sensorType);
+  json->variable("subType",    (char *) SENSORTYPE[_sensorType]);
+
+  json->variableI32("value", getValueI32() );
+  
+  json->endObject();
+}
+
+/***************************************************
+ *  
+ * SwOSLidarInput
+ *
+ ***************************************************/
+
+VL53L0X Lidar;
+
+SwOSLidarInput::SwOSLidarInput(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSInput( name, port, ctrl, FTSWARM_DIGITAL ) {
+  
+  // initialize local HW
+  if (_ctrl->isLocal()) {
+      _setupLocal();
+  }
+
+}
+
+void SwOSLidarInput::_setupLocal() {
+  // initialize local HW
+
+  SwOSInput::_setupLocal( );
+
+  Lidar.setTimeout(500);
+  Lidar.init();
+  // Lidar.setMeasurementTimingBudget(20000);
+  Lidar.startContinuous(100);
+}
+
+void SwOSLidarInput::setSensorType( FtSwarmSensor_t sensorType ) {
+
+  // due to send norallyOpen to remote controllers, don't call super class
+
+  _sensorType   = sensorType;
+
+  if (_ctrl->isLocal()) { 
+    
+    setSensorTypeLocal( sensorType );
+
+  } else {
+
+    // send SN, SETSENSORTYPE, _port, sensorType
+    SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_SETSENSORTYPE );
+    cmd.data.sensorCmd.index        = _port;
+    cmd.data.sensorCmd.sensorType   = _sensorType;
+    cmd.send( );
+
+  }
+
+}
+
+void SwOSLidarInput::setSensorTypeLocal( FtSwarmSensor_t sensorType ) {
+
+}
+
+void SwOSLidarInput::read() {
+  
+  // nothing todo on remote sensors
+  if (!_ctrl->isLocal()) return;
+
+  uint32_t newValue;
+
+  // read new data
+  newValue = Lidar.readRangeContinuousMillimeters();
+
+  setReading( newValue );
+
+}
+
+void SwOSLidarInput::setReading( int32_t newValue ) {
+    
+  // store new data
+  _lastRawValue = newValue;  
+
+  subscription();
+
+}
+
+void SwOSLidarInput::setValue( int32_t value ) {
+
+  // nothing ToDo on real local HW
+  if ( ( _ctrl->isLocal()) && (!_ctrl->isI2CSwarmCtrl() ) ) return;
+  
+  _lastRawValue = value;
+
+  subscription();
+
+}
+
+void SwOSLidarInput::jsonize( JSONize *json, uint8_t id) {
   json->startObject();
   SwOSIO::jsonize(json, id);
   json->variableUI32("sensorType", _sensorType);
@@ -3896,7 +3997,7 @@ SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local,
     
     switch (CPU) {
 
-      case FTSWARMJST_1V0:      Wire.begin( 13, 12 ); break;
+      case FTSWARMJST_1V0:      ( 13, 12 ); break;
 
       case FTSWARMCONTROL_1V3: 
       case FTSWARMJST_1V15:     Wire.begin( 21, 22 ); break;  
@@ -3905,9 +4006,12 @@ SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local,
 
       case FTSWARMRS_2V0: 
       case FTSWARMRS_2V1:       // use nvs parameters, since it's a local one
-                                if ( ( nvs.extensionPort != FTSWARM_EXT_I2C_MASTER ) ||
-                                     ( nvs.extensionPort != FTSWARM_EXT_MCU6040 ) ) 
+                                if ( ( nvs.extensionPort == FTSWARM_EXT_I2C_MASTER ) ||
+                                     ( nvs.extensionPort == FTSWARM_EXT_MCU6040 ) ||
+                                     ( nvs.extensionPort == FTSWARM_EXT_LIDAR ) ) {
+                                     printf("Wire.begin\n"); 
                                     Wire.begin( 8, 9 ); 
+                                }
                                 break;
   
       default:                  break;
@@ -4130,6 +4234,10 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
     } else {
       servo[i] = new SwOSServo("SERVO", i, this);
     }
+  }
+
+  if ( extensionPort == FTSWARM_EXT_LIDAR ) {
+    input[inputs++] = new SwOSLidarInput( "LIDAR", 99, this );
   }
 
 }

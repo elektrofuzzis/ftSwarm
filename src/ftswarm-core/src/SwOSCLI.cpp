@@ -379,7 +379,7 @@ void SwOSCLI::executeControllerCmd(void ) {
                                     userEvent = new SwOSCom( _ctrl->macAddr, _ctrl->serialNumber, CMD_USEREVENT );
 
                                     // copy parameters
-                                    for (uint8_t i=0; i<_maxParameter; i++) {
+                                    for (uint8_t i=0; i<=_maxParameter; i++) {
                                       p = _parameter[i].getValue();
                                       memcpy( &userEvent->data.userEventCmd.payload[i*sizeof(int)], &p, sizeof(int) );
                                     }
@@ -847,6 +847,9 @@ void SwOSCLI::executeIOCommand( void ) {
     switch (_io->getIOType() ) {
       case FTSWARM_DIGITALINPUT:
       case FTSWARM_ANALOGINPUT:
+      case FTSWARM_FREQUENCYINPUT:
+      case FTSWARM_COUNTERINPUT:
+      case FTSWARM_ROTARYINPUT:
       case FTSWARM_INPUT:       executeInputCmd(); break;
       case FTSWARM_ACTOR:       executeActorCmd(); break;
       case FTSWARM_JOYSTICK:    executeJoystickCmd(); break;

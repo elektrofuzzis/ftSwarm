@@ -29,7 +29,8 @@
 // There can only be once!
 SwOSSwarm myOSSwarm;
 
-#include <debug.h>
+// #define DEBUG_COMMUNICATION_SWARM
+// #define DEBUG_READTASK
 
 #define CONNECTDELAY 2500
 
@@ -51,7 +52,7 @@ static void recvTask( void *parameter ) {
     // new data available?
     if ( xQueueReceive( myOSNetwork.recvNotification, &event, ESPNOW_MAXDELAY ) == pdTRUE ) {
 
-      #ifdef DEBUG_COMMUNICATION
+      #ifdef DEBUG_COMMUNICATION_SWARM
         if ( (  event.data.cmd != CMD_STATE ) && ( event.data.cmd != CMD_ALIAS ) ) {
           printf("\n\n-----------------------------\nmy friend sends some data...\n" );
           event.macAddr.print();
@@ -1100,7 +1101,7 @@ void SwOSSwarm::registerMe( MacAddr destinationMac, FtSwarmSerialNumber_t destin
 
 void SwOSSwarm::cmdJoin( SwOSCom *com, uint8_t source, uint8_t affected ) {
 
-  #ifdef DEBUG_COMMUNICATION
+  #ifdef DEBUG_COMMUNICATION_SWARM
     printf( "CMD_SWARMJOIN PIN %d swarmName %s\n", com->data.joinCmd.pin, com->data.joinCmd.swarmName );
   #endif
 
@@ -1167,7 +1168,7 @@ void SwOSSwarm::cmdJoin( SwOSCom *com, uint8_t source, uint8_t affected ) {
   }
     
   // send acknowledge
-  #ifdef DEBUG_COMMUNICATION
+  #ifdef DEBUG_COMMUNICATION_SWARM
     printf( "CMD_SWARMJOIN accepted.\n" ); 
   #endif
 
@@ -1291,7 +1292,7 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
   if ( ( ( com->data.cmd == CMD_ANYBODYOUTTHERE ) || ( com->data.cmd == CMD_GOTYOU ) ) &&
        ( ( com->data.registerCmd.IAmKelda ) || ( Ctrl[0]->IAmKelda ) ) ) {
 
-    #ifdef DEBUG_COMMUNICATION
+    #ifdef DEBUG_COMMUNICATION_SWARM
       printf( "register msg %d source: %d affected: %d maxCtrl %d\n", com->data.cmd, source, affected, maxCtrl );
     #endif
 
@@ -1299,7 +1300,7 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
     if ( ( !Ctrl[source] ) || 
          ( ( Ctrl[source]->comState == ASKFORDETAILS ) && nvs.IAmKelda ) ) {
 
-      #ifdef DEBUG_COMMUNICATION
+      #ifdef DEBUG_COMMUNICATION_SWARM
       printf( "add a new controller type %d at %d\n", com->data.registerCmd.ctrlType, source);
       #endif
 

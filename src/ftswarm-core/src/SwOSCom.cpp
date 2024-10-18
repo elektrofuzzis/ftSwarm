@@ -26,7 +26,16 @@
 
 #include <esp_debug_helpers.h>
 
-#include <debug.h>
+
+// Debug options:
+// DEBUG_COMMUNICATION    show RX-Communication
+// DEBUG_TXCOMMUNICATION  show TX-Connumication
+// DEBUG_MONITOR          just monitor the bus and show communication
+
+// #define DEBUG_COMMUNICATION
+// #define DEBUG_COMMUNICATION_DETAIL
+// #define DEBUG_TXCOMMUNICATION
+// #define DEBUG_MONITOR
 
 #define min(a,b) ((a)<(b)?(a):(b))
 #define max(a,b) ((a)>(b)?(a):(b))
@@ -163,7 +172,7 @@ SwOSCom::SwOSCom( MacAddr macAddr, const uint8_t *buffer, int length):SwOSCom() 
   bool isJoin = ( data.secret == DEFAULTSECRET ) && ( data.cmd == CMD_SWARMJOIN );
   bool isAck  = ( ( data.secret == DEFAULTSECRET ) && ( data.cmd == CMD_ACK ) );
 
-  #ifdef DEBUG_COMMUNICATION
+  #ifdef DEBUG_COMMUNICATION_DETAIL
     printf("isvalid: isJoin = %d, isAck = %d, length = %d, size = %d, cmd = %d, version = %d\n",
             isJoin, isAck, length, size(), data.cmd, data.version);
   #endif
@@ -285,6 +294,7 @@ void SwOSCom::send( void ) {
 
   #ifdef DEBUG_MONITOR
     // Monitor mode, don't send data
+    printf("nix\n");
     return;
   #endif
 
@@ -346,7 +356,7 @@ bool _OnDataRecv( SwOSCom *payload ) {
     return false;
   }
 
-  #ifdef DEBUG_COMMUNICATION
+  #ifdef DEBUG_COMMUNICATION_DETAIL
     printf("\n_OnDataRecv buffer me: %d:\n", nvs.serialNumber);
     payload->print();
   #endif
@@ -359,7 +369,7 @@ bool _OnDataRecv( SwOSCom *payload ) {
 
   } else if ( ( payload->data.affectedSN != nvs.serialNumber ) && ( payload->data.affectedSN != broadcastSN )  && ( !nvs.IAmKelda ) ) {
     // direct communication to somebody else
-    #ifdef DEBUG_COMMUNICATION
+    #ifdef DEBUG_COMMUNICATION_DETAIL
       printf( "_onDataRecv: to someone else.\n");
     #endif
 

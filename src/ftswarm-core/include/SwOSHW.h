@@ -232,6 +232,37 @@ class SwOSDigitalInput : public SwOSInput {
 
 /***************************************************
  *
+ *   SwOSLidarInput
+ *
+ ***************************************************/
+
+class SwOSLidarInput : public SwOSInput {
+
+  protected:
+
+    virtual void _setupLocal();
+    virtual void setSensorTypeLocal( FtSwarmSensor_t sensorType );
+
+  public:
+ 
+	  SwOSLidarInput(const char *name, uint8_t port, SwOSCtrl *ctrl );
+  
+    // administrative stuff
+	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_DIGITALINPUT; };
+    virtual void jsonize( JSONize *json, uint8_t id);
+
+    // read sensor
+	  virtual void read();
+    virtual void setReading( int32_t newValue );
+
+    // external commands
+    virtual void            setSensorType( FtSwarmSensor_t sensorType );  // set sensor type
+    virtual void            setValue( int32_t value );                    // set value by an external call
+
+};
+
+/***************************************************
+ *
  *   SwOSCounter
  *
  ***************************************************/
