@@ -4008,14 +4008,14 @@ SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local,
       case FTSWARMJST_1V0:      Wire.begin( 13, 12 ); break;
 
       case FTSWARMCONTROL_1V3: 
-      case FTSWARMJST_1V15:     Wire.begin( 21, 22 ); break;  
+      case FTSWARMJST_1V15:     Wire.begin( 21, 22 ); printf("wire.begin\n"); break;  
 
       case FTSWARMXL_1V00:      Wire.begin( 33, 21 ); break;
 
       case FTSWARMRS_2V0: 
       case FTSWARMRS_2V1:       Wire.begin( 8, 9 );   break;
   
-      default:                  break;
+      default:                  break; // CAM
 
     }
 
@@ -4225,7 +4225,7 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
     case FTSWARMJST_1V15:   servos = ( extensionPort == FTSWARM_EXT_SERVO ) ? 3:1;
                             break;
 
-    default:                servos = 0;
+    default:                servos = ( extensionPort == FTSWARM_EXT_SERVO ) ? 2:0;
                             break;
   }
 

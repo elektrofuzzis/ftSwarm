@@ -42,17 +42,20 @@ void SwOSNVS::initialSetup( void ) {
   version = NVSVERSION;
 
   switch ( enterNumber(("Controller Type\n (1) ftSwarm\n (2) ftSwarmRS\n (3) ftSwarmControl\n (4) ftSwarmCAM\n (5) ftSwarmPwrDrive\n (6) ftSwarmDuino\n (7) ftSwarmXL\n (8) special config\n>"), 0, 1, 8 ) ) {
-    case 1:  controllerType = FTSWARM;         CPU = FTSWARMJST_1V15;       RGBLeds = 2; break;
-    case 2:  controllerType = FTSWARM;         CPU = FTSWARMRS_2V1;         RGBLeds = 2; break;
-    case 3:  controllerType = FTSWARMCONTROL;  CPU = FTSWARMCONTROL_1V3;    RGBLeds = 2; break;
-    case 4:  controllerType = FTSWARMCAM;      CPU = FTSWARMCAM_3V12;       RGBLeds = 2; break;
-    case 5:  controllerType = FTSWARMPWRDRIVE; CPU = FTSWARMPWRDRIVE_1V141; RGBLeds = 2; break;
-    case 6:  controllerType = FTSWARMDUINO;    CPU = FTSWARMDUINO_1V141;    RGBLeds = 2; break;
-    case 7:  controllerType = FTSWARM;         CPU = FTSWARMXL_1V00;        RGBLeds = 2; break;
+    case 1:  controllerType = FTSWARM;         CPU = FTSWARMJST_1V15;       break;
+    case 2:  controllerType = FTSWARM;         CPU = FTSWARMRS_2V1;         break;
+    case 3:  controllerType = FTSWARMCONTROL;  CPU = FTSWARMCONTROL_1V3;    break;
+    case 4:  controllerType = FTSWARMCAM;      CPU = FTSWARMCAM_3V12;       break;
+    case 5:  controllerType = FTSWARMPWRDRIVE; CPU = FTSWARMPWRDRIVE_1V141; break;
+    case 6:  controllerType = FTSWARMDUINO;    CPU = FTSWARMDUINO_1V141;    break;
+    case 7:  controllerType = FTSWARM;         CPU = FTSWARMXL_1V00;        break;
     default: // manual configuration
              controllerType = (FtSwarmController_t) (enterNumber(("controller Type\n (1) ftSwarm\n (2) ftSwarmControl\n (3) ftSwarmCAM\n (4) ftSwarmPwrDrive\n (5) ftSwarmDuino\n\n>"), 0, 1, 5 ) - 1 );
              CPU = ( FtSwarmVersion_t ) ( enterNumber(("CPU Version\n (1) FTSWARMJST_1V0\n (2) FTSWARMCONTROL_1V3\n (3) FTSWARMJST_1V15\n (4) FTSWARMRS_2V0\n (5) FTSWARMRS_2V1\n (6) FTSWARMCAM_3V12\n (7) FTSWARMDUINO_1V141\n (8) FTSWARMPWRDRIVE_1V141\n (9) FTSWARMXL_1V00"), 0, 1, 9 ) -1 );
   }
+
+  RGBLeds = 2; 
+  extensionPort = ( controllerType == FTSWARMCONTROL ) ? FTSWARM_EXT_I2C_MASTER : FTSWARM_EXT_OFF; 
 
   serialNumber = enterNumber("Serial number [1..65535]>", 0, 1, 65535 );
 
@@ -196,13 +199,14 @@ bool SwOSNVS::load() {
   // webUI
   nvs_get_u8 ( my_handle, "webUI", (uint8_t *) &webUI );
 
-  // sPort
+  // ExtentionPort
+  nvs_get_u32( my_handle, "extensionPort", (uint32_t *) &extensionPort);
+  if ( ( controllerType == FTSWARMCONTROL ) && ( extensionPort == FTSWARM_EXT_OFF ) ) { extensionPort = FTSWARM_EXT_I2C_MASTER; }
   nvs_get_u8 ( my_handle, "I2CAddr", &I2CAddr );
   nvs_get_u8 ( my_handle, "interruptLine", &interruptLine );
   nvs_get_i16( my_handle, "interruptLow",  &interruptOnOff[0] );
   nvs_get_i16( my_handle, "interruptHigh", &interruptOnOff[1] );
   nvs_get_u8 ( my_handle, "I2CRegisters", &I2CRegisters );
-  nvs_get_u32( my_handle, "extensionPort", (uint32_t *) &extensionPort);
   nvs_get_u8 ( my_handle, "Gyro",    (uint8_t *) &gyro);
 
   return true;
