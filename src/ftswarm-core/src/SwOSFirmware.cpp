@@ -81,7 +81,12 @@ void ExtensionMenu() {
       case EXTMENUMODE: // ExtMode
         anythingChanged = true;
         if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
-          nvs.extensionPort = (FtSwarmExtMode_t) enterNumber( "(0) off (1) I2C-Master: ", nvs.extensionPort, 0, 1 );
+          FtSwarmExtMode_t newMode =  (FtSwarmExtMode_t) enterNumber( "(-) off (1) I2C-Master (-) I2C-Slave (3) Gyro MCU6040 (-) Outputs (-) Servos (6) Lidar: ", nvs.extensionPort, 0, 6 );
+          if ( ( newMode == FTSWARM_EXT_I2C_MASTER ) ||
+               ( newMode == FTSWARM_EXT_MCU6040  ) ||
+               ( newMode == FTSWARM_EXT_LIDAR ) ) {
+               nvs.extensionPort = newMode;
+          }
         } else {
           nvs.extensionPort = (FtSwarmExtMode_t) enterNumber( "(0) off (1) I2C-Master (2) I2C-Slave (3) Gyro MCU6040 (4) Outputs (5) Servos (6) Lidar: ", nvs.extensionPort, 0, 6 );
         }

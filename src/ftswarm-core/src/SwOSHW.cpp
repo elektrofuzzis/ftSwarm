@@ -21,6 +21,7 @@
 #include <esp_log.h>
 #include <freertos/semphr.h>
 #include <VL53L0X.h>
+#include <MPU6050.h>
 
 #include "SwOS.h"
 #include "SwOSHAL.h"
@@ -669,7 +670,7 @@ void SwOSLidarInput::_setupLocal() {
 
 void SwOSLidarInput::setSensorType( FtSwarmSensor_t sensorType ) {
 
-  // due to send norallyOpen to remote controllers, don't call super class
+  // due to send normallyOpen to remote controllers, don't call super class
 
   _sensorType   = sensorType;
 
@@ -3993,11 +3994,18 @@ SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local,
   gyro = NULL;
   I2C  = NULL;
 
-  if ( local ) {
+  // Start I2C, if extention port is configured as I2C. 
+  // ToDo I2CSlave 
+  if ( ( local ) && 
+       ( ( nvs.extensionPort == FTSWARM_EXT_I2C_MASTER ) ||
+         ( nvs.extensionPort == FTSWARM_EXT_MCU6040 ) ||
+         ( nvs.extensionPort == FTSWARM_EXT_LIDAR ) 
+       )
+      ) {
     
     switch (CPU) {
 
-      case FTSWARMJST_1V0:      ( 13, 12 ); break;
+      case FTSWARMJST_1V0:      Wire.begin( 13, 12 ); break;
 
       case FTSWARMCONTROL_1V3: 
       case FTSWARMJST_1V15:     Wire.begin( 21, 22 ); break;  
@@ -4005,14 +4013,7 @@ SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local,
       case FTSWARMXL_1V00:      Wire.begin( 33, 21 ); break;
 
       case FTSWARMRS_2V0: 
-      case FTSWARMRS_2V1:       // use nvs parameters, since it's a local one
-                                if ( ( nvs.extensionPort == FTSWARM_EXT_I2C_MASTER ) ||
-                                     ( nvs.extensionPort == FTSWARM_EXT_MCU6040 ) ||
-                                     ( nvs.extensionPort == FTSWARM_EXT_LIDAR ) ) {
-                                     printf("Wire.begin\n"); 
-                                    Wire.begin( 8, 9 ); 
-                                }
-                                break;
+      case FTSWARMRS_2V1:       Wire.begin( 8, 9 );   break;
   
       default:                  break;
 
