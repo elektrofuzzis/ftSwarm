@@ -1931,29 +1931,6 @@ void SwOSServo::_setupLocal() {
 
   _SERVO = SERVO[_ctrl->getCPU()][_port];
 
-/*
-  switch ( _ctrl->getCPU() ) {
-    case FTSWARMRS_2V1:
-      if (_port == 0 ) _SERVO = xGPIO_NUM_47;
-      else             _SERVO = GPIO_NUM_15;
-      break;
-
-    case FTSWARMRS_2V0: 
-      _SERVO = xGPIO_NUM_47;
-      break;
-
-    case FTSWARMCONTROL_1V3: 
-      _SERVO = GPIO_NUM_33;
-      break;
-
-    default:
-      _SERVO = xGPIO_NUM_25;
-      break;
-      
-  }
-
-  */
-
   // set digital port  to output
   gpio_config_t io_conf = {};
   io_conf.intr_type = GPIO_INTR_DISABLE;
@@ -4222,6 +4199,7 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
                             break;
 
     case FTSWARMRS_2V0:
+    case FTSWARMJST_1V0:
     case FTSWARMJST_1V15:   servos = ( extensionPort == FTSWARM_EXT_SERVO ) ? 3:1;
                             break;
 
