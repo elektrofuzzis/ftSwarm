@@ -95,8 +95,11 @@ typedef enum { FTSWARM_NOTOGGLE, FTSWARM_TOGGLEUP, FTSWARM_TOGGLEDOWN } FtSwarmT
 // alignment
 typedef enum { FTSWARM_ALIGNLEFT, FTSWARM_ALIGNCENTER, FTSWARM_ALIGNRIGHT } FtSwarmAlign_t;
 
+// Gyro types
+typedef enum { FTSWARM_GYRO_OFF, FTSWARM_GYRO_LSM6, FTSWARM_GYRO_MPU6050 } FtSwarmGyroMode_t;
+
 // Ext Port modes
-typedef enum { FTSWARM_EXT_OFF, FTSWARM_EXT_I2C_MASTER, FTSWARM_EXT_I2C_SLAVE, FTSWARM_EXT_MCU6040, FTSWARM_EXT_OUTPUT, FTSWARM_EXT_SERVO, FTSWARM_EXT_LIDAR } FtSwarmExtMode_t;
+typedef enum { FTSWARM_EXT_OFF, FTSWARM_EXT_I2C_MASTER, FTSWARM_EXT_I2C_SLAVE, FTSWARM_EXT_OUTPUT, FTSWARM_EXT_SERVO, FTSWARM_EXT_LIDAR } FtSwarmExtMode_t;
 
 // trigger events
 typedef enum { FTSWARM_TRIGGERUP, FTSWARM_TRIGGERDOWN, FTSWARM_TRIGGERVALUE, FTSWARM_TRIGGERI2CREAD, FTSWARM_TRIGGERI2CWRITE, FTSWARM_MAXTRIGGER } FtSwarmTrigger_t;
@@ -530,6 +533,14 @@ class FtSwarmI2C : public FtSwarmIO {
     void    setRegister(uint8_t reg, uint8_t value);
 
     void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 ); 
+
+};
+
+class FtSwarmGyro : public FtSwarmIO {
+  // LSM6/MPU6050 Gyro
+  public:
+    FtSwarmGyro( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
+    FtSwarmGyro( const char *name );
 
 };
 

@@ -1,0 +1,103 @@
+/*
+ * SwOSHWDigital.h
+ *
+ * Digital inputs hardware implementation
+ * 
+ * (C) 2021-25 Christian Bergschneider & Stefan Fuss
+ * 
+ */
+ 
+#pragma once
+
+#include "SwOSHWBaseIO.h"
+ 
+/***************************************************
+ *
+ *   SwOSDigitalInput
+ *
+ ***************************************************/
+
+ class SwOSDigitalInput : public SwOSInput {
+
+  protected:
+    gpio_num_t      _PUA2   = GPIO_NUM_NC;
+    gpio_num_t      _USTX   = GPIO_NUM_NC;
+    FtSwarmToggle_t _toggle = FTSWARM_NOTOGGLE;
+    bool            _normallyOpen = true;
+
+    virtual void _setupLocal();
+    virtual void setSensorTypeLocal( FtSwarmSensor_t sensorType );
+
+  public:
+ 
+	  SwOSDigitalInput(const char *name, uint8_t port, SwOSCtrl *ctrl );
+  
+    // administrative stuff
+	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_DIGITALINPUT; };
+    virtual void jsonize( JSONize *json, uint8_t id);
+
+    // read sensor
+	  virtual void read();
+    virtual void setReading( int32_t newValue );
+
+    // external commands
+    virtual void            setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen );  // set sensor type
+    virtual void            setValue( int32_t value );                                       // set value by an external call
+    virtual FtSwarmToggle_t getToggle( void );                                               // check, on toggling signals
+
+};
+
+/***************************************************
+ *
+ *   SwOSButton
+ *
+ ***************************************************/
+
+ class SwOSButton : public SwOSIO, public SwOSEventInput {
+	bool              _lastState;
+  FtSwarmToggle_t   _toggle;
+public:
+  // constructor
+	SwOSButton(const char *name, uint8_t port, SwOSCtrl *ctrl);
+  
+  // administrative stuff
+  virtual FtSwarmIOType_t getIOType() { return FTSWARM_BUTTON; };
+  virtual char *    getIcon()   { return (char *) "12_button.svg"; };
+	virtual void jsonize( JSONize *json, uint8_t id);
+
+  // commands
+	virtual FtSwarmToggle_t getToggle();
+	virtual bool getState();
+  virtual void setState( bool state, bool clearToggle = false );
+};
+
+/***************************************************
+ *
+ *   SwOSHC165
+ *
+ ***************************************************/
+
+class SwOSHC165 : public SwOSIO {
+protected:
+	gpio_num_t _LD, _CS, _CLK, _MISO;
+	uint8_t    _lastValue;
+
+  // local HW procedures
+  virtual void _setupLocal();
+
+public:
+
+  // constructor
+	SwOSHC165(const char *name, SwOSCtrl *ctrl);
+
+  // administrative stuff
+  virtual FtSwarmIOType_t getIOType() { return FTSWARM_HC165; };
+
+	virtual void read();
+
+  // commands
+  virtual void    setValue( uint8_t value ) { _lastValue = value; };
+  virtual uint8_t getValue( uint8_t bit )   { return _lastValue && 1<<bit; };
+  virtual uint8_t getValue()                { return _lastValue; };
+
+};

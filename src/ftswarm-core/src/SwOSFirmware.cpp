@@ -8,13 +8,17 @@
  */
 
 #include "SwOSFirmware.h"
+
+#include <WiFi.h>
+
 #include "SwOS.h"
 #include "SwOSSwarm.h"
 #include "SwOSNVS.h"
 #include "easyKey.h"
 #include "SwOSCLI.h"
 
-const char EXTMODE[7][14] = { "off", "I2C-Master", "I2C-Slave", "Gyro MPU-6050", "Outputs", "Servos", "Lidar" };
+const char EXTMODE[7][14] = { "off", "I2C-Master", "I2C-Slave", "Outputs", "Servos", "Lidar", "" }; // "" just to avoid seg faults
+const char GYRO[3][8]     = { "off", "LSM6", "MPU6040"};
 const char ONOFF[2][5]    = { "off", "on" };
 const char OFFM1M2[3][5]  = { "off", "M1", "M2" };
 const char WIFI[3][12]    = { "off", "AP-Mode", "Client-Mode"};
@@ -66,7 +70,7 @@ void ExtensionMenu() {
     }
 
     // internal gyro is only available at ftSwarmRS
-    if ( ( nvs.CPU == FTSWARMRS_2V0 ) || ( nvs.CPU == FTSWARMRS_2V1 ) ) menu.add("internal Gyro", ONOFF[nvs.gyro], EXTMENUGYRO );
+    if ( ( nvs.CPU == FTSWARMRS_2V0 ) || ( nvs.CPU == FTSWARMRS_2V1 ) || ( nvs.CPU == FTSWARMCONTROL_1V3 ) ) menu.add("Gyro", GYRO[nvs.gyroMode], EXTMENUGYRO );
 
     switch( menu.userChoice() ) {
       
@@ -81,20 +85,20 @@ void ExtensionMenu() {
       case EXTMENUMODE: // ExtMode
         anythingChanged = true;
         if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
-          FtSwarmExtMode_t newMode =  (FtSwarmExtMode_t) enterNumber( "(-) off (1) I2C-Master (-) I2C-Slave (3) Gyro MCU6040 (-) Outputs (-) Servos (6) Lidar: ", nvs.extensionPort, 0, 6 );
+          FtSwarmExtMode_t newMode =  (FtSwarmExtMode_t) enterNumber( "(-) off (1) I2C-Master (-) I2C-Slave (-) Outputs (-) Servos (5) Lidar: ", nvs.extensionPort, 0, 5 );
           if ( ( newMode == FTSWARM_EXT_I2C_MASTER ) ||
-               ( newMode == FTSWARM_EXT_MCU6040  ) ||
                ( newMode == FTSWARM_EXT_LIDAR ) ) {
                nvs.extensionPort = newMode;
           }
         } else {
-          nvs.extensionPort = (FtSwarmExtMode_t) enterNumber( "(0) off (1) I2C-Master (2) I2C-Slave (3) Gyro MCU6040 (4) Outputs (5) Servos (6) Lidar: ", nvs.extensionPort, 0, 6 );
+          nvs.extensionPort = (FtSwarmExtMode_t) enterNumber( "(0) off (1) I2C-Master (2) I2C-Slave (3) Outputs (4) Servos (5) Lidar: ", nvs.extensionPort, 0, 5 );
         }
         break;
 
       case EXTMENUGYRO: // Gyro
         anythingChanged = true;
-        nvs.gyro = (bool) enterNumber( "(0) off (1) on: ", nvs.gyro, 0, 1 );
+        nvs.gyroMode = (FtSwarmGyroMode_t) enterNumber( "(0) off (1) LSM6 (2) MPU6050: ", nvs.gyroMode, 0, 2 );
+        if ( nvs.gyroMode == FTSWARM_GYRO_MPU6050 ) nvs.extensionPort = FTSWARM_EXT_I2C_MASTER;
         break;
 
       case EXTMENUI2C: // I2C Addr

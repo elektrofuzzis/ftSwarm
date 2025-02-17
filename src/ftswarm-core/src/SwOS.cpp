@@ -983,6 +983,14 @@ void FtSwarmI2C::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int
 
 };
 
+// **** FtSwarmGyro   ****
+
+FtSwarmGyro::FtSwarmGyro( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port ) : FtSwarmIO( serialNumber, port, FTSWARM_GYRO ) {
+}
+    
+FtSwarmGyro::FtSwarmGyro( const char *name ) : FtSwarmIO( name, FTSWARM_GYRO ) {
+}
+
 // **** FtSwarmServo ****
 
 FtSwarmServo::FtSwarmServo( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmIO( serialNumber, port, FTSWARM_SERVO) {};

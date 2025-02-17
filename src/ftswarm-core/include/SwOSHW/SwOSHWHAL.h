@@ -1,15 +1,16 @@
 /*
- * SwOSHAL.h
+ * SwOSHWHAL.h
  *
  * some useful hardware abstraction
  * 
- * (C) 2021/24 Christian Bergschneider & Stefan Fuss
+ * (C) 2021-25 Christian Bergschneider & Stefan Fuss
  * 
  */
  
 #pragma once
 
 #include <driver/gpio.h>
+#include <driver/adc.h>
 
 // handle different plattforms
 #if CONFIG_IDF_TARGET_ESP32S3
@@ -87,21 +88,3 @@ const gpio_num_t SERVO[9][4] =
     /* FTSWARMXL_1V00 */       { GPIO_NUM_33,   GPIO_NUM_21, GPIO_NUM_NC, GPIO_NUM_NC}
   };
 
-// CAMERA Pins
-#define PWDN_GPIO_NUM     GPIO_NUM_NC
-#define RESET_GPIO_NUM    GPIO_NUM_NC
-
-#define Y4_GPIO_NUM       GPIO_NUM_14
-#define Y3_GPIO_NUM       GPIO_NUM_13
-#define Y5_GPIO_NUM       GPIO_NUM_35
-#define Y2_GPIO_NUM       GPIO_NUM_7
-#define Y6_GPIO_NUM       GPIO_NUM_39
-#define PCLK_GPIO_NUM     GPIO_NUM_20
-#define Y7_GPIO_NUM       GPIO_NUM_38
-#define Y8_GPIO_NUM       GPIO_NUM_37
-#define XCLK_GPIO_NUM     GPIO_NUM_4
-#define Y9_GPIO_NUM       GPIO_NUM_36
-#define HREF_GPIO_NUM     GPIO_NUM_21
-#define VSYNC_GPIO_NUM    GPIO_NUM_5
-#define SIOC_GPIO_NUM     GPIO_NUM_19
-#define SIOD_GPIO_NUM     GPIO_NUM_18

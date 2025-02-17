@@ -106,7 +106,7 @@ SwOSNVS::SwOSNVS() {
   interruptOnOff[0]  = 0;
   interruptOnOff[1]  = 255;
   I2CRegisters       = MAXI2CREGISTERS;
-  gyro               = false;
+  gyroMode           = FTSWARM_GYRO_OFF;
 
   // initialize zero positions
   for (uint8_t i=0;i<2;i++)
@@ -207,7 +207,7 @@ bool SwOSNVS::load() {
   nvs_get_i16( my_handle, "interruptLow",  &interruptOnOff[0] );
   nvs_get_i16( my_handle, "interruptHigh", &interruptOnOff[1] );
   nvs_get_u8 ( my_handle, "I2CRegisters", &I2CRegisters );
-  nvs_get_u8 ( my_handle, "Gyro",    (uint8_t *) &gyro);
+  nvs_get_u32( my_handle, "GyroMode",    (uint32_t *) &gyroMode);
 
   return true;
 
@@ -273,7 +273,7 @@ void SwOSNVS::save( bool writeAll ) {
   ESP_ERROR_CHECK( nvs_set_i16( my_handle, "interruptHigh", interruptOnOff[1] ) );
   ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "I2CRegisters", I2CRegisters ) );
   ESP_ERROR_CHECK( nvs_set_u32( my_handle, "extensionPort", (uint32_t) extensionPort) );
-  ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "Gyro",    (uint8_t)  gyro) );
+  ESP_ERROR_CHECK( nvs_set_u32( my_handle, "GyroMode",          (uint32_t)  gyroMode) );
 
   // commit
   ESP_ERROR_CHECK( nvs_commit( my_handle ) );
@@ -316,7 +316,7 @@ void SwOSNVS::factorySettings( void ) {
 
   extensionPort      = FTSWARM_EXT_OFF;
   I2CAddr            = 0x66;
-  gyro               = false;
+  gyroMode           = FTSWARM_GYRO_OFF;
 
   eventList.reset();
 
