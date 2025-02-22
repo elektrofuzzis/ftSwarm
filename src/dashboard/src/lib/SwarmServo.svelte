@@ -4,7 +4,11 @@
     import Slider from "./Slider.svelte";
     import {ftSwarm} from "../api/FtSwarm";
 
-    export let input: ServoIo;
+  interface Props {
+    input: ServoIo;
+  }
+
+  let { input = $bindable() }: Props = $props();
 </script>
 
 <SwarmCtrlBase colspan={4} descriptor="Servo" io={input}>

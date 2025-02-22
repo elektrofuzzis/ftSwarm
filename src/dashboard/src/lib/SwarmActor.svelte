@@ -5,14 +5,18 @@
     import {ftSwarm} from "../api/FtSwarm";
     import {swarmApiData} from "../stores.ts";
 
-    export let input: ActorIo;
-    let disabled: boolean;
-    $: disabled = !$swarmApiData.auth.status;
+  interface Props {
+    input: ActorIo;
+  }
+
+  let { input = $bindable() }: Props = $props();
+    let disabled: boolean = $derived(!$swarmApiData.auth.status);
+    
 </script>
 
 <SwarmCtrlBase colspan={2} descriptor={input.subType} io={input}>
     <div class="container">
-        <select bind:value={input.motiontype} {disabled} on:change={(_) => {
+        <select bind:value={input.motiontype} {disabled} onchange={(_) => {
             ftSwarm.debouncedUpdateMotor(input.id, input.motiontype, input.speed);
         }}>
             <option value={0}>COAST</option>

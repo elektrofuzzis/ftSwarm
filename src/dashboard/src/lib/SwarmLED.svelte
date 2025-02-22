@@ -6,11 +6,15 @@
     import {ftSwarm} from "../api/FtSwarm";
     import {swarmApiData} from "../stores.ts";
 
-    export let input: LedIo;
-    let inputRef;
+  interface Props {
+    input: LedIo;
+  }
+
+  let { input = $bindable() }: Props = $props();
+    let inputRef = $state();
     let timeout: NodeJS.Timeout;
-    let disabled: boolean;
-    $: disabled = !$swarmApiData.auth.status;
+    let disabled: boolean = $derived(!$swarmApiData.auth.status);
+    
 
     onMount(() => {
         clearTimeout(timeout);
@@ -26,7 +30,7 @@
 
 <SwarmCtrlBase colspan={2} descriptor="LED" io={input}>
     <div class="container">
-        <input bind:this={inputRef} type="color" {disabled} on:input={() => {
+        <input bind:this={inputRef} type="color" {disabled} oninput={() => {
             ftSwarm.debouncedUpdateLed(input.id, inputRef.value, input.brightness);
         }}/>
         <Slider bind:value={input.brightness} max={255} min={0} oninput={() => {

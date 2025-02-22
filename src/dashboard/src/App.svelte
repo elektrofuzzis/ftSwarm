@@ -6,8 +6,8 @@
     import Swarm from "./lib/Swarm.svelte";
     import Login from "./lib/Login.svelte";
 
-    let swarmLoadingPromise = new Promise(() => {
-    });
+    let swarmLoadingPromise = $state(new Promise(() => {
+    }));
 
     onMount(() => {
         swarmLoadingPromise = ftSwarm.load();

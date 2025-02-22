@@ -2,7 +2,11 @@
     import type {InputIo} from "../swarm";
     import SwarmCtrlBase from "./SwarmCtrlBase.svelte";
 
-    export let input: InputIo;
+    interface Props {
+        input: InputIo;
+    }
+
+    let { input }: Props = $props();
 </script>
 
 <SwarmCtrlBase io={input} descriptor={input.subType}>

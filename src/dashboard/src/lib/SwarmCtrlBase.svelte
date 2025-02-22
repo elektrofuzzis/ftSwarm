@@ -1,9 +1,19 @@
 <script lang="ts">
     import type {BaseIo} from "../swarm";
 
-    export let io: BaseIo;
-    export let descriptor: string;
-    export let colspan: number;
+    interface Props {
+        io: BaseIo;
+        descriptor: string;
+        colspan: number;
+        children?: import('svelte').Snippet;
+    }
+
+    let {
+        io,
+        descriptor,
+        colspan,
+        children
+    }: Props = $props();
 </script>
 
 <div class="card colspan-when-large-enough" style={colspan > 1 ? `grid-column: span ${colspan}` : ''}>
@@ -18,7 +28,7 @@
             </div>
         </div>
         <div class="card__centergroup">
-            <slot/>
+            {@render children?.()}
         </div>
     </div>
 </div>

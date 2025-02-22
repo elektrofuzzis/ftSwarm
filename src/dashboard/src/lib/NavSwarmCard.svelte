@@ -2,10 +2,14 @@
     import type {Swarm} from "../swarm";
     import {currentSwarm} from "../stores.js";
 
-    export let swarm: Swarm;
+  interface Props {
+    swarm: Swarm;
+  }
+
+  let { swarm }: Props = $props();
 </script>
 
-<div class="card" on:click={() => currentSwarm.set(swarm.id)}>
+<div class="card" onclick={() => currentSwarm.set(swarm.id)}>
     <div class={"card__image " + (swarm.id === $currentSwarm ? "card__image--active" : "")}>
         {#if swarm.type === 'ftSwarm'}
             <svg width="49" height="48" viewBox="0 0 49 48" fill="none" xmlns="http://www.w3.org/2000/svg">

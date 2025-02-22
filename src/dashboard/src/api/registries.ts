@@ -1,0 +1,20 @@
+export enum FtSwarmIOType {
+    UNDEF = -1,
+    INPUT,
+    DIGITALINPUT,
+    ANALOGINPUT,
+    ACTOR,
+    BUTTON,
+    JOYSTICK,
+    PIXEL,
+    SERVO,
+    OLED,
+    GYRO,
+    HC165,
+    I2C,
+    CAM,
+    COUNTERINPUT,
+    ROTARYINPUT,
+    FREQUENCYINPUT,
+    MAXIOTYPE
+}

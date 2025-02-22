@@ -2,7 +2,11 @@
     import type {ButtonIo} from "../swarm";
     import SwarmCtrlBase from "./SwarmCtrlBase.svelte";
 
-    export let input: ButtonIo;
+  interface Props {
+    input: ButtonIo;
+  }
+
+  let { input }: Props = $props();
 </script>
 
 <SwarmCtrlBase descriptor="BUTTON" io={input} colspan={2}>

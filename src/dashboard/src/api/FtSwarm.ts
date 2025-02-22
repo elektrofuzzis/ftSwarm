@@ -3,7 +3,7 @@ import {nextToken} from "./auth";
 import Swal from "sweetalert2";
 import {get} from "svelte/store";
 
-const SWARM_API_BASE = window.location.origin === 'http://localhost:5173' ? 'http://172.16.16.132/api/' : window.location.origin + '/api/'
+const SWARM_API_BASE = window.location.origin + '/api/'
 let mouseDown = false;
 let lastRequest = 0;
 
@@ -14,10 +14,10 @@ window.addEventListener('mouseup', () => {
     return mouseDown = false;
 });
 
-function debounce(func, wait, immediate = false) {
-    let timeout;
+function debounce(func: (...args: any[]) => {}, wait: number, immediate = false) {
+    let timeout: number | null = null;
     let lastCall = 0;
-    return function (...args) {
+    return function (...args: any[]) {
         const context = this;
         sendTimeout.set(Date.now() + 1500);
         const later = function () {

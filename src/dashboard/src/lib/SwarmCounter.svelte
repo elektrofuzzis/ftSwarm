@@ -2,7 +2,11 @@
     import type {CounterIo, InputIo} from "../swarm";
     import SwarmCtrlBase from "./SwarmCtrlBase.svelte";
 
-    export let input: CounterIo;
+    interface Props {
+        input: CounterIo;
+    }
+
+    let { input }: Props = $props();
 
     let unit = input.icon === "28_frequency.svg" ? "Hz" : "";
 </script>

@@ -1,7 +1,12 @@
-<script>
+<script lang="ts">
     import FtSwarmImg from '../assets/ftSwarm.svg'
     import {swarmApiData} from "../stores";
     import NavSwarmCard from "./NavSwarmCard.svelte";
+    interface Props {
+        children?: import('svelte').Snippet;
+    }
+
+    let { children }: Props = $props();
 </script>
 
 <nav>
@@ -14,7 +19,7 @@
     </div>
 </nav>
 <main>
-    <slot/>
+    {@render children?.()}
 </main>
 <style lang="postcss">
   nav {

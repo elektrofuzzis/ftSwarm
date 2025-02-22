@@ -2,7 +2,11 @@
     import type {JoystickIo} from "../swarm";
     import SwarmCtrlBase from "./SwarmCtrlBase.svelte";
 
-    export let input: JoystickIo;
+  interface Props {
+    input: JoystickIo;
+  }
+
+  let { input }: Props = $props();
 </script>
 
 <SwarmCtrlBase colspan={2} descriptor="Joystick" io={input}>

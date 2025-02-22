@@ -52,13 +52,13 @@
 </script>
 
 {#if $swarmApiData.auth.status}
-    <div class="login-thumb" on:click={logout}>
+    <div class="login-thumb" onclick={logout}>
         <span>
             LOGOUT
         </span>
     </div>
 {:else}
-    <div class="login-thumb" on:click={login}>
+    <div class="login-thumb" onclick={login}>
         <span>
             LOGIN
         </span>
