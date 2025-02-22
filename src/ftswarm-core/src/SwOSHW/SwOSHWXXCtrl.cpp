@@ -16,7 +16,7 @@
  *
  ***************************************************/
 
- SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extensionPort, FtSwarmGyroMode_t gyroMode ) : SwOSCtrl (SN, macAddr, local, CPU, IAmKelda, extensionPort ) {
+ SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extensionPort, bool gyroOn ) : SwOSCtrl (SN, macAddr, local, CPU, IAmKelda, extensionPort ) {
 
   gyro = NULL;
   I2C  = NULL;
@@ -50,8 +50,12 @@
   // use parameter to handle remote devices correctly
   if ( extensionPort == FTSWARM_EXT_I2C_SLAVE ) { I2C = new SwOSI2C ( "I2C", this, nvs.I2CAddr ); };
 
-  if ( gyroMode != FTSWARM_GYRO_OFF) { gyro = new SwOSGyro( "GYRO", this, gyroMode ); }
-
+  // initialize gyro if available
+  if ( gyroOn  ) { 
+    if ( ( _CPU == FTSWARMRS_2V0 ) || ( _CPU == FTSWARMRS_2V1 ) ) gyro = new SwOSGyroLSM( "GYRO", this );
+    else                                                          gyro = new SwOSGyroMPU( "GYRO", this );
+  }
+  
 }
 
 SwOSSwarmXX::~SwOSSwarmXX() {
@@ -73,6 +77,20 @@ void SwOSSwarmXX::unsubscribe( void ) {
 
   if (gyro) gyro->unsubscribe();
   if (I2C)  I2C->unsubscribe();
+
+}
+
+bool SwOSSwarmXX::hasGyro( void ) {
+  // test if HW has a gyro
+
+  // already initialized or HW with integrated gyro
+  if ( ( gyro ) || 
+       ( _CPU == FTSWARMRS_2V0 ) ||
+       ( _CPU == FTSWARMRS_2V1 ) 
+     ) return true;
+
+  // check on MPU6050
+  return Wire.requestFrom( 0x68, 1 );
 
 }
 
@@ -239,7 +257,7 @@ bool SwOSSwarmXX::recvState( SwOSCom *com ) {
  *
  ***************************************************/
 
-SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extensionPort, FtSwarmGyroMode_t gyroMode ):SwOSSwarmXX( SN, macAddr, local, CPU, IAmKelda, extensionPort, gyroMode ) {
+SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extensionPort, bool gyro ):SwOSSwarmXX( SN, macAddr, local, CPU, IAmKelda, extensionPort, gyro ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
@@ -449,7 +467,7 @@ void SwOSSwarmJST::loadAliasFromNVS( nvs_handle_t my_handle ) {
  *
  ***************************************************/
 
-SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, int16_t zero[2][2], uint8_t displayType, FtSwarmExtMode_t extentionPort, FtSwarmGyroMode_t gyroMode ):SwOSSwarmXX( SN, macAddr, local, CPU,  IAmKelda, extentionPort, gyroMode ) {
+SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, int16_t zero[2][2], uint8_t displayType, FtSwarmExtMode_t extentionPort, bool gyroOn ):SwOSSwarmXX( SN, macAddr, local, CPU,  IAmKelda, extentionPort, gyroOn ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);

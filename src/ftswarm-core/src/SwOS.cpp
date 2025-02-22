@@ -11,6 +11,8 @@
 #include "SwOSSwarm.h"
 #include "easyKey.h"
 
+#include <MPU6050_6Axis_MotionApps20.h>
+
 FtSwarmIOType_t sensorType2IOType( FtSwarmSensor_t sensor2IOType ) {
 
   switch ( sensor2IOType ) {
@@ -990,6 +992,46 @@ FtSwarmGyro::FtSwarmGyro( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port
     
 FtSwarmGyro::FtSwarmGyro( const char *name ) : FtSwarmIO( name, FTSWARM_GYRO ) {
 }
+
+void FtSwarmGyro::getAcceleration( float *x, float *y, float *z) {
+  
+  if (!me) return;
+  
+  static_cast<SwOSGyro*>(me)->lock();
+  static_cast<SwOSGyro*>(me)->getAcceleration( x, y, z );
+  static_cast<SwOSGyro*>(me)->unlock();
+
+};
+
+void FtSwarmGyro::getQuaternion( float *w, float *x, float *y, float *z ) {
+  
+  if (!me) return;
+  
+  static_cast<SwOSGyro*>(me)->lock();
+  static_cast<SwOSGyro*>(me)->getQuaternion( w, x, y, z );
+  static_cast<SwOSGyro*>(me)->unlock();
+
+};
+
+void FtSwarmGyro::getEuler(float *alpha, float *beta, float *gamma, bool radiants )  {
+  
+  if (!me) return;
+  
+  static_cast<SwOSGyro*>(me)->lock();
+  static_cast<SwOSGyro*>(me)->getEuler( alpha, beta, gamma, radiants );
+  static_cast<SwOSGyro*>(me)->unlock();
+
+};
+
+void FtSwarmGyro::getYawPitchRoll(float *yaw, float *pitch, float *roll, bool radiants ) {
+  
+  if (!me) return;
+  
+  static_cast<SwOSGyro*>(me)->lock();
+  static_cast<SwOSGyro*>(me)->getYawPitchRoll( yaw, pitch, roll, radiants );
+  static_cast<SwOSGyro*>(me)->unlock();
+
+};
 
 // **** FtSwarmServo ****
 

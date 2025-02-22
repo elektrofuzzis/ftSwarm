@@ -18,7 +18,7 @@
 #include "SwOSCLI.h"
 
 const char EXTMODE[7][14] = { "off", "I2C-Master", "I2C-Slave", "Outputs", "Servos", "Lidar", "" }; // "" just to avoid seg faults
-const char GYRO[3][8]     = { "off", "LSM6", "MPU6040"};
+const char GYRO[3][8]     = { "off", "LSM6", "MPU6050"};
 const char ONOFF[2][5]    = { "off", "on" };
 const char OFFM1M2[3][5]  = { "off", "M1", "M2" };
 const char WIFI[3][12]    = { "off", "AP-Mode", "Client-Mode"};
@@ -69,8 +69,8 @@ void ExtensionMenu() {
       menu.add("I2C Registers", nvs.I2CRegisters, EXTMENUREG);
     }
 
-    // internal gyro is only available at ftSwarmRS
-    if ( ( nvs.CPU == FTSWARMRS_2V0 ) || ( nvs.CPU == FTSWARMRS_2V1 ) || ( nvs.CPU == FTSWARMCONTROL_1V3 ) ) menu.add("Gyro", GYRO[nvs.gyroMode], EXTMENUGYRO );
+    // gyro if available
+    if ( myOSSwarm.Ctrl[0]->hasGyro() ) menu.add("Gyro", ONOFF[nvs.gyro], EXTMENUGYRO );
 
     switch( menu.userChoice() ) {
       
@@ -97,8 +97,8 @@ void ExtensionMenu() {
 
       case EXTMENUGYRO: // Gyro
         anythingChanged = true;
-        nvs.gyroMode = (FtSwarmGyroMode_t) enterNumber( "(0) off (1) LSM6 (2) MPU6050: ", nvs.gyroMode, 0, 2 );
-        if ( nvs.gyroMode == FTSWARM_GYRO_MPU6050 ) nvs.extensionPort = FTSWARM_EXT_I2C_MASTER;
+        nvs.gyro = (FtSwarmGyroMode_t) enterNumber( "(0) off (1) on: ", nvs.gyro, 0, 1 );
+        if ( ( nvs.gyro ) && ( nvs.CPU != FTSWARMRS_2V0 ) && ( nvs.CPU != FTSWARMRS_2V1 ) ) nvs.extensionPort = FTSWARM_EXT_I2C_MASTER;
         break;
 
       case EXTMENUI2C: // I2C Addr
@@ -887,7 +887,7 @@ void mainMenu( void ) {
 
     menu.start( "Main Menu", 14 );
     menu.add("Wifi & Web UI", "", MAINMENUWEB );
-    if (WiFi.status() == WL_CONNECTED) {
+    if ( ( WiFi.status() == WL_CONNECTED ) || ( nvs.wifiMode == wifiAP ) ) {
       menu.add("Swarm Configuration", "", MAINMENUSWARM );
     }
     menu.add("Alias Names", "", MAINMENUALIAS );

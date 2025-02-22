@@ -20,25 +20,11 @@
  *
  ***************************************************/
 
-class SwOSGyro : public SwOSIO {
-  protected:
-    
-    LSM6DSRSensor *lsm = NULL;
-    MPU6050       *mpu = NULL;
-
-    int32_t _accelerometer[3];
-    int32_t _gyroscope[3];
-
-    virtual void _setupLocalLSM(); 
-    virtual void _setupLocalMPU(); 
-
-    virtual void _readLSM();
-    virtual void _readMPU();
-    
+ class SwOSGyro : public SwOSIO {
+   
   public:
     // constructor
-	  SwOSGyro(const char *name, SwOSCtrl *ctrl, FtSwarmGyroMode_t gyroMode );
-    ~SwOSGyro();
+	  SwOSGyro(const char *name, SwOSCtrl *ctrl);
 
     // administrative stuff
 	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_GYRO; };
@@ -48,8 +34,61 @@ class SwOSGyro : public SwOSIO {
     // Test, if I'm an Sensor
     virtual bool isSensor( void ) { return true; }
 
+    // interface
+    virtual void getAcceleration( float *x, float *y, float *z ) {};
+    virtual void getQuaternion( float *w, float *x, float *y, float *z ) {};
+    virtual void getYawPitchRoll(float *yaw, float *pitch, float *roll, bool radiants) {};
+    virtual void getEuler(float *alpha, float *beta, float *gamma, bool radiants ) {};
+    
+};
+
+/***************************************************
+ *
+ *   SwOSLSM
+ *
+ ***************************************************/
+
+ class SwOSGyroLSM : public SwOSGyro {
+  protected:
+
+    virtual void _setupLocal(); 
+
+  public:
+    // constructor
+	  SwOSGyroLSM(const char *name, SwOSCtrl *ctrl);
+    ~SwOSGyroLSM();
+
     // read sensor
     virtual void read();
+};
+
+/***************************************************
+ *
+ *   SwOSMPU
+ *
+ ***************************************************/
+
+ class SwOSGyroMPU : public SwOSGyro {
+  protected:
+    Quaternion  q;
+    VectorInt16 aa;
+    uint16_t packetSize;    // Expected MPU 6050 DMP packet size (default is 42 bytes)
+
+    virtual void _setupLocal(); 
+
+  public:
+    // constructor
+	  SwOSGyroMPU(const char *name, SwOSCtrl *ctrl );
+    ~SwOSGyroMPU();
+
+    // read sensor
+    virtual void read();
+
+    // interface
+    virtual void getAcceleration( float *x, float *y, float *z );
+    virtual void getQuaternion( float *w, float *x, float *y, float *z );
+    virtual void getYawPitchRoll(float *yaw, float *pitch, float *roll, bool radiants = false );
+    virtual void getEuler(float *alpha, float *beta, float *gamma, bool radiants = false );
 };
 
 /***************************************************

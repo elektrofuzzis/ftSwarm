@@ -54,7 +54,7 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
         case '\n':  break;
         case '\r':  strcpy( s, str );
                     free(str);
-                    if ( easyKeyEcho ) Serial.write('\n');
+                    if ( easyKeyEcho ) printf("\n");
                     return true;
         case '\b': 
         case 127:   if (i>0) { 
@@ -68,7 +68,7 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
                     break;
       
         case '\e': free(str);
-                   if ( easyKeyEcho ) Serial.write('\n');
+                   if ( easyKeyEcho ) printf("\n");
                    return false;
       
         default:   if ( ( ch < 255 ) && ( validChar( ch ) ) && ( i<size-1) ) {

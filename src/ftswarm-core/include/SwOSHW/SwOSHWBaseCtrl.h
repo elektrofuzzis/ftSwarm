@@ -96,6 +96,7 @@ public:
   virtual void identify( void );                                         // set LEDs to aquamarine / OLED to "it's me" to identify HW 
   virtual char *subscribe( char *ctrlName );                             // listen on user event data
   virtual bool changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarmIOType_t newIOType ); // change port's IO Type if possible
+  virtual bool hasGyro( void ) { return false; };                        // test if HW has a gyro
 
   virtual void read(); // run measurements
 

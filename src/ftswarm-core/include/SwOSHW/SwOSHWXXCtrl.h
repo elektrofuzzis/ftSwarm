@@ -32,7 +32,7 @@
     SwOSI2C      *I2C;
     
     // constructor, destructor
-    SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extentionPort, FtSwarmGyroMode_t gyroMode );
+    SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extentionPort, bool gyroOn );
     ~SwOSSwarmXX();
 
     virtual bool isInUse( void );
@@ -42,6 +42,7 @@
     virtual void factorySettings( void );                                  // reset factory settings  
     virtual void unsubscribe(void );                                       // unsubscribe all IOs
     virtual bool changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarmIOType_t newIOType ); // change port's IO Type if possible
+    virtual bool hasGyro( void );                                          // test if HW has a gyro
 
     virtual bool OnDataRecv( SwOSCom *com );     // data via espnow revceived
 	  virtual void read();                                                   // run measurements
@@ -67,7 +68,7 @@ class SwOSSwarmJST : public SwOSSwarmXX {
 	  SwOSServo *servo[MAXSERVOS];
 
     // constructor, destructor
-	  SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extentionPort, FtSwarmGyroMode_t gyroMode );
+	  SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extentionPort, bool gyroOn );
     SwOSSwarmJST( SwOSCom *com ); // constructor
     ~SwOSSwarmJST();
   
@@ -114,7 +115,7 @@ class SwOSSwarmControl : public SwOSSwarmXX {
 
     SwOSOLED     *oled;
  
-	  SwOSSwarmControl(FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, int16_t zero[2][2], uint8_t displayType, FtSwarmExtMode_t extentionPort, FtSwarmGyroMode_t gyroMode ); // constructor
+	  SwOSSwarmControl(FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, int16_t zero[2][2], uint8_t displayType, FtSwarmExtMode_t extentionPort, bool gyroOn ); // constructor
     SwOSSwarmControl( SwOSCom *com ); // constructor
     ~SwOSSwarmControl(); // destructor
   

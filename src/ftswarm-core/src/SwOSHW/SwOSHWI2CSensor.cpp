@@ -10,32 +10,41 @@
 #include "SwOSHW/SwOSHWI2CSensor.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWActor.h"
- 
- /***************************************************
+#include <MPU6050_6Axis_MotionApps20.h>
+
+/***************************************************
  *
  *   SwOSGyro
  *
  ***************************************************/
 
- SwOSGyro::SwOSGyro(const char *name, SwOSCtrl *ctrl, FtSwarmGyroMode_t gyroMode ) : SwOSIO( name, ctrl ) {
+LSM6DSRSensor *lsm = NULL;
+MPU6050       *mpu = NULL;
 
-  if (ctrl->isLocal() ) {
-
-    if (gyroMode == FTSWARM_GYRO_LSM6 )    _setupLocalLSM();
-    if (gyroMode == FTSWARM_GYRO_MPU6050 ) _setupLocalMPU();
-  
-  }
+SwOSGyro::SwOSGyro(const char *name, SwOSCtrl *ctrl ) : SwOSIO( name, ctrl ) {
 
 }
 
-SwOSGyro::~SwOSGyro( ) {
+
+/***************************************************
+ *
+ *   SwOSGyroLSM
+ *
+ ***************************************************/
+
+SwOSGyroLSM::SwOSGyroLSM(const char *name, SwOSCtrl *ctrl ) : SwOSGyro( name, ctrl ) {
+
+  if (ctrl->isLocal() ) _setupLocal();
+
+}
+
+SwOSGyroLSM::~SwOSGyroLSM( ) {
 
   if ( lsm ) delete lsm;
-  if ( mpu ) delete mpu;
 
 }
 
-void SwOSGyro::_setupLocalLSM() {
+void SwOSGyroLSM::_setupLocal() {
 
   // need an internal I²C interface
   TwoWire internalI2C = TwoWire(1);
@@ -62,65 +71,170 @@ void SwOSGyro::_setupLocalLSM() {
 
 }
 
-void SwOSGyro::_readLSM() {
+void SwOSGyroLSM::read() {
 
-  lsm->Get_X_Axes(_accelerometer);
-  lsm->Get_G_Axes(_gyroscope);
-
-}
-
-void SwOSGyro::_setupLocalMPU() {
-
-  mpu = new MPU6050();
-  mpu->initialize();
-
-  if(mpu->testConnection() == false){
-    ESP_LOGE( LOGFTSWARM, "MPU6050 connection failed." );
-    _ctrl->setState( ERROR );
-    return;
-  }
-
-  // Initializate and configure the DMP
-  uint8_t devStatus = mpu->dmpInitialize();
-
-  // Supply your gyro offsets here, scaled for min sensitivity
-  mpu->setXGyroOffset(0);
-  mpu->setYGyroOffset(0);
-  mpu->setZGyroOffset(0);
-  mpu->setXAccelOffset(0);
-  mpu->setYAccelOffset(0);
-  mpu->setZAccelOffset(0);
-
-  // Making sure it worked (returns 0 if so)
-  if (devStatus != 0) {
-    ESP_LOGE( LOGFTSWARM, "MPU6050 DMP initialisation failed." );
-    _ctrl->setState( ERROR );
-    return;  
-  }
-  
-  mpu->CalibrateAccel(6);  // Calibration Time: generate offsets and calibrate our MPU6050
-  mpu->CalibrateGyro(6);
-  printf("These are the Active offsets:\n");
-  mpu->PrintActiveOffsets();
-  printf("Enabling DMP...\n");   //Turning ON DMP
-  mpu->setDMPEnabled(true);
-
-}
-
-void SwOSGyro::_readMPU() {
-
-}
-
-void SwOSGyro::read() {
-
-  if (lsm) _readLSM();
-  if (mpu) _readMPU();
+  // lsm->Get_X_Axes( _accelerometer );
+  // lsm->Get_G_Axes( _gyroscope );
 
 }
 
 void SwOSGyro::jsonize( JSONize *json, uint8_t id) {
   
 }
+
+/***************************************************
+ *
+ *   SwOSGyroMPU
+ *
+ ***************************************************/
+
+SwOSGyroMPU::SwOSGyroMPU(const char *name, SwOSCtrl *ctrl ) : SwOSGyro( name, ctrl ) {
+
+  if (ctrl->isLocal() ) _setupLocal();
+
+}
+
+SwOSGyroMPU::~SwOSGyroMPU( ) {
+
+  if ( mpu ) delete mpu;
+
+}
+
+
+void SwOSGyroMPU::_setupLocal() {
+
+  uint8_t devStatus;      // Return status after each device operation (0 = success, !0 = error)
+
+  if (!mpu) {
+    
+    mpu = new MPU6050();
+
+    /*Initialize device*/
+    printf("Initializing MPU6050\n");
+    mpu->initialize();
+
+    /*Verify connection*/
+    if(mpu->testConnection() == false){
+      ESP_LOGE(LOGFTSWARM, "Gyro/MPU6050 connection failed.");
+      _ctrl->setState( ERROR );
+      delete mpu;
+      mpu = NULL;      
+    }
+
+    /* Initializate and configure the DMP*/
+    devStatus = mpu->dmpInitialize();
+
+    /* gyro offsets, scaled for min sensitivity */
+    mpu->setXGyroOffset(220);
+    mpu->setYGyroOffset(76);
+    mpu->setZGyroOffset(-85);
+    mpu->setXAccelOffset(0);
+    mpu->setYAccelOffset(0);
+    mpu->setZAccelOffset(1688);
+
+    /* Making sure it worked (returns 0 if so) */ 
+    if (devStatus == 0) {
+      mpu->CalibrateAccel(6);  // Calibration Time: generate offsets and calibrate our MPU6050
+      mpu->CalibrateGyro(6);
+      mpu->setDMPEnabled(true);
+      packetSize = mpu->dmpGetFIFOPacketSize(); //Get expected DMP packet size for later comparison
+    } else {
+      // 1 = initial memory load failed
+      // 2 = DMP configuration updates failed
+      ESP_LOGE(LOGFTSWARM, "Gyro/MPU6050: DMP initialisation error %d.", devStatus);
+      _ctrl->setState( ERROR );
+      delete mpu;
+      mpu = NULL;      
+    } 
+
+    }
+
+}
+
+void SwOSGyroMPU::read() {
+
+  uint8_t FIFOBuffer[64]; // FIFO storage buffer
+
+  if (!mpu) return;
+
+  // if FIFO doesn't have data, skip
+  if (mpu->getFIFOCount() < packetSize ) return;
+
+  // last packet in FIFO
+  if (mpu->dmpGetCurrentFIFOPacket(FIFOBuffer)) {
+    mpu->dmpGetQuaternion(&q, FIFOBuffer);
+    mpu->dmpGetAccel(&aa, FIFOBuffer);
+  }
+
+}
+
+void SwOSGyroMPU::getAcceleration( float *x, float *y, float *z ) {
+
+  if (!mpu) return;
+  
+  VectorFloat gravity; 
+  VectorInt16 aaReal;
+
+  mpu->dmpGetGravity(&gravity, &q);
+  mpu->dmpGetLinearAccel(&aaReal, &aa, &gravity);
+
+  *x = aaReal.x;
+  *y = aaReal.y;
+  *z = aaReal.z;
+
+};
+
+void SwOSGyroMPU::getQuaternion( float *w, float *x, float *y, float *z ) {
+
+  if (!mpu) return;
+
+  *w = q.w;
+  *x = q.x;
+  *z = q.z;
+
+};
+
+void SwOSGyroMPU::getYawPitchRoll(float *yaw, float *pitch, float *roll, bool radiants ) {
+
+  if (!mpu) return;
+
+  float ypr[3];
+  VectorFloat gravity; 
+
+  mpu->dmpGetGravity( &gravity, &q );
+  mpu->dmpGetYawPitchRoll( ypr, &q, &gravity );
+  
+  *yaw   = ypr[0];
+  *pitch = ypr[1];
+  *roll  = ypr[2];
+
+  if ( !radiants ) {
+    *yaw   *= 180/M_PI;
+    *pitch *= 180/M_PI;
+    *roll  *= 180/M_PI;  
+  }
+
+};
+
+void SwOSGyroMPU::getEuler(float *alpha, float *beta, float *gamma, bool radiants ) {
+
+  if (!mpu) return;
+  
+  float euler[3];
+  mpu->dmpGetEuler( euler, &q );
+  
+  *alpha = euler[0];
+  *beta  = euler[1];
+  *gamma = euler[2];
+
+  if ( !radiants ) {
+    *alpha *= 180/M_PI;
+    *beta  *= 180/M_PI;
+    *gamma *= 180/M_PI;  
+  }
+
+};
+
 
 /***************************************************
  *  

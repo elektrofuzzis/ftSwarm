@@ -96,7 +96,7 @@ typedef enum { FTSWARM_NOTOGGLE, FTSWARM_TOGGLEUP, FTSWARM_TOGGLEDOWN } FtSwarmT
 typedef enum { FTSWARM_ALIGNLEFT, FTSWARM_ALIGNCENTER, FTSWARM_ALIGNRIGHT } FtSwarmAlign_t;
 
 // Gyro types
-typedef enum { FTSWARM_GYRO_OFF, FTSWARM_GYRO_LSM6, FTSWARM_GYRO_MPU6050 } FtSwarmGyroMode_t;
+typedef enum { FTSWARM_GYRO_OFF, FTSWARM_GYRO_LSM, FTSWARM_GYRO_MPU } FtSwarmGyroMode_t;
 
 // Ext Port modes
 typedef enum { FTSWARM_EXT_OFF, FTSWARM_EXT_I2C_MASTER, FTSWARM_EXT_I2C_SLAVE, FTSWARM_EXT_OUTPUT, FTSWARM_EXT_SERVO, FTSWARM_EXT_LIDAR } FtSwarmExtMode_t;
@@ -177,6 +177,71 @@ typedef enum {
 #define FTSWARM_SERVO2 1
 
 // **** some internal types & classes, don't use them at all ****
+
+class SwOSQuaternion {
+  public:
+      float w;
+      float x;
+      float y;
+      float z;
+      
+      SwOSQuaternion() {
+          w = 1.0f;
+          x = 0.0f;
+          y = 0.0f;
+          z = 0.0f;
+      }
+
+      SwOSQuaternion(int16_t *data, const uint8_t* packet) {
+        if (!packet) return;
+        data[0] = (((int16_t)packet[0] << 8)  | (int16_t)packet[1]);
+        data[1] = (((int16_t)packet[4] << 8)  | (int16_t)packet[5]);
+        data[2] = (((int16_t)packet[8] << 8)  | (int16_t)packet[9]);
+        data[3] = (((int16_t)packet[12] << 8) | (int16_t)packet[13]);
+    }
+      
+      SwOSQuaternion(float nw, float nx, float ny, float nz) {
+          w = nw;
+          x = nx;
+          y = ny;
+          z = nz;
+      }
+
+      SwOSQuaternion getProduct(SwOSQuaternion q) {
+          // Quaternion multiplication is defined by:
+          //     (Q1 * Q2).w = (w1w2 - x1x2 - y1y2 - z1z2)
+          //     (Q1 * Q2).x = (w1x2 + x1w2 + y1z2 - z1y2)
+          //     (Q1 * Q2).y = (w1y2 - x1z2 + y1w2 + z1x2)
+          //     (Q1 * Q2).z = (w1z2 + x1y2 - y1x2 + z1w2
+          return SwOSQuaternion(
+              w*q.w - x*q.x - y*q.y - z*q.z,  // new w
+              w*q.x + x*q.w + y*q.z - z*q.y,  // new x
+              w*q.y - x*q.z + y*q.w + z*q.x,  // new y
+              w*q.z + x*q.y - y*q.x + z*q.w); // new z
+      }
+
+      SwOSQuaternion getConjugate() {
+          return SwOSQuaternion(w, -x, -y, -z);
+      }
+      
+      float getMagnitude() {
+          return sqrt(w*w + x*x + y*y + z*z);
+      }
+      
+      void normalize() {
+          const float im = 1.0f / getMagnitude();
+          w *= im;
+          x *= im;
+          y *= im;
+          z *= im;
+      }
+      
+      SwOSQuaternion getNormalized() {
+        SwOSQuaternion r(w, x, y, z);
+          r.normalize();
+          return r;
+      }
+};
 
 // handle/pointer to a swarm IO, used by FtSwarmIO base class
 typedef void* SwOSIOHandle_t;      
@@ -542,6 +607,11 @@ class FtSwarmGyro : public FtSwarmIO {
     FtSwarmGyro( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
     FtSwarmGyro( const char *name );
 
+    void getAcceleration( float *x, float *y, float *z );
+    void getQuaternion( float *w, float *x, float *y, float *z );
+    void getYawPitchRoll(float *yaw, float *pitch, float *roll, bool radiants = false );
+    void getEuler(float *alpha, float *beta, float *gamma, bool radiants = false );
+
 };
 
 class FtSwarmServo : public FtSwarmIO {
@@ -627,6 +697,8 @@ class FtSwarm {
     bool sendEventData( uint8_t *buffer, size_t size );
     bool IOAvaliable( const char *name ) { return false; };
 };
+
+
 
 // There is one only
 extern FtSwarm ftSwarm;
