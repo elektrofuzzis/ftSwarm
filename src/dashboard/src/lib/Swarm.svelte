@@ -8,6 +8,7 @@
     import SwarmLED from "./inputs/SwarmLED.svelte";
     import SwarmCounter from "./inputs/SwarmCounter.svelte";
     import {FtSwarmIOType} from "../api/registries";
+    import SwarmGyro from "./inputs/SwarmGyro.svelte";
 
     const currentSwarmIo = $derived.by(() => {
         if ($currentSwarm === -1) return $swarmApiData.swarms.flatMap((swarm) => swarm.io).filter(it => it.active)
@@ -29,6 +30,9 @@
         {/each}
         {#each currentSwarmIo.filter((io) => io.type === FtSwarmIOType.JOYSTICK) as io}
             <SwarmJoystick input={io}/>
+        {/each}
+        {#each currentSwarmIo.filter((io) => io.type === FtSwarmIOType.GYRO) as io}
+            <SwarmGyro input={io}/>
         {/each}
     </div>
     <span class="label">Output</span>

@@ -34,6 +34,12 @@ export type JoystickIo = BaseIo & {
     button: number;
 }
 
+export type GyroIo = BaseIo & {
+    type: FtSwarmIOType.GYRO;
+    Quaternion: string;
+    Acceleration: string;
+}
+
 export type ActorIo = BaseIo & {
     type: FtSwarmIOType.ACTOR;
     subType: FtSwarmActor.TRACTOR | FtSwarmActor.MOTOR | FtSwarmActor.XMMOTOR | FtSwarmActor.ENCODER | FtSwarmActor.LAMP;
@@ -54,7 +60,7 @@ export type ServoIo = BaseIo & {
     position: number;
 }
 
-export type AnyIo = InputIo | ActorIo | LedIo | ServoIo | ButtonIo | JoystickIo | CounterIo;
+export type AnyIo = InputIo | ActorIo | LedIo | ServoIo | ButtonIo | JoystickIo | CounterIo | GyroIo;
 
 export type Swarm = {
     name: string;
