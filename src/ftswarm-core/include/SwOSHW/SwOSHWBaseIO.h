@@ -31,25 +31,6 @@ extern ftPwrDrive *pwrDrive;
 // reference to local ftDuino
 extern FtDuino *ftDuino;
 
-const char SENSORTYPE[FTSWARM_MAXSENSOR][20] = { 
-  "DIGITAL", 
-  "ANALOG", 
-  "SWITCH", 
-  "REEDSWITCH", 
-  "LIGHTBARRIER", 
-  "VOLTMETER", 
-  "OHMMETER", 
-  "THERMOMETER", 
-  "LDR", 
-  "TRAILSENSOR", 
-  "COLORSENSOR", 
-  "ULTRASONIC", 
-  "CAM", 
-  "COUNTER", 
-  "ROTARYENCODER", 
-  "FREQUENCYMETER",
-  "LIDAR" };
-
 // forward declaration
 class SwOSCtrl; 
 
@@ -120,7 +101,7 @@ public:
   virtual uint8_t         getPort() { return _port; };
   virtual SwOSCtrl*       getCtrl() { return _ctrl; };
 	virtual FtSwarmIOType_t getIOType() { return FTSWARM_UNDEF; };
-  virtual char*           getIcon() { return (char *) "UNDEFINED"; };
+  virtual FtSwarmIcon_t   getIcon() { return FTSWARM_XX_UNDEF; };
 	virtual void            jsonize( JSONize *json, uint8_t id);
   virtual void            take( void ) { _useCounter++; };                      // register an instance using this IO
   virtual void            give( void ) { if (_useCounter>0) _useCounter--; };   // unregister an instance using this IO
@@ -200,7 +181,7 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
     // administrative stuff
 	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_INPUT; };
     virtual FtSwarmSensor_t getSensorType() { return _sensorType; };
-    virtual char *getIcon();
+    virtual FtSwarmIcon_t   getIcon();
 	  virtual void jsonize( JSONize *json, uint8_t id) {};               // just a placeholder
 
     // Test, if I', an Sensor

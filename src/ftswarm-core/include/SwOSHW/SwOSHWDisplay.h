@@ -38,7 +38,7 @@
   
     // administrative stuff
     virtual FtSwarmIOType_t getIOType() { return FTSWARM_PIXEL; };
-    virtual char *getIcon()   { return (char *) "15_rgbled.svg"; };
+    virtual FtSwarmIcon_t getIcon()   { return FTSWARM_15_RGBLED; };
     virtual void jsonize( JSONize *json, uint8_t id);
     virtual void onTrigger( int32_t value );
   

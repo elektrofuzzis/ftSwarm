@@ -62,7 +62,7 @@ public:
   
   // administrative stuff
   virtual FtSwarmIOType_t getIOType() { return FTSWARM_BUTTON; };
-  virtual char *    getIcon()   { return (char *) "12_button.svg"; };
+  virtual FtSwarmIcon_t getIcon()   { return FTSWARM_12_BUTTON; };
 	virtual void jsonize( JSONize *json, uint8_t id);
 
   // commands

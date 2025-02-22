@@ -79,7 +79,7 @@
   
     // administrative stuff
     virtual FtSwarmIOType_t getIOType() { return FTSWARM_JOYSTICK; };
-    virtual char *getIcon() { return (char *) "11_joystick.svg"; };
+    virtual FtSwarmIcon_t getIcon() { return FTSWARM_11_JOYSTICK; };
     virtual void jsonize( JSONize *json, uint8_t id);
     
     // Test, if I', an Sensor

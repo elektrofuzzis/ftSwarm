@@ -60,7 +60,7 @@ class SwOSActor : public SwOSIO {
     // adminstrative stuff
     virtual FtSwarmIOType_t getIOType()  { return FTSWARM_ACTOR; };
     virtual FtSwarmActor_t  getActorType() { return _actorType; };
-    virtual char *          getIcon();
+    virtual FtSwarmIcon_t   getIcon();
     virtual void            jsonize( JSONize *json, uint8_t id); // serialize object to JSON
     virtual void            onTrigger( int32_t value );
     virtual void            read( void );
@@ -130,7 +130,7 @@ class SwOSServo : public SwOSIO {
 
     // administrative stuff
 	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_SERVO; };
-    virtual char *    getIcon() { return (char *) "14_servo.svg"; };
+    virtual FtSwarmIcon_t getIcon() { return FTSWARM_14_SERVO; };
     virtual void jsonize( JSONize *json, uint8_t id);
     virtual void onTrigger( int32_t value );
 

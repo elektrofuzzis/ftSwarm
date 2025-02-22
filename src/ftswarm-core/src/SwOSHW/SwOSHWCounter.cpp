@@ -184,7 +184,7 @@ void SwOSCounter::jsonize( JSONize *json, uint8_t id) {
   json->startObject();
   SwOSIO::jsonize(json, id);
   json->variableUI32("sensorType", _sensorType);
-  json->variable("subType", (char *) SENSORTYPE[_sensorType]);
+  json->variableUI32("subType", _sensorType);
   json->variableI32("value", getValueI32() );
   json->endObject();
 }
@@ -300,7 +300,7 @@ void SwOSFrequencymeter::jsonize( JSONize *json, uint8_t id) {
   json->startObject();
   SwOSIO::jsonize(json, id);
   json->variableUI32("sensorType", _sensorType);
-  json->variable("subType", (char *) SENSORTYPE[_sensorType]);
+  json->variableUI32("subType", _sensorType );
   json->variableI32("value", getValueI32() );
   json->endObject();
 }
