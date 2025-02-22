@@ -544,9 +544,6 @@ esp_err_t apiIsAuthorized( httpd_req_t *req ) {
 
   if (!hasAuthorization ) return sendResponse( req, 400 );
 
-  // cleanup
-  cJSON_Delete(root);
-
   uint16_t status = myOSSwarm.apiIsAuthorized( token, true );
 
   return sendResponse( req, status );
