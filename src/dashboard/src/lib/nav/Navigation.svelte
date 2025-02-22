@@ -2,6 +2,7 @@
     import FtSwarmImg from '../../assets/ftSwarm.svg'
     import {swarmApiData} from "../../stores";
     import NavSwarmCard from "./NavSwarmCard.svelte";
+    import type {AnyIo} from "../../swarm";
     interface Props {
         children?: import('svelte').Snippet;
     }
@@ -13,6 +14,14 @@
     <img alt="ftSwarm" src={FtSwarmImg}/>
 
     <div class="swarmies">
+        <NavSwarmCard swarm={{
+            name: "Overview",
+            id: -1,
+            serialNumber: "",
+            hostInfo: "-1",
+            type: "Overview",
+            io: []
+        }}/>
         {#each ($swarmApiData).swarms as swarm}
             <NavSwarmCard {swarm}/>
         {/each}

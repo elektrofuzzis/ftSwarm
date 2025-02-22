@@ -12,6 +12,7 @@
 
     let {input = $bindable()}: Props = $props();
     let disabled: boolean = $derived(!$swarmApiData.auth.status);
+    let bounds = $derived(input.highResolution ? 4095 : 255)
 </script>
 
 <SwarmCtrlBase colspan={2} descriptor={ACTOR_NAMES[input.subType]} io={input}>
@@ -23,7 +24,7 @@
             <option value={1}>BRAKE</option>
             <option value={2}>RUN</option>
         </select>
-        <Slider max={255} min={-255} bind:value={input.speed} oninput={(_) => {
+        <Slider max={bounds} min={-bounds} bind:value={input.speed} oninput={(_) => {
             ftSwarm.debouncedUpdateMotor(input.id, input.motiontype, input.speed
 );
         }}/>

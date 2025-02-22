@@ -4,7 +4,8 @@ import type {GetSwarmResponse} from "./swarm";
 export const swarmApiData = writable<GetSwarmResponse>({
     auth: {
         provided: false,
-        status: false
+        status: false,
+        kelda: 0
     },
     swarms: []
 });

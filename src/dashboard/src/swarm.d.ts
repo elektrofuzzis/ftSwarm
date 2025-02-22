@@ -5,6 +5,7 @@ export type BaseIo = {
     id: string;
     type: FtSwarmIOType;
     icon: number;
+    active: number;
 }
 
 export type InputIo = BaseIo & {
@@ -38,6 +39,7 @@ export type ActorIo = BaseIo & {
     subType: FtSwarmActor.TRACTOR | FtSwarmActor.MOTOR | FtSwarmActor.XMMOTOR | FtSwarmActor.ENCODER | FtSwarmActor.LAMP;
     motiontype: number;
     speed: number;
+    highResolution: boolean;
 }
 
 export type LedIo = BaseIo & {
@@ -59,8 +61,8 @@ export type Swarm = {
     id: number;
     serialNumber: string;
     hostInfo: string;
-    type: "ftSwarm" | "ftSwarmControl"
-    io: [AnyIo];
+    type: "ftSwarm" | "ftSwarmControl" | "Overview"
+    io: AnyIo[];
 }
 
 export type GetSwarmResponse = {
@@ -68,5 +70,6 @@ export type GetSwarmResponse = {
     auth: {
         provided: boolean;
         status: boolean;
+        kelda: number;
     };
 }
