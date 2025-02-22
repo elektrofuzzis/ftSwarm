@@ -21,7 +21,7 @@
 <div class="card colspan-when-large-enough" style={colspan > 1 ? `grid-column: span ${colspan}` : ''}>
     <div class="card__inner">
         <div class="card__left">
-            <img alt="type" src={"/assets/" + ICONS[io.icon]}>
+            <img alt="type" src={"/assets/" + ICONS[io.icon]} class="svg">
 
             <div class="card__infos">
                 <span class="muted">{descriptor}</span>
@@ -36,57 +36,58 @@
 </div>
 
 <style lang="postcss">
-  .card {
-    width: 100%;
-    height: 96px;
-    background: var(--background-card);
-    border-radius: 4px;
-  }
-
-  @media (max-width: 768px) {
-    .colspan-when-large-enough {
-      grid-column: span 1 !important;
+    .card {
+        width: 100%;
+        height: 96px;
+        background: var(--background-card);
+        border-radius: 4px;
+        border: 1px solid var(--card-border);
     }
-  }
 
-  .card__inner {
-    padding: 16px;
+    @media (max-width: 768px) {
+        .colspan-when-large-enough {
+            grid-column: span 1 !important;
+        }
+    }
 
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-  }
+    .card__inner {
+        padding: 16px;
 
-  .card__left {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-  }
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
 
-  .card__infos {
-    margin-left: 16px;
+    .card__left {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+    }
 
-    display: flex;
-    flex-direction: column;
-  }
+    .card__infos {
+        margin-left: 16px;
 
-  .muted {
-    color: var(--color-text-muted);
-    font-size: 0.8em;
-  }
+        display: flex;
+        flex-direction: column;
+    }
 
-  .boo {
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
+    .muted {
+        color: var(--color-text-muted);
+        font-size: 0.8em;
+    }
 
-  .card:hover .boo {
-    opacity: 1;
-  }
+    .boo {
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
 
-  .card__left img {
-    width: 64px;
-    height: 64px;
-  }
+    .card:hover .boo {
+        opacity: 1;
+    }
+
+    .card__left img {
+        width: 64px;
+        height: 64px;
+    }
 </style>

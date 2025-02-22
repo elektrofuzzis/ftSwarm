@@ -3,11 +3,12 @@
     import {swarmApiData} from "../../stores";
     import NavSwarmCard from "./NavSwarmCard.svelte";
     import type {AnyIo} from "../../swarm";
+
     interface Props {
         children?: import('svelte').Snippet;
     }
 
-    let { children }: Props = $props();
+    let {children}: Props = $props();
 </script>
 
 <nav>
@@ -31,34 +32,36 @@
     {@render children?.()}
 </main>
 <style lang="postcss">
-  nav {
-    background-color: var(--background-nav);
+    nav {
+        background-color: var(--background-nav);
 
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 64px;
-    padding: 8px 16px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        padding: 8px 16px;
 
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
 
-  nav img {
-    height: 48px;
-  }
+        border-bottom: 1px solid var(--card-border);
+    }
 
-  .swarmies {
-    display: flex;
-    flex-direction: row;
-    overflow-x: auto;
-    overflow-y: hidden;
-    height: 100%;
-  }
+    nav img {
+        height: 48px;
+    }
 
-  main {
-    padding: 88px 16px 16px 16px;
-  }
+    .swarmies {
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+        height: 100%;
+    }
+
+    main {
+        padding: 88px 16px 16px 16px;
+    }
 </style>
