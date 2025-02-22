@@ -3,16 +3,15 @@
     import SwarmCtrlBase from "../utils/SwarmCtrlBase.svelte";
     import Slider from "../utils/Slider.svelte";
     import {ftSwarm} from "../../api/FtSwarm";
-    import {swarmApiData} from "../../stores.ts";
+    import {swarmApiData} from "../../stores";
     import {ACTOR_NAMES} from "../../api/registries.js";
 
-  interface Props {
-    input: ActorIo;
-  }
+    interface Props {
+        input: ActorIo;
+    }
 
-  let { input = $bindable() }: Props = $props();
+    let {input = $bindable()}: Props = $props();
     let disabled: boolean = $derived(!$swarmApiData.auth.status);
-    
 </script>
 
 <SwarmCtrlBase colspan={2} descriptor={ACTOR_NAMES[input.subType]} io={input}>
@@ -32,20 +31,24 @@
 </SwarmCtrlBase>
 
 <style>
-  .container {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
+    .container {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
 
-  select {
-    border: none;
-    background: none;
-    font-size: 1em;
-    text-align: center;
-    color: var(--color-text);
-  }
+    select {
+        border: none;
+        background: none;
+        font-size: 1em;
+        text-align: center;
+        color: var(--color-text);
+    }
+
+    option {
+        color: initial;
+    }
 </style>
