@@ -1,39 +1,41 @@
 <script lang="ts">
     import {currentSwarm, swarmApiData} from "../stores";
-    import SwarmInput from "./SwarmInput.svelte";
-    import SwarmBtn from "./SwarmBtn.svelte";
-    import SwarmJoystick from "./SwarmJoystick.svelte";
-    import SwarmActor from "./SwarmActor.svelte";
-    import SwarmServo from "./SwarmServo.svelte";
-    import SwarmLED from "./SwarmLED.svelte";
-    import SwarmCounter from "./SwarmCounter.svelte";
+    import SwarmInput from "./inputs/SwarmInput.svelte";
+    import SwarmBtn from "./inputs/SwarmBtn.svelte";
+    import SwarmJoystick from "./inputs/SwarmJoystick.svelte";
+    import SwarmActor from "./inputs/SwarmActor.svelte";
+    import SwarmServo from "./inputs/SwarmServo.svelte";
+    import SwarmLED from "./inputs/SwarmLED.svelte";
+    import SwarmCounter from "./inputs/SwarmCounter.svelte";
+    import {FtSwarmIOType} from "../api/registries";
+    import type {AnyIo} from "../swarm";
 </script>
 
 <div class="container">
     <span class="label">Input</span>
     <div class="grid">
-        {#each $swarmApiData.swarms[$currentSwarm].io.filter((io) => io.type === "DIGITALINPUT" || io.type === "ANALOGINPUT") as io}
+        {#each $swarmApiData.swarms[$currentSwarm].io.filter((io) => io.type === FtSwarmIOType.DIGITALINPUT || io.type === FtSwarmIOType.ANALOGINPUT) as io}
             <SwarmInput input={io}/>
         {/each}
-        {#each $swarmApiData.swarms[$currentSwarm].io.filter((io) => io.type === "COUNTER") as io}
+        {#each $swarmApiData.swarms[$currentSwarm].io.filter((io) => io.type === FtSwarmIOType.COUNTERINPUT) as io}
             <SwarmCounter input={io}/>
         {/each}
-        {#each $swarmApiData.swarms[$currentSwarm].io.filter((io) => io.type === "BUTTON") as io}
+        {#each $swarmApiData.swarms[$currentSwarm].io.filter((io) => io.type === FtSwarmIOType.BUTTON) as io}
             <SwarmBtn input={io}/>
         {/each}
-        {#each $swarmApiData.swarms[$currentSwarm].io.filter((io) => io.type === "JOYSTICK") as io}
+        {#each $swarmApiData.swarms[$currentSwarm].io.filter((io) => io.type === FtSwarmIOType.JOYSTICK) as io}
             <SwarmJoystick input={io}/>
         {/each}
     </div>
     <span class="label">Output</span>
     <div class="grid">
-        {#each $swarmApiData.swarms[$currentSwarm].io.filter((io) => io.type === "ACTOR") as io}
+        {#each $swarmApiData.swarms[$currentSwarm].io.filter((io) => io.type === FtSwarmIOType.ACTOR) as io}
             <SwarmActor input={io}/>
         {/each}
-        {#each $swarmApiData.swarms[$currentSwarm].io.filter((io) => io.type === "SERVO") as io}
+        {#each $swarmApiData.swarms[$currentSwarm].io.filter((io) => io.type === FtSwarmIOType.SERVO) as io}
             <SwarmServo input={io}/>
         {/each}
-        {#each $swarmApiData.swarms[$currentSwarm].io.filter((io) => io.type === "LED") as io}
+        {#each $swarmApiData.swarms[$currentSwarm].io.filter((io) => io.type === FtSwarmIOType.PIXEL) as io}
             <SwarmLED input={io}/>
         {/each}
     </div>

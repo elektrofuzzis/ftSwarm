@@ -40,6 +40,7 @@ class FtSwarm {
     private readonly _apiBase: string
     private isLoaded = false
     private interval: number | undefined
+    private isFetching = false
 
     constructor(apiBase: string = SWARM_API_BASE) {
         this._apiBase = apiBase
@@ -89,8 +90,13 @@ class FtSwarm {
             return
         }
 
+        if (this.isFetching) return
+        this.isFetching = true
+
         const req = await this.fetch('getSwarm')
         const res = await req.json()
+
+        this.isFetching = false
 
         if (get(sendTimeout) <= Date.now()) {
             swarmApiData.set(res)
@@ -121,20 +127,16 @@ class FtSwarm {
 
     async obtainAccessToken() {
         const req = await this.fetch('getToken')
-        const num = Number((await req.json())["token"])
-        localStorage.token = num
+        const json = await req.json()
+        const num = Number(json["token"])
+        localStorage.setItem("token", num + "");
         return num
     }
 
-    async fetchWithAuth(url: string, options: RequestInit = {}) {
-        let state = false
+    async fetchWithAuth(url: string, options: RequestInit = {}, allowUnauthenticated = false) {
+        let state = get(isLoggedIn)
 
-        isLoggedIn.update((v) => {
-            state = v
-            return v
-        })
-
-        if (!state) {
+        if (!state && !allowUnauthenticated) {
             await Swal.fire({
                 title: 'Error',
                 text: 'You are not logged in',
@@ -162,9 +164,18 @@ class FtSwarm {
         localStorage.setItem('token', newToken.toString());
     }
 
-    async login(pin: number) {
+    async login(pin: number): Promise<boolean> {
         await this.obtainAccessToken()
         localStorage.setItem('pin', pin.toString());
+        return await this.isAuth()
+    }
+
+    async isAuth(): Promise<boolean> {
+        const resp = await this.fetchWithAuth('isAuthenticated', {
+            method: 'POST',
+            body: JSON.stringify({}),
+        }, true)
+        return resp.ok
     }
 
     async updateLed(id: string, color: string, brightness: number) {

@@ -1,54 +1,58 @@
+import {FtSwarmActor, type FtSwarmIOType, FtSwarmSensor} from "./api/registries";
+
 export type BaseIo = {
     name: string;
     id: string;
-    type: string;
-    icon: string;
+    type: FtSwarmIOType;
+    icon: number;
 }
 
 export type InputIo = BaseIo & {
-    type: "ANALOGINPUT" | "DIGITALINPUT";
+    type: FtSwarmIOType.ANALOGINPUT | FtSwarmIOType.DIGITALINPUT;
     sensorType: number;
-    subType: string;
+    subType: FtSwarmSensor;
     value: string;
 }
 
 export type CounterIo = BaseIo & {
-    type: "COUNTER";
+    type: FtSwarmIOType.COUNTERINPUT;
     sensorType: number;
     subType: string;
     value: string;
 }
 
 export type ButtonIo = BaseIo & {
-    type: "BUTTON";
+    type: FtSwarmIOType.BUTTON;
     state: number;
 }
 
 export type JoystickIo = BaseIo & {
-    type: "JOYSTICK";
+    type: FtSwarmIOType.JOYSTICK;
     valueLr: number;
     valueFb: number;
     button: number;
 }
 
 export type ActorIo = BaseIo & {
-    type: "ACTOR";
-    subType: "TRACTORMOTOR" | "XMOTOR" | "XMMOTOR" | "ENCODERMOTOR" | "LAMP";
+    type: FtSwarmIOType.ACTOR;
+    subType: FtSwarmActor.TRACTOR | FtSwarmActor.MOTOR | FtSwarmActor.XMMOTOR | FtSwarmActor.ENCODER | FtSwarmActor.LAMP;
     motiontype: number;
     speed: number;
 }
 
 export type LedIo = BaseIo & {
-    type: "LED";
+    type: FtSwarmIOType.PIXEL;
     brightness: number;
     color: string;
 }
 
 export type ServoIo = BaseIo & {
-    type: "SERVO";
+    type: FtSwarmIOType.SERVO;
     offset: number;
     position: number;
 }
+
+export type AnyIo = InputIo | ActorIo | LedIo | ServoIo | ButtonIo | JoystickIo | CounterIo;
 
 export type Swarm = {
     name: string;
@@ -56,7 +60,7 @@ export type Swarm = {
     serialNumber: string;
     hostInfo: string;
     type: "ftSwarm" | "ftSwarmControl"
-    io: [InputIo | ActorIo | LedIo | ServoIo | ButtonIo | JoystickIo | CounterIo];
+    io: [AnyIo];
 }
 
 export type GetSwarmResponse = {

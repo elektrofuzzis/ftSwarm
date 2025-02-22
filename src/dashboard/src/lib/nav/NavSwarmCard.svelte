@@ -1,6 +1,6 @@
 <script lang="ts">
-    import type {Swarm} from "../swarm";
-    import {currentSwarm} from "../stores.js";
+    import type {Swarm} from "../../swarm";
+    import {currentSwarm} from "../../stores";
 
   interface Props {
     swarm: Swarm;

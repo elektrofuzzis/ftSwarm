@@ -1,10 +1,10 @@
 <script lang="ts">
-    import Navigation from "./lib/Navigation.svelte";
-    import Loader from "./lib/Loader.svelte";
+    import Navigation from "./lib/nav/Navigation.svelte";
+    import Loader from "./lib/utils/Loader.svelte";
     import {ftSwarm} from "./api/FtSwarm";
     import {onDestroy, onMount} from "svelte";
     import Swarm from "./lib/Swarm.svelte";
-    import Login from "./lib/Login.svelte";
+    import Login from "./lib/utils/Login.svelte";
 
     let swarmLoadingPromise = $state(new Promise(() => {
     }));

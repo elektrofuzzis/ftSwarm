@@ -1,9 +1,10 @@
 <script lang="ts">
-    import type {ActorIo} from "../swarm";
-    import SwarmCtrlBase from "./SwarmCtrlBase.svelte";
-    import Slider from "./Slider.svelte";
-    import {ftSwarm} from "../api/FtSwarm";
-    import {swarmApiData} from "../stores.ts";
+    import type {ActorIo} from "../../swarm";
+    import SwarmCtrlBase from "../utils/SwarmCtrlBase.svelte";
+    import Slider from "../utils/Slider.svelte";
+    import {ftSwarm} from "../../api/FtSwarm";
+    import {swarmApiData} from "../../stores.ts";
+    import {ACTOR_NAMES} from "../../api/registries.js";
 
   interface Props {
     input: ActorIo;
@@ -14,7 +15,7 @@
     
 </script>
 
-<SwarmCtrlBase colspan={2} descriptor={input.subType} io={input}>
+<SwarmCtrlBase colspan={2} descriptor={ACTOR_NAMES[input.subType]} io={input}>
     <div class="container">
         <select bind:value={input.motiontype} {disabled} onchange={(_) => {
             ftSwarm.debouncedUpdateMotor(input.id, input.motiontype, input.speed);

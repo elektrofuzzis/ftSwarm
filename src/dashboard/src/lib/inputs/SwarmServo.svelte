@@ -1,8 +1,8 @@
 <script lang="ts">
-    import type {ServoIo} from "../swarm";
-    import SwarmCtrlBase from "./SwarmCtrlBase.svelte";
-    import Slider from "./Slider.svelte";
-    import {ftSwarm} from "../api/FtSwarm";
+    import type {ServoIo} from "../../swarm";
+    import SwarmCtrlBase from "../utils/SwarmCtrlBase.svelte";
+    import Slider from "../utils/Slider.svelte";
+    import {ftSwarm} from "../../api/FtSwarm";
 
   interface Props {
     input: ServoIo;

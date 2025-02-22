@@ -1,6 +1,6 @@
 <script lang="ts">
-    import type {CounterIo, InputIo} from "../swarm";
-    import SwarmCtrlBase from "./SwarmCtrlBase.svelte";
+    import type {CounterIo, InputIo} from "../../swarm";
+    import SwarmCtrlBase from "../utils/SwarmCtrlBase.svelte";
 
     interface Props {
         input: CounterIo;

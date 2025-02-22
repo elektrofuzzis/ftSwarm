@@ -1,10 +1,10 @@
 <script lang="ts">
-    import type {LedIo} from "../swarm";
-    import SwarmCtrlBase from "./SwarmCtrlBase.svelte";
-    import Slider from "./Slider.svelte";
+    import type {LedIo} from "../../swarm";
+    import SwarmCtrlBase from "../utils/SwarmCtrlBase.svelte";
+    import Slider from "../utils/Slider.svelte";
     import {onDestroy, onMount} from "svelte";
-    import {ftSwarm} from "../api/FtSwarm";
-    import {swarmApiData} from "../stores.ts";
+    import {ftSwarm} from "../../api/FtSwarm";
+    import {swarmApiData} from "../../stores.ts";
 
   interface Props {
     input: LedIo;

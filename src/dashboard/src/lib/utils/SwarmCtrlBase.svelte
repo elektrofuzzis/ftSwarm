@@ -1,11 +1,13 @@
 <script lang="ts">
-    import type {BaseIo} from "../swarm";
+    import type {BaseIo} from "../../swarm";
+    import type {Snippet} from "svelte";
+    import {ICONS} from "../../api/registries";
 
     interface Props {
         io: BaseIo;
         descriptor: string;
-        colspan: number;
-        children?: import('svelte').Snippet;
+        colspan?: number;
+        children: Snippet;
     }
 
     let {
@@ -19,7 +21,7 @@
 <div class="card colspan-when-large-enough" style={colspan > 1 ? `grid-column: span ${colspan}` : ''}>
     <div class="card__inner">
         <div class="card__left">
-            <img alt="type" src={"/assets/" + io.icon}>
+            <img alt="type" src={"/assets/" + ICONS[io.icon]}>
 
             <div class="card__infos">
                 <span class="muted">{descriptor}</span>
@@ -28,7 +30,7 @@
             </div>
         </div>
         <div class="card__centergroup">
-            {@render children?.()}
+            {@render children()}
         </div>
     </div>
 </div>

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import {swarmApiData} from "../stores.ts";
+    import {swarmApiData} from "../../stores.ts";
 
   interface Props {
     min?: number;

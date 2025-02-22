@@ -1,6 +1,6 @@
 <script lang="ts">
-    import FtSwarmImg from '../assets/ftSwarm.svg'
-    import {swarmApiData} from "../stores";
+    import FtSwarmImg from '../../assets/ftSwarm.svg'
+    import {swarmApiData} from "../../stores";
     import NavSwarmCard from "./NavSwarmCard.svelte";
     interface Props {
         children?: import('svelte').Snippet;

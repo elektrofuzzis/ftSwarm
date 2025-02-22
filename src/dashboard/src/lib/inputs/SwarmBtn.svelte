@@ -1,6 +1,6 @@
 <script lang="ts">
-    import type {ButtonIo} from "../swarm";
-    import SwarmCtrlBase from "./SwarmCtrlBase.svelte";
+    import type {ButtonIo} from "../../swarm";
+    import SwarmCtrlBase from "../utils/SwarmCtrlBase.svelte";
 
   interface Props {
     input: ButtonIo;
