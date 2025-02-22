@@ -328,7 +328,7 @@ void SwOSGyroMPU::getEuler(float *alpha, float *beta, float *gamma, bool radiant
    json->startObject();
    SwOSIO::jsonize(json, id);
    json->variableUI32("sensorType", _sensorType);
-   json->variable("subType",    (char *) SENSORTYPE[_sensorType]);
+   json->variableUI32("subType", _sensorType);
  
    json->variableI32("value", getValueI32() );
    

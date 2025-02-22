@@ -13,18 +13,7 @@
 
 #include "SwOSCom.h"
 
-const char ACTORICON[FTSWARM_MAXACTOR][20] = {
-  "16_xmotor.svg",
-  "20_xmmotor.svg",
-  "17_tractor.svg",
-  "18_encoder.svg",
-  "19_lamp.svg",
-  "23_valve.svg",
-  "22_compressor.svg",
-  "24_buzzer.svg"
-};
-
-const char ACTORTYPE[FTSWARM_MAXACTOR][20] = { "MOTOR", "XMMOTOR", "TRACTORMOTOR", "ENCODERMOTOR", "LAMP", "VALVE", "COMPRESSOR", "BUZZER", "STEPPER" };
+const FtSwarmIcon_t ACTORICON[FTSWARM_MAXACTOR] = { FTSWARM_16_XMOTOR, FTSWARM_20_XMMOTOR, FTSWARM_17_TRACTOR, FTSWARM_18_ENCODER, FTSWARM_19_LAMP, FTSWARM_23_VALVE, FTSWARM_22_COMPRESSOR, FTSWARM_24_BUZZER };
  
 /***************************************************
  *
@@ -54,8 +43,8 @@ SwOSActor::~SwOSActor() {
   if ( ledc_channel ) free( ledc_channel );
 }
 
-char * SwOSActor::getIcon() { 
-  return (char *) ACTORICON[ _actorType ]; 
+FtSwarmIcon_t SwOSActor::getIcon() { 
+  return ACTORICON[ _actorType ]; 
 }; 
 
 void SwOSActor::_setupI2C() {
@@ -381,7 +370,7 @@ void SwOSActor::jsonize( JSONize *json, uint8_t id) {
 
   json->startObject();
   SwOSIO::jsonize(json, id);
-  json->variable("subType",    (char *) ACTORTYPE[ _actorType ] );
+  json->variableUI32("subType",    _actorType );
   json->variableUI32("motiontype", getMotionType() );
   json->variableI16 ("speed",      getSpeed() );
   json->variableB( "highResolution", _highResolution );

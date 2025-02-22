@@ -1,4 +1,3 @@
-#include "esp_err.h"
 /*
  * SwOSWEB.h
  *
@@ -8,6 +7,7 @@
  * 
  */
  
+#include <esp_err.h>
 #include <esp_http_server.h>
 #include <esp_log.h>
 #include <cJSON.h>
@@ -339,8 +339,10 @@ esp_err_t apiGetSwarm(httpd_req_t *req ) {
 
   json.variableB("provided", provided);
   json.variableB("status", status);
-
+  json.variableB("kelda", myOSSwarm.Ctrl[0]->IAmKelda );
   json.endObject();
+
+
   json.newObject(JSONObject);
   json.text2string((char *)"swarms");
   json.assign();
@@ -541,9 +543,6 @@ esp_err_t apiIsAuthorized( httpd_req_t *req ) {
   cJSON_Delete(root);
 
   if (!hasAuthorization ) return sendResponse( req, 400 );
-
-  // cleanup
-  cJSON_Delete(root);
 
   uint16_t status = myOSSwarm.apiIsAuthorized( token, true );
 

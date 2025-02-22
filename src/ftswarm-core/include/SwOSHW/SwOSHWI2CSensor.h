@@ -28,7 +28,7 @@
 
     // administrative stuff
 	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_GYRO; };
-    virtual char *getIcon() { return (char *) "25_gyro.svg"; };
+    virtual FtSwarmIcon_t getIcon() { return FTSWARM_29_GYRO; };
     virtual void jsonize( JSONize *json, uint8_t id);
 
     // Test, if I'm an Sensor

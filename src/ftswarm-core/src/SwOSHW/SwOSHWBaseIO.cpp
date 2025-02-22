@@ -32,24 +32,10 @@ const char IOTYPE[FTSWARM_MAXIOTYPE][15] = {
 
 const char EMPTYSTRING[] = "";
 
-const char SENSORICON[FTSWARM_MAXSENSOR][21] = {
-  "00_digital.svg",
-  "01_analog.svg",
-  "02_switch.svg",
-  "03_reedswitch.svg",
-  "21_lightbarrier.svg",
-  "04_voltage.svg",
-  "05_resistor.svg",
-  "06_ntc.svg",
-  "07_ldr.svg",
-  "08_trailsensor.svg",
-  "09_colorsensor.svg",
-  "10_ultrasonic.svg",
-  "26_cam.svg",
-  "25_counter.svg",
-  "27_rotaryEncoder.svg",
-  "28_frequency.svg"
-};
+FtSwarmIcon_t SENSORICON[FTSWARM_MAXSENSOR] = 
+  { FTSWARM_00_DIGITAL, FTSWARM_01_ANALOG, FTSWARM_02_SWITCH, FTSWARM_03_REEDSWITCH, FTSWARM_21_LIGHTBARRIER, FTSWARM_04_VOLTAGE, FTSWARM_05_RESISTOR, FTSWARM_06_NTC, FTSWARM_07_LDR,
+    FTSWARM_08_TRAILSENSOR, FTSWARM_09_COLORSENSOR, FTSWARM_10_ULTRASONIC, FTSWARM_26_CAM, FTSWARM_25_COUNTER, FTSWARM_27_ROTARYENCODER, FTSWARM_28_FREQUENCY 
+  };
 
 // reference to local ftPwrDrive
 ftPwrDrive *pwrDrive = NULL;
@@ -193,8 +179,8 @@ void SwOSIO::unlock( void ) {
 
 void SwOSIO::jsonize( JSONize *json, uint8_t id) {
   SwOSObj::jsonize(json, id);
-  json->variable("type", (char *) IOTYPE[getIOType()]);
-  json->variable("icon", (char *) getIcon() );
+  json->variableUI32("type", getIOType() );
+  json->variableUI32("icon", getIcon() );
   json->variableB( "active", ( _alias != NULL ) || isInUse() );
 }
 
@@ -363,8 +349,8 @@ void SwOSInput::_setupLocal() {
   
 }
 
-char * SwOSInput::getIcon() { 
-  return (char *) SENSORICON[ _sensorType ]; 
+FtSwarmIcon_t SwOSInput::getIcon() { 
+  return SENSORICON[ _sensorType ]; 
 }; 
 
 void SwOSInput::setSensorTypeLocal( FtSwarmSensor_t sensorType ) {

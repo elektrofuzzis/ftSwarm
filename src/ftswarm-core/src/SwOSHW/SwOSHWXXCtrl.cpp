@@ -237,6 +237,7 @@ SwOSCom *SwOSSwarmXX::state2Com( MacAddr destination ) {
 
   // copy I2C registers
   if (I2C) memcpy( com->data.stateCmd.i2cValue, I2C->myRegister, MAXI2CREGISTERS );
+  // if (gyro) memcpy( com->data.stateCmd.gyro, gyro->)
 
   return com;
 
