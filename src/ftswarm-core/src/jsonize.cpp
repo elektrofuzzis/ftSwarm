@@ -208,3 +208,31 @@ void JSONize::variableCelcius( const char *identifier, float f ) {
   text2string( value );
 
 }
+
+void JSONize::variable4F( const char *identifier, float f1, float f2, float f3, float f4 ) {
+
+  char value[100];
+
+  newObject(JSONVariable);
+
+  text2string( (char *) identifier );
+  assign();
+
+  sprintf(value, "%f %f %f %f", f1, f2, f3, f4 );
+  text2string( value );
+
+}
+
+void JSONize::variable3I16( const char *identifier, int16_t i1, int16_t i2, int16_t i3 )  {
+
+  char value[100];
+
+  newObject(JSONVariable);
+
+  text2string( (char *) identifier );
+  assign();
+
+  sprintf(value, "%d %d %d", i1, i2, i3 );
+  text2string( value );
+
+}

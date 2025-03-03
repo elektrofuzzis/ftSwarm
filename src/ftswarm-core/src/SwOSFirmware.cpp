@@ -259,149 +259,75 @@ void wifiMenu( void ) {
   }
 }
 
-void joinSwarm( boolean createNewSwarm ) {
+void newSwarm( void ) {
 
-  // create a new swarm
-  char name[64];
-  char prompt[256];
+  char name[MAXIDENTIFIER];
+  name[0] = '\0';
+  while (strlen(name) < 5) enterString("New Swarm Name [min. 5 chars]: ", name, MAXIDENTIFIER );
+  uint16_t pin = enterNumber("New Swarm Pin [1..9999]: ", -1, 1, 9999 );
 
-  // get new swarm's name
-  while (1) {
-    
-    enterString( "Please enter new swarm's name [minimum 5 chars]: ", name, MAXIDENTIFIER);
-
-    // different names, at least 5 chars
-    if ( ( strcmp( nvs.swarmName, name ) != 0 ) && ( strlen( name ) > 4 ) ) {
-      break;
-    }
-
-  }
-
-  // get new swarm's pin
-  uint16_t pin = enterNumber("Please enter new swarm's PIN [1..9999]: ", 0, 1, 9999 );
-
-  // build swarm
-  if ( createNewSwarm ) {
-    sprintf( prompt, "Do you really want to quit swarm \"%s\", create new swarm \"%s\" with pin %d and reboot (Y/N) ?", nvs.swarmName, name, pin );
+  if ( myOSSwarm.Ctrl[0]->IAmKelda ) {
+    if (!yesNo( "Destroy the existing swarm and create a new one? [Y/N] " ) ) return;
   } else {
-    sprintf( prompt, "Do you really want to quit swarm \"%s\" and join swarm \"%s\" with pin %d (Y/N) ?", nvs.swarmName, name, pin );
+    if (!yesNo( "Leave the existing swarm and create a new one? [Y/N] " ) ) return;
   }
 
-  // stop, if NO
-  if ( !yesNo( prompt ) ) return;
+  strcpy( nvs.swarmName, name );
+  nvs.swarmPIN = pin;
 
-  // leave old swarm
-  SwOSError_t err = myOSSwarm.leaveSwarm();
-  if ( ( err == SWOS_TIMEOUT ) && (!yesNo( "I couldn't inform all swarm members. Continue anyway [Y/N]?" ) ) ) return;
- 
-  // new swarm?
-  if ( createNewSwarm ) {
-    err = myOSSwarm.createSwarm( name, pin );
-    if ( err != SWOS_OK ) { printf("Internal error %d during createSwarm.\n", err ); return; }
-    nvs.deleteAllControllers();
-    nvs.save();
-    printf("%s successfully created.\n", name );
-    printf("Press any key to reboot\n");
-    anyKey();
-    ESP.restart();
+  myOSSwarm.newSwarm(  );
 
-  } else {
-
-    err = myOSSwarm.joinSwarm( name, pin );
-    switch ( err ) {
-      case SWOS_OK:       printf("%s successfully joined.\n", name ); 
-                          nvs.save();
-                          return;
-
-      case SWOS_DENY:     printf("Kelda refused you.\n"); 
-                          break;
-
-      case SWOS_TIMEOUT:  printf("Couldn't connect to Kelda.\n");
-                          break;
-
-      default:            printf("Internal error %d during joinSwarm.\n", err );
-                          break;
-    }
-
-    if ( yesNo( "Reload swarm settings and reboot [Y/N]?" ) ) { 
-      ESP.restart();
-    } 
-
-  }
+  nvs.save( );
 
 }
 
-void inviteControllerToSwarm( void ) {
+void addController( void ) {
 
-  uint16_t SN = enterNumber("Add Controller: Please enter the controllers serial number [1..999]: ", 0, 1, 999 );
+  FtSwarmSerialNumber_t serialNumber = (FtSwarmSerialNumber_t) enterNumber("Enter new swarm members serial number [1..9999]: ", -1, 1, 9999 );
 
-  if ( myOSSwarm.getController( SN ) ) {
-    printf("This controller is already a swarm member\n");
-    return;
-  }
-
-  SwOSError_t err = myOSSwarm.inviteToSwarm( SN );
+  if ( myOSSwarm.isMember( serialNumber ) ) { printf("This controller is already part of this swarm.\n"); return; }
   
-  switch ( err ) {
-    case SWOS_OK:       printf("Device %d successfully joined.\n", SN ); 
-                        nvs.save(); 
-                        myOSSwarm.registerMe( MacAddr( broadcast ), SN );
-                        longDelay();
-                        break;
-    case SWOS_DENY:     printf("Controller %d refused.\n", SN); break;
-    case SWOS_TIMEOUT:  printf("Couldn't connect to controller %d.\n", SN); break;
-    default:            printf("Internal error %d during joinSwarm.\n", err ); break;
-  }
-
-}
-
-void rejectControllerFromSwarm( void ) {
-
-  uint16_t SN = enterNumber("Delete Controller: Please enter the controllers serial number [1..999]: ", 0, 1, 999 );
-
-  if ( !myOSSwarm.getController( SN ) ) {
-    printf("This controller isn't a swarm member\n");
+  if ( !myOSSwarm.addController( serialNumber ) ) {
+    // no space left
+    printf("No space left in swarm. Controller #%d was declined.\n", serialNumber );
     return;
   }
 
-  bool force = false;
+  printf("Controller SN %d was added to the swarm.\n", serialNumber );
+  if ( !myOSSwarm.isOnline( serialNumber ) ) printf("Please switch on controller #%d\n", serialNumber);
 
-  while (1) {
+  nvs.save( );
 
-    switch ( myOSSwarm.rejectController( SN, force ) ) {
+}
 
-      case SWOS_OK:       printf( "Device %d left the swarm.\n", SN);
-                          nvs.deleteController( SN );
-                          nvs.save();
-                          return;
-      
-      case SWOS_TIMEOUT:  printf( "Couldn't connect to device %d,\n", SN);
-                          if (!yesNo("Delete it anyway [Y/N]?" ) ) return;
-                          force = true;
-                          break;
+void deleteController( void ) {
 
-      case SWOS_DENY:     printf( "This device is used actively. Stop yout program first.\n");
-                          return;
+  FtSwarmSerialNumber_t serialNumber = (FtSwarmSerialNumber_t) enterNumber("Enter serial number to be revoked [1..9999]: ", -1, 1, 9999 );
 
-      default:            printf( "Error: unexpected swarm behaviour.\n");
-                          return;
+  if ( !myOSSwarm.isMember( serialNumber ) ) { printf("This controller isn't part of this swarm.\n"); return; }
+  
+  if ( !myOSSwarm.deleteController( serialNumber ) ) {
+    // not found
+    printf("This controller isn't part of this swarm.\n");
+    return;
+  }
 
-    }
-    
-  } 
+  printf("Controller SN %d was revoked from the swarm.\n", serialNumber );
+
+  nvs.save( );
 
 }
 
 const char SWARMCOMMUNICATION[4][13] = { "none", "wifi", "RS485", "wifi & RS485" };
+const char COMSTATE[3][11] = { "OFFLINE", "CONNECTING", "ONLINE" };
 
 // swam menu identifiers
 
-#define MENUCREATESWARM        1
-#define MENUJOINSWARM          2
-#define MENUSWARMCOMMUNICATION 3
-#define MENUINVITECONTROLLER   4
-#define MENUREJECTCONTROLLER   5
-#define MENUSWARMSPEED         6
+#define MENUSWARMCREATE        1
+#define MENUSWARMADD           2
+#define MENUSWARMDELETE        3
+#define MENUSWARMCOMMUNICATION 4
+#define MENUSWARMSPEED         5
 
 void swarmMenu( void ) {
 
@@ -415,10 +341,10 @@ void swarmMenu( void ) {
 
     if (nvs.IAmKelda) {
 
-      printf("%s is Kelda running swarm \"%s\" using Pin %d:\n\nSN  NW Age Hostname \n", myOSSwarm.Ctrl[0]->getHostname(), nvs.swarmName, nvs.swarmPIN );
+      printf("%s is Kelda running swarm \"%s\" using Pin %d:\n\nSN  NW Age State      Hostname \n", myOSSwarm.Ctrl[0]->getHostname(), nvs.swarmName, nvs.swarmPIN );
       for ( int8_t i=0; i<=myOSSwarm.maxCtrl; i++ ) {
         if ( myOSSwarm.Ctrl[i] ) {
-          printf("%3d %.6lu %s\n", myOSSwarm.Ctrl[i]->serialNumber, myOSSwarm.Ctrl[i]->networkAge(), myOSSwarm.Ctrl[i]->getHostname() );
+          printf("%3d %.6lu %-10s %s\n", myOSSwarm.Ctrl[i]->serialNumber, myOSSwarm.Ctrl[i]->networkAge(), COMSTATE[myOSSwarm.Ctrl[i]->comState], myOSSwarm.Ctrl[i]->getHostname() );
         }
       }
 
@@ -440,12 +366,11 @@ void swarmMenu( void ) {
       if ( nvs.swarmCommunication != swarmComWifi ) menu.add( "swarm speed", nvs.swarmSpeed, MENUSWARMSPEED);
     }
     
-    menu.add( "create a new swarm", "", MENUCREATESWARM );
-    menu.add( "join another swarm", "", MENUJOINSWARM );
+    menu.add( "create a new swarm", "", MENUSWARMCREATE );
 
     if (nvs.IAmKelda) {
-      menu.add( "invite a controller to my swarm", "", MENUINVITECONTROLLER );
-      menu.add( "reject a controller from my swarm", "", MENUREJECTCONTROLLER );
+      menu.add( "add a controller", "", MENUSWARMADD );
+      menu.add( "revoke a controller", "", MENUSWARMDELETE );
     }
 
     switch( menu.userChoice() ) {
@@ -476,23 +401,19 @@ void swarmMenu( void ) {
         if ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) nvs.saveAndRestart();
         break;
 
-      case MENUCREATESWARM:
-        joinSwarm( true ); 
+      case MENUSWARMCREATE:
+        newSwarm();
         break;
         
-      case MENUJOINSWARM:
-        joinSwarm( false ); 
+      case MENUSWARMADD:
+        addController();
         break;
 
-      case MENUINVITECONTROLLER:
-        inviteControllerToSwarm( );
+      case MENUSWARMDELETE:
+        deleteController();
         break;
 
-      case MENUREJECTCONTROLLER:
-        rejectControllerFromSwarm( );
-        break;
-
-    }
+      }
     
   }
 
@@ -559,6 +480,12 @@ void aliasMenu( void ) {
                               menu.add( ftSwarm->I2C->getName(), ftSwarm->I2C->getAlias(), item, true );
                             }
                             break;
+                            // list gyro
+                            if (ftSwarm->gyro) {
+                              OSObj[item++] = ftSwarm->gyro;
+                              menu.add( ftSwarm->gyro->getName(), ftSwarm->gyro->getAlias(), item, true );
+                            }
+                            break;
 
       case FTSWARMCONTROL:  ftSwarmControl = static_cast<SwOSSwarmControl *>(myOSSwarm.Ctrl[0]);
                             // buttons
@@ -574,6 +501,11 @@ void aliasMenu( void ) {
                             if (ftSwarmControl->oled) {
                               OSObj[item++] = ftSwarmControl->oled;
                               menu.add( ftSwarmControl->oled->getName(), ftSwarmControl->oled->getAlias(), item, true );
+                            }
+                            // list gyro
+                            if (ftSwarmControl->gyro) {
+                              OSObj[item++] = ftSwarmControl->gyro;
+                              menu.add( ftSwarmControl->gyro->getName(), ftSwarmControl->gyro->getAlias(), item, true );
                             }
                             break;
 
@@ -887,8 +819,10 @@ void mainMenu( void ) {
 
     menu.start( "Main Menu", 14 );
     menu.add("Wifi & Web UI", "", MAINMENUWEB );
-    if ( ( WiFi.status() == WL_CONNECTED ) || ( nvs.wifiMode == wifiAP ) ) {
+    if ( ( WiFi.status() == WL_CONNECTED ) || ( nvs.wifiMode == wifiAP ) || ( nvs.RS485Available() ) ) {
       menu.add("Swarm Configuration", "", MAINMENUSWARM );
+    } else {
+      menu.add("Swarm Configuration - activate WiFi", "", DEACTIVATED );
     }
     menu.add("Alias Names", "", MAINMENUALIAS );
     menu.add("Factory Reset", "", MAINMENUFACTORY );

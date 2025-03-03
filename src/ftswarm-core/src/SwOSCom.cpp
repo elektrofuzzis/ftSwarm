@@ -168,24 +168,14 @@ SwOSCom::SwOSCom( MacAddr macAddr, const uint8_t *buffer, int length):SwOSCom() 
   bzero( &data, sizeof( SwOSDatagram_t ) );
   memcpy( &data, buffer, min( length, sizeof(data) ) );
 
-  // bool isJoin = ( ( data.secret == DEFAULTSECRET ) && ( data.cmd == CMD_SWARMJOIN ) && ( data.joinCmd.pin == myOSNetwork.pin ) && ( myOSNetwork.pin != 0 ) ) ;
-  bool isJoin = ( data.secret == DEFAULTSECRET ) && ( data.cmd == CMD_SWARMJOIN );
-  bool isAck  = ( ( data.secret == DEFAULTSECRET ) && ( data.cmd == CMD_ACK ) );
-
   #ifdef DEBUG_COMMUNICATION_DETAIL
-    printf("isvalid: isJoin = %d, isAck = %d, length = %d, size = %d, cmd = %d, version = %d\n",
-            isJoin, isAck, length, size(), data.cmd, data.version);
+    printf("isvalid: length = %d, size = %d, cmd = %d, version = %d\n",
+            length, size(), data.cmd, data.version);
   #endif
 
-  _isValid = ( ( ( data.secret == myOSNetwork.secret ) || isJoin || isAck ) &&
-               ( length == size( ) ) &&
+  _isValid = ( ( length == size( ) ) &&
                ( data.cmd < CMD_MAX ) &&
                ( data.version == VERSIONDATA ) );
-/*
-  if ( data.cmd != 8 )
-    printf("SN = %d %d secret = %d %d _isvalid = %d isJoin = %d, isAck = %d, length = %d, size = %d, cmd = %d, version = %d\n",
-            data.sourceSN, data.affectedSN, data.secret, myOSNetwork.secret, _isValid, isJoin, isAck, length, size(), data.cmd, data.version);
-*/
 
 }
 
@@ -199,7 +189,6 @@ SwOSCom::SwOSCom( MacAddr macAddr, FtSwarmSerialNumber_t affectedSN, SwOSCommand
   data.affectedSN = affectedSN;
   
   // set header
-  data.secret    = myOSNetwork.secret;
   data.version   = VERSIONDATA;
   data.cmd       = cmd;
 
@@ -256,7 +245,6 @@ void SwOSCom::print() {
 
   macAddr.print();
   printf("size: %d\n", size() );
-  printf("secret: %04X\n", data.secret);
   printf("source: %d\n", data.sourceSN);
   printf("affected: %d\n", data.affectedSN);
   printf("command: %d\n", data.cmd);

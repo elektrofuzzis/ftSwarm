@@ -54,8 +54,7 @@ public:
 	FtSwarmSerialNumber_t serialNumber;
   MacAddr               macAddr;
   bool                  IAmKelda;
-  SwOSAckState_t        lastAck = { CMD_MAX, SWOS_OK, DEFAULTSECRET };
-  SwOSComState_t        comState = INITIALIZING;
+  SwOSComState_t        comState = OFFLINE;
   
   // common hardware
 	SwOSInput    *input[MAXINPUTS];

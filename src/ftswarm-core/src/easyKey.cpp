@@ -189,7 +189,8 @@ void Menu::add( const char *item, int value, uint8_t id ) {
 void Menu::add( const char *item, const char *value, uint8_t id, bool staticDelimiter ){
 
   maxItem++;
-  printf( "(%2d) %s", maxItem, item );
+  if ( id==DEACTIVATED ) printf( "(--) %s", item );
+  else printf( "(%2d) %s", maxItem, item );
   
   if ( ( value[0] != '\0' ) || ( staticDelimiter ) ) {
     printf(": ");

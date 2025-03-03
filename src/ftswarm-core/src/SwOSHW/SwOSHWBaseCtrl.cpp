@@ -563,8 +563,8 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
       return true;
 
     case CMD_RESETCOUNTER:
-       if ( ( input[com->data.CounterCmd.index] ) && ( input[com->data.CounterCmd.index]->getIOType() == FTSWARM_COUNTERINPUT ) )
-          static_cast<SwOSCounter *>(input[com->data.CounterCmd.index])->resetCounter();
+       if ( ( input[com->data.counterCmd.index] ) && ( input[com->data.counterCmd.index]->getIOType() == FTSWARM_COUNTERINPUT ) )
+          static_cast<SwOSCounter *>(input[com->data.counterCmd.index])->resetCounter();
        return true;
 
     case CMD_SETSTEPPERDISTANCE:

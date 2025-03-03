@@ -45,6 +45,9 @@
 
     }
 
+    // 400kHz only
+    Wire.setClock(400000);
+
   }
 
   // use parameter to handle remote devices correctly
@@ -236,8 +239,8 @@ SwOSCom *SwOSSwarmXX::state2Com( MacAddr destination ) {
   SwOSCom *com = SwOSCtrl::state2Com( destination );
 
   // copy I2C registers
-  if (I2C) memcpy( com->data.stateCmd.i2cValue, I2C->myRegister, MAXI2CREGISTERS );
-  // if (gyro) memcpy( com->data.stateCmd.gyro, gyro->)
+  if (I2C)  memcpy( com->data.stateCmd.i2cValue, I2C->myRegister, MAXI2CREGISTERS );
+  if (gyro) gyro->state2com( com );
 
   return com;
 
@@ -247,7 +250,8 @@ bool SwOSSwarmXX::recvState( SwOSCom *com ) {
 
   if (!SwOSCtrl::recvState(com) ) return false;
 
-  if (I2C) memcpy( I2C->myRegister,  com->data.stateCmd.i2cValue, MAXI2CREGISTERS );
+  if (I2C)  memcpy( I2C->myRegister,  com->data.stateCmd.i2cValue, MAXI2CREGISTERS );
+  if (gyro) gyro->recvState( com );
   return true;
  
 } 

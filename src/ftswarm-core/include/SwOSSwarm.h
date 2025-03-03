@@ -36,19 +36,6 @@ protected:
   SwOSIO  *waitFor( char *alias, FtSwarmIOType_t ioType );
   bool     startEvents( void );
   void     startWifi( void );
-
-  // internal function to handle CMD_SWARMJOIN
-  void cmdJoin( SwOSCom *com, uint8_t source, uint8_t affected );
-
-  // internal function to handle CMD_ACK
-  void cmdAck( SwOSCom *com, uint8_t source, uint8_t affected );
-
-  // internale function to handle CMD_SWARMLEAVE
-  void cmdLeave( SwOSCom *com, uint8_t source, uint8_t affected );
-
-  // send an ack package to destinationSN to inform about command cmd with error error 
-  void sendAck( FtSwarmSerialNumber_t destinationSN, SwOSCommand_t cmd, SwOSError_t error, uint16_t secret );
-
   
 public:
 	int8_t   maxCtrl = -1;
@@ -112,31 +99,16 @@ public:
   // receiving data from other controllers
   void OnDataRecv( SwOSCom *buffer );
 
-  // void registerMe( void );                                                        // register myself in a swarm
-  
   // Introduce myself to a specific controller. 
   void registerMe( MacAddr destinationMac, FtSwarmSerialNumber_t destinationSN );  
   
-  // The local controller leaves the swarm.
-  SwOSError_t leaveSwarm( void );
-
-  // Kelda rejects/deletes a controller
-  SwOSError_t rejectController( FtSwarmSerialNumber_t serialNumber, bool force );
-
-  // create a new swarm using defaults. Call leaveSwarm before using it.
-  SwOSError_t createSwarm( void );
-
-  // create a new swarm. Call leaveSwarm before using it.
-  SwOSError_t createSwarm( char *name, uint16_t pin );
-
-  // invite a controller to join the swarm
-  SwOSError_t inviteToSwarm( FtSwarmSerialNumber_t serialNumber );
-
-  // I want to join an existing swarm
-  SwOSError_t joinSwarm( char *name, uint16_t pin );
-
   // **** some useful stuff ****
-  uint8_t members( void ); // # of members in swarm
+  uint8_t members( void );                                     // # of members in swarm
+  void newSwarm( void );                                       // create a new swam based on nvs settings
+  bool isMember( FtSwarmSerialNumber_t serialNumber );         // Test, if SN is part my my Swarm 
+  bool isOnline( FtSwarmSerialNumber_t serialNumber );         // Test, if SN is online
+  bool addController( FtSwarmSerialNumber_t serialNumber );    // add Controller SN to the swarm
+  bool deleteController( FtSwarmSerialNumber_t serialNumber ); // delete Controller SN
 
 };
 

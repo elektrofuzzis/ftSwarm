@@ -11,6 +11,7 @@
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWActor.h"
 #include <MPU6050_6Axis_MotionApps20.h>
+#include <LSM6DSRSensor.h>
 
 /***************************************************
  *
@@ -151,6 +152,32 @@ void SwOSGyroMPU::_setupLocal() {
 
 }
 
+void SwOSGyroMPU::state2com( SwOSCom *com ) {
+
+  com->data.stateCmd.gyroMPU.qw = q.w;
+  com->data.stateCmd.gyroMPU.qx = q.x;
+  com->data.stateCmd.gyroMPU.qy = q.y;
+  com->data.stateCmd.gyroMPU.qz = q.z;
+  com->data.stateCmd.gyroMPU.ax = aa.x;
+  com->data.stateCmd.gyroMPU.ay = aa.y;
+  com->data.stateCmd.gyroMPU.az = aa.z;
+
+}
+
+
+void SwOSGyroMPU::recvState( SwOSCom *com ) {
+
+  q.w = com->data.stateCmd.gyroMPU.qw;
+  q.x = com->data.stateCmd.gyroMPU.qx;
+  q.y = com->data.stateCmd.gyroMPU.qy;
+  q.z = com->data.stateCmd.gyroMPU.qz;
+
+  aa.x = com->data.stateCmd.gyroMPU.ax;
+  aa.y = com->data.stateCmd.gyroMPU.ay;
+  aa.z = com->data.stateCmd.gyroMPU.az;
+
+};
+
 void SwOSGyroMPU::read() {
 
   uint8_t FIFOBuffer[64]; // FIFO storage buffer
@@ -235,6 +262,16 @@ void SwOSGyroMPU::getEuler(float *alpha, float *beta, float *gamma, bool radiant
 
 };
 
+void SwOSGyroMPU::jsonize( JSONize *json, uint8_t id) {
+
+  json->startObject();
+  SwOSIO::jsonize(json, id);
+  
+  json->variable4F( "Quaternion", q.w, q.x, q.y, q.z);
+  json->variable3I16( "Acceleration", aa.x, aa.y, aa.z );
+  
+  json->endObject();
+}
 
 /***************************************************
  *  

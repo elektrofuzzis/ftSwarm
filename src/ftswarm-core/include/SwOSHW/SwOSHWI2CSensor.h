@@ -30,6 +30,8 @@
 	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_GYRO; };
     virtual FtSwarmIcon_t getIcon() { return FTSWARM_29_GYRO; };
     virtual void jsonize( JSONize *json, uint8_t id);
+    virtual void state2com( SwOSCom *com ) {};
+    virtual void recvState( SwOSCom *com ) {};
 
     // Test, if I'm an Sensor
     virtual bool isSensor( void ) { return true; }
@@ -80,6 +82,9 @@
     // constructor
 	  SwOSGyroMPU(const char *name, SwOSCtrl *ctrl );
     ~SwOSGyroMPU();
+    virtual void state2com( SwOSCom *com );
+    virtual void recvState( SwOSCom *com );
+    virtual void jsonize( JSONize *json, uint8_t id);
 
     // read sensor
     virtual void read();

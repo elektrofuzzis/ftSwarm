@@ -133,7 +133,7 @@ void SwOSSwarmPwrDrive::setMicrostepMode( uint8_t mode, bool dontSendToRemote ) 
     if (!dontSendToRemote) {
       // send remote
       SwOSCom cmd( macAddr, serialNumber, CMD_SETMICROSTEPMODE );
-      cmd.data.CtrlCmd.microstepMode = mode;
+      cmd.data.ctrlCmd.microstepMode = mode;
       cmd.send( );
     }
 
@@ -158,7 +158,7 @@ bool SwOSSwarmPwrDrive::OnDataRecv( SwOSCom *com ) {
   if (!com) return false;
 
   if ( com->data.cmd == CMD_SETMICROSTEPMODE ) {
-      setMicrostepMode( com->data.CtrlCmd.microstepMode, true );
+      setMicrostepMode( com->data.ctrlCmd.microstepMode, true );
       return true;
   } else {
       return SwOSCtrl::OnDataRecv(com);

@@ -11,6 +11,8 @@
 
 #include <stdint.h>
 
+#define DEACTIVATED 255
+
 void keyboardEcho( bool on );
 // set on to false to disable all keyboard echo
 

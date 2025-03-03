@@ -150,7 +150,7 @@ void SwOSCounter::resetCounter( void ) {
   } else {
 
     SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_RESETCOUNTER );
-    cmd.data.CounterCmd.index = _port;
+    cmd.data.counterCmd.index = _port;
     cmd.send( );
 
   }

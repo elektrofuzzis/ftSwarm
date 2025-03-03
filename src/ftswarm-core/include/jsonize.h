@@ -55,5 +55,7 @@ public:
   void variableVolt( const char *identifier, float f);
 	void variableOhm( const char *identifier, float f);
   void variableCelcius( const char *identifier, float f);
-  
+  void variable4F( const char *identifier, float f1, float f2, float f3, float f4 );
+  void variable3I16( const char *identifier, int16_t i1, int16_t i2, int16_t i3 );
+    
 };
