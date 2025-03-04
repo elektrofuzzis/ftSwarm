@@ -222,7 +222,7 @@ void wifiMenu( void ) {
         wifiMode = (FtSwarmWifi_t) enterNumber( "enter wifi mode [ 0-off , 1-AP-Mode, 2-Client-Mode]: ", nvs.wifiMode, 0, 2 );
         if ( nvs.wifiMode != wifiMode ) {
           if ( ( wifiMode == wifiOFF ) && ( nvs.swarmCommunication & 0x1 ) ) {
-            printf("Error: please deactivate wifi in swarm communication first.\n");
+            printf("\e[0;31mError: please deactivate wifi in swarm communication first.\e[0;30m\n");
           } else {
             nvs.wifiMode = wifiMode;
             if ( ( nvs.wifiMode == wifiAP ) && ( ( nvs.channel < 1 ) || ( nvs.channel > 13 ) ) ) nvs.channel = 1; // to avoid invalid channel settings
@@ -285,16 +285,16 @@ void addController( void ) {
 
   FtSwarmSerialNumber_t serialNumber = (FtSwarmSerialNumber_t) enterNumber("Enter new swarm members serial number [1..9999]: ", -1, 1, 9999 );
 
-  if ( myOSSwarm.isMember( serialNumber ) ) { printf("This controller is already part of this swarm.\n"); return; }
+  if ( myOSSwarm.isMember( serialNumber ) ) { printf("\e[0;31mERROR: This controller is already part of this swarm.\e[0;30m\n"); return; }
   
   if ( !myOSSwarm.addController( serialNumber ) ) {
     // no space left
-    printf("No space left in swarm. Controller #%d was declined.\n", serialNumber );
+    printf("\e[0;31mERROR: No space left in swarm. Controller #%d was declined.\e[0;30m\n", serialNumber );
     return;
   }
 
   printf("Controller SN %d was added to the swarm.\n", serialNumber );
-  if ( !myOSSwarm.isOnline( serialNumber ) ) printf("Please switch on controller #%d\n", serialNumber);
+  if ( !myOSSwarm.isOnline( serialNumber ) ) printf("\e[0;31mWARNING: Please switch controller #%d on.\e[0;30m\n", serialNumber);
 
   nvs.save( );
 
@@ -304,11 +304,11 @@ void deleteController( void ) {
 
   FtSwarmSerialNumber_t serialNumber = (FtSwarmSerialNumber_t) enterNumber("Enter serial number to be revoked [1..9999]: ", -1, 1, 9999 );
 
-  if ( !myOSSwarm.isMember( serialNumber ) ) { printf("This controller isn't part of this swarm.\n"); return; }
+  if ( !myOSSwarm.isMember( serialNumber ) ) { printf("\e[0;31mERROR: This controller isn't part of this swarm.\e[0;30m\n"); return; }
   
   if ( !myOSSwarm.deleteController( serialNumber ) ) {
     // not found
-    printf("This controller isn't part of this swarm.\n");
+    printf("\e[0;31mERROR: This controller isn't part of this swarm.\e[0;30m\n");
     return;
   }
 
@@ -319,7 +319,7 @@ void deleteController( void ) {
 }
 
 const char SWARMCOMMUNICATION[4][13] = { "none", "wifi", "RS485", "wifi & RS485" };
-const char COMSTATE[5][11] = { "OFFLINE", "PHASE1", "PHASE2", "ONLINE", "ERROR" };
+const char COMSTATE[5][30] = { "\e[1;31mOFFLINE\e[0;30m", "\e[1;33mPHASE1\e[0;30m", "\e[1;33mPHASE2\e[0;30m", "\e[1;32mONLINE\e[0;30m", "\e[1;31mERROR\e[0;30m\e[0;30m" };
 
 // swam menu identifiers
 
@@ -341,10 +341,10 @@ void swarmMenu( void ) {
 
     if (nvs.IAmKelda) {
 
-      printf("%s is Kelda running swarm \"%s\" using Pin %d:\n\nSN  NW Age State      Hostname \n", myOSSwarm.Ctrl[0]->getHostname(), nvs.swarmName, nvs.swarmPIN );
+      printf("%s is Kelda running swarm \"%s\" using Pin %d:\n\nSN  NW Age State  Hostname \n", myOSSwarm.Ctrl[0]->getHostname(), nvs.swarmName, nvs.swarmPIN );
       for ( int8_t i=0; i<=myOSSwarm.maxCtrl; i++ ) {
         if ( myOSSwarm.Ctrl[i] ) {
-          printf("%3d %.6lu %-10s %s\n", myOSSwarm.Ctrl[i]->serialNumber, myOSSwarm.Ctrl[i]->networkAge(), COMSTATE[myOSSwarm.Ctrl[i]->getComState()], myOSSwarm.Ctrl[i]->getHostname() );
+          printf("%3d %.6lu %-11s %s\n", myOSSwarm.Ctrl[i]->serialNumber, myOSSwarm.Ctrl[i]->networkAge(), COMSTATE[myOSSwarm.Ctrl[i]->getComState()], myOSSwarm.Ctrl[i]->getHostname() );
         }
       }
 
@@ -386,7 +386,7 @@ void swarmMenu( void ) {
           if (nvs.swarmCommunication != swarmCommunication) {
             // test if wifiMode is OFF and swarm should use wifi
             if ( ( nvs.wifiMode == wifiOFF ) && ( swarmCommunication & 0x1 ) ) {
-              printf("Error: please activate wifi first.\n");
+              printf("\e[0;31mError: please activate wifi first.\e[0;30m\n");
             } else {
               // let's save data
               nvs.swarmCommunication = swarmCommunication;
