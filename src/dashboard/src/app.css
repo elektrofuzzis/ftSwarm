@@ -8,8 +8,30 @@
   --background-nav: #363A4F;
   --background-selection: #363A4F;
   --background-card: #24273A;
+  --card-border: #00000000;
   --color-text: #FFF;
   --color-text-muted: #A0A0A0;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-primary: #5e81ac;
+    --color-secondary: #88c0d0;
+    --color-disabled: #374067;
+    --color-red: #bf616a;
+
+    --background: #F6F8FB;
+    --background-nav: #FFFFFF;
+    --background-selection: #D6E8F8;
+    --background-card: #ffffff;
+    --card-border: #E5E8EC;
+    --color-text: #182433;
+    --color-text-muted: #8A95A7;
+  }
+
+  .svg {
+    filter: invert(0.5) sepia(20) saturate(70) hue-rotate(190deg) brightness(0.3);
+  }
 }
 
 html, body {
@@ -22,4 +44,19 @@ html, body {
   font-size: 16px;
   font-weight: 400;
   line-height: 1.5;
+}
+
+.unstyled {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  background: none;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  display: inline-block;
+  border-radius: 0;
 }

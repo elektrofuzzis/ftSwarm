@@ -1,10 +1,14 @@
 <script lang="ts">
-    import type {ServoIo} from "../swarm";
-    import SwarmCtrlBase from "./SwarmCtrlBase.svelte";
-    import Slider from "./Slider.svelte";
-    import {ftSwarm} from "../api/FtSwarm";
+    import type {ServoIo} from "../../swarm";
+    import SwarmCtrlBase from "../utils/SwarmCtrlBase.svelte";
+    import Slider from "../utils/Slider.svelte";
+    import {ftSwarm} from "../../api/FtSwarm";
 
-    export let input: ServoIo;
+  interface Props {
+    input: ServoIo;
+  }
+
+  let { input = $bindable() }: Props = $props();
 </script>
 
 <SwarmCtrlBase colspan={4} descriptor="Servo" io={input}>

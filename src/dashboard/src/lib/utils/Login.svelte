@@ -1,7 +1,7 @@
 <script>
-    import {swarmApiData} from "../stores";
+    import {swarmApiData} from "../../stores";
     import Swal from "sweetalert2";
-    import {ftSwarm} from "../api/FtSwarm";
+    import {ftSwarm} from "../../api/FtSwarm";
 
     const logout = () => {
         localStorage.removeItem('token');
@@ -47,42 +47,39 @@
 
         let pin = Number(answer.value);
 
-        await ftSwarm.login(pin)
+        if (!await ftSwarm.login(pin)) {
+            Swal.fire({
+                title: 'Login failed',
+                text: 'Please try again',
+                icon: 'error',
+                background: 'var(--background-card)',
+                color: 'var(--color-text)',
+            }).then()
+        }
     };
 </script>
 
+
 {#if $swarmApiData.auth.status}
-    <div class="login-thumb" on:click={logout}>
-        <span>
-            LOGOUT
-        </span>
-    </div>
+    <button class="unstyled login-thumb" onclick={logout}>
+        LOGOUT
+    </button>
 {:else}
-    <div class="login-thumb" on:click={login}>
-        <span>
-            LOGIN
-        </span>
-    </div>
+    <button class="unstyled login-thumb" onclick={login}>
+        LOGIN
+    </button>
 {/if}
 
 <style>
-  .login-thumb {
-    position: fixed;
-    bottom: 0;
-    right: 64px;
-    width: 100px;
-    height: 20px;
-    padding: 0.5em;
-    background: var(--color-secondary);
-    border-radius: 8px 8px 0 0;
-    cursor: pointer;
-  }
-
-  .login-thumb span {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-weight: 700;
-  }
+    .login-thumb {
+        position: fixed;
+        bottom: 0;
+        right: 64px;
+        padding: 0.5em;
+        background: var(--color-secondary);
+        border-radius: 8px 8px 0 0;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: 700;
+    }
 </style>

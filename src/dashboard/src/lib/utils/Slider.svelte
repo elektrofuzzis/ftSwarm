@@ -1,16 +1,25 @@
 <script lang="ts">
-    import {swarmApiData} from "../stores.ts";
+    import {swarmApiData} from "../../stores.ts";
 
-    export let min: number = 0;
-    export let max: number = 100;
-    export let value: number = 50;
-    export let oninput: (event: Event) => void;
+  interface Props {
+    min?: number;
+    max?: number;
+    value?: number;
+    oninput: (event: Event) => void;
+  }
 
-    let disabled: boolean;
-    $: disabled = !$swarmApiData.auth.status;
+  let {
+    min = 0,
+    max = 100,
+    value = $bindable(50),
+    oninput
+  }: Props = $props();
+
+    let disabled: boolean = $derived(!$swarmApiData.auth.status);
+    
 </script>
 
-<input bind:value max={max} min={min} type="range" on:input={oninput} {disabled} />
+<input bind:value max={max} min={min} type="range" {oninput} {disabled} />
 
 <style>
   input {
