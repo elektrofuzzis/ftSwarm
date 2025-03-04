@@ -131,24 +131,34 @@ static void connectTask( void *Parameter ) {
  *
  ***************************************************/
 
+// Start status: OFFLINE
+// if OFFLINE or longer not seen -> CONNECT_PHASE1, send a connect-request
+// if Member denies by sending NAK -> ERROR
+// if Member sends GOTYOU -> CONNECT_PHASE2
+// if Member sends ALIASe -> ONLINE
+
 void SwOSSwarm::connect( void ) {
 
   if (!Ctrl[0]->IAmKelda) return;
 
   for (uint8_t i=1; i<=maxCtrl; i++) {
 
-    if ( ( Ctrl[i] ) && ( Ctrl[i]->networkAge() > 1000L ) ) Ctrl[i]->comState = ASKFORDETAILS;
-
-    if ( ( Ctrl[i] ) && ( Ctrl[i]->comState == ASKFORDETAILS ) ) {
+    // Controller was not seen for a longer time or is new: try to reconnect
+    if ( Ctrl[i] ) { 
+    
+      if ( ( Ctrl[i]->getComState() == COMSTATE_UNDEFINED ) ||
+           ( ( Ctrl[i]->networkAge() > 1000L ) && ( Ctrl[i]->getComState() != COMSTATE_ERROR ) ) ) {
       
-      registerMe( MacAddr( broadcast ), Ctrl[i]->serialNumber );
-      vTaskDelay( 75 / portTICK_PERIOD_MS );
+        Ctrl[i]->setComState( COMSTATE_CONNECT_PHASE1 );
+        joinMySwarm( MacAddr( broadcast ), Ctrl[i]->serialNumber );
+      }
 
     }
 
   }
 
 }
+
 
 uint16_t SwOSSwarm::nextToken( bool rotateToken ) {
 
@@ -375,7 +385,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
                         nvs.initialSetup();
                         break;
   }
-  Ctrl[0]->comState = ONLINE;
+  Ctrl[0]->setComState ( COMSTATE_ONLINE );
 
   // initialize all swarm members from nvs list
   for (uint8_t i=0; i<MAXCTRL; i++) {
@@ -383,7 +393,6 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
     if ( nvs.swarmMember[i] ) {
       maxCtrl++;
       Ctrl[maxCtrl] = new SwOSCtrl( nvs.swarmMember[i],  MacAddr( broadcast ), false, FTSWARM_NOVERSION, false, FTSWARM_EXT_OFF );
-      Ctrl[maxCtrl]->comState = ASKFORDETAILS;
     }
 
   }
@@ -1090,12 +1099,99 @@ void SwOSSwarm::setState( SwOSState_t state ) {
  *
  ***************************************************/
 
-void SwOSSwarm::registerMe( MacAddr destinationMac, FtSwarmSerialNumber_t destinationSN ) {
+void SwOSSwarm::joinMySwarm( MacAddr destinationMac, FtSwarmSerialNumber_t destinationSN ) {
+  // As a Kelda send CMD_JOINMYSWARM to a potential member
 
   // register myself
-  SwOSCom com( destinationMac, destinationSN, CMD_ANYBODYOUTTHERE );
+  SwOSCom com( destinationMac, destinationSN, CMD_JOINMYSWARM );
   Ctrl[0]->registerMe( &com );
   com.send();
+
+}
+
+void SwOSSwarm::replaceCtrl( SwOSCom *com, uint8_t source, uint8_t affected ) {
+  // replace controller in swarm list
+      
+  SwOSCtrl *newCtrl = NULL;
+  SwOSCtrl *oldCtrl = Ctrl[source];
+  switch (com->data.registerCmd.ctrlType) {
+    case FTSWARM:         newCtrl = new SwOSSwarmJST     ( com ); break;
+    case FTSWARMCONTROL:  newCtrl = new SwOSSwarmControl ( com ); break;
+    case FTSWARMCAM:      newCtrl = new SwOSSwarmCAM     ( com ); break;
+    case FTSWARMPWRDRIVE: newCtrl = new SwOSSwarmPwrDrive( com ); break;
+    case FTSWARMDUINO:    newCtrl = new SwOSSwarmDuino   ( com ); break;
+    default: ESP_LOGW( LOGFTSWARM, "Unknown controller type while adding a new controller to my swarm." ); return;
+  }
+  
+  // replace the new controller in my list
+  newCtrl->setComState( COMSTATE_ONLINE );
+  Ctrl[source] = newCtrl;
+  if (oldCtrl) delete oldCtrl; 
+  
+}
+
+void SwOSSwarm::cmdJoinMySwarm( SwOSCom *com, uint8_t source, uint8_t affected ) {
+
+  #ifdef DEBUG_COMMUNICATION_SWARM
+    printf( "CMD_JOINMYSWARM %d source: %d affected: %d maxCtrl %d\n", com->data.cmd, source, affected, maxCtrl );
+  #endif
+
+  if ( ( Ctrl[0]->IAmKelda ) && ( members() > 1 ) ){
+    // I'm a Kelda and I have a swarm with at least one member: nack
+    SwOSCom reply( com->macAddr, com->data.sourceSN, CMD_JOINNACK );
+    Ctrl[0]->registerMe( &reply );
+    reply.send();
+
+  } else { 
+    // I'm fine to join the swarm: ack
+
+    // take swarm settings
+    nvs.swarmPIN = com->data.registerCmd.swarmPIN;
+    strcpy( nvs.swarmName, com->data.registerCmd.swarmName );
+
+    // replace old controller
+    replaceCtrl( com, source, affected );
+
+    // getting member, knowing my Kelda
+    Ctrl[0]->IAmKelda = false;
+    Kelda = Ctrl[source];
+
+    // Send my data      
+    SwOSCom reply( com->macAddr, com->data.sourceSN, CMD_JOINACK );
+    Ctrl[0]->registerMe( &reply );
+    reply.send();
+
+    // send my alias names as well
+    if ( com->data.registerCmd.IAmKelda ) Ctrl[0]->sendAlias( com->macAddr ); 
+
+    // update status
+    setState( RUNNING );
+    if (verbose) { printf("Joined Swarm [%s with MAC ", Ctrl[source]->getHostname() ); Ctrl[source]->macAddr.print(); printf("]\n"); }
+
+  }
+
+}
+
+void SwOSSwarm::cmdJoinNAck( SwOSCom *com, uint8_t source, uint8_t affected ) {
+  // Member to Kelda: I don't want to join your Swarm
+  
+  if ( Ctrl[source] ) Ctrl[source]->setComState( COMSTATE_ERROR ); 
+
+}
+
+void SwOSSwarm::cmdJoinAck( SwOSCom *com, uint8_t source, uint8_t affected ) {
+  // Member to Kelda: I want to join your Swarm
+  
+  if ( Ctrl[source] )  {
+
+    // if it's an unkown controller, update controller data
+    if ( Ctrl[source]->getType() == FTSWARM_NOCTRL ) replaceCtrl( com, source, affected );
+    // ToDo else - send the controller his state
+
+    // wait for alias settings
+    Ctrl[source]->setComState( COMSTATE_CONNECT_PHASE2 ); 
+
+  }
 
 }
 
@@ -1109,83 +1205,25 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
   uint8_t source   = getIndex( com->data.sourceSN );
   uint8_t affected = getIndex( com->data.affectedSN );
 
-  // check, on welcome messages if I'm a Kelda or a Kelda is asking
-  if ( ( ( com->data.cmd == CMD_ANYBODYOUTTHERE ) || ( com->data.cmd == CMD_GOTYOU ) ) &&
-       ( ( com->data.registerCmd.IAmKelda ) || ( Ctrl[0]->IAmKelda ) ) ) {
+  switch ( com->data.cmd ) {
+    case CMD_JOINMYSWARM: cmdJoinMySwarm( com, source, affected ); 
+                          break;
 
-    #ifdef DEBUG_COMMUNICATION_SWARM
-      printf( "register msg %d source: %d affected: %d maxCtrl %d\n", com->data.cmd, source, affected, maxCtrl );
-    #endif
+    case CMD_JOINACK:     cmdJoinAck( com, source, affected ); 
+                          break;
 
-    // check on unkown controller
-    if ( ( !Ctrl[source] ) || 
-         ( ( Ctrl[source]->comState == ASKFORDETAILS ) && nvs.IAmKelda ) ) {
+    case CMD_JOINNACK:    cmdJoinNAck( com, source, affected ); 
+                          break;
 
-      #ifdef DEBUG_COMMUNICATION_SWARM
-      printf( "add a new controller type %d at %d\n", com->data.registerCmd.ctrlType, source);
-      #endif
-
-      // test, if the new controller is a Kelda and there is already a Kelda in my swarm
-      if ( ( com->data.registerCmd.IAmKelda ) && ( Ctrl[0]->IAmKelda ) ) {
-        setState( ERROR );
-        printf("ERROR: Multiple Keldas found! %d %d\n", Kelda->serialNumber, com->data.sourceSN );
-        while (1) delay(1000);
-        return;
-      }
-
-      // add or replace controller in swarm list
-      SwOSCtrl *newCtrl = NULL;
-      SwOSCtrl *oldCtrl = Ctrl[source];
-
-      switch (com->data.registerCmd.ctrlType) {
-        case FTSWARM:         newCtrl = new SwOSSwarmJST     ( com ); break;
-        case FTSWARMCONTROL:  newCtrl = new SwOSSwarmControl ( com ); break;
-        case FTSWARMCAM:      newCtrl = new SwOSSwarmCAM     ( com ); break;
-        case FTSWARMPWRDRIVE: newCtrl = new SwOSSwarmPwrDrive( com ); break;
-        case FTSWARMDUINO:    newCtrl = new SwOSSwarmDuino   ( com ); break;
-        default: ESP_LOGW( LOGFTSWARM, "Unknown controller type while adding a new controller to my swarm." ); return;
-      }
-
-      newCtrl->comState = ONLINE;
-      Ctrl[source] = newCtrl;
-      if (oldCtrl) delete oldCtrl; 
-
-      if ( Ctrl[source]->IAmKelda ) {
-        // register Kelda
-        Kelda = Ctrl[source];
-      } 
-      
-      if (verbose) { printf("[%s with MAC ", Ctrl[source]->getHostname() ); Ctrl[source]->macAddr.print(); printf(" joined the swarm]\n"); }
-
-      // update oled display
-      setState( RUNNING );
-      
-    }
-
-    // reply GOTYOU, if needed
-    if ( com->data.cmd == CMD_ANYBODYOUTTHERE ) {
-      
-      // frist introduce myself
-      SwOSCom reply( com->macAddr, com->data.sourceSN, CMD_GOTYOU );
-      Ctrl[0]->registerMe( &reply );
-      reply.send();
-    
-    }
-
-    // send my alias names, if the new controller is a Kelda
-    if ( com->data.registerCmd.IAmKelda ) Ctrl[0]->sendAlias( com->macAddr ); 
-
-    return;
-
-  } // end welcome messages
- 
-  if ( Ctrl[affected] ) {
-    // any other type of msg will be processed on controller level
-    Ctrl[affected]->lock();
-    Ctrl[affected]->OnDataRecv( com );
-    Ctrl[affected]->unlock();
-
-  } 
+    default:              if ( Ctrl[affected] ) {
+                            // any other type of msg will be processed on controller level
+                            Ctrl[affected]->lock();
+                            Ctrl[affected]->OnDataRecv( com );
+                            Ctrl[affected]->unlock();
+                          }
+                          break;
+  
+  }
 
 }
 
@@ -1246,7 +1284,7 @@ bool SwOSSwarm::isOnline( FtSwarmSerialNumber_t serialNumber ) {
   // Test, if SN is online
 
   for (uint8_t i=0; i<=maxCtrl; i++) {
-    if ( ( Ctrl[i]->serialNumber == serialNumber ) && ( Ctrl[i]->comState == ONLINE ) ) return true;
+    if ( ( Ctrl[i] ) && ( Ctrl[i]->serialNumber == serialNumber ) && ( Ctrl[i]->getComState() == COMSTATE_ONLINE ) ) return true;
   }
 
   return false;
@@ -1267,7 +1305,6 @@ bool SwOSSwarm::addController( FtSwarmSerialNumber_t serialNumber ) {
 
   // add new Controller to the list
   Ctrl[i] = new SwOSCtrl( serialNumber,  MacAddr( broadcast ), false, FTSWARM_NOVERSION, false, FTSWARM_EXT_OFF );
-  Ctrl[i]->comState = ASKFORDETAILS;
   nvs.addController( serialNumber );
 
   delay( CONNECTDELAY );

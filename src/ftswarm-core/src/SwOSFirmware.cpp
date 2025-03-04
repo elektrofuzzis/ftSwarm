@@ -319,7 +319,7 @@ void deleteController( void ) {
 }
 
 const char SWARMCOMMUNICATION[4][13] = { "none", "wifi", "RS485", "wifi & RS485" };
-const char COMSTATE[3][11] = { "OFFLINE", "CONNECTING", "ONLINE" };
+const char COMSTATE[5][11] = { "OFFLINE", "PHASE1", "PHASE2", "ONLINE", "ERROR" };
 
 // swam menu identifiers
 
@@ -344,7 +344,7 @@ void swarmMenu( void ) {
       printf("%s is Kelda running swarm \"%s\" using Pin %d:\n\nSN  NW Age State      Hostname \n", myOSSwarm.Ctrl[0]->getHostname(), nvs.swarmName, nvs.swarmPIN );
       for ( int8_t i=0; i<=myOSSwarm.maxCtrl; i++ ) {
         if ( myOSSwarm.Ctrl[i] ) {
-          printf("%3d %.6lu %-10s %s\n", myOSSwarm.Ctrl[i]->serialNumber, myOSSwarm.Ctrl[i]->networkAge(), COMSTATE[myOSSwarm.Ctrl[i]->comState], myOSSwarm.Ctrl[i]->getHostname() );
+          printf("%3d %.6lu %-10s %s\n", myOSSwarm.Ctrl[i]->serialNumber, myOSSwarm.Ctrl[i]->networkAge(), COMSTATE[myOSSwarm.Ctrl[i]->getComState()], myOSSwarm.Ctrl[i]->getHostname() );
         }
       }
 

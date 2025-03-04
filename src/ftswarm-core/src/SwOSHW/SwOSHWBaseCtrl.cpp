@@ -30,6 +30,7 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwa
   this->macAddr.set( macAddr );
   _local = local;
   _CPU = CPU;
+  _lastContact = millis();
 
   // set my name 
   char buffer[32];
@@ -629,6 +630,8 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
             cmdAlias( com->data.aliasCmd.alias[i].name, com->data.aliasCmd.alias[i].alias );
           }
         }
+        // receving alias cmds: set controlle "online"
+        setComState( COMSTATE_ONLINE );
       }
       return true;
 
@@ -669,7 +672,9 @@ void SwOSCtrl::registerMe( SwOSCom *com ){
   // meta data
   com->data.registerCmd.ctrlType   = getType();
   com->data.registerCmd.versionCPU = getCPU();
-  com->data.registerCmd.IAmKelda  = IAmKelda;
+  com->data.registerCmd.IAmKelda   = IAmKelda;
+  strcpy( com->data.registerCmd.swarmName, nvs.swarmName );
+  com->data.registerCmd.swarmPIN   = nvs.swarmPIN; 
 
   // extention port
   com->data.registerCmd.extensionPort = nvs.extensionPort;

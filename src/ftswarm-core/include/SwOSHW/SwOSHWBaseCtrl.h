@@ -43,7 +43,10 @@ protected:
   SemaphoreHandle_t _xAccessLock = xSemaphoreCreateMutex();
 	FtSwarmVersion_t _CPU;
   bool             _local;
+  
   unsigned long    _lastContact = 0;
+  SwOSComState_t   _comState = COMSTATE_UNDEFINED;
+  
   bool             _isSubscribed = false;
   char             *_subscribedCtrlName = NULL;
 
@@ -54,7 +57,6 @@ public:
 	FtSwarmSerialNumber_t serialNumber;
   MacAddr               macAddr;
   bool                  IAmKelda;
-  SwOSComState_t        comState = OFFLINE;
   
   // common hardware
 	SwOSInput    *input[MAXINPUTS];
@@ -91,7 +93,6 @@ public:
   virtual void halt( void );                                             // stop all actors
   virtual void unsubscribe( bool cascade );                              // unsubscribe userevents and if cascade = true all IOs
   virtual bool isI2CSwarmCtrl( void );                                   // is a ftSwarmI2C-Board 
-  virtual unsigned long networkAge( void );                              // ms since last received package
   virtual void identify( void );                                         // set LEDs to aquamarine / OLED to "it's me" to identify HW 
   virtual char *subscribe( char *ctrlName );                             // listen on user event data
   virtual bool changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarmIOType_t newIOType ); // change port's IO Type if possible
@@ -124,5 +125,14 @@ public:
   virtual SwOSCom *state2Com( MacAddr destination );               // copy my state in a com struct
   virtual void registerMe( SwOSCom *com );                         // fill in my own data in registerCmd datagram
   virtual void sendAlias( MacAddr destination );                   // send my alias names
+
+  // set comState
+  virtual void setComState( SwOSComState_t comState ) { _comState = comState; };
+
+  // get comState
+  virtual SwOSComState_t getComState( void ) { return _comState; };
+
+  // ms since last received package
+  virtual unsigned long networkAge( void );
     
 };

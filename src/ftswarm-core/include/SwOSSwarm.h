@@ -36,7 +36,19 @@ protected:
   SwOSIO  *waitFor( char *alias, FtSwarmIOType_t ioType );
   bool     startEvents( void );
   void     startWifi( void );
+
+  // replace controller in swarm list
+  void replaceCtrl( SwOSCom *com, uint8_t source, uint8_t affected );
+
+  // process CMD_JOINMYSWARM
+  void cmdJoinMySwarm( SwOSCom *com, uint8_t source, uint8_t affected );
+
+  // Member to Kelda: I don't want to join your Swarm
+  void cmdJoinNAck( SwOSCom *com, uint8_t source, uint8_t affected );
   
+  // Member to Kelda: I want to join your Swarm
+  void cmdJoinAck( SwOSCom *com, uint8_t source, uint8_t affected );
+
 public:
 	int8_t   maxCtrl = -1;
   SwOSCtrl *Kelda = NULL;
@@ -99,16 +111,28 @@ public:
   // receiving data from other controllers
   void OnDataRecv( SwOSCom *buffer );
 
-  // Introduce myself to a specific controller. 
-  void registerMe( MacAddr destinationMac, FtSwarmSerialNumber_t destinationSN );  
+  // As a Kelda send CMD_JOINMYSWARM to a potential member
+  void joinMySwarm( MacAddr destinationMac, FtSwarmSerialNumber_t destinationSN ); 
   
   // **** some useful stuff ****
-  uint8_t members( void );                                     // # of members in swarm
-  void newSwarm( void );                                       // create a new swam based on nvs settings
-  bool isMember( FtSwarmSerialNumber_t serialNumber );         // Test, if SN is part my my Swarm 
-  bool isOnline( FtSwarmSerialNumber_t serialNumber );         // Test, if SN is online
-  bool addController( FtSwarmSerialNumber_t serialNumber );    // add Controller SN to the swarm
-  bool deleteController( FtSwarmSerialNumber_t serialNumber ); // delete Controller SN
+
+  // # of members in swarm
+  uint8_t members( void ); 
+  
+  // create a new swam based on nvs settings
+  void newSwarm( void );  
+  
+  // Test, if SN is part my my Swarm 
+  bool isMember( FtSwarmSerialNumber_t serialNumber );  
+  
+  // Test, if SN is online
+  bool isOnline( FtSwarmSerialNumber_t serialNumber );  
+  
+  // add Controller SN to the swarm
+  bool addController( FtSwarmSerialNumber_t serialNumber );    
+
+  // delete Controller SN
+  bool deleteController( FtSwarmSerialNumber_t serialNumber ); 
 
 };
 

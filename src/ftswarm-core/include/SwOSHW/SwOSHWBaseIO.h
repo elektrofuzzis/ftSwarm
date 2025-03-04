@@ -38,7 +38,7 @@ class SwOSCtrl;
 typedef enum { BOOTING, STARTWIFI, RUNNING, ERROR, WAITING, IDENTIFY, MAXSTATE } SwOSState_t;
 
 // comState
-typedef enum { OFFLINE, ASKFORDETAILS, ONLINE } SwOSComState_t;
+typedef enum { COMSTATE_UNDEFINED, COMSTATE_CONNECT_PHASE1, COMSTATE_CONNECT_PHASE2, COMSTATE_ONLINE, COMSTATE_ERROR } SwOSComState_t;
 
 /***************************************************
  *

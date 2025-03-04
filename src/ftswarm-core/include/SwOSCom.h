@@ -25,10 +25,12 @@
 #define MAXUSEREVENTPAYLOAD 128
 
 typedef enum {
-  CMD_SWARMJOIN,              // I want to join a swarm
+  CMD_JOINMYSWARM,            // Kelda to member: Please join my Swarm 
+  CMD_JOINACK,                // Member to Kelda: yes, I want to join your Swarm
+  CMD_JOINNACK,               // Member to Kelda: no, I don't want to join your swarm
 //  CMD_ACK,                    // Acknowledge a cmd
 //  CMD_SWARMLEAVE,             // leave swarm
-  CMD_ANYBODYOUTTHERE,        // Broadcast to get known by everybody 
+//  CMD_ANYBODYOUTTHERE,        // Broadcast to get known by everybody 
   CMD_GOTYOU,                 // anybody's reply on ANYBODYOUTTHERE
   CMD_SETLED,                 // set LED color & brightness
   CMD_SETACTORSPEED,          // set actors motionType & speed
@@ -79,10 +81,12 @@ struct registerControl_t {
 
 struct registerCmd_t { 
   FtSwarmController_t ctrlType; 
-  FtSwarmVersion_t versionCPU; 
-  bool IAmKelda; 
-  FtSwarmExtMode_t extensionPort;
-  uint8_t leds;
+  FtSwarmVersion_t    versionCPU; 
+  bool                IAmKelda;
+  char                swarmName[MAXIDENTIFIER];
+  uint16_t            swarmPIN;
+  FtSwarmExtMode_t    extensionPort;
+  uint8_t             leds;
 } __attribute__((packed));
 
 struct joinCmd_t { 
