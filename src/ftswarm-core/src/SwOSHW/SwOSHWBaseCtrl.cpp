@@ -536,109 +536,101 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
 
   _lastContact = millis();
 
+  nvs_handle_t my_handle;
+    
   switch (com->data.cmd) {
-    case CMD_STATE: 
-      return recvState( com );
 
-    case CMD_SETLED: 
-      if (led[com->data.ledCmd.index]) {
-        led[com->data.ledCmd.index]->setBrightness( com->data.ledCmd.brightness );
-        led[com->data.ledCmd.index]->setColor( com->data.ledCmd.color );
-      }
-      return true;
+    case CMD_SAVEALIAS2NVS:         // save in local nvs
+                                    ESP_ERROR_CHECK( nvs_open("ftSwarm", NVS_READWRITE, &my_handle) );
+                                    saveAliasToNVS( my_handle );
+                                    ESP_ERROR_CHECK( nvs_commit( my_handle ) );
+                                    return true;
 
-    case CMD_SETSENSORTYPE:
-      if ( input[com->data.sensorCmd.index]->getIOType() == FTSWARM_DIGITALINPUT) { 
-        ((SwOSDigitalInput *)input[com->data.sensorCmd.index])->setSensorType( com->data.sensorCmd.sensorType, com->data.sensorCmd.normallyOpen );
-      } else {
-        ((SwOSAnalogInput *)input[com->data.sensorCmd.index])->setSensorType( com->data.sensorCmd.sensorType );
-      }
-      return true;
+    case CMD_STATE:                 return recvState( com );
 
-    case CMD_SETACTORSPEED:
-      actor[com->data.actorSpeedCmd.index]->setMotionType( com->data.actorSpeedCmd.motionType );
-      actor[com->data.actorSpeedCmd.index]->setAcceleration( com->data.actorSpeedCmd.rampUpT, com->data.actorSpeedCmd.rampUpY );
-      actor[com->data.actorSpeedCmd.index]->setSpeed( com->data.actorSpeedCmd.speed );
-      actor[com->data.actorSpeedCmd.index]->apply();
-      
-      return true;
+    case CMD_SETLED:                if (led[com->data.ledCmd.index]) {
+                                        led[com->data.ledCmd.index]->setBrightness( com->data.ledCmd.brightness );
+                                        led[com->data.ledCmd.index]->setColor( com->data.ledCmd.color );
+                                      }
+                                      return true;
 
-    case CMD_RESETCOUNTER:
-       if ( ( input[com->data.counterCmd.index] ) && ( input[com->data.counterCmd.index]->getIOType() == FTSWARM_COUNTERINPUT ) )
-          static_cast<SwOSCounter *>(input[com->data.counterCmd.index])->resetCounter();
-       return true;
+    case CMD_SETSENSORTYPE:           if ( input[com->data.sensorCmd.index]->getIOType() == FTSWARM_DIGITALINPUT) { 
+                                        ((SwOSDigitalInput *)input[com->data.sensorCmd.index])->setSensorType( com->data.sensorCmd.sensorType, com->data.sensorCmd.normallyOpen );
+                                      } else {
+                                        ((SwOSAnalogInput *)input[com->data.sensorCmd.index])->setSensorType( com->data.sensorCmd.sensorType );
+                                      }
+                                      return true;
 
-    case CMD_SETSTEPPERDISTANCE:
-      actor[com->data.actorStepperCmd.index]->setDistance( com->data.actorStepperCmd.paraml, com->data.actorStepperCmd.paramb, true );
-      return true;
+    case CMD_SETACTORSPEED:           actor[com->data.actorSpeedCmd.index]->setMotionType( com->data.actorSpeedCmd.motionType );
+                                      actor[com->data.actorSpeedCmd.index]->setAcceleration( com->data.actorSpeedCmd.rampUpT, com->data.actorSpeedCmd.rampUpY );
+                                      actor[com->data.actorSpeedCmd.index]->setSpeed( com->data.actorSpeedCmd.speed );
+                                      actor[com->data.actorSpeedCmd.index]->apply();
+                                      return true;
 
-    case CMD_SETSTEPPERPOSITION:
-      actor[com->data.actorStepperCmd.index]->setPosition( com->data.actorStepperCmd.paraml, true );
-      return true;
+    case CMD_RESETCOUNTER:            if ( ( input[com->data.counterCmd.index] ) && ( input[com->data.counterCmd.index]->getIOType() == FTSWARM_COUNTERINPUT ) )
+                                        static_cast<SwOSCounter *>(input[com->data.counterCmd.index])->resetCounter();
+                                      return true;
 
-    case CMD_STEPPERHOMING:
-      actor[com->data.actorStepperCmd.index]->homing( com->data.actorStepperCmd.paraml );
-      return true;
+    case CMD_SETSTEPPERDISTANCE:      actor[com->data.actorStepperCmd.index]->setDistance( com->data.actorStepperCmd.paraml, com->data.actorStepperCmd.paramb, true );
+                                      return true;
 
-    case CMD_SETSTEPPERHOMINGOFFSET:
-      actor[com->data.actorStepperCmd.index]->setHomingOffset( com->data.actorStepperCmd.paraml );
-      return true;
+    case CMD_SETSTEPPERPOSITION:      actor[com->data.actorStepperCmd.index]->setPosition( com->data.actorStepperCmd.paraml, true );
+                                      return true;
 
-    case CMD_STEPPERSTARTSTOP:
-      actor[com->data.actorStepperCmd.index]->startStop( com->data.actorStepperCmd.paramb );
-      return true;
+    case CMD_STEPPERHOMING:           actor[com->data.actorStepperCmd.index]->homing( com->data.actorStepperCmd.paraml );
+                                      return true;
 
-    case CMD_SETACTORTYPE:
-      actor[com->data.actorTypeCmd.index]->setActorType( com->data.actorTypeCmd.actorType, com->data.actorTypeCmd.highResolution, true );
-      actor[com->data.actorTypeCmd.index]->apply();
-      return true;
+    case CMD_SETSTEPPERHOMINGOFFSET:  actor[com->data.actorStepperCmd.index]->setHomingOffset( com->data.actorStepperCmd.paraml );
+                                      return true;
 
-    case CMD_IDENTIFY:
-      identify();
-      return true;
+    case CMD_STEPPERSTARTSTOP:        actor[com->data.actorStepperCmd.index]->startStop( com->data.actorStepperCmd.paramb );
+                                      return true;
 
-    case CMD_USEREVENT:
-      if ( com->data.userEventCmd.trigger ) {
+    case CMD_SETACTORTYPE:            actor[com->data.actorTypeCmd.index]->setActorType( com->data.actorTypeCmd.actorType, com->data.actorTypeCmd.highResolution, true );
+                                      actor[com->data.actorTypeCmd.index]->apply();
+                                      return true;
 
-        // send trigger event to local procedure
-        if ( xQueueSend( myOSNetwork.userEvent, com, ESPNOW_MAXDELAY ) != pdTRUE ) {
-          ESP_LOGE( LOGFTSWARM, "Can't send data to user event." );
-        }
+    case CMD_IDENTIFY:                identify();
+                                      return true;
 
-      } else {
+    case CMD_USEREVENT:               if ( com->data.userEventCmd.trigger ) {
+
+                                        // send trigger event to local procedure
+                                        if ( xQueueSend( myOSNetwork.userEvent, com, ESPNOW_MAXDELAY ) != pdTRUE ) {
+                                          ESP_LOGE( LOGFTSWARM, "Can't send data to user event." );
+                                        }
+
+                                      } else {
         
-        // got some user event data
-        if (_isSubscribed) {
-          printf("S: %s", _subscribedCtrlName );
-          for ( uint8_t i=0; i<com->data.userEventCmd.size; i++ ) printf(" %02X", com->data.userEventCmd.payload[i]);
-          printf("\n");
-        }
-      }
-      
-      return true;
+                                        // got some user event data
+                                        if (_isSubscribed) {
+                                          printf("S: %s", _subscribedCtrlName );
+                                          for ( uint8_t i=0; i<com->data.userEventCmd.size; i++ ) printf(" %02X", com->data.userEventCmd.payload[i]);
+                                          printf("\n");
+                                        }
+                                      }
+                                      return true;
 
-    case CMD_ALIAS:
-      // get all entries in datagramm
-      for (uint8_t i=0; i<MAXALIAS; i++) {
-        if (com->data.aliasCmd.alias[i].name[0] != '\0') {
-          // entry isn't empty
-          if ( strcmp( com->data.aliasCmd.alias[i].name, "HOSTNAME" ) == 0 ) {
-            // hostname
-            setAlias( com->data.aliasCmd.alias[i].alias );
-          } else {
-            // an IO port?
-            cmdAlias( com->data.aliasCmd.alias[i].name, com->data.aliasCmd.alias[i].alias );
-          }
-        }
-        // receving alias cmds: set controlle "online"
-        setComState( COMSTATE_ONLINE );
-      }
-      return true;
+    case CMD_ALIAS:                   // get all entries in datagramm
+                                      for (uint8_t i=0; i<MAXALIAS; i++) {
+                                        if (com->data.aliasCmd.alias[i].name[0] != '\0') {
+                                          // entry isn't empty
+                                          if ( strcmp( com->data.aliasCmd.alias[i].name, "HOSTNAME" ) == 0 ) {
+                                            // hostname
+                                            setAlias( com->data.aliasCmd.alias[i].alias );
+                                          } else {
+                                          // an IO port?
+                                          cmdAlias( com->data.aliasCmd.alias[i].name, com->data.aliasCmd.alias[i].alias );
+                                          }
+                                        }
+                                        // receving alias cmds: set controlle "online"
+                                        setComState( COMSTATE_ONLINE );
+                                      }
+                                      return true;
 
-    case CMD_CHANGEIOTYPE:
-      // change IO Type
-      changeIOType( com->data.changeIOTypeCmd.index, com->data.changeIOTypeCmd.oldIOType, com->data.changeIOTypeCmd.newIOType );
-      return true;
+    case CMD_CHANGEIOTYPE:            // change IO Type
+                                      changeIOType( com->data.changeIOTypeCmd.index, com->data.changeIOTypeCmd.oldIOType, com->data.changeIOTypeCmd.newIOType );
+                                      return true;
 
   }
 

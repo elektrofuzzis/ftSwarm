@@ -222,7 +222,7 @@ void wifiMenu( void ) {
         wifiMode = (FtSwarmWifi_t) enterNumber( "enter wifi mode [ 0-off , 1-AP-Mode, 2-Client-Mode]: ", nvs.wifiMode, 0, 2 );
         if ( nvs.wifiMode != wifiMode ) {
           if ( ( wifiMode == wifiOFF ) && ( nvs.swarmCommunication & 0x1 ) ) {
-            printf("\e[0;31mError: please deactivate wifi in swarm communication first.\e[0;30m\n");
+            printf("\e[0;31mError: please deactivate wifi in swarm communication first.\e[0m\n");
           } else {
             nvs.wifiMode = wifiMode;
             if ( ( nvs.wifiMode == wifiAP ) && ( ( nvs.channel < 1 ) || ( nvs.channel > 13 ) ) ) nvs.channel = 1; // to avoid invalid channel settings
@@ -285,16 +285,16 @@ void addController( void ) {
 
   FtSwarmSerialNumber_t serialNumber = (FtSwarmSerialNumber_t) enterNumber("Enter new swarm members serial number [1..9999]: ", -1, 1, 9999 );
 
-  if ( myOSSwarm.isMember( serialNumber ) ) { printf("\e[0;31mERROR: This controller is already part of this swarm.\e[0;30m\n"); return; }
+  if ( myOSSwarm.isMember( serialNumber ) ) { printf("\e[0;31mERROR: This controller is already part of this swarm.\e[0m\n"); return; }
   
   if ( !myOSSwarm.addController( serialNumber ) ) {
     // no space left
-    printf("\e[0;31mERROR: No space left in swarm. Controller #%d was declined.\e[0;30m\n", serialNumber );
+    printf("\e[0;31mERROR: No space left in swarm. Controller #%d was declined.\e[0m\n", serialNumber );
     return;
   }
 
   printf("Controller SN %d was added to the swarm.\n", serialNumber );
-  if ( !myOSSwarm.isOnline( serialNumber ) ) printf("\e[0;31mWARNING: Please switch controller #%d on.\e[0;30m\n", serialNumber);
+  if ( !myOSSwarm.isOnline( serialNumber ) ) printf("\e[0;31mWARNING: Please switch controller #%d on.\e[0m\n", serialNumber);
 
   nvs.save( );
 
@@ -304,11 +304,11 @@ void deleteController( void ) {
 
   FtSwarmSerialNumber_t serialNumber = (FtSwarmSerialNumber_t) enterNumber("Enter serial number to be revoked [1..9999]: ", -1, 1, 9999 );
 
-  if ( !myOSSwarm.isMember( serialNumber ) ) { printf("\e[0;31mERROR: This controller isn't part of this swarm.\e[0;30m\n"); return; }
+  if ( !myOSSwarm.isMember( serialNumber ) ) { printf("\e[0;31mERROR: This controller isn't part of this swarm.\e[0m\n"); return; }
   
   if ( !myOSSwarm.deleteController( serialNumber ) ) {
     // not found
-    printf("\e[0;31mERROR: This controller isn't part of this swarm.\e[0;30m\n");
+    printf("\e[0;31mERROR: This controller isn't part of this swarm.\e[0m\n");
     return;
   }
 
@@ -319,7 +319,7 @@ void deleteController( void ) {
 }
 
 const char SWARMCOMMUNICATION[4][13] = { "none", "wifi", "RS485", "wifi & RS485" };
-const char COMSTATE[5][30] = { "\e[1;31mOFFLINE\e[0;30m", "\e[1;33mPHASE1\e[0;30m", "\e[1;33mPHASE2\e[0;30m", "\e[1;32mONLINE\e[0;30m", "\e[1;31mERROR\e[0;30m\e[0;30m" };
+const char COMSTATE[5][30] = { "\e[1;31mOFFLINE\e[0m", "\e[1;33mPHASE1\e[0m", "\e[1;33mPHASE2\e[0m", "\e[1;32mONLINE\e[0m", "\e[1;31mERROR\e[0m\e[0m" };
 
 // swam menu identifiers
 
@@ -339,7 +339,7 @@ void swarmMenu( void ) {
 
     menu.start("swarm configuration", 19 );
 
-    if (nvs.IAmKelda) {
+    if (myOSSwarm.Ctrl[0]->IAmKelda) {
 
       printf("%s is Kelda running swarm \"%s\" using Pin %d:\n\nSN  NW Age State  Hostname \n", myOSSwarm.Ctrl[0]->getHostname(), nvs.swarmName, nvs.swarmPIN );
       for ( int8_t i=0; i<=myOSSwarm.maxCtrl; i++ ) {
@@ -386,7 +386,7 @@ void swarmMenu( void ) {
           if (nvs.swarmCommunication != swarmCommunication) {
             // test if wifiMode is OFF and swarm should use wifi
             if ( ( nvs.wifiMode == wifiOFF ) && ( swarmCommunication & 0x1 ) ) {
-              printf("\e[0;31mError: please activate wifi first.\e[0;30m\n");
+              printf("\e[0;31mError: please activate wifi first.\e[0m\n");
             } else {
               // let's save data
               nvs.swarmCommunication = swarmCommunication;
@@ -419,49 +419,81 @@ void swarmMenu( void ) {
 
 }
 
+uint8_t selectController( uint8_t controller ) {
+
+  Menu menu;
+
+  menu.start("Please select a controller", 10);
+
+  for (uint8_t i=0; i<=myOSSwarm.maxCtrl; i++) {
+    if ( myOSSwarm.Ctrl[i] ) menu.add( myOSSwarm.Ctrl[i]->getName(), "", i );
+  }
+
+  uint8_t choice = menu.userChoice( );
+
+  printf( "choice: %d\n", choice);
+
+  // nothing selected -> default controller
+  if ( choice == 255 ) return controller;
+
+  // index number of controller
+  return choice;
+
+}
+
 void aliasMenu( void ) {
 
   SwOSObj *OSObj[99];
-  bool    anythingChanged = false;
-
+  bool    anythingChanged[MAXCTRL];
+  uint8_t controller = 0;
   Menu    menu;
+
+  // initialize anythingChanged
+  for (uint8_t i=0; i<MAXCTRL; i++) anythingChanged[i] = false;
 
   while (1) {
 
     uint8_t item = 0;
-    menu.start( "alias controller menu:", 10);
-    
-    OSObj[item++] = myOSSwarm.Ctrl[0]; 
-    menu.add( myOSSwarm.Ctrl[0]->getName(), myOSSwarm.Ctrl[0]->getAlias(), item, true );
+    menu.start( "alias menu:", 10, 999 );
 
+    // Kelda only: option to select another controller in the swarm
+    if ( myOSSwarm.Ctrl[0]->IAmKelda ) {
+      menu.add( "Controller", myOSSwarm.Ctrl[controller]->getName(), 99 );
+      printf("\n");
+    }
+
+    // show existing alias
+    OSObj[item++] = myOSSwarm.Ctrl[controller]; 
+    menu.add( myOSSwarm.Ctrl[controller]->getName(), myOSSwarm.Ctrl[controller]->getAlias(), item, true );
+  
     // list inputs
-    for (uint8_t i=0; i<myOSSwarm.Ctrl[0]->inputs; i++ ) { 
-      OSObj[item++] = myOSSwarm.Ctrl[0]->input[i];
-      menu.add( myOSSwarm.Ctrl[0]->input[i]->getName(), myOSSwarm.Ctrl[0]->input[i]->getAlias(), item, true );
+    for (uint8_t i=0; i<myOSSwarm.Ctrl[controller]->inputs; i++ ) { 
+      OSObj[item++] = myOSSwarm.Ctrl[controller]->input[i];
+      menu.add( myOSSwarm.Ctrl[controller]->input[i]->getName(), myOSSwarm.Ctrl[controller]->input[i]->getAlias(), item, true );
     }
-
+  
     // list actors
-    for (uint8_t i=0; i<myOSSwarm.Ctrl[0]->actors; i++ ) {
-      OSObj[item++] = myOSSwarm.Ctrl[0]->actor[i];
-      menu.add( myOSSwarm.Ctrl[0]->actor[i]->getName(), myOSSwarm.Ctrl[0]->actor[i]->getAlias(), item, true );
+    for (uint8_t i=0; i<myOSSwarm.Ctrl[controller]->actors; i++ ) {
+      OSObj[item++] = myOSSwarm.Ctrl[controller]->actor[i];
+      menu.add( myOSSwarm.Ctrl[controller]->actor[i]->getName(), myOSSwarm.Ctrl[controller]->actor[i]->getAlias(), item, true );
     }
-
+  
     // list LEDs
     for (uint8_t i=0; i<nvs.RGBLeds; i++ ) {
-      if ( myOSSwarm.Ctrl[0]->led[i]) {
-        OSObj[item++] =  myOSSwarm.Ctrl[0]->led[i];
-        menu.add( myOSSwarm.Ctrl[0]->led[i]->getName(),  myOSSwarm.Ctrl[0]->led[i]->getAlias(), item, true );
+      if ( myOSSwarm.Ctrl[controller]->led[i]) {
+        OSObj[item++] =  myOSSwarm.Ctrl[controller]->led[i];
+        menu.add( myOSSwarm.Ctrl[controller]->led[i]->getName(),  myOSSwarm.Ctrl[controller]->led[i]->getAlias(), item, true );
       }
     }
-
+  
     // special HW
     SwOSSwarmJST *ftSwarm;
     SwOSSwarmControl *ftSwarmControl;
     SwOSSwarmCAM *ftSwarmCAM;
-
-    switch ( myOSSwarm.Ctrl[0]->getType() ) {
-
-      case FTSWARM:         ftSwarm = static_cast<SwOSSwarmJST *>(myOSSwarm.Ctrl[0]);
+  
+    switch ( myOSSwarm.Ctrl[controller]->getType() ) {
+  
+      case FTSWARM:         ftSwarm = static_cast<SwOSSwarmJST *>(myOSSwarm.Ctrl[controller]);
                             // list servos
                             for (uint8_t i=0; i<ftSwarm->servos; i++ ) {
                               if (ftSwarm->servo[i]) {
@@ -486,12 +518,12 @@ void aliasMenu( void ) {
                               menu.add( ftSwarm->gyro->getName(), ftSwarm->gyro->getAlias(), item, true );
                             }
                             break;
-
-      case FTSWARMCONTROL:  ftSwarmControl = static_cast<SwOSSwarmControl *>(myOSSwarm.Ctrl[0]);
+  
+      case FTSWARMCONTROL:  ftSwarmControl = static_cast<SwOSSwarmControl *>(myOSSwarm.Ctrl[controller]);
                             // buttons
                             for (uint8_t i=0; i<8; i++ ) {
                               OSObj[item++] = ftSwarmControl->button[i];
-                             menu.add( ftSwarmControl->button[i]->getName(),   ftSwarmControl->button[i]->getAlias(), item, true );
+                              menu.add( ftSwarmControl->button[i]->getName(),   ftSwarmControl->button[i]->getAlias(), item, true );
                             }
                             // joysticks
                             for (uint8_t i=0; i<2; i++ ) {
@@ -508,52 +540,93 @@ void aliasMenu( void ) {
                               menu.add( ftSwarmControl->gyro->getName(), ftSwarmControl->gyro->getAlias(), item, true );
                             }
                             break;
-
-      case FTSWARMCAM:      ftSwarmCAM = static_cast<SwOSSwarmCAM *>(myOSSwarm.Ctrl[0]);
+  
+      case FTSWARMCAM:      ftSwarmCAM = static_cast<SwOSSwarmCAM *>(myOSSwarm.Ctrl[controller]);
                             if (ftSwarmCAM->cam) {
                               OSObj[item++] = ftSwarmCAM->cam;
                               menu.add( ftSwarmCAM->cam->getName(), ftSwarmCAM->cam->getAlias(), item, true );
                             }
                             break;
-
+  
       default:              break;
     }
-
+  
     // User's choice
     uint8_t choice = menu.userChoice( );
-
-    // exit?
-    if ( choice == 0 ) {
-
-      if ( ( anythingChanged )  &&  yesNo( "Save changes? (Y/N)?" ) ) {
-
-        // Open
-        nvs_handle_t my_handle;
-        ESP_ERROR_CHECK( nvs_open("ftSwarm", NVS_READWRITE, &my_handle) );
-
-        // save
-        myOSSwarm.Ctrl[0]->saveAliasToNVS( my_handle );
-
-        // send new config to Kelda
-        if ( ( myOSSwarm.Kelda ) && ( myOSSwarm.Kelda != myOSSwarm.Ctrl[0] ) ) myOSSwarm.Ctrl[0]->sendAlias( myOSSwarm.Kelda->macAddr );
-
-        // commit
-        ESP_ERROR_CHECK( nvs_commit( my_handle ) );
-          
-      }
-      return;
-
-    // set name
-    } else if ( choice > 0 ) {
-
-      char alias[MAXIDENTIFIER];
-      char prompt[250];
-      sprintf( prompt, "%s - please enter new alias: ", OSObj[choice-1]->getName() );
-      enterIdentifier( prompt, alias, MAXIDENTIFIER );
-      OSObj[choice-1]->setAlias( alias );
-      anythingChanged = true;
     
-    }
+    uint8_t i;
+    bool changes = false;
+    SwOSCom *alias2nvs = NULL;
+
+    switch (choice) {
+
+      case  0:  // exit: save nvs?
+
+                // any changes?
+                for ( i=0; i<MAXCTRL; i++ ) { if (anythingChanged[i]) changes = true; }
+
+                if ( ( changes )  &&  yesNo( "Save changes? (Y/N)?" ) ) {
+
+                  // local changes
+                  if ( anythingChanged[0] ) {
+
+                    // save in local nvs
+                    nvs_handle_t my_handle;
+                    ESP_ERROR_CHECK( nvs_open("ftSwarm", NVS_READWRITE, &my_handle) );
+                    myOSSwarm.Ctrl[0]->saveAliasToNVS( my_handle );
+                    ESP_ERROR_CHECK( nvs_commit( my_handle ) );
+
+                    // send new config to Kelda
+                    if ( ( myOSSwarm.Kelda ) && ( myOSSwarm.Kelda != myOSSwarm.Ctrl[0] ) ) myOSSwarm.Ctrl[0]->sendAlias( myOSSwarm.Kelda->macAddr );
+
+                  }
+
+                  // remote changes
+                  for ( i=1; i<MAXCTRL; i++ ) {
+                    if ( anythingChanged[i] ) {
+                      myOSSwarm.Ctrl[i]->sendAlias( myOSSwarm.Ctrl[i]->macAddr );
+                      alias2nvs = new SwOSCom( myOSSwarm.Ctrl[i]->macAddr, myOSSwarm.Ctrl[i]->serialNumber, CMD_SAVEALIAS2NVS );
+                      alias2nvs->send( );
+                      delete alias2nvs;
+                      alias2nvs = NULL;
+                    }
+                  }
+          
+                }
+                return;
+      
+      case 99:  controller = selectController( controller );
+                printf("controller: %d\n", controller);
+                break;
+
+      case 255: break;
+
+      default:  // set name
+                char alias[MAXIDENTIFIER];
+                char prompt[250];
+                SwOSIO* testIO;
+
+                if (OSObj[choice-1]) {
+
+                  // ask user
+                  sprintf( prompt, "%s - please enter new alias: ", OSObj[choice-1]->getName() );
+                  enterIdentifier( prompt, alias, MAXIDENTIFIER );
+                
+                  // duplicates?
+                  testIO = myOSSwarm.getIO( alias, FTSWARM_UNDEF );
+
+                  if ( (testIO) && ( testIO != OSObj[choice-1] ) ) {
+                    // duplicate alias name
+                    printf("\e[0;31mERROR: This alias is already used in the swarm.\n\e[0m");
+
+                  } else {
+                    // change alias
+                    OSObj[choice-1]->setAlias( alias );
+                    anythingChanged[controller]= true;
+                  }
+                }
+                break;
+      }
     
   }
   

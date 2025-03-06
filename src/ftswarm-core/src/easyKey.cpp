@@ -8,6 +8,7 @@
  */
  
 #include <stdint.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
@@ -167,11 +168,15 @@ bool yesNo( const char *prompt, bool defaultValue ) {
 }
 
 
-void Menu::start( const char *prompt, uint8_t spacer ) { 
+void Menu::start( const char *prompt, uint8_t spacer, uint16_t maxMenuItems ) { 
+
+  if (id) free(id);
+  id = (uint8_t *) malloc( maxMenuItems );
 
   maxItem = 0; 
   id[0]   = 0;
   this->spacer = spacer;
+  this->maxMenuItems = maxMenuItems;
   strcpy( this->prompt, (char *) prompt ); 
 
   // print Headline
@@ -188,9 +193,12 @@ void Menu::add( const char *item, int value, uint8_t id ) {
 
 void Menu::add( const char *item, const char *value, uint8_t id, bool staticDelimiter ){
 
+  if ( maxItem >= maxMenuItems-2 ) return;
+
   maxItem++;
   if ( id==DEACTIVATED ) printf( "(--) %s", item );
-  else printf( "(%2d) %s", maxItem, item );
+  else if (maxMenuItems < 100 ) printf( "(%2d) %s", maxItem, item );
+  else printf( "(%3d) %s", maxItem, item );
   
   if ( ( value[0] != '\0' ) || ( staticDelimiter ) ) {
     printf(": ");
@@ -206,7 +214,8 @@ void Menu::add( const char *item, const char *value, uint8_t id, bool staticDeli
 
 int8_t Menu::userChoice( void ) {
 
-  printf("\n( 0) exit\n%s", prompt);
+  if (maxMenuItems < 100 ) printf("\n( 0) exit\n%s", prompt);
+  else printf("\n(  0) exit\n%s", prompt);
   
   // asking user
   uint16_t choice = enterNumber( ">", maxItem+1, 0, maxItem );

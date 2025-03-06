@@ -1400,7 +1400,7 @@ FtSwarmSerialNumber_t FtSwarm::begin( bool verbose ) {
   FtSwarmSerialNumber_t result = myOSSwarm.begin( verbose );
 
   if (!nvs.IAmKelda) {
-    printf("ERROR: Please configure this controller as Kelda.\n");
+    printf("\e[0;31mERROR: Please configure this controller as Kelda.\e[0m\\n");
     myOSSwarm.setState( ERROR );
     firmware();
     ESP.restart();

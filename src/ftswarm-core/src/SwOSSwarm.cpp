@@ -320,7 +320,7 @@ void SwOSSwarm::startWifi( void ) {
 
     // connection failed?
     if (WiFi.status() != WL_CONNECTED) {
-      printf( "\e[0;31mERROR: Can't connect to SSID %s\e[0;30m\n\nstarting setup...\n", nvs.wifiSSID );
+      printf( "\e[0;31mERROR: Can't connect to SSID %s\e[0m\n\nstarting setup...\n", nvs.wifiSSID );
       setState( ERROR );
       mainMenu();
       ESP.restart();
@@ -442,7 +442,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   if (verbose) printf("Start normal operation.\n");
 
   if ( ( nvs.IAmKelda) && ( nvs.wifiMode == wifiAP ) ) 
-    printf("\n\n\e[0;31m*** WARNING ***:\nA swarm using wifi ap mode provided by the Kelda isn't stable.\nBest practice is to use your local wifi or to provide the AP via a swarm member.\e[0;30m\n\n");
+    printf("\n\n\e[0;31m*** WARNING ***:\nA swarm using wifi ap mode provided by the Kelda isn't stable.\nBest practice is to use your local wifi or to provide the AP via a swarm member.\e[0m\n\n");
 
   initialized = true;
   return Ctrl[0]->serialNumber;
@@ -502,7 +502,7 @@ SwOSIO* SwOSSwarm::getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port
 
     // test, if the controller could change the IOType
     if ( IO->isInUse() ) {
-      printf("\e[0;31mERROR: Can't change IO Type. %s.%s is in use.\e[0;30m\n", Ctrl[i]->getName(), IO->getName() );
+      printf("\e[0;31mERROR: Can't change IO Type. %s.%s is in use.\e[0m\n", Ctrl[i]->getName(), IO->getName() );
       setState( ERROR );
     }
 
@@ -1154,6 +1154,7 @@ void SwOSSwarm::cmdJoinMySwarm( SwOSCom *com, uint8_t source, uint8_t affected )
 
     // getting member, knowing my Kelda
     Ctrl[0]->IAmKelda = false;
+    nvs.IAmKelda = false;
     Kelda = Ctrl[source];
 
     // Send my data      

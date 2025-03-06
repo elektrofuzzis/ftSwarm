@@ -28,6 +28,7 @@ typedef enum {
   CMD_JOINMYSWARM,            // Kelda to member: Please join my Swarm 
   CMD_JOINACK,                // Member to Kelda: yes, I want to join your Swarm
   CMD_JOINNACK,               // Member to Kelda: no, I don't want to join your swarm
+  CMD_SAVEALIAS2NVS,          // Kelda to Member: save alias setting to NVS
 //  CMD_ACK,                    // Acknowledge a cmd
 //  CMD_SWARMLEAVE,             // leave swarm
 //  CMD_ANYBODYOUTTHERE,        // Broadcast to get known by everybody 
