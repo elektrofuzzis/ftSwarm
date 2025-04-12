@@ -35,12 +35,12 @@ bool anyKey( void ) {
   
 }
 
-bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, int (*validChar)( int ch ) ) {
+bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, int (*validChar)( int ch ), int (*validString)( char *str) ) {
 
   char ch;
   char *str = (char *) calloc( size, sizeof(char) );
   uint8_t i = 0;
-  
+
   printf(prompt); fflush(stdout); 
 
   while (1) {
@@ -73,11 +73,23 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
                    return false;
       
         default:   if ( ( ch < 255 ) && ( validChar( ch ) ) && ( i<size-1) ) {
-                     // add printable char
-                     if ( easyKeyEcho ) {
-                      (hidden)?Serial.write( '*' ):Serial.write( ch );
-                     }
+
+  	                // add new char
                      str[i++] = ch;
+
+                     // is the whole string ok?
+                     if ( ( validString ) && ( !validString(str) ) ) {
+                      // not ok: revoke char
+                      str[i--] = '\0';
+
+                    } else {
+                      // ok: print char
+                      if ( easyKeyEcho ) {
+                        (hidden)?Serial.write( '*' ):Serial.write( ch );
+                      }
+
+                    }
+                     
                    }
                    break;
       }
@@ -93,12 +105,74 @@ int printable( int ch ) {
 }
 
 int isdigitExt( int ch ) {
-  return isdigit( ch ) || ( ch == '-') ;
+  return isdigit( ch ) || ( ch == '-') || ( ch == '+');
+}
+
+int isdigitFloat( int ch ) {
+  return isdigitExt( ch ) || ( ch == 'e') || ( ch == 'E') || ( ch == '.') || ( ch == ' ');
+}
+
+void skip( char **str, int (*validChar)( int ch ) ) {
+
+  while ( **str )  {
+    if ( !validChar( **str ) ) return;
+    (*str)++;
+  }
+
+}
+
+int isValidFloat( char *str ) {
+  // test if the str could be later a valid float
+
+  char *ptr = str;
+
+  // skip optional leading chars
+  skip( &ptr, isblank );
+
+  // skip optional sign
+  if ( ( *ptr ) && ( ( *ptr == '-') || ( *ptr == '+' ) ) ) ptr++;
+
+  // skip first block iof digits
+  skip( &ptr, isdigit );
+
+  // end of string?
+  if (!*ptr ) return 1;
+
+  // comma found? continue with a second block of digits
+  if (*ptr == '.') {
+    ptr++;
+    skip( &ptr, isdigit );
+  }
+
+  // end of string?
+  if (!*ptr ) return 1;
+
+  // optional exponent
+  if ( (*ptr == 'e') || (*ptr == 'E') ) {
+    ptr++;
+    // sign?
+    if ( (*ptr == '+') || (*ptr == '-') ) ptr++;
+    // digits?
+    skip( &ptr, isdigit );  
+  }
+
+  // nothing left? 
+  if (!*ptr) return 1;
+
+  // skip trailing blanks
+  skip( &ptr, isblank );
+
+  // nothing left? 
+  if (!*ptr) return 1;
+  
+  // not a float
+  return 0; 
+
 }
 
 void enterString( const char *prompt, char *s, uint16_t size, bool hidden ) {
 
-  if (!enterSomething( prompt, s, size, hidden, printable ) ) s[0] = '\0';
+  if (!enterSomething( prompt, s, size, hidden, printable, NULL ) ) s[0] = '\0';
   
 }
 
@@ -108,7 +182,7 @@ int identifier( int ch ) {
 
 void enterIdentifier( const char *prompt, char *s, uint16_t size ) {
 
-  if (!enterSomething( prompt, s, size, false, identifier ) ) s[0] = '\0';
+  if (!enterSomething( prompt, s, size, false, identifier, NULL ) ) s[0] = '\0';
   
 }
 
@@ -120,7 +194,7 @@ uint16_t enterNumber( const char *prompt, uint16_t defaultValue, uint16_t minVal
   while (1) {
 
     // get number and check on defaults
-    if ( ( !enterSomething( prompt, str, 6, false, isdigit ) ) || ( str[0] == '\0' ) ) {
+    if ( ( !enterSomething( prompt, str, 6, false, isdigit, NULL ) ) || ( str[0] == '\0' ) ) {
       return defaultValue;
     } else {
       i = atoi( str );
@@ -141,7 +215,7 @@ int32_t enterNumberI32( const char *prompt, uint16_t defaultValue, int32_t minVa
   while (1) {
 
     // get number and check on defaults
-    if ( ( !enterSomething( prompt, str, 10, false, isdigitExt ) ) || ( str[0] == '\0' ) ) {
+    if ( ( !enterSomething( prompt, str, 10, false, isdigitExt, NULL ) ) || ( str[0] == '\0' ) ) {
       return defaultValue;
     } else {
       i = atoi( str );
@@ -154,6 +228,27 @@ int32_t enterNumberI32( const char *prompt, uint16_t defaultValue, int32_t minVa
 
 }
 
+float enterNumberF( const char *prompt, float defaultValue, float minValue, float maxValue ) {
+
+  char str[20];
+  float f;
+
+  while (1) {
+
+    // get number and check on defaults
+    if ( ( !enterSomething( prompt, str, 20, false, isdigitFloat, isValidFloat ) ) || ( str[0] == '\0' ) ) {
+      return defaultValue;
+    } else {
+      f = atof( str );
+    }
+
+    // in range?
+    if ( ( f >= minValue ) && ( f <= maxValue ) ) return f;
+
+  }
+
+}
+
 int YN( int ch ) {
   return ( ch == 'Y' ) || ( ch == 'y' ) || ( ch == 'N' ) || ( ch == 'n' ) ;
 }
@@ -161,7 +256,7 @@ int YN( int ch ) {
 bool yesNo( const char *prompt, bool defaultValue ) {
 
   char str[2];
-  if ( (!enterSomething( prompt, str, 2, false, YN ) ) || ( strlen( str ) == 0 ) ) return defaultValue;
+  if ( (!enterSomething( prompt, str, 2, false, YN, NULL ) ) || ( strlen( str ) == 0 ) ) return defaultValue;
 
   return ( str[0] == 'y' ) || ( str[0] == 'Y' ) ;
 
@@ -188,6 +283,13 @@ void Menu::add( const char *item, int value, uint8_t id ) {
 
   char dummy[40];
   sprintf( dummy, "%d", value );
+  add( item, dummy, id );
+}
+
+void Menu::addF( const char *item, float value, uint8_t id ) {
+
+  char dummy[40];
+  sprintf( dummy, "%f", value );
   add( item, dummy, id );
 }
 

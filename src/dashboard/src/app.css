@@ -30,7 +30,7 @@
   }
 
   .svg {
-    filter: invert(0.5) sepia(20) saturate(70) hue-rotate(190deg) brightness(0.3);
+    filter: invert(0.5) sepia(20) saturate(70) hue-rotate(190deg) brightness(1);
   }
 }
 

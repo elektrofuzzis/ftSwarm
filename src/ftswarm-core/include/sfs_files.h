@@ -12,138 +12,142 @@
 extern const char *sfs_get_file( char *filename, uint32_t *length );
 
 
-// //index.html  SHA1:51d03089d020159fde1f91c6c6cd45d0e974672e
+// //index.html  SHA1:469ce9c2ba6e51847c5d20ebf1cc93cd16928e34
 extern const char sfs_index_html[];
-#define SFS_index_html_len 301
+#define SFS_index_html_len 308
 
-// /assets/17_tractor.svg  SHA1:dca8ff2960c6443bff837779f623255d285eed10
-extern const char sfs_assets_17_tractor_svg[];
-#define SFS_17_tractor_svg_len 2542
+// /assets/00_digital.svg  SHA1:fe4bc6ee43424a8985cce00178ad6b2a30e187a0
+extern const char sfs_assets_00_digital_svg[];
+#define SFS_00_digital_svg_len 729
 
-// /assets/07_ldr.svg  SHA1:cdcd996ed0843432ba92655ca9ae1360eb7df70f
-extern const char sfs_assets_07_ldr_svg[];
-#define SFS_07_ldr_svg_len 1118
+// /assets/01_analog.svg  SHA1:9490cef8544d025f85a539b9adb7774fc3f077a0
+extern const char sfs_assets_01_analog_svg[];
+#define SFS_01_analog_svg_len 1033
 
-// /assets/09_colorsensor.svg  SHA1:3601089c49bb466eff8a60b53d3b92ea5c686249
-extern const char sfs_assets_09_colorsensor_svg[];
-#define SFS_09_colorsensor_svg_len 989
-
-// /assets/23_valve.svg  SHA1:d102580ce48e5bd0b01a7cb1196d70872b462ae5
-extern const char sfs_assets_23_valve_svg[];
-#define SFS_23_valve_svg_len 1007
-
-// /assets/02_switch.svg  SHA1:3ceee5c820c7bf482b1fd7efbe41f0be5f7f3e64
+// /assets/02_switch.svg  SHA1:2ca4cdbb8014f70dc3c3b69b990ce1642fc47104
 extern const char sfs_assets_02_switch_svg[];
-#define SFS_02_switch_svg_len 802
+#define SFS_02_switch_svg_len 806
 
-// /assets/index-d07c0de5.js  SHA1:67c3f370a3f90b65b777123de7163afbd08f69fe
-extern const char sfs_assets_index_d07c0de5_js[];
-#define SFS_index_d07c0de5_js_len 30673
+// /assets/03_reedswitch.svg  SHA1:1c40df727edf0cf8a6bf3f0e5a49fceadc77ef70
+extern const char sfs_assets_03_reedswitch_svg[];
+#define SFS_03_reedswitch_svg_len 1612
 
-// /assets/index-b078bf7b.css  SHA1:52dc7f0f49d70719f462c766e6f4f9e679629a10
-extern const char sfs_assets_index_b078bf7b_css[];
-#define SFS_index_b078bf7b_css_len 1534
-
-// /assets/22_compressor.svg  SHA1:74ea72a81e35da3bdfc8cd0d9f80ea2a523ef690
-extern const char sfs_assets_22_compressor_svg[];
-#define SFS_22_compressor_svg_len 843
-
-// /assets/08_trailsensor.svg  SHA1:b435b87192793473a7166547436c3aa43097bca9
-extern const char sfs_assets_08_trailsensor_svg[];
-#define SFS_08_trailsensor_svg_len 911
-
-// /assets/16_xmotor.svg  SHA1:53358d05383afc0ff7416360a63c214dbe05ad62
-extern const char sfs_assets_16_xmotor_svg[];
-#define SFS_16_xmotor_svg_len 2616
-
-// /assets/27_rotaryEncoder.svg  SHA1:104c2d1d6f78df4bdc35ed9ae3f7fa31fbf61e9e
-extern const char sfs_assets_27_rotaryEncoder_svg[];
-#define SFS_27_rotaryEncoder_svg_len 1056
-
-// /assets/25_counter.svg  SHA1:785b7087c65dfc5ef9410b6f546dd4c2db8fca2d
-extern const char sfs_assets_25_counter_svg[];
-#define SFS_25_counter_svg_len 1208
-
-// /assets/04_voltage.svg  SHA1:3cf8fb2d870f46e89c2dc1893e356a164afd5a51
+// /assets/04_voltage.svg  SHA1:e20889e41d4ba4522a44ebde4dd61ab7214b8b5b
 extern const char sfs_assets_04_voltage_svg[];
-#define SFS_04_voltage_svg_len 868
+#define SFS_04_voltage_svg_len 874
 
-// /assets/18_encoder.svg  SHA1:f5acefcfd4d4a750135f86643fe26b72e5136318
+// /assets/05_resistor.svg  SHA1:dbe151d2d857b5c02b8073ddf60270fbd09bf0de
+extern const char sfs_assets_05_resistor_svg[];
+#define SFS_05_resistor_svg_len 1120
+
+// /assets/06_ntc.svg  SHA1:05c71f71aefcf3aaaa5f1fdbfa3204dc8a433cef
+extern const char sfs_assets_06_ntc_svg[];
+#define SFS_06_ntc_svg_len 756
+
+// /assets/07_ldr.svg  SHA1:3ea55c73a74927733c47c46ba645d15cc4c037c2
+extern const char sfs_assets_07_ldr_svg[];
+#define SFS_07_ldr_svg_len 1124
+
+// /assets/08_trailsensor.svg  SHA1:f2532f6ec3b7e6ff8cd2c13b1cae920be52fad4a
+extern const char sfs_assets_08_trailsensor_svg[];
+#define SFS_08_trailsensor_svg_len 915
+
+// /assets/09_colorsensor.svg  SHA1:c98258dca81ef4e80c63375a4d008aa0ce08fdc1
+extern const char sfs_assets_09_colorsensor_svg[];
+#define SFS_09_colorsensor_svg_len 996
+
+// /assets/10_ultrasonic.svg  SHA1:925654960036c9ca0b9272120effa9895b21d88e
+extern const char sfs_assets_10_ultrasonic_svg[];
+#define SFS_10_ultrasonic_svg_len 1641
+
+// /assets/11_joystick.svg  SHA1:f546e18cf01d82f4e2747cf24f72501a96b5cfd5
+extern const char sfs_assets_11_joystick_svg[];
+#define SFS_11_joystick_svg_len 1438
+
+// /assets/12_button.svg  SHA1:943d271c38dc6a15dadba2a0fbff86715f9488fe
+extern const char sfs_assets_12_button_svg[];
+#define SFS_12_button_svg_len 882
+
+// /assets/13_motor.svg  SHA1:77a462524d8dabbafe610251ee5e117c06705bc1
+extern const char sfs_assets_13_motor_svg[];
+#define SFS_13_motor_svg_len 814
+
+// /assets/14_servo.svg  SHA1:4070a7d32a9e2fbddd77bad4f522a19ddcc43b15
+extern const char sfs_assets_14_servo_svg[];
+#define SFS_14_servo_svg_len 1129
+
+// /assets/15_rgbled.svg  SHA1:2395193c60d1f779b48d7618b3a4d844a413eebb
+extern const char sfs_assets_15_rgbled_svg[];
+#define SFS_15_rgbled_svg_len 981
+
+// /assets/16_xmotor.svg  SHA1:b471554ae0db13433df92bee826fd4336e2de5ea
+extern const char sfs_assets_16_xmotor_svg[];
+#define SFS_16_xmotor_svg_len 2624
+
+// /assets/17_tractor.svg  SHA1:bc817840c92d4b25abba7e7b7af8afd3ebfa6f47
+extern const char sfs_assets_17_tractor_svg[];
+#define SFS_17_tractor_svg_len 2549
+
+// /assets/18_encoder.svg  SHA1:145ab0c958801050af5b19dc44ab09834f2a6246
 extern const char sfs_assets_18_encoder_svg[];
-#define SFS_18_encoder_svg_len 2571
+#define SFS_18_encoder_svg_len 2579
 
-// /assets/26_cam.svg  SHA1:67a48d42d7a87b5fce88ace285a219d396480df1
+// /assets/19_lamp.svg  SHA1:0268b9f86cb6cb603abfc64b7b16a975514e5766
+extern const char sfs_assets_19_lamp_svg[];
+#define SFS_19_lamp_svg_len 806
+
+// /assets/20_xmmotor.svg  SHA1:b71bedfa2525df47788860f9aeec5359f73774d1
+extern const char sfs_assets_20_xmmotor_svg[];
+#define SFS_20_xmmotor_svg_len 2613
+
+// /assets/21_lightbarrier.svg  SHA1:89b22eaa1b97fe881626b821550fd80d22746a79
+extern const char sfs_assets_21_lightbarrier_svg[];
+#define SFS_21_lightbarrier_svg_len 1172
+
+// /assets/22_compressor.svg  SHA1:f97b9c2ffaf432a22334ef8ba025586e822ca865
+extern const char sfs_assets_22_compressor_svg[];
+#define SFS_22_compressor_svg_len 850
+
+// /assets/23_valve.svg  SHA1:4db49357c6261580098e0e39edcbbbdad956216e
+extern const char sfs_assets_23_valve_svg[];
+#define SFS_23_valve_svg_len 1012
+
+// /assets/24_buzzer.svg  SHA1:594895baf135de4d9f788c2178f67d60eeb6ff12
+extern const char sfs_assets_24_buzzer_svg[];
+#define SFS_24_buzzer_svg_len 1583
+
+// /assets/25_counter.svg  SHA1:d3010cb736c62bf4e4e3e830d244137bd0f8990d
+extern const char sfs_assets_25_counter_svg[];
+#define SFS_25_counter_svg_len 1217
+
+// /assets/26_cam.svg  SHA1:684b9c482b41b33eb90b593da2d4d06f3e762eba
 extern const char sfs_assets_26_cam_svg[];
 #define SFS_26_cam_svg_len 319
 
-// /assets/ftSwarm-927930a8.svg  SHA1:f488efba0ae0b12c324f3fd8e59e1e156178d747
-extern const char sfs_assets_ftSwarm_927930a8_svg[];
-#define SFS_ftSwarm_927930a8_svg_len 2701
+// /assets/27_rotaryEncoder.svg  SHA1:a5b5b3aafc3afe44294e97db8def9f07fc11a46f
+extern const char sfs_assets_27_rotaryEncoder_svg[];
+#define SFS_27_rotaryEncoder_svg_len 1062
 
-// /assets/00_digital.svg  SHA1:2570e0a0a73526441816b79ea416c82b4061d20b
-extern const char sfs_assets_00_digital_svg[];
-#define SFS_00_digital_svg_len 722
-
-// /assets/20_xmmotor.svg  SHA1:25cde554ebb4bb6631ac1f639857b014fd0f91e0
-extern const char sfs_assets_20_xmmotor_svg[];
-#define SFS_20_xmmotor_svg_len 2606
-
-// /assets/24_buzzer.svg  SHA1:1fda77988688b6ca6194df92dca31476636beaf4
-extern const char sfs_assets_24_buzzer_svg[];
-#define SFS_24_buzzer_svg_len 1576
-
-// /assets/13_motor.svg  SHA1:eb9ed1124a5be313dccbeb70567fbce4b611360b
-extern const char sfs_assets_13_motor_svg[];
-#define SFS_13_motor_svg_len 806
-
-// /assets/28_frequency.svg  SHA1:2ecd3d9cd3af04ddfc925ac89101203e8903c9ad
+// /assets/28_frequency.svg  SHA1:810410c2bd446f0f02a7a3ea37d72e16cd1d3bc7
 extern const char sfs_assets_28_frequency_svg[];
 #define SFS_28_frequency_svg_len 301
 
-// /assets/12_button.svg  SHA1:e2ec63e61cc68eaa905e8d2730069ffcef6d3bd9
-extern const char sfs_assets_12_button_svg[];
-#define SFS_12_button_svg_len 878
-
-// /assets/19_lamp.svg  SHA1:1db79f674cdcc63496670e49feec1e3f11286ef6
-extern const char sfs_assets_19_lamp_svg[];
-#define SFS_19_lamp_svg_len 801
-
-// /assets/21_lightbarrier.svg  SHA1:2aae60b1537ff39cb8d804be78c214c42f429565
-extern const char sfs_assets_21_lightbarrier_svg[];
-#define SFS_21_lightbarrier_svg_len 1163
-
-// /assets/favicon.ico  SHA1:a81794647a50661c3065e8dd1aa92d0c5e2c9b6b
+// /assets/favicon.ico  SHA1:33f95bc2f5d2e7fbb30c2772ea555e00c4c17b3c
 extern const char sfs_assets_favicon_ico[];
 #define SFS_favicon_ico_len 1279
 
-// /assets/11_joystick.svg  SHA1:fa2e8284aa6f6522a1009d49afc96dc396d79f99
-extern const char sfs_assets_11_joystick_svg[];
-#define SFS_11_joystick_svg_len 1434
+// /assets/ftSwarm-DTApr_g0.svg  SHA1:56d2ec489735f6dd79c8d146535f88e5fd9327a5
+extern const char sfs_assets_ftSwarm_DTApr_g0_svg[];
+#define SFS_ftSwarm_DTApr_g0_svg_len 2706
 
-// /assets/01_analog.svg  SHA1:8d34cebbf020b5e0137b023d46cef9b4999eab76
-extern const char sfs_assets_01_analog_svg[];
-#define SFS_01_analog_svg_len 1029
+// /assets/index-CZuE1TKn.css  SHA1:3ff846e63775408c41637c90194b45a81088a0f7
+extern const char sfs_assets_index_CZuE1TKn_css[];
+#define SFS_index_CZuE1TKn_css_len 1776
 
-// /assets/06_ntc.svg  SHA1:06cac12ea7d28f4ad17279fd31da08ee253fdfae
-extern const char sfs_assets_06_ntc_svg[];
-#define SFS_06_ntc_svg_len 754
+// /assets/index-vtThxTEh.js  SHA1:9c9533bc65a487e67a4ad4aee41dbd39cfb61b9c
+extern const char sfs_assets_index_vtThxTEh_js[];
+#define SFS_index_vtThxTEh_js_len 36097
 
-// /assets/15_rgbled.svg  SHA1:8517998ca9de141097e2c89b3453506df63af9c8
-extern const char sfs_assets_15_rgbled_svg[];
-#define SFS_15_rgbled_svg_len 974
-
-// /assets/05_resistor.svg  SHA1:4a0b9af43c0c1fbb7eb04358ed6635a0cb07e0a3
-extern const char sfs_assets_05_resistor_svg[];
-#define SFS_05_resistor_svg_len 1115
-
-// /assets/14_servo.svg  SHA1:1b25f1d6be360b5cfa97cbfd1fc6083d3af6770a
-extern const char sfs_assets_14_servo_svg[];
-#define SFS_14_servo_svg_len 1125
-
-// /assets/03_reedswitch.svg  SHA1:0140f9545ca5413002568f146e24beabac6d9507
-extern const char sfs_assets_03_reedswitch_svg[];
-#define SFS_03_reedswitch_svg_len 1603
-
-// /assets/10_ultrasonic.svg  SHA1:7a8453a3a10cfb54cbdd94ee69a18fb959a2738e
-extern const char sfs_assets_10_ultrasonic_svg[];
-#define SFS_10_ultrasonic_svg_len 1633
+// /assets/sf.txt  SHA1:326e04170675ce86d6fdc1621944dd3e899c1d6c
+extern const char sfs_assets_sf_txt[];
+#define SFS_sf_txt_len 786

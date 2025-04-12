@@ -30,7 +30,7 @@
         <p class="center">
             Read the docs at <a
                 href="https://elektrofuzzis.github.io/ftSwarm">https://elektrofuzzis.github.io/ftSwarm</a><br/>
-            © 2022 Christian Bergschneider & Stefan Fuss
+            © 2025 Christian Bergschneider & Stefan Fuss
         </p>
     </Navigation>
 {/await}

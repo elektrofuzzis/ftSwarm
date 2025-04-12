@@ -28,6 +28,9 @@ uint16_t enterNumber( const char *prompt, uint16_t defaultValue, uint16_t minVal
 int32_t enterNumberI32( const char *prompt, uint16_t defaultValue, int32_t minValue = 0, int32_t maxValue = 0xFFFFFF );
 // write a prompt and get a int32_t reading
 
+float enterNumberF( const char *prompt, float defaultValue, float minValue, float maxValue );
+// write a prompt and get a float reading
+
 void enterString( const char *prompt, char *s, uint16_t size, bool hidden = false );
 // write a prompt and read a string from serial
 
@@ -47,5 +50,6 @@ class Menu {
     void   start( const char *prompt, uint8_t spacer, uint16_t maxMenuItems = 40 );
     void   add( const char *item, const char *value, uint8_t id, bool staticDelimiter = false );
     void   add( const char *item, int value, uint8_t id );
+    void   addF( const char *item, float value, uint8_t id );
     int8_t userChoice( void );
 };
