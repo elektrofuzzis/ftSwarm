@@ -13,6 +13,34 @@
 
 #include <MPU6050_6Axis_MotionApps20.h>
 
+SwOSPID::SwOSPID( float kp, float ki, float kd, float min_integral, float max_integral, float min_output, float max_output ) {
+  this->kp = kp;
+  this->ki = ki;
+  this->kd = kd;
+  this->min_integral = min_integral;
+  this->max_integral = max_integral;
+  this->min_output   = min_output;
+  this->max_output   = max_output;
+}
+
+float SwOSPID::solve( float target, float sensor ) {
+
+  printf( "solve target %f sensor %f\n", target, sensor );
+
+  float error = target - sensor;
+  integral += error;
+  integral = max( integral, max_integral );
+  integral = min( integral, min_integral );
+  float derivative = ( error - last_error);
+  float output = kp * error + ki * integral + kd * derivative;
+  output = min( output, max_output );
+  output = max( output, min_output );
+  last_error = error;
+  printf("output %f\n", output);
+  return output;
+
+}
+
 FtSwarmIOType_t sensorType2IOType( FtSwarmSensor_t sensor2IOType ) {
 
   switch ( sensor2IOType ) {
@@ -1074,7 +1102,7 @@ void FtSwarmServo::setOffset(int16_t offset) {
   if (!me) return;
   
   static_cast<SwOSServo*>(me)->lock();
-  static_cast<SwOSServo *>(me)->setOffset(offset, false);
+  static_cast<SwOSServo*>(me)->setOffset(offset, false);
   static_cast<SwOSServo*>(me)->unlock();
 }
 

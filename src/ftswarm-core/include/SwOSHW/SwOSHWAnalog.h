@@ -11,6 +11,7 @@
 
 #include "SwOSHWBaseIO.h"
 #include "SwOSHWBaseCtrl.h"
+#include "SwOSFilter.h"
 
 #include <esp_adc_cal.h>
 
@@ -23,9 +24,10 @@
  class SwOSAnalogInput : public SwOSInput {
 
   protected:
-    int8_t            _ADCChannel = ADC1_CHANNEL_MAX;
-    int8_t            _ADCUnit    = GPIO_NUM_NC;
+    int8_t _ADCChannel = ADC1_CHANNEL_MAX;
+    int8_t _ADCUnit    = GPIO_NUM_NC;
     esp_adc_cal_characteristics_t *_adc_chars = NULL;
+    SwOSFilter *filter = NULL;
 	
     bool isXMeter();
     virtual void _setupLocal();
@@ -34,10 +36,17 @@
   public:
  
 	  SwOSAnalogInput(const char *name, uint8_t port, SwOSCtrl *ctrl );
+    ~SwOSAnalogInput();
   
     // administrative stuff
 	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_ANALOGINPUT; };
     virtual void jsonize( JSONize *json, uint8_t id);
+
+    // delete all existing filtes
+    virtual void deleteFilter( void );
+
+    // add a new filter
+    virtual void addFilter( SwOSFilter *filter );
 
     // read sensor
 	  virtual void     read();

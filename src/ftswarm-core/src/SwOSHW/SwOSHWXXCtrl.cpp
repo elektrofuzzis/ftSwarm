@@ -41,7 +41,7 @@
       case FTSWARMRS_2V0: 
       case FTSWARMRS_2V1:       Wire.begin( 8, 9 );   break;
   
-      default:                  break; // CAM
+      default:                  break; // CAM, FTSWARMRC
 
     }
 
@@ -55,8 +55,10 @@
 
   // initialize gyro if available
   if ( gyroOn  ) { 
-    if ( ( _CPU == FTSWARMRS_2V0 ) || ( _CPU == FTSWARMRS_2V1 ) ) gyro = new SwOSGyroLSM( "GYRO", this );
-    else                                                          gyro = new SwOSGyroMPU( "GYRO", this );
+    if    ( ( _CPU == FTSWARMRS_2V0 ) || 
+            ( _CPU == FTSWARMRS_2V1 ) ||
+            ( _CPU == FTSWARMRC_1V140 ) ) gyro = new SwOSGyroLSM( "GYRO", this );
+    else                                  gyro = new SwOSGyroMPU( "GYRO", this );
   }
   
 }
@@ -89,7 +91,8 @@ bool SwOSSwarmXX::hasGyro( void ) {
   // already initialized or HW with integrated gyro
   if ( ( gyro ) || 
        ( _CPU == FTSWARMRS_2V0 ) ||
-       ( _CPU == FTSWARMRS_2V1 ) 
+       ( _CPU == FTSWARMRS_2V1 ) ||
+       ( _CPU == FTSWARMRC_1V140 )
      ) return true;
 
   // check on MPU6050
@@ -179,12 +182,13 @@ bool isInputType( FtSwarmIOType_t ioType ) {
 
 bool SwOSSwarmXX::changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarmIOType_t newIOType ) {
 
-  // check on compatible types
-  if (!isInputType( oldIOType) ) return false;
-  if (!isInputType( newIOType) ) return false;
+  // check on compatible IO types
+  if ( !isInputType( oldIOType) ) return false;
+  if ( !isInputType( newIOType) ) return false;
 
   // register the new one
-  SwOSInput *io;
+  SwOSInput *io    = NULL;
+
   switch ( newIOType ) {
 
     case FTSWARM_DIGITALINPUT:    io = new SwOSDigitalInput("A", port, this ); 
@@ -207,6 +211,7 @@ bool SwOSSwarmXX::changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarm
 
     case FTSWARM_FREQUENCYINPUT:  io = new SwOSFrequencymeter("A", port, 255, this ); 
                                   break;
+
     default: return false;
   }
 
@@ -273,6 +278,9 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
     case FTSWARMRS_2V1:     servos = ( extensionPort == FTSWARM_EXT_SERVO ) ? 4:2;
                             break;
 
+    case FTSWARMRC_1V140:   servos = 4;
+                            break;
+
     case FTSWARMRS_2V0:
     case FTSWARMJST_1V0:
     case FTSWARMJST_1V15:   servos = ( extensionPort == FTSWARM_EXT_SERVO ) ? 3:1;
@@ -283,11 +291,46 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
   }
 
   for (uint8_t i=0; i<MAXSERVOS; i++) {
-    if ( i>= servos ) {
-      servo[i] = NULL;
-    } else {
-      servo[i] = new SwOSServo("SERVO", i, this);
+
+    servo[i] = NULL;
+
+    if ( i < 1 ) {
+
+      if ( _CPU == FTSWARMRC_1V140 ) { 
+
+        // test on sensor cable
+        printf("Erzeuge AnalogInput\n");
+        SwOSAnalogInput *poti = new SwOSAnalogInput( "RCP", i+6, this );
+
+        // need different filters
+        poti->deleteFilter();
+        poti->addFilter(new SwOSSpike( 120, 30 ) );
+        poti->addFilter(new SwOSMovingAverage(3) );
+
+        // need to read multiple times to get consistent values
+        while (poti->getValueI32() == FILTER_INVALID ) {
+          poti->read();
+          printf("an %d %d\n", i, poti->getValueI32() );
+        }
+
+        printf("servo read\n");
+        poti->read();
+        if (( poti->getValueI32() > 0 ) && ( poti->getValueI32() < 4095 ) ) {
+          printf("Erzeuge RCServo\n");
+          servo[i] = new SwOSRCServo( "RCSERVO", i, this, poti, actor[i] );
+          actor[i] = NULL;
+        } else {
+          delete poti;
+        }
+
+      } else {
+        // just a modern servo
+        servo[i] = new SwOSServo("SERVO", i, this);
+
+      }
+
     }
+
   }
 
   if ( extensionPort == FTSWARM_EXT_LIDAR ) {
@@ -303,6 +346,16 @@ SwOSSwarmJST::SwOSSwarmJST( SwOSCom *com ):SwOSSwarmJST( com->data.sourceSN, com
 SwOSSwarmJST::~SwOSSwarmJST() {
   
   for ( uint8_t i=0; i<MAXSERVOS; i++ ) { if ( servo[i] ) delete servo[i]; }
+
+}
+
+void SwOSSwarmJST::read() {
+  
+  SwOSSwarmXX::read();
+
+  for (uint8_t i=0; i<servos; i++) {
+    if ( servo[i] ) servo[i]->adjust();
+  }
 
 }
 

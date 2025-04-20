@@ -61,22 +61,83 @@ typedef enum { SWOS_OK, SWOS_TIMEOUT, SWOS_DENY } SwOSError_t;
 typedef enum { swarmComWifi = 1, swarmComRS485 = 2, swarmComBoth= 3 } FtSwarmCommunication_t; 
 
 // IO types
-typedef enum { FTSWARM_UNDEF = -1, FTSWARM_INPUT, FTSWARM_DIGITALINPUT, FTSWARM_ANALOGINPUT, FTSWARM_ACTOR, FTSWARM_BUTTON, FTSWARM_JOYSTICK, FTSWARM_PIXEL, FTSWARM_SERVO,  FTSWARM_OLED, FTSWARM_GYRO, FTSWARM_HC165, FTSWARM_I2C, FTSWARM_CAM, FTSWARM_COUNTERINPUT, FTSWARM_ROTARYINPUT, FTSWARM_FREQUENCYINPUT, FTSWARM_MAXIOTYPE } FtSwarmIOType_t ;
+typedef enum { FTSWARM_UNDEF = -1, 
+               FTSWARM_INPUT, 
+               FTSWARM_DIGITALINPUT, 
+               FTSWARM_ANALOGINPUT, 
+               FTSWARM_ACTOR, 
+               FTSWARM_BUTTON, 
+               FTSWARM_JOYSTICK, 
+               FTSWARM_PIXEL, 
+               FTSWARM_SERVO, 
+               FTSWARM_OLED, 
+               FTSWARM_GYRO, 
+               FTSWARM_HC165, 
+               FTSWARM_I2C, 
+               FTSWARM_CAM, 
+               FTSWARM_COUNTERINPUT, 
+               FTSWARM_ROTARYINPUT, 
+               FTSWARM_FREQUENCYINPUT, 
+               FTSWARM_MAXIOTYPE } FtSwarmIOType_t ;
 
 // controller types
 typedef enum { FTSWARM_NOCTRL = -1, FTSWARM = 0, FTSWARMCONTROL, FTSWARMCAM, FTSWARMPWRDRIVE, FTSWARMDUINO } FtSwarmController_t;
 
 // sensor types
-typedef enum { FTSWARM_DIGITAL, FTSWARM_ANALOG, FTSWARM_SWITCH, FTSWARM_REEDSWITCH, FTSWARM_LIGHTBARRIER, FTSWARM_VOLTMETER, FTSWARM_OHMMETER, FTSWARM_THERMOMETER, FTSWARM_LDR, FTSWARM_TRAILSENSOR, FTSWARM_COLORSENSOR, FTSWARM_ULTRASONIC, FTSWARM_CAMSENSOR, FTSWARM_COUNTER, FTSWARM_ROTARYENCODER, FTSWARM_FREQUENCYMETER, FTSWARM_LIDAR, FTSWARM_MAXSENSOR } FtSwarmSensor_t;
+typedef enum { FTSWARM_DIGITAL, 
+               FTSWARM_ANALOG, 
+               FTSWARM_SWITCH, 
+               FTSWARM_REEDSWITCH, 
+               FTSWARM_LIGHTBARRIER, 
+               FTSWARM_VOLTMETER, 
+               FTSWARM_OHMMETER, 
+               FTSWARM_THERMOMETER, 
+               FTSWARM_LDR, 
+               FTSWARM_TRAILSENSOR, 
+               FTSWARM_COLORSENSOR, 
+               FTSWARM_ULTRASONIC, 
+               FTSWARM_CAMSENSOR, 
+               FTSWARM_COUNTER, 
+               FTSWARM_ROTARYENCODER, 
+               FTSWARM_FREQUENCYMETER, 
+               FTSWARM_LIDAR, 
+               FTSWARM_MAXSENSOR } FtSwarmSensor_t;
 
 // actor types
 typedef enum { FTSWARM_MOTOR, FTSWARM_XMMOTOR, FTSWARM_TRACTOR,  FTSWARM_ENCODER, FTSWARM_LAMP, FTSWARM_VALVE, FTSWARM_COMPRESSOR, FTSWARM_BUZZER, FTSWARM_STEPPER, FTSWARM_MAXACTOR } FtSwarmActor_t;
 
 // icons
-typedef enum { FTSWARM_XX_UNDEF = -1, FTSWARM_00_DIGITAL, FTSWARM_01_ANALOG, FTSWARM_02_SWITCH, FTSWARM_03_REEDSWITCH, FTSWARM_04_VOLTAGE, FTSWARM_05_RESISTOR, FTSWARM_06_NTC, FTSWARM_07_LDR, 
-               FTSWARM_08_TRAILSENSOR, FTSWARM_09_COLORSENSOR, FTSWARM_10_ULTRASONIC, FTSWARM_11_JOYSTICK, FTSWARM_12_BUTTON, FTSWARM_13_MOTOR, FTSWARM_14_SERVO,
-               FTSWARM_15_RGBLED, FTSWARM_16_XMOTOR, FTSWARM_17_TRACTOR, FTSWARM_18_ENCODER, FTSWARM_19_LAMP, FTSWARM_20_XMMOTOR, FTSWARM_21_LIGHTBARRIER,
-               FTSWARM_22_COMPRESSOR, FTSWARM_23_VALVE, FTSWARM_24_BUZZER,FTSWARM_25_COUNTER,FTSWARM_26_CAM,FTSWARM_27_ROTARYENCODER,FTSWARM_28_FREQUENCY, FTSWARM_29_GYRO
+typedef enum { FTSWARM_XX_UNDEF = -1, 
+               FTSWARM_00_DIGITAL, 
+               FTSWARM_01_ANALOG, 
+               FTSWARM_02_SWITCH, 
+               FTSWARM_03_REEDSWITCH, 
+               FTSWARM_04_VOLTAGE, 
+               FTSWARM_05_RESISTOR, 
+               FTSWARM_06_NTC, 
+               FTSWARM_07_LDR, 
+               FTSWARM_08_TRAILSENSOR, 
+               FTSWARM_09_COLORSENSOR, 
+               FTSWARM_10_ULTRASONIC, 
+               FTSWARM_11_JOYSTICK, 
+               FTSWARM_12_BUTTON, 
+               FTSWARM_13_MOTOR, 
+               FTSWARM_14_SERVO,
+               FTSWARM_15_RGBLED, 
+               FTSWARM_16_XMOTOR, 
+               FTSWARM_17_TRACTOR, 
+               FTSWARM_18_ENCODER, 
+               FTSWARM_19_LAMP, 
+               FTSWARM_20_XMMOTOR, 
+               FTSWARM_21_LIGHTBARRIER,
+               FTSWARM_22_COMPRESSOR, 
+               FTSWARM_23_VALVE, 
+               FTSWARM_24_BUZZER,
+               FTSWARM_25_COUNTER,
+               FTSWARM_26_CAM,
+               FTSWARM_27_ROTARYENCODER,
+               FTSWARM_28_FREQUENCY,
+               FTSWARM_29_GYRO
    } FtSwarmIcon_t;
 
 // HW versions
@@ -90,7 +151,9 @@ typedef enum {
   FTSWARMCAM_3V12,
   FTSWARMDUINO_1V141,
   FTSWARMPWRDRIVE_1V141,
-  FTSWARMXL_1V00 } FtSwarmVersion_t;
+  FTSWARMXL_1V00,
+  FTSWARMRC_1V140,
+  FTSWARMMAXVERSION } FtSwarmVersion_t;
 
 // how to move
 typedef enum { FTSWARM_COAST, FTSWARM_BRAKE, FTSWARM_ON, FTSWARM_MAXMOTION } FtSwarmMotion_t;
@@ -181,6 +244,8 @@ typedef enum {
 // Servos
 #define FTSWARM_SERVO1 0
 #define FTSWARM_SERVO2 1
+#define FTSWARM_SERVO3 2
+#define FTSWARM_SERVO4 3
 
 // **** some internal types & classes, don't use them at all ****
 
@@ -247,6 +312,26 @@ class SwOSQuaternion {
           r.normalize();
           return r;
       }
+};
+
+class SwOSPID {
+
+  public:
+  
+    float kp;
+    float ki;
+    float kd;
+    float max_integral;
+    float min_integral;
+    float max_output;
+    float min_output;
+    float integral = 0;
+    float last_error = 0;
+
+    SwOSPID( float kp, float ki, float kd, float min_integral, float max_integral, float min_output, float max_output );
+    float solve( float desired_value, float sensor );
+    void reset( float sensor ) { integral = 0; last_error = 0; };
+
 };
 
 // handle/pointer to a swarm IO, used by FtSwarmIO base class
@@ -634,6 +719,7 @@ class FtSwarmServo : public FtSwarmIO {
     // offset
     int16_t getOffset();
     void setOffset( int16_t position );
+
 };
 
 class FtSwarmOLED : public FtSwarmIO {

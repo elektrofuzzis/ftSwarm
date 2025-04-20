@@ -27,7 +27,8 @@
  class SwOSSwarmXX : public SwOSCtrl {
   protected:
     virtual void _sendAlias( SwOSCom *alias );
-  public:
+
+    public:
 	  SwOSGyro     *gyro;
     SwOSI2C      *I2C;
     
@@ -64,8 +65,8 @@ class SwOSSwarmJST : public SwOSSwarmXX {
   
   public:
     // specific hardware
-    uint8_t   servos  = 1;
-	  SwOSServo *servo[MAXSERVOS];
+    uint8_t       servos  = 1;
+	  SwOSBaseServo *servo[MAXSERVOS];
 
     // constructor, destructor
 	  SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extentionPort, bool gyroOn );
@@ -84,6 +85,7 @@ class SwOSSwarmJST : public SwOSSwarmXX {
     virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
     virtual void factorySettings( void );                                  // reset factory settings
     virtual void unsubscribe(void );                                       // unsubscribe all IOs
+    virtual void read();                                                   // run measurements
 
     // API commands
     virtual bool apiServoOffset( char *id, int offset );           // send a Servo command (from api)

@@ -42,6 +42,8 @@
         height: 64px;
         padding: 8px 16px;
 
+        z-index: 9999;
+
         display: flex;
         align-items: center;
         justify-content: space-between;

@@ -9,8 +9,12 @@
  
 #pragma once
 
+#include <esp_adc_cal.h>
+
+#include "SwOS.h"
 #include "SwOSHWBaseIO.h"
 #include "SwOSHWBaseCtrl.h"
+#include "SwOSHWAnalog.h"
 
 /***************************************************
  *
@@ -103,6 +107,45 @@ class SwOSActor : public SwOSIO {
     */
   
   };
+
+/***************************************************
+ *
+ *   SwOSBaseServo - virtual servo class
+ *
+ ***************************************************/
+
+ class SwOSBaseServo : public SwOSIO {
+  protected:
+    int16_t _position = 0;
+    int16_t _offset   = 128;
+
+    // local HW procedures
+    virtual void _setLocal() {};   // set position locally
+
+    // remote HW procedures
+    virtual void _setRemote() {};  // setPosition remotely 
+
+  public:
+    // constructor
+	  SwOSBaseServo(const char *name, uint8_t port, SwOSCtrl *ctrl);
+
+    // Test, if I'm an Actor
+    virtual bool isActor( void ) { return true; }
+    
+    // administrative stuff
+    virtual void jsonize( JSONize *json, uint8_t id);
+    virtual void onTrigger( int32_t value );
+	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_SERVO; };
+    virtual FtSwarmIcon_t getIcon() { return FTSWARM_14_SERVO; };    
+    virtual void adjust( void ) {};
+
+    // commands
+	  virtual int16_t getOffset( )   { return _offset; };
+	  virtual int16_t getPosition( ) { return _position; };
+	  virtual void setOffset( int16_t offset, bool dontSendToRemote );
+	  virtual void setPosition( int16_t position, bool dontSendToRemote );
+ 
+  };
   
 /***************************************************
  *
@@ -110,12 +153,10 @@ class SwOSActor : public SwOSIO {
  *
  ***************************************************/
 
-class SwOSServo : public SwOSIO {
+class SwOSServo : public SwOSBaseServo {
   protected:
     gpio_num_t      _SERVO;
 	  ledc_channel_t  _channelSERVO;
-	  int16_t _position = 0;
-	  int16_t _offset   = 128;
     
     // local HW procedures
     virtual void _setupLocal(); // initializes local HW
@@ -128,19 +169,29 @@ class SwOSServo : public SwOSIO {
     // constructor
 	  SwOSServo(const char *name, uint8_t port, SwOSCtrl *ctrl);
 
-    // administrative stuff
-	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_SERVO; };
-    virtual FtSwarmIcon_t getIcon() { return FTSWARM_14_SERVO; };
-    virtual void jsonize( JSONize *json, uint8_t id);
-    virtual void onTrigger( int32_t value );
-
-    // Test, if I'm an Actor
-    virtual bool            isActor( void ) { return true; }
-    
-    // commands
-	  virtual int16_t getOffset( )   { return _offset; };
-	  virtual int16_t getPosition( ) { return _position; };
-	  virtual void setOffset( int16_t offset, bool dontSendToRemote );
-	  virtual void setPosition( int16_t position, bool dontSendToRemote );
 };
-  
+
+/***************************************************
+ *
+ *   SwOSRCServo
+ *
+ ***************************************************/
+
+ class SwOSRCServo : public SwOSBaseServo {
+  protected:
+
+    SwOSAnalogInput *poti  = NULL;
+    SwOSActor       *motor = NULL;
+    SwOSPID         *pid   = new SwOSPID( 2.0, 1, 0, 0, 100, -512, 512);
+    float           target;
+    
+    virtual void _setLocal();       // set position locally
+
+  public:
+    // constructor
+	  SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSAnalogInput *poti, SwOSActor *actor );
+    ~SwOSRCServo();
+
+    virtual void adjust( void );
+
+};

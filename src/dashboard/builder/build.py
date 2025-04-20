@@ -191,12 +191,12 @@ consoleloader.warn("Please be sure to provide the HTTP header 'Content-Encoding:
 consoleloader.succeed("Cleaned up")
 consoleloader = Halo("Integrating...")
 
-if os.path.exists("../../pio-develop/src/sfs_files.cpp"):
-    os.remove("../../pio-develop/src/sfs_files.cpp")
-if os.path.exists("../../pio-develop/src/sfs_files.h"):
-    os.remove("../../pio-develop/src/sfs_files.h")
+if os.path.exists("../../ftswarm-core/src/sfs_files.cpp"):
+    os.remove("../../ftswarm-core/src/sfs_files.cpp")
+if os.path.exists("../../ftswarm-core/include/sfs_files.h"):
+    os.remove("../../ftswarm-core/include/sfs_files.h")
 
-shutil.copy("sfs_files.cpp", "../../pio-develop/src/")
-shutil.copy("sfs_files.h", "../../pio-develop/src/")
+shutil.copy("sfs_files.cpp", "../../ftswarm-core/src/")
+shutil.copy("sfs_files.h", "../../ftswarm-core/include/")
 
 consoleloader.succeed("Integrated")

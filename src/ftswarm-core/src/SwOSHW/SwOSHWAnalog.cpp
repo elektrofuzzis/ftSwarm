@@ -11,6 +11,7 @@
 #include "SwOSHW/SwOSHWHAL.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWXXCtrl.h"
+#include "SwOSFilter.h"
 
 /***************************************************
  *
@@ -21,7 +22,7 @@
  SwOSAnalogInput::SwOSAnalogInput(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSInput( name, port, ctrl, FTSWARM_DIGITAL ) {
   
   // initialize local HW
-  if ( _ctrl->isLocal() ) _setupLocal();
+  if ( _ctrl->isLocal() ) _setupLocal( );
 
 }
 
@@ -37,7 +38,37 @@ void SwOSAnalogInput::_setupLocal() {
   if ( ( _ADCUnit ==  ADC_UNIT_1) && ( _ADCChannel != ADC1_CHANNEL_MAX ) ) {
     // set ADC to 12 bits, scale 3.9V
     adc1_config_width(ADC_WIDTH_BIT_12);
+    adc1_config_channel_atten( (adc1_channel_t) _ADCChannel, (adc_atten_t) GPIO_INPUT[(int8_t)_ctrl->getCPU()][ _port][3] );
   }
+
+  #if CONFIG_IDF_TARGET_ESP32S3
+  if ((adc_unit_t)_ADCUnit == ADC_UNIT_2) {
+    adc2_config_channel_atten( (adc2_channel_t) _ADCChannel, (adc_atten_t) GPIO_INPUT[(int8_t)_ctrl->getCPU()][ _port][3] );
+  }
+  #endif
+
+  filter = new SwOSSpike( 10, 60 );
+  filter->addFilter( new SwOSMovingAverage( 3) );
+
+}
+
+SwOSAnalogInput::~SwOSAnalogInput( ) {
+
+  if (filter) delete filter;
+
+}
+
+void SwOSAnalogInput::deleteFilter( void ) {
+  
+  if (filter) delete filter;
+  filter = NULL;
+
+}
+
+void SwOSAnalogInput::addFilter( SwOSFilter *filter ) {
+
+  if (this->filter) this->filter->addFilter( filter );
+  else this->filter = filter;
 
 }
 
@@ -127,7 +158,7 @@ void SwOSAnalogInput::read() {
   // non existing port?
   if ( ( _GPIO == GPIO_NUM_NC ) || ( _ADCChannel == ADC1_CHANNEL_MAX) ) return;
 
-  uint32_t newValue;
+  int32_t newValue;
 
   if ((adc_unit_t)_ADCUnit == ADC_UNIT_1) newValue = adc1_get_raw( (adc1_channel_t )_ADCChannel );
 
@@ -143,6 +174,10 @@ void SwOSAnalogInput::read() {
     // XMeter: cast to mV
     newValue = esp_adc_cal_raw_to_voltage( newValue, _adc_chars ); 
   }
+
+  // printf("O: %d ", newValue);
+  if (filter) newValue = filter->fx(newValue); 
+  // printf("S: %d\n", newValue);
 
   setReading( newValue );
 

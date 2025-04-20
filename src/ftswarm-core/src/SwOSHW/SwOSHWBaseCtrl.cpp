@@ -39,16 +39,17 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwa
 
   // # of inputs & actors
   switch (CPU) {
-    case FTSWARM_NOVERSION:     inputs = 0; actors = 0; leds = 0; break;
+    case FTSWARM_NOVERSION:     inputs = 0;  actors = 0; leds = 0; break;
     case FTSWARMRS_2V0:
-    case FTSWARMRS_2V1:         inputs = 6; actors = 2; leds = 2;
+    case FTSWARMRS_2V1:         inputs = 6;  actors = 2; leds = 2;
                                 if ( extensionPort == FTSWARM_EXT_OUTPUT ) actors = 4; 
                                 break;
-    case FTSWARMCAM_3V12:       inputs = 4; actors = 2; leds = 2; break;
-    case FTSWARMDUINO_1V141:    inputs = 8; actors = 4; leds = 2; break;
-    case FTSWARMPWRDRIVE_1V141: inputs = 5; actors = 4; leds = 2; break;
-    case FTSWARMXL_1V00:        inputs = 8; actors = 8; leds = 2; break;
-    default:                    inputs = 4; actors = 2; leds = 2; break;
+    case FTSWARMCAM_3V12:       inputs = 4;  actors = 2; leds = 2; break;
+    case FTSWARMDUINO_1V141:    inputs = 8;  actors = 4; leds = 2; break;
+    case FTSWARMPWRDRIVE_1V141: inputs = 5;  actors = 4; leds = 2; break;
+    case FTSWARMXL_1V00:        inputs = 8;  actors = 8; leds = 2; break;
+    case FTSWARMRC_1V140:       inputs = 6;  actors = 4; leds = 2; break;
+    default:                    inputs = 4;  actors = 2; leds = 2; break;
   }
 
   // define common hardware

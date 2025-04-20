@@ -41,7 +41,7 @@ void SwOSNVS::initialSetup( void ) {
 
   version = NVSVERSION;
 
-  switch ( enterNumber(("Controller Type\n (1) ftSwarm\n (2) ftSwarmRS\n (3) ftSwarmControl\n (4) ftSwarmCAM\n (5) ftSwarmPwrDrive\n (6) ftSwarmDuino\n (7) ftSwarmXL\n (8) special config\n>"), 0, 1, 8 ) ) {
+  switch ( enterNumber(("Controller Type\n (1) ftSwarm\n (2) ftSwarmRS\n (3) ftSwarmControl\n (4) ftSwarmCAM\n (5) ftSwarmPwrDrive\n (6) ftSwarmDuino\n (7) ftSwarmXL\n (8) ftSwarmRC\n (9) special config\n>"), 0, 1, 8 ) ) {
     case 1:  controllerType = FTSWARM;         CPU = FTSWARMJST_1V15;       break;
     case 2:  controllerType = FTSWARM;         CPU = FTSWARMRS_2V1;         break;
     case 3:  controllerType = FTSWARMCONTROL;  CPU = FTSWARMCONTROL_1V3;    break;
@@ -49,9 +49,10 @@ void SwOSNVS::initialSetup( void ) {
     case 5:  controllerType = FTSWARMPWRDRIVE; CPU = FTSWARMPWRDRIVE_1V141; break;
     case 6:  controllerType = FTSWARMDUINO;    CPU = FTSWARMDUINO_1V141;    break;
     case 7:  controllerType = FTSWARM;         CPU = FTSWARMXL_1V00;        break;
+    case 8:  controllerType = FTSWARM;         CPU = FTSWARMRC_1V140;       break;
     default: // manual configuration
              controllerType = (FtSwarmController_t) (enterNumber(("controller Type\n (1) ftSwarm\n (2) ftSwarmControl\n (3) ftSwarmCAM\n (4) ftSwarmPwrDrive\n (5) ftSwarmDuino\n\n>"), 0, 1, 5 ) - 1 );
-             CPU = ( FtSwarmVersion_t ) ( enterNumber(("CPU Version\n (1) FTSWARMJST_1V0\n (2) FTSWARMCONTROL_1V3\n (3) FTSWARMJST_1V15\n (4) FTSWARMRS_2V0\n (5) FTSWARMRS_2V1\n (6) FTSWARMCAM_3V12\n (7) FTSWARMDUINO_1V141\n (8) FTSWARMPWRDRIVE_1V141\n (9) FTSWARMXL_1V00"), 0, 1, 9 ) -1 );
+             CPU = ( FtSwarmVersion_t ) ( enterNumber(("CPU Version\n (1) FTSWARMJST_1V0\n (2) FTSWARMCONTROL_1V3\n (3) FTSWARMJST_1V15\n (4) FTSWARMRS_2V0\n (5) FTSWARMRS_2V1\n (6) FTSWARMCAM_3V12\n (7) FTSWARMDUINO_1V141\n (8) FTSWARMPWRDRIVE_1V141\n (9) FTSWARMXL_1V00 (10) FTSWARMRC_1V140"), 0, 1, 10 ) -1 );
   }
 
   RGBLeds = 2; 

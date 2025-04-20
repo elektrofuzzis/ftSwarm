@@ -415,11 +415,53 @@ void SwOSActor::setValue( long distance, long position, bool isHoming, bool isRu
 
 /***************************************************
  *
+ *   SwOSBaseServo
+ *
+ ***************************************************/
+
+ SwOSBaseServo::SwOSBaseServo(const char *name, uint8_t port, SwOSCtrl *ctrl) : SwOSIO( name, port, ctrl ) {
+
+}
+
+void SwOSBaseServo::jsonize( JSONize *json, uint8_t id) {
+  json->startObject();
+  SwOSIO::jsonize(json, id);
+  json->variableI16("offset",   _offset);
+  json->variableI16("position", _position);
+  json->endObject();
+}
+
+void SwOSBaseServo::setPosition( int16_t position, bool dontSendToRemote ) {
+  _position = position;
+
+  // apply local or remote
+  if (_ctrl->isLocal())       _setLocal();
+  else if (!dontSendToRemote) _setRemote();
+
+}
+
+void SwOSBaseServo::setOffset( int16_t offset, bool dontSendToRemote ) {
+  _offset = offset;
+ 
+  // apply local or remote
+  if (_ctrl->isLocal())       _setLocal();
+  else if (!dontSendToRemote) _setRemote();
+
+}
+
+void SwOSBaseServo::onTrigger( int32_t value ) {
+
+  setPosition( (int16_t) value, false );
+
+}
+
+/***************************************************
+ *
  *   SwOSServo
  *
  ***************************************************/
 
-SwOSServo::SwOSServo(const char *name, uint8_t port, SwOSCtrl *ctrl) : SwOSIO( name, port, ctrl ) {
+SwOSServo::SwOSServo(const char *name, uint8_t port, SwOSCtrl *ctrl) : SwOSBaseServo( name, port, ctrl ) {
 
   // initialize local HW
   if (ctrl->isLocal()) _setupLocal();
@@ -496,34 +538,92 @@ void SwOSServo::_setRemote( ) {
   cmd.send( );
 }
 
-void SwOSServo::jsonize( JSONize *json, uint8_t id) {
-  json->startObject();
-  SwOSIO::jsonize(json, id);
-  json->variableI16("offset",   _offset);
-  json->variableI16("position", _position);
-  json->endObject();
+
+/***************************************************
+ *
+ *   SwOSRCServo
+ *
+ ***************************************************/
+
+ // min/max positions
+
+#define RCSERVO_LOW  1700.0
+#define RCSERVO_HIGH 3750.0
+#define RCMAXDELTA   20
+
+SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSAnalogInput *poti, SwOSActor *actor): SwOSBaseServo( name, port, ctrl ) {
+
+  this->poti  = poti;
+  this->motor = actor;
+
+  // keep position - multiple reads to avoid startup spikes
+  poti->read();
+  while ( abs( target - poti->getValueI32() ) > RCMAXDELTA ) {
+    target = poti->getValueI32();
+    delay(10);
+    poti->read();
+  }
+
+  target = poti->getValueI32();
+  _position = ( target - RCSERVO_LOW ) / ( RCSERVO_HIGH - RCSERVO_LOW ) * 256 - _offset;
+
+  printf("constructor target %f _position %d\n", target, _position);
+  
 }
 
-void SwOSServo::setPosition( int16_t position, bool dontSendToRemote ) {
-  _position = position;
-
-  // apply local or remote
-  if (_ctrl->isLocal())       _setLocal();
-  else if (!dontSendToRemote) _setRemote();
-
-}
-
-void SwOSServo::setOffset( int16_t offset, bool dontSendToRemote ) {
-  _offset = offset;
- 
-  // apply local or remote
-  if (_ctrl->isLocal())       _setLocal();
-  else if (!dontSendToRemote) _setRemote();
+SwOSRCServo::~SwOSRCServo() {
+  
+  if (poti)  delete poti;
+  if (motor) delete motor;
+  if (pid)   delete pid;
 
 }
 
-void SwOSServo::onTrigger( int32_t value ) {
+void SwOSRCServo::adjust(void) {
 
-  setPosition( (int16_t) value, false );
+  // remote: nothing todo
+  if (!_ctrl->isLocal()) return;
+
+return;
+
+  poti->read();
+
+  int16_t speed;
+  float   sensor = poti->getValueI32();
+
+  // target reached?
+  if ( abs( sensor - target ) < 25 ) { 
+    speed = 0; 
+
+  } else {
+
+    // calc next speed
+    speed = pid->solve( target, sensor );
+    
+    // keep minimum speed
+    if (abs(speed)<64) { 
+      if ( speed < 0 ) speed = -64;
+      else speed = 64;
+    }
+
+    printf("adjust target %d sensor %f speed %d\n",(int16_t) target, sensor, speed );
+
+    while(1) delay(50);
+
+  }
+  
+  motor->setSpeed( speed );
+  motor->apply();
 
 }
+
+void SwOSRCServo::_setLocal( void ) {
+
+  // calc poti's new target value
+  target = ( _position + _offset ) / 256.0 * ( RCSERVO_HIGH - RCSERVO_LOW ) + RCSERVO_LOW;
+  if ( target > RCSERVO_HIGH ) target = RCSERVO_HIGH;
+  if ( target < RCSERVO_LOW )  target = RCSERVO_LOW;
+
+}
+
+// RCSERVO1.setPosition(0)
