@@ -467,22 +467,28 @@ void aliasMenu( void ) {
     menu.add( myOSSwarm.Ctrl[controller]->getName(), myOSSwarm.Ctrl[controller]->getAlias(), item, true );
   
     // list inputs
-    for (uint8_t i=0; i<myOSSwarm.Ctrl[controller]->inputs; i++ ) { 
-      OSObj[item++] = myOSSwarm.Ctrl[controller]->input[i];
-      menu.add( myOSSwarm.Ctrl[controller]->input[i]->getName(), myOSSwarm.Ctrl[controller]->input[i]->getAlias(), item, true );
+    for (uint8_t i=0; i<myOSSwarm.Ctrl[controller]->inputs; i++ ) {
+      if ( myOSSwarm.Ctrl[controller]->input[i] ) { 
+        OSObj[item++] = myOSSwarm.Ctrl[controller]->input[i];
+        menu.add( myOSSwarm.Ctrl[controller]->input[i]->getName(), myOSSwarm.Ctrl[controller]->input[i]->getAlias(), item, true );
+      }
     }
   
     // list actors
     for (uint8_t i=0; i<myOSSwarm.Ctrl[controller]->actors; i++ ) {
-      OSObj[item++] = myOSSwarm.Ctrl[controller]->actor[i];
-      menu.add( myOSSwarm.Ctrl[controller]->actor[i]->getName(), myOSSwarm.Ctrl[controller]->actor[i]->getAlias(), item, true );
+      if (myOSSwarm.Ctrl[controller]->actor[i]) {
+        OSObj[item++] = myOSSwarm.Ctrl[controller]->actor[i];
+        menu.add( myOSSwarm.Ctrl[controller]->actor[i]->getName(), myOSSwarm.Ctrl[controller]->actor[i]->getAlias(), item, true );
+      }
     }
   
     // list LEDs
     for (uint8_t i=0; i<nvs.RGBLeds; i++ ) {
       if ( myOSSwarm.Ctrl[controller]->led[i]) {
-        OSObj[item++] =  myOSSwarm.Ctrl[controller]->led[i];
-        menu.add( myOSSwarm.Ctrl[controller]->led[i]->getName(),  myOSSwarm.Ctrl[controller]->led[i]->getAlias(), item, true );
+        if (myOSSwarm.Ctrl[controller]->led[i]) {
+          OSObj[item++] = myOSSwarm.Ctrl[controller]->led[i];
+          menu.add( myOSSwarm.Ctrl[controller]->led[i]->getName(),  myOSSwarm.Ctrl[controller]->led[i]->getAlias(), item, true );
+        }
       }
     }
   
@@ -522,13 +528,17 @@ void aliasMenu( void ) {
       case FTSWARMCONTROL:  ftSwarmControl = static_cast<SwOSSwarmControl *>(myOSSwarm.Ctrl[controller]);
                             // buttons
                             for (uint8_t i=0; i<8; i++ ) {
-                              OSObj[item++] = ftSwarmControl->button[i];
-                              menu.add( ftSwarmControl->button[i]->getName(),   ftSwarmControl->button[i]->getAlias(), item, true );
+                              if (ftSwarmControl->button[i]) {
+                                OSObj[item++] = ftSwarmControl->button[i];
+                                menu.add( ftSwarmControl->button[i]->getName(),   ftSwarmControl->button[i]->getAlias(), item, true );
+                              }
                             }
                             // joysticks
                             for (uint8_t i=0; i<2; i++ ) {
-                              OSObj[item++] = ftSwarmControl->joystick[i];
-                              menu.add( ftSwarmControl->joystick[i]->getName(), ftSwarmControl->joystick[i]->getAlias(), item , true);
+                              if (ftSwarmControl->joystick[i]) {
+                                OSObj[item++] = ftSwarmControl->joystick[i];
+                                menu.add( ftSwarmControl->joystick[i]->getName(), ftSwarmControl->joystick[i]->getAlias(), item , true);
+                              }
                             }
                             if (ftSwarmControl->oled) {
                               OSObj[item++] = ftSwarmControl->oled;

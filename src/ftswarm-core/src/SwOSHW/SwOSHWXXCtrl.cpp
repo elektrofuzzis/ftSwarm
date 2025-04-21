@@ -294,7 +294,7 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
 
     servo[i] = NULL;
 
-    if ( i < 1 ) {
+    if ( i < servos ) {
 
       if ( _CPU == FTSWARMRC_1V140 ) { 
 
@@ -314,10 +314,9 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
 
         poti->read();
         if (( poti->getValueI32() > 0 ) && ( poti->getValueI32() < 4095 ) ) {
-          printf("Erzeuge RCServo\n");
+          printf("RCServo%d found.\n", i);
           servo[i] = new SwOSRCServo( "RCSERVO", i, this, poti, actor[i] );
           actor[i] = NULL;
-          input[inputs++] = poti;
         } else {
           delete poti;
         }

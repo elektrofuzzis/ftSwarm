@@ -366,8 +366,13 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
   // initialize nvs
   nvs.begin();
-  if ( ( nvs.IAmKelda ) && ( this->verbose ) ) { printf( "I am KELDA!\n"); }
 
+  // Who I am?
+  if (this->verbose) {
+    printf("Boot %s (SN:%d).\n", nvs.swarmName, nvs.serialNumber );
+    if ( nvs.IAmKelda )  { printf( "I am KELDA!\n"); }
+  }
+  
 	// create local controller
 	maxCtrl++;
   switch (nvs.controllerType) {
@@ -399,9 +404,6 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
   // set Kelda link if i'm the Kelda
   if ( nvs.IAmKelda ) Kelda = Ctrl[0];
-
-  // Who I am?
-  printf("Boot %s (SN:%d).\n", Ctrl[0]->getHostname(), Ctrl[0]->serialNumber );
 
   // Open NVS again & load alias names
   nvs_handle_t my_handle;
