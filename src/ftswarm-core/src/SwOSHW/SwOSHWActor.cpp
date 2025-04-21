@@ -550,24 +550,12 @@ void SwOSServo::_setRemote( ) {
 #define RCSERVO_LOW  1700.0
 #define RCSERVO_HIGH 3750.0
 #define RCMAXDELTA   20
+#define RCMINSPEED   65
 
 SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSAnalogInput *poti, SwOSActor *actor): SwOSBaseServo( name, port, ctrl ) {
 
   this->poti  = poti;
   this->motor = actor;
-
-  // keep position - multiple reads to avoid startup spikes
-  poti->read();
-  while ( abs( target - poti->getValueI32() ) > RCMAXDELTA ) {
-    target = poti->getValueI32();
-    delay(10);
-    poti->read();
-  }
-
-  target = poti->getValueI32();
-  _position = ( target - RCSERVO_LOW ) / ( RCSERVO_HIGH - RCSERVO_LOW ) * 256 - _offset;
-
-  printf("constructor target %f _position %d\n", target, _position);
   
 }
 
@@ -584,16 +572,19 @@ void SwOSRCServo::adjust(void) {
   // remote: nothing todo
   if (!_ctrl->isLocal()) return;
 
-return;
-
+  // read poti value to fille up the filters
   poti->read();
 
+  // no target set - noting to do 
+  if ( target == FILTER_INVALID ) return;
+
   int16_t speed;
-  float   sensor = poti->getValueI32();
+  int16_t sensor = poti->getValueI32();
 
   // target reached?
-  if ( abs( sensor - target ) < 25 ) { 
+  if ( abs( sensor - target ) < RCMAXDELTA ) { 
     speed = 0; 
+    target = FILTER_INVALID;
 
   } else {
 
@@ -601,17 +592,13 @@ return;
     speed = pid->solve( target, sensor );
     
     // keep minimum speed
-    if (abs(speed)<64) { 
-      if ( speed < 0 ) speed = -64;
-      else speed = 64;
+    if ( abs( speed ) < RCMINSPEED ) { 
+      if ( speed < 0 ) speed = -RCMINSPEED;
+      else             speed =  RCMINSPEED;
     }
 
-    printf("adjust target %d sensor %f speed %d\n",(int16_t) target, sensor, speed );
-
-    while(1) delay(50);
-
   }
-  
+
   motor->setSpeed( speed );
   motor->apply();
 

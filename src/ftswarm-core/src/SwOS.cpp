@@ -25,8 +25,6 @@ SwOSPID::SwOSPID( float kp, float ki, float kd, float min_integral, float max_in
 
 float SwOSPID::solve( float target, float sensor ) {
 
-  printf( "solve target %f sensor %f\n", target, sensor );
-
   float error = target - sensor;
   integral += error;
   integral = max( integral, max_integral );
@@ -36,7 +34,6 @@ float SwOSPID::solve( float target, float sensor ) {
   output = min( output, max_output );
   output = max( output, min_output );
   last_error = error;
-  printf("output %f\n", output);
   return output;
 
 }

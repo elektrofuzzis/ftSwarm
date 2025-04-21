@@ -11,7 +11,7 @@
 
  #include <stdint.h>
 
-#define FILTER_INVALID 0x8FFF
+#define FILTER_INVALID 32767
 
 class SwOSFilter {
 

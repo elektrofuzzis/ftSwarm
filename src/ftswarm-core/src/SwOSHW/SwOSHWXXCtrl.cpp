@@ -299,7 +299,6 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
       if ( _CPU == FTSWARMRC_1V140 ) { 
 
         // test on sensor cable
-        printf("Erzeuge AnalogInput\n");
         SwOSAnalogInput *poti = new SwOSAnalogInput( "RCP", i+6, this );
 
         // need different filters
@@ -308,17 +307,17 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
         poti->addFilter(new SwOSMovingAverage(3) );
 
         // need to read multiple times to get consistent values
+        poti->read();
         while (poti->getValueI32() == FILTER_INVALID ) {
           poti->read();
-          printf("an %d %d\n", i, poti->getValueI32() );
         }
 
-        printf("servo read\n");
         poti->read();
         if (( poti->getValueI32() > 0 ) && ( poti->getValueI32() < 4095 ) ) {
           printf("Erzeuge RCServo\n");
           servo[i] = new SwOSRCServo( "RCSERVO", i, this, poti, actor[i] );
           actor[i] = NULL;
+          input[inputs++] = poti;
         } else {
           delete poti;
         }
