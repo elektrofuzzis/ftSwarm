@@ -31,19 +31,22 @@ void SwOSAnalogInput::_setupLocal() {
 
   SwOSInput::_setupLocal( );
 
+  adc_atten_t attenuation;
+
   // local init
-  _ADCUnit      = GPIO_INPUT[(int8_t)_ctrl->getCPU()][(int8_t) _port][1];
-  _ADCChannel   = GPIO_INPUT[(int8_t)_ctrl->getCPU()][(int8_t) _port][2];
+  _ADCUnit      = GPIO_INPUT[(int8_t)_ctrl->getCPU()][(int8_t) _port].adc_unit;
+  _ADCChannel   = GPIO_INPUT[(int8_t)_ctrl->getCPU()][(int8_t) _port].adc_channel;
+  attenuation   = GPIO_INPUT[(int8_t)_ctrl->getCPU()][ _port].attenuation;
 
   if ( ( _ADCUnit ==  ADC_UNIT_1) && ( _ADCChannel != ADC1_CHANNEL_MAX ) ) {
     // set ADC to 12 bits, scale 3.9V
     adc1_config_width(ADC_WIDTH_BIT_12);
-    adc1_config_channel_atten( (adc1_channel_t) _ADCChannel, (adc_atten_t) GPIO_INPUT[(int8_t)_ctrl->getCPU()][ _port][3] );
+    adc1_config_channel_atten( (adc1_channel_t) _ADCChannel, attenuation );
   }
 
   #if CONFIG_IDF_TARGET_ESP32S3
-  if ((adc_unit_t)_ADCUnit == ADC_UNIT_2) {
-    adc2_config_channel_atten( (adc2_channel_t) _ADCChannel, (adc_atten_t) GPIO_INPUT[(int8_t)_ctrl->getCPU()][ _port][3] );
+  if ( ( _ADCUnit == ADC_UNIT_2 ) && ( _ADCChannel != ADC2_CHANNEL_MAX ) ) {
+    adc2_config_channel_atten( (adc2_channel_t) _ADCChannel, attenuation );
   }
   #endif
 
@@ -175,9 +178,7 @@ void SwOSAnalogInput::read() {
     newValue = esp_adc_cal_raw_to_voltage( newValue, _adc_chars ); 
   }
 
-  // printf("O: %d ", newValue);
   if (filter) newValue = filter->fx(newValue); 
-  // printf("S: %d\n", newValue);
 
   setReading( newValue );
 

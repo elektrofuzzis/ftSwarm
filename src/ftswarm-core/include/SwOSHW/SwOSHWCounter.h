@@ -24,7 +24,7 @@
   protected:
 
     gpio_num_t _CONTROL  = GPIO_NUM_NC;
-    uint8_t _portControl = 255;
+    uint8_t _portControl = SWOS_NOPORT;
     pcnt_unit_t _unit = PCNT_UNIT_MAX;
 
     virtual void _setupLocal();
@@ -56,10 +56,10 @@ class SwOSFrequencymeter : public SwOSInput {
 
   protected:
 
-    gpio_num_t _CONTROL  = GPIO_NUM_NC;
-    uint8_t    _portControl = 255;
+    gpio_num_t _CONTROL     = GPIO_NUM_NC;
+    uint8_t    _portControl = SWOS_NOPORT;
 
-    int64_t                  _lastTick = 0;
+    int64_t       _lastTick = 0;
     QueueHandle_t _freqQueue = NULL;
 
     virtual void _setupLocal();

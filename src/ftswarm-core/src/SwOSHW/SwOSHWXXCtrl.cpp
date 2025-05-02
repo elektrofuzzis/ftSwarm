@@ -9,6 +9,7 @@
  
 #include "SwOSHW/SwOSHWXXCtrl.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
+#include "SwOSHW/SwOSHWHAL.h"
 
 /***************************************************
  *
@@ -197,7 +198,7 @@ bool SwOSSwarmXX::changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarm
     case FTSWARM_ANALOGINPUT:     io = new SwOSAnalogInput("A", port, this );
                                   break;
 
-    case FTSWARM_COUNTERINPUT:    io = new SwOSCounter("A", port, 255, this ); 
+    case FTSWARM_COUNTERINPUT:    io = new SwOSCounter("A", port, SWOS_NOPORT, this ); 
                                   break;
 
     case FTSWARM_ROTARYENCODER:   io = new SwOSCounter("A", port, port+1, this ); 
@@ -209,7 +210,7 @@ bool SwOSSwarmXX::changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarm
                                   }
                                   break;
 
-    case FTSWARM_FREQUENCYINPUT:  io = new SwOSFrequencymeter("A", port, 255, this ); 
+    case FTSWARM_FREQUENCYINPUT:  io = new SwOSFrequencymeter("A", port, SWOS_NOPORT, this ); 
                                   break;
 
     default: return false;
@@ -278,7 +279,7 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
     case FTSWARMRS_2V1:     servos = ( extensionPort == FTSWARM_EXT_SERVO ) ? 4:2;
                             break;
 
-    case FTSWARMRC_1V140:   servos = 4;
+    case FTSWARMRC_1V140:   servos = 3;
                             break;
 
     case FTSWARMRS_2V0:
@@ -299,7 +300,7 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
       if ( _CPU == FTSWARMRC_1V140 ) { 
 
         // test on sensor cable
-        SwOSAnalogInput *poti = new SwOSAnalogInput( "RCP", i+6, this );
+        SwOSAnalogInput *poti = new SwOSAnalogInput( "RCP", i+7, this );
 
         // need different filters
         poti->deleteFilter();
@@ -383,8 +384,8 @@ bool SwOSSwarmJST::cmdAlias( char *device, uint8_t port, const char *alias) {
 
   // test on my specific hardware
   if      ( ( strcmp(device, "SERVO") == 0 ) && (port < MAXSERVOS ) && (servo[port])) { servo[port]->setAlias(alias); return true; }
-  else if ( ( strcmp(device, "GYRO")  == 0 ) && (port = 255) && (gyro) )              { gyro->setAlias(alias);        return true; }
-  else if ( ( strcmp(device, "I2C")   == 0 ) && (port = 255) && (I2C) )               { I2C->setAlias(alias);         return true; }
+  else if ( ( strcmp(device, "GYRO")  == 0 ) && (port = SWOS_NOPORT) && (gyro) )      { gyro->setAlias(alias);        return true; }
+  else if ( ( strcmp(device, "I2C")   == 0 ) && (port = SWOS_NOPORT) && (I2C) )       { I2C->setAlias(alias);         return true; }
   else return false;
 
 }
@@ -586,12 +587,12 @@ void SwOSSwarmControl::factorySettings( void ) {
 bool SwOSSwarmControl::cmdAlias( char *device, uint8_t port, const char *alias) {
 
   // just test on specific hardware
-  if      ( ( strcmp(device, "S") == 0 )    && (port < 4) )   { button[port]->setAlias(alias);   return true; }
-  else if ( ( strcmp(device, "F") == 0 )    && (port < 2) )   { button[port+4]->setAlias(alias); return true; }
-  else if ( ( strcmp(device, "J") == 0 )    && (port < 2) )   { button[port+6]->setAlias(alias); return true; }
-  else if ( ( strcmp(device, "JOY") == 0 )  && (port < 2) )   { joystick[port]->setAlias(alias); return true; }
+  if      ( ( strcmp(device, "S") == 0 )    && (port < 4) )           { button[port]->setAlias(alias);   return true; }
+  else if ( ( strcmp(device, "F") == 0 )    && (port < 2) )           { button[port+4]->setAlias(alias); return true; }
+  else if ( ( strcmp(device, "J") == 0 )    && (port < 2) )           { button[port+6]->setAlias(alias); return true; }
+  else if ( ( strcmp(device, "JOY") == 0 )  && (port < 2) )           { joystick[port]->setAlias(alias); return true; }
 
-  else if ( ( strcmp(device, "OLED") == 0 ) && (port = 255) ) { oled->setAlias(alias);           return true; }
+  else if ( ( strcmp(device, "OLED") == 0 ) && (port = SWOS_NOPORT) ) { oled->setAlias(alias);           return true; }
 
   else return false;
 
@@ -836,7 +837,7 @@ SwOSSwarmCAM::~SwOSSwarmCAM() {
 
 bool SwOSSwarmCAM::cmdAlias( char *device, uint8_t port, const char *alias) {
 
-  if ( ( strcmp(device, "CAM") == 0 ) && (port = 255) ) { 
+  if ( ( strcmp(device, "CAM") == 0 ) && (port = SWOS_NOPORT) ) { 
     cam->setAlias(alias); 
     return true; 
   }

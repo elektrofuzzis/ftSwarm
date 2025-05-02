@@ -406,7 +406,6 @@ bool SwOSActor::isRunning( void ) {
 
 void SwOSActor::setValue( long distance, long position, bool isHoming, bool isRunning ) {
 
-  //printf("setValue: %s %ld %d %d\n", getName(), distance, position, isHoming, isRunning );
   _distance = distance;
   _position = position;
   _isHoming = isHoming;

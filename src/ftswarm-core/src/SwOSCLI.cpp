@@ -442,6 +442,8 @@ void SwOSCLI::executeInputCmd( void ) {
                                   
                                   // now change it
                                   io->lock();
+
+                                  printf("sn %d port %d\n",io->getCtrl()->serialNumber, io->getPort());
                                   
                                   // get the sensor
                                   io = (SwOSInput *) myOSSwarm.getIO( io->getCtrl()->serialNumber, io->getPort(), sensorType2IOType( newSensorType ) );

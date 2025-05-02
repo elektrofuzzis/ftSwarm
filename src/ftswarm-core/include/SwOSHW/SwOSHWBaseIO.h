@@ -25,6 +25,9 @@
 
 #define BRIGHTNESSDEFAULT 48
 
+#define SWOS_NOPORT 255
+#define SWOS_PWRCTL SWOS_NOPORT
+
 // reference to local ftPwrDrive
 extern ftPwrDrive *pwrDrive;
 

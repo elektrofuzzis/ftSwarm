@@ -155,7 +155,7 @@ SwOSIO::SwOSIO( const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSObj( name
   _ctrl  = ctrl;
 
   char str[10];
-  if (_port<255) {
+  if ( _port < SWOS_NOPORT ) {
     // normal stuff
     sprintf(str, "%s%d", name, _port+1 );
     setName( str ); 
@@ -166,7 +166,7 @@ SwOSIO::SwOSIO( const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSObj( name
  
 }
 
-SwOSIO::SwOSIO( const char *name, SwOSCtrl *ctrl ) : SwOSIO( name, 255, ctrl ) {
+SwOSIO::SwOSIO( const char *name, SwOSCtrl *ctrl ) : SwOSIO( name, SWOS_NOPORT, ctrl ) {
 }
 
 void SwOSIO::lock( void ) {
@@ -331,7 +331,7 @@ SwOSInput::SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl, FtSwarmSens
 void SwOSInput::_setupLocal() {
   // initialize local HW
 
-  _GPIO = (gpio_num_t) GPIO_INPUT[_ctrl->getCPU()][_port][0];
+  _GPIO = GPIO_INPUT[_ctrl->getCPU()][_port].io;
 
   gpio_config_t io_conf = {};
 

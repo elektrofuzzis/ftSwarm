@@ -88,7 +88,7 @@ FtSwarmIO::FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, Ft
   
 };
 
-FtSwarmIO::FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmIOType_t ioType ):FtSwarmIO(serialNumber, 255, ioType ) {
+FtSwarmIO::FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmIOType_t ioType ):FtSwarmIO(serialNumber, SWOS_NOPORT, ioType ) {
   // helper for all devices, which don't have a port like CAM, OLED, ...
 };
 

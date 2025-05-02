@@ -13,6 +13,7 @@
 #include "SwOSHW/SwOSHWActor.h"
 #include "SwOSHW/SwOSHWDisplay.h"
 #include "SwOSHW/SwOSHWCounter.h"
+#include "SwOSHW/SwOSHWHAL.h"
 
 #include "SwOSCom.h"
  
@@ -38,6 +39,15 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwa
   setName( buffer );
 
   // # of inputs & actors
+  inputs = MAXIOS[ CPU ].inputs;
+  actors = MAXIOS[ CPU ].actors;
+  leds   = MAXIOS[ CPU ].leds;
+  // servos = MAXIOS[ CPU ].servos;
+
+  // extensionPort is configured as additional outsputs, add 2 actors
+  if ( extensionPort == FTSWARM_EXT_OUTPUT ) actors += 2;
+
+  /*
   switch (CPU) {
     case FTSWARM_NOVERSION:     inputs = 0;  actors = 0; leds = 0; break;
     case FTSWARMRS_2V0:
@@ -51,6 +61,7 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwa
     case FTSWARMRC_1V140:       inputs = 6;  actors = 4; leds = 2; break;
     default:                    inputs = 4;  actors = 2; leds = 2; break;
   }
+  */
 
   // define common hardware
   for (uint8_t i=0; i<MAXINPUTS; i++) { 
@@ -60,15 +71,20 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwa
       if (CPU == FTSWARMPWRDRIVE_1V141 ) {
 
         if (i==4) {
-          input[i] = new SwOSDigitalInput("EM", 255, this );
+          input[i] = new SwOSDigitalInput("EM", SWOS_NOPORT, this );
         } else {
           input[i] = new SwOSDigitalInput("ES", i, this );
         }
 
       } else {
 
-        input[i] = new SwOSDigitalInput("A", i, this );
-      
+        if ( ( MAXIOS[ CPU ].pwrctl != NOPWRCTL ) && ( MAXIOS[ CPU ].pwrctl == i ) ) {
+          input[i] = new SwOSAnalogInput("A", i, this );
+          input[i]->setAlias( "PwrCtl" );
+          input[i]->setSensorType( FTSWARM_VOLTMETER );
+        } else {
+          input[i] = new SwOSDigitalInput("A", i, this );
+        }
       }
 
     } else {

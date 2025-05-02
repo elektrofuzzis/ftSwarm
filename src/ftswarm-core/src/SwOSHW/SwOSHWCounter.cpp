@@ -22,7 +22,7 @@
   _portControl = port2;
 
   // rotary?
-  if ( port2 < 255 ) _sensorType = FTSWARM_ROTARYENCODER;
+  if ( port2 < SWOS_NOPORT ) _sensorType = FTSWARM_ROTARYENCODER;
   
   // initialize local HW
   if ( _ctrl->isLocal() ) _setupLocal();
@@ -36,11 +36,11 @@ void SwOSCounter::_setupLocal() {
   SwOSInput::_setupLocal( );
 
   // setup _CONTROL Input if needed.
-  // counter: _portControl = 255 -> no _CONTROL
+  // counter: _portControl = SWOS_NOPORT -> no _CONTROL
   // encode:  if counter post is the highest input port, _portControl = _ctrl->inputs  -> no _CONTROL
   if ( _portControl < _ctrl->inputs ) { 
 
-    _CONTROL = (gpio_num_t) GPIO_INPUT[_ctrl->getCPU()][_portControl][0];
+    _CONTROL = (gpio_num_t) GPIO_INPUT[_ctrl->getCPU()][_portControl].io;
 
     gpio_config_t io_conf = {};
 

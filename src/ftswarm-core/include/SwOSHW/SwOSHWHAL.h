@@ -39,8 +39,38 @@
   #define ADC1_CHANNEL_9  ADC1_CHANNEL_MAX
 #endif
 
-const int8_t GPIO_INPUT[FTSWARMMAXVERSION][10][4] = 
-  { /* FTSWARMJST_1V0 */       { { GPIO_NUM_33,  ADC_UNIT_1, ADC1_CHANNEL_5,   ADC_ATTEN_DB_11 },
+typedef struct {
+  gpio_num_t  io;
+  adc_unit_t  adc_unit;
+  int8_t      adc_channel;
+  adc_atten_t attenuation;
+} SwOSIODefinition_t;
+
+typedef struct {
+  uint8_t inputs;
+  uint8_t actors;
+  uint8_t servos;
+  uint8_t leds;
+  int8_t  pwrctl;
+} SwOSMaxIO_t;
+
+#define NOPWRCTL -1
+
+const SwOSMaxIO_t MAXIOS[FTSWARMMAXVERSION] = {
+  /* FTSWARMJST_1V0 */       {  4, 2, 1, 2, NOPWRCTL },
+  /* FTSWARMCONTROL_1V3 */   {  4, 2, 1, 2, NOPWRCTL },
+  /* FTSWARMJST_1V15 */      {  4, 2, 1, 2, NOPWRCTL },
+  /* FTSWARMRS_2V0 */        {  7, 2, 2, 2, 6 },
+  /* FTSWARMRS_2V1 */        {  7, 2, 2, 2, 6 },
+  /* FTSWARMCAM_3V12 */      {  5, 2, 1, 2, 4 }, 
+  /* FTSWARMPWRDRIVE_1V14 */ {  0, 0, 0, 2, NOPWRCTL },
+  /* FTSWARMDUINO_1V14 */    {  0, 0, 0, 2, NOPWRCTL },
+  /* FTSWARMXL_1V00 */       {  8, 8, 0, 2, NOPWRCTL },
+  /* FTSWARMRC_1V140 */      {  7, 4, 3, 1, 6 }
+};
+
+const SwOSIODefinition_t GPIO_INPUT[FTSWARMMAXVERSION][MAXINPUTS] = {
+    /* FTSWARMJST_1V0 */       { { GPIO_NUM_33,  ADC_UNIT_1, ADC1_CHANNEL_5,   ADC_ATTEN_DB_11 },
                                  { xGPIO_NUM_25, ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_26,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }, 
                                  { GPIO_NUM_27,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
@@ -48,7 +78,7 @@ const int8_t GPIO_INPUT[FTSWARMMAXVERSION][10][4] =
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }, 
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }, 
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }, 
-                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }, 
+                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }
                                },
     /* FTSWARMCONTROL_1V3 */   { { GPIO_NUM_39,  ADC_UNIT_1, ADC1_CHANNEL_3,   ADC_ATTEN_DB_11 },   
@@ -80,7 +110,7 @@ const int8_t GPIO_INPUT[FTSWARMMAXVERSION][10][4] =
                                  { GPIO_NUM_9,   ADC_UNIT_1, ADC1_CHANNEL_8,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_11,  ADC_UNIT_2, ADC2_CHANNEL_0,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_13,  ADC_UNIT_2, ADC2_CHANNEL_2,   ADC_ATTEN_DB_11 },
-                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
+                                 { GPIO_NUM_12,  ADC_UNIT_2, ADC2_CHANNEL_1,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }
@@ -92,17 +122,17 @@ const int8_t GPIO_INPUT[FTSWARMMAXVERSION][10][4] =
                                  { GPIO_NUM_20,  ADC_UNIT_2, ADC2_CHANNEL_9,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_11,  ADC_UNIT_2, ADC2_CHANNEL_0,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_13,  ADC_UNIT_2, ADC2_CHANNEL_2,   ADC_ATTEN_DB_11 },
+                                 { GPIO_NUM_12,  ADC_UNIT_2, ADC2_CHANNEL_1,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
-                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
-                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 } 
+                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }
                                },
     
     /* FTSWARMCAM_3V12 */      { { GPIO_NUM_8,   ADC_UNIT_1, ADC1_CHANNEL_7,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_9,   ADC_UNIT_1, ADC1_CHANNEL_8,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_10,  ADC_UNIT_2, ADC1_CHANNEL_9,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_11,  ADC_UNIT_2, ADC2_CHANNEL_0,   ADC_ATTEN_DB_11 },
-                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
+                                 { GPIO_NUM_6,   ADC_UNIT_1, ADC1_CHANNEL_5,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
@@ -152,12 +182,12 @@ const int8_t GPIO_INPUT[FTSWARMMAXVERSION][10][4] =
                                  { GPIO_NUM_20,  ADC_UNIT_2, ADC2_CHANNEL_9,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_11,  ADC_UNIT_2, ADC2_CHANNEL_0,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_13,  ADC_UNIT_2, ADC2_CHANNEL_2,   ADC_ATTEN_DB_11 },
+                                 { GPIO_NUM_12,  ADC_UNIT_2, ADC2_CHANNEL_1,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_15,  ADC_UNIT_2, ADC2_CHANNEL_4,   ADC_ATTEN_DB_2_5},
                                  { GPIO_NUM_8,   ADC_UNIT_1, ADC1_CHANNEL_7,   ADC_ATTEN_DB_2_5},
-                                 { GPIO_NUM_9,   ADC_UNIT_1, ADC1_CHANNEL_8,   ADC_ATTEN_DB_2_5},
-                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_2_5}
+                                 { GPIO_NUM_9,   ADC_UNIT_1, ADC1_CHANNEL_8,   ADC_ATTEN_DB_2_5}
                                }
-  }; 
+}; 
 
   /* USTX, PUA */
 const gpio_num_t USTCPUA[FTSWARMMAXVERSION][2] = 
