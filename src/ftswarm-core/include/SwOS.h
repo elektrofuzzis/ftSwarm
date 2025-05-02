@@ -19,7 +19,7 @@
 #define LOGFTSWARM  "FTSWARM"
 #define MAXIDENTIFIER 32
 #define MAXACTORS 8
-#define MAXINPUTS 10
+#define MAXINPUTS 11
 #define SWOSVERSION "0.7.0"
 
 #include <stdint.h>

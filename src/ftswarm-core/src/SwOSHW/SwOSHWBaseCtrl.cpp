@@ -47,61 +47,40 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwa
   // extensionPort is configured as additional outsputs, add 2 actors
   if ( extensionPort == FTSWARM_EXT_OUTPUT ) actors += 2;
 
-  /*
-  switch (CPU) {
-    case FTSWARM_NOVERSION:     inputs = 0;  actors = 0; leds = 0; break;
-    case FTSWARMRS_2V0:
-    case FTSWARMRS_2V1:         inputs = 6;  actors = 2; leds = 2;
-                                if ( extensionPort == FTSWARM_EXT_OUTPUT ) actors = 4; 
-                                break;
-    case FTSWARMCAM_3V12:       inputs = 4;  actors = 2; leds = 2; break;
-    case FTSWARMDUINO_1V141:    inputs = 8;  actors = 4; leds = 2; break;
-    case FTSWARMPWRDRIVE_1V141: inputs = 5;  actors = 4; leds = 2; break;
-    case FTSWARMXL_1V00:        inputs = 8;  actors = 8; leds = 2; break;
-    case FTSWARMRC_1V140:       inputs = 6;  actors = 4; leds = 2; break;
-    default:                    inputs = 4;  actors = 2; leds = 2; break;
-  }
-  */
+  // define io pointer array dynamically
+  input = (SwOSInput **) calloc( inputs, sizeof(SwOSInput*) );
+  input = (SwOSActor **) calloc( actors, sizeof(SwOSActor*) );
 
   // define common hardware
-  for (uint8_t i=0; i<MAXINPUTS; i++) { 
+  for (uint8_t i=0; i<inputs; i++) { 
     
-    if ( i < inputs ) {
+    if (CPU == FTSWARMPWRDRIVE_1V141 ) {
 
-      if (CPU == FTSWARMPWRDRIVE_1V141 ) {
-
-        if (i==4) {
-          input[i] = new SwOSDigitalInput("EM", SWOS_NOPORT, this );
-        } else {
-          input[i] = new SwOSDigitalInput("ES", i, this );
-        }
-
+      if (i==4) {
+        // general emergency button
+        input[i] = new SwOSDigitalInput("EM", SWOS_NOPORT, this );
       } else {
-
-        if ( ( MAXIOS[ CPU ].pwrctl != NOPWRCTL ) && ( MAXIOS[ CPU ].pwrctl == i ) ) {
-          input[i] = new SwOSAnalogInput("A", i, this );
-          input[i]->setAlias( "PwrCtl" );
-          input[i]->setSensorType( FTSWARM_VOLTMETER );
-        } else {
-          input[i] = new SwOSDigitalInput("A", i, this );
-        }
+        // normal endstops
+        input[i] = new SwOSDigitalInput("ES", i, this );
       }
 
     } else {
-      input[i] = NULL;
+
+      // PwrCtl
+      if ( ( MAXIOS[ CPU ].pwrctl != NOPWRCTL ) && ( MAXIOS[ CPU ].pwrctl == i ) ) {
+        input[i] = new SwOSAnalogInput("A", i, this );
+        input[i]->setAlias( "PwrCtl" );
+        input[i]->setSensorType( FTSWARM_VOLTMETER );
+      } else {
+        input[i] = new SwOSDigitalInput("A", i, this );
+      }
     }
 
   }
 
-  for (uint8_t i=0; i<MAXACTORS; i++) { 
+  for (uint8_t i=0; i<actors; i++) { 
     
-    if ( i< actors ) {
-        actor[i] = new SwOSActor("M", i, this );
-    
-    } else {
-      actor[i] = NULL;
-    
-    }
+    actor[i] = new SwOSActor("M", i, this );
 
   }
 
@@ -115,9 +94,9 @@ SwOSCtrl::~SwOSCtrl() {
   
   if ( _subscribedCtrlName ) delete _subscribedCtrlName;
   
-  for (uint8_t i=0; i<MAXINPUTS; i++) { if ( input[i] ) delete( input[i] ); }
-  for (uint8_t i=0; i<MAXACTORS; i++) { if ( actor[i] ) delete( actor[i] ); }
-  for (uint8_t i=0; i<MAXLEDS;   i++) { if ( led[i] )   delete( led[i] ); }
+  for (uint8_t i=0; i<inputs; i++) { if ( input[i] ) delete( input[i] ); }
+  for (uint8_t i=0; i<actors; i++) { if ( actor[i] ) delete( actor[i] ); }
+  for (uint8_t i=0; i<MAXLEDS; i++) { if ( led[i] )   delete( led[i] ); }
   
 }
 
@@ -138,7 +117,7 @@ void SwOSCtrl::unlock( void ) {
 void SwOSCtrl::halt( void ) {
 
 
-  for (uint8_t i=0; i<MAXACTORS; i++) { 
+  for (uint8_t i=0; i<actors; i++) { 
     if ( actor[i] ) { actor[i]->setSpeed(0); actor[i]->apply(); }
   }
 
@@ -166,8 +145,8 @@ void SwOSCtrl::unsubscribe( bool cascade ) {
 
   if (!cascade) return;
 
-  for (uint8_t i=0; i<MAXINPUTS; i++) { if ( input[i] ) input[i]->unsubscribe(); }
-  for (uint8_t i=0; i<MAXACTORS; i++) { if ( actor[i] ) actor[i]->unsubscribe(); }
+  for (uint8_t i=0; i<inputs; i++) { if ( input[i] ) input[i]->unsubscribe(); }
+  for (uint8_t i=0; i<actors; i++) { if ( actor[i] ) actor[i]->unsubscribe(); }
   for ( uint8_t i=0; i<MAXLEDS; i++ ) { if ( led[i] ) led[i]->unsubscribe(); }
   
 }
@@ -175,8 +154,8 @@ void SwOSCtrl::unsubscribe( bool cascade ) {
 void SwOSCtrl::factorySettings( void ) {
 
   setAlias("");
-  for (uint8_t i=0; i<MAXINPUTS; i++) { if ( input[i] ) input[i]->setAlias( "" ); }
-  for (uint8_t i=0; i<MAXACTORS; i++) { if ( actor[i] ) actor[i]->setAlias( "" ); }
+  for (uint8_t i=0; i<inputs; i++) { if ( input[i] ) input[i]->setAlias( "" ); }
+  for (uint8_t i=0; i<actors; i++) { if ( actor[i] ) actor[i]->setAlias( "" ); }
   for (uint8_t i=0; i<MAXLEDS; i++)   { if ( led[i] )   led[i]->setAlias( "" ); }
 
 }

@@ -59,10 +59,12 @@ public:
   bool                  IAmKelda;
   
   // common hardware
-	SwOSInput    *input[MAXINPUTS];
-	SwOSActor    *actor[MAXACTORS]; 
+	SwOSInput    **input = NULL; // dynamically allocated array SwOWSInput *inputs[]
+	SwOSActor    **actor = NULL; // dynamically allocated array SwOWSActor *actors[]
 	SwOSPixel    *led[MAXLEDS];
-  uint8_t      inputs, actors, leds;
+  uint8_t      inputs = 0;
+  uint8_t      actors = 0;
+  uint8_t      leds = 0;
 	
   // constructor
   SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extentionPort );

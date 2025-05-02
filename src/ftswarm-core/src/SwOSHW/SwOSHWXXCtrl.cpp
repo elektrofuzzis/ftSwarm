@@ -297,7 +297,7 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
 
     if ( i < servos ) {
 
-      if ( _CPU == FTSWARMRC_1V140 ) { 
+      if ( ( _CPU == FTSWARMRC_1V140 ) && ( GPIO_INPUT[_CPU][7+i].io != GPIO_NUM_NC ) ) { 
 
         // test on sensor cable
         SwOSAnalogInput *poti = new SwOSAnalogInput( "RCP", i+7, this );

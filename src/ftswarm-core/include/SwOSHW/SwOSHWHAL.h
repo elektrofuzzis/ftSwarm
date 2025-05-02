@@ -66,7 +66,7 @@ const SwOSMaxIO_t MAXIOS[FTSWARMMAXVERSION] = {
   /* FTSWARMPWRDRIVE_1V14 */ {  0, 0, 0, 2, NOPWRCTL },
   /* FTSWARMDUINO_1V14 */    {  0, 0, 0, 2, NOPWRCTL },
   /* FTSWARMXL_1V00 */       {  8, 8, 0, 2, NOPWRCTL },
-  /* FTSWARMRC_1V140 */      {  7, 4, 3, 1, 6 }
+  /* FTSWARMRC_1V140 */      {  7, 4, 4, 1, 6 }
 };
 
 const SwOSIODefinition_t GPIO_INPUT[FTSWARMMAXVERSION][MAXINPUTS] = {
@@ -79,6 +79,7 @@ const SwOSIODefinition_t GPIO_INPUT[FTSWARMMAXVERSION][MAXINPUTS] = {
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }, 
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }, 
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
+                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }
                                },
     /* FTSWARMCONTROL_1V3 */   { { GPIO_NUM_39,  ADC_UNIT_1, ADC1_CHANNEL_3,   ADC_ATTEN_DB_11 },   
@@ -90,12 +91,14 @@ const SwOSIODefinition_t GPIO_INPUT[FTSWARMMAXVERSION][MAXINPUTS] = {
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
+                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }
                                 },
     /* FTSWARMJST_1V15 */      { { GPIO_NUM_39,  ADC_UNIT_1, ADC1_CHANNEL_3,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_32,  ADC_UNIT_1, ADC1_CHANNEL_4,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_33,  ADC_UNIT_1, ADC1_CHANNEL_5,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_34,  ADC_UNIT_1, ADC1_CHANNEL_6,   ADC_ATTEN_DB_11 },
+                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
@@ -113,6 +116,7 @@ const SwOSIODefinition_t GPIO_INPUT[FTSWARMMAXVERSION][MAXINPUTS] = {
                                  { GPIO_NUM_12,  ADC_UNIT_2, ADC2_CHANNEL_1,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
+                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }
                                },
 
@@ -123,6 +127,7 @@ const SwOSIODefinition_t GPIO_INPUT[FTSWARMMAXVERSION][MAXINPUTS] = {
                                  { GPIO_NUM_11,  ADC_UNIT_2, ADC2_CHANNEL_0,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_13,  ADC_UNIT_2, ADC2_CHANNEL_2,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_12,  ADC_UNIT_2, ADC2_CHANNEL_1,   ADC_ATTEN_DB_11 },
+                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }
@@ -137,10 +142,12 @@ const SwOSIODefinition_t GPIO_INPUT[FTSWARMMAXVERSION][MAXINPUTS] = {
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
+                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }
                                },
 
     /* FTSWARMPWRDRIVE_1V14 */ { { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
+                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
@@ -161,6 +168,7 @@ const SwOSIODefinition_t GPIO_INPUT[FTSWARMMAXVERSION][MAXINPUTS] = {
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
+                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }
                                },
  
@@ -173,6 +181,7 @@ const SwOSIODefinition_t GPIO_INPUT[FTSWARMMAXVERSION][MAXINPUTS] = {
                                  { GPIO_NUM_10,  ADC_UNIT_1, ADC1_CHANNEL_9,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_9,   ADC_UNIT_1, ADC1_CHANNEL_8,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
+                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }
                                },
 
@@ -182,10 +191,11 @@ const SwOSIODefinition_t GPIO_INPUT[FTSWARMMAXVERSION][MAXINPUTS] = {
                                  { GPIO_NUM_20,  ADC_UNIT_2, ADC2_CHANNEL_9,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_11,  ADC_UNIT_2, ADC2_CHANNEL_0,   ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_13,  ADC_UNIT_2, ADC2_CHANNEL_2,   ADC_ATTEN_DB_11 },
-                                 { GPIO_NUM_12,  ADC_UNIT_2, ADC2_CHANNEL_1,   ADC_ATTEN_DB_11 },
-                                 { GPIO_NUM_15,  ADC_UNIT_2, ADC2_CHANNEL_4,   ADC_ATTEN_DB_2_5},
+                                 { GPIO_NUM_12,  ADC_UNIT_2, ADC2_CHANNEL_1,   ADC_ATTEN_DB_11 },  // PwrControl
+                                 { GPIO_NUM_15,  ADC_UNIT_2, ADC2_CHANNEL_4,   ADC_ATTEN_DB_2_5},  // RC-Servo 
                                  { GPIO_NUM_8,   ADC_UNIT_1, ADC1_CHANNEL_7,   ADC_ATTEN_DB_2_5},
-                                 { GPIO_NUM_9,   ADC_UNIT_1, ADC1_CHANNEL_8,   ADC_ATTEN_DB_2_5}
+                                 { GPIO_NUM_9,   ADC_UNIT_1, ADC1_CHANNEL_8,   ADC_ATTEN_DB_2_5},
+                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }
                                }
 }; 
 
