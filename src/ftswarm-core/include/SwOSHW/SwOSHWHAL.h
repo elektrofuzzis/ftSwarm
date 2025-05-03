@@ -247,3 +247,16 @@ const int8_t GPIO_RCSERVO[4][3] = { { GPIO_NUM_6, ADC_UNIT_1, ADC1_CHANNEL_5 },
                                     { GPIO_NUM_8, ADC_UNIT_1, ADC1_CHANNEL_7 },
                                     { GPIO_NUM_9, ADC_UNIT_1, ADC1_CHANNEL_8 } };
 */
+
+const bool HASEXTPORT[FTSWARMMAXVERSION] = {
+  /* FTSWARMJST_1V0 */       true,
+  /* FTSWARMCONTROL_1V3 */   false,
+  /* FTSWARMJST_1V15 */      true,
+  /* FTSWARMRS_2V0 */        true,
+  /* FTSWARMRS_2V1 */        true,
+  /* FTSWARMCAM_3V12 */      false, 
+  /* FTSWARMPWRDRIVE_1V14 */ false,
+  /* FTSWARMDUINO_1V14 */    false,
+  /* FTSWARMXL_1V00 */       true,
+  /* FTSWARMRC_1V140 */      false
+};

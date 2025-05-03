@@ -15,11 +15,13 @@
 #include "SwOSNVS.h"
 #include "SwOSCom.h"
 
-#include "SwOSHWBaseIO.h"
+#include "SwOSHW/SwOSHWBaseIO.h"
+#include "SwOSHW/SwOSHWActor.h"
 
 // only to feed that silly compiler
 class SwOSActor;
 class SwOSPixel;
+class SwOSServo;
 
 const uint32_t LEDCOLOR0[MAXSTATE] = { CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red, CRGB::Cyan, CRGB::Aquamarine };
 const uint32_t LEDCOLOR1[MAXSTATE] = { CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red, CRGB::Cyan, CRGB::Aquamarine };
@@ -59,12 +61,15 @@ public:
   bool                  IAmKelda;
   
   // common hardware
-	SwOSInput    **input = NULL; // dynamically allocated array SwOWSInput *inputs[]
-	SwOSActor    **actor = NULL; // dynamically allocated array SwOWSActor *actors[]
-	SwOSPixel    *led[MAXLEDS];
-  uint8_t      inputs = 0;
-  uint8_t      actors = 0;
-  uint8_t      leds = 0;
+	SwOSInput **input = NULL; // dynamically allocated array SwOWSInput *inputs[]
+	SwOSActor **actor = NULL; // dynamically allocated array SwOWSActor *actors[]
+  SwOSServo **servo = NULL; // dynamically allocated array SwOSServo  *servos[]
+	SwOSPixel *led[MAXLEDS];
+  
+  uint8_t   inputs = 0;
+  uint8_t   actors = 0;
+  uint8_t   leds   = 0;
+  uint8_t   servos = 0;
 	
   // constructor
   SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extentionPort );
@@ -99,6 +104,7 @@ public:
   virtual char *subscribe( char *ctrlName );                             // listen on user event data
   virtual bool changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarmIOType_t newIOType ); // change port's IO Type if possible
   virtual bool hasGyro( void ) { return false; };                        // test if HW has a gyro
+  virtual bool hasExtPort( void );                                       // test if HW has an ExtentionPort
 
   virtual void read(); // run measurements
 

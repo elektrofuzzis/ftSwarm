@@ -12,9 +12,14 @@
 #include <esp_adc_cal.h>
 
 #include "SwOS.h"
-#include "SwOSHWBaseIO.h"
-#include "SwOSHWBaseCtrl.h"
-#include "SwOSHWAnalog.h"
+#include "SwOSHW/SwOSHWBaseIO.h"
+#include "SwOSHW/SwOSHWBaseCtrl.h"
+#include "SwOSHW/SwOSHWAnalog.h"
+#include "SwOSFilter.h"
+
+// only to feed that silly compiler
+class SwOSAnalogInput;
+
 
 /***************************************************
  *
@@ -110,11 +115,11 @@ class SwOSActor : public SwOSIO {
 
 /***************************************************
  *
- *   SwOSBaseServo - virtual servo class
+ *   SwOSServo - virtual servo class
  *
  ***************************************************/
 
- class SwOSBaseServo : public SwOSIO {
+ class SwOSServo : public SwOSIO {
   protected:
     int16_t _position = 0;
     int16_t _offset   = 128;
@@ -127,7 +132,7 @@ class SwOSActor : public SwOSIO {
 
   public:
     // constructor
-	  SwOSBaseServo(const char *name, uint8_t port, SwOSCtrl *ctrl);
+	  SwOSServo(const char *name, uint8_t port, SwOSCtrl *ctrl);
 
     // Test, if I'm an Actor
     virtual bool isActor( void ) { return true; }
@@ -149,11 +154,11 @@ class SwOSActor : public SwOSIO {
   
 /***************************************************
  *
- *   SwOSSERVO
+ *   SwOSDigitalSERVO
  *
  ***************************************************/
 
-class SwOSServo : public SwOSBaseServo {
+class SwOSDigitalServo : public SwOSServo {
   protected:
     gpio_num_t      _SERVO;
 	  ledc_channel_t  _channelSERVO;
@@ -167,7 +172,7 @@ class SwOSServo : public SwOSBaseServo {
   
   public:
     // constructor
-	  SwOSServo(const char *name, uint8_t port, SwOSCtrl *ctrl);
+	  SwOSDigitalServo(const char *name, uint8_t port, SwOSCtrl *ctrl);
 
 };
 
@@ -177,7 +182,7 @@ class SwOSServo : public SwOSBaseServo {
  *
  ***************************************************/
 
- class SwOSRCServo : public SwOSBaseServo {
+ class SwOSRCServo : public SwOSServo {
   protected:
 
     SwOSAnalogInput *poti   = NULL;

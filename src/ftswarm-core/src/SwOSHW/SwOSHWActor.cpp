@@ -414,15 +414,15 @@ void SwOSActor::setValue( long distance, long position, bool isHoming, bool isRu
 
 /***************************************************
  *
- *   SwOSBaseServo
+ *   SwOSServo
  *
  ***************************************************/
 
- SwOSBaseServo::SwOSBaseServo(const char *name, uint8_t port, SwOSCtrl *ctrl) : SwOSIO( name, port, ctrl ) {
+ SwOSServo::SwOSServo(const char *name, uint8_t port, SwOSCtrl *ctrl) : SwOSIO( name, port, ctrl ) {
 
 }
 
-void SwOSBaseServo::jsonize( JSONize *json, uint8_t id) {
+void SwOSServo::jsonize( JSONize *json, uint8_t id) {
   json->startObject();
   SwOSIO::jsonize(json, id);
   json->variableI16("offset",   _offset);
@@ -430,7 +430,7 @@ void SwOSBaseServo::jsonize( JSONize *json, uint8_t id) {
   json->endObject();
 }
 
-void SwOSBaseServo::setPosition( int16_t position, bool dontSendToRemote ) {
+void SwOSServo::setPosition( int16_t position, bool dontSendToRemote ) {
   _position = position;
 
   // apply local or remote
@@ -439,7 +439,7 @@ void SwOSBaseServo::setPosition( int16_t position, bool dontSendToRemote ) {
 
 }
 
-void SwOSBaseServo::setOffset( int16_t offset, bool dontSendToRemote ) {
+void SwOSServo::setOffset( int16_t offset, bool dontSendToRemote ) {
   _offset = offset;
  
   // apply local or remote
@@ -448,7 +448,7 @@ void SwOSBaseServo::setOffset( int16_t offset, bool dontSendToRemote ) {
 
 }
 
-void SwOSBaseServo::onTrigger( int32_t value ) {
+void SwOSServo::onTrigger( int32_t value ) {
 
   setPosition( (int16_t) value, false );
 
@@ -456,17 +456,17 @@ void SwOSBaseServo::onTrigger( int32_t value ) {
 
 /***************************************************
  *
- *   SwOSServo
+ *   SwOSDigitalServo
  *
  ***************************************************/
 
-SwOSServo::SwOSServo(const char *name, uint8_t port, SwOSCtrl *ctrl) : SwOSBaseServo( name, port, ctrl ) {
+ SwOSDigitalServo::SwOSDigitalServo(const char *name, uint8_t port, SwOSCtrl *ctrl) : SwOSServo( name, port, ctrl ) {
 
   // initialize local HW
   if (ctrl->isLocal()) _setupLocal();
 }
 
-void SwOSServo::_setupLocal() {
+void SwOSDigitalServo::_setupLocal() {
   // initialize local HW
 
   _SERVO = SERVO[_ctrl->getCPU()][_port];
@@ -510,7 +510,7 @@ void SwOSServo::_setupLocal() {
 
 }
 
-void SwOSServo::_setLocal() {
+void SwOSDigitalServo::_setLocal() {
 
   // calc duty
   float p = _offset + _position;
@@ -528,7 +528,7 @@ void SwOSServo::_setLocal() {
 
 }
 
-void SwOSServo::_setRemote( ) {
+void SwOSDigitalServo::_setRemote( ) {
   
   SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_SETSERVO );
   cmd.data.servoCmd.index    = _port;
@@ -551,7 +551,7 @@ void SwOSServo::_setRemote( ) {
 #define RCMAXDELTA   20
 #define RCMINSPEED   65
 
-SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSAnalogInput *poti, SwOSActor *actor): SwOSBaseServo( name, port, ctrl ) {
+SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSAnalogInput *poti, SwOSActor *actor): SwOSServo( name, port, ctrl ) {
 
   this->poti  = poti;
   this->motor = actor;

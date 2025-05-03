@@ -42,14 +42,18 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwa
   inputs = MAXIOS[ CPU ].inputs;
   actors = MAXIOS[ CPU ].actors;
   leds   = MAXIOS[ CPU ].leds;
-  // servos = MAXIOS[ CPU ].servos;
+  servos = MAXIOS[ CPU ].servos;
 
-  // extensionPort is configured as additional outsputs, add 2 actors
+  // extensionPort is configured as additional outputs, add 2 actors
   if ( extensionPort == FTSWARM_EXT_OUTPUT ) actors += 2;
+
+  // extensionPort is configured as additional servos, add 2 servos
+  if ( extensionPort == FTSWARM_EXT_SERVO ) servos +=2;
 
   // define io pointer array dynamically
   input = (SwOSInput **) calloc( inputs, sizeof(SwOSInput*) );
-  input = (SwOSActor **) calloc( actors, sizeof(SwOSActor*) );
+  actor = (SwOSActor **) calloc( actors, sizeof(SwOSActor*) );
+  servo = (SwOSServo **) calloc( servos, sizeof(SwOSServo*) );
 
   // define common hardware
   for (uint8_t i=0; i<inputs; i++) { 
@@ -88,15 +92,53 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwa
     led[i] = new SwOSPixel("LED", i, this);
   }
 
+  for (uint8_t i=0; i<servos; i++) {
+
+    servo[i] = NULL;
+
+    if ( ( _CPU == FTSWARMRC_1V140 ) && ( GPIO_INPUT[_CPU][7+i].io != GPIO_NUM_NC ) ) { 
+
+      // test on sensor cable
+      SwOSAnalogInput *poti = new SwOSAnalogInput( "RCP", i+7, this );
+
+      // need different filters
+      poti->deleteFilter();
+      poti->addFilter(new SwOSSpike( 120, 30 ) );
+      poti->addFilter(new SwOSMovingAverage(3) );
+
+      // need to read multiple times to get consistent values
+      poti->read();
+      while (poti->getValueI32() == FILTER_INVALID ) {
+        poti->read();
+      }
+
+      poti->read();
+      if (( poti->getValueI32() > 0 ) && ( poti->getValueI32() < 4095 ) ) {
+        printf("RCServo%d found.\n", i);
+        servo[i] = new SwOSRCServo( "RCSERVO", i, this, poti, actor[i] );
+        actor[i] = NULL;
+      } else {
+        delete poti;
+      }
+
+    } else {
+      // just a modern servo
+      servo[i] = new SwOSServo("SERVO", i, this);
+
+    }
+
+  }
+
 }
 
 SwOSCtrl::~SwOSCtrl() {
   
   if ( _subscribedCtrlName ) delete _subscribedCtrlName;
   
-  for (uint8_t i=0; i<inputs; i++) { if ( input[i] ) delete( input[i] ); }
-  for (uint8_t i=0; i<actors; i++) { if ( actor[i] ) delete( actor[i] ); }
-  for (uint8_t i=0; i<MAXLEDS; i++) { if ( led[i] )   delete( led[i] ); }
+  for ( uint8_t i=0; i<inputs; i++) { if ( input[i] ) delete( input[i] ); }
+  for ( uint8_t i=0; i<actors; i++) { if ( actor[i] ) delete( actor[i] ); }
+  for ( uint8_t i=0; i<MAXLEDS; i++) { if ( led[i] )   delete( led[i] ); }
+  for ( uint8_t i=0; i<servos; i++ ) { if ( servo[i] ) delete servo[i]; }
   
 }
 
@@ -145,18 +187,20 @@ void SwOSCtrl::unsubscribe( bool cascade ) {
 
   if (!cascade) return;
 
-  for (uint8_t i=0; i<inputs; i++) { if ( input[i] ) input[i]->unsubscribe(); }
-  for (uint8_t i=0; i<actors; i++) { if ( actor[i] ) actor[i]->unsubscribe(); }
-  for ( uint8_t i=0; i<MAXLEDS; i++ ) { if ( led[i] ) led[i]->unsubscribe(); }
+  for ( uint8_t i=0; i<inputs; i++ ) { if ( input[i] ) input[i]->unsubscribe(); }
+  for ( uint8_t i=0; i<actors; i++ ) { if ( actor[i] ) actor[i]->unsubscribe(); }
+  for ( uint8_t i=0; i<MAXLEDS; i++) { if ( led[i] )   led[i]->unsubscribe(); }
+  for ( uint8_t i=0; i<servos; i++ ) { if ( servo[i] ) servo[i]->unsubscribe(); }
   
 }
 
 void SwOSCtrl::factorySettings( void ) {
 
   setAlias("");
-  for (uint8_t i=0; i<inputs; i++) { if ( input[i] ) input[i]->setAlias( "" ); }
-  for (uint8_t i=0; i<actors; i++) { if ( actor[i] ) actor[i]->setAlias( "" ); }
-  for (uint8_t i=0; i<MAXLEDS; i++)   { if ( led[i] )   led[i]->setAlias( "" ); }
+  for ( uint8_t i=0; i<inputs; i++) { if ( input[i] ) input[i]->setAlias( "" ); }
+  for ( uint8_t i=0; i<actors; i++) { if ( actor[i] ) actor[i]->setAlias( "" ); }
+  for ( uint8_t i=0; i<MAXLEDS; i++)   { if ( led[i] )   led[i]->setAlias( "" ); }
+  for ( uint8_t i=0; i<servos; i++) { if ( servo[i] ) servo[i]->setAlias( "" ); }
 
 }
 
@@ -187,10 +231,11 @@ bool SwOSCtrl::cmdAlias( const char *obj, const char *alias) {
   }
 
   // now start interpreting
-  if (strcmp( "FTSWARM", device) == 0)                                           { setAlias( alias );            return true; }
-  else if ( ( strcmp(device, "A") == 0 )   && (port < inputs) )                  { input[port]->setAlias(alias); return true; }
-  else if ( ( strcmp(device, "M") == 0 )   && (port < actors) )                  { actor[port]->setAlias(alias); return true; }
-  else if ( ( strcmp(device, "LED") == 0 ) && (port < MAXLEDS) && (led[port] ) ) { led[port]->setAlias(alias);   return true; }
+  if (strcmp( "FTSWARM", device) == 0)                                               { setAlias( alias );            return true; }
+  else if ( ( strcmp(device, "A") == 0 )     && ( port < inputs) )                   { input[port]->setAlias(alias); return true; }
+  else if ( ( strcmp(device, "M") == 0 )     && ( port < actors) )                   { actor[port]->setAlias(alias); return true; }
+  else if ( ( strcmp(device, "LED") == 0 )   && ( port < MAXLEDS) && (led[port] )  ) { led[port]->setAlias(alias);   return true; }
+  else if ( ( strcmp(device, "SERVO") == 0 ) && ( port < servos ) && (servo[port]) ) { servo[port]->setAlias(alias); return true; }
   
   // specific hardware?
   return cmdAlias( device, port, alias );
@@ -209,6 +254,8 @@ SwOSIO *SwOSCtrl::getIO( const char *name) {
   for ( uint8_t i=0; i<inputs;  i++) { if ( ( input[i] ) && ( input[i]->equals(name) ) ) { return input[i]; } }
   for ( uint8_t i=0; i<actors;  i++) { if ( ( actor[i] ) && ( actor[i]->equals(name) ) ) { return actor[i]; } }
   for ( uint8_t i=0; i<MAXLEDS; i++) { if ( ( led[i] )   && ( led[i]->equals(name) ) )   { return led[i]; } }
+  for ( uint8_t i=0; i<servos;  i++) { if ( ( servo[i] ) && ( servo[i]->equals(name) ) ) { return servo[i]; } }
+
 
   return NULL;
 }
@@ -221,11 +268,13 @@ SwOSIO *SwOSCtrl::getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port) {
     case FTSWARM_FREQUENCYINPUT:
     case FTSWARM_INPUT: 
     case FTSWARM_DIGITALINPUT:
-    case FTSWARM_ANALOGINPUT : return ( (port<inputs)?input[ port ]:NULL);
+    case FTSWARM_ANALOGINPUT : return ( ( port<inputs)?input[ port ]:NULL);
     
-    case FTSWARM_ACTOR:        return ( (port<actors)?actor[ port ]:NULL);
+    case FTSWARM_ACTOR:        return ( ( port<actors)?actor[ port ]:NULL);
     
-    case FTSWARM_PIXEL:        return ( (port<MAXLEDS)?led[ port ]:NULL);
+    case FTSWARM_PIXEL:        return ( ( port<MAXLEDS)?led[ port ]:NULL);
+
+    case FTSWARM_SERVO:        return ( ( port<servos)?servo[port]:NULL);
     
     default: return NULL;   
 
@@ -246,15 +295,18 @@ void SwOSCtrl::read() {
   // don't send packets to myself, so I need to now last reading time
   _lastContact = millis();
 
-  for (uint8_t i=0; i<inputs; i++) { if (input[i]) input[i]->read(); }
-  for (uint8_t i=0; i<actors; i++) { if (actor[i]) actor[i]->read(); }
+  for (uint8_t i=0; i<inputs; i++) { if ( input[i] ) input[i]->read();   }
+  for (uint8_t i=0; i<actors; i++) { if ( actor[i] ) actor[i]->read();   }
+  for (uint8_t i=0; i<servos; i++) { if ( servo[i] ) servo[i]->adjust(); }
+
 
 }
 
 bool SwOSCtrl::isInUse( void ) {
 
-  for (uint8_t i=0; i<inputs; i++) { if ( (input[i]) && (input[i]->isInUse() ) ) return true; }
-  for (uint8_t i=0; i<actors; i++) { if ( (actor[i]) && (actor[i]->isInUse() ) ) return true; }
+  for (uint8_t i=0; i<inputs; i++) { if ( ( input[i] ) && ( input[i]->isInUse() ) ) return true; }
+  for (uint8_t i=0; i<actors; i++) { if ( ( actor[i] ) && ( actor[i]->isInUse() ) ) return true; }
+  for (uint8_t i=0; i<servos; i++) { if ( ( servo[i] ) && ( servo[i]->isInUse() ) ) return true; }
 
   return false;
 
@@ -326,6 +378,7 @@ void SwOSCtrl::jsonizeIO( JSONize *json, uint8_t id ) {
   for (uint8_t i=0; i<inputs; i++)      { if ( input[i] ) input[i]->jsonize( json, id ); }
   for (uint8_t i=0; i<actors; i++)      { if ( actor[i] ) actor[i]->jsonize( json, id ); }
   for (uint8_t i=0; i<nvs.RGBLeds; i++) { if ( led[i]   ) led[i]->jsonize( json, id ); }
+  for (uint8_t i=0; i<servos; i++)      { if ( servo[i] ) servo[i]->jsonize( json, id ); } 
 
 }
 
@@ -399,7 +452,16 @@ bool SwOSCtrl::apiLEDColor( char *id, int color ) {
 bool SwOSCtrl::apiServoOffset( char * id, int offset ) {
   // send a Servo command (from api)
 
-  // will be defined in SwOSSwarmJST
+  // search IO
+  for (uint8_t i=0; i<MAXSERVOS; i++) {
+
+    if ( (servo[i]) && ( servo[i]->equals(id) ) ) {
+      // found
+      servo[i]->setOffset( offset, false );
+      return true;
+    }
+  }
+
   return false;
 
 }
@@ -407,7 +469,16 @@ bool SwOSCtrl::apiServoOffset( char * id, int offset ) {
 bool SwOSCtrl::apiServoPosition( char * id, int position ) {
   // send a Servo command (from api)
 
-  // will be defined in SwOSSwarmJST
+  // search IO
+  for (uint8_t i=0; i<MAXSERVOS; i++) {
+
+    if ( (servo[i]) && ( servo[i]->equals(id) ) ) {
+      // found
+      servo[i]->setPosition( position, false );
+      return true;
+    }
+  }
+
   return false;
 
 }
@@ -628,6 +699,12 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
                                       changeIOType( com->data.changeIOTypeCmd.index, com->data.changeIOTypeCmd.oldIOType, com->data.changeIOTypeCmd.newIOType );
                                       return true;
 
+    case CMD_SETSERVO:                // set servo position + offset
+                                      if (servo[com->data.servoCmd.index]) {
+                                        servo[com->data.servoCmd.index]->setOffset( com->data.servoCmd.offset, true );
+                                        servo[com->data.servoCmd.index]->setPosition( com->data.servoCmd.position, true );
+                                      }
+
   }
 
   return false;
@@ -677,6 +754,7 @@ void SwOSCtrl::saveAliasToNVS( nvs_handle_t my_handle ) {
   for (uint8_t i=0; i<inputs; i++ )  if (input[i]) input[i]->saveAliasToNVS( my_handle );
   for (uint8_t i=0; i<actors; i++ )  if (actor[i]) actor[i]->saveAliasToNVS( my_handle );
   for (uint8_t i=0; i<MAXLEDS; i++ ) if (led[i])   led[i]->saveAliasToNVS( my_handle );
+  for (uint8_t i=0; i<servos; i++ )  if (servo[i]) servo[i]->saveAliasToNVS( my_handle );
 }
 
 void SwOSCtrl::loadAliasFromNVS( nvs_handle_t my_handle ) {
@@ -685,6 +763,7 @@ void SwOSCtrl::loadAliasFromNVS( nvs_handle_t my_handle ) {
   for (uint8_t i=0; i<inputs; i++ )  if (input[i]) input[i]->loadAliasFromNVS( my_handle );
   for (uint8_t i=0; i<actors; i++ )  if (actor[i]) actor[i]->loadAliasFromNVS( my_handle );
   for (uint8_t i=0; i<MAXLEDS; i++ ) if (led[i])   led[i]->loadAliasFromNVS( my_handle );
+  for (uint8_t i=0; i<servos; i++ )  if (servo[i]) servo[i]->loadAliasFromNVS( my_handle );
 }
 
 void SwOSCtrl::_sendAlias( SwOSCom *alias ) {
@@ -702,6 +781,9 @@ void SwOSCtrl::_sendAlias( SwOSCom *alias ) {
   for (uint8_t i=0; i<MAXLEDS;i++) 
     if (led[i]) alias->sendBuffered( led[i]->getName(), led[i]->getAlias() ); 
 
+  // servo
+  for (uint8_t i=0; i<SERVOS;i++) if (servo[i]) alias->sendBuffered( servo[i]->getName(), servo[i]->getAlias() ); 
+
 }
 
 void SwOSCtrl::sendAlias( MacAddr destination ) {
@@ -710,4 +792,10 @@ void SwOSCtrl::sendAlias( MacAddr destination ) {
   _sendAlias( &alias );
   alias.flushBuffer( );
   
+}
+
+bool SwOSCtrl::hasExtPort( void ) {
+
+  return HASEXTPORT[_CPU];
+
 }

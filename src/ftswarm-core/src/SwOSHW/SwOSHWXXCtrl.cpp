@@ -274,64 +274,6 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
   sprintf( buffer, "ftSwarm%d", SN);
   setName( buffer );
 
-  // define specific hardware
-  switch ( CPU ) {
-    case FTSWARMRS_2V1:     servos = ( extensionPort == FTSWARM_EXT_SERVO ) ? 4:2;
-                            break;
-
-    case FTSWARMRC_1V140:   servos = 3;
-                            break;
-
-    case FTSWARMRS_2V0:
-    case FTSWARMJST_1V0:
-    case FTSWARMJST_1V15:   servos = ( extensionPort == FTSWARM_EXT_SERVO ) ? 3:1;
-                            break;
-
-    default:                servos = ( extensionPort == FTSWARM_EXT_SERVO ) ? 2:0;
-                            break;
-  }
-
-  for (uint8_t i=0; i<MAXSERVOS; i++) {
-
-    servo[i] = NULL;
-
-    if ( i < servos ) {
-
-      if ( ( _CPU == FTSWARMRC_1V140 ) && ( GPIO_INPUT[_CPU][7+i].io != GPIO_NUM_NC ) ) { 
-
-        // test on sensor cable
-        SwOSAnalogInput *poti = new SwOSAnalogInput( "RCP", i+7, this );
-
-        // need different filters
-        poti->deleteFilter();
-        poti->addFilter(new SwOSSpike( 120, 30 ) );
-        poti->addFilter(new SwOSMovingAverage(3) );
-
-        // need to read multiple times to get consistent values
-        poti->read();
-        while (poti->getValueI32() == FILTER_INVALID ) {
-          poti->read();
-        }
-
-        poti->read();
-        if (( poti->getValueI32() > 0 ) && ( poti->getValueI32() < 4095 ) ) {
-          printf("RCServo%d found.\n", i);
-          servo[i] = new SwOSRCServo( "RCSERVO", i, this, poti, actor[i] );
-          actor[i] = NULL;
-        } else {
-          delete poti;
-        }
-
-      } else {
-        // just a modern servo
-        servo[i] = new SwOSServo("SERVO", i, this);
-
-      }
-
-    }
-
-  }
-
   if ( extensionPort == FTSWARM_EXT_LIDAR ) {
     input[inputs++] = new SwOSLidarInput( "LIDAR", 99, this );
   }
@@ -342,49 +284,10 @@ SwOSSwarmJST::SwOSSwarmJST( SwOSCom *com ):SwOSSwarmJST( com->data.sourceSN, com
   
 }
 
-SwOSSwarmJST::~SwOSSwarmJST() {
-  
-  for ( uint8_t i=0; i<MAXSERVOS; i++ ) { if ( servo[i] ) delete servo[i]; }
-
-}
-
-void SwOSSwarmJST::read() {
-  
-  SwOSSwarmXX::read();
-
-  for (uint8_t i=0; i<servos; i++) {
-    if ( servo[i] ) servo[i]->adjust();
-  }
-
-}
-
-bool SwOSSwarmJST::isInUse( void ) {
-
-  if ( SwOSSwarmXX::isInUse() ) return true;
-  for ( uint8_t i=0; i<MAXSERVOS; i++ ) { if ( ( servo[i] ) && ( servo[i]->isInUse() ) ) return true; }
-
-  return false;
-
-}
-
-void SwOSSwarmJST::unsubscribe( void ) {
-  
-  for ( uint8_t i=0; i<MAXSERVOS; i++ ) { if ( servo[i] ) servo[i]->unsubscribe(); }
-
-}
-
-void SwOSSwarmJST::factorySettings( void ) {
-
-  SwOSSwarmXX::factorySettings();
-  for (uint8_t i=0; i<MAXSERVOS; i++) { if ( servo[i] ) servo[i]->setAlias( "" ); }
-  
-}
-
 bool SwOSSwarmJST::cmdAlias( char *device, uint8_t port, const char *alias) {
 
   // test on my specific hardware
-  if      ( ( strcmp(device, "SERVO") == 0 ) && (port < MAXSERVOS ) && (servo[port])) { servo[port]->setAlias(alias); return true; }
-  else if ( ( strcmp(device, "GYRO")  == 0 ) && (port = SWOS_NOPORT) && (gyro) )      { gyro->setAlias(alias);        return true; }
+  if ( ( strcmp(device, "GYRO")  == 0 ) && (port = SWOS_NOPORT) && (gyro) )      { gyro->setAlias(alias);        return true; }
   else if ( ( strcmp(device, "I2C")   == 0 ) && (port = SWOS_NOPORT) && (I2C) )       { I2C->setAlias(alias);         return true; }
   else return false;
 
@@ -396,9 +299,7 @@ SwOSIO *SwOSSwarmJST::getIO( const char *name) {
   SwOSIO *IO = SwOSSwarmXX::getIO(name);
   if ( IO != NULL ) { return IO; }
 
-  // check on specific hardware
-  for (uint8_t i=0;i<MAXSERVOS;i++) { if ( (servo[i]) && ( servo[i]->equals(name) ) ) { return servo[i]; } }
-
+  // gyro?
   if ( (I2C) && ( I2C->equals(name) ) ) { return I2C; }
 
   return NULL;
@@ -411,7 +312,6 @@ SwOSIO *SwOSSwarmJST::getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port) {
   SwOSIO *IO = SwOSSwarmXX::getIO(ioType, port);
   if ( IO != NULL ) { return IO; }
 
-  if ( ioType == FTSWARM_SERVO) return ( (port<MAXSERVOS)?servo[port]:NULL);
   if ( ioType == FTSWARM_I2C)   return ( I2C );
   
   return NULL;
@@ -430,71 +330,7 @@ void SwOSSwarmJST::jsonizeIO( JSONize *json, uint8_t id) {
 
   SwOSSwarmXX::jsonizeIO(json, id);
 
-  for (uint8_t i=0; i<servos; i++) { if ( servo[i] ) servo[i]->jsonize( json, id ); } 
   if (gyro)  { gyro->jsonize(json, id); }
-
-}
-
-bool SwOSSwarmJST::apiServoOffset( char *id, int offset ) {
-  // send a Servo command (from api)
-
-  // search IO
-  for (uint8_t i=0; i<MAXSERVOS; i++) {
-
-    if ( (servo[i]) && ( servo[i]->equals(id) ) ) {
-      // found
-      servo[i]->setOffset( offset, false );
-      return true;
-    }
-  }
-
-  return false;
-
-}
-
-bool SwOSSwarmJST::apiServoPosition( char *id, int position ) {
-  // send a Servo command (from api)
-
-  // search IO
-  for (uint8_t i=0; i<MAXSERVOS; i++) {
-
-    if ( (servo[i]) && ( servo[i]->equals(id) ) ) {
-      // found
-      servo[i]->setPosition( position, false );
-      return true;
-    }
-  }
-
-  return false;
-
-}
-
-bool SwOSSwarmJST::OnDataRecv(SwOSCom *com ) {
-
-  if (!com) return false;
-
-  // check if SwOSCrtl knows the cmd
-  if ( SwOSSwarmXX::OnDataRecv( com ) ) return true;
-
-  switch ( com->data.cmd ) {
-    case CMD_SETSERVO:
-      if (servo[com->data.servoCmd.index]) {
-        servo[com->data.servoCmd.index]->setOffset( com->data.servoCmd.offset, true );
-        servo[com->data.servoCmd.index]->setPosition( com->data.servoCmd.position, true );
-      }
-      return true;
-  }
-
-  return false;
-
-}
-
-void SwOSSwarmJST::_sendAlias( SwOSCom *alias ) {
-
-  SwOSSwarmXX::_sendAlias( alias );
-
-  // servo
-  for (uint8_t i=0; i<MAXSERVOS;i++) if (servo[i]) alias->sendBuffered( servo[i]->getName(), servo[i]->getAlias() ); 
 
 }
 
@@ -504,7 +340,6 @@ void SwOSSwarmJST::saveAliasToNVS( nvs_handle_t my_handle ) {
 
   if (gyro) gyro->saveAliasToNVS( my_handle );
   if (I2C)  I2C->saveAliasToNVS( my_handle );
-  for (uint8_t i=0; i<MAXSERVOS; i++ ) if (servo[i]) servo[i]->saveAliasToNVS( my_handle );
   
 }
 
@@ -514,9 +349,9 @@ void SwOSSwarmJST::loadAliasFromNVS( nvs_handle_t my_handle ) {
 
   if (gyro) gyro->loadAliasFromNVS( my_handle );
   if (I2C)  I2C->loadAliasFromNVS( my_handle );
-  for (uint8_t i=0; i<MAXSERVOS; i++ ) if (servo[i]) servo[i]->loadAliasFromNVS( my_handle );
   
 }
+
 
 /***************************************************
  *
@@ -749,17 +584,6 @@ bool SwOSSwarmControl::recvState( SwOSCom *com ) {
   return true;
  
 } 
-
-bool SwOSSwarmControl::OnDataRecv(SwOSCom *com ) {
-
-  if (!com) return false;
-
-  // check if SwOSCrtl knows the cmd
-  if ( SwOSSwarmXX::OnDataRecv( com ) ) return true;
-
-  return false;
-
-}
 
 void SwOSSwarmControl::_sendAlias( SwOSCom *alias ) {
 

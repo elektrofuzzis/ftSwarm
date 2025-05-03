@@ -11,7 +11,6 @@
 
 #include "SwOSHWBaseCtrl.h"
 #include "SwOSHWI2CSensor.h"
-#include "SwOSHWActor.h"
 #include "SwOSHWDigital.h"
 #include "SwOSHWDisplay.h"
 #include "SwOSHWAnalog.h"
@@ -28,7 +27,7 @@
   protected:
     virtual void _sendAlias( SwOSCom *alias );
 
-    public:
+  public:
 	  SwOSGyro     *gyro;
     SwOSI2C      *I2C;
     
@@ -59,22 +58,14 @@
  ***************************************************/
 
 class SwOSSwarmJST : public SwOSSwarmXX {
-
-  protected:
-    virtual void _sendAlias( SwOSCom *alias );
   
   public:
-    // specific hardware
-    uint8_t       servos  = 1;
-	  SwOSBaseServo *servo[MAXSERVOS];
 
     // constructor, destructor
 	  SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extentionPort, bool gyroOn );
     SwOSSwarmJST( SwOSCom *com ); // constructor
-    ~SwOSSwarmJST();
   
     // administrative stuff
-    virtual bool isInUse( void );
 	  virtual bool cmdAlias( char *device, uint8_t port, const char *alias); // set an alias for a IO device
     virtual SwOSIO *getIO( FtSwarmIOType_t ioType,  FtSwarmPort_t port);   // get an pointer to the requested IO Device via type&port
 	  virtual SwOSIO *getIO( const char *name);                              // get an pointer to the requested IO Device via name or alias
@@ -83,16 +74,7 @@ class SwOSSwarmJST : public SwOSSwarmXX {
 	  virtual void jsonizeIO( JSONize *json, uint8_t id);                    // send IO device information as a json string
     virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
     virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
-    virtual void factorySettings( void );                                  // reset factory settings
-    virtual void unsubscribe(void );                                       // unsubscribe all IOs
-    virtual void read();                                                   // run measurements
 
-    // API commands
-    virtual bool apiServoOffset( char *id, int offset );           // send a Servo command (from api)
-    virtual bool apiServoPosition( char *id, int position );       // send a Servo command (from api)
-
-    // **** Communications *****
-    virtual bool OnDataRecv( SwOSCom *com ); // data via espnow revceived
 
 };
 
@@ -107,6 +89,7 @@ class SwOSSwarmControl : public SwOSSwarmXX {
   protected:
     boolean _remoteControl = false;
     boolean _firstRead     = true;
+
     virtual void _sendAlias( SwOSCom *alias );
 
   public:
@@ -142,7 +125,6 @@ class SwOSSwarmControl : public SwOSSwarmXX {
     // **** Communications *****
     virtual bool recvState( SwOSCom *com );    // receive state from another FtSwarmControl
     virtual SwOSCom *state2Com( MacAddr destination );        // copy my state in a com struct
-    virtual bool OnDataRecv( SwOSCom *com );   // data via espnow revceived
   
 };
 

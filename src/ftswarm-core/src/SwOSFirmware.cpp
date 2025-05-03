@@ -58,7 +58,7 @@ void ExtensionMenu() {
 
     menu.start("Extension Port", 20);
 
-    menu.add("Mode", EXTMODE[ nvs.extensionPort] , EXTMENUMODE );
+    if ( myOSSwarm.Ctrl[0]->hasExtPort() ) menu.add("Mode", EXTMODE[ nvs.extensionPort] , EXTMENUMODE );
 
     // I2C Slave Mode. Options I2C Slave Address and Interrupt Line
     if ( nvs.extensionPort == FTSWARM_EXT_I2C_SLAVE ) {
@@ -414,7 +414,7 @@ void swarmMenu( void ) {
         break;
 
       }
-    
+
   }
 
 }

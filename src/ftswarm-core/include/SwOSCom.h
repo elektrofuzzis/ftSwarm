@@ -69,17 +69,6 @@ struct Servo_t { int16_t offset; int16_t position; } __attribute__((packed));
 struct Joystick_t { int16_t LR; int16_t FB; } __attribute__((packed));
 struct Alias_t { char name[10]; char alias[MAXIDENTIFIER]; } __attribute__((packed));
 
-struct registerJST_t {
-  uint8_t leds;
-  LED_t   led[MAXLEDS];
-  Servo_t servo[MAXSERVOS];
-} __attribute__((packed));
-
-struct registerControl_t {
-  Joystick_t joystick[2];
-  uint8_t    hc165;
-} __attribute__((packed));
-
 struct registerCmd_t { 
   FtSwarmController_t ctrlType; 
   FtSwarmVersion_t    versionCPU; 
