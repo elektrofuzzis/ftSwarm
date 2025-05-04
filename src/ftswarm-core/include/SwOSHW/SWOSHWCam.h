@@ -39,19 +39,19 @@
  class SwOSCAM : public SwOSIO {
   protected:
 
-    framesize_t _framesize  = FRAMESIZE_QVGA;
-    int16_t     _quality    = 0;
-    int16_t     _brightness = 0;
-    int16_t     _contrast   = 0;
-    int16_t     _saturation = 0;
-    int16_t     _specialEffect = 0;
-    int16_t     _wbMode = 0; 
-    bool        _vFlip = false;
-    bool        _hMirror = false;
-    bool        _streaming = false;
+    framesize_t framesize  = FRAMESIZE_QVGA;
+    int16_t     quality    = 0;
+    int16_t     brightness = 0;
+    int16_t     contrast   = 0;
+    int16_t     saturation = 0;
+    int16_t     specialEffect = 0;
+    int16_t     wbMode = 0; 
+    bool        vFlip = false;
+    bool        hMirror = false;
+    bool        streaming = false;
     
     // local HW procedures
-    virtual void _setupLocal(); // initializes local HW
+    virtual void setupLocal(); // initializes local HW
     virtual void setRemote( void );
     
   public:
@@ -62,7 +62,7 @@
     virtual FtSwarmIOType_t getIOType() { return FTSWARM_CAM; };
     virtual void jsonize( JSONize *json, uint8_t id);
 
-    void streaming( bool onOff, bool dontSendToRemote );
+    void setStreaming( bool onOff, bool dontSendToRemote );
     void setFramesize( framesize_t framesize, bool dontSendToRemote );
     void setQuality( int quality, bool dontSendToRemote );
     void setBrightness( int brightness, bool dontSendToRemote );

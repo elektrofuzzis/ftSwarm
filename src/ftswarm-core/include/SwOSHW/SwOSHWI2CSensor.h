@@ -53,7 +53,7 @@
  class SwOSGyroLSM : public SwOSGyro {
   protected:
 
-    virtual void _setupLocal(); 
+    virtual void setupLocal(); 
 
   public:
     // constructor
@@ -76,7 +76,7 @@
     VectorInt16 aa;
     uint16_t packetSize;    // Expected MPU 6050 DMP packet size (default is 42 bytes)
 
-    virtual void _setupLocal(); 
+    virtual void setupLocal(); 
 
   public:
     // constructor
@@ -106,7 +106,7 @@
 
   protected:
 
-    virtual void _setupLocal();
+    virtual void setupLocal();
     virtual void setSensorTypeLocal( FtSwarmSensor_t sensorType );
 
   public:
@@ -136,9 +136,9 @@
  class SwOSI2C : public SwOSIO, public SwOSEventInput {
   protected:
     
-    virtual void _setupLocal(uint8_t I2CAddress); // initializes local HW
-    virtual void _setLocal( uint8_t reg, uint8_t value );
-    virtual void _setRemote(uint8_t reg, uint8_t value );
+    virtual void setupLocal(uint8_t I2CAddress); // initializes local HW
+    virtual void setLocal( uint8_t reg, uint8_t value );
+    virtual void setRemote(uint8_t reg, uint8_t value );
 
   public:
 

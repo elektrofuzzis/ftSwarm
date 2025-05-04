@@ -17,250 +17,9 @@
  *
  ***************************************************/
 
- SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extensionPort, bool gyroOn ) : SwOSCtrl (SN, macAddr, local, CPU, IAmKelda, extensionPort ) {
-
-  gyro = NULL;
-  I2C  = NULL;
-
-  // Start I2C, if extention port is configured as I2C. 
-  // ToDo I2CSlave 
-  if ( ( local ) && 
-       ( ( nvs.extensionPort == FTSWARM_EXT_I2C_MASTER ) ||
-         ( nvs.extensionPort == FTSWARM_EXT_LIDAR ) 
-       )
-      ) {
-    
-    switch (CPU) {
-
-      case FTSWARMJST_1V0:      Wire.begin( 13, 12 ); break;
-
-      case FTSWARMCONTROL_1V3: 
-      case FTSWARMJST_1V15:     Wire.begin( 21, 22 ); break;  
-
-      case FTSWARMXL_1V00:      Wire.begin( 33, 21 ); break;
-
-      case FTSWARMRS_2V0: 
-      case FTSWARMRS_2V1:       Wire.begin( 8, 9 );   break;
-  
-      default:                  break; // CAM, FTSWARMRC
-
-    }
-
-    // 400kHz only
-    Wire.setClock(400000);
-
-  }
-
-  // use parameter to handle remote devices correctly
-  if ( extensionPort == FTSWARM_EXT_I2C_SLAVE ) { I2C = new SwOSI2C ( "I2C", this, nvs.I2CAddr ); };
-
-  // initialize gyro if available
-  if ( gyroOn  ) { 
-    if    ( ( _CPU == FTSWARMRS_2V0 ) || 
-            ( _CPU == FTSWARMRS_2V1 ) ||
-            ( _CPU == FTSWARMRC_1V140 ) ) gyro = new SwOSGyroLSM( "GYRO", this );
-    else                                  gyro = new SwOSGyroMPU( "GYRO", this );
-  }
-  
-}
-
-SwOSSwarmXX::~SwOSSwarmXX() {
-
-  if (gyro) delete( gyro );
-  if (I2C)  delete( I2C );
+SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extensionPort, bool gyroOn ) : SwOSCtrl (SN, macAddr, local, CPU, IAmKelda, extensionPort, gyroOn ) {
 
 }
-
-void SwOSSwarmXX::read( void ) {
-
-  SwOSCtrl::read();
-  if (I2C) I2C->read();
-  if (gyro) gyro->read();
-
-}
-
-void SwOSSwarmXX::unsubscribe( void ) {
-
-  if (gyro) gyro->unsubscribe();
-  if (I2C)  I2C->unsubscribe();
-
-}
-
-bool SwOSSwarmXX::hasGyro( void ) {
-  // test if HW has a gyro
-
-  // already initialized or HW with integrated gyro
-  if ( ( gyro ) || 
-       ( _CPU == FTSWARMRS_2V0 ) ||
-       ( _CPU == FTSWARMRS_2V1 ) ||
-       ( _CPU == FTSWARMRC_1V140 )
-     ) return true;
-
-  // check on MPU6050
-  return Wire.requestFrom( 0x68, 1 );
-
-}
-
-void SwOSSwarmXX::factorySettings( void ) {
-
-  SwOSCtrl::factorySettings();
-  if (gyro) gyro->setAlias("");
-  if (I2C)  I2C->setAlias("");
-  
-}
-
-SwOSIO *SwOSSwarmXX::getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port) {
-
-  SwOSIO *result = SwOSCtrl::getIO( ioType, port );
-  if (result) return result;
-
-  switch (ioType) {
-    case FTSWARM_GYRO: return gyro;
-    case FTSWARM_I2C:  return I2C;
-  }
-
-  return NULL;
-
-}
-
-
-SwOSIO *SwOSSwarmXX::getIO( const char *name ) {
-
-  SwOSIO *result = SwOSCtrl::getIO( name );
-  if (result) return result;
-
-  if ( (gyro) && (gyro->equals(name) ) ) return gyro;
-  if ( (I2C)  && (I2C->equals(name) ) )  return I2C;
-
-  return NULL;
-
-}
-
-bool SwOSSwarmXX::OnDataRecv(SwOSCom *com ) {
-
-  if (!com) return false;
-
-  if ( ( com->data.cmd == CMD_I2CREGISTER ) && (I2C) ) {
-      I2C->setRegister( com->data.I2CRegisterCmd.reg, com->data.I2CRegisterCmd.value );
-      return true;
-  } else {
-      return SwOSCtrl::OnDataRecv(com);
-  }
-
-  return true;
-
-}
-
-bool SwOSSwarmXX::isInUse( void ) {
-
-  if (SwOSCtrl::isInUse() ) return true;
-
-  if ( ( gyro ) && ( gyro->isInUse() ) ) return true;
-  if ( ( I2C )  && ( I2C->isInUse() ) )  return true;
-
-  return false;
-
-}
-
-
-void SwOSSwarmXX::_sendAlias( SwOSCom *alias ) {
-
-  SwOSCtrl::_sendAlias( alias );
-
-  // gyro
-  if (gyro) alias->sendBuffered( gyro->getName(), gyro->getAlias() ); 
-
-}
-
-bool isInputType( FtSwarmIOType_t ioType ) {
-
-  return ( ioType == FTSWARM_DIGITALINPUT ) ||
-         ( ioType == FTSWARM_ANALOGINPUT ) ||
-         ( ioType == FTSWARM_ROTARYINPUT ) ||
-         ( ioType == FTSWARM_COUNTERINPUT ) ||
-         ( ioType == FTSWARM_FREQUENCYINPUT );
-}
-
-bool SwOSSwarmXX::changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarmIOType_t newIOType ) {
-
-  // check on compatible IO types
-  if ( !isInputType( oldIOType) ) return false;
-  if ( !isInputType( newIOType) ) return false;
-
-  // register the new one
-  SwOSInput *io    = NULL;
-
-  switch ( newIOType ) {
-
-    case FTSWARM_DIGITALINPUT:    io = new SwOSDigitalInput("A", port, this ); 
-                                  break;
-
-    case FTSWARM_ANALOGINPUT:     io = new SwOSAnalogInput("A", port, this );
-                                  break;
-
-    case FTSWARM_COUNTERINPUT:    io = new SwOSCounter("A", port, SWOS_NOPORT, this ); 
-                                  break;
-
-    case FTSWARM_ROTARYENCODER:   io = new SwOSCounter("A", port, port+1, this ); 
-                                  if ( port+1 < inputs ) { 
-                                    // cleanup next input, it's used now
-                                    SwOSInput *old = input[port+1];
-                                    input[port+1] = NULL;
-                                    if ( old ) delete old;
-                                  }
-                                  break;
-
-    case FTSWARM_FREQUENCYINPUT:  io = new SwOSFrequencymeter("A", port, SWOS_NOPORT, this ); 
-                                  break;
-
-    default: return false;
-  }
-
-  // if old port exits, transfer needed properties and kill it
-  if (input[port]) {
-    char alias[MAXIDENTIFIER];
-    strcpy( alias, input[port]->getAlias() );
-    io->setAlias( alias );
-    delete input[port];
-  }
-
-  // assign new port
-  input[port] = io;
-
-  // if it's an remote port, change remote site as well
-  if ( !isLocal() ) {
-    SwOSCom IOType( macAddr, serialNumber, CMD_CHANGEIOTYPE );
-    IOType.data.changeIOTypeCmd.index     = port;
-    IOType.data.changeIOTypeCmd.oldIOType = oldIOType;
-    IOType.data.changeIOTypeCmd.newIOType = newIOType;
-    IOType.send();
-  }
-
-  return true;
-
-}
-
-SwOSCom *SwOSSwarmXX::state2Com( MacAddr destination ) {
-
-  SwOSCom *com = SwOSCtrl::state2Com( destination );
-
-  // copy I2C registers
-  if (I2C)  memcpy( com->data.stateCmd.i2cValue, I2C->myRegister, MAXI2CREGISTERS );
-  if (gyro) gyro->state2com( com );
-
-  return com;
-
-}
-
-bool SwOSSwarmXX::recvState( SwOSCom *com ) {
-
-  if (!SwOSCtrl::recvState(com) ) return false;
-
-  if (I2C)  memcpy( I2C->myRegister,  com->data.stateCmd.i2cValue, MAXI2CREGISTERS );
-  if (gyro) gyro->recvState( com );
-  return true;
- 
-} 
 
 /***************************************************
  *
@@ -274,48 +33,10 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
   sprintf( buffer, "ftSwarm%d", SN);
   setName( buffer );
 
-  if ( extensionPort == FTSWARM_EXT_LIDAR ) {
-    input[inputs++] = new SwOSLidarInput( "LIDAR", 99, this );
-  }
-
 }
 
 SwOSSwarmJST::SwOSSwarmJST( SwOSCom *com ):SwOSSwarmJST( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmKelda, com->data.registerCmd.extensionPort, FTSWARM_GYRO_OFF ) {
   
-}
-
-bool SwOSSwarmJST::cmdAlias( char *device, uint8_t port, const char *alias) {
-
-  // test on my specific hardware
-  if ( ( strcmp(device, "GYRO")  == 0 ) && (port = SWOS_NOPORT) && (gyro) )      { gyro->setAlias(alias);        return true; }
-  else if ( ( strcmp(device, "I2C")   == 0 ) && (port = SWOS_NOPORT) && (I2C) )       { I2C->setAlias(alias);         return true; }
-  else return false;
-
-}
-
-SwOSIO *SwOSSwarmJST::getIO( const char *name) {
-
-  // check on base class hardware
-  SwOSIO *IO = SwOSSwarmXX::getIO(name);
-  if ( IO != NULL ) { return IO; }
-
-  // gyro?
-  if ( (I2C) && ( I2C->equals(name) ) ) { return I2C; }
-
-  return NULL;
-
-}
-
-SwOSIO *SwOSSwarmJST::getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port) {
-
-  // check on base class hardware
-  SwOSIO *IO = SwOSSwarmXX::getIO(ioType, port);
-  if ( IO != NULL ) { return IO; }
-
-  if ( ioType == FTSWARM_I2C)   return ( I2C );
-  
-  return NULL;
-
 }
 
 char* SwOSSwarmJST::myType() {
@@ -324,32 +45,6 @@ char* SwOSSwarmJST::myType() {
 
 FtSwarmController_t SwOSSwarmJST::getType() {
   return FTSWARM;
-}
-
-void SwOSSwarmJST::jsonizeIO( JSONize *json, uint8_t id) {
-
-  SwOSSwarmXX::jsonizeIO(json, id);
-
-  if (gyro)  { gyro->jsonize(json, id); }
-
-}
-
-void SwOSSwarmJST::saveAliasToNVS( nvs_handle_t my_handle ) {
-
-  SwOSSwarmXX::saveAliasToNVS( my_handle );
-
-  if (gyro) gyro->saveAliasToNVS( my_handle );
-  if (I2C)  I2C->saveAliasToNVS( my_handle );
-  
-}
-
-void SwOSSwarmJST::loadAliasFromNVS( nvs_handle_t my_handle ) {
-
-  SwOSSwarmXX::loadAliasFromNVS( my_handle );
-
-  if (gyro) gyro->loadAliasFromNVS( my_handle );
-  if (I2C)  I2C->loadAliasFromNVS( my_handle );
-  
 }
 
 
@@ -479,7 +174,6 @@ void SwOSSwarmControl::jsonizeIO( JSONize *json, uint8_t id) {
 
   for (uint8_t i=0; i<6; i++) { button[i]->jsonize( json, id ); }
   for (uint8_t i=0; i<2; i++) { joystick[i]->jsonize( json, id ); } 
-  if (gyro)  { gyro->jsonize(json, id); }
 
 }
 
@@ -587,7 +281,7 @@ bool SwOSSwarmControl::recvState( SwOSCom *com ) {
 
 void SwOSSwarmControl::_sendAlias( SwOSCom *alias ) {
 
-  SwOSSwarmXX::_sendAlias( alias );
+  SwOSSwarmXX::sendAlias( alias );
 
   // buttons
   for (uint8_t i=0; i<8;i++) alias->sendBuffered( button[i]->getName(), button[i]->getAlias() ); 
@@ -749,7 +443,7 @@ void SwOSSwarmCAM::loadAliasFromNVS( nvs_handle_t my_handle ) {
 bool SwOSSwarmCAM::apiCAMStreaming( char *id, bool onOff ) {
   // set CAM framzesize / resolution
 
-  if (cam) cam->streaming( onOff, false );
+  if (cam) cam->setStreaming( onOff, false );
   return true;
 
 }

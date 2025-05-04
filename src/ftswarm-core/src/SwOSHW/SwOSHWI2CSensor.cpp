@@ -35,7 +35,7 @@ SwOSGyro::SwOSGyro(const char *name, SwOSCtrl *ctrl ) : SwOSIO( name, ctrl ) {
 
 SwOSGyroLSM::SwOSGyroLSM(const char *name, SwOSCtrl *ctrl ) : SwOSGyro( name, ctrl ) {
 
-  if (ctrl->isLocal() ) _setupLocal();
+  if (ctrl->isLocal() ) setupLocal();
 
 }
 
@@ -45,7 +45,7 @@ SwOSGyroLSM::~SwOSGyroLSM( ) {
 
 }
 
-void SwOSGyroLSM::_setupLocal() {
+void SwOSGyroLSM::setupLocal() {
 
   // need an internal I²C interface
   TwoWire internalI2C = TwoWire(1);
@@ -91,7 +91,7 @@ void SwOSGyro::jsonize( JSONize *json, uint8_t id) {
 
 SwOSGyroMPU::SwOSGyroMPU(const char *name, SwOSCtrl *ctrl ) : SwOSGyro( name, ctrl ) {
 
-  if (ctrl->isLocal() ) _setupLocal();
+  if (ctrl->isLocal() ) setupLocal();
 
 }
 
@@ -102,7 +102,7 @@ SwOSGyroMPU::~SwOSGyroMPU( ) {
 }
 
 
-void SwOSGyroMPU::_setupLocal() {
+void SwOSGyroMPU::setupLocal() {
 
   uint8_t devStatus;      // Return status after each device operation (0 = success, !0 = error)
 
@@ -117,7 +117,7 @@ void SwOSGyroMPU::_setupLocal() {
     /*Verify connection*/
     if(mpu->testConnection() == false){
       ESP_LOGE(LOGFTSWARM, "Gyro/MPU6050 connection failed.");
-      _ctrl->setState( ERROR );
+      ctrl->setState( ERROR );
       delete mpu;
       mpu = NULL;      
     }
@@ -143,7 +143,7 @@ void SwOSGyroMPU::_setupLocal() {
       // 1 = initial memory load failed
       // 2 = DMP configuration updates failed
       ESP_LOGE(LOGFTSWARM, "Gyro/MPU6050: DMP initialisation error %d.", devStatus);
-      _ctrl->setState( ERROR );
+      ctrl->setState( ERROR );
       delete mpu;
       mpu = NULL;      
     } 
@@ -284,16 +284,16 @@ void SwOSGyroMPU::jsonize( JSONize *json, uint8_t id) {
  SwOSLidarInput::SwOSLidarInput(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSInput( name, port, ctrl, FTSWARM_DIGITAL ) {
    
    // initialize local HW
-   if (_ctrl->isLocal()) {
-       _setupLocal();
+   if (ctrl->isLocal()) {
+       setupLocal();
    }
  
  }
  
- void SwOSLidarInput::_setupLocal() {
+ void SwOSLidarInput::setupLocal() {
    // initialize local HW
  
-   SwOSInput::_setupLocal( );
+   SwOSInput::setupLocal( );
  
    Lidar.setTimeout(500);
    Lidar.init();
@@ -305,18 +305,18 @@ void SwOSGyroMPU::jsonize( JSONize *json, uint8_t id) {
  
    // due to send normallyOpen to remote controllers, don't call super class
  
-   _sensorType   = sensorType;
+   this->sensorType = sensorType;
  
-   if (_ctrl->isLocal()) { 
+   if (ctrl->isLocal()) { 
      
      setSensorTypeLocal( sensorType );
  
    } else {
  
-     // send SN, SETSENSORTYPE, _port, sensorType
-     SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_SETSENSORTYPE );
-     cmd.data.sensorCmd.index        = _port;
-     cmd.data.sensorCmd.sensorType   = _sensorType;
+     // send SN, SETSENSORTYPE, port, sensorType
+     SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETSENSORTYPE );
+     cmd.data.sensorCmd.index        = port;
+     cmd.data.sensorCmd.sensorType   = sensorType;
      cmd.send( );
  
    }
@@ -330,7 +330,7 @@ void SwOSGyroMPU::jsonize( JSONize *json, uint8_t id) {
  void SwOSLidarInput::read() {
    
    // nothing todo on remote sensors
-   if (!_ctrl->isLocal()) return;
+   if (!ctrl->isLocal()) return;
  
    uint32_t newValue;
  
@@ -344,7 +344,7 @@ void SwOSGyroMPU::jsonize( JSONize *json, uint8_t id) {
  void SwOSLidarInput::setReading( int32_t newValue ) {
      
    // store new data
-   _lastRawValue = newValue;  
+   lastRawValue = newValue;  
  
    subscription();
  
@@ -353,9 +353,9 @@ void SwOSGyroMPU::jsonize( JSONize *json, uint8_t id) {
  void SwOSLidarInput::setValue( int32_t value ) {
  
    // nothing ToDo on real local HW
-   if ( ( _ctrl->isLocal()) && (!_ctrl->isI2CSwarmCtrl() ) ) return;
+   if ( ( ctrl->isLocal()) && (!ctrl->isI2CSwarmCtrl() ) ) return;
    
-   _lastRawValue = value;
+   lastRawValue = value;
  
    subscription();
  
@@ -364,8 +364,8 @@ void SwOSGyroMPU::jsonize( JSONize *json, uint8_t id) {
  void SwOSLidarInput::jsonize( JSONize *json, uint8_t id) {
    json->startObject();
    SwOSIO::jsonize(json, id);
-   json->variableUI32("sensorType", _sensorType);
-   json->variableUI32("subType", _sensorType);
+   json->variableUI32("sensorType", sensorType);
+   json->variableUI32("subType", sensorType);
  
    json->variableI32("value", getValueI32() );
    
@@ -377,117 +377,6 @@ void SwOSGyroMPU::jsonize( JSONize *json, uint8_t id) {
  *   I2C Slave
  *
  ***************************************************/
-
-/*
-#define I2C_DATA_LENGTH 512                         -- Data buffer length of test buffer
-#define I2C_SLAVE_TX_BUF_LEN (2 * I2C_DATA_LENGTH)  -- I2C slave tx buffer size
-#define I2C_SLAVE_RX_BUF_LEN (2 * I2C_DATA_LENGTH)  -- I2C slave rx buffer size
-#define I2C_SLAVE_NUM I2C_NUM_1
-
-void SwOSI2C::read(  ) {
- 
-  int bytes_read = 0;
-  uint8_t data[4];
-  
-  bytes_read = i2c_slave_read_buffer(I2C_SLAVE_NUM, data, 4, portMAX_DELAY);
-
-  if ( bytes_read == 1 ) {
-    // read a register
-    uint8_t result = 0;
-    if (data[0]<MAXI2CREGISTERS) result = myRegister[data[0]];
-    i2c_reset_tx_fifo(I2C_SLAVE_NUM);
-    i2c_slave_write_buffer(I2C_SLAVE_NUM, &result, 1, portMAX_DELAY);
-      
-  } else if ( bytes_read == 2 ) {
-    // write a register
-    if (data[0]<MAXI2CREGISTERS) {
-      myRegister[data[0]] = data[1];
-    }
-  }
-
-  if ( bytes_read > 0 ) {
-    trigger( FTSWARM_TRIGGERI2CREAD, 0 );
-  }
-
-}
-
-void SwOSI2C::_setupLocal(uint8_t I2CAddress) {
-
-  int i2c_slave_port = I2C_SLAVE_NUM;
-  i2c_config_t conf_slave;
-
-  conf_slave.sda_pullup_en       = GPIO_PULLUP_ENABLE;
-  conf_slave.scl_pullup_en       = GPIO_PULLUP_ENABLE;
-  conf_slave.mode                = I2C_MODE_SLAVE;
-  conf_slave.slave.addr_10bit_en = 0;
-  conf_slave.slave.slave_addr    = I2CAddress;        
-  conf_slave.slave.maximum_speed = 400000;
-  conf_slave.clk_flags           = 0;
-
-  switch ( _ctrl->getCPU() ) {
-    case FTSWARMRS_2V1:
-      // ftSwarmRS final
-      conf_slave.sda_io_num = GPIO_NUM_8;
-      conf_slave.scl_io_num = GPIO_NUM_9;
-      break;
-    case FTSWARMRS_2V0:
-      // ftSwarmRS 
-      conf_slave.sda_io_num = GPIO_NUM_4;
-      conf_slave.scl_io_num = GPIO_NUM_5;
-      break;
-    default:
-      // ftSwarm & ftSwarmControl 
-      conf_slave.sda_io_num = GPIO_NUM_21;
-      conf_slave.scl_io_num = xGPIO_NUM_22;
-      break;
-    }
-    
-
-    i2c_param_config(i2c_slave_port, &conf_slave);
-    i2c_driver_install(i2c_slave_port,  I2C_MODE_SLAVE, I2C_SLAVE_RX_BUF_LEN, I2C_SLAVE_TX_BUF_LEN, 0);
-
-}
-
-
-SwOSI2C::SwOSI2C( const char *name, SwOSCtrl *ctrl, uint8_t I2CAddress):SwOSIO( name, ctrl ) {
-
-  memset(myRegister, 0, sizeof(myRegister));
-  
-  if (ctrl->isLocal()) _setupLocal(I2CAddress);
-
-}
-
-void SwOSI2C::setRegister( uint8_t reg, uint8_t value ) {
-
-  // check on boundaries
-  if (reg>=MAXI2CREGISTERS) return;
-  
-  myRegister[reg] = value;
-
-  if (_ctrl->isLocal()) _setLocal( reg, value );
-  else                  _setRemote( reg, value );
-
-}
-
-void SwOSI2C::_setRemote( uint8_t reg, uint8_t value ) {
-  
-  SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_I2CREGISTER );
-  cmd.data.I2CRegisterCmd.reg   = reg;
-  cmd.data.I2CRegisterCmd.value = value;
-  cmd.send( );
-}
-
-void SwOSI2C::_setLocal( uint8_t reg, uint8_t value ) {
-  myRegister[reg] = value;
-  trigger( FTSWARM_TRIGGERI2CWRITE, 0 );
-}
-
-uint8_t SwOSI2C::getRegister( uint8_t reg ) {
-
-  if (reg>=MAXI2CREGISTERS) return 0;
-  else return myRegister[reg];
-
-} */
 
 // internal copy of the registers
 uint8_t I2CSlave_register = 0;
@@ -539,13 +428,13 @@ void SwOSI2C::read( ) {
 
   if ( (I2CSlave_read) && ( nvs.interruptLine ) ) { 
     I2CSlave_read=false; 
-    _ctrl->actor[nvs.interruptLine-1]->setSpeed(nvs.interruptOnOff[0]);
-    _ctrl->actor[nvs.interruptLine-1]->apply();
+    ctrl->actor[nvs.interruptLine-1]->setSpeed(nvs.interruptOnOff[0]);
+    ctrl->actor[nvs.interruptLine-1]->apply();
   }
 
 }
 
-void SwOSI2C::_setupLocal(uint8_t I2CAddress) {
+void SwOSI2C::setupLocal(uint8_t I2CAddress) {
 
   Wire.begin(I2CAddress);
   Wire.onReceive(I2CReceiveEvent);
@@ -553,8 +442,8 @@ void SwOSI2C::_setupLocal(uint8_t I2CAddress) {
   
   if ( nvs.interruptLine ) { 
     I2CSlave_read=false; 
-    _ctrl->actor[nvs.interruptLine-1]->setSpeed( nvs.interruptOnOff[0] );
-    _ctrl->actor[nvs.interruptLine-1]->apply();
+    ctrl->actor[nvs.interruptLine-1]->setSpeed( nvs.interruptOnOff[0] );
+    ctrl->actor[nvs.interruptLine-1]->apply();
   }
 
 }
@@ -563,7 +452,7 @@ SwOSI2C::SwOSI2C( const char *name, SwOSCtrl *ctrl, uint8_t I2CAddress):SwOSIO( 
 
   memset(myRegister, 0, sizeof(myRegister));
   
-  if (ctrl->isLocal()) _setupLocal(I2CAddress);
+  if (ctrl->isLocal()) setupLocal(I2CAddress);
 
 }
 
@@ -574,20 +463,20 @@ void SwOSI2C::setRegister( uint8_t reg, uint8_t value ) {
   
   myRegister[reg] = value;
 
-  if (_ctrl->isLocal()) _setLocal( reg, value );
-  else                  _setRemote( reg, value );
+  if (ctrl->isLocal()) setLocal( reg, value );
+  else                 setRemote( reg, value );
 
 }
 
-void SwOSI2C::_setRemote( uint8_t reg, uint8_t value ) {
+void SwOSI2C::setRemote( uint8_t reg, uint8_t value ) {
   
-  SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_I2CREGISTER );
+  SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_I2CREGISTER );
   cmd.data.I2CRegisterCmd.reg   = reg;
   cmd.data.I2CRegisterCmd.value = value;
   cmd.send( );
 }
 
-void SwOSI2C::_setLocal( uint8_t reg, uint8_t value ) {
+void SwOSI2C::setLocal( uint8_t reg, uint8_t value ) {
 
   I2CSlave_value[reg] = value;
 
@@ -598,15 +487,15 @@ void SwOSI2C::_setLocal( uint8_t reg, uint8_t value ) {
     I2CSlave_read = false;
 
     // if the remote controller didn't ack the last interrupt, so I need to reset the interupt line first 
-    if ( _ctrl->actor[nvs.interruptLine-1]->getSpeed() != nvs.interruptOnOff[0] ) {
-      _ctrl->actor[nvs.interruptLine-1]->setSpeed( nvs.interruptOnOff[0] );
-      _ctrl->actor[nvs.interruptLine-1]->apply();
+    if ( ctrl->actor[nvs.interruptLine-1]->getSpeed() != nvs.interruptOnOff[0] ) {
+      ctrl->actor[nvs.interruptLine-1]->setSpeed( nvs.interruptOnOff[0] );
+      ctrl->actor[nvs.interruptLine-1]->apply();
       delay(1);
     }
 
     // set interrupt
-    _ctrl->actor[nvs.interruptLine-1]->setSpeed( nvs.interruptOnOff[1] );
-    _ctrl->actor[nvs.interruptLine-1]->apply();
+    ctrl->actor[nvs.interruptLine-1]->setSpeed( nvs.interruptOnOff[1] );
+    ctrl->actor[nvs.interruptLine-1]->apply();
 
   }
 

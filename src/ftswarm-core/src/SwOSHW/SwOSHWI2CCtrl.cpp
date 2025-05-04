@@ -17,9 +17,7 @@
  *
  ***************************************************/
 
- SwOSSwarmI2CCtrl::SwOSSwarmI2CCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda ): SwOSCtrl (SN, macAddr, local, CPU,  IAmKelda, FTSWARM_EXT_OFF ) {
-
-  Wire.begin( 5, 4);
+SwOSSwarmI2CCtrl::SwOSSwarmI2CCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda ): SwOSCtrl (SN, macAddr, local, CPU,  IAmKelda, FTSWARM_EXT_OFF, false ) {
 
 }
 
@@ -98,7 +96,7 @@ void SwOSSwarmPwrDrive::read( void ) {
   long    distance[4];
 
   // don't send packets to myself, so I need to now last reading time
-  _lastContact = millis();
+  lastContact = millis();
   
   // I'm alive
   pwrDrive->Watchdog( 500 );

@@ -19,8 +19,8 @@
 
  SwOSCAM::SwOSCAM(const char *name, SwOSCtrl *ctrl ) : SwOSIO( name, ctrl ) {
 
-  if ( _ctrl->isLocal() ) { 
-    _setupLocal(); 
+  if ( ctrl->isLocal() ) { 
+    setupLocal(); 
   }
 
 }
@@ -119,7 +119,7 @@ void blubber() {
 
 */
 
-void SwOSCAM::_setupLocal() {
+void SwOSCAM::setupLocal() {
 
   return;
 
@@ -221,13 +221,13 @@ void SwOSCAM::jsonize( JSONize *json, uint8_t id) {
   json->startObject();
   SwOSIO::jsonize(json, id);
   json->variable("url", (char *) "/stream" );
-  json->variableUI8( "framesize",  _framesize );
-  json->variableUI8( "quality",    _quality );
-  json->variableI16( "brightness", _brightness );
-  json->variableI16( "contrast",   _contrast );
-  json->variableI16( "saturation", _saturation );
-  json->variableB( "H-Mirror", _hMirror );
-  json->variableB( "v-Flip",   _vFlip );
+  json->variableUI8( "framesize",  framesize );
+  json->variableUI8( "quality",    quality );
+  json->variableI16( "brightness", brightness );
+  json->variableI16( "contrast",   contrast );
+  json->variableI16( "saturation", saturation );
+  json->variableB( "H-Mirror", hMirror );
+  json->variableB( "v-Flip",   vFlip );
   json->endObject();
 
 }
@@ -236,102 +236,102 @@ void SwOSCAM::setRemote( void ) {
   
 }
 
-void SwOSCAM::streaming( bool onOff, bool dontSendToRemote ) {
+void SwOSCAM::setStreaming( bool onOff, bool dontSendToRemote ) {
   
-  _streaming = onOff;
+  streaming = onOff;
 
   // apply local or remote
-  if (_ctrl->isLocal())       1==1;  // ToDo Streaming
+  if (ctrl->isLocal())       1==1;  // ToDo Streaming
   else if (!dontSendToRemote) setRemote();
 
 }
 
 void SwOSCAM::setFramesize( framesize_t framesize, bool dontSendToRemote ) {
   
-  _framesize = framesize;
+  this->framesize = framesize;
 
   // apply local or remote
-  if (_ctrl->isLocal())       esp_camera_sensor_get()->set_framesize( esp_camera_sensor_get(), framesize );
+  if (ctrl->isLocal())       esp_camera_sensor_get()->set_framesize( esp_camera_sensor_get(), this->framesize );
   else if (!dontSendToRemote) setRemote();
 
 }
 
 void SwOSCAM::setQuality( int quality, bool dontSendToRemote ) {
   
-  _quality = quality;
+  this->quality = quality;
 
   // apply local or remote
-  if (_ctrl->isLocal())       esp_camera_sensor_get()->set_quality( esp_camera_sensor_get(), quality );
+  if (ctrl->isLocal())       esp_camera_sensor_get()->set_quality( esp_camera_sensor_get(), this->quality );
   else if (!dontSendToRemote) setRemote();
 
 }
 
 void SwOSCAM::setBrightness( int brightness, bool dontSendToRemote ) {
   
-  _brightness = brightness;
+  this->brightness = brightness;
 
   // apply local or remote
-  if (_ctrl->isLocal())       esp_camera_sensor_get()->set_brightness( esp_camera_sensor_get(), brightness );
+  if (ctrl->isLocal())       esp_camera_sensor_get()->set_brightness( esp_camera_sensor_get(), this->brightness );
   else if (!dontSendToRemote) setRemote();
 
 }
 
 void SwOSCAM::setContrast( int contrast, bool dontSendToRemote ) {
   
-  _contrast = contrast;
+  this->contrast = contrast;
 
   // apply local or remote
-  if (_ctrl->isLocal())       esp_camera_sensor_get()->set_contrast( esp_camera_sensor_get(), contrast );
+  if (ctrl->isLocal())       esp_camera_sensor_get()->set_contrast( esp_camera_sensor_get(), this->contrast );
   else if (!dontSendToRemote) setRemote();
 
 }
 
 void SwOSCAM::setSaturation( int saturation, bool dontSendToRemote ) {
   
-  _saturation = saturation;
+  this->saturation = saturation;
 
   // apply local or remote
-  if (_ctrl->isLocal())       esp_camera_sensor_get()->set_saturation( esp_camera_sensor_get(), saturation );
+  if (ctrl->isLocal())       esp_camera_sensor_get()->set_saturation( esp_camera_sensor_get(), this->saturation );
   else if (!dontSendToRemote) setRemote();
 
 }
 
 void SwOSCAM::setSpecialEffect( int specialEffect, bool dontSendToRemote ) {
   
-  _specialEffect = specialEffect;
+  this->specialEffect = specialEffect;
 
   // apply local or remote
-  if (_ctrl->isLocal())       esp_camera_sensor_get()->set_special_effect( esp_camera_sensor_get(), specialEffect );
+  if (ctrl->isLocal())       esp_camera_sensor_get()->set_special_effect( esp_camera_sensor_get(), this->specialEffect );
   else if (!dontSendToRemote) setRemote();
 
 }
 
 void SwOSCAM::setWbMode( int wbMode, bool dontSendToRemote ) {
   
-  _wbMode = wbMode;
+  this->wbMode = wbMode;
 
   // apply local or remote
-  if (_ctrl->isLocal())       esp_camera_sensor_get()->set_wb_mode( esp_camera_sensor_get(), wbMode );
+  if (ctrl->isLocal())       esp_camera_sensor_get()->set_wb_mode( esp_camera_sensor_get(), this->wbMode );
   else if (!dontSendToRemote) setRemote();
 
 }
 
 void SwOSCAM::setVFlip( bool vFlip, bool dontSendToRemote ) {
   
-  _vFlip = vFlip; 
+  this->vFlip = vFlip; 
 
   // apply local or remote
-  if (_ctrl->isLocal())   esp_camera_sensor_get()->set_vflip( esp_camera_sensor_get(), vFlip );
+  if (ctrl->isLocal())   esp_camera_sensor_get()->set_vflip( esp_camera_sensor_get(), this->vFlip );
   else if (!dontSendToRemote) setRemote();
 
 }
 
 void SwOSCAM::setHMirror( bool hMirror, bool dontSendToRemote ) {
   
-  _hMirror = hMirror; 
+  this->hMirror = hMirror; 
 
   // apply local or remote
-  if (_ctrl->isLocal())   esp_camera_sensor_get()->set_hmirror( esp_camera_sensor_get(), hMirror );
+  if (ctrl->isLocal())   esp_camera_sensor_get()->set_hmirror( esp_camera_sensor_get(), this->hMirror );
   else if (!dontSendToRemote) setRemote();
 
 }

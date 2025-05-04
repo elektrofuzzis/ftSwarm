@@ -151,13 +151,13 @@ char * SwOSObj::getAlias( ) {
 SwOSIO::SwOSIO( const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSObj( name ) {
 
   // store local port and controller 
-  _port  = port;
-  _ctrl  = ctrl;
+  this->port  = port;
+  this->ctrl  = ctrl;
 
   char str[10];
-  if ( _port < SWOS_NOPORT ) {
+  if ( port < SWOS_NOPORT ) {
     // normal stuff
-    sprintf(str, "%s%d", name, _port+1 );
+    sprintf(str, "%s%d", name, port+1 );
     setName( str ); 
   } else {
     // avoid servo256
@@ -170,11 +170,11 @@ SwOSIO::SwOSIO( const char *name, SwOSCtrl *ctrl ) : SwOSIO( name, SWOS_NOPORT, 
 }
 
 void SwOSIO::lock( void ) {
-  if (_ctrl) _ctrl->lock();
+  if (ctrl) ctrl->lock();
 }
 
 void SwOSIO::unlock( void ) {
-  if (_ctrl) _ctrl->unlock();
+  if (ctrl) ctrl->unlock();
 }
 
 void SwOSIO::jsonize( JSONize *json, uint8_t id) {
@@ -190,24 +190,24 @@ void SwOSIO::onTrigger( int32_t value ) {
 
 char *SwOSIO::subscribe( char *IOName, uint32_t hysteresis ) {
   
-  _hysteresis = hysteresis;
-  _isSubscribed = true;
+  this->hysteresis = hysteresis;
+  isSubscribed = true;
 
   // only if I don't know my external name, store it
-  if (!_subscribedIOName) {
-    _subscribedIOName = (char *)malloc( strlen(IOName)+1 );
-    strcpy( _subscribedIOName, IOName );
+  if (!subscribedIOName) {
+    subscribedIOName = (char *)malloc( strlen(IOName)+1 );
+    strcpy( subscribedIOName, IOName );
   }
   
   // return my internal name to outside
-  return _subscribedIOName;
+  return subscribedIOName;
 
 } 
 
 void SwOSIO::unsubscribe() {
-  _isSubscribed = false;
-  if (_subscribedIOName) free( _subscribedIOName );
-  _subscribedIOName = NULL;
+  isSubscribed = false;
+  if (subscribedIOName) free( subscribedIOName );
+  subscribedIOName = NULL;
 }
 
 
@@ -218,22 +218,22 @@ void SwOSIO::unsubscribe() {
  ***************************************************/
 
 SwOSEventHandler::SwOSEventHandler( ) {
-  _actor        = NULL;
-  _parameter    = 0;
-  _usePortValue = true;
+  actor        = NULL;
+  parameter    = 0;
+  usePortValue = true;
 }
 
 SwOSEventHandler::SwOSEventHandler( SwOSIO *actor, boolean usePortValue, int32_t parameter ) {
-  _actor        = actor;
-  _usePortValue = usePortValue;
-  _parameter    = parameter;
+  this->actor        = actor;
+  this->usePortValue = usePortValue;
+  this->parameter    = parameter;
 }
 
 void SwOSEventHandler::trigger( int32_t portValue ) {
 
-  if ( _actor ) {
-    if (_usePortValue) _actor->onTrigger( portValue );
-    else               _actor->onTrigger( _parameter );
+  if ( actor ) {
+    if (usePortValue) actor->onTrigger( portValue );
+    else              actor->onTrigger( parameter );
   }
 }
 
@@ -245,14 +245,14 @@ void SwOSEventHandler::trigger( int32_t portValue ) {
 
 SwOSEventHandlers::SwOSEventHandlers( ) {
 
-  for (uint8_t i=0; i<FTSWARM_MAXTRIGGER; i++ ) _event[i] = NULL;
+  for (uint8_t i=0; i<FTSWARM_MAXTRIGGER; i++ ) event[i] = NULL;
 
 };
 
 SwOSEventHandlers::~SwOSEventHandlers() {
 
   for (uint8_t i=0; i<FTSWARM_MAXTRIGGER; i++ ) {
-    if (_event[i]) delete _event[i];
+    if (event[i]) delete event[i];
   }
   
 }
@@ -260,25 +260,25 @@ SwOSEventHandlers::~SwOSEventHandlers() {
 void SwOSEventHandlers::registerEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, boolean usePortValue, int32_t parameter ) {
 
   // if there is already a registered event, delete it
-  if (_event[triggerEvent]) delete _event[triggerEvent];
+  if (event[triggerEvent]) delete event[triggerEvent];
 
-  _event[triggerEvent] = new SwOSEventHandler( actor, usePortValue, parameter );
+  event[triggerEvent] = new SwOSEventHandler( actor, usePortValue, parameter );
   
 };
 
 void SwOSEventHandlers::unregisterEvent( FtSwarmTrigger_t triggerEvent ) {
 
   // if there is already a registered event, delete it
-  if (_event[triggerEvent]) delete _event[triggerEvent];
+  if (event[triggerEvent]) delete event[triggerEvent];
 
-  _event[triggerEvent] = NULL;
+  event[triggerEvent] = NULL;
   
 };
 
 void SwOSEventHandlers::trigger( FtSwarmTrigger_t triggerEvent, int32_t portValue ) {
 
-  if ( _event[triggerEvent] ) {
-    _event[triggerEvent]->trigger( portValue );
+  if ( event[triggerEvent] ) {
+    event[triggerEvent]->trigger( portValue );
   }
 }
 
@@ -289,28 +289,28 @@ void SwOSEventHandlers::trigger( FtSwarmTrigger_t triggerEvent, int32_t portValu
  ***************************************************/
 
 SwOSEventInput::~SwOSEventInput() {
-  if (!_events) delete _events;
+  if (!events) delete events;
 }
 
 void SwOSEventInput::registerEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, boolean usePortValue, int32_t p1 ) {
 
-  if (!_events) _events = new SwOSEventHandlers( );
+  if (!events) events = new SwOSEventHandlers( );
 
-  _events->registerEvent( triggerEvent, actor, usePortValue, p1 );
+  events->registerEvent( triggerEvent, actor, usePortValue, p1 );
   
 }
 
 void SwOSEventInput::unregisterEvent( FtSwarmTrigger_t triggerEvent ) {
 
-  if (!_events) return;
+  if (!events) return;
 
-  _events->unregisterEvent( triggerEvent );
+  events->unregisterEvent( triggerEvent );
   
 }
 
 void SwOSEventInput::trigger( FtSwarmTrigger_t triggerEvent, int32_t portValue ) {
 
-  if ( _events ) _events->trigger( triggerEvent, portValue );
+  if ( events ) events->trigger( triggerEvent, portValue );
 
 }
 
@@ -323,26 +323,26 @@ void SwOSEventInput::trigger( FtSwarmTrigger_t triggerEvent, int32_t portValue )
 SwOSInput::SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl, FtSwarmSensor_t sensorType ) : SwOSIO( name, port, ctrl ), SwOSEventInput( ) {
   
   // initialize some vars to undefined
-  _sensorType   = sensorType;
+  this->sensorType = sensorType;
 
 }
 
 
-void SwOSInput::_setupLocal() {
+void SwOSInput::setupLocal() {
   // initialize local HW
 
-  _GPIO = GPIO_INPUT[_ctrl->getCPU()][_port].io;
+  GPIO = GPIO_INPUT[ctrl->getCPU()][port].io;
 
   gpio_config_t io_conf = {};
 
-  if ( _GPIO != GPIO_NUM_NC) {
+  if ( GPIO != GPIO_NUM_NC) {
 
     // initialize digital  port
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-    io_conf.pin_bit_mask = 1ULL << _GPIO;
+    io_conf.pin_bit_mask = 1ULL << GPIO;
     gpio_config(&io_conf);
 
   }
@@ -350,7 +350,7 @@ void SwOSInput::_setupLocal() {
 }
 
 FtSwarmIcon_t SwOSInput::getIcon() { 
-  return SENSORICON[ _sensorType ]; 
+  return SENSORICON[ sensorType ]; 
 }; 
 
 void SwOSInput::setSensorTypeLocal( FtSwarmSensor_t sensorType ) {
@@ -359,18 +359,18 @@ void SwOSInput::setSensorTypeLocal( FtSwarmSensor_t sensorType ) {
 
 void SwOSInput::setSensorType( FtSwarmSensor_t sensorType ) {
 
-  _sensorType   = sensorType;
+  this->sensorType = sensorType;
 
-  if ( _ctrl->isLocal() ) {
+  if ( ctrl->isLocal() ) {
 
     setSensorTypeLocal( sensorType ); 
 
   } else {
 
-    // send SN, SETSENSORTYPE, _port, sensorType
-    SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_SETSENSORTYPE );
-    cmd.data.sensorCmd.index        = _port;
-    cmd.data.sensorCmd.sensorType   = _sensorType;
+    // send SN, SETSENSORTYPE, port, sensorType
+    SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETSENSORTYPE );
+    cmd.data.sensorCmd.index        = port;
+    cmd.data.sensorCmd.sensorType   = sensorType;
     cmd.send( );
 
   }
@@ -380,20 +380,20 @@ void SwOSInput::setSensorType( FtSwarmSensor_t sensorType ) {
 void SwOSInput::subscription() {
 
   // test, if input is subscribed
-  if (!_isSubscribed) return;
+  if (!isSubscribed) return;
 
-  if ( ( (_lastRawValue > _lastsubscribedValue) && (_lastRawValue-_lastsubscribedValue) > _hysteresis ) ||
-       ( (_lastsubscribedValue > _lastRawValue ) && (_lastsubscribedValue-_lastRawValue) > _hysteresis ) ) {
-       printf("S: %s %d\n", _subscribedIOName, _lastRawValue);
-       _lastsubscribedValue = _lastRawValue;
+  if ( ( (lastRawValue > lastsubscribedValue) && (lastRawValue-lastsubscribedValue) > hysteresis ) ||
+       ( (lastsubscribedValue > lastRawValue ) && (lastsubscribedValue-lastRawValue) > hysteresis ) ) {
+       printf("S: %s %d\n", subscribedIOName, lastRawValue);
+       lastsubscribedValue = lastRawValue;
   }
 }
 
 
 int32_t SwOSInput::getValueI32() {
-  return _lastRawValue;
+  return lastRawValue;
 }
 
 float SwOSInput::getValueF() {
-  return (float)_lastRawValue;
+  return (float)lastRawValue;
 }

@@ -21,16 +21,16 @@
 
  class SwOSPixel : public SwOSIO {
   protected:
-    uint32_t _color = 0;
-    uint8_t  _brightness = BRIGHTNESSDEFAULT;
+    uint32_t color = 0;
+    uint8_t  brightness = BRIGHTNESSDEFAULT;
   
     // local HW procedures
-    virtual void _setupLocal(); 
-    virtual void _setColorLocal();
-    virtual void _setBrightnessLocal();
+    virtual void setupLocal(); 
+    virtual void setColorLocal();
+    virtual void setBrightnessLocal();
   
     // remote HW procedures
-    virtual void _setRemote();
+    virtual void setRemote();
     
   public:
     // constructor
@@ -46,11 +46,11 @@
     virtual bool     isActor( void ) { return true; }
   
     // commands
-    virtual uint32_t getColor()      { return _color; };
-    virtual uint8_t  getBrightness() { return _brightness; };
+    virtual uint32_t getColor()      { return color; };
+    virtual uint8_t  getBrightness() { return this->brightness; };
     virtual void     setColor(uint32_t color);
     virtual void     setBrightness(uint8_t brightness);
-    virtual void     setValue( uint8_t brightness, uint32_t color ) { _brightness = brightness; _color = color; };
+    virtual void     setValue( uint8_t brightness, uint32_t color ) { this->brightness = brightness; this->color = color; };
   };
 
 /***************************************************
@@ -64,12 +64,12 @@
 
     Adafruit_SSD1306 *_display = NULL;
     
-    uint8_t _textSizeX = 0;
-    uint8_t _textSizeY = 0;
-    uint8_t _displayType = 0;
+    uint8_t textSizeX = 0;
+    uint8_t textSizeY = 0;
+    uint8_t displayType = 0;
     
     // local HW procedures
-    virtual void _setupLocal(); // initializes local HW
+    virtual void setupLocal(); // initializes local HW
     
   public:
     // constructor

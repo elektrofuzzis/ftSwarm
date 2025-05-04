@@ -24,31 +24,12 @@
  ***************************************************/
 
  class SwOSSwarmXX : public SwOSCtrl {
-  protected:
-    virtual void _sendAlias( SwOSCom *alias );
 
   public:
-	  SwOSGyro     *gyro;
-    SwOSI2C      *I2C;
     
     // constructor, destructor
     SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extentionPort, bool gyroOn );
-    ~SwOSSwarmXX();
-
-    virtual bool isInUse( void );
-
-    virtual SwOSIO *getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port);    // get a pointer to an IO port via address
-	  virtual SwOSIO *getIO( const char *name);                              // get a pointer to an IO port via name or alias
-    virtual void factorySettings( void );                                  // reset factory settings  
-    virtual void unsubscribe(void );                                       // unsubscribe all IOs
-    virtual bool changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarmIOType_t newIOType ); // change port's IO Type if possible
-    virtual bool hasGyro( void );                                          // test if HW has a gyro
-
-    virtual bool OnDataRecv( SwOSCom *com );     // data via espnow revceived
-	  virtual void read();                                                   // run measurements
-    virtual SwOSCom *state2Com( MacAddr destination );                     // copy my state in a com struct
-    virtual bool recvState( SwOSCom *com );                                // receive state from another ftSwarmXX
-  
+    
 };
 
 /***************************************************
@@ -66,15 +47,8 @@ class SwOSSwarmJST : public SwOSSwarmXX {
     SwOSSwarmJST( SwOSCom *com ); // constructor
   
     // administrative stuff
-	  virtual bool cmdAlias( char *device, uint8_t port, const char *alias); // set an alias for a IO device
-    virtual SwOSIO *getIO( FtSwarmIOType_t ioType,  FtSwarmPort_t port);   // get an pointer to the requested IO Device via type&port
-	  virtual SwOSIO *getIO( const char *name);                              // get an pointer to the requested IO Device via name or alias
 	  virtual FtSwarmController_t getType();                                  // what I am?
 	  virtual char* myType();                                                // what I am?
-	  virtual void jsonizeIO( JSONize *json, uint8_t id);                    // send IO device information as a json string
-    virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
-    virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
-
 
 };
 

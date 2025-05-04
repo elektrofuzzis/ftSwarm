@@ -370,13 +370,13 @@ void SwOSCLI::executeControllerCmd(void ) {
 
   switch ( _cmd ) {
     case CLICMD_show:               // show controller
-                                    _ctrl->lock();
-                                    _ctrl->identify();  
-                                    _ctrl->unlock();
+                                    ctrl->lock();
+                                    ctrl->identify();  
+                                    ctrl->unlock();
                                     break;
 
     case CLICMD_triggerUserEvent:   // create SwOSCom header
-                                    userEvent = new SwOSCom( _ctrl->macAddr, _ctrl->serialNumber, CMD_USEREVENT );
+                                    userEvent = new SwOSCom( ctrl->macAddr, ctrl->serialNumber, CMD_USEREVENT );
 
                                     // copy parameters
                                     for (uint8_t i=0; i<=_maxParameter; i++) {
@@ -385,7 +385,7 @@ void SwOSCLI::executeControllerCmd(void ) {
                                     }
 
                                     // send event
-                                    if ( _ctrl->isLocal()) {
+                                    if ( ctrl->isLocal()) {
 
                                       if ( xQueueSend( myOSNetwork.userEvent, userEvent, ESPNOW_MAXDELAY ) != pdTRUE ) ESP_LOGE( LOGFTSWARM, "Can't send data to user event." );
       
@@ -401,18 +401,18 @@ void SwOSCLI::executeControllerCmd(void ) {
 
     case CLICMD_setMicrostepMode:   if (_parameter[0].inRange( "MicroStepMode", 0, 7 ) ) {
                                       printf("R: ok\n");
-                                      if ( _ctrl->getType() == FTSWARMPWRDRIVE ) {
-                                        _ctrl->lock();
-                                        static_cast<SwOSSwarmPwrDrive *>(_ctrl)->setMicrostepMode( (uint8_t) _parameter[0].getValue(), false );
-                                        _ctrl->unlock();
+                                      if ( ctrl->getType() == FTSWARMPWRDRIVE ) {
+                                        ctrl->lock();
+                                        static_cast<SwOSSwarmPwrDrive *>(ctrl)->setMicrostepMode( (uint8_t) _parameter[0].getValue(), false );
+                                        ctrl->unlock();
                                       }
                                     }
                                     break;
 
-    case CLICMD_getMicrostepMode:   if ( _ctrl->getType() == FTSWARMPWRDRIVE ) {
-                                      _ctrl->lock();
-                                      microStepMode = static_cast<SwOSSwarmPwrDrive *>(_ctrl)->getMicrostepMode( );
-                                      _ctrl->unlock();
+    case CLICMD_getMicrostepMode:   if ( ctrl->getType() == FTSWARMPWRDRIVE ) {
+                                      ctrl->lock();
+                                      microStepMode = static_cast<SwOSSwarmPwrDrive *>(ctrl)->getMicrostepMode( );
+                                      ctrl->unlock();
                                       printf("R: %d\n", microStepMode );
                                     } else { printf("kein PwrDrive\n"); }
                                     break;
@@ -578,7 +578,7 @@ void SwOSCLI::executeActorCmd( void ) {
                                 io->unlock();
                                 break;
 
-    case CLICMD_setSpeed:       if ( io->_highResolution ) maxspeed = 4095;
+    case CLICMD_setSpeed:       if ( io->highResolution ) maxspeed = 4095;
                                 else maxspeed = 255;
                                 if (_parameter[0].inRange( "speed", -maxspeed, maxspeed ) ) { 
                                   printf("R: ok\n");
@@ -840,7 +840,7 @@ void SwOSCLI::executeI2CCmd( void ) {
 
 void SwOSCLI::executeIOCommand( void ) {
 
-  if ( (!_io) && (_ctrl ) ) {
+  if ( (!_io) && (ctrl ) ) {
     // controller cmd?
     executeControllerCmd( );
 
@@ -897,16 +897,16 @@ bool SwOSCLI::tokenizeCmd( char *cmd ) {
 
 bool  SwOSCLI::getIO( char *token, char *IOName, SwOSCtrl **ctrl, SwOSIO **io ) {
   
-  SwOSCtrl *_ctrl = NULL;
-  SwOSIO   *_io   = NULL;
-  char     *_rollback;
+  SwOSCtrl *xctrl = NULL;
+  SwOSIO   *xio  = NULL;
+  char     *xrollback;
 
-  _ctrl = (SwOSCtrl *)myOSSwarm.getController( token );
-  if (_ctrl) { 
+  xctrl = (SwOSCtrl *)myOSSwarm.getController( token );
+  if (xctrl) { 
     // it's a controller, now we need the io port
 
     // first I need to save the position of _evalPtr 
-    _rollback = _evalPtr;
+    xrollback = _evalPtr;
 
     // I need to store the original ctrl.io-Text for subscribe
     strcpy( IOName, token);
@@ -916,28 +916,28 @@ bool  SwOSCLI::getIO( char *token, char *IOName, SwOSCtrl **ctrl, SwOSIO **io ) 
     if ( getNextToken( token ) != EVAL_LITERAL ) { Error( ERROR_LITERALEXPECTED ); return false; }
 
     // check if the read literal is an io
-    _io = _ctrl->getIO( token );
+    xio = xctrl->getIO( token );
     
-    if (_io) {
+    if (xio) {
       // if an io is found, add .io-Name to io
       strcat(IOName, ".");
       strcat(IOName, token);
 
     } else {
       // if it's not an io, it was a controller: revoke last 2 getNextToken
-      _evalPtr = _rollback;
+      _evalPtr = xrollback;
     }
 
   } else {
 
     // it was an alias name without controller
-    _io = myOSSwarm.getIO( token, FTSWARM_UNDEF );
+    xio = myOSSwarm.getIO( token, FTSWARM_UNDEF );
     strcpy( IOName, token );
   }
 
   // copy resultgetIO
-  *ctrl = _ctrl;
-  *io   = _io;
+  *ctrl = xctrl;
+  *io   = xio;
 
   return true;
 
@@ -953,10 +953,10 @@ void SwOSCLI::evalIOCommand( char *token ) {
   char     paramIOName[CLIMAXLINE];
 
   // check, if the token is a controller or an io
-  if (!getIO( token, IOName, &_ctrl, &_io ) ) { Error( ERROR_IOEXPECTED ); return; }
+  if (!getIO( token, IOName, &ctrl, &_io ) ) { Error( ERROR_IOEXPECTED ); return; }
 
   // unvalid io?
-  if ( ( !_io ) && ( !_ctrl ) ) { Error( ERROR_IOEXPECTED ); return; }
+  if ( ( !_io ) && ( !ctrl ) ) { Error( ERROR_IOEXPECTED ); return; }
 
   // now we need another "." and a method
   if ( getNextToken( token ) != EVAL_DOT ) { Error( ERROR_DOTEXPECTED ); return; }
@@ -1025,10 +1025,10 @@ void SwOSCLI::evalIOCommand( char *token ) {
     int a = _parameter[0].getValue();
 
     // controller?
-    if ( (!_io) && (_ctrl ) ) {
-      _ctrl->lock();
-      _ctrl->subscribe( IOName );
-      _ctrl->unlock();
+    if ( (!_io) && (ctrl ) ) {
+      ctrl->lock();
+      ctrl->subscribe( IOName );
+      ctrl->unlock();
     
     // IO?
     } else {

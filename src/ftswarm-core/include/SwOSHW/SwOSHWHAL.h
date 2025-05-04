@@ -58,7 +58,7 @@ typedef struct {
 
 const SwOSMaxIO_t MAXIOS[FTSWARMMAXVERSION] = {
   /* FTSWARMJST_1V0 */       {  4, 2, 1, 2, NOPWRCTL },
-  /* FTSWARMCONTROL_1V3 */   {  4, 2, 1, 2, NOPWRCTL },
+  /* FTSWARMCONTROL_1V3 */   {  4, 2, 0, 0, NOPWRCTL },
   /* FTSWARMJST_1V15 */      {  4, 2, 1, 2, NOPWRCTL },
   /* FTSWARMRS_2V0 */        {  7, 2, 2, 2, 6 },
   /* FTSWARMRS_2V1 */        {  7, 2, 2, 2, 6 },
@@ -227,7 +227,7 @@ const gpio_num_t GPIO_ACTOR[FTSWARMMAXVERSION][8][2] =
     { { GPIO_NUM_14,  GPIO_NUM_21 }, { xGPIO_NUM_45, xGPIO_NUM_46}, { GPIO_NUM_NC, GPIO_NUM_8},  { GPIO_NUM_NC, GPIO_NUM_9},    { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC},  { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} }
   };   
 
-const gpio_num_t SERVO[FTSWARMMAXVERSION][4] = 
+const gpio_num_t GPIO_SERVO[FTSWARMMAXVERSION][4] = 
   { /* FTSWARMJST_1V0 */       { xGPIO_NUM_25,  GPIO_NUM_13, GPIO_NUM_12, GPIO_NUM_NC},
     /* FTSWARMCONTROL_1V3 */   { GPIO_NUM_NC,   GPIO_NUM_NC, GPIO_NUM_NC, GPIO_NUM_NC},
     /* FTSWARMJST_1V15 */      { xGPIO_NUM_25,  GPIO_NUM_13, GPIO_NUM_12, GPIO_NUM_NC},
@@ -259,4 +259,27 @@ const bool HASEXTPORT[FTSWARMMAXVERSION] = {
   /* FTSWARMDUINO_1V14 */    false,
   /* FTSWARMXL_1V00 */       true,
   /* FTSWARMRC_1V140 */      false
+};
+
+const gpio_num_t GPIO_I2C[FTSWARMMAXVERSION][2][2] = {
+  /* FTSWARMJST_1V0 */       { { GPIO_NUM_13, GPIO_NUM_12 },    // External
+                               { GPIO_NUM_NC, GPIO_NUM_NC } },  // Internal
+  /* FTSWARMCONTROL_1V3 */   { { GPIO_NUM_21, xGPIO_NUM_22 }, 
+                               { GPIO_NUM_NC, GPIO_NUM_NC } },
+  /* FTSWARMJST_1V15 */      { { GPIO_NUM_21, xGPIO_NUM_22 }, 
+                               { GPIO_NUM_NC, GPIO_NUM_NC } },
+  /* FTSWARMRS_2V0 */        { { GPIO_NUM_8,  GPIO_NUM_9  }, 
+                               { GPIO_NUM_NC, GPIO_NUM_NC } },
+  /* FTSWARMRS_2V1 */        { { GPIO_NUM_8,  GPIO_NUM_9  }, 
+                               { GPIO_NUM_NC, GPIO_NUM_NC } },
+  /* FTSWARMCAM_3V12 */      { { GPIO_NUM_NC, GPIO_NUM_NC }, 
+                               { GPIO_NUM_NC, GPIO_NUM_NC } }, 
+  /* FTSWARMPWRDRIVE_1V14 */ { { GPIO_NUM_5,  GPIO_NUM_4  }, 
+                               { GPIO_NUM_NC, GPIO_NUM_NC } }, 
+  /* FTSWARMDUINO_1V14 */    { { GPIO_NUM_5,  GPIO_NUM_4  }, 
+                               { GPIO_NUM_NC, GPIO_NUM_NC } }, 
+  /* FTSWARMXL_1V00 */       { { GPIO_NUM_33, GPIO_NUM_21 }, 
+                               { GPIO_NUM_NC, GPIO_NUM_NC } },
+  /* FTSWARMRC_1V140 */      { { GPIO_NUM_NC, GPIO_NUM_NC }, 
+                               { GPIO_NUM_NC, GPIO_NUM_NC } }
 };

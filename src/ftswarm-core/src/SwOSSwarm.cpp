@@ -397,7 +397,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
     
     if ( nvs.swarmMember[i] ) {
       maxCtrl++;
-      Ctrl[maxCtrl] = new SwOSCtrl( nvs.swarmMember[i],  MacAddr( broadcast ), false, FTSWARM_NOVERSION, false, FTSWARM_EXT_OFF );
+      Ctrl[maxCtrl] = new SwOSCtrl( nvs.swarmMember[i],  MacAddr( broadcast ), false, FTSWARM_NOVERSION, false, FTSWARM_EXT_OFF, false );
     }
 
   }
@@ -1307,7 +1307,7 @@ bool SwOSSwarm::addController( FtSwarmSerialNumber_t serialNumber ) {
   if ( Ctrl[i] != NULL ) return true;
 
   // add new Controller to the list
-  Ctrl[i] = new SwOSCtrl( serialNumber,  MacAddr( broadcast ), false, FTSWARM_NOVERSION, false, FTSWARM_EXT_OFF );
+  Ctrl[i] = new SwOSCtrl( serialNumber,  MacAddr( broadcast ), false, FTSWARM_NOVERSION, false, FTSWARM_EXT_OFF, false );
   nvs.addController( serialNumber );
 
   delay( CONNECTDELAY );

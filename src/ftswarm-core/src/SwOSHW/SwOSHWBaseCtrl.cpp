@@ -23,39 +23,8 @@
  *
  ***************************************************/
 
-SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extensionPort  ):SwOSObj() {
+void SwOSCtrl::setupLocalInputs( FtSwarmExtMode_t extensionPort ) {
 
-  // copy master data
-  this->IAmKelda = IAmKelda;
-  serialNumber = SN;
-  this->macAddr.set( macAddr );
-  _local = local;
-  _CPU = CPU;
-  _lastContact = millis();
-
-  // set my name 
-  char buffer[32];
-  sprintf( buffer, "ftSwarm%d", SN);
-  setName( buffer );
-
-  // # of inputs & actors
-  inputs = MAXIOS[ CPU ].inputs;
-  actors = MAXIOS[ CPU ].actors;
-  leds   = MAXIOS[ CPU ].leds;
-  servos = MAXIOS[ CPU ].servos;
-
-  // extensionPort is configured as additional outputs, add 2 actors
-  if ( extensionPort == FTSWARM_EXT_OUTPUT ) actors += 2;
-
-  // extensionPort is configured as additional servos, add 2 servos
-  if ( extensionPort == FTSWARM_EXT_SERVO ) servos +=2;
-
-  // define io pointer array dynamically
-  input = (SwOSInput **) calloc( inputs, sizeof(SwOSInput*) );
-  actor = (SwOSActor **) calloc( actors, sizeof(SwOSActor*) );
-  servo = (SwOSServo **) calloc( servos, sizeof(SwOSServo*) );
-
-  // define common hardware
   for (uint8_t i=0; i<inputs; i++) { 
     
     if (CPU == FTSWARMPWRDRIVE_1V141 ) {
@@ -75,12 +44,22 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwa
         input[i] = new SwOSAnalogInput("A", i, this );
         input[i]->setAlias( "PwrCtl" );
         input[i]->setSensorType( FTSWARM_VOLTMETER );
-      } else {
+
+      // LIDAR
+      } else if ( ( extensionPort == FTSWARM_EXT_LIDAR ) && ( i+1 == inputs )) {
+        input[i] = new SwOSLidarInput( "LIDAR", SWOS_NOPORT, this );
+
+      // normal input
+      } else { 
         input[i] = new SwOSDigitalInput("A", i, this );
       }
     }
 
   }
+
+}
+
+void SwOSCtrl::setupLocalActors( void ) {
 
   for (uint8_t i=0; i<actors; i++) { 
     
@@ -88,15 +67,21 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwa
 
   }
 
+}
+
+void SwOSCtrl::setupLocalPixels( void ) {
+
   for (uint8_t i=0; i<MAXLEDS; i++) { 
     led[i] = new SwOSPixel("LED", i, this);
   }
 
+}
+
+void SwOSCtrl::setupLocalServos( FtSwarmExtMode_t extensionPort ) {
+
   for (uint8_t i=0; i<servos; i++) {
 
-    servo[i] = NULL;
-
-    if ( ( _CPU == FTSWARMRC_1V140 ) && ( GPIO_INPUT[_CPU][7+i].io != GPIO_NUM_NC ) ) { 
+    if ( ( CPU == FTSWARMRC_1V140 ) && ( GPIO_INPUT[CPU][7+i].io != GPIO_NUM_NC ) ) { 
 
       // test on sensor cable
       SwOSAnalogInput *poti = new SwOSAnalogInput( "RCP", i+7, this );
@@ -131,27 +116,123 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwa
 
 }
 
+void SwOSCtrl::setupLocalI2C( FtSwarmExtMode_t extensionPort ) {
+
+  // Start I2C, if extention port is configured as I2C. 
+  // ToDo I2CSlave 
+  if ( ( local ) && 
+       ( ( nvs.extensionPort == FTSWARM_EXT_I2C_MASTER ) ||
+         ( nvs.extensionPort == FTSWARM_EXT_LIDAR ) 
+       )
+      ) {
+
+    if ( GPIO_I2C[CPU][0][0] != GPIO_NUM_NC ) {
+    
+      // start I2C
+      Wire.begin(  GPIO_I2C[CPU][0][0], GPIO_I2C[CPU][0][1] );
+  
+      // 400kHz only
+      Wire.setClock(400000);
+
+    }
+
+  }
+
+  // use parameter to handle remote devices correctly
+  if ( extensionPort == FTSWARM_EXT_I2C_SLAVE ) { I2C = new SwOSI2C ( "I2C", this, nvs.I2CAddr ); };
+
+}
+
+void SwOSCtrl::setupLocalGyro( bool gyroOn ) {
+
+    // initialize gyro if available
+  if ( gyroOn  ) { 
+    if    ( ( CPU == FTSWARMRS_2V0 ) || 
+            ( CPU == FTSWARMRS_2V1 ) ||
+            ( CPU == FTSWARMRC_1V140 ) ) gyro = new SwOSGyroLSM( "GYRO", this );
+    else                                  gyro = new SwOSGyroMPU( "GYRO", this );
+  }
+
+}
+
+
+SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extensionPort, bool gyroOn  ):SwOSObj() {
+
+  // copy master data
+  this->IAmKelda = IAmKelda;
+  this->serialNumber = SN;
+  this->macAddr.set( macAddr );
+  this->local = local;
+  this->CPU = CPU;
+  this->lastContact = millis();
+
+  // set my name 
+  char buffer[32];
+  sprintf( buffer, "ftSwarm%d", SN);
+  setName( buffer );
+
+  // # of inputs & actors
+  inputs = MAXIOS[ CPU ].inputs;
+  actors = MAXIOS[ CPU ].actors;
+  leds   = MAXIOS[ CPU ].leds;
+  servos = MAXIOS[ CPU ].servos;
+
+  switch ( extensionPort ) {
+
+    // extensionPort is configured as additional outputs, add 2 actors
+    case FTSWARM_EXT_OUTPUT: actors += 2; break;
+
+    // extensionPort is configured as additional servos, add 2 servos
+    case FTSWARM_EXT_SERVO: servos +=2; break;
+
+    // extensionPort is configured as LIDAR, add 1 input
+    case FTSWARM_EXT_LIDAR: inputs++; break;
+
+  }
+
+  // define io pointer array dynamically
+  input = (SwOSInput **) calloc( inputs, sizeof(SwOSInput*) );
+  actor = (SwOSActor **) calloc( actors, sizeof(SwOSActor*) );
+  servo = (SwOSServo **) calloc( servos, sizeof(SwOSServo*) );
+
+  // define common hardware
+  if (local) {
+    setupLocalInputs( extensionPort );
+    setupLocalActors();
+    setupLocalServos( extensionPort );
+    setupLocalPixels();
+    setupLocalI2C( extensionPort );
+    setupLocalGyro( gyroOn );
+  }
+
+
+
+}
+
 SwOSCtrl::~SwOSCtrl() {
   
-  if ( _subscribedCtrlName ) delete _subscribedCtrlName;
+  if ( subscribedCtrlName ) delete subscribedCtrlName;
   
-  for ( uint8_t i=0; i<inputs; i++) { if ( input[i] ) delete( input[i] ); }
-  for ( uint8_t i=0; i<actors; i++) { if ( actor[i] ) delete( actor[i] ); }
-  for ( uint8_t i=0; i<MAXLEDS; i++) { if ( led[i] )   delete( led[i] ); }
+  for ( uint8_t i=0; i<inputs; i++)  { if ( input[i] ) delete( input[i] ); }
+  for ( uint8_t i=0; i<actors; i++)  { if ( actor[i] ) delete( actor[i] ); }
+  for ( uint8_t i=0; i<MAXLEDS;i++)  { if ( led[i] )   delete( led[i] ); }
   for ( uint8_t i=0; i<servos; i++ ) { if ( servo[i] ) delete servo[i]; }
+
+  if (gyro) delete( gyro );
+  if (I2C)  delete( I2C );
   
 }
 
 void SwOSCtrl::lock( void ) {
 
-   xSemaphoreTake( _xAccessLock, portMAX_DELAY );
+   xSemaphoreTake( xAccessLock, portMAX_DELAY );
 
 }
 
 
 void SwOSCtrl::unlock( void ) {
 
-   xSemaphoreGive( _xAccessLock );
+   xSemaphoreGive( xAccessLock );
 
 }
 
@@ -167,23 +248,23 @@ void SwOSCtrl::halt( void ) {
 
 char *SwOSCtrl::subscribe( char *ctrlName  ) {
   
-  _isSubscribed = true;
+  isSubscribed = true;
 
-  if (_subscribedCtrlName) delete _subscribedCtrlName;
+  if (subscribedCtrlName) delete subscribedCtrlName;
 
   // only if I don't know my external name, store it
-  if (!_subscribedCtrlName) {
-    _subscribedCtrlName = (char *)malloc( strlen(ctrlName)+1 );
-    strcpy( _subscribedCtrlName, ctrlName );
+  if (!subscribedCtrlName) {
+    subscribedCtrlName = (char *)malloc( strlen(ctrlName)+1 );
+    strcpy( subscribedCtrlName, ctrlName );
   }
 
-  return _subscribedCtrlName;
+  return subscribedCtrlName;
 
 }
 
 void SwOSCtrl::unsubscribe( bool cascade ) {
 
-  _isSubscribed = false;
+  isSubscribed = false;
 
   if (!cascade) return;
 
@@ -191,6 +272,9 @@ void SwOSCtrl::unsubscribe( bool cascade ) {
   for ( uint8_t i=0; i<actors; i++ ) { if ( actor[i] ) actor[i]->unsubscribe(); }
   for ( uint8_t i=0; i<MAXLEDS; i++) { if ( led[i] )   led[i]->unsubscribe(); }
   for ( uint8_t i=0; i<servos; i++ ) { if ( servo[i] ) servo[i]->unsubscribe(); }
+
+  if (gyro) gyro->unsubscribe();
+  if (I2C)  I2C->unsubscribe();
   
 }
 
@@ -201,6 +285,9 @@ void SwOSCtrl::factorySettings( void ) {
   for ( uint8_t i=0; i<actors; i++) { if ( actor[i] ) actor[i]->setAlias( "" ); }
   for ( uint8_t i=0; i<MAXLEDS; i++)   { if ( led[i] )   led[i]->setAlias( "" ); }
   for ( uint8_t i=0; i<servos; i++) { if ( servo[i] ) servo[i]->setAlias( "" ); }
+
+  if (gyro) gyro->setAlias("");
+  if (I2C)  I2C->setAlias("");
 
 }
 
@@ -236,6 +323,8 @@ bool SwOSCtrl::cmdAlias( const char *obj, const char *alias) {
   else if ( ( strcmp(device, "M") == 0 )     && ( port < actors) )                   { actor[port]->setAlias(alias); return true; }
   else if ( ( strcmp(device, "LED") == 0 )   && ( port < MAXLEDS) && (led[port] )  ) { led[port]->setAlias(alias);   return true; }
   else if ( ( strcmp(device, "SERVO") == 0 ) && ( port < servos ) && (servo[port]) ) { servo[port]->setAlias(alias); return true; }
+  else if ( ( strcmp(device, "GYRO")  == 0 ) && ( gyro ) )                           { gyro->setAlias(alias);        return true; }
+  else if ( ( strcmp(device, "I2C")   == 0 ) && ( I2C ) )                            { I2C->setAlias(alias);         return true; }
   
   // specific hardware?
   return cmdAlias( device, port, alias );
@@ -256,6 +345,8 @@ SwOSIO *SwOSCtrl::getIO( const char *name) {
   for ( uint8_t i=0; i<MAXLEDS; i++) { if ( ( led[i] )   && ( led[i]->equals(name) ) )   { return led[i]; } }
   for ( uint8_t i=0; i<servos;  i++) { if ( ( servo[i] ) && ( servo[i]->equals(name) ) ) { return servo[i]; } }
 
+  if ( (gyro) && (gyro->equals(name) ) ) return gyro;
+  if ( (I2C)  && (I2C->equals(name) ) )  return I2C;
 
   return NULL;
 }
@@ -275,6 +366,10 @@ SwOSIO *SwOSCtrl::getIO( FtSwarmIOType_t ioType, FtSwarmPort_t port) {
     case FTSWARM_PIXEL:        return ( ( port<MAXLEDS)?led[ port ]:NULL);
 
     case FTSWARM_SERVO:        return ( ( port<servos)?servo[port]:NULL);
+
+    case FTSWARM_GYRO:         return gyro;
+
+    case FTSWARM_I2C:          return I2C;
     
     default: return NULL;   
 
@@ -293,12 +388,14 @@ FtSwarmController_t SwOSCtrl::getType() {
 void SwOSCtrl::read() {
 
   // don't send packets to myself, so I need to now last reading time
-  _lastContact = millis();
+  lastContact = millis();
 
   for (uint8_t i=0; i<inputs; i++) { if ( input[i] ) input[i]->read();   }
   for (uint8_t i=0; i<actors; i++) { if ( actor[i] ) actor[i]->read();   }
   for (uint8_t i=0; i<servos; i++) { if ( servo[i] ) servo[i]->adjust(); }
 
+  if (gyro) gyro->read();
+  if (I2C) I2C->read();
 
 }
 
@@ -307,6 +404,9 @@ bool SwOSCtrl::isInUse( void ) {
   for (uint8_t i=0; i<inputs; i++) { if ( ( input[i] ) && ( input[i]->isInUse() ) ) return true; }
   for (uint8_t i=0; i<actors; i++) { if ( ( actor[i] ) && ( actor[i]->isInUse() ) ) return true; }
   for (uint8_t i=0; i<servos; i++) { if ( ( servo[i] ) && ( servo[i]->isInUse() ) ) return true; }
+  
+  if ( ( gyro ) && ( gyro->isInUse() ) ) return true;
+  if ( ( I2C )  && ( I2C->isInUse() ) )  return true;
 
   return false;
 
@@ -315,7 +415,7 @@ bool SwOSCtrl::isInUse( void ) {
 
 bool SwOSCtrl::isI2CSwarmCtrl( void ) {
 
-  return ( _CPU == FTSWARMPWRDRIVE_1V141 ) || ( _CPU == FTSWARMDUINO_1V141 );
+  return ( CPU == FTSWARMPWRDRIVE_1V141 ) || ( CPU == FTSWARMDUINO_1V141 );
 
 }
 
@@ -336,7 +436,7 @@ const char *SwOSCtrl::version( FtSwarmVersion_t v) {
 }
 
 const char *SwOSCtrl::getVersionCPU() {
-  return version(_CPU);
+  return version(CPU);
 }
 
 char *SwOSCtrl::getHostname( void ) {
@@ -349,10 +449,71 @@ char *SwOSCtrl::getHostname( void ) {
 
 }
 
+bool isInputType( FtSwarmIOType_t ioType ) {
+
+  return ( ioType == FTSWARM_DIGITALINPUT ) ||
+         ( ioType == FTSWARM_ANALOGINPUT ) ||
+         ( ioType == FTSWARM_ROTARYINPUT ) ||
+         ( ioType == FTSWARM_COUNTERINPUT ) ||
+         ( ioType == FTSWARM_FREQUENCYINPUT );
+}
+
 bool SwOSCtrl::changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarmIOType_t newIOType ) {
 
-  // not in standard, maybe overloaded
-  return false;
+  // check on compatible IO types
+  if ( !isInputType( oldIOType) ) return false;
+  if ( !isInputType( newIOType) ) return false;
+
+  // register the new one
+  SwOSInput *io    = NULL;
+
+  switch ( newIOType ) {
+
+    case FTSWARM_DIGITALINPUT:    io = new SwOSDigitalInput("A", port, this ); 
+                                  break;
+
+    case FTSWARM_ANALOGINPUT:     io = new SwOSAnalogInput("A", port, this );
+                                  break;
+
+    case FTSWARM_COUNTERINPUT:    io = new SwOSCounter("A", port, SWOS_NOPORT, this ); 
+                                  break;
+
+    case FTSWARM_ROTARYENCODER:   io = new SwOSCounter("A", port, port+1, this ); 
+                                  if ( port+1 < inputs ) { 
+                                    // cleanup next input, it's used now
+                                    SwOSInput *old = input[port+1];
+                                    input[port+1] = NULL;
+                                    if ( old ) delete old;
+                                  }
+                                  break;
+
+    case FTSWARM_FREQUENCYINPUT:  io = new SwOSFrequencymeter("A", port, SWOS_NOPORT, this ); 
+                                  break;
+
+    default: return false;
+  }
+
+  // if old port exits, transfer needed properties and kill it
+  if (input[port]) {
+    char alias[MAXIDENTIFIER];
+    strcpy( alias, input[port]->getAlias() );
+    io->setAlias( alias );
+    delete input[port];
+  }
+
+  // assign new port
+  input[port] = io;
+
+  // if it's an remote port, change remote site as well
+  if ( !isLocal() ) {
+    SwOSCom IOType( macAddr, serialNumber, CMD_CHANGEIOTYPE );
+    IOType.data.changeIOTypeCmd.index     = port;
+    IOType.data.changeIOTypeCmd.oldIOType = oldIOType;
+    IOType.data.changeIOTypeCmd.newIOType = newIOType;
+    IOType.send();
+  }
+
+  return true;
 
 }
 
@@ -375,10 +536,12 @@ void SwOSCtrl::jsonize( JSONize *json, uint8_t id) {
 
 void SwOSCtrl::jsonizeIO( JSONize *json, uint8_t id ) {
   
-  for (uint8_t i=0; i<inputs; i++)      { if ( input[i] ) input[i]->jsonize( json, id ); }
-  for (uint8_t i=0; i<actors; i++)      { if ( actor[i] ) actor[i]->jsonize( json, id ); }
-  for (uint8_t i=0; i<nvs.RGBLeds; i++) { if ( led[i]   ) led[i]->jsonize( json, id ); }
-  for (uint8_t i=0; i<servos; i++)      { if ( servo[i] ) servo[i]->jsonize( json, id ); } 
+  for (uint8_t i=0; i<inputs; i++) { if ( input[i] ) input[i]->jsonize( json, id ); }
+  for (uint8_t i=0; i<actors; i++) { if ( actor[i] ) actor[i]->jsonize( json, id ); }
+  for (uint8_t i=0; i<leds;   i++) { if ( led[i]   ) led[i]->jsonize( json, id ); }
+  for (uint8_t i=0; i<servos; i++) { if ( servo[i] ) servo[i]->jsonize( json, id ); } 
+
+  if (gyro)  { gyro->jsonize(json, id); }
 
 }
 
@@ -578,7 +741,7 @@ void SwOSCtrl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
 
 void SwOSCtrl::identify( void ) {
   
-  if (_local) {
+  if (local) {
     setState( IDENTIFY );
   
   } else {
@@ -591,7 +754,7 @@ void SwOSCtrl::identify( void ) {
 
 unsigned long SwOSCtrl::networkAge( void ) { 
 
-  unsigned long age = millis() - _lastContact;
+  unsigned long age = millis() - lastContact;
 
   return age;
 
@@ -601,7 +764,7 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
 
   if (!com) return false;
 
-  _lastContact = millis();
+  lastContact = millis();
 
   nvs_handle_t my_handle;
     
@@ -670,8 +833,8 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
                                       } else {
         
                                         // got some user event data
-                                        if (_isSubscribed) {
-                                          printf("S: %s", _subscribedCtrlName );
+                                        if (isSubscribed) {
+                                          printf("S: %s", subscribedCtrlName );
                                           for ( uint8_t i=0; i<com->data.userEventCmd.size; i++ ) printf(" %02X", com->data.userEventCmd.payload[i]);
                                           printf("\n");
                                         }
@@ -705,6 +868,8 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
                                         servo[com->data.servoCmd.index]->setPosition( com->data.servoCmd.position, true );
                                       }
 
+    case CMD_I2CREGISTER:             if (I2C) I2C->setRegister( com->data.I2CRegisterCmd.reg, com->data.I2CRegisterCmd.value );
+
   }
 
   return false;
@@ -717,7 +882,9 @@ SwOSCom *SwOSCtrl::state2Com( MacAddr destination ) {
 
   int16_t FB, LR;
 
-  for (uint8_t i=0; i<inputs; i++ ) { com->data.stateCmd.inputValue[i] = input[i]->getValueI32(); };
+  for (uint8_t i=0; i<inputs; i++ ) { com->data.stateCmd.inputValue[i] = input[i]->getValueI32(); }; 
+  if (gyro) gyro->state2com( com );
+  if (I2C)  memcpy( com->data.stateCmd.i2cValue, I2C->myRegister, MAXI2CREGISTERS );
 
   return com;
 
@@ -726,6 +893,9 @@ SwOSCom *SwOSCtrl::state2Com( MacAddr destination ) {
 bool SwOSCtrl::recvState( SwOSCom *com ) {
   
   for (uint8_t i=0; i<inputs; i++ ) { input[i]->setValue( com->data.stateCmd.inputValue[i] ); };
+  if (gyro) gyro->recvState( com );
+  if (I2C)  memcpy( I2C->myRegister,  com->data.stateCmd.i2cValue, MAXI2CREGISTERS );
+
   return true;
  
 } 
@@ -755,6 +925,9 @@ void SwOSCtrl::saveAliasToNVS( nvs_handle_t my_handle ) {
   for (uint8_t i=0; i<actors; i++ )  if (actor[i]) actor[i]->saveAliasToNVS( my_handle );
   for (uint8_t i=0; i<MAXLEDS; i++ ) if (led[i])   led[i]->saveAliasToNVS( my_handle );
   for (uint8_t i=0; i<servos; i++ )  if (servo[i]) servo[i]->saveAliasToNVS( my_handle );
+
+  if (gyro) gyro->saveAliasToNVS( my_handle );
+  if (I2C)  I2C->saveAliasToNVS( my_handle );
 }
 
 void SwOSCtrl::loadAliasFromNVS( nvs_handle_t my_handle ) {
@@ -764,9 +937,13 @@ void SwOSCtrl::loadAliasFromNVS( nvs_handle_t my_handle ) {
   for (uint8_t i=0; i<actors; i++ )  if (actor[i]) actor[i]->loadAliasFromNVS( my_handle );
   for (uint8_t i=0; i<MAXLEDS; i++ ) if (led[i])   led[i]->loadAliasFromNVS( my_handle );
   for (uint8_t i=0; i<servos; i++ )  if (servo[i]) servo[i]->loadAliasFromNVS( my_handle );
+
+  if (gyro) gyro->loadAliasFromNVS( my_handle );
+  if (I2C)  I2C->loadAliasFromNVS( my_handle );
+
 }
 
-void SwOSCtrl::_sendAlias( SwOSCom *alias ) {
+void SwOSCtrl::sendAlias( SwOSCom *alias ) {
 
     // hostname
   alias->sendBuffered( (char *)"HOSTNAME", getAlias() ); 
@@ -784,18 +961,36 @@ void SwOSCtrl::_sendAlias( SwOSCom *alias ) {
   // servo
   for (uint8_t i=0; i<SERVOS;i++) if (servo[i]) alias->sendBuffered( servo[i]->getName(), servo[i]->getAlias() ); 
 
+  // gyro
+  if (gyro) alias->sendBuffered( gyro->getName(), gyro->getAlias() ); 
+
 }
 
 void SwOSCtrl::sendAlias( MacAddr destination ) {
 
   SwOSCom alias( destination, serialNumber, CMD_ALIAS );
-  _sendAlias( &alias );
+  sendAlias( &alias );
   alias.flushBuffer( );
   
 }
 
+bool SwOSCtrl::hasGyro( void ) {
+  // test if HW has a gyro
+
+  // already initialized or HW with integrated gyro
+  if ( ( gyro ) || 
+       ( CPU == FTSWARMRS_2V0 ) ||
+       ( CPU == FTSWARMRS_2V1 ) ||
+       ( CPU == FTSWARMRC_1V140 )
+     ) return true;
+
+  // check on MPU6050
+  return Wire.requestFrom( 0x68, 1 );
+
+}
+
 bool SwOSCtrl::hasExtPort( void ) {
 
-  return HASEXTPORT[_CPU];
+  return HASEXTPORT[CPU];
 
 }

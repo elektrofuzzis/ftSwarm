@@ -1332,7 +1332,7 @@ void FtSwarmCAM::streaming( bool onOff ) {
   if (!me) return;
 
   static_cast<SwOSCAM*>(me)->lock();
-  static_cast<SwOSCAM *>(me)->streaming( onOff, false);
+  static_cast<SwOSCAM *>(me)->setStreaming( onOff, false);
   static_cast<SwOSCAM*>(me)->unlock();
 }
 

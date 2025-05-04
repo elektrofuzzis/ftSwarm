@@ -80,16 +80,16 @@ public:
 
 class SwOSIO : public SwOSObj {
 protected:
-	uint8_t   _port;  // local port
-  SwOSCtrl *_ctrl;  // pointer to my Controller
-  bool      _isSubscribed = false;
-  uint32_t  _lastsubscribedValue = 0;
-  uint32_t  _hysteresis = 0;
-  char     *_subscribedIOName = NULL;
-  int16_t   _useCounter = 0;
+	uint8_t    port;  // local port
+  SwOSCtrl  *ctrl;  // pointer to my Controller
+  bool       isSubscribed = false;
+  uint32_t   lastsubscribedValue = 0;
+  uint32_t   hysteresis = 0;
+  char      *subscribedIOName = NULL;
+  int16_t    useCounter = 0;
 
   // local HW 
-  virtual void _setupLocal() {};
+  virtual void setupLocal() {};
 
 public:
   // Constructors
@@ -101,14 +101,14 @@ public:
   virtual void            unlock(void);
   virtual char*           subscribe( char *IOName, uint32_t hysteresis ); // subscribe sensor to display value changes as console outputs 
 	virtual void            unsubscribe();                                  // clear subscription
-  virtual uint8_t         getPort() { return _port; };
-  virtual SwOSCtrl*       getCtrl() { return _ctrl; };
+  virtual uint8_t         getPort() { return port; };
+  virtual SwOSCtrl*       getCtrl() { return ctrl; };
 	virtual FtSwarmIOType_t getIOType() { return FTSWARM_UNDEF; };
   virtual FtSwarmIcon_t   getIcon() { return FTSWARM_XX_UNDEF; };
 	virtual void            jsonize( JSONize *json, uint8_t id);
-  virtual void            take( void ) { _useCounter++; };                      // register an instance using this IO
-  virtual void            give( void ) { if (_useCounter>0) _useCounter--; };   // unregister an instance using this IO
-  virtual bool            isInUse( void ) { return _useCounter > 0; };          // test, if an IO is used by some user elements
+  virtual void            take( void ) { useCounter++; };                      // register an instance using this IO
+  virtual void            give( void ) { if (useCounter>0) useCounter--; };   // unregister an instance using this IO
+  virtual bool            isInUse( void ) { return useCounter > 0; };          // test, if an IO is used by some user elements
   
   // Test, if I'm an Actor
   virtual bool            isActor( void ) { return false; };
@@ -129,9 +129,9 @@ public:
 
 class SwOSEventHandler {
   protected:
-    SwOSIO           *_actor;
-    boolean          _usePortValue;
-    int32_t          _parameter;
+    SwOSIO           *actor;
+    boolean          usePortValue;
+    int32_t          parameter;
   public:
     SwOSEventHandler( );
     SwOSEventHandler( SwOSIO *actor, boolean usePortValue, int32_t parameter );
@@ -140,7 +140,7 @@ class SwOSEventHandler {
 
 class SwOSEventHandlers {
   protected:
-    SwOSEventHandler *_event[FTSWARM_MAXTRIGGER];
+    SwOSEventHandler *event[FTSWARM_MAXTRIGGER];
   public:
     SwOSEventHandlers( );
     ~SwOSEventHandlers();
@@ -151,7 +151,7 @@ class SwOSEventHandlers {
 
 class SwOSEventInput {
   protected:
-    SwOSEventHandlers *_events = NULL;
+    SwOSEventHandlers *events = NULL;
   public:
    ~SwOSEventInput();
     void registerEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, boolean usePortValue, int32_t p1 );
@@ -168,11 +168,11 @@ class SwOSEventInput {
 class SwOSInput : public SwOSIO, public SwOSEventInput {
   
   protected:
-    gpio_num_t        _GPIO = GPIO_NUM_NC;
-	  FtSwarmSensor_t   _sensorType;
-	  int32_t           _lastRawValue = 0;
+    gpio_num_t        GPIO = GPIO_NUM_NC;
+	  FtSwarmSensor_t   sensorType;
+	  int32_t           lastRawValue = 0;
 	
-    virtual void _setupLocal();
+    virtual void setupLocal();
     virtual void subscription();
     virtual void setSensorTypeLocal( FtSwarmSensor_t sensorType );
 	  
@@ -183,7 +183,7 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
   
     // administrative stuff
 	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_INPUT; };
-    virtual FtSwarmSensor_t getSensorType() { return _sensorType; };
+    virtual FtSwarmSensor_t getSensorType() { return sensorType; };
     virtual FtSwarmIcon_t   getIcon();
 	  virtual void jsonize( JSONize *json, uint8_t id) {};               // just a placeholder
 

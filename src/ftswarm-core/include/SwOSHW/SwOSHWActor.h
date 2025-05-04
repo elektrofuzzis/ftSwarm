@@ -31,36 +31,36 @@ class SwOSActor : public SwOSIO {
   protected:
   
     // DC motors
-    gpio_num_t     _IN1 = GPIO_NUM_NC;
-    gpio_num_t     _IN2 = GPIO_NUM_NC;
+    gpio_num_t     IN1 = GPIO_NUM_NC;
+    gpio_num_t     IN2 = GPIO_NUM_NC;
     ledc_channel_config_t *ledc_channel = NULL;
-    uint32_t       _rampUpT = 0;
-    uint32_t       _rampUpY = 0;
+    uint32_t       rampUpT = 0;
+    uint32_t       rampUpY = 0;
   
     // stepper motors
-    long           _distance;
-    long           _position;
-    uint8_t        _pwrDriveMotor;
-    bool           _isHoming;
-    bool           _isRunning;
+    long           distance;
+    long           position;
+    uint8_t        pwrDriveMotor;
+    bool           motorIsHoming;
+    bool           motorIsRunning;
   
     // generics
-    FtSwarmActor_t  _actorType = FTSWARM_MOTOR;
-    FtSwarmMotion_t _motionType = FTSWARM_COAST;
-    int16_t         _speed = 0;
+    FtSwarmActor_t  actorType = FTSWARM_MOTOR;
+    FtSwarmMotion_t motionType = FTSWARM_COAST;
+    int16_t         speed = 0;
   
     // local HW procedures
-    virtual void _setupI2C(); // initializes local HW
-    virtual void _setupLocal(); // initializes local HW
-    virtual void _setLocalI2C();   // start moving locally
-    virtual void _setLocalLHW();   // start moving locally
-    virtual void setPWM( int16_t in1, int16_t in2, gpio_num_t pwm, uint32_t duty );
+    virtual void setupI2C(); // initializes local HW
+    virtual void setupLocal(); // initializes local HW
+    virtual void setLocalI2C();   // start moving locally
+    virtual void setLocalLHW();   // start moving locally
+    virtual void setPWM( int16_t xin1, int16_t xin2, gpio_num_t pwm, uint32_t duty );
   
     // remote HW procedures
-    virtual void _setRemote();  // start moving remotely 
+    virtual void setRemote();  // start moving remotely 
   
   public:
-    bool           _highResolution = false;
+    bool highResolution = false;
   
     // Constructors
     SwOSActor(const char *name, uint8_t port, SwOSCtrl *ctrl );
@@ -68,7 +68,7 @@ class SwOSActor : public SwOSIO {
   
     // adminstrative stuff
     virtual FtSwarmIOType_t getIOType()  { return FTSWARM_ACTOR; };
-    virtual FtSwarmActor_t  getActorType() { return _actorType; };
+    virtual FtSwarmActor_t  getActorType() { return actorType; };
     virtual FtSwarmIcon_t   getIcon();
     virtual void            jsonize( JSONize *json, uint8_t id); // serialize object to JSON
     virtual void            onTrigger( int32_t value );
@@ -79,14 +79,14 @@ class SwOSActor : public SwOSIO {
   
     // commands
     virtual void            setActorType( FtSwarmActor_t actorType, bool highResolution, bool dontSendToRemote );    // set actor type
-    virtual void            setValue( FtSwarmMotion_t motionType, int16_t speed ) { _motionType = motionType; _speed = speed; };  // set values
+    virtual void            setValue( FtSwarmMotion_t motionType, int16_t speed ) { this->motionType = motionType; this->speed = speed; };  // set values
     virtual void            setSpeed( int16_t speed );                                 // set speed
     virtual void            apply( void );                                             // apply speed/setAcceleration/setMotionType
-    virtual int16_t         getSpeed() { return _speed; };                             // get speed
+    virtual int16_t         getSpeed() { return speed; };                              // get speed
     virtual void            setAcceleration( uint32_t rampUpT,  uint32_t rampUpY );    // set acceleration ramp
     virtual void            getAcceleration( uint32_t *rampUpT, uint32_t *rampUpY );   // get acceleration ramp
     virtual void            setMotionType( FtSwarmMotion_t motionType );               // set motion type
-    virtual FtSwarmMotion_t getMotionType() { return _motionType; };                   // get motion type
+    virtual FtSwarmMotion_t getMotionType() { return motionType; };                    // get motion type
   
     // steppers only
     virtual void            setValue( long distance, long position, bool isHoming, bool isRunning );
@@ -121,14 +121,14 @@ class SwOSActor : public SwOSIO {
 
  class SwOSServo : public SwOSIO {
   protected:
-    int16_t _position = 0;
-    int16_t _offset   = 128;
+    int16_t position = 0;
+    int16_t offset   = 128;
 
     // local HW procedures
-    virtual void _setLocal() {};   // set position locally
+    virtual void setLocal() {};   // set position locally
 
     // remote HW procedures
-    virtual void _setRemote() {};  // setPosition remotely 
+    virtual void setRemote() {};  // setPosition remotely 
 
   public:
     // constructor
@@ -145,8 +145,8 @@ class SwOSActor : public SwOSIO {
     virtual void adjust( void ) {};
 
     // commands
-	  virtual int16_t getOffset( )   { return _offset; };
-	  virtual int16_t getPosition( ) { return _position; };
+	  virtual int16_t getOffset( )   { return offset; };
+	  virtual int16_t getPosition( ) { return position; };
 	  virtual void setOffset( int16_t offset, bool dontSendToRemote );
 	  virtual void setPosition( int16_t position, bool dontSendToRemote );
  
@@ -160,15 +160,15 @@ class SwOSActor : public SwOSIO {
 
 class SwOSDigitalServo : public SwOSServo {
   protected:
-    gpio_num_t      _SERVO;
-	  ledc_channel_t  _channelSERVO;
+    gpio_num_t      SERVO;
+	  ledc_channel_t  channelSERVO;
     
     // local HW procedures
-    virtual void _setupLocal(); // initializes local HW
-    virtual void _setLocal();   // set position locally
+    virtual void setupLocal(); // initializes local HW
+    virtual void setLocal();   // set position locally
 
     // remote HW procedures
-    virtual void _setRemote();  // setPosition remotely 
+    virtual void setRemote();  // setPosition remotely 
   
   public:
     // constructor
@@ -190,7 +190,7 @@ class SwOSDigitalServo : public SwOSServo {
     SwOSPID         *pid    = new SwOSPID( 2.0, 1, 0, 0, 100, -512, 512);
     int16_t         target = FILTER_INVALID; // FILTER_INVALID -> don't regulate
     
-    virtual void _setLocal();       // set position locally
+    virtual void setLocal();       // set position locally
 
   public:
     // constructor

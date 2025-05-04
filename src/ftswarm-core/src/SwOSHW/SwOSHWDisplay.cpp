@@ -26,17 +26,17 @@
 
 SwOSPixel::SwOSPixel(const char *name, uint8_t port, SwOSCtrl *ctrl) : SwOSIO( name, port, ctrl ) {
 
-  if (ctrl->isLocal()) _setupLocal();
+  if (ctrl->isLocal()) setupLocal();
 
 }
 
-void SwOSPixel::_setupLocal() {
+void SwOSPixel::setupLocal() {
 
   // leds[] need to be initialized only once.
   if (!ledsInitialized) {
 
     // assign port to GPIO.
-    switch ( _ctrl->getCPU() ) {
+    switch ( ctrl->getCPU() ) {
       #if CONFIG_IDF_TARGET_ESP32S3
         case FTSWARMPWRDRIVE_1V141:
         case FTSWARMDUINO_1V141:
@@ -54,8 +54,8 @@ void SwOSPixel::_setupLocal() {
   }
 
   // initialize pixel
-  if ( _port < MAXLEDS ) {
-    // leds[_port] = CRGB::Black;
+  if ( port < MAXLEDS ) {
+    // leds[port] = CRGB::Black;
     setColor( FtSwarmColor::Black );
   }
 
@@ -64,27 +64,27 @@ void SwOSPixel::_setupLocal() {
 void SwOSPixel::setColor(uint32_t color) {
 
   // store new color
-  _color = color;
+  this->color = color;
 
   // apply local or remote
-  if (_ctrl->isLocal()) _setColorLocal();
-  else                  _setRemote();
+  if (ctrl->isLocal()) setColorLocal();
+  else                 setRemote();
 }
 
-void SwOSPixel::_setRemote() {
+void SwOSPixel::setRemote() {
   
-  SwOSCom cmd( _ctrl->macAddr, _ctrl->serialNumber, CMD_SETLED );
-  cmd.data.ledCmd.index = _port;
-  cmd.data.ledCmd.color = _color;
-  cmd.data.ledCmd.brightness = _brightness;
+  SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETLED );
+  cmd.data.ledCmd.index = port;
+  cmd.data.ledCmd.color = color;
+  cmd.data.ledCmd.brightness = brightness;
   cmd.send( );
 }
 
-void SwOSPixel::_setColorLocal() {
+void SwOSPixel::setColorLocal() {
 
   // set color
-  if (_port < MAXLEDS ) {
-    led[_port] = _color;
+  if (port < MAXLEDS ) {
+    led[port] = color;
     FastLED.show();
   }
 
@@ -93,21 +93,21 @@ void SwOSPixel::_setColorLocal() {
 void SwOSPixel::setBrightness(uint8_t brightness) {
 
   // store new brightness
-  _brightness = brightness;
+  this->brightness = brightness;
 
   // apply local or remote
-  if (_ctrl->isLocal()) _setBrightnessLocal();
-  else                  _setRemote();
+  if (ctrl->isLocal()) setBrightnessLocal();
+  else                 setRemote();
 
 }
 
-void SwOSPixel::_setBrightnessLocal() {
+void SwOSPixel::setBrightnessLocal() {
 
   // set brightness
-  if (_port < MAXLEDS ) {
+  if (port < MAXLEDS ) {
     // TODO: brightness per pixel
-    // leds[_port].fadeLightBy( brightness );
-    FastLED.setBrightness( _brightness );
+    // leds[port].fadeLightBy( brightness );
+    FastLED.setBrightness( brightness );
     FastLED.show();
   }
 
@@ -116,8 +116,8 @@ void SwOSPixel::_setBrightnessLocal() {
 void SwOSPixel::jsonize( JSONize *json, uint8_t id) {
   json->startObject();
   SwOSIO::jsonize(json, id);
-  json->variableUI8  ("brightness", _brightness);
-  json->variableUI32X("color",     _color);
+  json->variableUI8  ("brightness", brightness);
+  json->variableUI32X("color",      color);
   json->endObject();
 }
 
@@ -133,14 +133,14 @@ void SwOSPixel::onTrigger( int32_t value ) {
 
  SwOSOLED::SwOSOLED(const char *name, SwOSCtrl *ctrl, uint8_t displayType) : SwOSIO( name, ctrl ) {
  
-   if ( _ctrl->isLocal() ) { 
+   if ( ctrl->isLocal() ) { 
      displayType = displayType; 
-     _setupLocal(); 
+     setupLocal(); 
    }
  
  }
  
- void SwOSOLED::_setupLocal() {
+ void SwOSOLED::setupLocal() {
  
    _display = new Adafruit_SSD1306 (128, 64, &Wire, -1);
    if ( !_display->begin(SSD1306_SWITCHCAPVCC, 0x3C ) ) {
@@ -162,7 +162,7 @@ void SwOSPixel::onTrigger( int32_t value ) {
  
    _display->setTextSize(1,1);            // hostname & version
    char line[100];
-   sprintf( line, "%s %s", _ctrl->getHostname(), SWOSVERSION );
+   sprintf( line, "%s %s", ctrl->getHostname(), SWOSVERSION );
    write( line, getWidth()/2, 32, FTSWARM_ALIGNCENTER, true );
  
    // additional default values
@@ -204,7 +204,7 @@ void SwOSPixel::onTrigger( int32_t value ) {
  void SwOSOLED::setContrast(uint8_t contrast) {
  
    // avoid problemns with setContrast and Display Types != 1
-   if (_displayType != 1 ) return;
+   if (displayType != 1 ) return;
  
    // send set contrast
    Wire.beginTransmission( 0x3C );
@@ -314,16 +314,16 @@ void SwOSPixel::onTrigger( int32_t value ) {
  
  void SwOSOLED::setTextSize(uint8_t sx, uint8_t sy) {
    
-   _textSizeX = sx;
-   _textSizeY = sy;
+   textSizeX = sx;
+   textSizeY = sy;
    
    if (_display) _display->setTextSize( sx, sy );
    
  } 
  
  void SwOSOLED::getTextSize( uint8_t *sx, uint8_t *sy ) {
-   *sx = _textSizeX;
-   *sy = _textSizeY;
+   *sx = textSizeX;
+   *sy = textSizeY;
  }
  
  void SwOSOLED::drawChar(int16_t x, int16_t y, unsigned char c, bool color, bool bg, uint8_t size_x, uint8_t size_y) {

@@ -64,7 +64,7 @@ class SwOSCLI {
     char   *_evalPtr;
     char   *_start;
     SwOSIO *_io = NULL;
-    SwOSCtrl *_ctrl = NULL;
+    SwOSCtrl *ctrl = NULL;
     CLICmd_t _cmd;
     int     _maxParameter;
     SwOSCLIParameter _parameter[MAXPARAM];

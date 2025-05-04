@@ -24,13 +24,13 @@
  class SwOSAnalogInput : public SwOSInput {
 
   protected:
-    int8_t _ADCChannel = ADC1_CHANNEL_MAX;
-    int8_t _ADCUnit    = GPIO_NUM_NC;
-    esp_adc_cal_characteristics_t *_adc_chars = NULL;
-    SwOSFilter *filter = NULL;
+    int8_t                         ADCChannel = ADC1_CHANNEL_MAX;
+    int8_t                         ADCUnit    = GPIO_NUM_NC;
+    esp_adc_cal_characteristics_t *adc_chars  = NULL;
+    SwOSFilter                    *filter     = NULL;
 	
     bool isXMeter();
-    virtual void _setupLocal();
+    virtual void setupLocal();
     virtual void setSensorTypeLocal( FtSwarmSensor_t sensorType );  // set sensor type
 
   public:
@@ -71,14 +71,14 @@
 
  class SwOSJoystick : public SwOSIO, SwOSEventInput {
   protected:
-    adc1_channel_t _ADCChannelLR, _ADCChannelFB;
-    int16_t        _lastLR, _lastFB;
-    int16_t        _lastSubscribedLR, _lastSubscribedFB;
-    int16_t        _zeroLR, _zeroFB;
-    int16_t        _lastRawLR, _lastRawFB;
+    adc1_channel_t ADCChannelLR, ADCChannelFB;
+    int16_t        lastLR, lastFB;
+    int16_t        lastSubscribedLR, lastSubscribedFB;
+    int16_t        zeroLR, zeroFB;
+    int16_t        lastRawLR, lastRawFB;
   
     // local HW procedures
-    virtual void _setupLocal(); // initializes local HW
+    virtual void setupLocal(); // initializes local HW
     
   public:
     SwOSEventInput triggerLR, triggerFB;
@@ -99,7 +99,7 @@
     virtual void read();
   
     // commands
-    virtual void getValue( int16_t* FB, int16_t* LR ) { *FB = _lastFB; *LR = _lastLR; };
+    virtual void getValue( int16_t* FB, int16_t* LR ) { *FB = lastFB; *LR = lastLR; };
     virtual void setValue( int16_t  FB, int16_t  lastLR );
     virtual void calibrate( int16_t *zeroLR, int16_t *zeroFB );  // uses actual readings to calibrate
   };

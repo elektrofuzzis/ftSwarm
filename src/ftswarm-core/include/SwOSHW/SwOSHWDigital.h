@@ -20,12 +20,12 @@
  class SwOSDigitalInput : public SwOSInput {
 
   protected:
-    gpio_num_t      _PUA2   = GPIO_NUM_NC;
-    gpio_num_t      _USTX   = GPIO_NUM_NC;
-    FtSwarmToggle_t _toggle = FTSWARM_NOTOGGLE;
-    bool            _normallyOpen = true;
+    gpio_num_t      PUA2   = GPIO_NUM_NC;
+    gpio_num_t      USTX   = GPIO_NUM_NC;
+    FtSwarmToggle_t toggle = FTSWARM_NOTOGGLE;
+    bool            normallyOpen = true;
 
-    virtual void _setupLocal();
+    virtual void setupLocal();
     virtual void setSensorTypeLocal( FtSwarmSensor_t sensorType );
 
   public:
@@ -54,8 +54,8 @@
  ***************************************************/
 
  class SwOSButton : public SwOSIO, public SwOSEventInput {
-	bool              _lastState;
-  FtSwarmToggle_t   _toggle;
+	bool              lastState;
+  FtSwarmToggle_t   toggle;
 public:
   // constructor
 	SwOSButton(const char *name, uint8_t port, SwOSCtrl *ctrl);
@@ -79,11 +79,11 @@ public:
 
 class SwOSHC165 : public SwOSIO {
 protected:
-	gpio_num_t _LD, _CS, _CLK, _MISO;
-	uint8_t    _lastValue;
+	gpio_num_t LD, CS, CLK, MISO;
+	uint8_t    lastValue;
 
   // local HW procedures
-  virtual void _setupLocal();
+  virtual void setupLocal();
 
 public:
 
@@ -96,8 +96,8 @@ public:
 	virtual void read();
 
   // commands
-  virtual void    setValue( uint8_t value ) { _lastValue = value; };
-  virtual uint8_t getValue( uint8_t bit )   { return _lastValue && 1<<bit; };
-  virtual uint8_t getValue()                { return _lastValue; };
+  virtual void    setValue( uint8_t value ) { this->lastValue = value; };
+  virtual uint8_t getValue( uint8_t bit )   { return lastValue && 1<<bit; };
+  virtual uint8_t getValue()                { return lastValue; };
 
 };

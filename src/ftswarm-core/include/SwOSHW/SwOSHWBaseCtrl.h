@@ -17,11 +17,14 @@
 
 #include "SwOSHW/SwOSHWBaseIO.h"
 #include "SwOSHW/SwOSHWActor.h"
+#include "SwOSHW/SwOSHWI2CSensor.h"
 
 // only to feed that silly compiler
 class SwOSActor;
 class SwOSPixel;
 class SwOSServo;
+class SwOSGyro;
+class SwOSI2C;
 
 const uint32_t LEDCOLOR0[MAXSTATE] = { CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red, CRGB::Cyan, CRGB::Aquamarine };
 const uint32_t LEDCOLOR1[MAXSTATE] = { CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red, CRGB::Cyan, CRGB::Aquamarine };
@@ -42,18 +45,26 @@ const char     OLEDMSG[MAXSTATE][20] = { "booting", "connecting wifi", "online",
 
 class SwOSCtrl : public SwOSObj {
 protected:
-  SemaphoreHandle_t _xAccessLock = xSemaphoreCreateMutex();
-	FtSwarmVersion_t _CPU;
-  bool             _local;
+  SemaphoreHandle_t xAccessLock = xSemaphoreCreateMutex();
+	FtSwarmVersion_t  CPU;
+  bool              local;
   
-  unsigned long    _lastContact = 0;
-  SwOSComState_t   _comState = COMSTATE_UNDEFINED;
+  unsigned long     lastContact = 0;
+  SwOSComState_t    comState = COMSTATE_UNDEFINED;
   
-  bool             _isSubscribed = false;
-  char             *_subscribedCtrlName = NULL;
+  bool              isSubscribed = false;
+  char             *subscribedCtrlName = NULL;
 
 	const char *     version( FtSwarmVersion_t v);
-  virtual void     _sendAlias( SwOSCom *alias );
+  virtual void     sendAlias( SwOSCom *alias );
+
+  // initialize Hardware
+  void setupLocalInputs( FtSwarmExtMode_t extensionPort );
+  void setupLocalActors( void );
+  void setupLocalServos( FtSwarmExtMode_t extensionPort );
+  void setupLocalPixels( void );
+  void setupLocalI2C( FtSwarmExtMode_t extensionPort );
+  void setupLocalGyro( bool gyroOn  );
 
 public:
 	FtSwarmSerialNumber_t serialNumber;
@@ -66,13 +77,16 @@ public:
   SwOSServo **servo = NULL; // dynamically allocated array SwOSServo  *servos[]
 	SwOSPixel *led[MAXLEDS];
   
+  SwOSGyro  *gyro = NULL;
+  SwOSI2C    *I2C = NULL;
+  
   uint8_t   inputs = 0;
   uint8_t   actors = 0;
   uint8_t   leds   = 0;
   uint8_t   servos = 0;
 	
   // constructor
-  SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extentionPort );
+  SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extentionPort, bool gyroOn );
   
   // destructor
   ~SwOSCtrl();
@@ -87,9 +101,9 @@ public:
 	virtual SwOSIO *getIO( const char *name);                              // get a pointer to an IO port via name or alias
   virtual FtSwarmController_t getType();                                  // what I am?
 	virtual char*              myType();                                   // what I am?
-  virtual FtSwarmVersion_t   getCPU() { return _CPU; };                  // my CPU type
+  virtual FtSwarmVersion_t   getCPU() { return CPU; };                   // my CPU type
 	virtual const char *       getVersionCPU();                            // my CPU type as string
-  virtual bool               isLocal() { return _local; };               // local or remote?
+  virtual bool               isLocal() { return local; };                // local or remote?
 	virtual char *             getHostname( );                             // hostname
 	virtual void               jsonize( JSONize *json, uint8_t id);        // send board & IO device information as a json string
   virtual void               jsonizeIO( JSONize *json, uint8_t id);      // send IO device information as a json string
@@ -103,7 +117,7 @@ public:
   virtual void identify( void );                                         // set LEDs to aquamarine / OLED to "it's me" to identify HW 
   virtual char *subscribe( char *ctrlName );                             // listen on user event data
   virtual bool changeIOType( uint8_t port, FtSwarmIOType_t oldIOType, FtSwarmIOType_t newIOType ); // change port's IO Type if possible
-  virtual bool hasGyro( void ) { return false; };                        // test if HW has a gyro
+  virtual bool hasGyro( void );                                          // test if HW has a gyro
   virtual bool hasExtPort( void );                                       // test if HW has an ExtentionPort
 
   virtual void read(); // run measurements
@@ -135,10 +149,10 @@ public:
   virtual void sendAlias( MacAddr destination );                   // send my alias names
 
   // set comState
-  virtual void setComState( SwOSComState_t comState ) { _comState = comState; };
+  virtual void setComState( SwOSComState_t comState ) { this->comState = comState; };
 
   // get comState
-  virtual SwOSComState_t getComState( void ) { return _comState; };
+  virtual SwOSComState_t getComState( void ) { return comState; };
 
   // ms since last received package
   virtual unsigned long networkAge( void );
