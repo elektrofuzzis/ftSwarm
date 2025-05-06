@@ -587,14 +587,14 @@ void aliasMenu( void ) {
                     ESP_ERROR_CHECK( nvs_commit( my_handle ) );
 
                     // send new config to Kelda
-                    if ( ( myOSSwarm.Kelda ) && ( myOSSwarm.Kelda != myOSSwarm.Ctrl[0] ) ) myOSSwarm.Ctrl[0]->sendAlias( myOSSwarm.Kelda->macAddr );
+                    if ( ( myOSSwarm.Kelda ) && ( myOSSwarm.Kelda != myOSSwarm.Ctrl[0] ) ) myOSSwarm.Ctrl[0]->sendIOConfig( myOSSwarm.Kelda->macAddr );
 
                   }
 
                   // remote changes
                   for ( i=1; i<MAXCTRL; i++ ) {
                     if ( anythingChanged[i] ) {
-                      myOSSwarm.Ctrl[i]->sendAlias( myOSSwarm.Ctrl[i]->macAddr );
+                      myOSSwarm.Ctrl[i]->sendIOConfig( myOSSwarm.Ctrl[i]->macAddr );
                       alias2nvs = new SwOSCom( myOSSwarm.Ctrl[i]->macAddr, myOSSwarm.Ctrl[i]->serialNumber, CMD_SAVEALIAS2NVS );
                       alias2nvs->send( );
                       delete alias2nvs;
@@ -691,7 +691,7 @@ bool changeEvent( NVSEvent *event ) {
     else if (!newSensor) 
       printf("sensor %s doesn't exist in the swarm.\n", sensor);
     
-    else if ( !newSensor->isSensor() )
+    else if ( !newSensor->isInput() )
       printf("%s needs to be a sensor.\n", sensor);
 
     else

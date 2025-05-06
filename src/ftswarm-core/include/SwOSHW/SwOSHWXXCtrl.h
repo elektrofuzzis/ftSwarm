@@ -28,7 +28,7 @@
   public:
     
     // constructor, destructor
-    SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extentionPort, bool gyroOn );
+    SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSCtrlConfig_t ctrlConfig );
     
 };
 
@@ -43,7 +43,7 @@ class SwOSSwarmJST : public SwOSSwarmXX {
   public:
 
     // constructor, destructor
-	  SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extentionPort, bool gyroOn );
+	  SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSCtrlConfig_t ctrlConfig );
     SwOSSwarmJST( SwOSCom *com ); // constructor
   
     // administrative stuff
@@ -74,7 +74,7 @@ class SwOSSwarmControl : public SwOSSwarmXX {
 
     SwOSOLED     *oled;
  
-	  SwOSSwarmControl(FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, int16_t zero[2][2], uint8_t displayType, FtSwarmExtMode_t extentionPort, bool gyroOn ); // constructor
+	  SwOSSwarmControl(FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSCtrlConfig_t ctrlConfig ); // constructor
     SwOSSwarmControl( SwOSCom *com ); // constructor
     ~SwOSSwarmControl(); // destructor
   
@@ -115,7 +115,7 @@ class SwOSSwarmCAM : public SwOSSwarmXX {
   public:
     SwOSCAM *cam = NULL;
 
-    SwOSSwarmCAM(FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda ); // constructor
+    SwOSSwarmCAM(FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSCtrlConfig_t ctrlConfig ); // constructor
     SwOSSwarmCAM( SwOSCom *com ); // constructor
     ~SwOSSwarmCAM(); // destructor
   

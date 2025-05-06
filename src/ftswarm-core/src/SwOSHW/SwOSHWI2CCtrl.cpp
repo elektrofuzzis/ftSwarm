@@ -17,7 +17,7 @@
  *
  ***************************************************/
 
-SwOSSwarmI2CCtrl::SwOSSwarmI2CCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda ): SwOSCtrl (SN, macAddr, local, CPU,  IAmKelda, FTSWARM_EXT_OFF, false ) {
+SwOSSwarmI2CCtrl::SwOSSwarmI2CCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSCtrlConfig_t ctrlConfig ): SwOSCtrl (SN, macAddr, local, ctrlConfig ) {
 
 }
 
@@ -31,7 +31,7 @@ SwOSSwarmI2CCtrl::~SwOSSwarmI2CCtrl() {
  *
  ***************************************************/
 
-SwOSSwarmPwrDrive::SwOSSwarmPwrDrive( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda ): SwOSSwarmI2CCtrl (SN, macAddr, local, CPU,  IAmKelda ) {
+SwOSSwarmPwrDrive::SwOSSwarmPwrDrive( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSCtrlConfig_t ctrlConfig ): SwOSSwarmI2CCtrl (SN, macAddr, local, ctrlConfig ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
@@ -41,7 +41,7 @@ SwOSSwarmPwrDrive::SwOSSwarmPwrDrive( FtSwarmSerialNumber_t SN, MacAddr macAddr,
   
 }
 
-SwOSSwarmPwrDrive::SwOSSwarmPwrDrive( SwOSCom *com ):SwOSSwarmPwrDrive( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmKelda ) {
+SwOSSwarmPwrDrive::SwOSSwarmPwrDrive( SwOSCom *com ):SwOSSwarmPwrDrive( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.ctrlConfig ) {
   
 }
 
@@ -172,7 +172,7 @@ bool SwOSSwarmPwrDrive::OnDataRecv( SwOSCom *com ) {
  *
  ***************************************************/
 
-SwOSSwarmDuino::SwOSSwarmDuino( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda ): SwOSSwarmI2CCtrl (SN, macAddr, local, CPU,  IAmKelda ) {
+SwOSSwarmDuino::SwOSSwarmDuino( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSCtrlConfig_t ctrlConfig ): SwOSSwarmI2CCtrl (SN, macAddr, local, ctrlConfig ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
@@ -182,7 +182,7 @@ SwOSSwarmDuino::SwOSSwarmDuino( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool 
 
 }
 
-SwOSSwarmDuino::SwOSSwarmDuino( SwOSCom *com ):SwOSSwarmDuino( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmKelda ) {
+SwOSSwarmDuino::SwOSSwarmDuino( SwOSCom *com ):SwOSSwarmDuino( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.ctrlConfig ) {
   
 }
 

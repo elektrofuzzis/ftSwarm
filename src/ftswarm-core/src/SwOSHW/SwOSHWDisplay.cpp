@@ -131,10 +131,9 @@ void SwOSPixel::onTrigger( int32_t value ) {
  *
  ***************************************************/
 
- SwOSOLED::SwOSOLED(const char *name, SwOSCtrl *ctrl, uint8_t displayType) : SwOSIO( name, ctrl ) {
+ SwOSOLED::SwOSOLED(const char *name, SwOSCtrl *ctrl) : SwOSIO( name, ctrl ) {
  
    if ( ctrl->isLocal() ) { 
-     displayType = displayType; 
      setupLocal(); 
    }
  
@@ -202,9 +201,6 @@ void SwOSPixel::onTrigger( int32_t value ) {
  }
  
  void SwOSOLED::setContrast(uint8_t contrast) {
- 
-   // avoid problemns with setContrast and Display Types != 1
-   if (displayType != 1 ) return;
  
    // send set contrast
    Wire.beginTransmission( 0x3C );

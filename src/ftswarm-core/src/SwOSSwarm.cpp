@@ -29,6 +29,18 @@
 // There can only be once!
 SwOSSwarm myOSSwarm;
 
+const SwOSCtrlConfig_t noCtrlConfig = {
+  .ctrlType      = FTSWARM_NOCTRL,
+  .CPU           = FTSWARM_NOVERSION,
+  .IAmKelda      = false,
+  .extensionPort = FTSWARM_EXT_OFF,
+  .inputs        = 0,
+  .actors        = 0,
+  .leds          = 0,
+  .servos        = 0,
+  .gyro          = false
+};
+
 // #define DEBUG_COMMUNICATION_SWARM
 // #define DEBUG_READTASK
 
@@ -215,7 +227,7 @@ bool SwOSSwarm::startEvents( void ) {
       // get IOs and stop on error
       sensor = waitFor( event->sensor, FTSWARM_UNDEF );  
       if (!sensor) return false;
-      if (!sensor->isSensor()) return false;
+      if (!sensor->isInput()) return false;
       
       actor  = waitFor( event->actor,  FTSWARM_UNDEF );  
       if (!actor)  return false;
@@ -372,19 +384,31 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
     printf("Boot %s (SN:%d).\n", nvs.swarmName, nvs.serialNumber );
     if ( nvs.IAmKelda )  { printf( "I am KELDA!\n"); }
   }
+
+  const SwOSCtrlConfig_t localCtrlConfig = {
+    .ctrlType      = nvs.controllerType,
+    .CPU           = nvs.CPU,
+    .IAmKelda      = nvs.IAmKelda,
+    .extensionPort = nvs.extensionPort,
+    .inputs        = 0,
+    .actors        = 0,
+    .leds          = 0,
+    .servos        = 0,
+    .gyro          = nvs.gyro 
+  };
   
 	// create local controller
 	maxCtrl++;
   switch (nvs.controllerType) {
-  case FTSWARM:         Ctrl[maxCtrl] = new SwOSSwarmJST( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda, nvs.extensionPort, nvs.gyro );
+  case FTSWARM:         Ctrl[maxCtrl] = new SwOSSwarmJST( nvs.serialNumber, noMac, true, localCtrlConfig );
                         break;
-	case FTSWARMCONTROL:  Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda, nvs.joyZero, nvs.displayType, nvs.extensionPort, nvs.gyro );
+	case FTSWARMCONTROL:  Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, noMac, true, localCtrlConfig );
                         break;
-	case FTSWARMCAM:      Ctrl[maxCtrl] = new SwOSSwarmCAM( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda );
+	case FTSWARMCAM:      Ctrl[maxCtrl] = new SwOSSwarmCAM( nvs.serialNumber, noMac, true, localCtrlConfig );
                         break;
-	case FTSWARMDUINO:    Ctrl[maxCtrl] = new SwOSSwarmDuino( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda );
+	case FTSWARMDUINO:    Ctrl[maxCtrl] = new SwOSSwarmDuino( nvs.serialNumber, noMac, true, localCtrlConfig );
                         break;
-	case FTSWARMPWRDRIVE: Ctrl[maxCtrl] = new SwOSSwarmPwrDrive( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda );
+	case FTSWARMPWRDRIVE: Ctrl[maxCtrl] = new SwOSSwarmPwrDrive( nvs.serialNumber, noMac, true, localCtrlConfig );
                         break;
   default:              // wrong setup
                         nvs.initialSetup();
@@ -397,7 +421,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
     
     if ( nvs.swarmMember[i] ) {
       maxCtrl++;
-      Ctrl[maxCtrl] = new SwOSCtrl( nvs.swarmMember[i],  MacAddr( broadcast ), false, FTSWARM_NOVERSION, false, FTSWARM_EXT_OFF, false );
+      Ctrl[maxCtrl] = new SwOSCtrl( nvs.swarmMember[i],  MacAddr( broadcast ), false, noCtrlConfig );
     }
 
   }
@@ -1116,7 +1140,7 @@ void SwOSSwarm::replaceCtrl( SwOSCom *com, uint8_t source, uint8_t affected ) {
       
   SwOSCtrl *newCtrl = NULL;
   SwOSCtrl *oldCtrl = Ctrl[source];
-  switch (com->data.registerCmd.ctrlType) {
+  switch (com->data.registerCmd.ctrlConfig.ctrlType) {
     case FTSWARM:         newCtrl = new SwOSSwarmJST     ( com ); break;
     case FTSWARMCONTROL:  newCtrl = new SwOSSwarmControl ( com ); break;
     case FTSWARMCAM:      newCtrl = new SwOSSwarmCAM     ( com ); break;
@@ -1165,7 +1189,7 @@ void SwOSSwarm::cmdJoinMySwarm( SwOSCom *com, uint8_t source, uint8_t affected )
     reply.send();
 
     // send my alias names as well
-    if ( com->data.registerCmd.IAmKelda ) Ctrl[0]->sendAlias( com->macAddr ); 
+    if ( com->data.registerCmd.ctrlConfig.IAmKelda ) Ctrl[0]->sendIOConfig( com->macAddr ); 
 
     // update status
     setState( RUNNING );
@@ -1307,7 +1331,7 @@ bool SwOSSwarm::addController( FtSwarmSerialNumber_t serialNumber ) {
   if ( Ctrl[i] != NULL ) return true;
 
   // add new Controller to the list
-  Ctrl[i] = new SwOSCtrl( serialNumber,  MacAddr( broadcast ), false, FTSWARM_NOVERSION, false, FTSWARM_EXT_OFF, false );
+  Ctrl[i] = new SwOSCtrl( serialNumber,  MacAddr( broadcast ), false, noCtrlConfig );
   nvs.addController( serialNumber );
 
   delay( CONNECTDELAY );

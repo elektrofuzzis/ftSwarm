@@ -21,25 +21,30 @@
 #define ESPNOW_MAXDELAY     128
 #define DEFAULTSECRET       0x2506
 #define VERSIONDATA         9
-#define MAXALIAS            5
+#define MAXIOCONFIG         5
 #define MAXUSEREVENTPAYLOAD 128
+#define MAXCONFIGPAYLOAD    200
 
 typedef enum {
+  
   CMD_JOINMYSWARM,            // Kelda to member: Please join my Swarm 
   CMD_JOINACK,                // Member to Kelda: yes, I want to join your Swarm
   CMD_JOINNACK,               // Member to Kelda: no, I don't want to join your swarm
+
   CMD_SAVEALIAS2NVS,          // Kelda to Member: save alias setting to NVS
-//  CMD_ACK,                    // Acknowledge a cmd
-//  CMD_SWARMLEAVE,             // leave swarm
-//  CMD_ANYBODYOUTTHERE,        // Broadcast to get known by everybody 
+
   CMD_GOTYOU,                 // anybody's reply on ANYBODYOUTTHERE
+  CMD_STATE,                  // send my input's readings
+  CMD_IOCONFIG,               // send my io config to kelda
+  CMD_CHANGEIOTYPE,           // change a port's IO Type
+  
+  CMD_IDENTIFY,               // show myself
+  
   CMD_SETLED,                 // set LED color & brightness
   CMD_SETACTORSPEED,          // set actors motionType & speed
   CMD_SETSERVO,               // set servo position
-  CMD_STATE,                  // send my input's readings
   CMD_SETSENSORTYPE,          // set an input's sensor type
   CMD_SETACTORTYPE,           // set an actors's actor type
-  CMD_ALIAS,                  // send some alias names
   CMD_I2CREGISTER,            // set an I2C register
   CMD_SETSTEPPERDISTANCE,     // set distance to go
   CMD_STEPPERSTARTSTOP,       // start/stop
@@ -48,8 +53,6 @@ typedef enum {
   CMD_SETSTEPPERHOMINGOFFSET, // set homing offset
   CMD_SETMICROSTEPMODE,       // set Microstepmode
   CMD_USEREVENT,              // send data from user exit back to Kelda
-  CMD_IDENTIFY,               // show myself
-  CMD_CHANGEIOTYPE,           // change a port's IO Type
   CMD_RESETCOUNTER,           // Reset counter
   CMD_STARTFREQUENCYMETER,    // start frequency meter
   CMD_MAX
@@ -67,16 +70,25 @@ extern QueueHandle_t recvNotification;
 struct LED_t   { uint8_t brightness; uint32_t color; } __attribute__((packed));
 struct Servo_t { int16_t offset; int16_t position; } __attribute__((packed));
 struct Joystick_t { int16_t LR; int16_t FB; } __attribute__((packed));
-struct Alias_t { char name[10]; char alias[MAXIDENTIFIER]; } __attribute__((packed));
+struct IOConfig_t { FtSwarmIOType_t ioType; FtSwarmSensor_t sensorType; uint8_t port; char name[10]; char alias[MAXIDENTIFIER]; } __attribute__((packed));
+
+struct SwOSCtrlConfig_t { 
+  FtSwarmController_t   ctrlType; 
+  FtSwarmVersion_t      CPU; 
+  bool                  IAmKelda;
+  FtSwarmExtMode_t      extensionPort;
+  uint8_t               inputs;
+  uint8_t               actors;
+  uint8_t               leds;
+  uint8_t               servos;
+  bool                  gyro;
+  int16_t               zero[2][2];
+} __attribute__((packed));
 
 struct registerCmd_t { 
-  FtSwarmController_t ctrlType; 
-  FtSwarmVersion_t    versionCPU; 
-  bool                IAmKelda;
   char                swarmName[MAXIDENTIFIER];
   uint16_t            swarmPIN;
-  FtSwarmExtMode_t    extensionPort;
-  uint8_t             leds;
+  SwOSCtrlConfig_t    ctrlConfig;
 } __attribute__((packed));
 
 struct joinCmd_t { 
@@ -147,8 +159,8 @@ struct ledCmd_t {
   uint32_t color;
 } __attribute__((packed));
 
-struct aliasCmd_t { 
-  Alias_t alias[MAXALIAS];
+struct ioConfigCmd_t { 
+  uint8_t payload[MAXCONFIGPAYLOAD];
 } __attribute__((packed));
 
 struct I2CRegisterCmd_t { 
@@ -194,7 +206,7 @@ struct SwOSDatagram_t {
     actorStepperCmd_t actorStepperCmd;
     actorTypeCmd_t actorTypeCmd;
     ledCmd_t ledCmd;
-    aliasCmd_t aliasCmd;
+    ioConfigCmd_t ioConfigCmd;
     I2CRegisterCmd_t I2CRegisterCmd;
     ctrlCmd_t ctrlCmd;
     userEventCmd_t userEventCmd;
@@ -224,8 +236,8 @@ class MacAddr {
 
 class SwOSCom {
 protected:
-  bool                  _isValid;
-  uint8_t               bufferIndex;
+  bool    _isValid    = false;
+  uint8_t bufferIndex = 0;
 
 public:
   MacAddr        macAddr;
@@ -237,8 +249,12 @@ public:
   size_t size( void );
 
   // send my alias names buffered
-  void sendBuffered( char *name, char *alias );
-  void flushBuffer( );
+  void sendHostname( char *name, char *alias ) { sendIO( FTSWARM_MAXIOTYPE, FTSWARM_MAXSENSOR, SWOS_NOPORT, name, alias); };
+  void sendIO( FtSwarmIOType_t ioType, char *name, char *alias ) { sendIO( ioType, FTSWARM_MAXSENSOR, SWOS_NOPORT, name, alias); };
+  void sendIO( FtSwarmIOType_t ioType, uint8_t port, char *name, char *alias ) { sendIO( ioType, FTSWARM_MAXSENSOR, port, name, alias); };
+  void sendIO( FtSwarmIOType_t ioType, FtSwarmSensor_t sensorType, uint8_t port, char *name, char *alias );
+  void flushBuffer( void );
+  bool getNextIO( FtSwarmIOType_t *ioType, FtSwarmSensor_t *sensorType, uint8_t *port, char **name, char **alias );
   
   void send( void );
 

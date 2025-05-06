@@ -155,39 +155,49 @@ void SwOSCtrl::setupLocalGyro( bool gyroOn ) {
 
 }
 
-
-SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extensionPort, bool gyroOn  ):SwOSObj() {
+SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSCtrlConfig_t ctrlConfig  ):SwOSObj() {
 
   // copy master data
-  this->IAmKelda = IAmKelda;
-  this->serialNumber = SN;
+  this->IAmKelda      = ctrlConfig.IAmKelda;
+  this->serialNumber  = SN;
+  this->local         = local;
+  this->CPU           = ctrlConfig.CPU;
+  this->lastContact   = millis();
+  this->extensionPort = ctrlConfig.extensionPort;
   this->macAddr.set( macAddr );
-  this->local = local;
-  this->CPU = CPU;
-  this->lastContact = millis();
-
+  
   // set my name 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
   setName( buffer );
 
   // # of inputs & actors
-  inputs = MAXIOS[ CPU ].inputs;
-  actors = MAXIOS[ CPU ].actors;
-  leds   = MAXIOS[ CPU ].leds;
-  servos = MAXIOS[ CPU ].servos;
+  if (local) {
 
-  switch ( extensionPort ) {
+    inputs = MAXIOS[ CPU ].inputs;
+    actors = MAXIOS[ CPU ].actors;
+    leds   = MAXIOS[ CPU ].leds;
+    servos = MAXIOS[ CPU ].servos;
 
-    // extensionPort is configured as additional outputs, add 2 actors
-    case FTSWARM_EXT_OUTPUT: actors += 2; break;
+    switch ( extensionPort ) {
 
-    // extensionPort is configured as additional servos, add 2 servos
-    case FTSWARM_EXT_SERVO: servos +=2; break;
+      // extensionPort is configured as additional outputs, add 2 actors
+      case FTSWARM_EXT_OUTPUT: actors += 2; break;
 
-    // extensionPort is configured as LIDAR, add 1 input
-    case FTSWARM_EXT_LIDAR: inputs++; break;
+      // extensionPort is configured as additional servos, add 2 servos
+      case FTSWARM_EXT_SERVO: servos +=2; break;
 
+      // extensionPort is configured as LIDAR, add 1 input
+      case FTSWARM_EXT_LIDAR: inputs++; break;
+
+    }
+
+  } else {
+
+    inputs = ctrlConfig.inputs;
+    actors = ctrlConfig.actors;
+    leds   = ctrlConfig.leds;
+    servos = ctrlConfig.servos;
   }
 
   // define io pointer array dynamically
@@ -197,15 +207,13 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwa
 
   // define common hardware
   if (local) {
-    setupLocalInputs( extensionPort );
+    setupLocalInputs( ctrlConfig.extensionPort );
     setupLocalActors();
-    setupLocalServos( extensionPort );
+    setupLocalServos( ctrlConfig.extensionPort );
     setupLocalPixels();
-    setupLocalI2C( extensionPort );
-    setupLocalGyro( gyroOn );
+    setupLocalI2C( ctrlConfig.extensionPort );
+    setupLocalGyro( ctrlConfig.gyro );
   }
-
-
 
 }
 
@@ -760,115 +768,200 @@ unsigned long SwOSCtrl::networkAge( void ) {
 
 }
 
+bool SwOSCtrl::saveAlias2NVS( SwOSCom *com ) {
+  // save in local nvs
+
+  nvs_handle_t my_handle;
+
+  ESP_ERROR_CHECK( nvs_open("ftSwarm", NVS_READWRITE, &my_handle) );
+  saveAliasToNVS( my_handle );
+  ESP_ERROR_CHECK( nvs_commit( my_handle ) );
+  
+  return true;
+
+}
+
+bool SwOSCtrl::setLED( SwOSCom *com ) {
+
+  if (led[com->data.ledCmd.index]) {
+    led[com->data.ledCmd.index]->setBrightness( com->data.ledCmd.brightness );
+    led[com->data.ledCmd.index]->setColor( com->data.ledCmd.color );
+  }
+
+  return true;
+
+}
+
+bool SwOSCtrl::setSensorType( SwOSCom *com ) {
+
+  if ( input[com->data.sensorCmd.index]->getIOType() == FTSWARM_DIGITALINPUT) { 
+    ((SwOSDigitalInput *)input[com->data.sensorCmd.index])->setSensorType( com->data.sensorCmd.sensorType, com->data.sensorCmd.normallyOpen );
+  } else {
+    ((SwOSAnalogInput *)input[com->data.sensorCmd.index])->setSensorType( com->data.sensorCmd.sensorType );
+  }
+
+  return true;
+
+}
+
+bool SwOSCtrl::setActorSpeed( SwOSCom *com ) {
+
+  actor[com->data.actorSpeedCmd.index]->setMotionType( com->data.actorSpeedCmd.motionType );
+  actor[com->data.actorSpeedCmd.index]->setAcceleration( com->data.actorSpeedCmd.rampUpT, com->data.actorSpeedCmd.rampUpY );
+  actor[com->data.actorSpeedCmd.index]->setSpeed( com->data.actorSpeedCmd.speed );
+  actor[com->data.actorSpeedCmd.index]->apply();
+  
+  return true;
+
+}
+
+bool SwOSCtrl::resetCounter( SwOSCom *com ) {
+
+  if ( ( input[com->data.counterCmd.index] ) && ( input[com->data.counterCmd.index]->getIOType() == FTSWARM_COUNTERINPUT ) )
+    static_cast<SwOSCounter *>(input[com->data.counterCmd.index])->resetCounter();
+  
+  return true;
+
+}
+
+bool SwOSCtrl::setActorType( SwOSCom *com ) {
+
+  actor[com->data.actorTypeCmd.index]->setActorType( com->data.actorTypeCmd.actorType, com->data.actorTypeCmd.highResolution, true );
+  actor[com->data.actorTypeCmd.index]->apply();
+
+  return true;
+
+}
+
+bool SwOSCtrl::userEvent( SwOSCom *com ) {
+
+  if ( com->data.userEventCmd.trigger ) {
+
+    // send trigger event to local procedure
+    if ( xQueueSend( myOSNetwork.userEvent, com, ESPNOW_MAXDELAY ) != pdTRUE ) {
+      ESP_LOGE( LOGFTSWARM, "Can't send data to user event." );
+    }
+
+  } else {
+
+    // got some user event data
+    if (isSubscribed) {
+      printf("S: %s", subscribedCtrlName );
+      for ( uint8_t i=0; i<com->data.userEventCmd.size; i++ ) printf(" %02X", com->data.userEventCmd.payload[i]);
+      printf("\n");
+    }
+  }
+
+  return true;
+
+}
+
+bool SwOSCtrl::setServo( SwOSCom *com ) {
+  
+  // set servo position + offset
+  if (servo[com->data.servoCmd.index]) {
+    servo[com->data.servoCmd.index]->setOffset( com->data.servoCmd.offset, true );
+    servo[com->data.servoCmd.index]->setPosition( com->data.servoCmd.position, true );
+  }
+
+  return true;
+
+}
+
+SwOSIO* SwOSCtrl::ioConfig( FtSwarmIOType_t ioType, FtSwarmSensor_t sensorType, uint8_t port, char *name, char *alias ) {
+
+  SwOSIO *io;
+
+  switch ( ioType ) {
+    case FTSWARM_INPUT:           io = new SwOSInput( name, port, this, sensorType );    break;
+    case FTSWARM_DIGITALINPUT:    io = new SwOSDigitalInput( name, port, this );         break; 
+    case FTSWARM_ANALOGINPUT:     io = new SwOSAnalogInput( name, port, this );          break;
+    case FTSWARM_ACTOR:           io = new SwOSActor( name, port, this );                break; 
+    case FTSWARM_BUTTON:          io = new SwOSButton( name, port, this ) ;              break;
+    case FTSWARM_JOYSTICK:        io = new SwOSJoystick( name, port, this, 0, 0 );       break; 
+    case FTSWARM_PIXEL:           io = new SwOSPixel( name, port, this );                break;
+    case FTSWARM_SERVO:           io = new SwOSServo( name, port, this );                break; 
+    case FTSWARM_OLED:            io = new SwOSOLED( name, this );                       break;
+    case FTSWARM_GYRO:            io = new SwOSGyro( name, this );                       break;
+    case FTSWARM_I2C:             io = new SwOSI2C( name, this, 0 );                     break;
+    case FTSWARM_COUNTERINPUT:    io = new SwOSCounter( name, port, port, this );        break;
+    case FTSWARM_FREQUENCYINPUT:  io = new SwOSFrequencymeter( name, port, port, this ); break;
+
+    case FTSWARM_ROTARYINPUT:     
+    case FTSWARM_CAM:             
+    case FTSWARM_HC165:           
+    default:                      // This should newer happen
+                                  ESP_LOGE( LOGFTSWARM, "SwOSCtrl::ioConfig: Unkown ioType %d", ioType );
+                                  setState( ERROR );
+                                  forever("");
+    }
+  
+  if (alias) io->setAlias( alias );
+
+  return io;
+  
+}
+
+bool SwOSCtrl::ioConfig( SwOSCom *com ) {
+
+  SwOSIO          *io;
+  FtSwarmIOType_t ioType;
+  FtSwarmSensor_t sensorType;
+  uint8_t         port;
+  char            *name;
+  char            *alias;
+
+  while ( com->getNextIO( &ioType, &sensorType, &port, &name, &alias ) ) {
+
+    if (ioType == FTSWARM_MAXIOTYPE ) {
+      // hostname
+      // setName( name );
+      setAlias( alias );
+
+    } else {
+      // any type of io
+      io = ioConfig( ioType, sensorType, port, name, alias );
+      if      ( io->isInput() ) input[port] = (SwOSInput *) io;
+      else if ( io->isActor() ) actor[port] = (SwOSActor *) io;
+      else if ( io->isGyro() )  gyro        = (SwOSGyro  *) io;
+      else if ( io->isI2C() )   I2C         = (SwOSI2C   *) io;
+      // else if ( io->isOLED() )  OLED        = (SwOSOLED  *) io;
+      else if ( io->isServo() ) servo[port] = (SwOSServo *) io;
+      else if ( io->isPixel() ) led[port]   = (SwOSPixel *) io;
+    }
+
+  }
+
+  return true;
+
+}
+
 bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
 
   if (!com) return false;
 
   lastContact = millis();
-
-  nvs_handle_t my_handle;
     
   switch (com->data.cmd) {
 
-    case CMD_SAVEALIAS2NVS:         // save in local nvs
-                                    ESP_ERROR_CHECK( nvs_open("ftSwarm", NVS_READWRITE, &my_handle) );
-                                    saveAliasToNVS( my_handle );
-                                    ESP_ERROR_CHECK( nvs_commit( my_handle ) );
-                                    return true;
-
-    case CMD_STATE:                 return recvState( com );
-
-    case CMD_SETLED:                if (led[com->data.ledCmd.index]) {
-                                        led[com->data.ledCmd.index]->setBrightness( com->data.ledCmd.brightness );
-                                        led[com->data.ledCmd.index]->setColor( com->data.ledCmd.color );
-                                      }
-                                      return true;
-
-    case CMD_SETSENSORTYPE:           if ( input[com->data.sensorCmd.index]->getIOType() == FTSWARM_DIGITALINPUT) { 
-                                        ((SwOSDigitalInput *)input[com->data.sensorCmd.index])->setSensorType( com->data.sensorCmd.sensorType, com->data.sensorCmd.normallyOpen );
-                                      } else {
-                                        ((SwOSAnalogInput *)input[com->data.sensorCmd.index])->setSensorType( com->data.sensorCmd.sensorType );
-                                      }
-                                      return true;
-
-    case CMD_SETACTORSPEED:           actor[com->data.actorSpeedCmd.index]->setMotionType( com->data.actorSpeedCmd.motionType );
-                                      actor[com->data.actorSpeedCmd.index]->setAcceleration( com->data.actorSpeedCmd.rampUpT, com->data.actorSpeedCmd.rampUpY );
-                                      actor[com->data.actorSpeedCmd.index]->setSpeed( com->data.actorSpeedCmd.speed );
-                                      actor[com->data.actorSpeedCmd.index]->apply();
-                                      return true;
-
-    case CMD_RESETCOUNTER:            if ( ( input[com->data.counterCmd.index] ) && ( input[com->data.counterCmd.index]->getIOType() == FTSWARM_COUNTERINPUT ) )
-                                        static_cast<SwOSCounter *>(input[com->data.counterCmd.index])->resetCounter();
-                                      return true;
-
-    case CMD_SETSTEPPERDISTANCE:      actor[com->data.actorStepperCmd.index]->setDistance( com->data.actorStepperCmd.paraml, com->data.actorStepperCmd.paramb, true );
-                                      return true;
-
-    case CMD_SETSTEPPERPOSITION:      actor[com->data.actorStepperCmd.index]->setPosition( com->data.actorStepperCmd.paraml, true );
-                                      return true;
-
-    case CMD_STEPPERHOMING:           actor[com->data.actorStepperCmd.index]->homing( com->data.actorStepperCmd.paraml );
-                                      return true;
-
-    case CMD_SETSTEPPERHOMINGOFFSET:  actor[com->data.actorStepperCmd.index]->setHomingOffset( com->data.actorStepperCmd.paraml );
-                                      return true;
-
-    case CMD_STEPPERSTARTSTOP:        actor[com->data.actorStepperCmd.index]->startStop( com->data.actorStepperCmd.paramb );
-                                      return true;
-
-    case CMD_SETACTORTYPE:            actor[com->data.actorTypeCmd.index]->setActorType( com->data.actorTypeCmd.actorType, com->data.actorTypeCmd.highResolution, true );
-                                      actor[com->data.actorTypeCmd.index]->apply();
-                                      return true;
-
-    case CMD_IDENTIFY:                identify();
-                                      return true;
-
-    case CMD_USEREVENT:               if ( com->data.userEventCmd.trigger ) {
-
-                                        // send trigger event to local procedure
-                                        if ( xQueueSend( myOSNetwork.userEvent, com, ESPNOW_MAXDELAY ) != pdTRUE ) {
-                                          ESP_LOGE( LOGFTSWARM, "Can't send data to user event." );
-                                        }
-
-                                      } else {
-        
-                                        // got some user event data
-                                        if (isSubscribed) {
-                                          printf("S: %s", subscribedCtrlName );
-                                          for ( uint8_t i=0; i<com->data.userEventCmd.size; i++ ) printf(" %02X", com->data.userEventCmd.payload[i]);
-                                          printf("\n");
-                                        }
-                                      }
-                                      return true;
-
-    case CMD_ALIAS:                   // get all entries in datagramm
-                                      for (uint8_t i=0; i<MAXALIAS; i++) {
-                                        if (com->data.aliasCmd.alias[i].name[0] != '\0') {
-                                          // entry isn't empty
-                                          if ( strcmp( com->data.aliasCmd.alias[i].name, "HOSTNAME" ) == 0 ) {
-                                            // hostname
-                                            setAlias( com->data.aliasCmd.alias[i].alias );
-                                          } else {
-                                          // an IO port?
-                                          cmdAlias( com->data.aliasCmd.alias[i].name, com->data.aliasCmd.alias[i].alias );
-                                          }
-                                        }
-                                        // receving alias cmds: set controlle "online"
-                                        setComState( COMSTATE_ONLINE );
-                                      }
-                                      return true;
-
-    case CMD_CHANGEIOTYPE:            // change IO Type
-                                      changeIOType( com->data.changeIOTypeCmd.index, com->data.changeIOTypeCmd.oldIOType, com->data.changeIOTypeCmd.newIOType );
-                                      return true;
-
-    case CMD_SETSERVO:                // set servo position + offset
-                                      if (servo[com->data.servoCmd.index]) {
-                                        servo[com->data.servoCmd.index]->setOffset( com->data.servoCmd.offset, true );
-                                        servo[com->data.servoCmd.index]->setPosition( com->data.servoCmd.position, true );
-                                      }
-
-    case CMD_I2CREGISTER:             if (I2C) I2C->setRegister( com->data.I2CRegisterCmd.reg, com->data.I2CRegisterCmd.value );
+    case CMD_SAVEALIAS2NVS:           return saveAlias2NVS( com );
+    case CMD_STATE:                   return recvState( com );
+    case CMD_SETLED:                  return setLED( com );
+    case CMD_SETSENSORTYPE:           return setSensorType( com );
+    case CMD_SETACTORSPEED:           return setActorSpeed( com );
+    case CMD_RESETCOUNTER:            return resetCounter( com );
+    case CMD_SETSTEPPERDISTANCE:      actor[com->data.actorStepperCmd.index]->setDistance( com->data.actorStepperCmd.paraml, com->data.actorStepperCmd.paramb, true ); return true;
+    case CMD_SETSTEPPERPOSITION:      actor[com->data.actorStepperCmd.index]->setPosition( com->data.actorStepperCmd.paraml, true ); return true;
+    case CMD_STEPPERHOMING:           actor[com->data.actorStepperCmd.index]->homing( com->data.actorStepperCmd.paraml ); return true;
+    case CMD_SETSTEPPERHOMINGOFFSET:  actor[com->data.actorStepperCmd.index]->setHomingOffset( com->data.actorStepperCmd.paraml ); return true;
+    case CMD_STEPPERSTARTSTOP:        actor[com->data.actorStepperCmd.index]->startStop( com->data.actorStepperCmd.paramb ); return true;
+    case CMD_SETACTORTYPE:            return setActorType(com);
+    case CMD_IDENTIFY:                identify(); return true;
+    case CMD_USEREVENT:               return userEvent( com );
+    case CMD_IOCONFIG:                return ioConfig( com );
+    case CMD_CHANGEIOTYPE:            changeIOType( com->data.changeIOTypeCmd.index, com->data.changeIOTypeCmd.oldIOType, com->data.changeIOTypeCmd.newIOType ); return true;
+    case CMD_SETSERVO:                return setServo( com );
+    case CMD_I2CREGISTER:             if (I2C) I2C->setRegister( com->data.I2CRegisterCmd.reg, com->data.I2CRegisterCmd.value ); return true;
 
   }
 
@@ -904,17 +997,20 @@ void SwOSCtrl::registerMe( SwOSCom *com ){
 
   if (!com) return;
 
-  // meta data
-  com->data.registerCmd.ctrlType   = getType();
-  com->data.registerCmd.versionCPU = getCPU();
-  com->data.registerCmd.IAmKelda   = IAmKelda;
+  // controller data
+  com->data.registerCmd.ctrlConfig.ctrlType      = getType();
+  com->data.registerCmd.ctrlConfig.CPU           = getCPU();
+  com->data.registerCmd.ctrlConfig.IAmKelda      = IAmKelda;
+  com->data.registerCmd.ctrlConfig.extensionPort = extensionPort;
+  com->data.registerCmd.ctrlConfig.inputs        = inputs;
+  com->data.registerCmd.ctrlConfig.actors        = actors;
+  com->data.registerCmd.ctrlConfig.leds          = leds;
+  com->data.registerCmd.ctrlConfig.servos        = servos;
+  
+  // swarm data
   strcpy( com->data.registerCmd.swarmName, nvs.swarmName );
-  com->data.registerCmd.swarmPIN   = nvs.swarmPIN; 
+  com->data.registerCmd.swarmPIN = nvs.swarmPIN; 
 
-  // extention port
-  com->data.registerCmd.extensionPort = nvs.extensionPort;
-
-  if ( getType() != FTSWARMCONTROL ) com->data.registerCmd.leds = leds;
 
 }
 
@@ -943,35 +1039,28 @@ void SwOSCtrl::loadAliasFromNVS( nvs_handle_t my_handle ) {
 
 }
 
-void SwOSCtrl::sendAlias( SwOSCom *alias ) {
+void SwOSCtrl::sendIOConfig( MacAddr destination ) {
 
-    // hostname
-  alias->sendBuffered( (char *)"HOSTNAME", getAlias() ); 
+  SwOSCom ioConfig( destination, serialNumber, CMD_IOCONFIG );
+
+  // hostname
+  ioConfig.sendHostname( (char *)"HOSTNAME", getAlias() ); 
 
   // input
-  for (uint8_t i=0; i<inputs;i++) if (input[i]) alias->sendBuffered( input[i]->getName(), input[i]->getAlias() ); 
+  for (uint8_t i=0; i<inputs;i++) if (input[i]) ioConfig.sendIO( input[i]->getIOType(), input[i]->getSensorType(), i, input[i]->getName(), input[i]->getAlias() ); 
   
   // actor
-  for (uint8_t i=0; i<actors;i++) if (actor[i]) alias->sendBuffered( actor[i]->getName(), actor[i]->getAlias() ); 
+  for (uint8_t i=0; i<actors;i++) if (actor[i]) ioConfig.sendIO( actor[i]->getIOType(), i, actor[i]->getName(), actor[i]->getAlias() ); 
   
   // LED
-  for (uint8_t i=0; i<MAXLEDS;i++) 
-    if (led[i]) alias->sendBuffered( led[i]->getName(), led[i]->getAlias() ); 
+  for (uint8_t i=0; i<MAXLEDS;i++) if (led[i]) ioConfig.sendIO( input[i]->getIOType(), i, led[i]->getName(), led[i]->getAlias() ); 
 
   // servo
-  for (uint8_t i=0; i<SERVOS;i++) if (servo[i]) alias->sendBuffered( servo[i]->getName(), servo[i]->getAlias() ); 
+  for (uint8_t i=0; i<SERVOS;i++) if (servo[i]) ioConfig.sendIO( servo[i]->getIOType(), i, servo[i]->getName(), servo[i]->getAlias() ); 
 
   // gyro
-  if (gyro) alias->sendBuffered( gyro->getName(), gyro->getAlias() ); 
+  if (gyro) ioConfig.sendIO( gyro->getIOType(), gyro->getName(), gyro->getAlias() ); 
 
-}
-
-void SwOSCtrl::sendAlias( MacAddr destination ) {
-
-  SwOSCom alias( destination, serialNumber, CMD_ALIAS );
-  sendAlias( &alias );
-  alias.flushBuffer( );
-  
 }
 
 bool SwOSCtrl::hasGyro( void ) {

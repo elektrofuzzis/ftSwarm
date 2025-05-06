@@ -25,9 +25,6 @@
 
 #define BRIGHTNESSDEFAULT 48
 
-#define SWOS_NOPORT 255
-#define SWOS_PWRCTL SWOS_NOPORT
-
 // reference to local ftPwrDrive
 extern ftPwrDrive *pwrDrive;
 
@@ -110,11 +107,14 @@ public:
   virtual void            give( void ) { if (useCounter>0) useCounter--; };   // unregister an instance using this IO
   virtual bool            isInUse( void ) { return useCounter > 0; };          // test, if an IO is used by some user elements
   
-  // Test, if I'm an Actor
-  virtual bool            isActor( void ) { return false; };
-
-  // Test, if I', an Sensor
-  virtual bool            isSensor( void ) { return false; };
+  // Test, if I'm an ...
+  virtual bool isActor( void ) { return false; };
+  virtual bool isInput( void ) { return false; };
+  virtual bool isServo( void ) { return false; };
+  virtual bool isGyro( void )  { return false; };
+  virtual bool isI2C( void )   { return false; };
+  virtual bool isOLED( void )  { return false; };
+  virtual bool isPixel( void ) { return false; };
 
   virtual void read( void ) { };
   virtual void onTrigger( int32_t value );
@@ -185,7 +185,7 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
 	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_INPUT; };
     virtual FtSwarmSensor_t getSensorType() { return sensorType; };
     virtual FtSwarmIcon_t   getIcon();
-	  virtual void jsonize( JSONize *json, uint8_t id) {};               // just a placeholder
+	  virtual void jsonize( JSONize *json, uint8_t id) {};
 
     // Test, if I', an Sensor
     virtual bool            isSensor( void ) { return true; };

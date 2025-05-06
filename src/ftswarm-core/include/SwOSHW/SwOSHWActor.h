@@ -143,6 +143,7 @@ class SwOSActor : public SwOSIO {
 	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_SERVO; };
     virtual FtSwarmIcon_t getIcon() { return FTSWARM_14_SERVO; };    
     virtual void adjust( void ) {};
+    virtual bool isServo( void ) { return true; };
 
     // commands
 	  virtual int16_t getOffset( )   { return offset; };

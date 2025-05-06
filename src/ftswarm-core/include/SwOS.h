@@ -14,13 +14,16 @@
 // #define DEBUG_COMMUNICATION
 // #define DEBUG_READTASK
 
-#define ARDUHAL_LOG_LEVEL_VERBOSE (5)
+// #define ARDUHAL_LOG_LEVEL_VERBOSE (5)
 
 #define LOGFTSWARM  "FTSWARM"
 #define MAXIDENTIFIER 32
 #define MAXACTORS 8
 #define MAXINPUTS 11
 #define SWOSVERSION "0.7.0"
+
+#define SWOS_NOPORT 255
+#define SWOS_PWRCTL SWOS_NOPORT
 
 #include <stdint.h>
 #include <cstddef>

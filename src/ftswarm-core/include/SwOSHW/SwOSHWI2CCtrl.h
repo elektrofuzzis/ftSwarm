@@ -21,7 +21,7 @@
   public:
 
     // constructor, destructor
-    SwOSSwarmI2CCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda );
+    SwOSSwarmI2CCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSCtrlConfig_t ctrlConfig );
     ~SwOSSwarmI2CCtrl();
 
 };
@@ -37,7 +37,7 @@ class SwOSSwarmPwrDrive : public SwOSSwarmI2CCtrl {
     uint8_t _microstepMode = 0;
   public:
     // constructor, destructor
-    SwOSSwarmPwrDrive( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda );
+    SwOSSwarmPwrDrive( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSCtrlConfig_t ctrlConfig );
     SwOSSwarmPwrDrive( SwOSCom *com ); 
     ~SwOSSwarmPwrDrive();
 
@@ -73,7 +73,7 @@ class SwOSSwarmDuino : public SwOSSwarmI2CCtrl {
 
   public:
     // constructor, destructor
-    SwOSSwarmDuino( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda );
+    SwOSSwarmDuino( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSCtrlConfig_t ctrlConfig );
     SwOSSwarmDuino( SwOSCom *com ); 
     ~SwOSSwarmDuino();
 

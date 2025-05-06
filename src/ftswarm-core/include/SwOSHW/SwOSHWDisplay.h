@@ -41,9 +41,7 @@
     virtual FtSwarmIcon_t getIcon()   { return FTSWARM_15_RGBLED; };
     virtual void jsonize( JSONize *json, uint8_t id);
     virtual void onTrigger( int32_t value );
-  
-    // Test, if I'm an Actor
-    virtual bool     isActor( void ) { return true; }
+    virtual bool isPixel( void ) { return true; };
   
     // commands
     virtual uint32_t getColor()      { return color; };
@@ -73,10 +71,11 @@
     
   public:
     // constructor
-    SwOSOLED(const char *name, SwOSCtrl *ctrl, uint8_t displayType);
+    SwOSOLED(const char *name, SwOSCtrl *ctrl);
 
     // administrative stuff
     virtual FtSwarmIOType_t getIOType() { return FTSWARM_OLED; };
+    virtual bool isOLED( void ) { return true; };
 
     void display(void);
     void invertDisplay(bool i);

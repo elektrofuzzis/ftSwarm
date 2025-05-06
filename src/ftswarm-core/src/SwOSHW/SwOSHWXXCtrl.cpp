@@ -17,7 +17,7 @@
  *
  ***************************************************/
 
-SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extensionPort, bool gyroOn ) : SwOSCtrl (SN, macAddr, local, CPU, IAmKelda, extensionPort, gyroOn ) {
+SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSCtrlConfig_t ctrlConfig ) : SwOSCtrl (SN, macAddr, local, ctrlConfig ) {
 
 }
 
@@ -27,7 +27,7 @@ SwOSSwarmXX::SwOSSwarmXX( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local,
  *
  ***************************************************/
 
-SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extensionPort, bool gyro ):SwOSSwarmXX( SN, macAddr, local, CPU, IAmKelda, extensionPort, gyro ) {
+SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSCtrlConfig_t ctrlConfig ):SwOSSwarmXX( SN, macAddr, local, ctrlConfig ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
@@ -35,7 +35,7 @@ SwOSSwarmJST::SwOSSwarmJST( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
 
 }
 
-SwOSSwarmJST::SwOSSwarmJST( SwOSCom *com ):SwOSSwarmJST( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmKelda, com->data.registerCmd.extensionPort, FTSWARM_GYRO_OFF ) {
+SwOSSwarmJST::SwOSSwarmJST( SwOSCom *com ):SwOSSwarmJST( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.ctrlConfig ) {
   
 }
 
@@ -54,7 +54,7 @@ FtSwarmController_t SwOSSwarmJST::getType() {
  *
  ***************************************************/
 
-SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, int16_t zero[2][2], uint8_t displayType, FtSwarmExtMode_t extentionPort, bool gyroOn ):SwOSSwarmXX( SN, macAddr, local, CPU,  IAmKelda, extentionPort, gyroOn ) {
+SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSCtrlConfig_t ctrlConfig ):SwOSSwarmXX( SN, macAddr, local, ctrlConfig ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
@@ -65,15 +65,14 @@ SwOSSwarmControl::SwOSSwarmControl( FtSwarmSerialNumber_t SN, MacAddr macAddr, b
   for (uint8_t i=0; i<2; i++) { button[4+i] = new SwOSButton("F", i, this); }
   for (uint8_t i=0; i<2; i++) { button[6+i] = new SwOSButton("J", i, this); }
   for (uint8_t i=0; i<2; i++) { 
-    if (zero) joystick[i] = new SwOSJoystick("JOY", i, this, zero[i][0], zero[i][1]); 
-    else      joystick[i] = new SwOSJoystick("JOY", i, this, 0, 0 ); 
+    joystick[i] = new SwOSJoystick("JOY", i, this, ctrlConfig.zero[i][0], ctrlConfig.zero[i][1]); 
   }
   hc165 = new SwOSHC165("HC165", this);
-  oled  = new SwOSOLED("OLED", this, displayType);
+  oled  = new SwOSOLED("OLED", this );
 
 }
 
-SwOSSwarmControl::SwOSSwarmControl( SwOSCom *com ):SwOSSwarmControl( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmKelda, NULL, 1, FTSWARM_EXT_OFF, FTSWARM_GYRO_OFF ) {
+SwOSSwarmControl::SwOSSwarmControl( SwOSCom *com ):SwOSSwarmControl( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.ctrlConfig ) {
   
 }
 
@@ -281,6 +280,7 @@ bool SwOSSwarmControl::recvState( SwOSCom *com ) {
 
 void SwOSSwarmControl::_sendAlias( SwOSCom *alias ) {
 
+  /*
   SwOSSwarmXX::sendAlias( alias );
 
   // buttons
@@ -291,6 +291,7 @@ void SwOSSwarmControl::_sendAlias( SwOSCom *alias ) {
 
   // oled
   if (oled) alias->sendBuffered( oled->getName(), oled->getAlias() ); 
+  */
 
 }
 
@@ -333,7 +334,7 @@ void SwOSSwarmControl::setRemoteControl( boolean remoteControl ) {
  *
  ***************************************************/
 
-SwOSSwarmCAM::SwOSSwarmCAM( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda ):SwOSSwarmXX( SN, macAddr, local, CPU,  IAmKelda, FTSWARM_EXT_OFF, FTSWARM_GYRO_OFF ) {
+SwOSSwarmCAM::SwOSSwarmCAM( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSCtrlConfig_t ctrlConfig ):SwOSSwarmXX( SN, macAddr, local, ctrlConfig ) {
 
   char buffer[32];
   sprintf( buffer, "ftSwarm%d", SN);
@@ -343,7 +344,7 @@ SwOSSwarmCAM::SwOSSwarmCAM( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool loca
 
 }
 
-SwOSSwarmCAM::SwOSSwarmCAM( SwOSCom *com ):SwOSSwarmCAM( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.versionCPU, com->data.registerCmd.IAmKelda ) {
+SwOSSwarmCAM::SwOSSwarmCAM( SwOSCom *com ):SwOSSwarmCAM( com->data.sourceSN, com->macAddr, false, com->data.registerCmd.ctrlConfig ) {
  
 }
 

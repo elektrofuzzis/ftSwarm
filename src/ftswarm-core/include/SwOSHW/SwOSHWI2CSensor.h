@@ -144,6 +144,7 @@
 
     uint8_t myRegister[MAXI2CREGISTERS];
     SwOSI2C( const char *name, SwOSCtrl *ctrl, uint8_t I2CAddress);
+    virtual bool isI2C( void ) { return true; };
 
     virtual void read();
     virtual FtSwarmIOType_t getIOType() { return FTSWARM_I2C; };

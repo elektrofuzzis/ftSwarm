@@ -56,7 +56,18 @@ protected:
   char             *subscribedCtrlName = NULL;
 
 	const char *     version( FtSwarmVersion_t v);
-  virtual void     sendAlias( SwOSCom *alias );
+
+  // communications
+  bool saveAlias2NVS( SwOSCom *com );
+  bool setLED( SwOSCom *com );
+  bool setSensorType( SwOSCom *com );
+  bool resetCounter( SwOSCom *com );
+  bool setActorType( SwOSCom *com );
+  bool setActorSpeed( SwOSCom *com );
+  bool userEvent( SwOSCom *com );
+  SwOSIO* ioConfig( FtSwarmIOType_t ioType, FtSwarmSensor_t sensorType, uint8_t port, char *name, char *alias );
+  bool ioConfig( SwOSCom *com );
+  bool setServo( SwOSCom *com );
 
   // initialize Hardware
   void setupLocalInputs( FtSwarmExtMode_t extensionPort );
@@ -78,15 +89,17 @@ public:
 	SwOSPixel *led[MAXLEDS];
   
   SwOSGyro  *gyro = NULL;
-  SwOSI2C    *I2C = NULL;
+  SwOSI2C   *I2C = NULL;
   
   uint8_t   inputs = 0;
   uint8_t   actors = 0;
   uint8_t   leds   = 0;
   uint8_t   servos = 0;
+
+  FtSwarmExtMode_t extensionPort;
 	
   // constructor
-  SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, FtSwarmVersion_t CPU, bool IAmKelda, FtSwarmExtMode_t extentionPort, bool gyroOn );
+  SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSCtrlConfig_t ctrlConfig );
   
   // destructor
   ~SwOSCtrl();
@@ -146,7 +159,7 @@ public:
   virtual bool recvState( SwOSCom *com );                          // receive state from another ftSwarmXX
   virtual SwOSCom *state2Com( MacAddr destination );               // copy my state in a com struct
   virtual void registerMe( SwOSCom *com );                         // fill in my own data in registerCmd datagram
-  virtual void sendAlias( MacAddr destination );                   // send my alias names
+  virtual void sendIOConfig( MacAddr destination );                // send my IO config
 
   // set comState
   virtual void setComState( SwOSComState_t comState ) { this->comState = comState; };

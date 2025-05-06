@@ -149,8 +149,6 @@ SwOSCom::SwOSCom() {
 
   // just cleanup everything
   bzero( &data, sizeof(data) );
-  bufferIndex = 0;
-  _isValid = false;
 
 }
 
@@ -215,18 +213,21 @@ size_t SwOSCom::size( void ) {
 
 }
 
-void SwOSCom::sendBuffered(char *name, char *alias ) {
+void SwOSCom::sendIO( FtSwarmIOType_t ioType, FtSwarmSensor_t sensorType, uint8_t port, char *name, char *alias ) {
 
-  // anyting ToDo?
-  if ( (!alias) || (alias[0]=='\0') ) return;
+  uint8_t len_name  = strlen( name );
+  uint8_t len_alias = strlen( alias );
+  
+  // not enough space to add to buffer?
+  if ( ( bufferIndex + len_name + len_alias + 5 ) >= MAXCONFIGPAYLOAD ) flushBuffer();
 
-  // copy data to buffer
-  strcpy( data.aliasCmd.alias[bufferIndex].name, name );
-  strcpy( data.aliasCmd.alias[bufferIndex].alias, alias );
-  (bufferIndex)++;
-
-  // buffer full?
-  if (bufferIndex>=MAXALIAS) flushBuffer( );
+  data.ioConfigCmd.payload[bufferIndex++] = (uint8_t) ioType;
+  data.ioConfigCmd.payload[bufferIndex++] = (uint8_t) sensorType;
+  data.ioConfigCmd.payload[bufferIndex++] = port;
+  strcpy( (char*) &(data.ioConfigCmd.payload[bufferIndex]), name );
+  bufferIndex += len_name + 1;
+  strcpy( (char*) &(data.ioConfigCmd.payload[bufferIndex]), alias );
+  bufferIndex += len_alias + 1;
   
 }
 
@@ -237,8 +238,33 @@ void SwOSCom::flushBuffer( ) {
 
   // cleanup
   bufferIndex = 0;
-  memset( &data.aliasCmd, 0, sizeof( data.aliasCmd ) );
+  memset( &data.ioConfigCmd, 0, sizeof( data.ioConfigCmd ) );
   
+}
+
+bool SwOSCom::getNextIO( FtSwarmIOType_t *ioType, FtSwarmSensor_t *sensorType, uint8_t *port, char **name, char **alias ) {
+
+  // end of data?
+  if ( data.ioConfigCmd.payload[bufferIndex] == 0 ) return false;
+
+  uint8_t len_name  = strlen( (char *) &(data.ioConfigCmd.payload[bufferIndex + 3]) );
+  uint8_t len_alias = strlen( (char *) &(data.ioConfigCmd.payload[bufferIndex + 4 + len_name] ) );
+  
+  // corrupt packet?
+  if ( ( bufferIndex + len_name + len_alias + 5 ) >= MAXCONFIGPAYLOAD ) {
+    printf("SwOSCOM::getNextIO corrupt packet found:\n");
+    print();
+    while(1) delay(250);
+  }
+ 
+  *ioType     = ( FtSwarmIOType_t ) data.ioConfigCmd.payload[bufferIndex++];
+  *sensorType = ( FtSwarmSensor_t ) data.ioConfigCmd.payload[bufferIndex++];
+  *port       = data.ioConfigCmd.payload[bufferIndex++];
+  *name       = ( char * ) &(data.ioConfigCmd.payload[bufferIndex]);
+  *alias      = ( char * ) &(data.ioConfigCmd.payload[bufferIndex+1+len_name]);
+
+  return true;
+
 }
 
 void SwOSCom::print() {
