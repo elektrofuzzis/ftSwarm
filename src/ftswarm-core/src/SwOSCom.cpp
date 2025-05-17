@@ -213,7 +213,7 @@ size_t SwOSCom::size( void ) {
 
 }
 
-void SwOSCom::sendIO( FtSwarmIOType_t ioType, FtSwarmSensor_t sensorType, uint8_t port, char *name, char *alias ) {
+void SwOSCom::pushIO( uint8_t index, SwOSIOType_t ioType, uint8_t port, char *name, char *alias ) {
 
   uint8_t len_name  = strlen( name );
   uint8_t len_alias = strlen( alias );
@@ -221,8 +221,8 @@ void SwOSCom::sendIO( FtSwarmIOType_t ioType, FtSwarmSensor_t sensorType, uint8_
   // not enough space to add to buffer?
   if ( ( bufferIndex + len_name + len_alias + 5 ) >= MAXCONFIGPAYLOAD ) flushBuffer();
 
+  data.ioConfigCmd.payload[bufferIndex++] = index;
   data.ioConfigCmd.payload[bufferIndex++] = (uint8_t) ioType;
-  data.ioConfigCmd.payload[bufferIndex++] = (uint8_t) sensorType;
   data.ioConfigCmd.payload[bufferIndex++] = port;
   strcpy( (char*) &(data.ioConfigCmd.payload[bufferIndex]), name );
   bufferIndex += len_name + 1;
@@ -242,7 +242,7 @@ void SwOSCom::flushBuffer( ) {
   
 }
 
-bool SwOSCom::getNextIO( FtSwarmIOType_t *ioType, FtSwarmSensor_t *sensorType, uint8_t *port, char **name, char **alias ) {
+bool SwOSCom::popIO( uint8_t *index, SwOSIOType_t *ioType, uint8_t *port, char **name, char **alias ) {
 
   // end of data?
   if ( data.ioConfigCmd.payload[bufferIndex] == 0 ) return false;
@@ -257,8 +257,8 @@ bool SwOSCom::getNextIO( FtSwarmIOType_t *ioType, FtSwarmSensor_t *sensorType, u
     while(1) delay(250);
   }
  
-  *ioType     = ( FtSwarmIOType_t ) data.ioConfigCmd.payload[bufferIndex++];
-  *sensorType = ( FtSwarmSensor_t ) data.ioConfigCmd.payload[bufferIndex++];
+  *index       = data.ioConfigCmd.payload[bufferIndex++]; 
+  *ioType     = ( SwOSIOType_t ) data.ioConfigCmd.payload[bufferIndex++];
   *port       = data.ioConfigCmd.payload[bufferIndex++];
   *name       = ( char * ) &(data.ioConfigCmd.payload[bufferIndex]);
   *alias      = ( char * ) &(data.ioConfigCmd.payload[bufferIndex+1+len_name]);

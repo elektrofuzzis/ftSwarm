@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <Wire.h>
+
 #include "SwOS.h"
 #include "SwOSSwarm.h"
 #include "easyKey.h"
@@ -11,11 +12,9 @@
 // #define PIDTEST
 // #define LSM
 
-
 void setup() {
 
   Serial.begin(115200);
-
   firmware();
 
   ESP.restart();
@@ -29,18 +28,6 @@ void setup() {
   }
     */
 
-  SwOSSpike spike(5, 50);
-  int16_t x;
-  x=1901; printf("s(%d)=%d\n", x, spike.fx(x) );
-  x=1903; printf("s(%d)=%d\n", x, spike.fx(x) );
-  x=1899; printf("s(%d)=%d\n", x, spike.fx(x) );
-  x=1901; printf("s(%d)=%d\n", x, spike.fx(x) );
-  x=1870; printf("s(%d)=%d\n", x, spike.fx(x) );
-  x=1901; printf("s(%d)=%d\n", x, spike.fx(x) );
-  x=1905; printf("s(%d)=%d\n", x, spike.fx(x) );
-  x=1870; printf("s(%d)=%d\n", x, spike.fx(x) );
-  x=1850; printf("s(%d)=%d\n", x, spike.fx(x) );
-  x=11830; printf("s(%d)=%d\n", x, spike.fx(x) );
   
 
 }

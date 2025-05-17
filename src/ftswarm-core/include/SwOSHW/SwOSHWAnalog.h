@@ -26,21 +26,20 @@
   protected:
     int8_t                         ADCChannel = ADC1_CHANNEL_MAX;
     int8_t                         ADCUnit    = GPIO_NUM_NC;
+    adc_atten_t                    attenuation = ADC_ATTEN_DB_11;
     esp_adc_cal_characteristics_t *adc_chars  = NULL;
     SwOSFilter                    *filter     = NULL;
 	
     bool isXMeter();
     virtual void setupLocal();
-    virtual void setSensorTypeLocal( FtSwarmSensor_t sensorType );  // set sensor type
 
   public:
  
-	  SwOSAnalogInput(const char *name, uint8_t port, SwOSCtrl *ctrl );
+	  SwOSAnalogInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType );
     ~SwOSAnalogInput();
   
     // administrative stuff
-	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_ANALOGINPUT; };
-    virtual void jsonize( JSONize *json, uint8_t id);
+	  virtual void jsonize( JSONize *json, uint8_t id);
 
     // delete all existing filtes
     virtual void deleteFilter( void );
@@ -87,12 +86,10 @@
     SwOSJoystick(const char *name, uint8_t port, SwOSCtrl *ctrl, int16_t zeroLR, int16_t zeroFB );
   
     // administrative stuff
-    virtual FtSwarmIOType_t getIOType() { return FTSWARM_JOYSTICK; };
-    virtual FtSwarmIcon_t getIcon() { return FTSWARM_11_JOYSTICK; };
     virtual void jsonize( JSONize *json, uint8_t id);
     
     // Test, if I', an Sensor
-    virtual bool            isSensor( void ) { return true; }
+    virtual bool isSensor( void ) { return true; }
   
     // read
     virtual void subscription();

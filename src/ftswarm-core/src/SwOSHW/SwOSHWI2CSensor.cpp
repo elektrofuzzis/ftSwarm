@@ -22,7 +22,7 @@
 LSM6DSRSensor *lsm = NULL;
 MPU6050       *mpu = NULL;
 
-SwOSGyro::SwOSGyro(const char *name, SwOSCtrl *ctrl ) : SwOSIO( name, ctrl ) {
+SwOSGyro::SwOSGyro(const char *name, SwOSCtrl *ctrl ) : SwOSIO( name, ctrl, SWOSIO_GYRO ) {
 
 }
 
@@ -79,9 +79,6 @@ void SwOSGyroLSM::read() {
 
 }
 
-void SwOSGyro::jsonize( JSONize *json, uint8_t id) {
-  
-}
 
 /***************************************************
  *
@@ -152,30 +149,36 @@ void SwOSGyroMPU::setupLocal() {
 
 }
 
-void SwOSGyroMPU::state2com( SwOSCom *com ) {
+uint8_t SwOSGyroMPU::pushState( uint8_t *buffer ) { 
+  
+  uint8_t *ptr = buffer;
+  
+  memcpy( ptr, &q.w,  sizeof( q.w ) );  *ptr += sizeof( q.w );
+  memcpy( ptr, &q.x,  sizeof( q.x ) );  *ptr += sizeof( q.x );
+  memcpy( ptr, &q.y,  sizeof( q.y ) );  *ptr += sizeof( q.y );
+  memcpy( ptr, &q.z,  sizeof( q.z ) );  *ptr += sizeof( q.z );
+  memcpy( ptr, &aa.x, sizeof( aa.x ) ); *ptr += sizeof( aa.x );
+  memcpy( ptr, &aa.y, sizeof( aa.y ) ); *ptr += sizeof( aa.y );
+  memcpy( ptr, &aa.z, sizeof( aa.z ) ); *ptr += sizeof( aa.z );
 
-  com->data.stateCmd.gyroMPU.qw = q.w;
-  com->data.stateCmd.gyroMPU.qx = q.x;
-  com->data.stateCmd.gyroMPU.qy = q.y;
-  com->data.stateCmd.gyroMPU.qz = q.z;
-  com->data.stateCmd.gyroMPU.ax = aa.x;
-  com->data.stateCmd.gyroMPU.ay = aa.y;
-  com->data.stateCmd.gyroMPU.az = aa.z;
+  return ptr - buffer;
 
-}
+};
 
+uint8_t SwOSGyroMPU::popState( uint8_t *buffer ) { 
 
-void SwOSGyroMPU::recvState( SwOSCom *com ) {
-
-  q.w = com->data.stateCmd.gyroMPU.qw;
-  q.x = com->data.stateCmd.gyroMPU.qx;
-  q.y = com->data.stateCmd.gyroMPU.qy;
-  q.z = com->data.stateCmd.gyroMPU.qz;
-
-  aa.x = com->data.stateCmd.gyroMPU.ax;
-  aa.y = com->data.stateCmd.gyroMPU.ay;
-  aa.z = com->data.stateCmd.gyroMPU.az;
-
+  uint8_t *ptr = buffer;
+  
+  memcpy( &q.w,  ptr, sizeof( q.w ) );  *ptr += sizeof( q.w );
+  memcpy( &q.x,  ptr, sizeof( q.x ) );  *ptr += sizeof( q.x );
+  memcpy( &q.y,  ptr, sizeof( q.y ) );  *ptr += sizeof( q.y );
+  memcpy( &q.z,  ptr, sizeof( q.z ) );  *ptr += sizeof( q.z );
+  memcpy( &aa.x, ptr, sizeof( aa.x ) ); *ptr += sizeof( aa.x );
+  memcpy( &aa.y, ptr, sizeof( aa.y ) ); *ptr += sizeof( aa.y );
+  memcpy( &aa.z, ptr, sizeof( aa.z ) ); *ptr += sizeof( aa.z );
+  
+  return ptr - buffer;
+  
 };
 
 void SwOSGyroMPU::read() {
@@ -281,7 +284,7 @@ void SwOSGyroMPU::jsonize( JSONize *json, uint8_t id) {
 
  VL53L0X Lidar;
 
- SwOSLidarInput::SwOSLidarInput(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSInput( name, port, ctrl, FTSWARM_DIGITAL ) {
+ SwOSLidarInput::SwOSLidarInput(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSInput( name, port, ctrl, SWOSIO_LIDAR ) {
    
    // initialize local HW
    if (ctrl->isLocal()) {
@@ -300,33 +303,7 @@ void SwOSGyroMPU::jsonize( JSONize *json, uint8_t id) {
    // Lidar.setMeasurementTimingBudget(20000);
    Lidar.startContinuous(100);
  }
- 
- void SwOSLidarInput::setSensorType( FtSwarmSensor_t sensorType ) {
- 
-   // due to send normallyOpen to remote controllers, don't call super class
- 
-   this->sensorType = sensorType;
- 
-   if (ctrl->isLocal()) { 
-     
-     setSensorTypeLocal( sensorType );
- 
-   } else {
- 
-     // send SN, SETSENSORTYPE, port, sensorType
-     SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETSENSORTYPE );
-     cmd.data.sensorCmd.index        = port;
-     cmd.data.sensorCmd.sensorType   = sensorType;
-     cmd.send( );
- 
-   }
- 
- }
- 
- void SwOSLidarInput::setSensorTypeLocal( FtSwarmSensor_t sensorType ) {
- 
- }
- 
+  
  void SwOSLidarInput::read() {
    
    // nothing todo on remote sensors
@@ -362,14 +339,12 @@ void SwOSGyroMPU::jsonize( JSONize *json, uint8_t id) {
  }
  
  void SwOSLidarInput::jsonize( JSONize *json, uint8_t id) {
+   
    json->startObject();
    SwOSIO::jsonize(json, id);
-   json->variableUI32("sensorType", sensorType);
-   json->variableUI32("subType", sensorType);
- 
-   json->variableI32("value", getValueI32() );
-   
+   json->variableI32("value", getValueI32() );   
    json->endObject();
+
  }
 
  /***************************************************
@@ -428,8 +403,9 @@ void SwOSI2C::read( ) {
 
   if ( (I2CSlave_read) && ( nvs.interruptLine ) ) { 
     I2CSlave_read=false; 
-    ctrl->actor[nvs.interruptLine-1]->setSpeed(nvs.interruptOnOff[0]);
-    ctrl->actor[nvs.interruptLine-1]->apply();
+    // TODO
+    // ctrl->actor[nvs.interruptLine-1]->setSpeed(nvs.interruptOnOff[0]);
+    // ctrl->actor[nvs.interruptLine-1]->apply();
   }
 
 }
@@ -442,13 +418,14 @@ void SwOSI2C::setupLocal(uint8_t I2CAddress) {
   
   if ( nvs.interruptLine ) { 
     I2CSlave_read=false; 
-    ctrl->actor[nvs.interruptLine-1]->setSpeed( nvs.interruptOnOff[0] );
-    ctrl->actor[nvs.interruptLine-1]->apply();
+    // TODO
+    // ctrl->actor[nvs.interruptLine-1]->setSpeed( nvs.interruptOnOff[0] );
+    // ctrl->actor[nvs.interruptLine-1]->apply();
   }
 
 }
 
-SwOSI2C::SwOSI2C( const char *name, SwOSCtrl *ctrl, uint8_t I2CAddress):SwOSIO( name, ctrl ) {
+SwOSI2C::SwOSI2C( const char *name, SwOSCtrl *ctrl, uint8_t I2CAddress):SwOSIO( name, ctrl, SWOSIO_I2C ) {
 
   memset(myRegister, 0, sizeof(myRegister));
   
@@ -471,6 +448,7 @@ void SwOSI2C::setRegister( uint8_t reg, uint8_t value ) {
 void SwOSI2C::setRemote( uint8_t reg, uint8_t value ) {
   
   SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_I2CREGISTER );
+  // TODO index
   cmd.data.I2CRegisterCmd.reg   = reg;
   cmd.data.I2CRegisterCmd.value = value;
   cmd.send( );
@@ -487,15 +465,17 @@ void SwOSI2C::setLocal( uint8_t reg, uint8_t value ) {
     I2CSlave_read = false;
 
     // if the remote controller didn't ack the last interrupt, so I need to reset the interupt line first 
-    if ( ctrl->actor[nvs.interruptLine-1]->getSpeed() != nvs.interruptOnOff[0] ) {
+    // TODO
+    /* if ( ctrl->actor[nvs.interruptLine-1]->getSpeed() != nvs.interruptOnOff[0] ) {
       ctrl->actor[nvs.interruptLine-1]->setSpeed( nvs.interruptOnOff[0] );
       ctrl->actor[nvs.interruptLine-1]->apply();
       delay(1);
-    }
+    } 
 
     // set interrupt
     ctrl->actor[nvs.interruptLine-1]->setSpeed( nvs.interruptOnOff[1] );
     ctrl->actor[nvs.interruptLine-1]->apply();
+    */
 
   }
 
@@ -505,5 +485,19 @@ uint8_t SwOSI2C::getRegister( uint8_t reg ) {
 
   if (reg>=MAXI2CREGISTERS) return 0;
   else return myRegister[reg];
+
+}
+
+uint8_t SwOSI2C::pushState( uint8_t *buffer ) {
+
+  memcpy( buffer, myRegister, MAXI2CREGISTERS );
+  return MAXI2CREGISTERS;
+
+}
+
+uint8_t SwOSI2C::popState( uint8_t *buffer ) {
+
+  memcpy( myRegister, buffer, MAXI2CREGISTERS );
+  return MAXI2CREGISTERS;
 
 }

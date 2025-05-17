@@ -27,10 +27,6 @@
 	  SwOSGyro(const char *name, SwOSCtrl *ctrl);
 
     // administrative stuff
-	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_GYRO; };
-    virtual FtSwarmIcon_t getIcon() { return FTSWARM_29_GYRO; };
-    virtual void jsonize( JSONize *json, uint8_t id);
-    virtual void state2com( SwOSCom *com ) {};
     virtual void recvState( SwOSCom *com ) {};
 
     // Test, if I'm an Sensor
@@ -82,8 +78,8 @@
     // constructor
 	  SwOSGyroMPU(const char *name, SwOSCtrl *ctrl );
     ~SwOSGyroMPU();
-    virtual void state2com( SwOSCom *com );
-    virtual void recvState( SwOSCom *com );
+    uint8_t popState( uint8_t *buffer );
+    uint8_t pushState( uint8_t *buffer );
     virtual void jsonize( JSONize *json, uint8_t id);
 
     // read sensor
@@ -107,14 +103,12 @@
   protected:
 
     virtual void setupLocal();
-    virtual void setSensorTypeLocal( FtSwarmSensor_t sensorType );
 
   public:
  
 	  SwOSLidarInput(const char *name, uint8_t port, SwOSCtrl *ctrl );
   
     // administrative stuff
-	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_DIGITALINPUT; };
     virtual void jsonize( JSONize *json, uint8_t id);
 
     // read sensor
@@ -122,8 +116,7 @@
     virtual void setReading( int32_t newValue );
 
     // external commands
-    virtual void            setSensorType( FtSwarmSensor_t sensorType );  // set sensor type
-    virtual void            setValue( int32_t value );                    // set value by an external call
+    virtual void setValue( int32_t value );                    // set value by an external call
 
 };
 
@@ -145,9 +138,10 @@
     uint8_t myRegister[MAXI2CREGISTERS];
     SwOSI2C( const char *name, SwOSCtrl *ctrl, uint8_t I2CAddress);
     virtual bool isI2C( void ) { return true; };
+    virtual uint8_t pushState( uint8_t *buffer );
+    virtual uint8_t popState( uint8_t *buffer );
 
     virtual void read();
-    virtual FtSwarmIOType_t getIOType() { return FTSWARM_I2C; };
 
     virtual void setRegister( uint8_t reg, uint8_t value );
     virtual uint8_t getRegister( uint8_t reg );

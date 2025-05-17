@@ -11,37 +11,49 @@
 
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWHAL.h"
-
-const char IOTYPE[FTSWARM_MAXIOTYPE][15] = { 
-  "INPUT", 
-  "DIGITALINPUT", 
-  "ANALOGINPUT", 
-  "ACTOR", 
-  "BUTTON", 
-  "JOYSTICK", 
-  "LED", 
-  "SERVO", 
-  "OLED", 
-  "GYRO", 
-  "HC165", 
-  "I2C", 
-  "CAM",  
-  "COUNTER", 
-  "COUNTER", 
-  "COUNTER" };
+#include "SwOSHW/SwOSHWDuino.h"
 
 const char EMPTYSTRING[] = "";
 
-FtSwarmIcon_t SENSORICON[FTSWARM_MAXSENSOR] = 
-  { FTSWARM_00_DIGITAL, FTSWARM_01_ANALOG, FTSWARM_02_SWITCH, FTSWARM_03_REEDSWITCH, FTSWARM_21_LIGHTBARRIER, FTSWARM_04_VOLTAGE, FTSWARM_05_RESISTOR, FTSWARM_06_NTC, FTSWARM_07_LDR,
-    FTSWARM_08_TRAILSENSOR, FTSWARM_09_COLORSENSOR, FTSWARM_10_ULTRASONIC, FTSWARM_26_CAM, FTSWARM_25_COUNTER, FTSWARM_27_ROTARYENCODER, FTSWARM_28_FREQUENCY 
+FtSwarmIcon_t IO_ICON[SWOSIO_MAXIOTYPE] = 
+  { FTSWARM_00_DIGITAL, 
+    FTSWARM_02_SWITCH,
+    FTSWARM_03_REEDSWITCH, 
+    FTSWARM_21_LIGHTBARRIER, 
+    FTSWARM_12_BUTTON,
+    FTSWARM_01_ANALOG, 
+    FTSWARM_04_VOLTAGE, 
+    FTSWARM_05_RESISTOR,
+    FTSWARM_06_NTC,
+    FTSWARM_07_LDR,
+    FTSWARM_11_JOYSTICK,
+    FTSWARM_13_MOTOR,
+    FTSWARM_16_XMOTOR,
+    FTSWARM_20_XMMOTOR,
+    FTSWARM_17_TRACTOR,
+    FTSWARM_18_ENCODER,
+    FTSWARM_19_LAMP,
+    FTSWARM_23_VALVE,
+    FTSWARM_22_COMPRESSOR,
+    FTSWARM_24_BUZZER,
+    FTSWARM_13_MOTOR,
+    FTSWARM_25_COUNTER, 
+    FTSWARM_27_ROTARYENCODER, 
+    FTSWARM_28_FREQUENCY,
+    FTSWARM_00_DIGITAL, // TODO LIDAR Icon
+    FTSWARM_26_CAM,
+    FTSWARM_14_SERVO,
+    FTSWARM_15_RGBLED,
+    FTSWARM_XX_UNDEF,  // TODO OLED Icon
+    FTSWARM_XX_UNDEF,  // TODO I2C Icon
+    FTSWARM_29_GYRO
   };
 
 // reference to local ftPwrDrive
-ftPwrDrive *pwrDrive = NULL;
+FtPwrDrive *ftPwrDrive = NULL;
 
 // reference to local ftDuino
-FtDuino *ftDuino = NULL;
+SwOSDuino *ftDuino = NULL;
 
 #define FTDUINOADDR               0x20
 #define FTDUINO_CMD_READ          0x00
@@ -84,7 +96,7 @@ void SwOSObj::saveAliasToNVS( nvs_handle_t my_handle ) {
 void SwOSObj::setAlias( const char *alias ) {
 
   // free memory?
-  if ( _alias != NULL ) { free( (void*) _alias ); }
+  if ( _alias != NULL ) { free( (void*) _alias ); _alias = NULL; }
 
   // nothing?
   if ( (!alias) || (alias[0]=='\0') ) {
@@ -95,6 +107,7 @@ void SwOSObj::setAlias( const char *alias ) {
   // store
   _alias = (char *) malloc(strlen(alias)+1);
   strcpy( _alias, alias );
+
 }
 
 void SwOSObj::setName( const char *name ) {
@@ -144,29 +157,19 @@ char * SwOSObj::getAlias( ) {
 
 /***************************************************
  *
- *   SwOSIO - Base class for all sensors or actors.
+ *   SwOSIO - Base class for all IOs.
  *
  ***************************************************/
 
-SwOSIO::SwOSIO( const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSObj( name ) {
+SwOSIO::SwOSIO( const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType ) : SwOSObj( name ) {
 
   // store local port and controller 
-  this->port  = port;
-  this->ctrl  = ctrl;
+  this->port   = port;
+  this->ctrl   = ctrl;
+  this->ioType = ioType;
 
-  char str[10];
-  if ( port < SWOS_NOPORT ) {
-    // normal stuff
-    sprintf(str, "%s%d", name, port+1 );
-    setName( str ); 
-  } else {
-    // avoid servo256
-    setName( name );
-  } 
+  setName( name );
  
-}
-
-SwOSIO::SwOSIO( const char *name, SwOSCtrl *ctrl ) : SwOSIO( name, SWOS_NOPORT, ctrl ) {
 }
 
 void SwOSIO::lock( void ) {
@@ -175,6 +178,13 @@ void SwOSIO::lock( void ) {
 
 void SwOSIO::unlock( void ) {
   if (ctrl) ctrl->unlock();
+}
+
+FtSwarmIcon_t SwOSIO::getIcon() {
+
+  if ( ioType == SWOSIO_UNDEF ) return FTSWARM_XX_UNDEF;
+  return IO_ICON[ioType];
+
 }
 
 void SwOSIO::jsonize( JSONize *json, uint8_t id) {
@@ -209,7 +219,6 @@ void SwOSIO::unsubscribe() {
   if (subscribedIOName) free( subscribedIOName );
   subscribedIOName = NULL;
 }
-
 
 /***************************************************
  *
@@ -320,16 +329,14 @@ void SwOSEventInput::trigger( FtSwarmTrigger_t triggerEvent, int32_t portValue )
  *
  ***************************************************/  
 
-SwOSInput::SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl, FtSwarmSensor_t sensorType ) : SwOSIO( name, port, ctrl ), SwOSEventInput( ) {
-  
-  // initialize some vars to undefined
-  this->sensorType = sensorType;
-
-}
-
-
 void SwOSInput::setupLocal() {
   // initialize local HW
+
+  // ftDuino
+  if ( ( ctrl->getCPU() == FTSWARMDUINO_1V141 ) && (ftDuino) ) {
+    ftDuino->setIOType( port, ioType );
+    return;
+  }
 
   GPIO = GPIO_INPUT[ctrl->getCPU()][port].io;
 
@@ -347,35 +354,7 @@ void SwOSInput::setupLocal() {
 
   }
   
-}
-
-FtSwarmIcon_t SwOSInput::getIcon() { 
-  return SENSORICON[ sensorType ]; 
-}; 
-
-void SwOSInput::setSensorTypeLocal( FtSwarmSensor_t sensorType ) {
-
-}
-
-void SwOSInput::setSensorType( FtSwarmSensor_t sensorType ) {
-
-  this->sensorType = sensorType;
-
-  if ( ctrl->isLocal() ) {
-
-    setSensorTypeLocal( sensorType ); 
-
-  } else {
-
-    // send SN, SETSENSORTYPE, port, sensorType
-    SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETSENSORTYPE );
-    cmd.data.sensorCmd.index        = port;
-    cmd.data.sensorCmd.sensorType   = sensorType;
-    cmd.send( );
-
-  }
-
-}
+} 
 
 void SwOSInput::subscription() {
 
@@ -397,3 +376,21 @@ int32_t SwOSInput::getValueI32() {
 float SwOSInput::getValueF() {
   return (float)lastRawValue;
 }
+
+uint8_t SwOSInput::pushState( uint8_t *buffer ) { 
+  
+  memcpy( buffer, &lastRawValue, sizeof( lastRawValue ) );
+  return sizeof( lastRawValue );
+
+};
+
+uint8_t SwOSInput::popState( uint8_t *buffer ) { 
+
+  int32_t newValue;
+  
+  memcpy( &newValue, buffer, sizeof( newValue ) );
+  setReading( newValue );
+
+  return sizeof( newValue );
+  
+};

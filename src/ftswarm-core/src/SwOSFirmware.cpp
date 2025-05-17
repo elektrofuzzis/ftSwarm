@@ -158,8 +158,9 @@ void SwarmControlMenu() {
       case 2: // calibrate joysticks
         if  ( yesNo( "Start calibration (Y/N)?" ) ) {
           anythingChanged = true;
-          static_cast<SwOSSwarmControl *>(myOSSwarm.Ctrl[0])->joystick[0]->calibrate( &nvs.joyZero[0][0], &nvs.joyZero[0][1] );
-          static_cast<SwOSSwarmControl *>(myOSSwarm.Ctrl[0])->joystick[1]->calibrate( &nvs.joyZero[1][0], &nvs.joyZero[1][1] );
+          // TODO
+          // static_cast<SwOSSwarmControl *>(myOSSwarm.Ctrl[0])->joystick[0]->calibrate( &nvs.joyZero[0][0], &nvs.joyZero[0][1] );
+          // static_cast<SwOSSwarmControl *>(myOSSwarm.Ctrl[0])->joystick[1]->calibrate( &nvs.joyZero[1][0], &nvs.joyZero[1][1] );
         }
         break;
         
@@ -466,99 +467,12 @@ void aliasMenu( void ) {
     OSObj[item++] = myOSSwarm.Ctrl[controller]; 
     menu.add( myOSSwarm.Ctrl[controller]->getName(), myOSSwarm.Ctrl[controller]->getAlias(), item, true );
   
-    // list inputs
-    for (uint8_t i=0; i<myOSSwarm.Ctrl[controller]->inputs; i++ ) {
-      if ( myOSSwarm.Ctrl[controller]->input[i] ) { 
-        OSObj[item++] = myOSSwarm.Ctrl[controller]->input[i];
-        menu.add( myOSSwarm.Ctrl[controller]->input[i]->getName(), myOSSwarm.Ctrl[controller]->input[i]->getAlias(), item, true );
+    // list IOs
+    for (uint8_t i=0; i<myOSSwarm.Ctrl[controller]->IOs; i++ ) {
+      if ( myOSSwarm.Ctrl[controller]->io[i] ) { 
+        OSObj[item++] = myOSSwarm.Ctrl[controller]->io[i];
+        menu.add( myOSSwarm.Ctrl[controller]->io[i]->getName(), myOSSwarm.Ctrl[controller]->io[i]->getAlias(), item, true );
       }
-    }
-  
-    // list actors
-    for (uint8_t i=0; i<myOSSwarm.Ctrl[controller]->actors; i++ ) {
-      if (myOSSwarm.Ctrl[controller]->actor[i]) {
-        OSObj[item++] = myOSSwarm.Ctrl[controller]->actor[i];
-        menu.add( myOSSwarm.Ctrl[controller]->actor[i]->getName(), myOSSwarm.Ctrl[controller]->actor[i]->getAlias(), item, true );
-      }
-    }
-  
-    // list LEDs
-    for (uint8_t i=0; i<nvs.RGBLeds; i++ ) {
-      if ( myOSSwarm.Ctrl[controller]->led[i]) {
-        if (myOSSwarm.Ctrl[controller]->led[i]) {
-          OSObj[item++] = myOSSwarm.Ctrl[controller]->led[i];
-          menu.add( myOSSwarm.Ctrl[controller]->led[i]->getName(),  myOSSwarm.Ctrl[controller]->led[i]->getAlias(), item, true );
-        }
-      }
-    }
-  
-    // special HW
-    SwOSSwarmJST *ftSwarm;
-    SwOSSwarmControl *ftSwarmControl;
-    SwOSSwarmCAM *ftSwarmCAM;
-  
-    switch ( myOSSwarm.Ctrl[controller]->getType() ) {
-  
-      case FTSWARM:         ftSwarm = static_cast<SwOSSwarmJST *>(myOSSwarm.Ctrl[controller]);
-                            // list servos
-                            for (uint8_t i=0; i<ftSwarm->servos; i++ ) {
-                              if (ftSwarm->servo[i]) {
-                                OSObj[item++] = ftSwarm->servo[i];
-                                menu.add( ftSwarm->servo[i]->getName(), ftSwarm->servo[i]->getAlias(), item, true );
-                              }
-                            }
-                            // list gyro
-                            if (ftSwarm->gyro) {
-                              OSObj[item++] = ftSwarm->gyro;
-                              menu.add( ftSwarm->gyro->getName(), ftSwarm->gyro->getAlias(), item, true );
-                            }
-                            // list i2c
-                            if (ftSwarm->I2C) {
-                              OSObj[item++] = ftSwarm->I2C;
-                              menu.add( ftSwarm->I2C->getName(), ftSwarm->I2C->getAlias(), item, true );
-                            }
-                            break;
-                            // list gyro
-                            if (ftSwarm->gyro) {
-                              OSObj[item++] = ftSwarm->gyro;
-                              menu.add( ftSwarm->gyro->getName(), ftSwarm->gyro->getAlias(), item, true );
-                            }
-                            break;
-  
-      case FTSWARMCONTROL:  ftSwarmControl = static_cast<SwOSSwarmControl *>(myOSSwarm.Ctrl[controller]);
-                            // buttons
-                            for (uint8_t i=0; i<8; i++ ) {
-                              if (ftSwarmControl->button[i]) {
-                                OSObj[item++] = ftSwarmControl->button[i];
-                                menu.add( ftSwarmControl->button[i]->getName(),   ftSwarmControl->button[i]->getAlias(), item, true );
-                              }
-                            }
-                            // joysticks
-                            for (uint8_t i=0; i<2; i++ ) {
-                              if (ftSwarmControl->joystick[i]) {
-                                OSObj[item++] = ftSwarmControl->joystick[i];
-                                menu.add( ftSwarmControl->joystick[i]->getName(), ftSwarmControl->joystick[i]->getAlias(), item , true);
-                              }
-                            }
-                            if (ftSwarmControl->oled) {
-                              OSObj[item++] = ftSwarmControl->oled;
-                              menu.add( ftSwarmControl->oled->getName(), ftSwarmControl->oled->getAlias(), item, true );
-                            }
-                            // list gyro
-                            if (ftSwarmControl->gyro) {
-                              OSObj[item++] = ftSwarmControl->gyro;
-                              menu.add( ftSwarmControl->gyro->getName(), ftSwarmControl->gyro->getAlias(), item, true );
-                            }
-                            break;
-  
-      case FTSWARMCAM:      ftSwarmCAM = static_cast<SwOSSwarmCAM *>(myOSSwarm.Ctrl[controller]);
-                            if (ftSwarmCAM->cam) {
-                              OSObj[item++] = ftSwarmCAM->cam;
-                              menu.add( ftSwarmCAM->cam->getName(), ftSwarmCAM->cam->getAlias(), item, true );
-                            }
-                            break;
-  
-      default:              break;
     }
   
     // User's choice
@@ -623,7 +537,7 @@ void aliasMenu( void ) {
                   enterIdentifier( prompt, alias, MAXIDENTIFIER );
                 
                   // duplicates?
-                  testIO = myOSSwarm.getIO( alias, FTSWARM_UNDEF );
+                  testIO = myOSSwarm.getIO( alias, SWOSIO_UNDEF );
 
                   if ( (testIO) && ( testIO != OSObj[choice-1] ) ) {
                     // duplicate alias name
@@ -683,7 +597,7 @@ bool changeEvent( NVSEvent *event ) {
   // enter sensor
   while (true) {
     enterString( "sensor: ", sensor, sizeof(sensor) );
-    newSensor = myOSSwarm.getIO( sensor, FTSWARM_UNDEF );
+    newSensor = myOSSwarm.getIO( sensor, SWOSIO_UNDEF );
     
     if (sensor[0] == '\0' ) 
       return false;
@@ -700,7 +614,7 @@ bool changeEvent( NVSEvent *event ) {
   }
 
   // which poti?
-  if ( newSensor->getIOType() == FTSWARM_JOYSTICK ) 
+  if ( newSensor->getIOType() == SWOSIO_JOYSTICK ) 
     LR = enterNumber( "joystick direction: (1) left/right (2) forward/backward: ", 1, 1, 2 );
   else
     LR = 0;
@@ -711,7 +625,7 @@ bool changeEvent( NVSEvent *event ) {
   // enter actor
   while (true) {
     enterString( "actor: ", actor, sizeof(actor) );
-    newActor = myOSSwarm.getIO( actor, FTSWARM_UNDEF );
+    newActor = myOSSwarm.getIO( actor, SWOSIO_UNDEF );
     
     if (actor[0] == '\0' ) 
       return false;
@@ -719,7 +633,7 @@ bool changeEvent( NVSEvent *event ) {
     else if (!newActor) 
       printf("actor %s doesn't exist in the swarm.\n", actor);
 
-    else if ( !newActor->isActor() )
+    else if ( !newActor->isMotor() )  // ToDo
       printf("%s needs to be an actor, a LED or a servo.\n", actor);
     
     else
@@ -732,13 +646,13 @@ bool changeEvent( NVSEvent *event ) {
   if (!usePortValue) parameter = enterNumberI32( "Which value should be set? ", 0, 0, 0xFFFFFF );
 
   // delete old trigger
-  SwOSIO *oldSensor = myOSSwarm.getIO( event->sensor, FTSWARM_UNDEF );
+  SwOSIO *oldSensor = myOSSwarm.getIO( event->sensor, SWOSIO_UNDEF );
   
   if ( oldSensor != NULL ) {
   
     switch ( oldSensor->getIOType() ) {
     
-      case FTSWARM_JOYSTICK: 
+      case SWOSIO_JOYSTICK: 
         if ( LR == 1 ) static_cast<SwOSJoystick *>(oldSensor)->triggerLR.unregisterEvent( trigger );
         else           static_cast<SwOSJoystick *>(oldSensor)->triggerFB.unregisterEvent( trigger );
         break; 
@@ -754,7 +668,7 @@ bool changeEvent( NVSEvent *event ) {
   // modify trigger
   switch ( newSensor->getIOType() ) {
     
-    case FTSWARM_JOYSTICK: 
+    case SWOSIO_JOYSTICK: 
       if ( LR == 1 ) static_cast<SwOSJoystick *>(newSensor)->triggerLR.registerEvent( trigger, newActor, usePortValue, parameter );
       else           static_cast<SwOSJoystick *>(newSensor)->triggerFB.registerEvent( trigger, newActor, usePortValue, parameter );
       break;

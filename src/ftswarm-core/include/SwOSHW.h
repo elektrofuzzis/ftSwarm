@@ -19,6 +19,4 @@
  #include "SwOSHW/SwOSHWDisplay.h"
  #include "SwOSHW/SwOSHWI2CSensor.h"
  
- #include "SwOSHW/SwOSHWI2CCtrl.h"
- #include "SwOSHW/SwOSHWXXCtrl.h"
  

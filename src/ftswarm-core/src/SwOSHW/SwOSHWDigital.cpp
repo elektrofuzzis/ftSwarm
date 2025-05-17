@@ -11,21 +11,20 @@
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWHAL.h"
 
- /***************************************************
+// local HC165
+SwOSHC165 *hc165 = NULL;
+
+/***************************************************
  *
  *   SwOSDigitalInput
  *
  ***************************************************/
 
- SwOSDigitalInput::SwOSDigitalInput(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSInput( name, port, ctrl, FTSWARM_DIGITAL ) {
+ SwOSDigitalInput::SwOSDigitalInput(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSInput( name, port, ctrl, SWOSIO_DIGITAL ) {
   
   // initialize local HW
   if (ctrl->isLocal()) {
-    if ( ctrl->isI2CSwarmCtrl() ) {
-      // _setupI2C();
-    } else {
       setupLocal();
-    }
   }
 
 }
@@ -34,6 +33,12 @@ void SwOSDigitalInput::setupLocal() {
   // initialize local HW
 
   SwOSInput::setupLocal( );
+
+  // ftDuino
+  if ( ( ctrl->getCPU() == FTSWARMDUINO_1V141 ) && (ftDuino) ) {
+    ftDuino->setIOType( port, ioType );
+    return;
+  }
 
   // local init
   PUA2         = GPIO_NUM_NC;
@@ -64,41 +69,10 @@ void SwOSDigitalInput::setupLocal() {
     gpio_set_level( (gpio_num_t) USTX, 0 );
   }
 
-}
-
-void SwOSDigitalInput::setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen ) {
-
-  // due to send norallyOpen to remote controllers, don't call super class
-
-  this->sensorType   = sensorType;
-  this->normallyOpen = normallyOpen;
-
-  if (ctrl->isLocal()) { 
-    
-    setSensorTypeLocal( sensorType );
-
-  } else {
-
-    // send SN, SETSENSORTYPE, port, sensorType
-    SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETSENSORTYPE );
-    cmd.data.sensorCmd.index        = port;
-    cmd.data.sensorCmd.sensorType   = sensorType;
-    cmd.data.sensorCmd.normallyOpen = normallyOpen;
-    cmd.send( );
-
-  }
-
-}
-
-void SwOSDigitalInput::setSensorTypeLocal( FtSwarmSensor_t sensorType ) {
-
   // set A1 pullup if available
-  if ( ( PUA2 != GPIO_NUM_NC ) && ( sensorType != FTSWARM_ULTRASONIC ) ) {
+  if ( ( PUA2 != GPIO_NUM_NC ) && ( ioType != SWOSIO_ULTRASONIC ) ) {
     gpio_set_level( (gpio_num_t) PUA2, true );
   }
-
-  // ftDuino
-  if ( ( ctrl->getCPU() == FTSWARMDUINO_1V141 ) && (ftDuino) ) ftDuino->setSensorType( port, sensorType );
 
 }
 
@@ -107,8 +81,9 @@ void SwOSDigitalInput::read() {
   // nothing todo on remote sensors
   if (!ctrl->isLocal()) return;
 
-  // i2c sensor is read via a block control by <controller>.read
-  if (ctrl->isI2CSwarmCtrl()) return; 
+  // ftDuino?
+  if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && ( ftPwrDrive ) ) { setReading( ftDuino->input[port] ); return; }
+  if ( ( ctrl->getCPU() == FTSWARMDUINO_1V141 )    && ( ftDuino ) )    { setReading( ftDuino->input[port] ); return; }
 
   // existing port?
   if (GPIO == GPIO_NUM_NC ) return;
@@ -176,14 +151,30 @@ FtSwarmToggle_t SwOSDigitalInput::getToggle() {
 }
 
 void SwOSDigitalInput::jsonize( JSONize *json, uint8_t id) {
+
   json->startObject();
   SwOSIO::jsonize(json, id);
-  json->variableUI32("sensorType", sensorType);
-  json->variableUI32("subType", sensorType);
-
-  json->variableI32("value", getValueI32() );
-  
+  json->variableI32("value", getValueI32() ); 
   json->endObject();
+  
+}
+
+void SwOSDigitalInput::setParameter( int32_t parameter ) {
+
+  if ( ctrl->isLocal() ) {
+    
+    this->normallyOpen = (bool) parameter;
+
+  } else {
+
+    // send 
+    SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETPARAMETER );
+    cmd.data.parameterCmd.index     = ctrl->getIndex( this );
+    cmd.data.parameterCmd.parameter = parameter;
+    cmd.send( );
+
+  }
+
 }
 
 /***************************************************
@@ -192,9 +183,21 @@ void SwOSDigitalInput::jsonize( JSONize *json, uint8_t id) {
  *
  ***************************************************/
 
- SwOSButton::SwOSButton(const char *name, uint8_t port, SwOSCtrl *ctrl) : SwOSIO( name, port, ctrl ), SwOSEventInput( ) {
+SwOSButton::SwOSButton(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSIO( name, port, ctrl, SWOSIO_BUTTON ), SwOSEventInput( ) {
 
   toggle = FTSWARM_NOTOGGLE;
+
+}
+
+void SwOSButton::read( ) {
+
+  if (!hc165) return;
+
+  uint8_t v;
+  v = hc165->getValue( );
+  setState( v & (1<<port), firstRead );
+
+  firstRead = false;
 
 }
 
@@ -238,13 +241,27 @@ FtSwarmToggle_t SwOSButton::getToggle() {
 
 }
 
+uint8_t SwOSButton::pushState( uint8_t *buffer ) {
+
+  memcpy( buffer, &lastState, sizeof( lastState ) );
+  return sizeof( lastState );
+
+}
+
+uint8_t SwOSButton::popState( uint8_t *buffer ) {
+
+  memcpy( &lastState, buffer, sizeof( lastState ) );
+  return sizeof( lastState );
+
+}
+
 /***************************************************
  *
  *   SwOSHC165
  *
  ***************************************************/
 
-SwOSHC165::SwOSHC165(const char *name, SwOSCtrl *ctrl) : SwOSIO(name, ctrl) {
+SwOSHC165::SwOSHC165(const char *name, SwOSCtrl *ctrl) : SwOSIO(name, ctrl, SWOSIO_HC165 ) {
 
   // initialize local HW
   if (ctrl->isLocal()) setupLocal();
@@ -255,18 +272,14 @@ void SwOSHC165::setupLocal() {
   // initialize local HW
 
   switch ( ctrl->getCPU() ) {
-    case FTSWARMJST_1V0: CS   = GPIO_NUM_19;
-                      LD   = GPIO_NUM_18;
-                      CLK  = GPIO_NUM_14;
-                      MISO = GPIO_NUM_12;
-                      break; 
-    case FTSWARMCONTROL_1V3: CS   = GPIO_NUM_14;
-                      LD   = GPIO_NUM_15;
-                      CLK  = GPIO_NUM_12;
-                      MISO = GPIO_NUM_35;
-                      break;
-    default:          CS = LD = CLK = MISO = GPIO_NUM_NC;
-                      return;
+    case FTSWARMCONTROL_1V3:  CS   = GPIO_NUM_14;
+                              LD   = GPIO_NUM_15;
+                              CLK  = GPIO_NUM_12;
+                              MISO = GPIO_NUM_35;
+                              break;
+
+    default:                  CS = LD = CLK = MISO = GPIO_NUM_NC;
+                              return;
   }
 
   // initialize ports

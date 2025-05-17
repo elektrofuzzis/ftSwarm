@@ -15,8 +15,8 @@
 // #include <driver/gpio.h>
 
 #include <nvs.h>
-#include <ftDuino.h>
 
+#include "SwOSHW/SwOSHWDuino.h"
 #include "ftPwrDrive/ftPwrDrive.h"
 
 #include "SwOS.h"
@@ -26,10 +26,10 @@
 #define BRIGHTNESSDEFAULT 48
 
 // reference to local ftPwrDrive
-extern ftPwrDrive *pwrDrive;
+extern FtPwrDrive *ftPwrDrive;
 
 // reference to local ftDuino
-extern FtDuino *ftDuino;
+extern SwOSDuino *ftDuino;
 
 // forward declaration
 class SwOSCtrl; 
@@ -77,21 +77,22 @@ public:
 
 class SwOSIO : public SwOSObj {
 protected:
-	uint8_t    port;  // local port
-  SwOSCtrl  *ctrl;  // pointer to my Controller
-  bool       isSubscribed = false;
-  uint32_t   lastsubscribedValue = 0;
-  uint32_t   hysteresis = 0;
-  char      *subscribedIOName = NULL;
-  int16_t    useCounter = 0;
+	uint8_t      port;  // local port
+  SwOSCtrl     *ctrl; // pointer to my Controller
+  SwOSIOType_t ioType = SWOSIO_UNDEF;
+  bool         isSubscribed = false;
+  uint32_t     lastsubscribedValue = 0;
+  uint32_t     hysteresis = 0;
+  char         *subscribedIOName = NULL;
+  int16_t      useCounter = 0;
 
   // local HW 
   virtual void setupLocal() {};
 
 public:
   // Constructors
-	SwOSIO(const char *name, SwOSCtrl *ctrl);                 // constructor name, pointer to overlying controller
-	SwOSIO(const char *name, uint8_t port, SwOSCtrl *ctrl);   // constructor name, port, pointer to overlying controller
+	SwOSIO(const char *name, SwOSCtrl *ctrl, SwOSIOType_t ioType ) : SwOSIO( name, SWOS_NOPORT, ctrl,ioType ) {};
+	SwOSIO(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType );   
 
   // Administrative stuff
   virtual void            lock(void);
@@ -100,21 +101,29 @@ public:
 	virtual void            unsubscribe();                                  // clear subscription
   virtual uint8_t         getPort() { return port; };
   virtual SwOSCtrl*       getCtrl() { return ctrl; };
-	virtual FtSwarmIOType_t getIOType() { return FTSWARM_UNDEF; };
-  virtual FtSwarmIcon_t   getIcon() { return FTSWARM_XX_UNDEF; };
+	virtual SwOSIOType_t    getIOType() { return ioType; };
+  virtual FtSwarmIcon_t   getIcon();
 	virtual void            jsonize( JSONize *json, uint8_t id);
   virtual void            take( void ) { useCounter++; };                      // register an instance using this IO
   virtual void            give( void ) { if (useCounter>0) useCounter--; };   // unregister an instance using this IO
   virtual bool            isInUse( void ) { return useCounter > 0; };          // test, if an IO is used by some user elements
+  virtual bool            showInApi( void ) { return SHOWIOINAPI[ ioType ]; };
+  virtual void            halt( void ) {};
+  virtual uint8_t         pushState( uint8_t *buffer ) { return 0; };
+  virtual uint8_t         popState( uint8_t *buffer )  { return 0; };
+  virtual void            setParameter( int32_t parameter ) {};
   
   // Test, if I'm an ...
-  virtual bool isActor( void ) { return false; };
-  virtual bool isInput( void ) { return false; };
-  virtual bool isServo( void ) { return false; };
-  virtual bool isGyro( void )  { return false; };
-  virtual bool isI2C( void )   { return false; };
-  virtual bool isOLED( void )  { return false; };
-  virtual bool isPixel( void ) { return false; };
+  virtual bool isMotor( void )   { return false; };
+  virtual bool isInput( void )   { return false; };
+  virtual bool isServo( void )   { return false; };
+  virtual bool isGyro( void )    { return false; };
+  virtual bool isI2C( void )     { return false; };
+  virtual bool isOLED( void )    { return false; };
+  virtual bool isPixel( void )   { return false; };
+  virtual bool isCAM( void )     { return false; };
+  virtual bool isCounter( void ) { return false; };
+  virtual bool isStepper( void ) { return false; };
 
   virtual void read( void ) { };
   virtual void onTrigger( int32_t value );
@@ -168,37 +177,33 @@ class SwOSEventInput {
 class SwOSInput : public SwOSIO, public SwOSEventInput {
   
   protected:
-    gpio_num_t        GPIO = GPIO_NUM_NC;
-	  FtSwarmSensor_t   sensorType;
-	  int32_t           lastRawValue = 0;
+    gpio_num_t GPIO = GPIO_NUM_NC;
+	  int32_t    lastRawValue = 0;
 	
     virtual void setupLocal();
     virtual void subscription();
-    virtual void setSensorTypeLocal( FtSwarmSensor_t sensorType );
 	  
 
   public:
  
-	  SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl, FtSwarmSensor_t sensorType );
+	  SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType ) : SwOSIO( name, port, ctrl, ioType ), SwOSEventInput( ) {};
   
     // administrative stuff
-	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_INPUT; };
-    virtual FtSwarmSensor_t getSensorType() { return sensorType; };
-    virtual FtSwarmIcon_t   getIcon();
 	  virtual void jsonize( JSONize *json, uint8_t id) {};
-
-    // Test, if I', an Sensor
-    virtual bool            isSensor( void ) { return true; };
+    virtual uint8_t pushState( uint8_t *buffer );
+    virtual uint8_t popState( uint8_t *buffer );
+  
+    // Test, if I'm a sensor
+    virtual bool isSensor( void ) { return true; };
 
     // read sensor
 	  virtual void read() {};
     virtual void setReading( int32_t newValue ) {};
 
     // external commands
-    virtual void            setSensorType( FtSwarmSensor_t sensorType );  // set sensor type
-	  virtual int32_t         getValueI32( void );                          // get raw reading
-	  virtual float           getValueF( void );                            // get float reading
-    virtual void            setValue( int32_t value ) {};                 // set value by an external call
+	  virtual int32_t getValueI32( void );                          // get raw reading
+	  virtual float   getValueF( void );                            // get float reading
+    virtual void    setValue( int32_t value ) {};                 // set value by an external call
   
 };
 

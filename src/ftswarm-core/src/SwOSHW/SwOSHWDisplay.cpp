@@ -24,7 +24,7 @@
   uint8_t usedPixels = 0;
   bool ledsInitialized = false;
 
-SwOSPixel::SwOSPixel(const char *name, uint8_t port, SwOSCtrl *ctrl) : SwOSIO( name, port, ctrl ) {
+SwOSPixel::SwOSPixel(const char *name, uint8_t port, SwOSCtrl *ctrl) : SwOSIO( name, port, ctrl, SWOSIO_PIXEL ) {
 
   if (ctrl->isLocal()) setupLocal();
 
@@ -73,10 +73,10 @@ void SwOSPixel::setColor(uint32_t color) {
 
 void SwOSPixel::setRemote() {
   
-  SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETLED );
-  cmd.data.ledCmd.index = port;
-  cmd.data.ledCmd.color = color;
-  cmd.data.ledCmd.brightness = brightness;
+  SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETPIXEL );
+  cmd.data.pixelCmd.index = port;
+  cmd.data.pixelCmd.color = color;
+  cmd.data.pixelCmd.brightness = brightness;
   cmd.send( );
 }
 
@@ -131,7 +131,7 @@ void SwOSPixel::onTrigger( int32_t value ) {
  *
  ***************************************************/
 
- SwOSOLED::SwOSOLED(const char *name, SwOSCtrl *ctrl) : SwOSIO( name, ctrl ) {
+ SwOSOLED::SwOSOLED(const char *name, SwOSCtrl *ctrl) : SwOSIO( name, ctrl, SWOSIO_OLED ) {
  
    if ( ctrl->isLocal() ) { 
      setupLocal(); 

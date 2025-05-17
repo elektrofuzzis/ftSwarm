@@ -37,7 +37,6 @@
     SwOSPixel(const char *name, uint8_t port, SwOSCtrl *ctrl);
   
     // administrative stuff
-    virtual FtSwarmIOType_t getIOType() { return FTSWARM_PIXEL; };
     virtual FtSwarmIcon_t getIcon()   { return FTSWARM_15_RGBLED; };
     virtual void jsonize( JSONize *json, uint8_t id);
     virtual void onTrigger( int32_t value );
@@ -74,7 +73,6 @@
     SwOSOLED(const char *name, SwOSCtrl *ctrl);
 
     // administrative stuff
-    virtual FtSwarmIOType_t getIOType() { return FTSWARM_OLED; };
     virtual bool isOLED( void ) { return true; };
 
     void display(void);

@@ -59,8 +59,8 @@
     SwOSCAM(const char *name, SwOSCtrl *ctrl );
 
     // administrative stuff
-    virtual FtSwarmIOType_t getIOType() { return FTSWARM_CAM; };
     virtual void jsonize( JSONize *json, uint8_t id);
+    virtual bool isCAM( void )   { return true; };
 
     void setStreaming( bool onOff, bool dontSendToRemote );
     void setFramesize( framesize_t framesize, bool dontSendToRemote );

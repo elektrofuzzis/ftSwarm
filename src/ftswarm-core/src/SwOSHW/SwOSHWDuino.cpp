@@ -2,21 +2,21 @@
 #include <string.h>
 
 #include "ftPwrDrive/i2cBuffer.h"
-#include "ftDuino.h"
+#include "SwOSHW/SWOSHWDuino.h"
 #include "SwOSCom.h"
 
-void FtDuino::setSensorType( uint8_t port, FtSwarmSensor_t sensorType ) {
+void SwOSDuino::setIOType( uint8_t port, SwOSIOType_t ioType ) {
 
     uint8_t mode;
 
-    switch (sensorType) {
-        case FTSWARM_ANALOG:
-        case FTSWARM_VOLTMETER:     mode = VOLTAGE;
+    switch ( ioType ) {
+        case SWOSIO_ANALOG:
+        case SWOSIO_VOLTMETER:      mode = VOLTAGE;
                                     break;
                                     
-        case FTSWARM_LDR:
-        case FTSWARM_OHMMETER:
-        case FTSWARM_THERMOMETER:   mode = RESISTANCE;
+        case SWOSIO_LDR:
+        case SWOSIO_OHMMETER:
+        case SWOSIO_THERMOMETER:    mode = RESISTANCE;
                                     break;
 
         default:                    mode = SWITCH;
@@ -27,7 +27,7 @@ void FtDuino::setSensorType( uint8_t port, FtSwarmSensor_t sensorType ) {
 }
 
 
-void FtDuino::setMotor( uint8_t port, FtSwarmMotion_t _motionType, int16_t speed) {
+void SwOSDuino::setMotor( uint8_t port, FtSwarmMotion_t _motionType, int16_t speed) {
 
     // cast speed to pwm
     uint8_t pwm = ( abs( speed) > 255 ) ? 255 : abs( speed );
@@ -43,14 +43,16 @@ void FtDuino::setMotor( uint8_t port, FtSwarmMotion_t _motionType, int16_t speed
     i2c.sendData( i2cAddress, I2C_MOTOR_SET, port, mode, pwm );
 }
 
-void FtDuino::getState( uint16_t input[8] ) {
+void SwOSDuino::read( void ) {
 
     i2c.sendData( i2cAddress, I2C_GETSTATE );
     i2c.receiveBuffer( i2cAddress, 16 );
     memcpy( input, i2c.data, 16 );
 
+    if ( i2c.error ) error++;
+
 }
 
-uint8_t FtDuino::getError( void ) {
-    return i2c.error;
+uint8_t SwOSDuino::getError( void ) {
+    return error;
 }

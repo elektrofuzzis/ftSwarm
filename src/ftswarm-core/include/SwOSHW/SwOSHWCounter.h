@@ -34,8 +34,8 @@
 	  SwOSCounter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl );
   
     // administrative stuff
-	  virtual FtSwarmIOType_t getIOType();
     virtual void jsonize( JSONize *json, uint8_t id);
+    virtual bool isCounter( void ) { return true; };
 
     // read sensor
 	  virtual void read();
@@ -70,7 +70,6 @@ class SwOSFrequencymeter : public SwOSInput {
     ~SwOSFrequencymeter();
   
     // administrative stuff
-	  virtual FtSwarmIOType_t getIOType() { return FTSWARM_FREQUENCYINPUT; };
     virtual void jsonize( JSONize *json, uint8_t id);
 
     // read sensor

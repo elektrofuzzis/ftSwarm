@@ -10,8 +10,7 @@
 //
 ///////////////////////////////////////////////////
 
-#ifndef ftPwrDrive_h
-#define ftPwrDrive_h
+#pragma once
 
 #include <Arduino.h>
 
@@ -53,10 +52,15 @@ static const uint8_t FTPWRDRIVE_MOTORS = MOTORS;
 static const uint8_t FTPWRDRIVE_M[ MOTORS ] = { M1, M2, M3, M4 }; 
 static const uint8_t FTPWRDRIVE_ISMOVING = ISMOVING, FTPWRDRIVE_ENDSTOP = ENDSTOP, FTPWRDRIVE_EMERCENCYSTOP = EMERCENCYSTOP, FTPWRDRIVE_HOMING = HOMING;
 
-class ftPwrDrive {
+class FtPwrDrive {
   public:
+
+    // readings from last read() cmd;
+    uint8_t lastState[4];
+    long    lastPosition[4];
+    long    lastDistance[4];
     
-    ftPwrDrive( uint8_t myI2CAddress = 32, int sda = -1, int scl = -1 );
+    FtPwrDrive( uint8_t myI2CAddress = 32, int sda = -1, int scl = -1 );
       // constructor
       
     void Watchdog( long w );
@@ -213,6 +217,8 @@ class ftPwrDrive {
     void setInSync( uint8_t motor1, uint8_t motor2, boolean OnOff);
       // set two motors running in sync
 
+    void read( void );
+
   private:
     uint8_t i2cAddress = 32;
 
@@ -222,6 +228,3 @@ class ftPwrDrive {
      // returns the index (0..3) of a motor
 
 };
-
-
-#endif

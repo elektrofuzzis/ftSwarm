@@ -17,12 +17,12 @@
  *
  ***************************************************/
 
- SwOSCounter::SwOSCounter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl ) : SwOSInput( name, port1, ctrl, FTSWARM_COUNTER ) {
+ SwOSCounter::SwOSCounter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl ) : SwOSInput( name, port1, ctrl, SWOSIO_COUNTER ) {
 
   portControl = port2;
 
   // rotary?
-  if ( port2 < SWOS_NOPORT ) sensorType = FTSWARM_ROTARYENCODER;
+  if ( port2 < SWOS_NOPORT ) ioType = SWOSIO_ROTARYENCODER;
   
   // initialize local HW
   if ( ctrl->isLocal() ) setupLocal();
@@ -38,7 +38,7 @@ void SwOSCounter::setupLocal() {
   // setup _CONTROL Input if needed.
   // counter: portControl = SWOS_NOPORT -> no _CONTROL
   // encode:  if counter post is the highest input port, portControl = ctrl->inputs  -> no _CONTROL
-  if ( portControl < ctrl->inputs ) { 
+  if ( portControl < MAXIOS[ ctrl->getCPU() ].inputs ) { 
 
     CONTROL = (gpio_num_t) GPIO_INPUT[ctrl->getCPU()][portControl].io;
 
@@ -111,15 +111,6 @@ void SwOSCounter::setupLocal() {
 
 }
 
-FtSwarmIOType_t SwOSCounter::getIOType() { 
-
-  if ( sensorType == FTSWARM_ROTARYENCODER )
-    return FTSWARM_ROTARYINPUT;
-  else
-    return FTSWARM_COUNTERINPUT; 
-};
-
-
 void SwOSCounter::read( void ) {
 
   // nothing todo on remote sensors
@@ -184,8 +175,6 @@ void SwOSCounter::jsonize( JSONize *json, uint8_t id) {
 
   json->startObject();
   SwOSIO::jsonize(json, id);
-  json->variableUI32("sensorType", sensorType);
-  json->variableUI32("subType", sensorType);
   json->variableI32("value", getValueI32() );
   json->endObject();
 
@@ -206,7 +195,7 @@ static void IRAM_ATTR freq_isr_handler(void* arg) {
 
 }
 
-SwOSFrequencymeter::SwOSFrequencymeter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl ) : SwOSInput( name, port1, ctrl, FTSWARM_FREQUENCYMETER ) {
+SwOSFrequencymeter::SwOSFrequencymeter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl ) : SwOSInput( name, port1, ctrl, SWOSIO_FREQUENCYMETER ) {
 
   portControl = port2;
   
@@ -303,8 +292,6 @@ void SwOSFrequencymeter::jsonize( JSONize *json, uint8_t id) {
 
   json->startObject();
   SwOSIO::jsonize(json, id);
-  json->variableUI32("sensorType", sensorType);
-  json->variableUI32("subType", sensorType );
   json->variableI32("value", getValueI32() );
   json->endObject();
 

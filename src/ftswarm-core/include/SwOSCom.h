@@ -36,15 +36,14 @@ typedef enum {
   CMD_GOTYOU,                 // anybody's reply on ANYBODYOUTTHERE
   CMD_STATE,                  // send my input's readings
   CMD_IOCONFIG,               // send my io config to kelda
-  CMD_CHANGEIOTYPE,           // change a port's IO Type
+  CMD_SETIOTYPE,              // change a port's IO Type
+  CMD_SETPARAMETER,           // send a parameter to the IO, e.g. normallyOpen, highResolution
   
   CMD_IDENTIFY,               // show myself
   
-  CMD_SETLED,                 // set LED color & brightness
+  CMD_SETPIXEL,               // set LED color & brightness
   CMD_SETACTORSPEED,          // set actors motionType & speed
   CMD_SETSERVO,               // set servo position
-  CMD_SETSENSORTYPE,          // set an input's sensor type
-  CMD_SETACTORTYPE,           // set an actors's actor type
   CMD_I2CREGISTER,            // set an I2C register
   CMD_SETSTEPPERDISTANCE,     // set distance to go
   CMD_STEPPERSTARTSTOP,       // start/stop
@@ -70,17 +69,14 @@ extern QueueHandle_t recvNotification;
 struct LED_t   { uint8_t brightness; uint32_t color; } __attribute__((packed));
 struct Servo_t { int16_t offset; int16_t position; } __attribute__((packed));
 struct Joystick_t { int16_t LR; int16_t FB; } __attribute__((packed));
-struct IOConfig_t { FtSwarmIOType_t ioType; FtSwarmSensor_t sensorType; uint8_t port; char name[10]; char alias[MAXIDENTIFIER]; } __attribute__((packed));
+struct IOConfig_t { SwOSIOType_t ioType; uint8_t port; char name[10]; char alias[MAXIDENTIFIER]; } __attribute__((packed));
 
 struct SwOSCtrlConfig_t { 
   FtSwarmController_t   ctrlType; 
   FtSwarmVersion_t      CPU; 
   bool                  IAmKelda;
   FtSwarmExtMode_t      extensionPort;
-  uint8_t               inputs;
-  uint8_t               actors;
-  uint8_t               leds;
-  uint8_t               servos;
+  uint8_t               IOs;
   bool                  gyro;
   int16_t               zero[2][2];
 } __attribute__((packed));
@@ -104,13 +100,12 @@ struct ackCmd_t {
   uint16_t secret;
 } __attribute__((packed));
 
+#define MAXSTATECMDPAYLOAD 128
+
 struct stateCmd_t {
-  uint32_t inputValue[MAXINPUTS]; 
-  int16_t LR[2]; int16_t FB[2]; uint8_t hc165; 
-  uint8_t i2cValue[MAXI2CREGISTERS]; 
-  union{
-    struct{ float qw, qx, qy, qz; int16_t ax, ay, az; } gyroMPU;
-  };
+  uint8_t items;
+  uint8_t payload[MAXSTATECMDPAYLOAD];
+
 } __attribute__((packed));
 
 struct stepperStateCmd_t{ 
@@ -123,7 +118,7 @@ struct stepperStateCmd_t{
 
 struct sensorCmd_t { 
   uint8_t index; 
-  FtSwarmSensor_t sensorType; 
+  SwOSIOType_t ioType; 
   bool normallyOpen;
 } __attribute__((packed));
 
@@ -149,11 +144,11 @@ struct actorStepperCmd_t{
 
 struct actorTypeCmd_t{ 
   uint8_t index; 
-  FtSwarmActor_t actorType; 
+  SwOSIOType_t actorType; 
   bool highResolution;
 } __attribute__((packed));
 
-struct ledCmd_t { 
+struct pixelCmd_t { 
   uint8_t index; 
   uint8_t brightness; 
   uint32_t color;
@@ -164,6 +159,7 @@ struct ioConfigCmd_t {
 } __attribute__((packed));
 
 struct I2CRegisterCmd_t { 
+  uint8_t index;
   uint8_t reg; 
   uint8_t value;
 } __attribute__((packed));
@@ -178,10 +174,16 @@ struct userEventCmd_t {
   uint8_t payload[MAXUSEREVENTPAYLOAD];
 } __attribute__((packed));
 
-struct changeIOTypeCmd_t{ 
+struct parameterCmd_t { 
   uint8_t index; 
-  FtSwarmIOType_t oldIOType; 
-  FtSwarmIOType_t newIOType;
+  int32_t parameter;
+} __attribute__((packed));
+
+  struct ioTypeCmd_t{ 
+  uint8_t      index; 
+  SwOSIOType_t oldIOType;
+  SwOSIOType_t newIOType;
+  int32_t      payload;
 } __attribute__((packed));
 
 struct counterCmd_t{ 
@@ -205,13 +207,14 @@ struct SwOSDatagram_t {
     actorSpeedCmd_t actorSpeedCmd;
     actorStepperCmd_t actorStepperCmd;
     actorTypeCmd_t actorTypeCmd;
-    ledCmd_t ledCmd;
+    pixelCmd_t pixelCmd;
     ioConfigCmd_t ioConfigCmd;
     I2CRegisterCmd_t I2CRegisterCmd;
     ctrlCmd_t ctrlCmd;
     userEventCmd_t userEventCmd;
-    changeIOTypeCmd_t changeIOTypeCmd;
+    ioTypeCmd_t ioTypeCmd;
     counterCmd_t counterCmd;
+    parameterCmd_t parameterCmd;
   };
 } __attribute__((packed));
 
@@ -249,12 +252,10 @@ public:
   size_t size( void );
 
   // send my alias names buffered
-  void sendHostname( char *name, char *alias ) { sendIO( FTSWARM_MAXIOTYPE, FTSWARM_MAXSENSOR, SWOS_NOPORT, name, alias); };
-  void sendIO( FtSwarmIOType_t ioType, char *name, char *alias ) { sendIO( ioType, FTSWARM_MAXSENSOR, SWOS_NOPORT, name, alias); };
-  void sendIO( FtSwarmIOType_t ioType, uint8_t port, char *name, char *alias ) { sendIO( ioType, FTSWARM_MAXSENSOR, port, name, alias); };
-  void sendIO( FtSwarmIOType_t ioType, FtSwarmSensor_t sensorType, uint8_t port, char *name, char *alias );
+  void pushHostname( char *name, char *alias ) { pushIO( 255, SWOSIO_MAXIOTYPE, SWOS_NOPORT, name, alias); };
+  void pushIO( uint8_t index, SwOSIOType_t ioType,  uint8_t port,  char *name,  char *alias );
+  bool popIO( uint8_t *index, SwOSIOType_t *ioType, uint8_t *port, char **name, char **alias );
   void flushBuffer( void );
-  bool getNextIO( FtSwarmIOType_t *ioType, FtSwarmSensor_t *sensorType, uint8_t *port, char **name, char **alias );
   
   void send( void );
 

@@ -13,46 +13,124 @@
 
 #include "SwOSCom.h"
 
-const FtSwarmIcon_t ACTORICON[FTSWARM_MAXACTOR] = { FTSWARM_16_XMOTOR, FTSWARM_20_XMMOTOR, FTSWARM_17_TRACTOR, FTSWARM_18_ENCODER, FTSWARM_19_LAMP, FTSWARM_23_VALVE, FTSWARM_22_COMPRESSOR, FTSWARM_24_BUZZER };
- 
 /***************************************************
  *
- *   SwOSActor
+ *   SwOSMotor
  *
  ***************************************************/
 
- SwOSActor::SwOSActor(const char *name, uint8_t port, SwOSCtrl *ctrl):SwOSIO(name, port, ctrl ){
-
-  // ftPwrDrive has a bitmap motor representation, so precalc the Mx values
-  pwrDriveMotor = 1 << port;
-  if ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) highResolution = true;
+ SwOSMotor::SwOSMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType ):SwOSIO(name, port, ctrl, ioType ){
 
   // initialize local HW
   if (ctrl->isLocal()) {
-    if ( ctrl->isI2CSwarmCtrl() ) {
-      setupI2C();
-    } else {
-      setupLocal();
-    }
+    setupLocal();
   }
 
 }
 
-SwOSActor::~SwOSActor() {
-  if (ctrl->isLocal() ) { setSpeed(0); apply(); }
-  if ( ledc_channel ) free( ledc_channel );
-}
+void SwOSMotor::setMotionType( FtSwarmMotion_t motionType ) {
 
-FtSwarmIcon_t SwOSActor::getIcon() { 
-  return ACTORICON[ actorType ]; 
-}; 
-
-void SwOSActor::setupI2C() {
+  this->motionType = motionType;
   
 }
 
-void SwOSActor::setupLocal() {
+void SwOSMotor::setParameter( int32_t parameter ) {
+
+  if ( ctrl->isLocal() ) {
+    
+    this->highResolution = (bool) parameter;
+
+  } else {
+
+    // send 
+    SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETPARAMETER );
+    cmd.data.parameterCmd.index     = ctrl->getIndex( this );
+    cmd.data.parameterCmd.parameter = parameter;
+    cmd.send( );
+
+  }
+
+} 
+
+void SwOSMotor::setSpeed( int16_t speed ) {
+
+  // if no change is needed, return
+  if ( speed == this->speed ) return;
+
+  // Motor, OnOff-Actors: set COAST or ON automatically
+  if ( autoCoast() ) {
+    if ( ( this->speed != 0 ) && ( speed == 0 ) ) motionType = FTSWARM_COAST;
+    if ( ( this->speed == 0 ) && ( speed != 0 ) ) motionType = FTSWARM_ON;
+  }
+  
+  // limit speed values
+  int16_t maxSpeed = MAXSPEED256;
+  if (highResolution) maxSpeed = MAXSPEED4096;
+  if      (speed> maxSpeed) this->speed =  maxSpeed;
+  else if (speed<-maxSpeed) this->speed = -maxSpeed;
+  else                      this->speed =  speed;
+
+}
+
+void SwOSMotor::apply(void) {
+
+  // set speed values
+  if   (!ctrl->isLocal()) setRemote();
+  else                    setLocal();
+
+}
+
+void SwOSMotor::jsonize( JSONize *json, uint8_t id) {
+
+  json->startObject();
+  SwOSIO::jsonize(json, id);
+  json->variableUI32("motiontype",   getMotionType() );
+  json->variableI16 ("speed",        getSpeed() );
+  json->variableB( "highResolution", highResolution );
+  json->endObject();
+}
+
+void SwOSMotor::onTrigger( int32_t value ) {
+
+  setSpeed( (int16_t) value );
+  apply();
+
+}
+
+void SwOSMotor::read( void ) {
+
+}
+
+/***************************************************
+ *
+ *   SwOSDCMotor
+ *
+ ***************************************************/
+
+SwOSDCMotor::SwOSDCMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType ):SwOSMotor(name, port, ctrl, ioType ){
+
   // initialize local HW
+  if (ctrl->isLocal()) {
+    setupLocal();
+  }
+
+}
+
+SwOSDCMotor::~SwOSDCMotor() {
+
+  if ( ctrl->isLocal() ) { setSpeed(0); apply(); }
+  if ( ledc_channel ) free( ledc_channel );
+
+}
+
+void SwOSDCMotor::setupLocal() {
+  // initialize local HW
+
+  // ftDuino
+  if ( ( ctrl->getCPU() == FTSWARMDUINO_1V141 ) && (ftDuino) ) {
+    ftDuino->setIOType( port, ioType );
+    return;
+  }
 
   // set HW Pins
   IN1 = GPIO_ACTOR[ctrl->getCPU()][port][0];
@@ -97,97 +175,7 @@ void SwOSActor::setupLocal() {
 
 }
 
-void SwOSActor::setMotionType( FtSwarmMotion_t motionType ) {
-
-  this->motionType = motionType;
-  
-}
-
-void SwOSActor::setActorType( FtSwarmActor_t actorType, bool highResolution, bool dontSendToRemote ) { 
-
-  this->actorType = actorType;
-  this->highResolution = highResolution;
-
-  if (ctrl->isLocal()) { 
-    
-  } else if (!dontSendToRemote) {    
-    // send SN, SETSENSORTYPE, port, sensorType
-    SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETACTORTYPE );
-    cmd.data.actorTypeCmd.index          = port;
-    cmd.data.actorTypeCmd.actorType      = actorType;
-    cmd.data.actorTypeCmd.highResolution = highResolution;
-    cmd.send( );
-
-  }
-  
-};   
-
-void SwOSActor::setAcceleration( uint32_t rampUpT,  uint32_t rampUpY ) {
-
-  this->rampUpT = rampUpT;
-  this->rampUpY = rampUpY;
-
-}
-
-void SwOSActor::getAcceleration( uint32_t *rampUpT,  uint32_t *rampUpY ) {
-  *rampUpY = this->rampUpY;
-  *rampUpT = this->rampUpT;
-}
-
-void SwOSActor::setSpeed( int16_t speed ) {
-
-  // if no change is needed, return
-  if ( speed == this->speed ) return;
-
-  // Motor, OnOff-Actors: set COAST or ON automatically
-  if ( ( actorType != FTSWARM_XMMOTOR ) && ( actorType != FTSWARM_TRACTOR ) && ( actorType != FTSWARM_ENCODER ) ) {
-    if ( ( this->speed != 0 ) && ( speed == 0 ) ) motionType = FTSWARM_COAST;
-    if ( ( this->speed == 0 ) && ( speed != 0 ) ) motionType = FTSWARM_ON;
-  }
-  
-  // limit speed values
-  int16_t maxSpeed = MAXSPEED256;
-  if (highResolution) maxSpeed = MAXSPEED4096;
-  if      (speed> maxSpeed) this->speed =  maxSpeed;
-  else if (speed<-maxSpeed) this->speed = -maxSpeed;
-  else                      this->speed =  speed;
-
-}
-
-void SwOSActor::apply(void) {
-
-  // set speed values
-  if      (!ctrl->isLocal())        setRemote();
-  else if ( ctrl->isI2CSwarmCtrl()) setLocalI2C();
-  else                              setLocalLHW();
-
-}
-
-void SwOSActor::setRemote() {
-  
-  SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETACTORSPEED  );
-  cmd.data.actorSpeedCmd.index      = port;
-  cmd.data.actorSpeedCmd.motionType = motionType;
-  cmd.data.actorSpeedCmd.speed      = speed;
-  cmd.data.actorSpeedCmd.rampUpT    = rampUpT;
-  cmd.data.actorSpeedCmd.rampUpY    = rampUpY;
-  cmd.send( );
-
-}
-
-void SwOSActor::setLocalI2C() {
-
-  if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && ( pwrDrive ) ) {
-    pwrDrive->setMaxSpeed( pwrDriveMotor, speed );
-  }
-
-  if ( ( ctrl->getCPU() == FTSWARMDUINO_1V141 ) && ( ftDuino ) ) {
-    ftDuino->setMotor( port, motionType, speed);
-  }
-
-}
-
-void SwOSActor::setPWM( int16_t xin1, int16_t xin2, gpio_num_t pwm, uint32_t duty ) {
+void SwOSDCMotor::setPWM( int16_t xin1, int16_t xin2, gpio_num_t pwm, uint32_t duty ) {
 
   // calc duty based on _highResolution
   uint32_t duty1 = duty;
@@ -229,7 +217,7 @@ void SwOSActor::setPWM( int16_t xin1, int16_t xin2, gpio_num_t pwm, uint32_t dut
 
 }
 
-void SwOSActor::setLocalLHW() {
+void SwOSDCMotor::setLocal() {
 
   // just in case of non-existent HW
   if ( ( IN1 == GPIO_NUM_NC ) || ( IN2 == GPIO_NUM_NC ) ) return;
@@ -260,36 +248,103 @@ void SwOSActor::setLocalLHW() {
   
 }
 
-void SwOSActor::setDistance( long distance, bool relative, bool dontSendToRemote ) {
+
+void SwOSDCMotor::setAcceleration( uint32_t rampUpT,  uint32_t rampUpY ) {
+
+  this->rampUpT = rampUpT;
+  this->rampUpY = rampUpY;
+
+}
+
+void SwOSDCMotor::getAcceleration( uint32_t *rampUpT,  uint32_t *rampUpY ) {
+  *rampUpY = this->rampUpY;
+  *rampUpT = this->rampUpT;
+}
+
+void SwOSDCMotor::setRemote() {
+  
+  SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETACTORSPEED  );
+  cmd.data.actorSpeedCmd.index      = ctrl->getIndex( this );
+  cmd.data.actorSpeedCmd.motionType = motionType;
+  cmd.data.actorSpeedCmd.speed      = speed;
+  cmd.data.actorSpeedCmd.rampUpT    = rampUpT;
+  cmd.data.actorSpeedCmd.rampUpY    = rampUpY;
+  cmd.send( );
+
+}
+
+/***************************************************
+ *
+ *   SwOSStepper
+ *
+ ***************************************************/
+
+SwOSStepper::SwOSStepper(const char *name, uint8_t port, SwOSCtrl *ctrl ):SwOSMotor(name, port, ctrl, SWOSIO_STEPPER ){
+
+  // ftPwrDrive has a bitmap motor representation, so precalc the Mx values
+  pwrDriveMotor = 1 << port;
+  highResolution = true;
+
+  // initialize local HW
+  if (ctrl->isLocal()) {
+    setupLocal();
+  }
+
+}
+
+SwOSStepper::~SwOSStepper() {
+
+  if (ctrl->isLocal() ) { setSpeed(0); apply(); }
+
+}
+
+void SwOSStepper::setRemote() {
+  
+  SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETACTORSPEED  );
+  cmd.data.actorSpeedCmd.index      = ctrl->getIndex( this );
+  cmd.data.actorSpeedCmd.motionType = motionType;
+  cmd.data.actorSpeedCmd.speed      = speed;
+  cmd.data.actorSpeedCmd.rampUpT    = 0;
+  cmd.data.actorSpeedCmd.rampUpY    = 0;
+  cmd.send( );
+
+}
+
+void SwOSStepper::setLocal() {
+
+  if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && ( ftPwrDrive ) ) {
+    ftPwrDrive->setMaxSpeed( pwrDriveMotor, speed );
+  }
+
+}
+
+void SwOSStepper::setDistance( long distance, bool relative ) {
 
   if   (!ctrl->isLocal()) {
 
-    if (!dontSendToRemote) {
-      // send remote
-      SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETSTEPPERDISTANCE  );
-      cmd.data.actorStepperCmd.index = port;
-      cmd.data.actorStepperCmd.paraml = distance;
-      cmd.data.actorStepperCmd.paramb = relative;
-      cmd.send( );
+    // send remote
+    SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETSTEPPERDISTANCE  );
+    cmd.data.actorStepperCmd.index  = ctrl->getIndex( this );
+    cmd.data.actorStepperCmd.paraml = distance;
+    cmd.data.actorStepperCmd.paramb = relative;
+    cmd.send( );
 
-    }
-
-  } else if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && (pwrDrive ) ) {
+  } else if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && (ftPwrDrive ) ) {
     // set local
-    if (relative) pwrDrive->setRelDistance( pwrDriveMotor, distance );
-    else          pwrDrive->setAbsDistance( pwrDriveMotor, distance );
+    if (relative) ftPwrDrive->setRelDistance( pwrDriveMotor, distance );
+    else          ftPwrDrive->setAbsDistance( pwrDriveMotor, distance );
 
-    distance = pwrDrive->getStepsToGo( pwrDriveMotor );
+    distance = ftPwrDrive->getStepsToGo( pwrDriveMotor );
 
   }
 
 }
 
-long SwOSActor::getDistance( void ) {
+long SwOSStepper::getDistance( void ) {
   return distance;
 }
 
-void SwOSActor::startStop( bool start ) {
+void SwOSStepper::startStop( bool start ) {
 
   if (!ctrl->isLocal() )  {
     // send remote
@@ -298,43 +353,39 @@ void SwOSActor::startStop( bool start ) {
     cmd.data.actorStepperCmd.paramb = start;
     cmd.send( );
 
-  } else if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && (pwrDrive ) ) {
+  } else if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && ( ftPwrDrive ) ) {
 
-    if (start) pwrDrive->startMoving( pwrDriveMotor );
-    else       pwrDrive->stopMoving( pwrDriveMotor );
+    if (start) ftPwrDrive->startMoving( pwrDriveMotor );
+    else       ftPwrDrive->stopMoving( pwrDriveMotor );
     
   }
 
 }
 
-void SwOSActor::setPosition( long position, bool dontSendToRemote ) {
+void SwOSStepper::setPosition( long position ) {
 
   this->position = position;
 
   if   (!ctrl->isLocal()) {
 
-    if (!dontSendToRemote) {
-    
-      // send remote
-      SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETSTEPPERPOSITION  );
-      cmd.data.actorStepperCmd.index = port;
-      cmd.data.actorStepperCmd.paraml = position;
-      cmd.send( );
+    // send remote
+    SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETSTEPPERPOSITION  );
+    cmd.data.actorStepperCmd.index = port;
+    cmd.data.actorStepperCmd.paraml = position;
+    cmd.send( );
 
-    }
-
-  } else if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && (pwrDrive ) ) {
+  } else if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && (ftPwrDrive ) ) {
     // set local
-    pwrDrive->setPosition( pwrDriveMotor, position );
+    ftPwrDrive->setPosition( pwrDriveMotor, position );
   }
 
 }
 
-long SwOSActor::getPosition( void ) {
+long SwOSStepper::getPosition( void ) {
   return position;
 }
 
-void SwOSActor::homing( long maxDistance ) {
+void SwOSStepper::homing( long maxDistance ) {
 
   if   (!ctrl->isLocal()) {
     // send remote
@@ -343,14 +394,14 @@ void SwOSActor::homing( long maxDistance ) {
     cmd.data.actorStepperCmd.paraml = maxDistance;
     cmd.send( );
 
-  } else if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && (pwrDrive ) ) {
+  } else if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && (ftPwrDrive ) ) {
     // set local
-    pwrDrive->homing(pwrDriveMotor, maxDistance );
+    ftPwrDrive->homing(pwrDriveMotor, maxDistance );
   }
 
 }
 
-void SwOSActor::setHomingOffset( long offset ) {
+void SwOSStepper::setHomingOffset( long offset ) {
 
   if   (!ctrl->isLocal()) {
     // send remote
@@ -359,52 +410,30 @@ void SwOSActor::setHomingOffset( long offset ) {
     cmd.data.actorStepperCmd.paraml = offset;
     cmd.send( );
 
-  } else if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && (pwrDrive ) ) {
+  } else if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && (ftPwrDrive ) ) {
     // set local
-    pwrDrive->homingOffset( pwrDriveMotor, offset );
+    ftPwrDrive->homingOffset( pwrDriveMotor, offset );
   }
 
 }
 
-void SwOSActor::jsonize( JSONize *json, uint8_t id) {
-
-  json->startObject();
-  SwOSIO::jsonize(json, id);
-  json->variableUI32("subType",      actorType );
-  json->variableUI32("motiontype",   getMotionType() );
-  json->variableI16 ("speed",        getSpeed() );
-  json->variableB( "highResolution", highResolution );
-  json->endObject();
-}
-
-void SwOSActor::onTrigger( int32_t value ) {
-
-  setSpeed( (int16_t) value );
-  apply();
-
-}
-
-void SwOSActor::read( void ) {
-
-}
-
-void SwOSActor::setIsHoming( bool isHoming ) {
+void SwOSStepper::setIsHoming( bool isHoming ) {
   this->motorIsHoming = isHoming;
 }
 
-bool SwOSActor::isHoming( void ) {
+bool SwOSStepper::isHoming( void ) {
   return motorIsHoming;
 }
 
-void SwOSActor::setIsRunning( bool isRunning ) {
+void SwOSStepper::setIsRunning( bool isRunning ) {
   this->motorIsRunning = isRunning;
 }
 
-bool SwOSActor::isRunning( void ) {
+bool SwOSStepper::isRunning( void ) {
   return motorIsRunning;
 }
 
-void SwOSActor::setValue( long distance, long position, bool isHoming, bool isRunning ) {
+void SwOSStepper::setValue( long distance, long position, bool isHoming, bool isRunning ) {
 
   this->distance = distance;
   this->position = position;
@@ -418,10 +447,6 @@ void SwOSActor::setValue( long distance, long position, bool isHoming, bool isRu
  *
  ***************************************************/
 
- SwOSServo::SwOSServo(const char *name, uint8_t port, SwOSCtrl *ctrl) : SwOSIO( name, port, ctrl ) {
-
-}
-
 void SwOSServo::jsonize( JSONize *json, uint8_t id) {
 
   json->startObject();
@@ -432,29 +457,29 @@ void SwOSServo::jsonize( JSONize *json, uint8_t id) {
 
 }
 
-void SwOSServo::setPosition( int16_t position, bool dontSendToRemote ) {
+void SwOSServo::setPosition( int16_t position ) {
   
   this->position = position;
 
   // apply local or remote
-  if (ctrl->isLocal())        setLocal();
-  else if (!dontSendToRemote) setRemote();
+  if (ctrl->isLocal()) setLocal();
+  else                 setRemote();
 
 }
 
-void SwOSServo::setOffset( int16_t offset, bool dontSendToRemote ) {
+void SwOSServo::setOffset( int16_t offset ) {
   
   this->offset = offset;
  
   // apply local or remote
-  if (ctrl->isLocal())        setLocal();
-  else if (!dontSendToRemote) setRemote();
+  if (ctrl->isLocal()) setLocal();
+  else                 setRemote();
 
 }
 
 void SwOSServo::onTrigger( int32_t value ) {
 
-  setPosition( (int16_t) value, false );
+  setPosition( (int16_t) value );
 
 }
 
@@ -555,10 +580,10 @@ void SwOSDigitalServo::setRemote( ) {
 #define RCMAXDELTA   20
 #define RCMINSPEED   65
 
-SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSAnalogInput *poti, SwOSActor *actor): SwOSServo( name, port, ctrl ) {
+SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSAnalogInput *poti, SwOSMotor *motor): SwOSServo( name, port, ctrl ) {
 
   this->poti  = poti;
-  this->motor = actor;
+  this->motor = motor;
   
 }
 

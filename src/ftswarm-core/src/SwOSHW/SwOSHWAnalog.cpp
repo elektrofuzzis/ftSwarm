@@ -10,7 +10,6 @@
 #include "SwOSHW/SwOSHWAnalog.h"
 #include "SwOSHW/SwOSHWHAL.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
-#include "SwOSHW/SwOSHWXXCtrl.h"
 #include "SwOSFilter.h"
 
 /***************************************************
@@ -19,7 +18,7 @@
  *
  ***************************************************/
 
- SwOSAnalogInput::SwOSAnalogInput(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSInput( name, port, ctrl, FTSWARM_DIGITAL ) {
+ SwOSAnalogInput::SwOSAnalogInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType ) : SwOSInput( name, port, ctrl, ioType ) {
   
   // initialize local HW
   if ( ctrl->isLocal() ) setupLocal( );
@@ -29,9 +28,13 @@
 void SwOSAnalogInput::setupLocal() {
   // initialize local HW
 
-  SwOSInput::setupLocal( );
+  // ftDuino
+  if ( ( ctrl->getCPU() == FTSWARMDUINO_1V141 ) && (ftDuino) ) {
+    ftDuino->setIOType( port, ioType );
+    return;
+  }
 
-  adc_atten_t attenuation;
+  SwOSInput::setupLocal( );
 
   // local init
   ADCUnit     = GPIO_INPUT[(int8_t)ctrl->getCPU()][(int8_t) port].adc_unit;
@@ -49,6 +52,12 @@ void SwOSAnalogInput::setupLocal() {
     adc2_config_channel_atten( (adc2_channel_t) ADCChannel, attenuation );
   }
   #endif
+
+  // analog calibration if needed
+  if ( ( isXMeter() ) && (!adc_chars) ) {
+    adc_chars = (esp_adc_cal_characteristics_t*) calloc(1, sizeof(esp_adc_cal_characteristics_t));
+    esp_adc_cal_characterize((adc_unit_t) ADCUnit, attenuation, ADC_WIDTH_BIT_12, 0, adc_chars);
+  }
 
   filter = new SwOSSpike( 10, 60 );
   filter->addFilter( new SwOSMovingAverage( 3) );
@@ -77,19 +86,9 @@ void SwOSAnalogInput::addFilter( SwOSFilter *filter ) {
 
 bool SwOSAnalogInput::isXMeter() {
 
-  return ( ( sensorType == FTSWARM_VOLTMETER ) ||
-           ( sensorType == FTSWARM_OHMMETER ) ||
-           ( sensorType == FTSWARM_THERMOMETER ) );
-
-}
-
-void SwOSAnalogInput::setSensorTypeLocal( FtSwarmSensor_t sensorType ) {
-
-  // analog calibration if needed
-  if ( ( isXMeter() ) && (!adc_chars) ) {
-    adc_chars = (esp_adc_cal_characteristics_t*) calloc(1, sizeof(esp_adc_cal_characteristics_t));
-    esp_adc_cal_characterize((adc_unit_t) ADCUnit, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 0, adc_chars);
-  }
+  return ( ( ioType == SWOSIO_VOLTMETER ) ||
+           ( ioType == SWOSIO_OHMMETER ) ||
+           ( ioType == SWOSIO_THERMOMETER ) );
 
 }
 
@@ -156,7 +155,9 @@ void SwOSAnalogInput::read() {
 
   // nothing todo on remote sensors
   if (!ctrl->isLocal()) return;
-  if (ctrl->isI2CSwarmCtrl()) return;  // sensor is read via a block control by <controller>.read
+  
+  // ftDuino?
+  if ( ( ctrl->getCPU() == FTSWARMDUINO_1V141 ) && ( ftDuino ) ) { setReading( ftDuino->input[port] ); return; }
 
   // non existing port?
   if ( ( GPIO == GPIO_NUM_NC ) || ( ADCChannel == ADC1_CHANNEL_MAX) ) return;
@@ -218,14 +219,12 @@ void SwOSAnalogInput::setValue( int32_t value ) {
 void SwOSAnalogInput::jsonize( JSONize *json, uint8_t id) {
   json->startObject();
   SwOSIO::jsonize(json, id);
-  json->variableUI32("sensorType", sensorType);
-  json->variableUI32("subType",    sensorType);
 
-  if ( sensorType == FTSWARM_VOLTMETER ) {
+  if ( ioType == SWOSIO_VOLTMETER ) {
     json->variableVolt("value", getVoltage() );
-  } else if ( sensorType == FTSWARM_OHMMETER ) {
+  } else if ( ioType == SWOSIO_OHMMETER ) {
     json->variableOhm("value", getResistance() );
-  } else if ( sensorType == FTSWARM_THERMOMETER ) {
+  } else if ( ioType == SWOSIO_THERMOMETER ) {
     json->variableCelcius("value", getCelcius() );
   } else {
     json->variableI32("value", getValueI32() );
@@ -248,7 +247,7 @@ void SwOSAnalogInput::jsonize( JSONize *json, uint8_t id) {
  *
  ***************************************************/
 
- SwOSJoystick::SwOSJoystick(const char *name, uint8_t port,SwOSCtrl *ctrl, int16_t zeroLR, int16_t zeroFB ) : SwOSIO( name, port, ctrl ) {
+ SwOSJoystick::SwOSJoystick(const char *name, uint8_t port,SwOSCtrl *ctrl, int16_t zeroLR, int16_t zeroFB ) : SwOSIO( name, port, ctrl, SWOSIO_JOYSTICK ) {
 
   // set read values to undefined
   this->lastLR = 0;
@@ -276,19 +275,7 @@ void SwOSJoystick::setupLocal() {
   ADCChannelLR = ADC1_CHANNEL_MAX;
   ADCChannelFB = ADC1_CHANNEL_MAX;
 
-  if ( ctrl->getCPU() == FTSWARMJST_1V0 ) {
-    switch (port) {
-    case 0:
-      ADCChannelLR = ADC1_CHANNEL_3;
-      ADCChannelFB = ADC1_CHANNEL_0;
-      break;
-    case 1:
-      ADCChannelLR = ADC1_CHANNEL_4;
-      ADCChannelFB = ADC1_CHANNEL_6;
-      break;
-    default: break;
-    }
-  } else if ( ctrl->getCPU() == FTSWARMCONTROL_1V3 ) {
+  if ( ctrl->getCPU() == FTSWARMCONTROL_1V3 ) {
     switch (port) {
     case 0:
       ADCChannelLR = ADC1_CHANNEL_5;
@@ -364,15 +351,15 @@ void SwOSJoystick::read() {
   // nothing ToDO with remote HW
   if (!ctrl->isLocal()) return;
 
-    x = readChannel( ADCChannelLR, zeroLR, &lastRawLR, port );
-    if ( x != lastLR ) triggerLR.trigger( FTSWARM_TRIGGERVALUE, x );
-    lastLR = x;
+  x = readChannel( ADCChannelLR, zeroLR, &lastRawLR, port );
+  if ( x != lastLR ) triggerLR.trigger( FTSWARM_TRIGGERVALUE, x );
+  lastLR = x;
 
-    x = readChannel( ADCChannelFB, zeroFB, &lastRawFB, port );
-    if ( x != lastFB ) triggerFB.trigger( FTSWARM_TRIGGERVALUE, x );
-    lastFB = x;
+  x = readChannel( ADCChannelFB, zeroFB, &lastRawFB, port );
+  if ( x != lastFB ) triggerFB.trigger( FTSWARM_TRIGGERVALUE, x );
+  lastFB = x;
 
-    subscription();
+  subscription();
 
 }
 
@@ -412,6 +399,9 @@ void SwOSJoystick::jsonize( JSONize *json, uint8_t id) {
   SwOSIO::jsonize(json, id);
   json->variableI16("valueLr", lastLR );
   json->variableI16("valueFb", lastFB );
-  json->variableB("button", static_cast<SwOSSwarmControl *>(ctrl)->button[6+port]->getState());
+
+  // TODO
+  // json->variableB("button", static_cast<SwOSSwarmControl *>(ctrl)->button[6+port]->getState());
+  
   json->endObject();
 }

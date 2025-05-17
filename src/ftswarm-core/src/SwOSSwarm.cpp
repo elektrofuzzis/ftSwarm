@@ -29,18 +29,6 @@
 // There can only be once!
 SwOSSwarm myOSSwarm;
 
-const SwOSCtrlConfig_t noCtrlConfig = {
-  .ctrlType      = FTSWARM_NOCTRL,
-  .CPU           = FTSWARM_NOVERSION,
-  .IAmKelda      = false,
-  .extensionPort = FTSWARM_EXT_OFF,
-  .inputs        = 0,
-  .actors        = 0,
-  .leds          = 0,
-  .servos        = 0,
-  .gyro          = false
-};
-
 // #define DEBUG_COMMUNICATION_SWARM
 // #define DEBUG_READTASK
 
@@ -182,7 +170,7 @@ uint16_t SwOSSwarm::nextToken( bool rotateToken ) {
   
 }
 
-SwOSIO *SwOSSwarm::waitFor( char *alias, FtSwarmIOType_t ioType ) {
+SwOSIO *SwOSSwarm::waitFor( char *alias, SwOSIOType_t ioType ) {
 
   SwOSIO *me = NULL;
   bool   firstTry = true;
@@ -225,37 +213,23 @@ bool SwOSSwarm::startEvents( void ) {
     if ( ( event->sensor[0] != '\0' ) && ( event->actor[0] != '\0' ) ) {
 
       // get IOs and stop on error
-      sensor = waitFor( event->sensor, FTSWARM_UNDEF );  
+      sensor = waitFor( event->sensor, SWOSIO_UNDEF );  
       if (!sensor) return false;
       if (!sensor->isInput()) return false;
       
-      actor  = waitFor( event->actor,  FTSWARM_UNDEF );  
-      if (!actor)  return false;
-      if (!actor->isActor()) return false;
+      actor  = waitFor( event->actor,  SWOSIO_UNDEF );  
+      if (!actor)            return false;
+      if (!actor->isMotor()) return false;
 
-      switch ( sensor->getIOType() ) {
-    
-        case FTSWARM_INPUT: 
-          static_cast<SwOSInput *>(sensor)->registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter ); 
-          break;
-    
-        case FTSWARM_DIGITALINPUT: 
-          static_cast<SwOSDigitalInput *>(sensor)->registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter ); 
-          break;
-    
-        case FTSWARM_ANALOGINPUT: 
-          static_cast<SwOSAnalogInput *>(sensor)->registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter ); 
-          break;
-    
-        case FTSWARM_BUTTON: 
-          static_cast<SwOSButton *>(sensor)->registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter ); 
-          break;
-    
-        case FTSWARM_JOYSTICK: 
-          if ( event->LR == 1 ) static_cast<SwOSJoystick *>(sensor)->triggerLR.registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter );
-          else                  static_cast<SwOSJoystick *>(sensor)->triggerFB.registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter );
-          break;
-        
+      if ( sensor->getIOType() == SWOSIO_JOYSTICK ) {
+     
+        if ( event->LR == 1 ) static_cast<SwOSJoystick *>(sensor)->triggerLR.registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter );
+        else                  static_cast<SwOSJoystick *>(sensor)->triggerFB.registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter );
+     
+      } else {
+
+        static_cast<SwOSInput *>(sensor)->registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter ); 
+
       }
     
     }
@@ -285,8 +259,8 @@ void SwOSSwarm::startWifi( void ) {
   WiFi.useStaticBuffers(true); 
   WiFi.mode(WIFI_AP_STA);
 
-  if ( ( nvs.wifiMode == wifiAP ) || Ctrl[0]->maintenanceMode() ) {
-    // work as AP in standard or maintennace cable was set
+  if ( nvs.wifiMode == wifiAP ) {
+    // work as AP in standard 
     if (verbose) printf("Create own SSID: %s\n", Ctrl[0]->getHostname());
 
     esp_wifi_set_ps(WIFI_PS_NONE);
@@ -385,36 +359,28 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
     if ( nvs.IAmKelda )  { printf( "I am KELDA!\n"); }
   }
 
-  const SwOSCtrlConfig_t localCtrlConfig = {
+SwOSCtrlConfig_t localCtrlConfig = {
     .ctrlType      = nvs.controllerType,
     .CPU           = nvs.CPU,
     .IAmKelda      = nvs.IAmKelda,
     .extensionPort = nvs.extensionPort,
-    .inputs        = 0,
-    .actors        = 0,
-    .leds          = 0,
-    .servos        = 0,
-    .gyro          = nvs.gyro 
+    .IOs           = 0,
+    .gyro          = nvs.gyro
   };
-  
-	// create local controller
-	maxCtrl++;
-  switch (nvs.controllerType) {
-  case FTSWARM:         Ctrl[maxCtrl] = new SwOSSwarmJST( nvs.serialNumber, noMac, true, localCtrlConfig );
-                        break;
-	case FTSWARMCONTROL:  Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, noMac, true, localCtrlConfig );
-                        break;
-	case FTSWARMCAM:      Ctrl[maxCtrl] = new SwOSSwarmCAM( nvs.serialNumber, noMac, true, localCtrlConfig );
-                        break;
-	case FTSWARMDUINO:    Ctrl[maxCtrl] = new SwOSSwarmDuino( nvs.serialNumber, noMac, true, localCtrlConfig );
-                        break;
-	case FTSWARMPWRDRIVE: Ctrl[maxCtrl] = new SwOSSwarmPwrDrive( nvs.serialNumber, noMac, true, localCtrlConfig );
-                        break;
-  default:              // wrong setup
-                        nvs.initialSetup();
-                        break;
-  }
+
+  memcpy( &localCtrlConfig.zero, &nvs.joyZero, sizeof(nvs.joyZero) );
+
+  // initial setup?
+  if (nvs.controllerType >= FTSWARM_MAXCONTROLLERTYPE ) nvs.initialSetup();
+
+  maxCtrl = 0;
+  Ctrl[0] = new SwOSCtrl( nvs.serialNumber, noMac, true, localCtrlConfig );
   Ctrl[0]->setComState ( COMSTATE_ONLINE );
+
+  SwOSCtrlConfig_t noCtrlConfig;
+  bzero( &noCtrlConfig, sizeof(noCtrlConfig) );
+  noCtrlConfig.ctrlType = FTSWARM_NOCTRL;
+  noCtrlConfig.CPU      = FTSWARM_NOVERSION;
 
   // initialize all swarm members from nvs list
   for (uint8_t i=0; i<MAXCTRL; i++) {
@@ -512,7 +478,7 @@ uint8_t SwOSSwarm::getIndex( FtSwarmSerialNumber_t serialNumber ) {
   
  }
 
-SwOSIO* SwOSSwarm::getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmIOType_t ioType ) {
+SwOSIO* SwOSSwarm::getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType ) {
 
   SwOSIO *IO = NULL;
   
@@ -524,7 +490,7 @@ SwOSIO* SwOSSwarm::getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port
   if ( IO ) {
 
     // everything is fine...
-    if ( ( ioType == FTSWARM_UNDEF ) || ( IO->getIOType() == ioType ) ) return IO;
+    if ( ( ioType == SWOSIO_UNDEF ) || ( IO->getIOType() == ioType ) ) return IO;
 
     // test, if the controller could change the IOType
     if ( IO->isInUse() ) {
@@ -540,7 +506,7 @@ SwOSIO* SwOSSwarm::getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port
   
 }
 
-SwOSIO* SwOSSwarm::getIO( const char *name, FtSwarmIOType_t ioType ) {
+SwOSIO* SwOSSwarm::getIO( const char *name, SwOSIOType_t ioType ) {
 
   SwOSIO *IO;
 
@@ -553,7 +519,7 @@ SwOSIO* SwOSSwarm::getIO( const char *name, FtSwarmIOType_t ioType ) {
       if ( IO ) {
 
         // everything is fine...
-        if ( ( ioType == FTSWARM_UNDEF ) || ( IO->getIOType() == ioType ) ) return IO;
+        if ( ( ioType == SWOSIO_UNDEF ) || ( IO->getIOType() == ioType ) ) return IO;
 
         // test, if the controller could change the IOType
         if ( IO->isInUse() ) {
@@ -1140,15 +1106,13 @@ void SwOSSwarm::replaceCtrl( SwOSCom *com, uint8_t source, uint8_t affected ) {
       
   SwOSCtrl *newCtrl = NULL;
   SwOSCtrl *oldCtrl = Ctrl[source];
-  switch (com->data.registerCmd.ctrlConfig.ctrlType) {
-    case FTSWARM:         newCtrl = new SwOSSwarmJST     ( com ); break;
-    case FTSWARMCONTROL:  newCtrl = new SwOSSwarmControl ( com ); break;
-    case FTSWARMCAM:      newCtrl = new SwOSSwarmCAM     ( com ); break;
-    case FTSWARMPWRDRIVE: newCtrl = new SwOSSwarmPwrDrive( com ); break;
-    case FTSWARMDUINO:    newCtrl = new SwOSSwarmDuino   ( com ); break;
-    default: ESP_LOGW( LOGFTSWARM, "Unknown controller type while adding a new controller to my swarm." ); return;
-  }
   
+  if ( com->data.registerCmd.ctrlConfig.ctrlType >= FTSWARM_MAXCONTROLLERTYPE ) {
+    ESP_LOGW( LOGFTSWARM, "Unknown controller type while adding a new controller to my swarm." ); return;
+  } else {
+    newCtrl = new SwOSCtrl( com->data.sourceSN , com->macAddr, false, com->data.registerCmd.ctrlConfig );
+  }
+
   // replace the new controller in my list
   newCtrl->setComState( COMSTATE_ONLINE );
   Ctrl[source] = newCtrl;
@@ -1331,6 +1295,12 @@ bool SwOSSwarm::addController( FtSwarmSerialNumber_t serialNumber ) {
   if ( Ctrl[i] != NULL ) return true;
 
   // add new Controller to the list
+
+  SwOSCtrlConfig_t noCtrlConfig;
+  bzero( &noCtrlConfig, sizeof(noCtrlConfig) );
+  noCtrlConfig.ctrlType = FTSWARM_NOCTRL;
+  noCtrlConfig.CPU      = FTSWARM_NOVERSION;
+
   Ctrl[i] = new SwOSCtrl( serialNumber,  MacAddr( broadcast ), false, noCtrlConfig );
   nvs.addController( serialNumber );
 

@@ -17,7 +17,7 @@
  ***************************************************/
 
 
- SwOSCAM::SwOSCAM(const char *name, SwOSCtrl *ctrl ) : SwOSIO( name, ctrl ) {
+ SwOSCAM::SwOSCAM(const char *name, SwOSCtrl *ctrl ) : SwOSIO( name, ctrl, SWOSIO_CAM ) {
 
   if ( ctrl->isLocal() ) { 
     setupLocal(); 

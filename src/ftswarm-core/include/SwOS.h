@@ -63,51 +63,133 @@ typedef enum { SWOS_OK, SWOS_TIMEOUT, SWOS_DENY } SwOSError_t;
 // communication
 typedef enum { swarmComWifi = 1, swarmComRS485 = 2, swarmComBoth= 3 } FtSwarmCommunication_t; 
 
-// IO types
-typedef enum { FTSWARM_UNDEF = -1, 
-               FTSWARM_INPUT, 
-               FTSWARM_DIGITALINPUT, 
-               FTSWARM_ANALOGINPUT, 
-               FTSWARM_ACTOR, 
-               FTSWARM_BUTTON, 
-               FTSWARM_JOYSTICK, 
-               FTSWARM_PIXEL, 
-               FTSWARM_SERVO, 
-               FTSWARM_OLED, 
-               FTSWARM_GYRO, 
-               FTSWARM_HC165, 
-               FTSWARM_I2C, 
-               FTSWARM_CAM, 
-               FTSWARM_COUNTERINPUT, 
-               FTSWARM_ROTARYINPUT, 
-               FTSWARM_FREQUENCYINPUT, 
-               FTSWARM_MAXIOTYPE } FtSwarmIOType_t ;
-
 // controller types
-typedef enum { FTSWARM_NOCTRL = -1, FTSWARM = 0, FTSWARMCONTROL, FTSWARMCAM, FTSWARMPWRDRIVE, FTSWARMDUINO } FtSwarmController_t;
+typedef enum { FTSWARM_NOCTRL = -1, FTSWARM = 0, FTSWARMCONTROL, FTSWARMCAM, FTSWARMPWRDRIVE, FTSWARMDUINO, FTSWARM_MAXCONTROLLERTYPE } FtSwarmController_t;
 
-// sensor types
-typedef enum { FTSWARM_DIGITAL, 
-               FTSWARM_ANALOG, 
-               FTSWARM_SWITCH, 
-               FTSWARM_REEDSWITCH, 
-               FTSWARM_LIGHTBARRIER, 
-               FTSWARM_VOLTMETER, 
-               FTSWARM_OHMMETER, 
-               FTSWARM_THERMOMETER, 
-               FTSWARM_LDR, 
-               FTSWARM_TRAILSENSOR, 
-               FTSWARM_COLORSENSOR, 
-               FTSWARM_ULTRASONIC, 
-               FTSWARM_CAMSENSOR, 
-               FTSWARM_COUNTER, 
-               FTSWARM_ROTARYENCODER, 
-               FTSWARM_FREQUENCYMETER, 
-               FTSWARM_LIDAR, 
-               FTSWARM_MAXSENSOR } FtSwarmSensor_t;
+// io types
+typedef enum { SWOSIO_UNDEF = -1,
+               SWOSIO_DIGITAL, 
+               SWOSIO_SWITCH, 
+               SWOSIO_REEDSWITCH, 
+               SWOSIO_LIGHTBARRIER, 
+               SWOSIO_BUTTON,              
+               
+               SWOSIO_ANALOG, 
+               SWOSIO_VOLTMETER, 
+               SWOSIO_OHMMETER, 
+               SWOSIO_THERMOMETER, 
+               SWOSIO_LDR, 
+               SWOSIO_JOYSTICK,
 
-// actor types
-typedef enum { FTSWARM_MOTOR, FTSWARM_XMMOTOR, FTSWARM_TRACTOR,  FTSWARM_ENCODER, FTSWARM_LAMP, FTSWARM_VALVE, FTSWARM_COMPRESSOR, FTSWARM_BUZZER, FTSWARM_STEPPER, FTSWARM_MAXACTOR } FtSwarmActor_t;
+               SWOSIO_MOTOR, 
+               SWOSIO_XMMOTOR, 
+               SWOSIO_TRACTOR,  
+               SWOSIO_ENCODER, 
+               SWOSIO_LAMP, 
+               SWOSIO_VALVE, 
+               SWOSIO_COMPRESSOR, 
+               SWOSIO_BUZZER, 
+               SWOSIO_STEPPER, 
+                            
+               SWOSIO_COUNTER, 
+               SWOSIO_ROTARYENCODER, 
+               SWOSIO_FREQUENCYMETER, 
+               // SWOSIO_TRAILSENSOR, 
+               // SWOSIO_COLORSENSOR, 
+               SWOSIO_ULTRASONIC, 
+               SWOSIO_LIDAR, 
+               
+               SWOSIO_CAM, 
+
+               SWOSIO_SERVO,
+               SWOSIO_PIXEL,
+               SWOSIO_OLED,
+               SWOSIO_I2C,
+               
+               SWOSIO_GYRO,
+               SWOSIO_HC165,
+               SWOSIO_MAXIOTYPE } SwOSIOType_t;
+
+// show via api?
+const bool SHOWIOINAPI[SWOSIO_MAXIOTYPE ] = {
+  true, // SWOSIO_DIGITAL
+  true, // SWOSIO_SWITCH
+  true, // SWOSIO_REEDSWITCH 
+  true, // SWOSIO_LIGHTBARRIER
+  true, // SWOSIO_BUTTON         
+  true, // SWOSIO_ANALOG
+  true, // SWOSIO_VOLTMETER
+  true, // SWOSIO_OHMMETER
+  true, // SWOSIO_THERMOMETER
+  true, // SWOSIO_LDR
+  true, // SWOSIO_JOYSTICK
+  true, // SWOSIO_MOTOR 
+  true, // SWOSIO_XMMOTOR
+  true, // SWOSIO_TRACTOR  
+  true, // SWOSIO_ENCODER 
+  true, // SWOSIO_LAMP
+  true, // SWOSIO_VALVE 
+  true, // SWOSIO_COMPRESSOR
+  true, // SWOSIO_BUZZER
+  true, // SWOSIO_STEPPER
+  true, // SWOSIO_COUNTER 
+  true, // SWOSIO_ROTARYENCODER
+  true, // SWOSIO_FREQUENCYMETER
+  // SWOSIO_TRAILSENSOR, 
+  // SWOSIO_COLORSENSOR, 
+  true, // SWOSIO_ULTRASONIC, 
+  true, // SWOSIO_LIDAR
+  false, // SWOSIO_CAM 
+  true, // SWOSIO_SERVO
+  true, // SWOSIO_PIXEL
+  false, // SWOSIO_OLED
+  false, // SWOSIO_I2C
+  false, // SWOSIO_GYRO
+  false, // SWOSIO_HC165
+} ;               
+
+#define SWOSHW_NOCHANGEIOTYPE 0
+#define SWOSHW_GPIO 1
+#define SWOSHW_ACTOR 2
+
+// show via api?
+const uint8_t CHANGEHWTYPE[SWOSIO_MAXIOTYPE ] = {
+  SWOSHW_GPIO, // SWOSIO_DIGITAL
+  SWOSHW_GPIO, // SWOSIO_SWITCH
+  SWOSHW_GPIO, // SWOSIO_REEDSWITCH 
+  SWOSHW_GPIO, // SWOSIO_LIGHTBARRIER
+  SWOSHW_NOCHANGEIOTYPE, // SWOSIO_BUTTON         
+  SWOSHW_GPIO, // SWOSIO_ANALOG
+  SWOSHW_GPIO, // SWOSIO_VOLTMETER
+  SWOSHW_GPIO, // SWOSIO_OHMMETER
+  SWOSHW_GPIO, // SWOSIO_THERMOMETER
+  SWOSHW_GPIO, // SWOSIO_LDR
+  SWOSHW_NOCHANGEIOTYPE, // SWOSIO_JOYSTICK
+  SWOSHW_ACTOR, // SWOSIO_MOTOR 
+  SWOSHW_ACTOR, // SWOSIO_XMMOTOR
+  SWOSHW_ACTOR, // SWOSIO_TRACTOR  
+  SWOSHW_ACTOR, // SWOSIO_ENCODER 
+  SWOSHW_ACTOR, // SWOSIO_LAMP
+  SWOSHW_ACTOR, // SWOSIO_VALVE 
+  SWOSHW_ACTOR, // SWOSIO_COMPRESSOR
+  SWOSHW_ACTOR, // SWOSIO_BUZZER
+  SWOSHW_NOCHANGEIOTYPE, // SWOSIO_STEPPER
+  SWOSHW_GPIO, // SWOSIO_COUNTER 
+  SWOSHW_GPIO, // SWOSIO_ROTARYENCODER
+  SWOSHW_GPIO, // SWOSIO_FREQUENCYMETER
+  // SWOSIO_TRAILSENSOR, 
+  // SWOSIO_COLORSENSOR, 
+  SWOSIO_ULTRASONIC, 
+  SWOSHW_NOCHANGEIOTYPE, // SWOSIO_LIDAR
+  SWOSHW_NOCHANGEIOTYPE, // SWOSIO_CAM 
+  SWOSHW_NOCHANGEIOTYPE, // SWOSIO_SERVO
+  SWOSHW_NOCHANGEIOTYPE, // SWOSIO_PIXEL
+  SWOSHW_NOCHANGEIOTYPE, // SWOSIO_OLED
+  SWOSHW_NOCHANGEIOTYPE, // SWOSIO_I2C
+  SWOSHW_NOCHANGEIOTYPE, // SWOSIO_GYRO
+  SWOSHW_NOCHANGEIOTYPE // SWOSIO_HC165
+} ;               
+
 
 // icons
 typedef enum { FTSWARM_XX_UNDEF = -1, 
@@ -192,7 +274,7 @@ typedef enum {
 
 // **** port definitions ****
 
-// switches
+// buttons
 #define FTSWARM_S1 0
 #define FTSWARM_S2 1
 #define FTSWARM_S3 2
@@ -201,6 +283,8 @@ typedef enum {
 #define FTSWARM_F2 5
 #define FTSWARM_J1 6
 #define FTSWARM_J2 7
+
+const char BUTTON[8][3] = { "S1", "S2", "S3", "S4", "F1", "F2", "J1", "J2" };
 
 // inputs
 #define FTSWARM_A1 0
@@ -346,9 +430,9 @@ class FtSwarmIO {
   protected:
     
     // constructors
-    FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmIOType_t ioType);
-    FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmIOType_t ioType);
-    FtSwarmIO( const char *name, FtSwarmIOType_t ioType );
+    FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType);
+    FtSwarmIO( FtSwarmSerialNumber_t serialNumber, SwOSIOType_t ioType);
+    FtSwarmIO( const char *name, SwOSIOType_t ioType );
 
     // destructor
     ~FtSwarmIO();
@@ -358,12 +442,12 @@ class FtSwarmIO {
     SwOSIOHandle_t me = NULL; // pointer to my swarm HW, don't use!
 };
 
-class FtSwarmInput : public FtSwarmIO {
+class FtSwarmSensor : public FtSwarmIO {
   // an input base class, don't use this class at all
   
   protected:
-    FtSwarmInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmIOType_t ioType );
-    FtSwarmInput( const char *name, FtSwarmIOType_t ioType );
+    FtSwarmSensor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType );
+    FtSwarmSensor( const char *name, SwOSIOType_t ioType );
 
   public:
     void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 ); 
@@ -372,13 +456,12 @@ class FtSwarmInput : public FtSwarmIO {
 
 // **** input / actor classes to use in your sketch ****
 
-class FtSwarmDigitalInput : public FtSwarmInput {
+class FtSwarmDigitalInput : public FtSwarmSensor {
   // digital inputs. ports A1..A4, all controller types
 
   protected:
-    FtSwarmDigitalInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmSensor_t sensorType, bool normallyOpen = true);
-    FtSwarmDigitalInput( const char *name, FtSwarmSensor_t sensorType, bool normallyOpen );
-    virtual void setSensorType( FtSwarmSensor_t sensorType, bool normallyOpen );
+    FtSwarmDigitalInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType, bool normallyOpen = true);
+    FtSwarmDigitalInput( const char *name, SwOSIOType_t ioType, bool normallyOpen );
   
   public:
     FtSwarmDigitalInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool normallyOpen = true);
@@ -430,12 +513,11 @@ class FtSwarmButton : public FtSwarmIO {
     void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor ); 
 };
 
-class FtSwarmCounter : public FtSwarmInput {
+class FtSwarmCounter : public FtSwarmSensor {
   // counter input is available at all ports
   protected:
-    virtual void setSensorType( FtSwarmSensor_t sensorType);
-    FtSwarmCounter( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmSensor_t sensorType );
-    FtSwarmCounter( const char *name, FtSwarmSensor_t sensorType );
+    FtSwarmCounter( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType );
+    FtSwarmCounter( const char *name, SwOSIOType_t ioType );
   public:
     FtSwarmCounter( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
     FtSwarmCounter( const char *name );
@@ -445,12 +527,11 @@ class FtSwarmCounter : public FtSwarmInput {
 
 };
 
-class FtSwarmRotaryEncoder : public FtSwarmInput {
+class FtSwarmRotaryEncoder : public FtSwarmSensor {
   // rotary input is available at all ports
   protected:
-    virtual void setSensorType( FtSwarmSensor_t sensorType);
-    FtSwarmRotaryEncoder( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmSensor_t sensorType );
-    FtSwarmRotaryEncoder( const char *name, FtSwarmSensor_t sensorType );
+    FtSwarmRotaryEncoder( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType );
+    FtSwarmRotaryEncoder( const char *name, SwOSIOType_t ioType );
   public:
     FtSwarmRotaryEncoder( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
     FtSwarmRotaryEncoder( const char *name );
@@ -459,7 +540,7 @@ class FtSwarmRotaryEncoder : public FtSwarmInput {
     void resetCounter( void );
 };
 
-class FtSwarmFrequencymeter : public FtSwarmInput {
+class FtSwarmFrequencymeter : public FtSwarmSensor {
   // FtSwarmFrequencymeter is available at all input ports
   public:
     FtSwarmFrequencymeter( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
@@ -468,12 +549,11 @@ class FtSwarmFrequencymeter : public FtSwarmInput {
 
 };
 
-class FtSwarmAnalogInput : public FtSwarmInput { 
+class FtSwarmAnalogInput : public FtSwarmSensor { 
   // general analog input, A1..A4 ftSwarm only
   protected:
-    FtSwarmAnalogInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmSensor_t sensorType);
-    FtSwarmAnalogInput( const char *name, FtSwarmSensor_t sensorType );
-    void setSensorType( FtSwarmSensor_t sensorType );
+    FtSwarmAnalogInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType);
+    FtSwarmAnalogInput( const char *name, SwOSIOType_t ioType );
 
   public:
     FtSwarmAnalogInput( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
@@ -520,23 +600,15 @@ class FtSwarmLDR : public FtSwarmAnalogInput {
     FtSwarmLDR( const char * name );
 };
 
-class FtSwarmActor : public FtSwarmIO {
-  // an actor base class, don't use this class at all
-  protected:
-    FtSwarmActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType, bool highResolution );
-    FtSwarmActor( const char *name, FtSwarmActor_t actorType, bool highResolution );
-};
-
-
-class FtSwarmMotor : public FtSwarmActor {
+class FtSwarmMotor : public FtSwarmIO {
   // general motor class, use this class for (old) gray motors, mini motors, XS motors
   // M1..M2 all contollers - keep power budget in mind!
   protected:
-    FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType, bool highResolution );
-    FtSwarmMotor( const char *name, FtSwarmActor_t actorType, bool highResolution );
+    FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType, bool highResolution );
+    FtSwarmMotor( const char *name, SwOSIOType_t ioType, bool highResolution );
   public:
-    FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool highResolution = false ):FtSwarmMotor( serialNumber, port, FTSWARM_MOTOR, highResolution ) {};
-    FtSwarmMotor( const char *name, bool highResolution = false ):FtSwarmMotor( name, FTSWARM_MOTOR, highResolution ) {};  
+    FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool highResolution = false ):FtSwarmMotor( serialNumber, port, SWOSIO_MOTOR, highResolution ) {};
+    FtSwarmMotor( const char *name, bool highResolution = false ):FtSwarmMotor( name, SWOSIO_MOTOR, highResolution ) {};  
     void     setSpeed( int16_t speed );                                // speed +/- 255 or +/-4095 dependend on resolution, speed 0 motor stopss
     uint16_t getSpeed();                                               // actual speed
     void     setAcceleration( uint32_t rampUpT,  uint32_t rampUpY );  
@@ -548,8 +620,8 @@ class FtSwarmTractorMotor : public FtSwarmMotor {
   // tractor & XM motor
   // M1..M2 all contollers - keep power budget in mind!
   protected:
-    FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType, bool highResolution );
-    FtSwarmTractorMotor( const char * name, FtSwarmActor_t actorType, bool highResolution );
+    FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType, bool highResolution );
+    FtSwarmTractorMotor( const char * name, SwOSIOType_t ioType, bool highResolution );
       
   public:
     FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool highResolution = false );
@@ -599,12 +671,12 @@ class FtSwarmStepperMotor : public FtSwarmTractorMotor {
 };
 
 
-class FtSwarmOnOffActor : public FtSwarmActor {
+class FtSwarmOnOffActor : public FtSwarmMotor {
   // classic on/off devices
   // M1..M2 all contollers - keep power budget in mind!
   public:
-    FtSwarmOnOffActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmActor_t actorType );
-    FtSwarmOnOffActor( const char *name, FtSwarmActor_t actorType );
+    FtSwarmOnOffActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType );
+    FtSwarmOnOffActor( const char *name, SwOSIOType_t ioType );
     
     void on( int16_t power = MAXSPEED256 );
     void off( void );
@@ -800,4 +872,4 @@ extern FtSwarm ftSwarm;
 
 extern void forever( char *prompt);
 
-extern FtSwarmIOType_t sensorType2IOType( FtSwarmSensor_t sensor2IOType );
+extern void forever( const char *prompt);
