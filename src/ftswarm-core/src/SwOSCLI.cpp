@@ -402,38 +402,32 @@ void SwOSCLI::executeControllerCmd(void ) {
 void SwOSCLI::executeInputCmd( void ) {
 
   SwOSInput    *io = (SwOSInput *)_io;
-  SwOSIOType_t newSensorType;
+  SwOSIOType_t newSensorType, newIOType;
+
+  SwOSCtrl *ctrl = _io->getCtrl();
+  uint8_t   index = ctrl->getIndex( _io );
 
   switch ( _cmd ) {
-    case CLICMD_getIOType:      _io->lock();
-                                printf("R: %d\n", io->getIOType() ); 
-                                _io->unlock();
-                                break;
 
-    case CLICMD_setIOType:      if ( ( _parameter[0].inRange( "sensorType", 0, SWOSIO_MAXIOTYPE-1 ) ) && 
-                                     ( _parameter[1].inRange( "normallyOpen", 0, 1 ) ) ) {
-                                  
-                                  // which sensor type?
-                                  newSensorType =  (SwOSIOType_t) _parameter[0].getValue();
-                                  
-                                  // now change it
-                                  io->lock();
+    case CLICMD_getIOType:    _io->lock();
+                              printf("R: %d\n", io->getIOType() ); 
+                              _io->unlock();
+                              break;
 
-                                  printf("sn %d port %d\n",io->getCtrl()->serialNumber, io->getPort());
-                                  
-                                  // get the sensor
-                                  io = (SwOSInput *) myOSSwarm.getIO( io->getCtrl()->serialNumber, io->getPort(), newSensorType );
-                                  
-                                  // normallyOpen
-                                  if (io->getIOType() == SWOSIO_DIGITAL ) ((SwOSDigitalInput *)io)->setParameter( _parameter[1].getValue() );
-                                  
-                                  io->unlock();
+    case CLICMD_setIOType:    if ( ( _parameter[0].inRange( "ioType", 0, SWOSIO_MAXIOTYPE-1 ) ) && 
+                                   ( _parameter[1].inRange( "normallyOpen", 0, 1 ) ) ) {
 
+                                // which sensor type?
+                                newIOType =  (SwOSIOType_t) _parameter[0].getValue();
+
+                                if ( ctrl->changeIOType( index, newIOType ) ) {
+                                  _io = ctrl->io[ index ];
+                                  if (_io) _io->setParameter( _parameter[1].getValue() );
                                   printf("R: ok\n");
+                                }
 
-                              } else {
-                                printf("ERROR: wrong sensor type %d\n", newSensorType );
-                              }
+                              } else printf("ERROR: wrong io type type %d\n", newIOType );
+
                               break;
 
     case CLICMD_getValue:     _io->lock();
@@ -442,7 +436,7 @@ void SwOSCLI::executeInputCmd( void ) {
                               break;
 
     case CLICMD_getVoltage:   _io->lock();
-                              if ( io->getIOType() == SWOSIO_ANALOG ) {
+                              if ( io->getIOType() == SWOSIO_VOLTMETER ) {
                                 printf("R: %f\n", ((SwOSAnalogInput *)io)->getVoltage());
                               } else {
                                 printf("ERROR: wrong IO type %d\n", io->getIOType() );
@@ -451,7 +445,7 @@ void SwOSCLI::executeInputCmd( void ) {
                               break;
 
     case CLICMD_getResistance: _io->lock();
-                              if ( io->getIOType() == SWOSIO_ANALOG ) {
+                              if ( io->getIOType() == SWOSIO_OHMMETER ) {
                                 printf("R: %f\n", ((SwOSAnalogInput *)io)->getResistance());
                               } else {
                                 printf("ERROR: wrong IO type %d\n", io->getIOType() );
@@ -460,7 +454,7 @@ void SwOSCLI::executeInputCmd( void ) {
                               break;
 
     case CLICMD_getKelvin:    _io->lock();
-                              if ( io->getIOType() == SWOSIO_ANALOG ) {
+                              if ( io->getIOType() == SWOSIO_THERMOMETER ) {
                                 printf("R: %f\n", ((SwOSAnalogInput *)io)->getKelvin());
                               } else {
                                 printf("ERROR: wrong IO type %d\n", io->getIOType() );
@@ -469,7 +463,7 @@ void SwOSCLI::executeInputCmd( void ) {
                               break;
 
     case CLICMD_getCelcius:   _io->lock();
-                              if ( io->getIOType() == SWOSIO_ANALOG ) {
+                              if ( io->getIOType() == SWOSIO_THERMOMETER ) {
                                 printf("R: %f\n", ((SwOSAnalogInput *)io)->getCelcius());
                               } else {
                                 printf("ERROR: wrong IO type %d\n", io->getIOType() );
@@ -478,7 +472,7 @@ void SwOSCLI::executeInputCmd( void ) {
                               break;
 
     case CLICMD_getFahrenheit: _io->lock();
-                              if ( io->getIOType() == SWOSIO_ANALOG ) {
+                              if ( io->getIOType() == SWOSIO_THERMOMETER ) {
                                 printf("R: %f\n", ((SwOSAnalogInput *)io)->getFahrenheit());
                               } else {
                                 printf("ERROR: wrong IO type %d\n", io->getIOType() );
@@ -487,7 +481,14 @@ void SwOSCLI::executeInputCmd( void ) {
                               break;
 
     case CLICMD_getToggle:    _io->lock();
-                              if ( io->getIOType() == SWOSIO_DIGITAL ) {
+                              // ToDO: alle DigIO Typen
+                              if ( ( io->getIOType() == SWOSIO_DIGITAL ) ||
+                                   ( io->getIOType() == SWOSIO_DIGITAL ) ||
+                                   ( io->getIOType() == SWOSIO_DIGITAL ) ||
+                                   ( io->getIOType() == SWOSIO_DIGITAL ) )
+                                   
+                              
+                              {
                                 printf("R: %f\n", ((SwOSDigitalInput*)io)->getToggle());
                               } else {
                                 printf("ERROR: wrong IO type %d\n", io->getIOType() );
@@ -519,31 +520,43 @@ void SwOSCLI::executeInputCmd( void ) {
 
 void SwOSCLI::executeActorCmd( void ) {
 
-  SwOSMotor   *motor   = (SwOSMotor *)_io;
-  SwOSStepper *stepper = (SwOSStepper *)_io;
-  int         maxspeed;
-  bool        highResolution = false;
-  bool        ok = true;
+  SwOSMotor    *motor   = (SwOSMotor *)_io;
+  SwOSStepper  *stepper = (SwOSStepper *)_io;
+  int          maxspeed;
+  bool         highResolution = false;
+  bool         ok = true;
+  SwOSCtrl     *ctrl = _io->getCtrl();
+  uint8_t      index = ctrl->getIndex( _io );
+  SwOSIOType_t newIOType;
   
   switch ( _cmd ) {
-    case CLICMD_setIOType:      if (_parameter[0].inRange( "actorType", 0, (int)SWOSIO_MAXIOTYPE-1 ) ) { 
-                                    if ( _maxParameter > 0) {
-                                      if (_parameter[1].inRange( "highResolution", 0, 1 ) ) 
-                                        highResolution = _parameter[1].getValue(); 
-                                      else 
-                                        ok = false;
-                                    }
-                                    if (ok) {
-                                      printf("R: ok\n"); 
+
+    case CLICMD_setIOType:      if ( ( _parameter[0].inRange( "ioType", 0, SWOSIO_MAXIOTYPE-1 ) ) && 
+                                     ( _parameter[1].inRange( "highResolution", 0, 1 ) ) ) {
+
+                                  // which sensor type?
+                                  newIOType =  (SwOSIOType_t) _parameter[0].getValue();
+
+                                  if ( ctrl->changeIOType( index, newIOType ) ) {
+                                  
+                                    motor = (SwOSMotor *)ctrl->io[ index ];
+                                  
+                                    if (motor) {
                                       motor->lock();
-                                      motor->setParameter( highResolution );
+                                      motor->setParameter( _parameter[1].getValue() );
                                       motor->setSpeed(0);
                                       motor->apply();
                                       motor->unlock();
                                     }
-                                }
-                                break;
 
+                                    printf("R: ok\n");
+
+                                  }
+
+                                } else printf("ERROR: wrong io type type %d\n", newIOType );
+
+                                break;
+                              
     case CLICMD_getIOType:      motor->lock();
                                 printf("R: %d\n", (int) motor->getIOType() ); 
                                 motor->unlock();
@@ -816,7 +829,8 @@ void SwOSCLI::executeIOCommand( void ) {
     // controller cmd?
     executeControllerCmd( );
 
-  } else if (_io ) {
+  } else if (_io ) { 
+   
     // io cmd?
     switch (_io->getIOType() ) {
 
@@ -876,7 +890,7 @@ bool SwOSCLI::tokenizeCmd( char *cmd ) {
 bool  SwOSCLI::getIO( char *token, char *IOName, SwOSCtrl **ctrl, SwOSIO **io ) {
   
   SwOSCtrl *xctrl = NULL;
-  SwOSIO   *xio  = NULL;
+  SwOSIO   *xio   = NULL;
   char     *xrollback;
 
   xctrl = (SwOSCtrl *)myOSSwarm.getController( token );
@@ -909,7 +923,7 @@ bool  SwOSCLI::getIO( char *token, char *IOName, SwOSCtrl **ctrl, SwOSIO **io ) 
   } else {
 
     // it was an alias name without controller
-    xio = myOSSwarm.getIO( token, SWOSIO_UNDEF );
+    xio = myOSSwarm.getIO( token );
     strcpy( IOName, token );
   }
 

@@ -284,7 +284,7 @@ void SwOSGyroMPU::jsonize( JSONize *json, uint8_t id) {
 
  VL53L0X Lidar;
 
- SwOSLidarInput::SwOSLidarInput(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSInput( name, port, ctrl, SWOSIO_LIDAR ) {
+ SwOSLidarInput::SwOSLidarInput(const char *name, SwOSCtrl *ctrl ) : SwOSInput( name, SWOS_NOPORT, ctrl, SWOSIO_LIDAR ) {
    
    // initialize local HW
    if (ctrl->isLocal()) {

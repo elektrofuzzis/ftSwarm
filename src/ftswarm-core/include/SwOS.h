@@ -66,6 +66,14 @@ typedef enum { swarmComWifi = 1, swarmComRS485 = 2, swarmComBoth= 3 } FtSwarmCom
 // controller types
 typedef enum { FTSWARM_NOCTRL = -1, FTSWARM = 0, FTSWARMCONTROL, FTSWARMCAM, FTSWARMPWRDRIVE, FTSWARMDUINO, FTSWARM_MAXCONTROLLERTYPE } FtSwarmController_t;
 
+// technologies
+typedef enum { SWOSIOCLASS_INPUT,
+               SWOSIOCLASS_BUTTON,
+               SWOSIOCLASS_JOYSTICK,
+               SWOSIOCLASS_MOTOR,
+               SWOSIOCLASS_SINGULAR 
+} SwOSIOClass_t;
+
 // io types
 typedef enum { SWOSIO_UNDEF = -1,
                SWOSIO_DIGITAL, 
@@ -76,7 +84,7 @@ typedef enum { SWOSIO_UNDEF = -1,
                
                SWOSIO_ANALOG, 
                SWOSIO_VOLTMETER, 
-               SWOSIO_OHMMETER, 
+               SWOSIO_OHMMETER,
                SWOSIO_THERMOMETER, 
                SWOSIO_LDR, 
                SWOSIO_JOYSTICK,
@@ -109,6 +117,44 @@ typedef enum { SWOSIO_UNDEF = -1,
                SWOSIO_GYRO,
                SWOSIO_HC165,
                SWOSIO_MAXIOTYPE } SwOSIOType_t;
+
+// show via api?
+const bool SWOSIOCLASS[SWOSIO_MAXIOTYPE ] = {
+  SWOSIOCLASS_INPUT, // SWOSIO_DIGITAL
+  SWOSIOCLASS_INPUT, // SWOSIO_SWITCH
+  SWOSIOCLASS_INPUT, // SWOSIO_REEDSWITCH 
+  SWOSIOCLASS_INPUT, // SWOSIO_LIGHTBARRIER
+  SWOSIOCLASS_SINGULAR, // SWOSIO_BUTTON         
+  SWOSIOCLASS_INPUT, // SWOSIO_ANALOG
+  SWOSIOCLASS_INPUT, // SWOSIO_VOLTMETER
+  SWOSIOCLASS_INPUT, // SWOSIO_OHMMETER
+  SWOSIOCLASS_INPUT, // SWOSIO_THERMOMETER
+  SWOSIOCLASS_INPUT, // SWOSIO_LDR
+  SWOSIOCLASS_SINGULAR, // SWOSIO_JOYSTICK
+  SWOSIOCLASS_MOTOR, // SWOSIO_MOTOR 
+  SWOSIOCLASS_MOTOR, // SWOSIO_XMMOTOR
+  SWOSIOCLASS_MOTOR, // SWOSIO_TRACTOR  
+  SWOSIOCLASS_MOTOR, // SWOSIO_ENCODER 
+  SWOSIOCLASS_MOTOR, // SWOSIO_LAMP
+  SWOSIOCLASS_MOTOR, // SWOSIO_VALVE 
+  SWOSIOCLASS_MOTOR, // SWOSIO_COMPRESSOR
+  SWOSIOCLASS_MOTOR, // SWOSIO_BUZZER
+  SWOSIOCLASS_SINGULAR, // SWOSIO_STEPPER
+  SWOSIOCLASS_INPUT, // SWOSIO_COUNTER 
+  SWOSIOCLASS_INPUT, // SWOSIO_ROTARYENCODER
+  SWOSIOCLASS_INPUT, // SWOSIO_FREQUENCYMETER
+  // SWOSIO_TRAILSENSOR, 
+  // SWOSIO_COLORSENSOR, 
+  SWOSIOCLASS_SINGULAR, // SWOSIO_ULTRASONIC, 
+  SWOSIOCLASS_SINGULAR, // SWOSIO_LIDAR
+  SWOSIOCLASS_SINGULAR, // SWOSIO_CAM 
+  SWOSIOCLASS_SINGULAR, // SWOSIO_SERVO
+  SWOSIOCLASS_SINGULAR, // SWOSIO_PIXEL
+  SWOSIOCLASS_SINGULAR, // SWOSIO_OLED
+  SWOSIOCLASS_SINGULAR, // SWOSIO_I2C
+  SWOSIOCLASS_SINGULAR, // SWOSIO_GYRO
+  SWOSIOCLASS_SINGULAR // SWOSIO_HC165
+} ;  
 
 // show via api?
 const bool SHOWIOINAPI[SWOSIO_MAXIOTYPE ] = {
@@ -145,51 +191,8 @@ const bool SHOWIOINAPI[SWOSIO_MAXIOTYPE ] = {
   false, // SWOSIO_OLED
   false, // SWOSIO_I2C
   false, // SWOSIO_GYRO
-  false, // SWOSIO_HC165
+  false // SWOSIO_HC165
 } ;               
-
-#define SWOSHW_NOCHANGEIOTYPE 0
-#define SWOSHW_GPIO 1
-#define SWOSHW_ACTOR 2
-
-// show via api?
-const uint8_t CHANGEHWTYPE[SWOSIO_MAXIOTYPE ] = {
-  SWOSHW_GPIO, // SWOSIO_DIGITAL
-  SWOSHW_GPIO, // SWOSIO_SWITCH
-  SWOSHW_GPIO, // SWOSIO_REEDSWITCH 
-  SWOSHW_GPIO, // SWOSIO_LIGHTBARRIER
-  SWOSHW_NOCHANGEIOTYPE, // SWOSIO_BUTTON         
-  SWOSHW_GPIO, // SWOSIO_ANALOG
-  SWOSHW_GPIO, // SWOSIO_VOLTMETER
-  SWOSHW_GPIO, // SWOSIO_OHMMETER
-  SWOSHW_GPIO, // SWOSIO_THERMOMETER
-  SWOSHW_GPIO, // SWOSIO_LDR
-  SWOSHW_NOCHANGEIOTYPE, // SWOSIO_JOYSTICK
-  SWOSHW_ACTOR, // SWOSIO_MOTOR 
-  SWOSHW_ACTOR, // SWOSIO_XMMOTOR
-  SWOSHW_ACTOR, // SWOSIO_TRACTOR  
-  SWOSHW_ACTOR, // SWOSIO_ENCODER 
-  SWOSHW_ACTOR, // SWOSIO_LAMP
-  SWOSHW_ACTOR, // SWOSIO_VALVE 
-  SWOSHW_ACTOR, // SWOSIO_COMPRESSOR
-  SWOSHW_ACTOR, // SWOSIO_BUZZER
-  SWOSHW_NOCHANGEIOTYPE, // SWOSIO_STEPPER
-  SWOSHW_GPIO, // SWOSIO_COUNTER 
-  SWOSHW_GPIO, // SWOSIO_ROTARYENCODER
-  SWOSHW_GPIO, // SWOSIO_FREQUENCYMETER
-  // SWOSIO_TRAILSENSOR, 
-  // SWOSIO_COLORSENSOR, 
-  SWOSIO_ULTRASONIC, 
-  SWOSHW_NOCHANGEIOTYPE, // SWOSIO_LIDAR
-  SWOSHW_NOCHANGEIOTYPE, // SWOSIO_CAM 
-  SWOSHW_NOCHANGEIOTYPE, // SWOSIO_SERVO
-  SWOSHW_NOCHANGEIOTYPE, // SWOSIO_PIXEL
-  SWOSHW_NOCHANGEIOTYPE, // SWOSIO_OLED
-  SWOSHW_NOCHANGEIOTYPE, // SWOSIO_I2C
-  SWOSHW_NOCHANGEIOTYPE, // SWOSIO_GYRO
-  SWOSHW_NOCHANGEIOTYPE // SWOSIO_HC165
-} ;               
-
 
 // icons
 typedef enum { FTSWARM_XX_UNDEF = -1, 
@@ -497,20 +500,11 @@ class FtSwarmLightBarrier: public FtSwarmDigitalInput {
     FtSwarmLightBarrier( const char *name, bool normallyOpen = true);
 };
 
-class FtSwarmButton : public FtSwarmIO {
+class FtSwarmButton : public FtSwarmDigitalInput {
   // onboard buttons, FtSwarmControl only
   public:
     FtSwarmButton( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
     FtSwarmButton( const char *name );
-    
-    bool isPressed();                     // button is pressed
-    bool isReleased();                    // button is released
-    bool hasToggledUp();                  // was the last toggle event from down to up, since a hasToggled* method called last time?
-    bool hasToggledDown();                // was the last toggle event from up to down, since a hasToggled* method called last time?
-    virtual bool getState();              // true, if the button is pressed
-    virtual FtSwarmToggle_t getToggle();  // last toggle event since a hasToggled* method called last time
-    void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 ); 
-    void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor ); 
 };
 
 class FtSwarmCounter : public FtSwarmSensor {

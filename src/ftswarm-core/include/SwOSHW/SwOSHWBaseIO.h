@@ -38,7 +38,12 @@ class SwOSCtrl;
 typedef enum { BOOTING, STARTWIFI, RUNNING, ERROR, WAITING, IDENTIFY, MAXSTATE } SwOSState_t;
 
 // comState
-typedef enum { COMSTATE_UNDEFINED, COMSTATE_CONNECT_PHASE1, COMSTATE_CONNECT_PHASE2, COMSTATE_ONLINE, COMSTATE_ERROR } SwOSComState_t;
+typedef enum { 
+  COMSTATE_UNDEFINED, 
+  COMSTATE_CONNECT_PHASE1, // try to connect the remote controller
+  COMSTATE_CONNECT_PHASE2, // wait for IO settings & alias names
+  COMSTATE_ONLINE, 
+  COMSTATE_ERROR } SwOSComState_t;
 
 /***************************************************
  *

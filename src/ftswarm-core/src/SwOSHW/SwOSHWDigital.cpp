@@ -20,7 +20,7 @@ SwOSHC165 *hc165 = NULL;
  *
  ***************************************************/
 
- SwOSDigitalInput::SwOSDigitalInput(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSInput( name, port, ctrl, SWOSIO_DIGITAL ) {
+ SwOSDigitalInput::SwOSDigitalInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType ) : SwOSInput( name, port, ctrl, ioType ) {
   
   // initialize local HW
   if (ctrl->isLocal()) {
@@ -39,6 +39,8 @@ void SwOSDigitalInput::setupLocal() {
     ftDuino->setIOType( port, ioType );
     return;
   }
+
+  if ( ioType == SWOSIO_BUTTON ) return; // all done
 
   // local init
   PUA2         = GPIO_NUM_NC;
@@ -84,6 +86,13 @@ void SwOSDigitalInput::read() {
   // ftDuino?
   if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && ( ftPwrDrive ) ) { setReading( ftDuino->input[port] ); return; }
   if ( ( ctrl->getCPU() == FTSWARMDUINO_1V141 )    && ( ftDuino ) )    { setReading( ftDuino->input[port] ); return; }
+
+  if ( ioType == SWOSIO_BUTTON ) {
+    if (hc165) setReading( 1- (hc165->getValue( ) & (1<<port) ) );
+    return;
+  }
+
+  // GPIO-based
 
   // existing port?
   if (GPIO == GPIO_NUM_NC ) return;
@@ -174,84 +183,6 @@ void SwOSDigitalInput::setParameter( int32_t parameter ) {
     cmd.send( );
 
   }
-
-}
-
-/***************************************************
- *
- *   SwOSButton
- *
- ***************************************************/
-
-SwOSButton::SwOSButton(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSIO( name, port, ctrl, SWOSIO_BUTTON ), SwOSEventInput( ) {
-
-  toggle = FTSWARM_NOTOGGLE;
-
-}
-
-void SwOSButton::read( ) {
-
-  if (!hc165) return;
-
-  uint8_t v;
-  v = hc165->getValue( );
-  setState( v & (1<<port), firstRead );
-
-  firstRead = false;
-
-}
-
-void SwOSButton::jsonize( JSONize *json, uint8_t id) {
-  json->startObject();
-  SwOSIO::jsonize(json, id);
-  json->variableB("state", lastState );
-  json->endObject();
-}
-
-void SwOSButton::setState( bool state, bool clearToggle ) {
-  
-  if ( state != lastState ) {
-
-    if (state) { 
-      toggle = FTSWARM_TOGGLEUP; 
-      if ( ctrl->isLocal() ) trigger( FTSWARM_TRIGGERUP, state );
-    
-    } else {
-      toggle = FTSWARM_TOGGLEDOWN;
-      if ( ctrl->isLocal() ) trigger( FTSWARM_TRIGGERDOWN, state );
-    }
-  }
-
-  if (clearToggle) toggle = FTSWARM_NOTOGGLE;
-  
-  lastState = state; 
-
-  };
-
-bool SwOSButton::getState() { 
-  return lastState;
-};
-
-FtSwarmToggle_t SwOSButton::getToggle() {
-
-  FtSwarmToggle_t rtoggle = toggle;
-  toggle = FTSWARM_NOTOGGLE;
-
-  return rtoggle;
-
-}
-
-uint8_t SwOSButton::pushState( uint8_t *buffer ) {
-
-  memcpy( buffer, &lastState, sizeof( lastState ) );
-  return sizeof( lastState );
-
-}
-
-uint8_t SwOSButton::popState( uint8_t *buffer ) {
-
-  memcpy( &lastState, buffer, sizeof( lastState ) );
-  return sizeof( lastState );
 
 }
 

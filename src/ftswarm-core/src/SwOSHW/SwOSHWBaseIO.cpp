@@ -338,7 +338,8 @@ void SwOSInput::setupLocal() {
     return;
   }
 
-  GPIO = GPIO_INPUT[ctrl->getCPU()][port].io;
+  if ( ioType == SWOSIO_BUTTON ) GPIO = GPIO_NUM_NC;
+  else                           GPIO = GPIO_INPUT[ctrl->getCPU()][port].io;
 
   gpio_config_t io_conf = {};
 

@@ -33,7 +33,7 @@ protected:
   uint8_t  getIndex( FtSwarmSerialNumber_t serialNumber );               // return index of controller with this s/n or are free slot if not found
 	bool     splitID( char *id, uint8_t *index, char *io, size_t sizeIO);  // split identifier
   uint16_t nextToken( bool rotateToken);
-  SwOSIO  *waitFor( char *alias, SwOSIOType_t ioType );
+  SwOSIO  *waitFor( char *alias );
   bool     startEvents( void );
   void     startWifi( void );
 
@@ -73,10 +73,10 @@ public:
   void *getController( FtSwarmSerialNumber_t SN );
 
   // Get an IO in the swarm using controllers serial number, port and ioType. Returns the IO#s pointer or NULL if it doesn't exist.
-  virtual SwOSIO* getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType);
+  virtual SwOSIO* getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType );
 
   // Get an IO in the swarm using his name/alias and ioType. Returns the IO#s pointer or NULL if it doesn't exist.
-  virtual SwOSIO* getIO( const char *name, SwOSIOType_t ioType );
+  virtual SwOSIO* getIO( const char *name, SwOSIOType_t ioType = SWOSIO_UNDEF );
 
   // search for offline or unconnected controllers and try to get them
   virtual void connect( void );

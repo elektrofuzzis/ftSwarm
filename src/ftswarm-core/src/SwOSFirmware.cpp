@@ -320,7 +320,7 @@ void deleteController( void ) {
 }
 
 const char SWARMCOMMUNICATION[4][13] = { "none", "wifi", "RS485", "wifi & RS485" };
-const char COMSTATE[5][30] = { "\e[1;31mOFFLINE\e[0m", "\e[1;33mPHASE1\e[0m", "\e[1;33mPHASE2\e[0m", "\e[1;32mONLINE\e[0m", "\e[1;31mERROR\e[0m\e[0m" };
+const char COMSTATE[5][30] = { "\e[1;31mOFFLINE!\e[0m", "\e[1;31mOFFLINE\e[0m", "\e[1;33mCONNECTING\e[0m", "\e[1;32mONLINE\e[0m", "\e[1;31mERROR\e[0m\e[0m" };
 
 // swam menu identifiers
 
@@ -340,24 +340,15 @@ void swarmMenu( void ) {
 
     menu.start("swarm configuration", 19 );
 
-    if (myOSSwarm.Ctrl[0]->IAmKelda) {
-
+    if (myOSSwarm.Ctrl[0]->IAmKelda) 
       printf("%s is Kelda running swarm \"%s\" using Pin %d:\n\nSN  NW Age State  Hostname \n", myOSSwarm.Ctrl[0]->getHostname(), nvs.swarmName, nvs.swarmPIN );
-      for ( int8_t i=0; i<=myOSSwarm.maxCtrl; i++ ) {
-        if ( myOSSwarm.Ctrl[i] ) {
-          printf("%3d %.6lu %-11s %s\n", myOSSwarm.Ctrl[i]->serialNumber, myOSSwarm.Ctrl[i]->networkAge(), COMSTATE[myOSSwarm.Ctrl[i]->getComState()], myOSSwarm.Ctrl[i]->getHostname() );
-        }
+    else
+      printf( "%s is connected to swarm \"%s\" uising Swarm PIN %d.\n", myOSSwarm.Ctrl[0]->getHostname(), nvs.swarmName, nvs.swarmPIN );
+
+    for ( int8_t i=0; i<=myOSSwarm.maxCtrl; i++ ) {
+      if ( myOSSwarm.Ctrl[i] ) {
+        printf("%3d %.6lu %-11s %s\n", myOSSwarm.Ctrl[i]->serialNumber, myOSSwarm.Ctrl[i]->networkAge(), COMSTATE[myOSSwarm.Ctrl[i]->getComState()], myOSSwarm.Ctrl[i]->getHostname() );
       }
-
-    } else {
-
-      printf( "%s is connected to swarm \"%s\".\nSwarm PIN is %d.\n", myOSSwarm.Ctrl[0]->getHostname(), nvs.swarmName, nvs.swarmPIN );
-      if (myOSSwarm.Kelda) {
-        printf("Kelda SN %d is online\n", myOSSwarm.Kelda->serialNumber );
-      } else {
-        printf("Kelda is offline\n");
-      }
-
     }
 
     printf("\n");
@@ -537,7 +528,7 @@ void aliasMenu( void ) {
                   enterIdentifier( prompt, alias, MAXIDENTIFIER );
                 
                   // duplicates?
-                  testIO = myOSSwarm.getIO( alias, SWOSIO_UNDEF );
+                  testIO = myOSSwarm.getIO( alias );
 
                   if ( (testIO) && ( testIO != OSObj[choice-1] ) ) {
                     // duplicate alias name
@@ -597,7 +588,7 @@ bool changeEvent( NVSEvent *event ) {
   // enter sensor
   while (true) {
     enterString( "sensor: ", sensor, sizeof(sensor) );
-    newSensor = myOSSwarm.getIO( sensor, SWOSIO_UNDEF );
+    newSensor = myOSSwarm.getIO( sensor );
     
     if (sensor[0] == '\0' ) 
       return false;
@@ -625,7 +616,7 @@ bool changeEvent( NVSEvent *event ) {
   // enter actor
   while (true) {
     enterString( "actor: ", actor, sizeof(actor) );
-    newActor = myOSSwarm.getIO( actor, SWOSIO_UNDEF );
+    newActor = myOSSwarm.getIO( actor );
     
     if (actor[0] == '\0' ) 
       return false;

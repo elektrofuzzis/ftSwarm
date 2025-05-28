@@ -38,6 +38,7 @@ typedef enum {
   CMD_IOCONFIG,               // send my io config to kelda
   CMD_SETIOTYPE,              // change a port's IO Type
   CMD_SETPARAMETER,           // send a parameter to the IO, e.g. normallyOpen, highResolution
+  CMD_HARTBEAT,               // Kelda to Member: I'm still out there
   
   CMD_IDENTIFY,               // show myself
   
@@ -179,9 +180,8 @@ struct parameterCmd_t {
   int32_t parameter;
 } __attribute__((packed));
 
-  struct ioTypeCmd_t{ 
+  struct setIOTypeCmd_t{ 
   uint8_t      index; 
-  SwOSIOType_t oldIOType;
   SwOSIOType_t newIOType;
   int32_t      payload;
 } __attribute__((packed));
@@ -212,7 +212,7 @@ struct SwOSDatagram_t {
     I2CRegisterCmd_t I2CRegisterCmd;
     ctrlCmd_t ctrlCmd;
     userEventCmd_t userEventCmd;
-    ioTypeCmd_t ioTypeCmd;
+    setIOTypeCmd_t setIOTypeCmd;
     counterCmd_t counterCmd;
     parameterCmd_t parameterCmd;
   };
@@ -240,6 +240,8 @@ class MacAddr {
 class SwOSCom {
 protected:
   bool    _isValid    = false;
+
+public:
   uint8_t bufferIndex = 0;
 
 public:
@@ -252,7 +254,7 @@ public:
   size_t size( void );
 
   // send my alias names buffered
-  void pushHostname( char *name, char *alias ) { pushIO( 255, SWOSIO_MAXIOTYPE, SWOS_NOPORT, name, alias); };
+  void pushHostname( char *name, char *alias ) { pushIO( 254, SWOSIO_MAXIOTYPE, SWOS_NOPORT, name, alias); };
   void pushIO( uint8_t index, SwOSIOType_t ioType,  uint8_t port,  char *name,  char *alias );
   bool popIO( uint8_t *index, SwOSIOType_t *ioType, uint8_t *port, char **name, char **alias );
   void flushBuffer( void );

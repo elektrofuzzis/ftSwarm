@@ -139,18 +139,29 @@ static void connectTask( void *Parameter ) {
 
 void SwOSSwarm::connect( void ) {
 
-  if (!Ctrl[0]->IAmKelda) return;
+  // if I'm not the Kelda, just check if Kelda is online
+  if (!Ctrl[0]->IAmKelda) {
+    if ( Kelda ) && ( Kelda->networkAge() > 1000L ) Kelda->setComState( COMSTATE_UNDEFINED );
+    return;
+  }
 
   for (uint8_t i=1; i<=maxCtrl; i++) {
 
-    // Controller was not seen for a longer time or is new: try to reconnect
     if ( Ctrl[i] ) { 
-    
+
+      //if controller was not seen for a longer time or is new: try to reconnect
       if ( ( Ctrl[i]->getComState() == COMSTATE_UNDEFINED ) ||
            ( ( Ctrl[i]->networkAge() > 1000L ) && ( Ctrl[i]->getComState() != COMSTATE_ERROR ) ) ) {
       
         Ctrl[i]->setComState( COMSTATE_CONNECT_PHASE1 );
         joinMySwarm( MacAddr( broadcast ), Ctrl[i]->serialNumber );
+
+      // if it's online send him an hart beat
+      } else {
+        
+        SwOSCom hartBeat( Ctrl[i]->macAddr, Ctrl[i]->serialNumber, CMD_HARTBEAT );
+        hartBeat.send();
+
       }
 
     }
@@ -170,14 +181,14 @@ uint16_t SwOSSwarm::nextToken( bool rotateToken ) {
   
 }
 
-SwOSIO *SwOSSwarm::waitFor( char *alias, SwOSIOType_t ioType ) {
+SwOSIO *SwOSSwarm::waitFor( char *alias ) {
 
   SwOSIO *me = NULL;
   bool   firstTry = true;
 
   while (!me) {
 
-    me = getIO( alias, ioType );
+    me = getIO( alias );
 
     // no success, wait 25 ms
     if ( (!me) && ( firstTry ) ) {
@@ -213,11 +224,11 @@ bool SwOSSwarm::startEvents( void ) {
     if ( ( event->sensor[0] != '\0' ) && ( event->actor[0] != '\0' ) ) {
 
       // get IOs and stop on error
-      sensor = waitFor( event->sensor, SWOSIO_UNDEF );  
+      sensor = waitFor( event->sensor );  
       if (!sensor) return false;
       if (!sensor->isInput()) return false;
       
-      actor  = waitFor( event->actor,  SWOSIO_UNDEF );  
+      actor  = waitFor( event->actor );  
       if (!actor)            return false;
       if (!actor->isMotor()) return false;
 
@@ -480,65 +491,62 @@ uint8_t SwOSSwarm::getIndex( FtSwarmSerialNumber_t serialNumber ) {
 
 SwOSIO* SwOSSwarm::getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType ) {
 
-  SwOSIO *IO = NULL;
-  
   // check on valid controller
-  uint8_t i = getIndex( serialNumber );
+  SwOSCtrl *ctrl = Ctrl[ getIndex( serialNumber ) ];
+  if (!ctrl) return NULL;
 
-  if ( Ctrl[i] ) IO = Ctrl[i]->getIO( ioType, port );
+  // get an io candidate
+  SwOSIO *io = ctrl->getIO( ioType, port );
+  if (!io) return NULL;
 
-  if ( IO ) {
+  // if no special type is required, take it as it is
+  if ( ioType == SWOSIO_UNDEF ) return io;
 
-    // everything is fine...
-    if ( ( ioType == SWOSIO_UNDEF ) || ( IO->getIOType() == ioType ) ) return IO;
+  // 100% match?
+  if ( ( io->getIOType() == ioType ) && ( io->getPort() == port ) ) return io;
 
-    // test, if the controller could change the IOType
-    if ( IO->isInUse() ) {
-      printf("\e[0;31mERROR: Can't change IO Type. %s.%s is in use.\e[0m\n", Ctrl[i]->getName(), IO->getName() );
-      setState( ERROR );
-    }
+  // compatible ioType?
+  uint8_t index = ctrl->getIndex( io );
+  if (!ctrl->changeIOType( index, ioType ) ) return NULL;
 
-    if ( Ctrl[i]->changeIOType( port, IO->getIOType(), ioType ) ) return Ctrl[i]->getIO( ioType, port );
+  // return corrected io
+  return ctrl->io[index];
 
-  }
-
-  return IO;
-  
 }
 
 SwOSIO* SwOSSwarm::getIO( const char *name, SwOSIOType_t ioType ) {
 
-  SwOSIO *IO;
+  SwOSIO   *io   = NULL;
+  SwOSCtrl *ctrl = NULL;
 
+  // list all controllers and check for the name
   for ( uint8_t i=0; i<=maxCtrl; i++ ) {
 
-    if ( Ctrl[i] ) {
+    // check next controller
+    ctrl = Ctrl[i];
+    if ( ctrl ) io = ctrl->getIO( name );
 
-      IO = Ctrl[i]->getIO( name );
-      
-      if ( IO ) {
+    // io found
+    if (io) break;
 
-        // everything is fine...
-        if ( ( ioType == SWOSIO_UNDEF ) || ( IO->getIOType() == ioType ) ) return IO;
-
-        // test, if the controller could change the IOType
-        if ( IO->isInUse() ) {
-          printf("ERROR: Can't change IO Type. %s.%s is in use.\n", Ctrl[i]->getName(), IO->getName() );
-          setState( ERROR );
-          while (1) delay(50);
-        }
-
-        if ( Ctrl[i]->changeIOType( IO->getPort(), IO->getIOType(), ioType ) ) return Ctrl[i]->getIO( name );
-        
-        // not possible at all
-        return NULL;
-        
-      }
-
-    }
-    
   }
 
+  // nothing found?
+  if (!io) return NULL;
+
+  // if no special type is required, take it as it is
+  if ( ioType == SWOSIO_UNDEF ) return io;
+
+  // 100% match?
+  if ( io->getIOType() == ioType ) return io;
+
+  // compatible ioType?
+  uint8_t index = ctrl->getIndex( io );
+  if (!ctrl->changeIOType( index, ioType ) ) return NULL;
+
+  // return corrected io
+  return ctrl->io[index];
+    
   // nothing found
   return NULL;
   
@@ -1204,6 +1212,9 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
                           break;
 
     case CMD_JOINNACK:    cmdJoinNAck( com, source, affected ); 
+                          break;
+
+    case CMD_HARTBEAT:    if ( Ctrl[source] ) Ctrl[source]->tick();
                           break;
 
     default:              if ( Ctrl[affected] ) {

@@ -17,7 +17,12 @@
 #include "SwOSHW/SwOSHWHAL.h"
 
 #include "SwOSCom.h"
- 
+
+// local pixels & oled
+SwOSPixel *pixel0 = NULL;
+SwOSPixel *pixel1 = NULL;
+SwOSOLED  *oled   = NULL;
+
 /***************************************************
  *
  *   SwOSCtrl - Base class for controllers.
@@ -39,7 +44,7 @@ uint8_t SwOSCtrl::setupLocalInputs( uint8_t maxIO ) {
     // normal input
     } else { 
       sprintf( name, "A%d", i+1 );
-      io[ maxIO++ ] = new SwOSDigitalInput( name, i, this );
+      io[ maxIO++ ] = new SwOSDigitalInput( name, i, this, SWOSIO_DIGITAL );
     }
 
   }
@@ -52,12 +57,12 @@ uint8_t SwOSCtrl::setupLocalInputs( uint8_t maxIO ) {
       if (i==4) {
         // general emergency button
         sprintf( name, "EM", i+1 );
-        io[ maxIO++ ] = new SwOSDigitalInput( name, SWOS_NOPORT, this );
+        io[ maxIO++ ] = new SwOSDigitalInput( name, SWOS_NOPORT, this, SWOSIO_DIGITAL );
 
       } else {
         // normal endstops
         sprintf( name, "ES", i+1 );
-        io[ maxIO++ ] = new SwOSDigitalInput( name, i, this );
+        io[ maxIO++ ] = new SwOSDigitalInput( name, i, this, SWOSIO_DIGITAL );
       }
 
     }
@@ -66,7 +71,7 @@ uint8_t SwOSCtrl::setupLocalInputs( uint8_t maxIO ) {
 
   // LIDAR
   if ( extensionPort == FTSWARM_EXT_LIDAR ) {
-    io[ maxIO++ ] = new SwOSLidarInput( "LIDAR", SWOS_NOPORT, this );
+    io[ maxIO++ ] = new SwOSLidarInput( "LIDAR", this );
   }
 
   return maxIO;
@@ -95,7 +100,16 @@ uint8_t SwOSCtrl::setupLocalPixels( uint8_t maxIO ) {
   for (uint8_t i=0; i<MAXLEDS; i++) { 
 
     sprintf( name, "LED%d", i+1 );
-    io[ maxIO++ ] = new SwOSPixel( name, i, this);
+    io[ maxIO ] = new SwOSPixel( name, i, this);
+    
+    // store local pxiels for setState
+    if ( i < MAXIOS[CPU].pixels ) {
+      if ( i == 0 ) pixel0 = (SwOSPixel*) io[ maxIO ];
+      if ( i == 1 ) pixel1 = (SwOSPixel*) io[ maxIO ];
+    }
+
+    maxIO++;
+
   }
 
   return maxIO;
@@ -167,7 +181,7 @@ uint8_t SwOSCtrl::setupLocalButtons( uint8_t maxIO ) {
 
   // create buttons
   for ( uint8_t i=0; i<MAXIOS[ CPU ].buttons; i++) {
-    io[ maxIO++ ] = new SwOSButton( BUTTON[i], i, this );
+    io[ maxIO++ ] = new SwOSDigitalInput( BUTTON[i], i, this, SWOSIO_BUTTON );
   }
 
   return maxIO;
@@ -179,7 +193,7 @@ uint8_t SwOSCtrl::setupLocalJoysticks( uint8_t maxIO, SwOSCtrlConfig_t ctrlConfi
   char name[10];
   
   for ( uint8_t i=0; i<MAXIOS[ CPU ].joysticks; i++) {
-    sprintf( name, "JOY", i+1 );
+    sprintf( name, "JOY%d", i+1 );
     io[ maxIO++ ] = new SwOSJoystick( name, i, this, ctrlConfig.zero[i][0], ctrlConfig.zero[i][1] );
   }
 
@@ -231,7 +245,10 @@ uint8_t SwOSCtrl::setupLocalGyro( uint8_t maxIO ) {
 uint8_t SwOSCtrl::setupLocalOLED( uint8_t maxIO ) {
 
   // initialize oled if available
-  if ( CPU == FTSWARMCONTROL_1V3 ) io[ maxIO++ ] = new SwOSOLED( "OLED", this );
+  if ( CPU == FTSWARMCONTROL_1V3 ) {
+    oled = new SwOSOLED( "OLED", this );
+    io[ maxIO++ ] = oled;
+  }
 
   return maxIO;
 
@@ -301,7 +318,7 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSC
     maxIO = setupLocalInputs( maxIO );
     maxIO = setupLocalMotors( maxIO, actors );
     maxIO = setupLocalServos( maxIO, servos );
-    maxIO = setupLocalPixels( maxIO );
+    if ( MAXIOS[ CPU ].pixels ) maxIO = setupLocalPixels( maxIO );
     maxIO = setupLocalButtons( maxIO );
     maxIO = setupLocalJoysticks( maxIO, ctrlConfig );
     maxIO = setupLocalI2C( maxIO, ctrlConfig.extensionPort );
@@ -383,7 +400,11 @@ SwOSIO *SwOSCtrl::getIO( const char *name) {
 SwOSIO *SwOSCtrl::getIO( SwOSIOType_t ioType, FtSwarmPort_t port) {
 
   for ( uint8_t i=0; i<IOs; i++ ) {
-    if ( ( io[i] ) && ( io[i]->getIOType() == ioType ) && ( io[i]->getPort() == port ) ) return io[i];
+    if ( ( io[i] ) &&                                                                                  // IO exists
+         ( SWOSIOCLASS[ io[i]->getIOType() ] == SWOSIOCLASS[ ioType ] ) &&                             // IO has the same io class as requested
+         ( ( SWOSIOCLASS[ ioType ] != SWOSIOCLASS_SINGULAR ) || ( io[i]->getIOType() == ioType ) ) &&  // if IO is class SWOSCLASS_SINGULAR, both io types need to be the same
+         ( io[i]->getPort() == port )                                                                  // same port
+       ) return io[i];
   }
 
   return NULL;   
@@ -504,21 +525,31 @@ bool able2ChangeIOType( SwOSIOType_t ioType ) {
 }
 
 
-bool SwOSCtrl::changeIOType( uint8_t index,  SwOSIOType_t oldIOType, SwOSIOType_t newIOType ) {
-
-  // nothing changed?
-  if ( oldIOType == newIOType ) return true;
+bool SwOSCtrl::changeIOType( uint8_t index, SwOSIOType_t newIOType ) {
 
   // do I exist?
   if ( index >= IOs )                        return false;
   if ( !io[index] )                          return false; 
-  if ( io[index]->getIOType() != oldIOType ) return false;
 
-  // unable to change
-  if ( CHANGEHWTYPE[oldIOType] == SWOSHW_NOCHANGEIOTYPE ) return false;
+  // get my type
+  SwOSIOType_t oldIOType = io[index]->getIOType();
 
-  // Same HW Plattform?
-  if ( ( CHANGEHWTYPE[oldIOType] != CHANGEHWTYPE[newIOType] ) ) return false;
+  // nothing changed?
+  if ( oldIOType == newIOType ) return true;
+
+  // in use?
+  if ( io[index]->isInUse() ) {
+    printf("\e[0;31mERROR: Can't change IO Type. %s.%s is in use.\e[0m\n", getName(), io[index]->getName() );
+    setState( ERROR );
+    return false;
+  }
+
+  // able to change?
+  if ( ( SWOSIOCLASS[oldIOType] != SWOSIOCLASS[newIOType] ) || ( SWOSIOCLASS[oldIOType] == SWOSIOCLASS_SINGULAR ) ) {
+    printf("\e[0;31mERROR: Can't change IO type of %s.%s  from %d to %d due to incompatible io types.\e[0m\n", getName(), io[index]->getName(), oldIOType, newIOType );
+    setState( ERROR );
+    return false;
+  }
 
   // now we're changing the type
   SwOSIO *oldIO;
@@ -548,9 +579,8 @@ bool SwOSCtrl::changeIOType( uint8_t index,  SwOSIOType_t oldIOType, SwOSIOType_
   // if it's an remote port, change remote site as well
   if ( !isLocal() ) {
     SwOSCom IOType( macAddr, serialNumber, CMD_SETIOTYPE );
-    IOType.data.ioTypeCmd.index     = index;
-    IOType.data.ioTypeCmd.oldIOType = oldIOType;
-    IOType.data.ioTypeCmd.newIOType = newIOType;
+    IOType.data.setIOTypeCmd.index     = index;
+    IOType.data.setIOTypeCmd.newIOType = newIOType;
     IOType.send();
   }
 
@@ -584,18 +614,27 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, char *name, char 
 
   SwOSIO *io;
 
-  // TODO unvollständig
   switch ( ioType ) {
-    case SWOSIO_DIGITAL:         io = new SwOSDigitalInput( name, port, this );         break; 
+    case SWOSIO_SWITCH:
+    case SWOSIO_REEDSWITCH:
+    case SWOSIO_LIGHTBARRIER:
+    case SWOSIO_ULTRASONIC:
+    case SWOSIO_DIGITAL:         io = new SwOSDigitalInput( name, port, this, ioType ); break; 
     case SWOSIO_OHMMETER:
     case SWOSIO_THERMOMETER:
     case SWOSIO_VOLTMETER:
+    case SWOSIO_LDR:
     case SWOSIO_ANALOG:          io = new SwOSAnalogInput( name, port, this, ioType );  break;
+    case SWOSIO_LAMP:
+    case SWOSIO_VALVE:
+    case SWOSIO_COMPRESSOR:
+    case SWOSIO_BUZZER:
+    case SWOSIO_ENCODER:
     case SWOSIO_XMMOTOR:
     case SWOSIO_TRACTOR:
     case SWOSIO_MOTOR:           io = new SwOSMotor( name, port, this, ioType );        break; 
     case SWOSIO_STEPPER:         io = new SwOSStepper( name, port, this);               break; 
-    case SWOSIO_BUTTON:          io = new SwOSButton( name, port, this ) ;              break;
+    case SWOSIO_BUTTON:          io = new SwOSDigitalInput( name, port, this, SWOSIO_BUTTON ); break;
     case SWOSIO_JOYSTICK:        io = new SwOSJoystick( name, port, this, 0, 0 );       break; 
     case SWOSIO_PIXEL:           io = new SwOSPixel( name, port, this );                break;
     case SWOSIO_SERVO:           io = new SwOSServo( name, port, this );                break; 
@@ -607,6 +646,7 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, char *name, char 
     case SWOSIO_ROTARYENCODER:   io = new SwOSCounter( name, port, port + 1, this );    break;
     case SWOSIO_CAM:             io = new SwOSCAM( name, this );                        break;
     case SWOSIO_HC165:           io = new SwOSHC165( name, this );                      break;
+    case SWOSIO_LIDAR:           io = new SwOSLidarInput( name, this );                 break;
     default:                     // This should newer happen
                                  ESP_LOGE( LOGFTSWARM, "SwOSCtrl::createIO: Unkown ioType %d", ioType );
                                  setState( ERROR );
@@ -871,12 +911,53 @@ bool SwOSCtrl::apiCAMHMirror( char *id,bool hMirror ) {
 void SwOSCtrl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
   // visualizes controller's state like booting, error,...
 
-  SwOSPixel *led0 = getPixel( (char*) "LED1" );
-  SwOSPixel *led1 = getPixel( (char*) "LED2" );
+  // *** classic ftSwarm ***
+  if (pixel0) pixel0->setColor( LEDCOLOR0[state] );
+  if (pixel1) pixel1->setColor( LEDCOLOR0[state] );
   
-  if (led0) led0->setColor( LEDCOLOR0[state] );
-  if (led1) led1->setColor( LEDCOLOR1[state] );
+  // *** ftSwarmControl ***
+  if (!oled) return;
 
+  // rember old values
+  uint8_t sx, sy;
+  oled->getTextSize( &sx, &sy );
+  int16_t cx, cy;
+  oled->getCursor( &cx, &cy );
+  
+  int16_t w = oled->getWidth();
+
+  // clear status bar
+  oled->drawRect( 0, -YELLOWPIXELS, w, YELLOWPIXELS, true, false );
+
+  // status message
+  if ( ( state == RUNNING ) && (SSID) ) {
+    char _SSID[15];
+    strncpy( _SSID, SSID, 14 );
+    oled->write( _SSID, w/2, -YELLOWPIXELS, FTSWARM_ALIGNCENTER, false );
+  } else {
+    oled->write( (char *) OLEDMSG[state], w/2, -YELLOWPIXELS, FTSWARM_ALIGNCENTER, false );
+  }
+
+  // members
+  if ( members > 0) {
+    char m[10];
+    sprintf( m, "%d", members );
+    oled->write( m, w, -YELLOWPIXELS, FTSWARM_ALIGNRIGHT, false );
+  }
+
+  // Kelda
+  if (IAmKelda) oled->write( (char *) "K", 0, -YELLOWPIXELS, FTSWARM_ALIGNLEFT, false );
+
+  // cool line
+  oled->drawLine( 0, -5, w, -5, true );
+
+  // restore values
+  oled->setCursor( cx, cy );
+  oled->setTextSize( sx, sy );
+
+  // show on display
+  oled->display();
+   
 }
 
 void SwOSCtrl::identify( void ) {
@@ -1068,16 +1149,17 @@ bool SwOSCtrl::ioConfig( SwOSCom *com ) {
 
   while ( com->popIO( &index, &ioType,  &port, &name, &alias ) ) {
 
-    if ( index == SWOSIO_MAXIOTYPE ) {
+    if ( index == 254 ) {
       // hostname
-      // setName( name );
+      setName( name );
       setAlias( alias );
+      setComState( COMSTATE_ONLINE );
 
     } else if ( index >= IOs ) {
-      ESP_LOGE( LOGFTSWARM, "SwOSCtrl::ioConfig: index out of range %d", index );
+      ESP_LOGE( LOGFTSWARM, "SwOSCtrl::ioConfig: index out of range %X", index );
 
     } else if ( io[index] ) {
-      ESP_LOGE( LOGFTSWARM, "SwOSCtrl::ioConfig: io exists already %d", index );
+      ESP_LOGE( LOGFTSWARM, "SwOSCtrl::ioConfig: io exists already %X", index );
 
     } else {
       // any type of io
@@ -1091,11 +1173,15 @@ bool SwOSCtrl::ioConfig( SwOSCom *com ) {
 
 }
 
+void SwOSCtrl::tick( void ) {
+  lastContact = millis();
+}
+
 bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
 
   if (!com) return false;
 
-  lastContact = millis();
+  tick();
     
   switch (com->data.cmd) {
 
@@ -1112,7 +1198,7 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
     case CMD_IDENTIFY:                identify(); return true;
     case CMD_USEREVENT:               return userEvent( com );
     case CMD_IOCONFIG:                return ioConfig( com );
-    case CMD_SETIOTYPE:               return changeIOType( com->data.ioTypeCmd.index, com->data.ioTypeCmd.oldIOType, com->data.ioTypeCmd.newIOType );
+    case CMD_SETIOTYPE:               return changeIOType( com->data.setIOTypeCmd.index, com->data.setIOTypeCmd.newIOType );
     case CMD_SETSERVO:                return setServo( com );
     case CMD_I2CREGISTER:             return I2CRegister( com );
     case CMD_SETPARAMETER:            return setParameter( com );
@@ -1217,11 +1303,15 @@ void SwOSCtrl::sendIOConfig( MacAddr destination ) {
 
   SwOSCom ioConfig( destination, serialNumber, CMD_IOCONFIG );
 
-  // hostname
-  ioConfig.pushHostname( (char *)"HOSTNAME", getAlias() ); 
-
+  // IOs
   for (uint8_t i=0; i<IOs;i++) if (io[i]) ioConfig.pushIO( i, io[i]->getIOType(), io[i]->getPort(), io[i]->getName(), io[i]->getAlias() ); 
-  
+
+  // hostname - identifies last data
+  ioConfig.pushHostname( getHostname(), getAlias() ); 
+
+  // send
+  ioConfig.flushBuffer();
+
 }
 
 bool SwOSCtrl::hasGyro( void ) {

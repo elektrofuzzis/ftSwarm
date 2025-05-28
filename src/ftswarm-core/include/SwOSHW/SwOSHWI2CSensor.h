@@ -106,7 +106,7 @@
 
   public:
  
-	  SwOSLidarInput(const char *name, uint8_t port, SwOSCtrl *ctrl );
+	  SwOSLidarInput(const char *name, SwOSCtrl *ctrl );
   
     // administrative stuff
     virtual void jsonize( JSONize *json, uint8_t id);

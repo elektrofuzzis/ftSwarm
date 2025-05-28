@@ -116,8 +116,9 @@ public:
   virtual void lock( void );
   virtual void unlock( void );
   virtual bool isInUse( void );
-  virtual SwOSIO *getIO( SwOSIOType_t ioType, FtSwarmPort_t port);       // get a pointer to an IO port by address
+  virtual SwOSIO *getIO( SwOSIOType_t ioType, FtSwarmPort_t port );      // get a pointer to an IO port by address
 	virtual SwOSIO *getIO( const char *name);                              // get a pointer to an IO port by name
+  virtual void tick( void );                                             // mark communcation in lastContact
 
   SwOSMotor*    getMotor( char *name );                                  // get a pointer to a motor by name
   SwOSMotor*    getMotor( uint8_t index );                               // get a pointer to a motor by index
@@ -146,7 +147,7 @@ public:
   virtual bool isI2CSwarmCtrl( void );                                   // is a ftSwarmI2C-Board 
   virtual void identify( void );                                         // set LEDs to aquamarine / OLED to "it's me" to identify HW 
   virtual char *subscribe( char *ctrlName );                             // listen on user event data
-  virtual bool changeIOType( uint8_t index, SwOSIOType_t oldIOType, SwOSIOType_t newIOType ); // change port's IO Type if possible
+  virtual bool changeIOType( uint8_t index, SwOSIOType_t newIOType );    // change port's IO Type if possible
   virtual bool hasGyro( void );                                          // test if HW has a gyro
   virtual bool hasExtPort( void );                                       // test if HW has an ExtentionPort
 

@@ -223,60 +223,8 @@ FtSwarmReedSwitch::FtSwarmReedSwitch( const char * name, bool normallyOpen):FtSw
 
 // **** FtSwarmButton ****
 
-FtSwarmButton::FtSwarmButton( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmIO( serialNumber, port, SWOSIO_BUTTON ) {};
-FtSwarmButton::FtSwarmButton( const char *name):FtSwarmIO( name,SWOSIO_BUTTON ) {};
-
-// real stuff
-
-void FtSwarmButton::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 ) {
-
-  // set trigger using static values
-  if ( (me) && (actor) ) {
-    static_cast<SwOSInput *>(me)->lock();
-    static_cast<SwOSInput *>(me)->registerEvent( triggerEvent, (SwOSIO *)actor->me, false, p1 );
-    static_cast<SwOSInput *>(me)->unlock();
-  }
-
-};
-
-void FtSwarmButton::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor )  {
-
-  // set trigger using port's value
-  if ( (me) && (actor) ) {
-    static_cast<SwOSInput *>(me)->lock();
-    static_cast<SwOSInput *>(me)->registerEvent( triggerEvent, (SwOSIO *)actor->me, true, 0 );
-    static_cast<SwOSInput *>(me)->unlock();
-  }
-
-};
-
-FtSwarmToggle_t FtSwarmButton::FtSwarmButton::getToggle() { 
-
-  if (!me) return FTSWARM_NOTOGGLE;
-
-  static_cast<SwOSButton *>(me)->lock();
-  FtSwarmToggle_t xReturn = static_cast<SwOSButton *>(me)->getToggle();
-  static_cast<SwOSButton *>(me)->unlock();
-
-  return xReturn;
-};
-
-bool FtSwarmButton::getState() { 
-
-  if (!me) return false;
-
-  static_cast<SwOSButton *>(me)->lock();
-  bool xReturn = (static_cast<SwOSButton *>(me)->getState());
-  static_cast<SwOSButton *>(me)->unlock();
-
-  return xReturn;
-};
-
-// some facades
-bool FtSwarmButton::isPressed()            { return getState(); };
-bool FtSwarmButton::isReleased()           { return !getState(); };
-bool FtSwarmButton::hasToggledUp()         { return ( getToggle() == FTSWARM_TOGGLEUP ); };
-bool FtSwarmButton::hasToggledDown()       { return ( getToggle() == FTSWARM_TOGGLEDOWN ); };
+FtSwarmButton::FtSwarmButton( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmDigitalInput( serialNumber, port, SWOSIO_BUTTON ) {};
+FtSwarmButton::FtSwarmButton( const char *name):FtSwarmDigitalInput( name, SWOSIO_BUTTON ) {};
 
 // **** FtSwarmCounter
 
@@ -790,7 +738,7 @@ void FtSwarmJoystick::getValue( int16_t *FB, int16_t *LR, boolean *buttonState )
 
   static_cast<SwOSJoystick *>(me)->lock();
   static_cast<SwOSJoystick *>(me)->getValue(FB, LR);
-  if (button) *buttonState = static_cast<SwOSButton *>(button)->getState();
+  if (button) *buttonState = static_cast<SwOSDigitalInput *>(button)->getValueI32();
   static_cast<SwOSJoystick *>(me)->unlock();
 }
 
