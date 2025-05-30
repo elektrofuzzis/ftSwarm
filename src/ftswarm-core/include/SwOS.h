@@ -12,7 +12,8 @@
 
 // inter swarm communication deep debugging 
 // #define DEBUG_COMMUNICATION
-// #define DEBUG_READTASK
+// #define DEBUG_COMMUNICATION_SWARM
+#define DEBUG_READTASK
 
 // #define ARDUHAL_LOG_LEVEL_VERBOSE (5)
 
@@ -118,7 +119,7 @@ typedef enum { SWOSIO_UNDEF = -1,
                SWOSIO_HC165,
                SWOSIO_MAXIOTYPE } SwOSIOType_t;
 
-// show via api?
+// technologies to change IO type
 const bool SWOSIOCLASS[SWOSIO_MAXIOTYPE ] = {
   SWOSIOCLASS_INPUT, // SWOSIO_DIGITAL
   SWOSIOCLASS_INPUT, // SWOSIO_SWITCH
@@ -168,6 +169,7 @@ const bool SHOWIOINAPI[SWOSIO_MAXIOTYPE ] = {
   true, // SWOSIO_OHMMETER
   true, // SWOSIO_THERMOMETER
   true, // SWOSIO_LDR
+
   true, // SWOSIO_JOYSTICK
   true, // SWOSIO_MOTOR 
   true, // SWOSIO_XMMOTOR
@@ -178,6 +180,7 @@ const bool SHOWIOINAPI[SWOSIO_MAXIOTYPE ] = {
   true, // SWOSIO_COMPRESSOR
   true, // SWOSIO_BUZZER
   true, // SWOSIO_STEPPER
+
   true, // SWOSIO_COUNTER 
   true, // SWOSIO_ROTARYENCODER
   true, // SWOSIO_FREQUENCYMETER

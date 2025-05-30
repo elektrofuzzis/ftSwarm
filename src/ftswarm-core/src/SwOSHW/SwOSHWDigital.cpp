@@ -22,6 +22,8 @@ SwOSHC165 *hc165 = NULL;
 
  SwOSDigitalInput::SwOSDigitalInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType ) : SwOSInput( name, port, ctrl, ioType ) {
   
+  if ( ioType == SWOSIO_BUTTON ) normallyOpen = false;
+
   // initialize local HW
   if (ctrl->isLocal()) {
       setupLocal();
@@ -102,15 +104,15 @@ void SwOSDigitalInput::read() {
   // read new data
   newValue = gpio_get_level( (gpio_num_t) GPIO );
 
+  // normally open: change logic
+  if (normallyOpen) newValue = 1-newValue;
+
   setReading( newValue );
 
 }
 
 void SwOSDigitalInput::setReading( int32_t newValue ) {
-    
-  // normally open: change logic
-  if (normallyOpen) newValue = 1-newValue;
-    
+
   // check if it's toggled?
   if ( lastRawValue != newValue ) { 
     if (newValue) { toggle = FTSWARM_TOGGLEUP;   trigger( FTSWARM_TRIGGERUP, newValue ); }

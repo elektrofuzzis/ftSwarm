@@ -54,7 +54,7 @@ static void recvTask( void *parameter ) {
     if ( xQueueReceive( myOSNetwork.recvNotification, &event, ESPNOW_MAXDELAY ) == pdTRUE ) {
 
       #ifdef DEBUG_COMMUNICATION_SWARM
-        if ( (  event.data.cmd != CMD_STATE ) && ( event.data.cmd != CMD_ALIAS ) ) {
+        if ( event.data.cmd != CMD_STATE ) {
           printf("\n\n-----------------------------\nmy friend sends some data...\n" );
           event.macAddr.print();
           printf("cmd %d valid %d\n", event.data.cmd, event.isValid() );
@@ -141,7 +141,7 @@ void SwOSSwarm::connect( void ) {
 
   // if I'm not the Kelda, just check if Kelda is online
   if (!Ctrl[0]->IAmKelda) {
-    if ( Kelda ) && ( Kelda->networkAge() > 1000L ) Kelda->setComState( COMSTATE_UNDEFINED );
+    if ( ( Kelda ) && ( Kelda->networkAge() > 1000L ) ) Kelda->setComState( COMSTATE_UNDEFINED );
     return;
   }
 

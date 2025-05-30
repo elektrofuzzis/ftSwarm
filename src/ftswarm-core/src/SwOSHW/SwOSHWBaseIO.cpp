@@ -388,6 +388,7 @@ uint8_t SwOSInput::pushState( uint8_t *buffer ) {
 uint8_t SwOSInput::popState( uint8_t *buffer ) { 
 
   int32_t newValue;
+
   
   memcpy( &newValue, buffer, sizeof( newValue ) );
   setReading( newValue );

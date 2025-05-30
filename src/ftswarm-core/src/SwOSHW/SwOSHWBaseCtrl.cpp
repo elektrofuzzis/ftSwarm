@@ -606,7 +606,7 @@ void SwOSCtrl::jsonize( JSONize *json, uint8_t id) {
 
 void SwOSCtrl::jsonizeIO( JSONize *json, uint8_t id ) {
   
-  for (uint8_t i=0; i<IOs; i++) { if ( io[i] ) io[i]->jsonize( json, id ); }
+  for (uint8_t i=0; i<IOs; i++) { if ( ( io[i] ) && ( io[i]->showInApi() ) ) io[i]->jsonize( json, id ); }
 
 }
 
@@ -1254,10 +1254,12 @@ SwOSCom *SwOSCtrl::state2Com( MacAddr destination ) {
 
 bool SwOSCtrl::recvState( SwOSCom *com ) {
 
-  uint8_t ptr = 0;
+  uint8_t ptr = 0;  // ptr in payload buffer
+  uint8_t index;    // index of io
 
   for ( uint8_t i=0; i<com->data.stateCmd.items; i++ ) {
-    if (io[i]) ptr += io[i]->popState( &(com->data.stateCmd.payload[ptr]) );
+    index = com->data.stateCmd.payload[ptr++];
+    if (io[index]) ptr += io[index]->popState( &(com->data.stateCmd.payload[ptr]) );
   }
 
   return true;
