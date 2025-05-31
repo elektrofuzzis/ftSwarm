@@ -339,6 +339,14 @@ bool SwOSCLI::eval( void ) {
 
 }
 
+void SwOSCLI::wrongIOType( SwOSIOType_t ioType ) {
+  printf("[ERROR]: wrong IO type %d\n", ioType );
+}
+
+void SwOSCLI::OK ( void ) {
+  printf("R: ok\n");
+}
+
 void SwOSCLI::executeControllerCmd(void ) {
 
   SwOSCom *userEvent;
@@ -376,7 +384,7 @@ void SwOSCLI::executeControllerCmd(void ) {
                                     break;
 
     case CLICMD_setMicrostepMode:   if (_parameter[0].inRange( "MicroStepMode", 0, 7 ) ) {
-                                      printf("R: ok\n");
+                                      OK();
                                       if ( ctrl->getType() == FTSWARMPWRDRIVE ) {
                                         ctrl->lock();
                                         ctrl->setMicrostepMode( (uint8_t) _parameter[0].getValue() );
@@ -423,10 +431,10 @@ void SwOSCLI::executeInputCmd( void ) {
                                 if ( ctrl->changeIOType( index, newIOType ) ) {
                                   _io = ctrl->io[ index ];
                                   if (_io) _io->setParameter( _parameter[1].getValue() );
-                                  printf("R: ok\n");
+                                  OK();
                                 }
 
-                              } else printf("ERROR: wrong io type type %d\n", newIOType );
+                              } else wrongIOType( newIOType );
 
                               break;
 
@@ -439,7 +447,7 @@ void SwOSCLI::executeInputCmd( void ) {
                               if ( io->getIOType() == SWOSIO_VOLTMETER ) {
                                 printf("R: %f\n", ((SwOSAnalogInput *)io)->getVoltage());
                               } else {
-                                printf("ERROR: wrong IO type %d\n", io->getIOType() );
+                                wrongIOType( io->getIOType() );
                               }
                               _io->unlock();
                               break;
@@ -448,7 +456,7 @@ void SwOSCLI::executeInputCmd( void ) {
                               if ( io->getIOType() == SWOSIO_OHMMETER ) {
                                 printf("R: %f\n", ((SwOSAnalogInput *)io)->getResistance());
                               } else {
-                                printf("ERROR: wrong IO type %d\n", io->getIOType() );
+                                wrongIOType( io->getIOType() );
                               }
                               _io->unlock();
                               break;
@@ -457,7 +465,7 @@ void SwOSCLI::executeInputCmd( void ) {
                               if ( io->getIOType() == SWOSIO_THERMOMETER ) {
                                 printf("R: %f\n", ((SwOSAnalogInput *)io)->getKelvin());
                               } else {
-                                printf("ERROR: wrong IO type %d\n", io->getIOType() );
+                                wrongIOType( io->getIOType() );
                               }
                               _io->unlock();
                               break;
@@ -466,7 +474,7 @@ void SwOSCLI::executeInputCmd( void ) {
                               if ( io->getIOType() == SWOSIO_THERMOMETER ) {
                                 printf("R: %f\n", ((SwOSAnalogInput *)io)->getCelcius());
                               } else {
-                                printf("ERROR: wrong IO type %d\n", io->getIOType() );
+                                wrongIOType( io->getIOType() );
                               }
                               _io->unlock();
                               break;
@@ -475,7 +483,7 @@ void SwOSCLI::executeInputCmd( void ) {
                               if ( io->getIOType() == SWOSIO_THERMOMETER ) {
                                 printf("R: %f\n", ((SwOSAnalogInput *)io)->getFahrenheit());
                               } else {
-                                printf("ERROR: wrong IO type %d\n", io->getIOType() );
+                                wrongIOType( io->getIOType() );
                               }
                               _io->unlock();
                               break;
@@ -499,7 +507,7 @@ void SwOSCLI::executeInputCmd( void ) {
     case CLICMD_onTrigger:     if (( _parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER ) ) &&
                                   ( _parameter[1].isIO() ) &&
                                   ( _parameter[2].isConstant() ) ) {
-                                printf("R: ok\n");
+                                OK();
                                 _io->lock();
                                 if ( _maxParameter == 2 ) {
                                   // work with a fixed value
@@ -549,7 +557,7 @@ void SwOSCLI::executeActorCmd( void ) {
                                       motor->unlock();
                                     }
 
-                                    printf("R: ok\n");
+                                    OK();
 
                                   }
 
@@ -565,7 +573,7 @@ void SwOSCLI::executeActorCmd( void ) {
     case CLICMD_setSpeed:       if ( motor->highResolution ) maxspeed = 4095;
                                 else maxspeed = 255;
                                 if (_parameter[0].inRange( "speed", -maxspeed, maxspeed ) ) { 
-                                  printf("R: ok\n");
+                                  OK();
                                   motor->lock(); 
                                   motor->setSpeed( _parameter[0].getValue() );
                                   motor->apply();
@@ -579,7 +587,7 @@ void SwOSCLI::executeActorCmd( void ) {
                                 break;
 
     case CLICMD_setMotionType:  if (_parameter[0].inRange( "motionType", 0, FTSWARM_MAXMOTION-1) ) { 
-                                  printf("R: ok\n");
+                                  OK();
                                   motor->lock(); 
                                   motor->setMotionType( (FtSwarmMotion_t) _parameter[0].getValue() );
                                   motor->apply();
@@ -592,61 +600,80 @@ void SwOSCLI::executeActorCmd( void ) {
                                 motor->unlock();
                                 break;
 
-    // TODO: ist es auch ein Stepper?
-    case CLICMD_setDistance:    printf("R: ok\n");
-                                stepper->lock(); 
-                                stepper->setDistance( _parameter[0].getLongValue(), (_parameter[1].getValue() > 0) );
-                                stepper->unlock();
+    case CLICMD_setDistance:    if ( stepper->getIOType() == SWOSIO_STEPPER ) {
+                                  OK();
+                                  stepper->lock(); 
+                                  stepper->setDistance( _parameter[0].getLongValue(), (_parameter[1].getValue() > 0) );
+                                  stepper->unlock();
+                                } else wrongIOType( stepper->getIOType() );
                                 break;
 
-    case CLICMD_getDistance:    stepper->lock();
-                                printf("R: %lu\n", stepper->getDistance() ); 
-                                stepper->unlock();
+    case CLICMD_getDistance:    if ( stepper->getIOType() == SWOSIO_STEPPER ) {
+                                  stepper->lock();
+                                  printf("R: %lu\n", stepper->getDistance() ); 
+                                  stepper->unlock();
+                                } else wrongIOType( stepper->getIOType() );
                                 break;
 
-    case CLICMD_run:            printf("R: ok\n");
-                                stepper->lock(); 
-                                stepper->startStop( true );
-                                stepper->unlock();
+    case CLICMD_run:            if ( stepper->getIOType() == SWOSIO_STEPPER ) {
+                                  OK();
+                                  stepper->lock(); 
+                                  stepper->startStop( true );
+                                  stepper->unlock();
+                                } else wrongIOType( stepper->getIOType() );
                                 break;
 
-    case CLICMD_isRunning:      stepper->lock();
-                                if ( stepper->isRunning() ) printf("R: 1\n"  ); else printf("R: 1\n"  );
-                                stepper->unlock();
+    case CLICMD_isRunning:      if ( stepper->getIOType() == SWOSIO_STEPPER ) {
+                                  stepper->lock();
+                                  if ( stepper->isRunning() ) printf("R: 1\n"  ); else printf("R: 1\n"  );
+                                  stepper->unlock();
+                                } else wrongIOType( stepper->getIOType() );
                                 break;
 
-    case CLICMD_stop:           printf("R: ok\n");
-                                stepper->lock(); 
-                                stepper->startStop( false );
-                                stepper->unlock();
+    case CLICMD_stop:           if ( stepper->getIOType() == SWOSIO_STEPPER ) {
+                                  OK();
+                                  stepper->lock(); 
+                                  stepper->startStop( false );
+                                  stepper->unlock();
+                                } else wrongIOType( stepper->getIOType() );
                                 break;
 
-    case CLICMD_setPosition:    printf("R: ok\n");
-                                stepper->lock(); 
-                                stepper->setPosition( _parameter[0].getLongValue() );
-                                stepper->unlock();
+    case CLICMD_setPosition:    if ( stepper->getIOType() == SWOSIO_STEPPER ) {
+                                  OK();
+                                  stepper->lock(); 
+                                  stepper->setPosition( _parameter[0].getLongValue() );
+                                  stepper->unlock();
+                                } else wrongIOType( stepper->getIOType() );
                                 break;
 
-    case CLICMD_getPosition:    stepper->lock();
-                                printf("R: %lu\n", stepper->getPosition() ); 
-                                stepper->unlock();
+    case CLICMD_getPosition:    if ( stepper->getIOType() == SWOSIO_STEPPER ) {
+                                  stepper->lock();
+                                  printf("R: %lu\n", stepper->getPosition() ); 
+                                  stepper->unlock();
+                                } else wrongIOType( stepper->getIOType() );
                                 break;
 
-    case CLICMD_homing:         printf("R: ok\n");
-                                stepper->lock(); 
-                                stepper->homing( _parameter[0].getLongValue() );
-                                stepper->unlock();
+    case CLICMD_homing:         if ( stepper->getIOType() == SWOSIO_STEPPER ) {
+                                  OK();
+                                  stepper->lock(); 
+                                  stepper->homing( _parameter[0].getLongValue() );
+                                  stepper->unlock();
+                                } else wrongIOType( stepper->getIOType() );
                                 break;
                                 
-    case CLICMD_isHoming:       stepper->lock();
-                                printf("R: %d\n", stepper->isHoming() ); 
-                                stepper->unlock();
+    case CLICMD_isHoming:       if ( stepper->getIOType() == SWOSIO_STEPPER ) {
+                                  stepper->lock();
+                                  printf("R: %d\n", stepper->isHoming() ); 
+                                  stepper->unlock();
+                                } else wrongIOType( stepper->getIOType() );
                                 break;
 
-    case CLICMD_setHomingOffset: printf("R: ok\n");
-                                stepper->lock(); 
-                                stepper->setHomingOffset( _parameter[0].getLongValue() );
-                                stepper->unlock();
+    case CLICMD_setHomingOffset: if ( stepper->getIOType() == SWOSIO_STEPPER ) {
+                                  OK();
+                                  stepper->lock(); 
+                                  stepper->setHomingOffset( _parameter[0].getLongValue() );
+                                  stepper->unlock();
+                                } else wrongIOType( stepper->getIOType() );
                                 break;
 
     default:                    printf("Error: invalid command.\n");
@@ -670,7 +697,7 @@ void SwOSCLI::executeJoystickCmd( void ) {
     case CLICMD_onTriggerLR:   if (( _parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER ) ) &&
                                   ( _parameter[1].isIO() ) &&
                                   ( _parameter[2].isConstant() ) ) {
-                                printf("R: ok\n");
+                                OK();
                                 io->lock();
                                 if ( _maxParameter == 2 ) {
                                   // work with a fixed value
@@ -687,7 +714,7 @@ void SwOSCLI::executeJoystickCmd( void ) {
     case CLICMD_onTriggerFB:   if (( _parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER ) ) &&
                                   ( _parameter[1].isIO() ) &&
                                   ( _parameter[2].isConstant() ) ) {
-                                printf("R: ok\n");
+                                OK();
                                 io->lock();
                                 if ( _maxParameter == 2 ) {
                                   // work with a fixed value
@@ -712,8 +739,8 @@ void SwOSCLI::executeServoCmd( void ) {
   SwOSServo *io = (SwOSServo *)_io;
   
   switch ( _cmd ) {
-    case CLICMD_setPosition:     if (_parameter[0].inRange( "position", -255, 255 ) ) { 
-                                  printf("R: ok\n");
+    case CLICMD_setPosition:    if (_parameter[0].inRange( "position", -255, 255 ) ) { 
+                                  OK();
                                   io->lock(); 
                                   io->setPosition( (int16_t) _parameter[0].getValue() );
                                   io->unlock();
@@ -725,8 +752,8 @@ void SwOSCLI::executeServoCmd( void ) {
                                 io->unlock();
                                 break;
 
-    case CLICMD_setOffset:       if (_parameter[0].inRange( "offset", -255, 255 ) ) { 
-                                  printf("R: ok\n");
+    case CLICMD_setOffset:      if (_parameter[0].inRange( "offset", -255, 255 ) ) { 
+                                  OK();
                                   io->lock(); 
                                   io->setOffset( (int16_t) _parameter[0].getValue() );
                                   io->unlock();
@@ -750,7 +777,7 @@ void SwOSCLI::executePixelCmd( void ) {
   
   switch ( _cmd ) {
     case CLICMD_setBrightness:   if (_parameter[0].inRange( "brightness", 0, 255 ) ) { 
-                                  printf("R: ok\n");
+                                  OK();
                                   io->lock(); 
                                   io->setBrightness( (uint8_t) _parameter[0].getValue() );
                                   io->unlock();
@@ -762,7 +789,7 @@ void SwOSCLI::executePixelCmd( void ) {
                                 io->unlock();
                                 break;
 
-    case CLICMD_setColor:       printf("R: ok\n");
+    case CLICMD_setColor:       OK();
                                 io->lock(); 
                                 io->setColor( (uint) _parameter[0].getValue() );
                                 io->unlock();
@@ -786,7 +813,7 @@ void SwOSCLI::executeI2CCmd( void ) {
   switch ( _cmd ) {
     case CLICMD_setRegister:    if ( (_parameter[0].inRange( "register", 0, MAXI2CREGISTERS ) ) &&
                                    (_parameter[1].inRange( "value", 0, 255 ) ) ) { 
-                                  printf("R: ok\n");
+                                  OK();
                                   io->lock(); 
                                   io->setRegister( (uint8_t) _parameter[0].getValue(), (uint8_t) _parameter[1].getValue() );
                                   io->unlock();
@@ -803,7 +830,7 @@ void SwOSCLI::executeI2CCmd( void ) {
     case CLICMD_onTrigger:     if (( _parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER ) ) &&
                                   ( _parameter[1].isIO() ) &&
                                   ( _parameter[2].isConstant() ) ) {
-                                printf("R: ok\n");
+                                OK();
                                 io->lock();
                                 if ( _maxParameter == 2 ) {
                                   // work with a fixed value

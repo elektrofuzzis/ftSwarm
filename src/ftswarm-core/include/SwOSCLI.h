@@ -86,6 +86,9 @@ class SwOSCLI {
     Cmd_t evalSimpleCommand( char *token );  // tests, if token is a simple command
     void evalIOCommand( char *token );       // evals an IO command, token is already first token 
 
+    void wrongIOType( SwOSIOType_t ioType );
+    void OK( void );
+
     void executeInputCmd( void );
     void executeActorCmd( void ); 
     void executeJoystickCmd( void );

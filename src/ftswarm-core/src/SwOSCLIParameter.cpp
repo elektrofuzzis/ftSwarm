@@ -55,12 +55,12 @@ long SwOSCLIParameter::getLongValue( void ){
   bool SwOSCLIParameter::inRange( const char *name, int minValue, int maxValue ) {
 
   if (!isConstant()) {
-    printf("Error: parameter %s is not a number.\n", name);
+    printf("[Error]: parameter %s is not a number.\n", name);
     return false;
   }
 
   if ( (getValue()<minValue) || (getValue()>maxValue) ) {
-    printf("Error: parameter %s needs to be between %d and %d, but %d found.\n", name, minValue, maxValue, getValue());
+    printf("[Error]: parameter %s needs to be between %d and %d, but %d found.\n", name, minValue, maxValue, getValue());
     return false;
   }
 
