@@ -13,7 +13,7 @@
 // inter swarm communication deep debugging 
 // #define DEBUG_COMMUNICATION
 // #define DEBUG_COMMUNICATION_SWARM
-#define DEBUG_READTASK
+// #define DEBUG_READTASK
 
 // #define ARDUHAL_LOG_LEVEL_VERBOSE (5)
 

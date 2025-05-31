@@ -23,6 +23,7 @@
   protected:
     uint32_t color = 0;
     uint8_t  brightness = BRIGHTNESSDEFAULT;
+    bool     dynamic = false;
   
     // local HW procedures
     virtual void setupLocal(); 

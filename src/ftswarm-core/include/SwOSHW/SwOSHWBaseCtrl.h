@@ -65,6 +65,8 @@ protected:
 
   uint8_t          microstepMode = 0;  // FtSwarmPwrDrive only
 
+  uint8_t          pixels = 0;
+
   // communications
   bool saveAlias2NVS( SwOSCom *com );
   bool setPixel( SwOSCom *com );

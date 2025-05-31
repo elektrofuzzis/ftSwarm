@@ -26,7 +26,12 @@
 
 SwOSPixel::SwOSPixel(const char *name, uint8_t port, SwOSCtrl *ctrl) : SwOSIO( name, port, ctrl, SWOSIO_PIXEL ) {
 
-  if (ctrl->isLocal()) setupLocal();
+  if (ctrl->isLocal()) 
+    setupLocal();
+  
+  else if ( port<MAXIOS[ctrl->getCPU()].pixels) 
+    // in case of buildin remote pixels assume green
+    color = CRGB::Green;
 
 }
 

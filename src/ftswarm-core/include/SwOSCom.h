@@ -78,6 +78,7 @@ struct SwOSCtrlConfig_t {
   bool                  IAmKelda;
   FtSwarmExtMode_t      extensionPort;
   uint8_t               IOs;
+  uint8_t               pixels;
   bool                  gyro;
   int16_t               zero[2][2];
 } __attribute__((packed));

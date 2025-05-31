@@ -100,9 +100,9 @@ uint8_t SwOSCtrl::setupLocalPixels( uint8_t maxIO ) {
   for (uint8_t i=0; i<MAXLEDS; i++) { 
 
     sprintf( name, "LED%d", i+1 );
-    io[ maxIO ] = new SwOSPixel( name, i, this);
+    io[ maxIO ] = new SwOSPixel( name, i, this );
     
-    // store local pxiels for setState
+    // store local pixels for setState
     if ( i < MAXIOS[CPU].pixels ) {
       if ( i == 0 ) pixel0 = (SwOSPixel*) io[ maxIO ];
       if ( i == 1 ) pixel1 = (SwOSPixel*) io[ maxIO ];
@@ -264,6 +264,7 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSC
   this->lastContact   = millis();
   this->extensionPort = ctrlConfig.extensionPort;
   this->macAddr.set( macAddr );
+  this->pixels        = ctrlConfig.pixels;
   
   // set my name 
   char buffer[32];
@@ -606,7 +607,23 @@ void SwOSCtrl::jsonize( JSONize *json, uint8_t id) {
 
 void SwOSCtrl::jsonizeIO( JSONize *json, uint8_t id ) {
   
-  for (uint8_t i=0; i<IOs; i++) { if ( ( io[i] ) && ( io[i]->showInApi() ) ) io[i]->jsonize( json, id ); }
+  for (uint8_t i=0; i<IOs; i++) { 
+    
+    if ( ( io[i] ) && ( io[i]->showInApi() ) ) {
+
+      if ( io[i]->getIOType() == SWOSIO_PIXEL ) {
+
+        // show pixels only, if they are marked as show in WebUI or the pixel is used
+        if ( ( io[i]->getPort() < pixels ) || ( io[i]->isInUse() ) ) io[i]->jsonize( json, id ); 
+
+      } else {
+        // all other stuff
+        io[i]->jsonize( json, id ); 
+      }
+
+    }
+
+  }
 
 }
 
@@ -1276,6 +1293,7 @@ void SwOSCtrl::registerMe( SwOSCom *com ){
   com->data.registerCmd.ctrlConfig.IAmKelda      = IAmKelda;
   com->data.registerCmd.ctrlConfig.extensionPort = extensionPort;
   com->data.registerCmd.ctrlConfig.IOs           = IOs;
+  com->data.registerCmd.ctrlConfig.pixels        = pixels;
   
   // swarm data
   strcpy( com->data.registerCmd.swarmName, nvs.swarmName );

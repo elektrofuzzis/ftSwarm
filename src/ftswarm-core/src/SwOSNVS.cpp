@@ -15,6 +15,7 @@
 #include "SwOS.h"
 #include "SwOSNVS.h"
 #include "easyKey.h"
+#include "SwOSHW/SwOSHWHAL.h"
 
 SwOSNVS nvs;
 
@@ -55,7 +56,7 @@ void SwOSNVS::initialSetup( void ) {
              CPU = ( FtSwarmVersion_t ) ( enterNumber(("CPU Version\n (1) FTSWARMJST_1V0\n (2) FTSWARMCONTROL_1V3\n (3) FTSWARMJST_1V15\n (4) FTSWARMRS_2V0\n (5) FTSWARMRS_2V1\n (6) FTSWARMCAM_3V12\n (7) FTSWARMDUINO_1V141\n (8) FTSWARMPWRDRIVE_1V141\n (9) FTSWARMXL_1V00 (10) FTSWARMRC_1V140"), 0, 1, 10 ) -1 );
   }
 
-  RGBLeds = 2; 
+  pixels = MAXIOS[CPU].pixels;
   extensionPort = ( controllerType == FTSWARMCONTROL ) ? FTSWARM_EXT_I2C_MASTER : FTSWARM_EXT_OFF; 
 
   serialNumber = enterNumber("Serial number [1..65535]>", 0, 1, 65535 );
@@ -172,7 +173,7 @@ bool SwOSNVS::load() {
   nvs_get_u8(  my_handle, "displayType", &displayType);
 
   // RGBLeds
-  nvs_get_u8( my_handle, "RGBLeds", &RGBLeds );
+  nvs_get_u8( my_handle, "RGBLeds", &pixels );
   
   size_t dummy;
        
@@ -242,7 +243,7 @@ void SwOSNVS::save( bool writeAll ) {
   ESP_ERROR_CHECK( nvs_set_u8(  my_handle, "displayType", displayType) );
 
   // RGBLeds
-  ESP_ERROR_CHECK( nvs_set_u8( my_handle, "RGBLeds", RGBLeds ) );
+  ESP_ERROR_CHECK( nvs_set_u8( my_handle, "RGBLeds", pixels ) );
 
   // wifi
   ESP_ERROR_CHECK( nvs_set_u32( my_handle, "wifiMode", wifiMode ) );
@@ -313,7 +314,7 @@ void SwOSNVS::factorySettings( void ) {
 
   displayType        = 1;
 
-  RGBLeds            = 2;
+  pixels             = MAXIOS[CPU].pixels;
 
   extensionPort      = FTSWARM_EXT_OFF;
   I2CAddr            = 0x66;
@@ -413,7 +414,7 @@ void SwOSNVS::printNVS() {
   printf( "swarmName: >%s<\n", swarmName );
   printf( "IAmKelda: %d\n", IAmKelda );
   printf( "swarmCommunication %d\n", swarmCommunication );
-  printf( "RGBLeds: %d\n", RGBLeds );
+  printf( "pixels: %d\n", pixels );
   printf( "displayType: %d\n", displayType );
 
   printf( "swarm members:");

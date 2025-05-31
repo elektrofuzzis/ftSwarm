@@ -376,6 +376,7 @@ SwOSCtrlConfig_t localCtrlConfig = {
     .IAmKelda      = nvs.IAmKelda,
     .extensionPort = nvs.extensionPort,
     .IOs           = 0,
+    .pixels        = nvs.pixels,
     .gyro          = nvs.gyro
   };
 
@@ -1117,8 +1118,16 @@ void SwOSSwarm::replaceCtrl( SwOSCom *com, uint8_t source, uint8_t affected ) {
   
   if ( com->data.registerCmd.ctrlConfig.ctrlType >= FTSWARM_MAXCONTROLLERTYPE ) {
     ESP_LOGW( LOGFTSWARM, "Unknown controller type while adding a new controller to my swarm." ); return;
+
   } else {
+    
     newCtrl = new SwOSCtrl( com->data.sourceSN , com->macAddr, false, com->data.registerCmd.ctrlConfig );
+    
+    if (verbose) { 
+      if ( com->data.registerCmd.ctrlConfig.IAmKelda ) printf("Kelda ");
+      printf("\n[Info] ftSwarm%d joined the swarm.\n", com->data.sourceSN ); 
+    }
+
   }
 
   // replace the new controller in my list
@@ -1165,7 +1174,6 @@ void SwOSSwarm::cmdJoinMySwarm( SwOSCom *com, uint8_t source, uint8_t affected )
 
     // update status
     setState( RUNNING );
-    if (verbose) { printf("Joined Swarm [%s with MAC ", Ctrl[source]->getHostname() ); Ctrl[source]->macAddr.print(); printf("]\n"); }
 
   }
 

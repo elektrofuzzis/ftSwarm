@@ -205,7 +205,7 @@ void wifiMenu( void ) {
       
       menu.add( "Web UI", ONOFF[nvs.webUI], 5);
       
-      if ( nvs.webUI ) menu.add( "ftPixels in UI", nvs.RGBLeds, 6);
+      if ( nvs.webUI ) menu.add( "ftPixels in UI", nvs.pixels, 6);
     
     }
 
@@ -254,7 +254,7 @@ void wifiMenu( void ) {
         
       case 6: // # of ftPixel
         anythingChanged = true;
-        nvs.RGBLeds = enterNumber( "enter number of ftPixel in WebUI [2..18]: ", nvs.RGBLeds, 2, MAXLEDS );
+        nvs.pixels = enterNumber( "enter number of ftPixel in WebUI [2..18]: ", nvs.pixels, 2, MAXLEDS );
         break;
     }
   }
