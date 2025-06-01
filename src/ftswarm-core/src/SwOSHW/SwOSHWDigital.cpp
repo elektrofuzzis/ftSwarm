@@ -99,7 +99,7 @@ void SwOSDigitalInput::read() {
   if ( ( ctrl->getCPU() == FTSWARMDUINO_1V141 )    && ( ftDuino ) )    { setReading( ftDuino->input[port] ); return; }
 
   if ( ioType == SWOSIO_BUTTON ) {
-    if (hc165) setReading( 1- (hc165->getValue( ) & (1<<port) ) );
+    if (hc165) setReading( ( ( hc165->getValue( ) & (1<<port) ) >0 ) );
     return;
   }
 

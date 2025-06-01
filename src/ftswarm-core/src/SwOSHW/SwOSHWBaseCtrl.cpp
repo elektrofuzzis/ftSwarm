@@ -626,6 +626,10 @@ void SwOSCtrl::jsonizeIO( JSONize *json, uint8_t id ) {
         // show pixels only, if they are marked as show in WebUI or the pixel is used
         if ( ( io[i]->getPort() < pixels ) || ( io[i]->isInUse() ) ) io[i]->jsonize( json, id ); 
 
+      } else if ( ( io[i]->getIOType() == SWOSIO_BUTTON ) && ( io[i]->getPort() >= FTSWARM_J1 ) && ( io[i]->getPort() <= FTSWARM_J2 ) ) {
+        
+        // don't show J1 und J2 as singular Buttons in UI, they're part of JOY1/JOY2
+
       } else {
         // all other stuff
         io[i]->jsonize( json, id ); 
@@ -1286,7 +1290,7 @@ bool SwOSCtrl::recvState( SwOSCom *com ) {
 
   for ( uint8_t i=0; i<com->data.stateCmd.items; i++ ) {
     index = com->data.stateCmd.payload[ptr++];
-    if (io[index]) ptr += io[index]->popState( &(com->data.stateCmd.payload[ptr]) );
+    if ( (index < IOs) && (io[index]) ) ptr += io[index]->popState( &(com->data.stateCmd.payload[ptr]) );
   }
 
   return true;

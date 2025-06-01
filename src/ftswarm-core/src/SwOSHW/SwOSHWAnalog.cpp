@@ -11,6 +11,7 @@
 #include "SwOSHW/SwOSHWHAL.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSFilter.h"
+#include "SwOSHW/SwOSHWDigital.h"
 
 /***************************************************
  *
@@ -406,8 +407,9 @@ void SwOSJoystick::jsonize( JSONize *json, uint8_t id) {
   json->variableI16("valueLr", lastLR );
   json->variableI16("valueFb", lastFB );
 
-  // TODO
-  // json->variableB("button", static_cast<SwOSSwarmControl *>(ctrl)->button[6+port]->getState());
+  SwOSDigitalInput *button = (SwOSDigitalInput*) ctrl->getIO( SWOSIO_BUTTON, FTSWARM_J1 + port );
+  if (button) json->variableB( "button", button->getValueI32() );
   
   json->endObject();
+
 }
