@@ -1,3 +1,12 @@
+/*
+ * SwOSHWDuino.cpp
+ *
+ * ftDuino wrapper class
+ * 
+ * (C) 2021-25 Christian Bergschneider & Stefan Fuss
+ * 
+ */
+
 #include <Wire.h>
 #include <string.h>
 

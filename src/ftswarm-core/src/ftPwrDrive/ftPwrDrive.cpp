@@ -364,5 +364,11 @@ void FtPwrDrive::read( void ) {
   getStateAll( &lastState[0], &lastState[1], &lastState[2], &lastState[3] );
   getPositionAll( &lastPosition[0], &lastPosition[1], &lastPosition[2], &lastPosition[3] );
   getStepsToGoAll( &lastDistance[0], &lastDistance[1], &lastDistance[2], &lastDistance[3] );
+
+  error += i2c.error;
   
+}
+
+uint8_t FtPwrDrive::getError( void ) {
+    return error;
 }

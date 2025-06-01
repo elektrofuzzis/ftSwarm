@@ -149,18 +149,20 @@ float SwOSAnalogInput::getKelvin() {
 }
 
 float SwOSAnalogInput::getCelcius() {
-  // ToDo cast to temperature
+
   return getKelvin() - NULLKELVIN;
+
 }
 
 float SwOSAnalogInput::getFahrenheit() {
-  // ToDo cast to temperature
+
   return getCelcius() * 9 / 5 + 32;
+
 }
 
 void SwOSAnalogInput::read() {
 
-  // nothing todo on remote sensors
+  // remote: no work
   if (!ctrl->isLocal()) return;
   
   // ftDuino?
@@ -206,7 +208,7 @@ void SwOSAnalogInput::setReading( int32_t newValue ) {
 
 void SwOSAnalogInput::setValue( int32_t value ) {
 
-  // nothing ToDo on real local HW
+  // stop, if it's not local HW
   if ( ( ctrl->isLocal()) && (!ctrl->isI2CSwarmCtrl() ) ) return;
 
   // check if it's toggled?
@@ -355,7 +357,7 @@ void SwOSJoystick::read() {
 
   int16_t x;
 
-  // nothing ToDO with remote HW
+  // remote: no work
   if (!ctrl->isLocal()) return;
 
   x = readChannel( ADCChannelLR, zeroLR, &lastRawLR, port );
@@ -383,7 +385,7 @@ void SwOSJoystick::setValue( int16_t FB, int16_t LR ) {
 
 void SwOSJoystick::calibrate( int16_t *zeroLR, int16_t *zeroFB ) {
 
-  // nothing ToDO with remote HW
+  /// remote: no work
   if (!ctrl->isLocal()) return;
   if ( (ADCChannelLR == ADC1_CHANNEL_MAX ) || ( ADCChannelFB == ADC1_CHANNEL_MAX )) return;
 

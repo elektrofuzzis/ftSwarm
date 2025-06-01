@@ -244,14 +244,6 @@ const gpio_num_t GPIO_SERVO[FTSWARMMAXVERSION][4] =
     /* FTSWARMRC_1V140 */      { GPIO_NUM_NC,   GPIO_NUM_NC, GPIO_NUM_NC, GPIO_NUM_NC}
   };
 
-// TODO FTSWARMRC
-/*
-const int8_t GPIO_RCSERVO[4][3] = { { GPIO_NUM_6, ADC_UNIT_1, ADC1_CHANNEL_5 },
-                                    { GPIO_NUM_7, ADC_UNIT_1, ADC1_CHANNEL_6 },
-                                    { GPIO_NUM_8, ADC_UNIT_1, ADC1_CHANNEL_7 },
-                                    { GPIO_NUM_9, ADC_UNIT_1, ADC1_CHANNEL_8 } };
-*/
-
 const bool HASEXTPORT[FTSWARMMAXVERSION] = {
   /* FTSWARMJST_1V0 */       true,
   /* FTSWARMCONTROL_1V3 */   false,

@@ -460,9 +460,8 @@ void SwOSCtrl::read() {
     // get data from ftDuino
     ftPwrDrive->read( );
     
-    // ToDo
     // errors during I2C communication?
-    // if ( ftPwrDrive->getError() != 0 ) setState( ERROR );
+    if ( ftPwrDrive->getError() != 0 ) setState( ERROR );
 
   }
 

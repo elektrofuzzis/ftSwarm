@@ -597,7 +597,7 @@ SwOSRCServo::~SwOSRCServo() {
 
 void SwOSRCServo::adjust(void) {
 
-  // remote: nothing todo
+  // remote: no work
   if (!ctrl->isLocal()) return;
 
   // read poti value to fille up the filters

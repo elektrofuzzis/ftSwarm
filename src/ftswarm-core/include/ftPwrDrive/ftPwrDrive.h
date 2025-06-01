@@ -2,7 +2,7 @@
 //
 // ftPwrDrive Arduino Interface
 //
-// 01.01.2022 V0.98 / latest version
+// 01.06.2025 V0.99
 //
 // (C) 2022 Christian Bergschneider & Stefan Fuss
 //
@@ -53,12 +53,22 @@ static const uint8_t FTPWRDRIVE_M[ MOTORS ] = { M1, M2, M3, M4 };
 static const uint8_t FTPWRDRIVE_ISMOVING = ISMOVING, FTPWRDRIVE_ENDSTOP = ENDSTOP, FTPWRDRIVE_EMERCENCYSTOP = EMERCENCYSTOP, FTPWRDRIVE_HOMING = HOMING;
 
 class FtPwrDrive {
+
+  protected:
+    uint8_t i2cAddress = 32;
+    uint16_t error = 0;
+
+    float gearFactor[ MOTORS ] = { 1,1,1,1 };
+
+    uint8_t motorIndex( uint8_t motor );
+     // returns the index (0..3) of a motor
+
   public:
 
     // readings from last read() cmd;
-    uint8_t lastState[4];
-    long    lastPosition[4];
-    long    lastDistance[4];
+    uint8_t  lastState[4];
+    long     lastPosition[4];
+    long     lastDistance[4];
     
     FtPwrDrive( uint8_t myI2CAddress = 32, int sda = -1, int scl = -1 );
       // constructor
@@ -218,13 +228,6 @@ class FtPwrDrive {
       // set two motors running in sync
 
     void read( void );
-
-  private:
-    uint8_t i2cAddress = 32;
-
-    float gearFactor[ MOTORS ] = { 1,1,1,1 };
-
-    uint8_t motorIndex( uint8_t motor );
-     // returns the index (0..3) of a motor
+    uint8_t getError( void );
 
 };
