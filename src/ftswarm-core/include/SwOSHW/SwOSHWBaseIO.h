@@ -119,16 +119,19 @@ public:
   virtual void            setParameter( int32_t parameter ) {};
   
   // Test, if I'm an ...
-  virtual bool isMotor( void )   { return false; };
-  virtual bool isInput( void )   { return false; };
-  virtual bool isServo( void )   { return false; };
-  virtual bool isGyro( void )    { return false; };
-  virtual bool isI2C( void )     { return false; };
-  virtual bool isOLED( void )    { return false; };
-  virtual bool isPixel( void )   { return false; };
-  virtual bool isCAM( void )     { return false; };
-  virtual bool isCounter( void ) { return false; };
-  virtual bool isStepper( void ) { return false; };
+  virtual bool isMotor( void )        { return false; };  
+  virtual bool isInput( void )        { return false; };
+  virtual bool isGPIOInput( void )    { return false; };  
+  virtual bool isDigitalInput( void ) { return false; };  
+  virtual bool isAnalogInput( void )  { return false; };  
+  virtual bool isServo( void )        { return false; };  
+  virtual bool isGyro( void )         { return false; };
+  virtual bool isI2C( void )          { return false; };
+  virtual bool isOLED( void )         { return false; };
+  virtual bool isPixel( void )        { return false; };
+  virtual bool isCAM( void )          { return false; };
+  virtual bool isCounter( void )      { return false; };
+  virtual bool isStepper( void )      { return false; };
 
   virtual void read( void ) { };
   virtual void onTrigger( int32_t value );
@@ -198,8 +201,8 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
     virtual uint8_t pushState( uint8_t *buffer );
     virtual uint8_t popState( uint8_t *buffer );
   
-    // Test, if I'm a sensor
-    virtual bool isSensor( void ) { return true; };
+    // Test, if I'm an input
+    virtual bool isInput( void ) { return true; };
 
     // read sensor
 	  virtual void read() {};

@@ -51,7 +51,6 @@ class SwOSNVS {
     FtSwarmWifi_t         wifiMode;
     int16_t               joyZero[2][2];
     uint8_t               pixels;
-    uint8_t               displayType = 1;
     NVSEventList          eventList;
     bool                  webUI;
     bool                  IAmKelda;

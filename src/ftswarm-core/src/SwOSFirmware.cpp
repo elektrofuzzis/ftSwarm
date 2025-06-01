@@ -133,14 +133,13 @@ void ExtensionMenu() {
 
 void SwarmControlMenu() {
 
-  bool    anythingChanged = false;
-  char    prompt[255];
+  bool          anythingChanged = false;
+  SwOSJoystick *joystick;
 
   while (1) {
     
     printf("\n\nftSwarmControl settings\n\n");
-    sprintf( prompt, "(1) Display:  type %d\n(2) Calibrate Joysticks\n\n(0) exit\nftSwarmControl>", nvs.displayType );
-    switch( enterNumber( prompt, 0, 0, 2) ) {
+    switch( enterNumber( "(1) Calibrate Joysticks\n\n(0) exit\nftSwarmControl>", 0, 0, 1) ) {
       
       case 0: // exit
         if ( ( anythingChanged) && ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) ) {
@@ -150,17 +149,13 @@ void SwarmControlMenu() {
           return;
         }
         
-      case 1: // DisplayType
-        anythingChanged = true;
-        nvs.displayType = 1 + ( !( nvs.displayType - 1 ) );
-        break;
-
-      case 2: // calibrate joysticks
+      case 1: // calibrate joysticks
         if  ( yesNo( "Start calibration (Y/N)?" ) ) {
           anythingChanged = true;
-          // TODO
-          // static_cast<SwOSSwarmControl *>(myOSSwarm.Ctrl[0])->joystick[0]->calibrate( &nvs.joyZero[0][0], &nvs.joyZero[0][1] );
-          // static_cast<SwOSSwarmControl *>(myOSSwarm.Ctrl[0])->joystick[1]->calibrate( &nvs.joyZero[1][0], &nvs.joyZero[1][1] );
+          for ( uint8_t i=0; i<2; i++ ) {
+            joystick = (SwOSJoystick *) myOSSwarm.Ctrl[0]->getIO(SWOSIO_JOYSTICK, i);
+            if (joystick) joystick->calibrate( &nvs.joyZero[i][0], &nvs.joyZero[i][1] );
+          }
         }
         break;
         

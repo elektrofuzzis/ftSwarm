@@ -33,6 +33,8 @@
   
     // administrative stuff
 	  virtual void jsonize( JSONize *json, uint8_t id);
+    virtual bool isGPIOInput( void );
+    virtual bool isDigitalInput( void ) { return true; };
 
     // read sensor
 	  virtual void read();

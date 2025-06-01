@@ -28,9 +28,7 @@
 
     // administrative stuff
     virtual void recvState( SwOSCom *com ) {};
-
-    // Test, if I'm an Sensor
-    virtual bool isSensor( void ) { return true; }
+    virtual bool isGyro( void ) { return true; };
 
     // interface
     virtual void getAcceleration( float *x, float *y, float *z ) {};

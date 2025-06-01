@@ -64,7 +64,6 @@
     
     uint8_t textSizeX = 0;
     uint8_t textSizeY = 0;
-    uint8_t displayType = 0;
     
     // local HW procedures
     virtual void setupLocal(); // initializes local HW

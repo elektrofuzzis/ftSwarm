@@ -80,6 +80,15 @@ void SwOSDigitalInput::setupLocal() {
 
 }
 
+bool SwOSDigitalInput::isGPIOInput( void ) { 
+  
+  return ( ( ctrl->getCPU() != FTSWARMDUINO_1V141 ) && 
+           ( ctrl->getCPU() != FTSWARMPWRDRIVE_1V141 ) && 
+           ( ioType != SWOSIO_BUTTON ) 
+         );
+
+};
+
 void SwOSDigitalInput::read() {
   
   // nothing todo on remote sensors

@@ -70,6 +70,12 @@ SwOSAnalogInput::~SwOSAnalogInput( ) {
 
 }
 
+bool SwOSAnalogInput::isGPIOInput( void ) { 
+  
+  return ( ctrl->getCPU() != FTSWARMDUINO_1V141 ); 
+
+};  
+
 void SwOSAnalogInput::deleteFilter( void ) {
   
   if (filter) delete filter;
@@ -375,7 +381,7 @@ void SwOSJoystick::setValue( int16_t FB, int16_t LR ) {
 
 
 void SwOSJoystick::calibrate( int16_t *zeroLR, int16_t *zeroFB ) {
-  
+
   // nothing ToDO with remote HW
   if (!ctrl->isLocal()) return;
   if ( (ADCChannelLR == ADC1_CHANNEL_MAX ) || ( ADCChannelFB == ADC1_CHANNEL_MAX )) return;

@@ -401,11 +401,12 @@ SwOSIO *SwOSCtrl::getIO( const char *name) {
 SwOSIO *SwOSCtrl::getIO( SwOSIOType_t ioType, FtSwarmPort_t port) {
 
   for ( uint8_t i=0; i<IOs; i++ ) {
-    if ( ( io[i] ) &&                                                                                  // IO exists
-         ( SWOSIOCLASS[ io[i]->getIOType() ] == SWOSIOCLASS[ ioType ] ) &&                             // IO has the same io class as requested
-         ( ( SWOSIOCLASS[ ioType ] != SWOSIOCLASS_SINGULAR ) || ( io[i]->getIOType() == ioType ) ) &&  // if IO is class SWOSCLASS_SINGULAR, both io types need to be the same
-         ( io[i]->getPort() == port )                                                                  // same port
-       ) return io[i];
+    if ( io[i] ) {
+      if ( ( SWOSIOCLASS[ io[i]->getIOType() ] == SWOSIOCLASS[ ioType ] ) &&                             // IO has the same io class as requested
+           ( ( SWOSIOCLASS[ ioType ] != SWOSIOCLASS_SINGULAR ) || ( io[i]->getIOType() == ioType ) ) &&  // if IO is class SWOSCLASS_SINGULAR, both io types need to be the same
+           ( io[i]->getPort() == port )                                                                  // same port
+         ) { return io[i]; }
+    }
   }
 
   return NULL;   
@@ -427,7 +428,16 @@ char* SwOSCtrl::myType() {
 }
 
 FtSwarmController_t SwOSCtrl::getType() {
-  return FTSWARM_NOCTRL;
+
+  switch ( CPU ) {
+    case FTSWARMDUINO_1V141:    return FTSWARMDUINO;
+    case FTSWARMPWRDRIVE_1V141: return FTSWARMPWRDRIVE;
+    case FTSWARMCAM_3V12:       return FTSWARMCAM;
+    case FTSWARMCONTROL_1V3:    return FTSWARMCONTROL;
+    case FTSWARM_NOVERSION:     return FTSWARM_NOCTRL;
+    default:                    return FTSWARM;
+  };
+
 }
 
 void SwOSCtrl::read() {
@@ -562,7 +572,7 @@ bool SwOSCtrl::changeIOType( uint8_t index, SwOSIOType_t newIOType ) {
     if ( index+1 >= IOs )                                   return false;  // index in range?
     if ( !io[index+1] )                                     return false;  // io exists?
     if ( io[index+1]->isInUse() )                           return false;  // free to use?
-    if ( !io[index+1]->isInput() )                          return false;  // is an input
+    if ( !io[index+1]->isGPIOInput() )                      return false;  // is an input
     if ( io[index+1]->getPort() != io[index]->getPort()+1 ) return false;  // is the next port?
     
     // unregister secondary port

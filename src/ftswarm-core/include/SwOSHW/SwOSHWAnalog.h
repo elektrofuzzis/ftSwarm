@@ -40,6 +40,8 @@
   
     // administrative stuff
 	  virtual void jsonize( JSONize *json, uint8_t id);
+    virtual bool isGPIOInput( void );  
+    virtual bool isAnalogInput( void ) { return true; };
 
     // delete all existing filtes
     virtual void deleteFilter( void );
@@ -87,9 +89,6 @@
   
     // administrative stuff
     virtual void jsonize( JSONize *json, uint8_t id);
-    
-    // Test, if I', an Sensor
-    virtual bool isSensor( void ) { return true; }
   
     // read
     virtual void subscription();

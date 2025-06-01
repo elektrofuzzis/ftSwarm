@@ -170,7 +170,6 @@ bool SwOSNVS::load() {
   nvs_get_i16( my_handle, "joyZero01", &joyZero[0][1]);
   nvs_get_i16( my_handle, "joyZero10", &joyZero[1][0]);
   nvs_get_i16( my_handle, "joyZero11", &joyZero[1][1]);
-  nvs_get_u8(  my_handle, "displayType", &displayType);
 
   // RGBLeds
   nvs_get_u8( my_handle, "RGBLeds", &pixels );
@@ -240,7 +239,6 @@ void SwOSNVS::save( bool writeAll ) {
   ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero01", joyZero[0][1]) );
   ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero10", joyZero[1][0]) );
   ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero11", joyZero[1][1]) );
-  ESP_ERROR_CHECK( nvs_set_u8(  my_handle, "displayType", displayType) );
 
   // RGBLeds
   ESP_ERROR_CHECK( nvs_set_u8( my_handle, "RGBLeds", pixels ) );
@@ -311,8 +309,6 @@ void SwOSNVS::factorySettings( void ) {
   IAmKelda           = true;
   swarmCommunication = swarmComWifi;
   swarmSpeed         = 4;
-
-  displayType        = 1;
 
   pixels             = MAXIOS[CPU].pixels;
 
@@ -415,12 +411,9 @@ void SwOSNVS::printNVS() {
   printf( "IAmKelda: %d\n", IAmKelda );
   printf( "swarmCommunication %d\n", swarmCommunication );
   printf( "pixels: %d\n", pixels );
-  printf( "displayType: %d\n", displayType );
 
   printf( "swarm members:");
   for (uint8_t i=0; i<MAXCTRL; i++) { if (swarmMember[i]) printf(" %d", swarmMember[i]); }
   printf( "\n");
-
- 
  
 }

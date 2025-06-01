@@ -489,14 +489,7 @@ void SwOSCLI::executeInputCmd( void ) {
                               break;
 
     case CLICMD_getToggle:    _io->lock();
-                              // ToDO: alle DigIO Typen
-                              if ( ( io->getIOType() == SWOSIO_DIGITAL ) ||
-                                   ( io->getIOType() == SWOSIO_DIGITAL ) ||
-                                   ( io->getIOType() == SWOSIO_DIGITAL ) ||
-                                   ( io->getIOType() == SWOSIO_DIGITAL ) )
-                                   
-                              
-                              {
+                              if ( io->isDigitalInput() ) {
                                 printf("R: %f\n", ((SwOSDigitalInput*)io)->getToggle());
                               } else {
                                 printf("ERROR: wrong IO type %d\n", io->getIOType() );
@@ -504,9 +497,9 @@ void SwOSCLI::executeInputCmd( void ) {
                               _io->unlock();
                               break;
 
-    case CLICMD_onTrigger:     if (( _parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER ) ) &&
-                                  ( _parameter[1].isIO() ) &&
-                                  ( _parameter[2].isConstant() ) ) {
+    case CLICMD_onTrigger:   if (( _parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER ) ) &&
+                                 ( _parameter[1].isIO() ) &&
+                                 ( _parameter[2].isConstant() ) ) {
                                 OK();
                                 _io->lock();
                                 if ( _maxParameter == 2 ) {

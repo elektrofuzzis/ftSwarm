@@ -48,12 +48,12 @@ class SwOSAnalogInput;
     SwOSMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType );
 
     // administrative stuff
-    virtual bool            isActor( void ) { return true; };
     virtual void            setMotionType( FtSwarmMotion_t motionType );
     virtual FtSwarmMotion_t getMotionType() { return motionType; }; 
     virtual void            jsonize( JSONize *json, uint8_t id); // serialize object to JSON
     virtual void            onTrigger( int32_t value );
     virtual void            read( void );
+    virtual bool            isMotor( void ) { return true; };
 
     // commands
     virtual void    setSpeed( int16_t speed );
@@ -180,9 +180,6 @@ class SwOSDCMotor : public SwOSMotor {
   public:
     // constructor
 	  SwOSServo(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSIO( name, port, ctrl, SWOSIO_SERVO ) {};
-
-    // Test, if I'm an Actor
-    virtual bool isActor( void ) { return true; }
     
     // administrative stuff
     virtual void jsonize( JSONize *json, uint8_t id);
