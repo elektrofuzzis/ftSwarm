@@ -48,7 +48,7 @@ typedef struct {
 
 typedef struct {
   uint8_t inputs;
-  uint8_t actors;
+  uint8_t motors;
   uint8_t rcservos;
   uint8_t servos;
   uint8_t pixels;
@@ -60,7 +60,7 @@ typedef struct {
 #define NOPWRCTL -1
 
 const SwOSMaxIO_t MAXIOS[FTSWARMMAXVERSION] = {
-                            //  inputs actors rcservos servos pixels, buttons, joysticks, pwrctl
+                            //  inputs motors rcservos servos pixels, buttons, joysticks, pwrctl
   /* FTSWARMJST_1V0 */       {  4,     2,     0,       1,     2,      0,       0,         NOPWRCTL },
   /* FTSWARMCONTROL_1V3 */   {  4,     2,     0,       0,     0,      8,       2,         NOPWRCTL },
   /* FTSWARMJST_1V15 */      {  4,     2,     0,       1,     2,      0,       0,         NOPWRCTL },

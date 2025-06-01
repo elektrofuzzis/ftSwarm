@@ -87,7 +87,7 @@ protected:
 
   // initialize Hardware
   uint8_t setupLocalInputs( uint8_t maxIO );
-  uint8_t setupLocalMotors( uint8_t maxIO, uint8_t actors );
+  uint8_t setupLocalMotors( uint8_t maxIO, uint8_t motors );
   uint8_t setupLocalServos( uint8_t maxIO, uint8_t servos );
   uint8_t setupLocalPixels( uint8_t maxIO );
   uint8_t setupLocalButtons( uint8_t maxIO );

@@ -78,11 +78,11 @@ uint8_t SwOSCtrl::setupLocalInputs( uint8_t maxIO ) {
 
 }
 
-uint8_t SwOSCtrl::setupLocalMotors( uint8_t maxIO, uint8_t actors ) {
+uint8_t SwOSCtrl::setupLocalMotors( uint8_t maxIO, uint8_t motors ) {
 
   char name[10];
 
-  for (uint8_t i=0; i<actors; i++) { 
+  for (uint8_t i=0; i<motors; i++) { 
     
     sprintf( name, "M%d", i+1 );
     if (CPU == FTSWARMPWRDRIVE_1V141 ) io[ maxIO++ ] = new SwOSStepper( name, i, this );
@@ -271,14 +271,14 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSC
   sprintf( buffer, "ftSwarm%d", SN);
   setName( buffer );
 
-  uint8_t actors = 0;
+  uint8_t motors = 0;
   uint8_t servos = 0;
 
   // # of inputs & actors
   if (local) {
 
     // calculate needed IOs
-    IOs = MAXIOS[ CPU ].inputs + MAXIOS[ CPU ].actors + MAXIOS[ CPU ].servos + MAXIOS[ CPU ].joysticks + MAXLEDS;
+    IOs = MAXIOS[ CPU ].inputs + MAXIOS[ CPU ].motors + MAXIOS[ CPU ].servos + MAXIOS[ CPU ].joysticks + MAXLEDS;
 
     // Buttons + HC165?
     if ( MAXIOS[ CPU ].buttons > 0 ) IOs = IOs + MAXIOS[ CPU ].buttons + 1;
@@ -286,13 +286,13 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSC
     // OLED?
     if ( CPU == FTSWARMCONTROL_1V3 ) IOs++;
 
-    actors = MAXIOS[ CPU ].actors;
+    motors = MAXIOS[ CPU ].motors;
     servos = MAXIOS[ CPU ].servos;
 
     switch ( extensionPort ) {
 
-      // extensionPort is configured as additional outputs, add 2 actors
-      case FTSWARM_EXT_OUTPUT: actors += 2; IOs += 2; break;
+      // extensionPort is configured as additional outputs, add 2 motors
+      case FTSWARM_EXT_OUTPUT: motors += 2; IOs += 2; break;
 
       // extensionPort is configured as additional servos, add 2 servos
       case FTSWARM_EXT_SERVO: servos +=2;   IOs += 2; break;
@@ -317,7 +317,7 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSC
 
     uint8_t maxIO = 0;
     maxIO = setupLocalInputs( maxIO );
-    maxIO = setupLocalMotors( maxIO, actors );
+    maxIO = setupLocalMotors( maxIO, motors );
     maxIO = setupLocalServos( maxIO, servos );
     if ( MAXIOS[ CPU ].pixels ) maxIO = setupLocalPixels( maxIO );
     maxIO = setupLocalButtons( maxIO );
@@ -1314,8 +1314,6 @@ void SwOSCtrl::registerMe( SwOSCom *com ){
 
 
 }
-
-// ToDO
 
 void SwOSCtrl::saveAliasToNVS( nvs_handle_t my_handle ) {
 

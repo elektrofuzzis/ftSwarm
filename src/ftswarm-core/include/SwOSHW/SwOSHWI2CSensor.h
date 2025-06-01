@@ -13,6 +13,9 @@
 
 #include <VL53L0X.h>
 #include <MPU6050_6Axis_MotionApps20.h>
+#include "SwOSHW/SwOSHWActor.h"
+
+class SwOSMotor;
 
 /***************************************************
  *
@@ -125,7 +128,9 @@
  ***************************************************/
 
  class SwOSI2C : public SwOSIO, public SwOSEventInput {
+  
   protected:
+    SwOSMotor *intIO = NULL;
     
     virtual void setupLocal(uint8_t I2CAddress); // initializes local HW
     virtual void setLocal( uint8_t reg, uint8_t value );

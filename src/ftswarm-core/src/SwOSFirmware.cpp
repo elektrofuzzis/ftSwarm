@@ -16,6 +16,7 @@
 #include "SwOSNVS.h"
 #include "easyKey.h"
 #include "SwOSCLI.h"
+#include "SwOSHW/SwOSHWHAL.h"
 
 const char EXTMODE[7][14] = { "off", "I2C-Master", "I2C-Slave", "Outputs", "Servos", "Lidar", "" }; // "" just to avoid seg faults
 const char GYRO[3][8]     = { "off", "LSM6", "MPU6050"};
@@ -108,7 +109,7 @@ void ExtensionMenu() {
         
       case EXTMENUINT: // Interrupt Line
         anythingChanged = true;
-        nvs.interruptLine = (uint8_t) enterNumber( "(0) off, (1) M1, (2) M2:", nvs.interruptLine, 0, 2 );
+        nvs.interruptLine = (uint8_t) enterNumber( "motor (1 for M1, 2 for M2, ...) or 0 to skip: ", nvs.interruptLine, 0, MAXIOS[nvs.CPU].motors );
         break;
 
       case EXTMENUINT0: // Interrupt Line Low

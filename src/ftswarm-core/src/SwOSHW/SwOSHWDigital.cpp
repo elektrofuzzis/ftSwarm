@@ -91,7 +91,7 @@ bool SwOSDigitalInput::isGPIOInput( void ) {
 
 void SwOSDigitalInput::read() {
   
-  // nothing todo on remote sensors
+  // no work on remote sensors
   if (!ctrl->isLocal()) return;
 
   // ftDuino?
@@ -140,7 +140,7 @@ void SwOSDigitalInput::setReading( int32_t newValue ) {
 
 void SwOSDigitalInput::setValue( int32_t value ) {
 
-  // nothing ToDo on real local HW
+  // no work on real local HW
   if ( ( ctrl->isLocal()) && (!ctrl->isI2CSwarmCtrl() ) ) return;
 
   // check if it's toggled?
@@ -246,7 +246,7 @@ void SwOSHC165::setupLocal() {
 
 void SwOSHC165::read( ) {
 
-  // remote HW nothing todo
+  // no work on remote HW
   if (!ctrl->isLocal()) return;
 
   // invalid configuration?

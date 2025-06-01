@@ -113,7 +113,7 @@ void SwOSCounter::setupLocal() {
 
 void SwOSCounter::read( void ) {
 
-  // nothing todo on remote sensors
+  // no work on remote sensors
   if ( !ctrl->isLocal() ) return;
 
   // i2c sensor is read via a block control by <controller>.read
@@ -154,7 +154,7 @@ void SwOSCounter::resetCounter( void ) {
 
 void SwOSCounter::setValue( int32_t value ) {
 
-  // nothing ToDo on real local HW
+  // no work on real local HW
   if ( ( ctrl->isLocal()) && (!ctrl->isI2CSwarmCtrl() ) ) return;
 
   // check if it's toggled?
@@ -233,7 +233,7 @@ void SwOSFrequencymeter::setupLocal() {
 
 void SwOSFrequencymeter::read( void ) {
 
-  // nothing todo on remote sensors
+  // no work on remote sensors
   if (!ctrl->isLocal()) return;
 
   // i2c sensor is read via a block control by <controller>.read
@@ -271,7 +271,7 @@ void SwOSFrequencymeter::read( void ) {
 
 void SwOSFrequencymeter::setValue( int32_t value ) {
 
-  // nothing ToDo on real local HW
+  // no work on real local HW
   if ( ( ctrl->isLocal()) && (!ctrl->isI2CSwarmCtrl() ) ) return;
 
   // check if it's toggled?

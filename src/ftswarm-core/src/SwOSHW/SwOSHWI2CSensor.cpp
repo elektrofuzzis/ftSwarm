@@ -306,7 +306,7 @@ void SwOSGyroMPU::jsonize( JSONize *json, uint8_t id) {
   
  void SwOSLidarInput::read() {
    
-   // nothing todo on remote sensors
+   // no work on remote sensors
    if (!ctrl->isLocal()) return;
  
    uint32_t newValue;
@@ -329,7 +329,7 @@ void SwOSGyroMPU::jsonize( JSONize *json, uint8_t id) {
  
  void SwOSLidarInput::setValue( int32_t value ) {
  
-   // nothing ToDo on real local HW
+   // no work on real local HW
    if ( ( ctrl->isLocal()) && (!ctrl->isI2CSwarmCtrl() ) ) return;
    
    lastRawValue = value;
@@ -403,9 +403,10 @@ void SwOSI2C::read( ) {
 
   if ( (I2CSlave_read) && ( nvs.interruptLine ) ) { 
     I2CSlave_read=false; 
-    // TODO
-    // ctrl->actor[nvs.interruptLine-1]->setSpeed(nvs.interruptOnOff[0]);
-    // ctrl->actor[nvs.interruptLine-1]->apply();
+    if (intIO) {
+      intIO->setSpeed(nvs.interruptOnOff[0]);
+      intIO->apply();
+    }
   }
 
 }
@@ -418,9 +419,10 @@ void SwOSI2C::setupLocal(uint8_t I2CAddress) {
   
   if ( nvs.interruptLine ) { 
     I2CSlave_read=false; 
-    // TODO
-    // ctrl->actor[nvs.interruptLine-1]->setSpeed( nvs.interruptOnOff[0] );
-    // ctrl->actor[nvs.interruptLine-1]->apply();
+    if (intIO) {
+      intIO->setSpeed(nvs.interruptOnOff[0]);
+      intIO->apply();      
+    }
   }
 
 }
@@ -448,10 +450,11 @@ void SwOSI2C::setRegister( uint8_t reg, uint8_t value ) {
 void SwOSI2C::setRemote( uint8_t reg, uint8_t value ) {
   
   SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_I2CREGISTER );
-  // TODO index
+  cmd.data.I2CRegisterCmd.index = ctrl->getIndex( this );
   cmd.data.I2CRegisterCmd.reg   = reg;
   cmd.data.I2CRegisterCmd.value = value;
   cmd.send( );
+
 }
 
 void SwOSI2C::setLocal( uint8_t reg, uint8_t value ) {
@@ -464,18 +467,23 @@ void SwOSI2C::setLocal( uint8_t reg, uint8_t value ) {
     // reset read semaphore
     I2CSlave_read = false;
 
-    // if the remote controller didn't ack the last interrupt, so I need to reset the interupt line first 
-    // TODO
-    /* if ( ctrl->actor[nvs.interruptLine-1]->getSpeed() != nvs.interruptOnOff[0] ) {
-      ctrl->actor[nvs.interruptLine-1]->setSpeed( nvs.interruptOnOff[0] );
-      ctrl->actor[nvs.interruptLine-1]->apply();
-      delay(1);
-    } 
+    // get MotorIO
+    intIO = (SwOSMotor*) ctrl->getIO( SWOSIO_MOTOR, nvs.interruptLine - 1 + FTSWARM_M1 );
 
-    // set interrupt
-    ctrl->actor[nvs.interruptLine-1]->setSpeed( nvs.interruptOnOff[1] );
-    ctrl->actor[nvs.interruptLine-1]->apply();
-    */
+    if (intIO) {
+
+      // if the remote controller didn't ack the last interrupt, so I need to reset the interupt line first 
+      if ( intIO->getSpeed() != nvs.interruptOnOff[0] ) {
+        intIO->setSpeed(nvs.interruptOnOff[0]);
+        intIO->apply();
+        delay(1);
+      }
+
+      // set interrupt
+      intIO->setSpeed(nvs.interruptOnOff[1]);
+      intIO->apply();
+
+    }
 
   }
 
