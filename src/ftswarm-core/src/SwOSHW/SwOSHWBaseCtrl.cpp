@@ -126,6 +126,8 @@ uint8_t SwOSCtrl::getIndex( SwOSIO *x ) {
 
 }
 
+#include "easyKey.h"
+
 uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
 
   char name[10];
@@ -149,8 +151,8 @@ uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
 
     poti->read();
     if (( poti->getValueI32() > 0 ) && ( poti->getValueI32() < 4095 ) ) {
-      printf("RCServo%d found.\n", i);
       sprintf( name, "RCSERVO%d", i+1 );
+      printf("%s found.\n", name );
       SwOSMotor *motor = (SwOSMotor *) getIO( SWOSIO_MOTOR, i );
       io[ getIndex( motor ) ] = new SwOSRCServo( name, i, this, poti, motor );
 
