@@ -111,9 +111,7 @@ FtSwarmIO::~FtSwarmIO() {
 
 bool FtSwarmIO::isOnline() { 
   // check if I'm online
-  // TODO!
-  // return (me)?me->isOnline():false;
-  return true;
+  return (me)?static_cast<SwOSIO *>(me)->isOnline():false;
 };
 
 // **** FtSwarmSensor

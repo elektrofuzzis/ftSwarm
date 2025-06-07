@@ -1145,39 +1145,45 @@ void SwOSSwarm::cmdJoinMySwarm( SwOSCom *com, uint8_t source, uint8_t affected )
     printf( "CMD_JOINMYSWARM %d source: %d affected: %d maxCtrl %d\n", com->data.cmd, source, affected, maxCtrl );
   #endif
 
-  if ( ( Ctrl[0]->IAmKelda ) && ( members() > 1 ) ){
-    // I'm a Kelda and I have a swarm with at least one member: nack
+  // not my SN and not a wildcard: ignore
+  if ( ( com->data.affectedSN != Ctrl[0]->serialNumber ) && ( com->data.affectedSN != 0 ) ) return;
+
+  // I'm a Kelda with at leat a member: decline
+  if ( ( Ctrl[0]->IAmKelda ) && ( members() > 1 ) ) {
+
+    printf("[ERROR] Declining to join swarm %s. I'm a Kelda with %d swarm members.\n", com->data.joinCmd.swarmName, members() );
     SwOSCom reply( com->macAddr, com->data.sourceSN, CMD_JOINNACK );
     Ctrl[0]->registerMe( &reply );
     reply.send();
 
-  } else { 
-    // I'm fine to join the swarm: ack
-
-    // take swarm settings
-    nvs.swarmPIN = com->data.registerCmd.swarmPIN;
-    strcpy( nvs.swarmName, com->data.registerCmd.swarmName );
-
-    // replace old controller
-    replaceCtrl( com, source, affected );
-
-    // getting member, knowing my Kelda
-    Ctrl[0]->IAmKelda = false;
-    nvs.IAmKelda = false;
-    Kelda = Ctrl[source];
-
-    // Send my data      
-    SwOSCom reply( com->macAddr, com->data.sourceSN, CMD_JOINACK );
-    Ctrl[0]->registerMe( &reply );
-    reply.send();
-
-    // send my alias names as well
-    if ( com->data.registerCmd.ctrlConfig.IAmKelda ) Ctrl[0]->sendIOConfig( com->macAddr ); 
-
-    // update status
-    setState( RUNNING );
+    return;
 
   }
+
+  // I'm fine to join the swarm: ack
+
+  // take swarm settings
+  nvs.swarmPIN = com->data.registerCmd.swarmPIN;
+  strcpy( nvs.swarmName, com->data.registerCmd.swarmName );
+
+  // replace old controller
+  replaceCtrl( com, source, affected );
+
+  // getting member, knowing my Kelda
+  Ctrl[0]->IAmKelda = false;
+  nvs.IAmKelda = false;
+  Kelda = Ctrl[source];
+
+  // Send my data      
+  SwOSCom reply( com->macAddr, com->data.sourceSN, CMD_JOINACK );
+  Ctrl[0]->registerMe( &reply );
+  reply.send();
+
+  // send my alias names as well
+  if ( com->data.registerCmd.ctrlConfig.IAmKelda ) Ctrl[0]->sendIOConfig( com->macAddr ); 
+
+  // update status
+  setState( RUNNING );
 
 }
 
@@ -1204,6 +1210,22 @@ void SwOSSwarm::cmdJoinAck( SwOSCom *com, uint8_t source, uint8_t affected ) {
 
 }
 
+void SwOSSwarm::cmdRevokeFromSwarm( SwOSCom *com, uint8_t source, uint8_t affected ) {
+  // Kelda to member: get out of my swarm
+
+  // for me?
+  if ( ( com->data.affectedSN != Ctrl[0]->serialNumber ) || (com->data.joinCmd.pin == nvs.swarmPIN) || strcmp( com->data.registerCmd.swarmName, nvs.swarmName ) ) return;
+
+  // User info
+  printf("\n\n[INFO] leaving swarm %s and reboot.\n\n", com->data.registerCmd.swarmName );
+
+  // just reboot
+  ESP.restart();
+
+}
+  
+
+
 void SwOSSwarm::OnDataRecv(SwOSCom *com) {
   // callback function receiving data from other controllers
 
@@ -1215,25 +1237,28 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
   uint8_t affected = getIndex( com->data.affectedSN );
 
   switch ( com->data.cmd ) {
-    case CMD_JOINMYSWARM: cmdJoinMySwarm( com, source, affected ); 
-                          break;
+    case CMD_JOINMYSWARM:     cmdJoinMySwarm( com, source, affected ); 
+                              break;
 
-    case CMD_JOINACK:     cmdJoinAck( com, source, affected ); 
-                          break;
+    case CMD_REVOKEFROMSWARM: cmdRevokeFromSwarm( com, source, affected );
+                              break;
 
-    case CMD_JOINNACK:    cmdJoinNAck( com, source, affected ); 
-                          break;
+    case CMD_JOINACK:         cmdJoinAck( com, source, affected ); 
+                              break;
 
-    case CMD_HARTBEAT:    if ( Ctrl[source] ) Ctrl[source]->tick();
-                          break;
+    case CMD_JOINNACK:        cmdJoinNAck( com, source, affected ); 
+                              break;
 
-    default:              if ( Ctrl[affected] ) {
-                            // any other type of msg will be processed on controller level
-                            Ctrl[affected]->lock();
-                            Ctrl[affected]->OnDataRecv( com );
-                            Ctrl[affected]->unlock();
-                          }
-                          break;
+    case CMD_HARTBEAT:        if ( Ctrl[source] ) Ctrl[source]->tick();
+                              break;
+
+    default:                  if ( Ctrl[affected] ) {
+                                // any other type of msg will be processed on controller level
+                                Ctrl[affected]->lock();
+                                Ctrl[affected]->OnDataRecv( com );
+                                Ctrl[affected]->unlock();
+                              }
+                              break;
   
   }
 
@@ -1285,7 +1310,7 @@ bool SwOSSwarm::isMember( FtSwarmSerialNumber_t serialNumber ) {
   // Test, if SN is part my my Swarm
 
   for (uint8_t i=0; i<=maxCtrl; i++) {
-    if ( Ctrl[i]->serialNumber == serialNumber ) return true;
+    if ( (Ctrl[i] ) && ( Ctrl[i]->serialNumber == serialNumber ) ) return true;
   }
 
   return false;
@@ -1296,7 +1321,7 @@ bool SwOSSwarm::isOnline( FtSwarmSerialNumber_t serialNumber ) {
   // Test, if SN is online
 
   for (uint8_t i=0; i<=maxCtrl; i++) {
-    if ( ( Ctrl[i] ) && ( Ctrl[i]->serialNumber == serialNumber ) && ( Ctrl[i]->getComState() == COMSTATE_ONLINE ) ) return true;
+    if ( ( Ctrl[i] ) && ( Ctrl[i]->serialNumber == serialNumber ) && ( Ctrl[i]->isOnline( ) ) ) return true;
   }
 
   return false;
@@ -1339,6 +1364,13 @@ bool SwOSSwarm::deleteController( FtSwarmSerialNumber_t serialNumber ) {
 
   // not found?
   if ( ( i >= MAXCTRL ) || ( Ctrl[i] == NULL ) ) return false;
+
+  if ( Ctrl[i]->isOnline() ) {
+    // Hoecker, you're out
+    SwOSCom com( Ctrl[i]->macAddr, Ctrl[i]->serialNumber, CMD_REVOKEFROMSWARM );
+    Ctrl[0]->registerMe( &com );
+    com.send();
+  }
 
   // delete
   SwOSCtrl *oldCtrl = Ctrl[i]; 

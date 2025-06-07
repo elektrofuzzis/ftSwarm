@@ -49,6 +49,9 @@ protected:
   // Member to Kelda: I want to join your Swarm
   void cmdJoinAck( SwOSCom *com, uint8_t source, uint8_t affected );
 
+  // Kelda to Member: get out of my Swarm
+  void cmdRevokeFromSwarm( SwOSCom *com, uint8_t source, uint8_t affected );
+
 public:
 	int8_t   maxCtrl = -1;
   SwOSCtrl *Kelda = NULL;

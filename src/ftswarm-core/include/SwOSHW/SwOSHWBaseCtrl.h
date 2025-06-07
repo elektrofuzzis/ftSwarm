@@ -121,6 +121,7 @@ public:
   virtual SwOSIO *getIO( SwOSIOType_t ioType, FtSwarmPort_t port );      // get a pointer to an IO port by address
 	virtual SwOSIO *getIO( const char *name);                              // get a pointer to an IO port by name
   virtual void tick( void );                                             // mark communcation in lastContact
+  virtual bool isOnline( void ) { return getComState() == COMSTATE_ONLINE; }; // Online?
 
   SwOSMotor*    getMotor( char *name );                                  // get a pointer to a motor by name
   SwOSMotor*    getMotor( uint8_t index );                               // get a pointer to a motor by index

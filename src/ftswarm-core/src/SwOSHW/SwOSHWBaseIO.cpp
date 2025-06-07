@@ -172,6 +172,10 @@ SwOSIO::SwOSIO( const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioT
  
 }
 
+bool SwOSIO::isOnline( void ) { 
+  return ctrl->isOnline();
+};
+
 void SwOSIO::lock( void ) {
   if (ctrl) ctrl->lock();
 }

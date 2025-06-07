@@ -30,6 +30,7 @@ typedef enum {
   CMD_JOINMYSWARM,            // Kelda to member: Please join my Swarm 
   CMD_JOINACK,                // Member to Kelda: yes, I want to join your Swarm
   CMD_JOINNACK,               // Member to Kelda: no, I don't want to join your swarm
+  CMD_REVOKEFROMSWARM,        // Kelda to member: Please leave my swarm
 
   CMD_SAVEALIAS2NVS,          // Kelda to Member: save alias setting to NVS
 
@@ -54,7 +55,6 @@ typedef enum {
   CMD_SETMICROSTEPMODE,       // set Microstepmode
   CMD_USEREVENT,              // send data from user exit back to Kelda
   CMD_RESETCOUNTER,           // Reset counter
-  CMD_STARTFREQUENCYMETER,    // start frequency meter
   CMD_MAX
 } SwOSCommand_t;
 

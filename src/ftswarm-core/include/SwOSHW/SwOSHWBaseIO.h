@@ -117,6 +117,7 @@ public:
   virtual uint8_t         pushState( uint8_t *buffer ) { return 0; };
   virtual uint8_t         popState( uint8_t *buffer )  { return 0; };
   virtual void            setParameter( int32_t parameter ) {};
+  virtual bool            isOnline( void );
   
   // Test, if I'm an ...
   virtual bool isMotor( void )        { return false; };  
