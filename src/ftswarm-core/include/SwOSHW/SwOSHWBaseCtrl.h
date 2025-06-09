@@ -68,7 +68,7 @@ protected:
   uint8_t          pixels = 0;
 
   // communications
-  bool saveAlias2NVS( SwOSCom *com );
+  bool saveToNVS( SwOSCom *com );
   bool setPixel( SwOSCom *com );
   bool resetCounter( SwOSCom *com );
   bool setActorType( SwOSCom *com );
@@ -141,8 +141,8 @@ public:
 	virtual char *             getHostname( );                             // hostname
 	virtual void               jsonize( JSONize *json, uint8_t id);        // send board & IO device information as a json string
   virtual void               jsonizeIO( JSONize *json, uint8_t id);      // send IO device information as a json string
-  virtual void loadAliasFromNVS(  nvs_handle_t my_handle );              // write my alias to NVS
-  virtual void saveAliasToNVS(  nvs_handle_t my_handle );                // load my alias from NVS
+  virtual void loadFromNVS( void );                                      // write my port & alias settings to NVS
+  virtual void saveToNVS( void );                                        // load my port & alias settings from NVS
   virtual void setState( SwOSState_t state, uint8_t members = 0, char *SSID = NULL ); // visualizes controller's state like booting, error,...
   virtual void factorySettings( void );                                  // reset factory settings
   virtual void halt( void );                                             // stop all actors

@@ -17,7 +17,7 @@
 
 // #define ARDUHAL_LOG_LEVEL_VERBOSE (5)
 
-#define LOGFTSWARM  "FTSWARM"
+static const char* LOGFTSWARM = "FTSWARM";
 #define MAXIDENTIFIER 32
 #define MAXACTORS 8
 #define MAXINPUTS 11
@@ -195,7 +195,47 @@ const bool SHOWIOINAPI[SWOSIO_MAXIOTYPE ] = {
   false, // SWOSIO_I2C
   false, // SWOSIO_GYRO
   false // SWOSIO_HC165
-} ;               
+} ;  
+
+// show via api?
+const char SWOSIOTYPE[SWOSIO_MAXIOTYPE ][15] = {
+  "DigitalInput",
+  "Switch",
+  "Reedswitch",
+  "Lightbarrier",
+  "Button",
+  "Analog",
+  "Voltmeter",
+  "Ohmmeter",
+  "Thermometer",
+  "LDR",
+
+  "Joystick",
+  "Motor",
+  "XMMotor",
+  "Tractor",
+  "Encoder",
+  "Lamp",
+  "Valve",
+  "Compressor",
+  "Buzzer",
+  "Stepper",
+
+  "Counter",
+  "Rotaryencoder",
+  "Frequencymeter",
+  // SWOSIO_TRAILSENSOR, 
+  // SWOSIO_COLORSENSOR, 
+  "Ultrasonic",
+  "Lidar",
+  "Cam",
+  "Servo",
+  "Pixel",
+  "OLED",
+  "I2C",
+  "Gyro",
+  "HC165"
+} ;  
 
 // icons
 typedef enum { FTSWARM_XX_UNDEF = -1, 

@@ -14,7 +14,9 @@
 #include <stdint.h>
 
 #define MAXNVSEVENT 36
-#define NVSVERSION  2
+#define NVSVERSION  3
+
+static const char* NVSNAMESPACE = "ftSwarm";
 
 class NVSEvent {
   public:
@@ -77,6 +79,7 @@ class SwOSNVS {
     void factorySettings( void );          // reset to factory settings
     bool RS485Available( void );           // true if board has RS485
     void printNVS();                       // print settings for debugging only  
+    bool upgrade( void );                  // runs an nvs version upgrade, true if an upgrade took place
 };
 
 extern SwOSNVS nvs;

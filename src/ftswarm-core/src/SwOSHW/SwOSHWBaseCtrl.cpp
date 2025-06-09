@@ -1013,14 +1013,10 @@ unsigned long SwOSCtrl::networkAge( void ) {
 
 }
 
-bool SwOSCtrl::saveAlias2NVS( SwOSCom *com ) {
+bool SwOSCtrl::saveToNVS( SwOSCom *com ) {
   // save in local nvs
 
-  nvs_handle_t my_handle;
-
-  ESP_ERROR_CHECK( nvs_open("ftSwarm", NVS_READWRITE, &my_handle) );
-  saveAliasToNVS( my_handle );
-  ESP_ERROR_CHECK( nvs_commit( my_handle ) );
+  saveToNVS( );
   
   return true;
 
@@ -1191,7 +1187,9 @@ bool SwOSCtrl::ioConfig( SwOSCom *com ) {
       ESP_LOGE( LOGFTSWARM, "SwOSCtrl::ioConfig: index out of range %X", index );
 
     } else if ( io[index] ) {
-      ESP_LOGE( LOGFTSWARM, "SwOSCtrl::ioConfig: io exists already %X", index );
+      // set IOType + alias name as transmitted
+      changeIOType( index, ioType );
+      io[index]->setAlias( alias );
 
     } else {
       // any type of io
@@ -1217,7 +1215,7 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
     
   switch (com->data.cmd) {
 
-    case CMD_SAVEALIAS2NVS:           return saveAlias2NVS( com );
+    case CMD_SAVETONVS:               return saveToNVS( com );
     case CMD_STATE:                   return recvState( com );
     case CMD_SETPIXEL:                return setPixel( com );
     case CMD_SETACTORSPEED:           return setActorSpeed( com );
@@ -1317,18 +1315,26 @@ void SwOSCtrl::registerMe( SwOSCom *com ){
 
 }
 
-void SwOSCtrl::saveAliasToNVS( nvs_handle_t my_handle ) {
+void SwOSCtrl::saveToNVS( void ) {
 
-  SwOSObj::saveAliasToNVS( my_handle );
+  nvs_handle_t my_handle;
+  ESP_ERROR_CHECK( nvs_open(NVSNAMESPACE, NVS_READWRITE, &my_handle) );
 
-  for ( uint8_t i=0; i<IOs; i++) if (io[i]) io[i]->saveAliasToNVS( my_handle );
+  SwOSObj::saveToNVS( my_handle );
+
+  for ( uint8_t i=0; i<IOs; i++) if (io[i]) io[i]->saveToNVS( my_handle );
+
+  ESP_ERROR_CHECK( nvs_commit( my_handle ) );
 
 }
 
-void SwOSCtrl::loadAliasFromNVS( nvs_handle_t my_handle ) {
+void SwOSCtrl::loadFromNVS( void ) {
 
-  SwOSObj::loadAliasFromNVS( my_handle );
-  for ( uint8_t i=0; i<IOs; i++) if (io[i]) io[i]->loadAliasFromNVS( my_handle );
+  nvs_handle_t my_handle;
+  ESP_ERROR_CHECK( nvs_open( NVSNAMESPACE, NVS_READONLY, &my_handle) );
+
+  SwOSObj::loadFromNVS( my_handle );
+  for ( uint8_t i=0; i<IOs; i++) if (io[i]) io[i]->loadFromNVS( my_handle );
 
 }
 
@@ -1340,7 +1346,7 @@ void SwOSCtrl::sendIOConfig( MacAddr destination ) {
   for (uint8_t i=0; i<IOs;i++) if (io[i]) ioConfig.pushIO( i, io[i]->getIOType(), io[i]->getPort(), io[i]->getName(), io[i]->getAlias() ); 
 
   // hostname - identifies last data
-  ioConfig.pushHostname( getHostname(), getAlias() ); 
+  ioConfig.pushHostname( getName(), getAlias() ); 
 
   // send
   ioConfig.flushBuffer();

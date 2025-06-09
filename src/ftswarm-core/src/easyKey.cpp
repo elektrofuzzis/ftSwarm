@@ -263,13 +263,14 @@ bool yesNo( const char *prompt, bool defaultValue ) {
 }
 
 
-void Menu::start( const char *prompt, uint8_t spacer, uint16_t maxMenuItems ) { 
+void Menu::start( const char *prompt, uint8_t spacer, uint16_t maxMenuItems, char delimiter ) { 
 
   if (id) free(id);
   id = (uint8_t *) malloc( maxMenuItems );
 
   maxItem = 0; 
   id[0]   = 0;
+  this->delimiter = delimiter;
   this->spacer = spacer;
   this->maxMenuItems = maxMenuItems;
   strcpy( this->prompt, (char *) prompt ); 
@@ -293,6 +294,10 @@ void Menu::addF( const char *item, float value, uint8_t id ) {
   add( item, dummy, id );
 }
 
+void Menu::add( const char *value, uint8_t id ) {
+  add( "", value, id );
+}
+
 void Menu::add( const char *item, const char *value, uint8_t id, bool staticDelimiter ){
 
   if ( maxItem >= maxMenuItems-2 ) return;
@@ -303,7 +308,7 @@ void Menu::add( const char *item, const char *value, uint8_t id, bool staticDeli
   else printf( "(%3d) %s", maxItem, item );
   
   if ( ( value[0] != '\0' ) || ( staticDelimiter ) ) {
-    printf(": ");
+    printf("%c ", delimiter);
     for (uint8_t i=strlen( item ); i<spacer; i++)  printf( " " );
     printf( "%s\n", value );
   } else {

@@ -140,7 +140,7 @@ bool SwOSNVS::load() {
 
   // Open
   nvs_handle_t my_handle;
-  ESP_ERROR_CHECK( nvs_open("ftSwarm", NVS_READWRITE, &my_handle) );
+  ESP_ERROR_CHECK( nvs_open( NVSNAMESPACE, NVS_READONLY, &my_handle) );
 
   // start reading my version to check my data is valid
   nvs_get_i32( my_handle, "NVSVersion", &version);
@@ -224,11 +224,11 @@ void SwOSNVS::save( bool writeAll ) {
 
   // Open
   nvs_handle_t my_handle;
-  ESP_ERROR_CHECK( nvs_open("ftSwarm", NVS_READWRITE, &my_handle) );
+  ESP_ERROR_CHECK( nvs_open(NVSNAMESPACE, NVS_READWRITE, &my_handle) );
 
   // Write
   if (writeAll) {
-    ESP_ERROR_CHECK( nvs_set_i32( my_handle, "NVSVersion", version ) );
+    ESP_ERROR_CHECK( nvs_set_i32( my_handle, "NVSVersion", NVSVERSION ) );
     ESP_ERROR_CHECK( nvs_set_u32( my_handle, "controlerType", (uint32_t) controllerType ) );
     ESP_ERROR_CHECK( nvs_set_u16( my_handle, "serialNumber", (FtSwarmSerialNumber_t) serialNumber ) );
     ESP_ERROR_CHECK( nvs_set_u32( my_handle, "CPU", (uint32_t) CPU ) );
@@ -416,4 +416,25 @@ void SwOSNVS::printNVS() {
   for (uint8_t i=0; i<MAXCTRL; i++) { if (swarmMember[i]) printf(" %d", swarmMember[i]); }
   printf( "\n");
  
+}
+
+bool SwOSNVS::upgrade( void ) {
+
+  if ( version != NVSVERSION ) {
+
+    printf("[INFO] upgrading NVS setting from version %d to %d\n", version, NVSVERSION );
+   
+     // erase all
+    nvs_handle_t my_handle;
+    ESP_ERROR_CHECK( nvs_open(NVSNAMESPACE, NVS_READWRITE, &my_handle) );   
+    ESP_ERROR_CHECK( nvs_erase_all( my_handle ) );
+    ESP_ERROR_CHECK( nvs_commit( my_handle ) );
+    
+    // save again
+    save( true );
+    return true;   
+  }
+
+  return false;
+
 }

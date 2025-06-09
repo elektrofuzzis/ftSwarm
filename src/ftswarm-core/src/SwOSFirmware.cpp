@@ -429,12 +429,78 @@ uint8_t selectController( uint8_t controller ) {
 
 }
 
+bool setAliasAndType( SwOSObj *selected, SwOSCtrl *ctrl ) {
+  
+  char         alias[MAXIDENTIFIER];
+  char         prompt[250];
+
+  // null -> done!
+  if (!selected) return false;
+  
+  // ask user for new alias
+  sprintf( prompt, "%s - please enter new alias: ", selected->getName() );
+  enterIdentifier( prompt, alias, MAXIDENTIFIER );
+                
+  // test on duplicates
+  SwOSIO *testIO = myOSSwarm.getIO( alias );
+  if ( (testIO) && ( testIO != selected ) ) {
+    printf("\e[0;31mERROR: This alias is already used in the swarm.\n\e[0m");
+    return false;
+  }
+
+  // change name
+  bool anythingChanged = strcmp( alias, selected->getAlias() );
+  if (anythingChanged ) selected->setAlias( alias );
+
+  // if it's the controller, we're done
+  if (selected == ctrl) return anythingChanged;
+
+  // change type?
+  SwOSIO*      io     = (SwOSIO*)selected;
+  SwOSIOType_t ioType = io->getIOType();
+
+  // singular class -> done
+  if ( SWOSIOCLASS[ioType] == SWOSIOCLASS_SINGULAR ) return anythingChanged;
+
+  // list compatible types and ask user
+  int8_t       maxType = -1;
+  SwOSIOType_t defaultValue, type[99];
+
+  for (uint8_t i=0; i<SWOSIO_MAXIOTYPE; i++) {
+
+    // compatible type?
+    if ( SWOSIOCLASS[ioType] == SWOSIOCLASS[i] ) {
+
+      maxType++;
+
+      // default?
+      if ( ioType == (SwOSIOType_t) i ) defaultValue = (SwOSIOType_t)i;
+
+      // menu entry
+      type[maxType] = (SwOSIOType_t) i;
+      printf( "(%2d) %s\n", maxType, SWOSIOTYPE[i] );
+
+    }
+
+  }
+
+  sprintf( prompt, "Choose new IO Type - default %s:", SWOSIOTYPE[defaultValue]);
+  SwOSIOType_t newIOType = type[enterNumber( prompt, defaultValue, 0, maxType )];
+  if ( ioType != newIOType ) { 
+    if ( ctrl->changeIOType( ctrl->getIndex( io ), newIOType ) ) anythingChanged = true;
+  }
+
+  return anythingChanged;
+               
+}
+
 void aliasMenu( void ) {
 
-  SwOSObj *OSObj[99];
-  bool    anythingChanged[MAXCTRL];
-  uint8_t controller = 0;
-  Menu    menu;
+  SwOSObj      *OSObj[99];
+  bool         anythingChanged[MAXCTRL];
+  uint8_t      controller = 0;
+  Menu         menu;
+  char         data[80];
 
   // initialize anythingChanged
   for (uint8_t i=0; i<MAXCTRL; i++) anythingChanged[i] = false;
@@ -442,7 +508,7 @@ void aliasMenu( void ) {
   while (1) {
 
     uint8_t item = 0;
-    menu.start( "alias menu:", 10, 999 );
+    menu.start( "alias menu:", 10, 255, ' ' );
 
     // Kelda only: option to select another controller in the swarm
     if ( myOSSwarm.Ctrl[0]->IAmKelda ) {
@@ -450,15 +516,19 @@ void aliasMenu( void ) {
       printf("\n");
     }
 
+    printf("      Name        Type            Alias\n");
+
     // show existing alias
     OSObj[item++] = myOSSwarm.Ctrl[controller]; 
-    menu.add( myOSSwarm.Ctrl[controller]->getName(), myOSSwarm.Ctrl[controller]->getAlias(), item, true );
+    sprintf( data, "Controller      %s", myOSSwarm.Ctrl[controller]->getAlias() );
+    menu.add( myOSSwarm.Ctrl[controller]->getName(), data, item, true );
   
     // list IOs
     for (uint8_t i=0; i<myOSSwarm.Ctrl[controller]->IOs; i++ ) {
       if ( myOSSwarm.Ctrl[controller]->io[i] ) { 
         OSObj[item++] = myOSSwarm.Ctrl[controller]->io[i];
-        menu.add( myOSSwarm.Ctrl[controller]->io[i]->getName(), myOSSwarm.Ctrl[controller]->io[i]->getAlias(), item, true );
+        sprintf( data, "%-15s %s", SWOSIOTYPE[myOSSwarm.Ctrl[controller]->io[i]->getIOType()], myOSSwarm.Ctrl[controller]->io[i]->getAlias() );
+        menu.add( myOSSwarm.Ctrl[controller]->io[i]->getName(), data, item, true );
       }
     }
   
@@ -482,10 +552,7 @@ void aliasMenu( void ) {
                   if ( anythingChanged[0] ) {
 
                     // save in local nvs
-                    nvs_handle_t my_handle;
-                    ESP_ERROR_CHECK( nvs_open("ftSwarm", NVS_READWRITE, &my_handle) );
-                    myOSSwarm.Ctrl[0]->saveAliasToNVS( my_handle );
-                    ESP_ERROR_CHECK( nvs_commit( my_handle ) );
+                    myOSSwarm.Ctrl[0]->saveToNVS( );
 
                     // send new config to Kelda
                     if ( ( myOSSwarm.Kelda ) && ( myOSSwarm.Kelda != myOSSwarm.Ctrl[0] ) ) myOSSwarm.Ctrl[0]->sendIOConfig( myOSSwarm.Kelda->macAddr );
@@ -496,7 +563,7 @@ void aliasMenu( void ) {
                   for ( i=1; i<MAXCTRL; i++ ) {
                     if ( anythingChanged[i] ) {
                       myOSSwarm.Ctrl[i]->sendIOConfig( myOSSwarm.Ctrl[i]->macAddr );
-                      alias2nvs = new SwOSCom( myOSSwarm.Ctrl[i]->macAddr, myOSSwarm.Ctrl[i]->serialNumber, CMD_SAVEALIAS2NVS );
+                      alias2nvs = new SwOSCom( myOSSwarm.Ctrl[i]->macAddr, myOSSwarm.Ctrl[i]->serialNumber, CMD_SAVETONVS );
                       alias2nvs->send( );
                       delete alias2nvs;
                       alias2nvs = NULL;
@@ -512,30 +579,8 @@ void aliasMenu( void ) {
 
       case 255: break;
 
-      default:  // set name
-                char alias[MAXIDENTIFIER];
-                char prompt[250];
-                SwOSIO* testIO;
-
-                if (OSObj[choice-1]) {
-
-                  // ask user
-                  sprintf( prompt, "%s - please enter new alias: ", OSObj[choice-1]->getName() );
-                  enterIdentifier( prompt, alias, MAXIDENTIFIER );
-                
-                  // duplicates?
-                  testIO = myOSSwarm.getIO( alias );
-
-                  if ( (testIO) && ( testIO != OSObj[choice-1] ) ) {
-                    // duplicate alias name
-                    printf("\e[0;31mERROR: This alias is already used in the swarm.\n\e[0m");
-
-                  } else {
-                    // change alias
-                    OSObj[choice-1]->setAlias( alias );
-                    anythingChanged[controller]= true;
-                  }
-                }
+      default:  // set alias & type
+                anythingChanged[controller] = setAliasAndType( OSObj[choice-1], myOSSwarm.Ctrl[controller] );
                 break;
       }
     
@@ -557,10 +602,7 @@ void factorySettings( void ) {
     delay(2000);
 
     // Alias names
-    nvs_handle_t my_handle;
-    ESP_ERROR_CHECK( nvs_open("ftSwarm", NVS_READWRITE, &my_handle) );
-    myOSSwarm.Ctrl[0]->saveAliasToNVS( my_handle );
-    ESP_ERROR_CHECK( nvs_commit( my_handle ) );
+    myOSSwarm.Ctrl[0]->saveToNVS( );
 
     nvs.saveAndRestart();
 

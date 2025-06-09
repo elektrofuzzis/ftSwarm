@@ -77,7 +77,7 @@ SwOSObj::~SwOSObj() {
   if (_alias) free( _alias );
 }
 
-void SwOSObj::loadAliasFromNVS( nvs_handle_t my_handle ) {
+void SwOSObj::loadFromNVS( nvs_handle_t my_handle ) {
 
   size_t size = MAXIDENTIFIER;
   char alias[MAXIDENTIFIER];
@@ -87,13 +87,16 @@ void SwOSObj::loadAliasFromNVS( nvs_handle_t my_handle ) {
   }
 }
 
-void SwOSObj::saveAliasToNVS( nvs_handle_t my_handle ) {
+void SwOSObj::saveToNVS( nvs_handle_t my_handle ) {
 
   nvs_set_str( my_handle, getName(), getAlias() );
   
 }
 
 void SwOSObj::setAlias( const char *alias ) {
+
+  // no change?
+  if ( ( _alias ) && ( strcmp( _alias, alias ) == 0 ) ) return;
 
   // free memory?
   if ( _alias != NULL ) { free( (void*) _alias ); _alias = NULL; }
@@ -175,6 +178,43 @@ SwOSIO::SwOSIO( const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioT
 bool SwOSIO::isOnline( void ) { 
   return ctrl->isOnline();
 };
+
+void SwOSIO::loadFromNVS( nvs_handle_t my_handle ) {
+
+  uint8_t blob[MAXIDENTIFIER+2];
+  size_t  len = MAXIDENTIFIER+2;
+
+  if (nvs.version == 2) {
+    // compatibility to old version
+    if ( ESP_OK != nvs_get_str( my_handle, getName(), (char *) &blob[1], &len ) ) return;
+    blob[0] = ioType;
+
+  } else {
+    // read ioType & alias in a blob
+    if ( ESP_OK != nvs_get_blob( my_handle, getName(), blob, &len ) ) return;
+
+  }
+
+  setAlias( (char *) &blob[1] );
+  ctrl->changeIOType( ctrl->getIndex(this), (SwOSIOType_t) blob[0] );
+    
+}
+
+void SwOSIO::saveToNVS( nvs_handle_t my_handle ) {
+
+  uint8_t blob[MAXIDENTIFIER+2];
+
+  bzero( blob, MAXIDENTIFIER+2 );
+  
+  uint8_t len = strlen( getAlias() );
+
+  blob[0] = ioType;
+  memcpy( &blob[1], getAlias(), len );
+
+  nvs_set_blob( my_handle, getName(), blob, len+2 );
+  
+}
+
 
 void SwOSIO::lock( void ) {
   if (ctrl) ctrl->lock();

@@ -408,9 +408,10 @@ SwOSCtrlConfig_t localCtrlConfig = {
   if ( nvs.IAmKelda ) Kelda = Ctrl[0];
 
   // Open NVS again & load alias names
-  nvs_handle_t my_handle;
-  ESP_ERROR_CHECK( nvs_open("ftSwarm", NVS_READWRITE, &my_handle) );
-  myOSSwarm.Ctrl[0]->loadAliasFromNVS( my_handle );
+  myOSSwarm.Ctrl[0]->loadFromNVS(  );
+
+  // check on nvs version upgrades
+  if ( nvs.upgrade() ) myOSSwarm.Ctrl[0]->saveToNVS( );
 
   // now I can visualize my state
   setState( BOOTING );
@@ -1126,7 +1127,6 @@ void SwOSSwarm::replaceCtrl( SwOSCom *com, uint8_t source, uint8_t affected ) {
     newCtrl = new SwOSCtrl( com->data.sourceSN , com->macAddr, false, com->data.registerCmd.ctrlConfig );
     
     if (verbose) { 
-      if ( com->data.registerCmd.ctrlConfig.IAmKelda ) printf("Kelda ");
       printf("\n[Info] ftSwarm%d joined the swarm.\n", com->data.sourceSN ); 
     }
 

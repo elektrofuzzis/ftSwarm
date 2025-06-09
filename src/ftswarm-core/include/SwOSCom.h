@@ -32,7 +32,7 @@ typedef enum {
   CMD_JOINNACK,               // Member to Kelda: no, I don't want to join your swarm
   CMD_REVOKEFROMSWARM,        // Kelda to member: Please leave my swarm
 
-  CMD_SAVEALIAS2NVS,          // Kelda to Member: save alias setting to NVS
+  CMD_SAVETONVS,              // Kelda to Member: save port & alias setting to NVS
 
   CMD_GOTYOU,                 // anybody's reply on ANYBODYOUTTHERE
   CMD_STATE,                  // send my input's readings

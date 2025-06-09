@@ -43,13 +43,15 @@ class Menu {
     uint8_t  spacer = 0;
     uint16_t maxMenuItems = 40;
     uint8_t  *id = NULL;
+    char     delimiter = ' ';
     char     prompt[40];
 
   public:
     ~Menu() { if (id) free(id); };
-    void   start( const char *prompt, uint8_t spacer, uint16_t maxMenuItems = 40 );
+    void   start( const char *prompt, uint8_t spacer, uint16_t maxMenuItems = 40, char delimiter = ':' );
     void   add( const char *item, const char *value, uint8_t id, bool staticDelimiter = false );
     void   add( const char *item, int value, uint8_t id );
+    void   add( const char *value, uint8_t id);
     void   addF( const char *item, float value, uint8_t id );
     int8_t userChoice( void );
 };
