@@ -5,6 +5,7 @@
 #include "SwOSSwarm.h"
 #include "easyKey.h"
 #include "SwOSFilter.h"
+#include <fastLed.h>
 
 //#define FIRMWARE
 // #define SEILBAHN
@@ -12,81 +13,6 @@
 // #define PIDTEST
 // #define LSM
 
-/*
-class x {
-
-  public:
-
-    gpio_num_t  gpio;
-    adc_unit_t  adc_unit;
-    int8_t      adc_channel;
-    adc_atten_t attenuation;
-    esp_adc_cal_characteristics_t *adc_chars = NULL;
-
-  x( gpio_num_t gpio, adc_unit_t  adc_unit, int8_t adc_channel, adc_atten_t attenuation );
-  uint32_t read( void );
-
-};
-
-x::x( gpio_num_t gpio, adc_unit_t  adc_unit, int8_t adc_channel, adc_atten_t attenuation ) {
-
-  // local init
-  this->adc_unit = adc_unit;
-  this->adc_channel = adc_channel;
-  this->attenuation = attenuation;
-
-  gpio_config_t io_conf = {};
-
-  io_conf.intr_type = GPIO_INTR_DISABLE;
-  io_conf.mode = GPIO_MODE_INPUT;
-  io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-  io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-  io_conf.pin_bit_mask = 1ULL << gpio;
-  gpio_config(&io_conf);
-
-  if ( ( adc_unit ==  ADC_UNIT_1) && ( adc_channel != ADC1_CHANNEL_MAX ) ) {
-    // set ADC to 12 bits, scale 3.9V
-    adc1_config_width(ADC_WIDTH_BIT_12);
-    adc1_config_channel_atten( (adc1_channel_t) adc_channel, attenuation );
-  }
-
-  #if CONFIG_IDF_TARGET_ESP32S3
-  if ( ( adc_unit == ADC_UNIT_2 ) && ( adc_channel != ADC2_CHANNEL_MAX ) ) {
-    adc2_config_channel_atten( (adc2_channel_t) adc_channel, attenuation );
-  }
-  #endif
-
-  adc_chars = (esp_adc_cal_characteristics_t*) calloc(1, sizeof(esp_adc_cal_characteristics_t));
-  esp_adc_cal_characterize((adc_unit_t) adc_unit, attenuation, ADC_WIDTH_BIT_12, 0, adc_chars);
-
-}
-
-uint32_t x::read( void ) {
-
-  int32_t newValue;
-
-  if ((adc_unit_t)adc_unit == ADC_UNIT_1) newValue = adc1_get_raw( (adc1_channel_t )adc_channel );
-
-  #if CONFIG_IDF_TARGET_ESP32S3
-  if ((adc_unit_t)adc_unit == ADC_UNIT_2) {
-    int raw;
-    adc2_get_raw( (adc2_channel_t )adc_channel, ADC_WIDTH_12Bit, &raw );
-    newValue = raw;
-  }
-  #endif
-
-  newValue = esp_adc_cal_raw_to_voltage( newValue, adc_chars ); 
-
-  return newValue;
-
-}
-
-x s1( GPIO_NUM_6,   ADC_UNIT_1, ADC1_CHANNEL_5,   ADC_ATTEN_DB_2_5 );
-x s2( GPIO_NUM_7,   ADC_UNIT_1, ADC1_CHANNEL_6,   ADC_ATTEN_DB_2_5 );
-x s3( GPIO_NUM_8,   ADC_UNIT_1, ADC1_CHANNEL_7,   ADC_ATTEN_DB_2_5 );
-x s4( GPIO_NUM_9,   ADC_UNIT_1, ADC1_CHANNEL_8,   ADC_ATTEN_DB_2_5 );
-
-*/ 
 
 void setup() {
 
@@ -94,13 +20,23 @@ void setup() {
 
   firmware();
   ESP.restart();
-
   
 }
 
+
 void loop() {
 
-  // printf("\t%d\t%d\t%d\t%d\n", s1.read(), s2.read(), s3.read(), s4.read() );
+  delay(500);
+  /*
+
+  setPWM( LEDC_CHANNEL_0, 0);
+  delay(500);
+
+  setPWM( LEDC_CHANNEL_0, 2048);
+  delay(500);
+
+  setPWM( LEDC_CHANNEL_0, 4095); */
+
   delay(500);
 
 }

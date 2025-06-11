@@ -134,7 +134,6 @@ public:
   SwOSStepper*  getStepper( uint8_t index );                             // get a pointer to a stepper by index
 
   virtual FtSwarmController_t getType();                                  // what I am?
-	virtual char*              myType();                                   // what I am?
   virtual FtSwarmVersion_t   getCPU() { return CPU; };                   // my CPU type
 	virtual const char *       getVersionCPU();                            // my CPU type as string
   virtual bool               isLocal() { return local; };                // local or remote?

@@ -415,20 +415,6 @@ SwOSIO *SwOSCtrl::getIO( SwOSIOType_t ioType, FtSwarmPort_t port) {
 
 }
 
-char* SwOSCtrl::myType() {
-
-  switch (CPU) {
-    case FTSWARMCONTROL_1V3:    return (char *) "ftSwarmControl";
-    case FTSWARMCAM_3V12:       return (char *) "ftSwarmCAM";
-    case FTSWARMDUINO_1V141:    return (char *) "ftSwarmDuino";
-    case FTSWARMPWRDRIVE_1V141: return (char *) "ftSwarmPwrDrive";
-    default:                    return (char *) "ftSwarm";
-  }
-
-  return (char *) "";
-
-}
-
 FtSwarmController_t SwOSCtrl::getType() {
 
   switch ( CPU ) {
@@ -606,7 +592,7 @@ void SwOSCtrl::jsonize( JSONize *json, uint8_t id) {
   json->variable( "name", getHostname());
   json->variableUI8( "id", id);
   json->variableUI16( "serialNumber", serialNumber);
-  json->variable( "type", myType() );
+  json->variableUI8( "type", getType() );
   
   json->startArray( "io" );
   jsonizeIO( json, id );
