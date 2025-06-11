@@ -349,7 +349,7 @@ void SwOSStepper::startStop( bool start ) {
   if (!ctrl->isLocal() )  {
     // send remote
     SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_STEPPERSTARTSTOP  );
-    cmd.data.actorStepperCmd.index  = port;
+    cmd.data.actorStepperCmd.index  = ctrl->getIndex(this);
     cmd.data.actorStepperCmd.paramb = start;
     cmd.send( );
 
@@ -370,7 +370,7 @@ void SwOSStepper::setPosition( long position ) {
 
     // send remote
     SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETSTEPPERPOSITION  );
-    cmd.data.actorStepperCmd.index = port;
+    cmd.data.actorStepperCmd.index  = ctrl->getIndex(this);
     cmd.data.actorStepperCmd.paraml = position;
     cmd.send( );
 
@@ -390,7 +390,7 @@ void SwOSStepper::homing( long maxDistance ) {
   if   (!ctrl->isLocal()) {
     // send remote
     SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_STEPPERHOMING );
-    cmd.data.actorStepperCmd.index = port;
+    cmd.data.actorStepperCmd.index  = ctrl->getIndex(this);
     cmd.data.actorStepperCmd.paraml = maxDistance;
     cmd.send( );
 
@@ -406,7 +406,7 @@ void SwOSStepper::setHomingOffset( long offset ) {
   if   (!ctrl->isLocal()) {
     // send remote
     SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETSTEPPERHOMINGOFFSET );
-    cmd.data.actorStepperCmd.index = port;
+    cmd.data.actorStepperCmd.index  = ctrl->getIndex(this);
     cmd.data.actorStepperCmd.paraml = offset;
     cmd.send( );
 
@@ -560,7 +560,7 @@ void SwOSDigitalServo::setLocal() {
 void SwOSDigitalServo::setRemote( ) {
   
   SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETSERVO );
-  cmd.data.servoCmd.index    = port;
+  cmd.data.servoCmd.index    = ctrl->getIndex(this);
   cmd.data.servoCmd.position = position;
   cmd.data.servoCmd.offset   = offset;
   cmd.send( );

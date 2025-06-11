@@ -170,7 +170,7 @@ void SwOSPixel::setColor(uint32_t color) {
 void SwOSPixel::setRemote() {
   
   SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETPIXEL );
-  cmd.data.pixelCmd.index = port;
+  cmd.data.pixelCmd.index = ctrl->getIndex(this);
   cmd.data.pixelCmd.color = color;
   cmd.data.pixelCmd.brightness = brightness;
   cmd.send( );
