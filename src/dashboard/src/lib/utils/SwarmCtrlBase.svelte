@@ -18,22 +18,28 @@
     }: Props = $props();
 </script>
 
-<div class="card colspan-when-large-enough" style={colspan > 1 ? `grid-column: span ${colspan}` : ''}>
-    <div class="card__inner">
-        <div class="card__left">
-            <img alt="type" src={"/assets/" + ICONS[io.icon]} class="svg">
+<svelte:boundary>
+    <div class="card colspan-when-large-enough" style={colspan > 1 ? `grid-column: span ${colspan}` : ''}>
+        <div class="card__inner">
+            <div class="card__left">
+                <img alt="type" src={"/assets/" + ICONS[io.icon]} class="svg">
 
-            <div class="card__infos">
-                <span class="muted">{descriptor}</span>
-                {io.name}
-                <span class="muted boo">{io.id}</span>
+                <div class="card__infos">
+                    <span class="muted">{descriptor}</span>
+                    {io.name}
+                    <span class="muted boo">{io.id}</span>
+                </div>
+            </div>
+            <div class="card__centergroup">
+                {@render children()}
             </div>
         </div>
-        <div class="card__centergroup">
-            {@render children()}
-        </div>
     </div>
-</div>
+
+    {#snippet failed(error, reset)}
+        <button onclick={reset}>error while rendering: {JSON.stringify(io)}: {error}</button>
+    {/snippet}
+</svelte:boundary>
 
 <style lang="postcss">
     .card {

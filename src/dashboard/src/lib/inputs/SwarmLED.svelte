@@ -1,21 +1,21 @@
 <script lang="ts">
-    import type {LedIo} from "../../swarm";
+    import type { LedIo } from "../../swarm";
     import SwarmCtrlBase from "../utils/SwarmCtrlBase.svelte";
     import Slider from "../utils/Slider.svelte";
-    import {onDestroy, onMount} from "svelte";
-    import {ftSwarm} from "../../api/FtSwarm";
-    import {swarmApiData} from "../../stores.ts";
+    import { onDestroy, onMount } from "svelte";
+    import { ftSwarm } from "../../api/FtSwarm";
+    import { swarmApiData } from "../../stores.ts";
 
-  interface Props {
-    input: LedIo;
-  }
+    interface Props {
+        input: LedIo;
+    }
 
-  let { input = $bindable() }: Props = $props();
+    let { input = $bindable() }: Props = $props();
     let inputRef = $state();
     let timeout: NodeJS.Timeout;
     let disabled: boolean = $derived(!$swarmApiData.auth.status);
-    
 
+    console.log(input);
     onMount(() => {
         clearTimeout(timeout);
         timeout = setInterval(() => {
@@ -30,32 +30,49 @@
 
 <SwarmCtrlBase colspan={2} descriptor="LED" io={input}>
     <div class="container">
-        <input bind:this={inputRef} type="color" {disabled} oninput={() => {
-            ftSwarm.debouncedUpdateLed(input.id, inputRef.value, input.brightness);
-        }}/>
-        <Slider bind:value={input.brightness} max={255} min={0} oninput={() => {
-            ftSwarm.debouncedUpdateLed(input.id, inputRef.value, input.brightness);
-        }}/>
+        <input
+            bind:this={inputRef}
+            type="color"
+            {disabled}
+            oninput={() => {
+                ftSwarm.debouncedUpdateLed(
+                    input.id,
+                    inputRef.value,
+                    input.brightness,
+                );
+            }}
+        />
+        <Slider
+            bind:value={input.brightness}
+            max={255}
+            min={0}
+            oninput={() => {
+                ftSwarm.debouncedUpdateLed(
+                    input.id,
+                    inputRef.value,
+                    input.brightness,
+                );
+            }}
+        />
     </div>
 </SwarmCtrlBase>
 
 <style>
-  .container {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
+    .container {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
 
-
-  input[type="color"] {
-    border: 3px solid var(--background-selection);
-    border-radius: 4px;
-    background: var(--background-selection);
-    font-size: 1em;
-    text-align: center;
-    color: var(--color-text);
-  }
+    input[type="color"] {
+        border: 3px solid var(--background-selection);
+        border-radius: 4px;
+        background: var(--background-selection);
+        font-size: 1em;
+        text-align: center;
+        color: var(--color-text);
+    }
 </style>
