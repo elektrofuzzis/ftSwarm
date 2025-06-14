@@ -593,6 +593,7 @@ void SwOSCtrl::jsonize( JSONize *json, uint8_t id) {
   json->variableUI8( "id", id);
   json->variableUI16( "serialNumber", serialNumber);
   json->variableUI8( "type", getType() );
+  json->variableUI8( "state", getState() );
   
   json->startArray( "io" );
   jsonizeIO( json, id );
@@ -928,6 +929,8 @@ bool SwOSCtrl::apiCAMHMirror( char *id,bool hMirror ) {
 
 void SwOSCtrl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
   // visualizes controller's state like booting, error,...
+
+  this->state = state;
 
   // *** classic ftSwarm ***
   if (pixel0) pixel0->setColor( LEDCOLOR0[state] );

@@ -186,7 +186,7 @@ void SwOSIO::loadFromNVS( nvs_handle_t my_handle ) {
 
   if (nvs.version == 2) {
     // compatibility to old version
-    if ( ESP_OK != nvs_get_str( my_handle, getName(), (char *) &blob[1], &len ) ) return;
+    if ( ESP_OK != nvs_get_str( my_handle, getName(), (char *)&blob[1], &len ) ) return;
     blob[0] = ioType;
 
   } else {

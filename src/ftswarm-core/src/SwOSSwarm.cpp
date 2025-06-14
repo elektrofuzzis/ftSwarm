@@ -25,6 +25,7 @@
 #include "SwOSSwarm.h"
 #include "SwOSWeb.h"
 #include "easyKey.h"
+#include "redirect.h"
 
 // There can only be once!
 SwOSSwarm myOSSwarm;
@@ -192,7 +193,7 @@ SwOSIO *SwOSSwarm::waitFor( char *alias ) {
 
     // no success, wait 25 ms
     if ( (!me) && ( firstTry ) ) {
-      printf( "Waiting on device %s. Press anykey to enter setup and change remote control settings.\n", alias );
+      printf( "Waiting for device %s. Press anykey to enter setup and change remote control settings.\n", alias );
       setState( WAITING );
       firstTry = false;
     }
@@ -223,10 +224,14 @@ bool SwOSSwarm::startEvents( void ) {
     
     if ( ( event->sensor[0] != '\0' ) && ( event->actor[0] != '\0' ) ) {
 
+      if (verbose) printf("connecting %s to %s\n", event->sensor, event->actor);
       // get IOs and stop on error
       sensor = waitFor( event->sensor );  
       if (!sensor) return false;
-      if (!sensor->isInput()) return false;
+      if (!sensor->isInput()) {
+        printf("[ERROR] %s is not an input. Please check configuration\n", event->sensor );
+        return false;
+      }
       
       actor  = waitFor( event->actor );  
       if (!actor)            return false;
@@ -300,7 +305,8 @@ void SwOSSwarm::startWifi( void ) {
       // user entertainment
       if (verbose) { 
         printf("."); 
-        fflush(stdout);
+        // fflush(stdout);
+        flushStdIO();
       }
 
       // wait
@@ -348,6 +354,8 @@ void SwOSSwarm::startWifi( void ) {
 FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
   if (initialized) return Ctrl[0]->serialNumber;
+
+  redirectStdIO();
 
   this->verbose = verbose;
 
@@ -435,6 +443,8 @@ SwOSCtrlConfig_t localCtrlConfig = {
   if ( ( nvs.webUI ) && ( nvs.wifiMode != wifiOFF ) ) SwOSStartWebServer();
 
   // firmware events?
+  
+  if (verbose) printf("Starting events.\n");
   if ( !startEvents( ) ) {
       printf( "\nStarting setup..\n" );
       mainMenu();

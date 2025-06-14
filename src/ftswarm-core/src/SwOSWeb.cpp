@@ -19,6 +19,7 @@
 #include "SwOSSwarm.h"
 #include "SwOSWeb.h"
 #include "sfs_files.h"
+#include "redirect.h"
 
 #define SCRATCH_BUFSIZE (10240)
 #define HTTPD_401 "401 Unauthorized"
@@ -356,6 +357,23 @@ esp_err_t apiGetSwarm(httpd_req_t *req ) {
   return ESP_OK;
 }
 
+esp_err_t apiGetLog(httpd_req_t *req ) {
+  // reply on /api/getToken
+
+  char buffer[STDIO_BUFFER_SIZE];
+  dumpStdIO(buffer, STDIO_BUFFER_SIZE);
+
+  sendResponse( req, 200, true );
+
+  JSONize json(req);
+
+  httpd_resp_sendstr_chunk( req, buffer);
+  
+  httpd_resp_sendstr_chunk(req, NULL);
+
+  return ESP_OK;
+}
+
 esp_err_t apiGetToken(httpd_req_t *req ) {
   // reply on /api/getToken
 
@@ -377,6 +395,7 @@ esp_err_t apiGetHandler(httpd_req_t *req ) {
 
   // check on sub urls, apiGetSwarm will lock
   if (strcmp( req->uri, "/api/getSwarm" ) == 0 ) { return apiGetSwarm( req ); }
+  if (strcmp( req->uri, "/api/getLog"   ) == 0 ) { return apiGetLog( req ); }
   if (strcmp( req->uri, "/api/getToken" ) == 0 ) { return apiGetToken( req ); }
 
   // unknown URL: FAIL

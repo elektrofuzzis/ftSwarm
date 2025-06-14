@@ -35,7 +35,7 @@ extern SwOSDuino *ftDuino;
 class SwOSCtrl; 
 
 // state
-typedef enum { BOOTING, STARTWIFI, RUNNING, ERROR, WAITING, IDENTIFY, MAXSTATE } SwOSState_t;
+typedef enum { OFFLINE, BOOTING, STARTWIFI, RUNNING, ERROR, WAITING, IDENTIFY, MAXSTATE } SwOSState_t;
 
 // comState
 typedef enum { 

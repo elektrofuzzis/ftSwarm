@@ -18,6 +18,7 @@
 
 #include "easyKey.h"
 #include <HardwareSerial.h>
+#include "redirect.h"
 
 bool easyKeyEcho = true;
 
@@ -41,7 +42,9 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
   char *str = (char *) calloc( size, sizeof(char) );
   uint8_t i = 0;
 
-  printf(prompt); fflush(stdout); 
+  printf(prompt); 
+  flushStdIO();
+  // fflush(stdout); 
 
   while (1) {
 
@@ -60,11 +63,7 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
         case '\b': 
         case 127:   if (i>0) { 
                       str[--i] = '\0';
-                      if ( easyKeyEcho ) {
-                        Serial.write(0x8); 
-                        Serial.write(' '); 
-                        Serial.write(0x8);
-                      } 
+                      if ( easyKeyEcho ) printf("%c %c", 0x08, 0x08);
                     }
                     break;
       
@@ -85,7 +84,7 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
                     } else {
                       // ok: print char
                       if ( easyKeyEcho ) {
-                        (hidden)?Serial.write( '*' ):Serial.write( ch );
+                        (hidden)?printf( "*" ):printf( "%c", ch );
                       }
 
                     }
@@ -93,6 +92,8 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
                    }
                    break;
       }
+
+      flushStdIO();
 
     }
 

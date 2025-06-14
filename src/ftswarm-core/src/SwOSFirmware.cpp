@@ -662,7 +662,7 @@ bool changeEvent( NVSEvent *event ) {
     else if (!newActor) 
       printf("actor %s doesn't exist in the swarm.\n", actor);
 
-    else if ( !newActor->isMotor() )  // ToDo
+    else if ( !( ( newActor->isMotor() ) || ( newActor->isServo() ) || ( newActor->isPixel() ) ) )
       printf("%s needs to be an actor, a LED or a servo.\n", actor);
     
     else

@@ -32,10 +32,10 @@ class SwOSCAM;
 class SwOSCounter;
 class SwOSStepper;
 
-const uint32_t LEDCOLOR0[MAXSTATE] = { CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red, CRGB::Cyan, CRGB::Aquamarine };
-const uint32_t LEDCOLOR1[MAXSTATE] = { CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red, CRGB::Cyan, CRGB::Aquamarine };
+const uint32_t LEDCOLOR0[MAXSTATE] = { CRGB::Black, CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red, CRGB::Cyan, CRGB::Aquamarine };
+const uint32_t LEDCOLOR1[MAXSTATE] = { CRGB::Black, CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red, CRGB::Cyan, CRGB::Aquamarine };
 
-const char     OLEDMSG[MAXSTATE][20] = { "booting", "connecting wifi", "online", "ERROR - check logs", "waiting on HW", "It's me!" };
+const char     OLEDMSG[MAXSTATE][20] = { "offline", "booting", "connecting wifi", "online", "ERROR - check logs", "waiting on HW", "It's me!" };
 
 /***************************************************
  *
@@ -57,6 +57,7 @@ protected:
   
   unsigned long     lastContact = 0;
   SwOSComState_t    comState = COMSTATE_UNDEFINED;
+  SwOSState_t       state = OFFLINE;
   
   bool              isSubscribed = false;
   char             *subscribedCtrlName = NULL;
@@ -143,6 +144,7 @@ public:
   virtual void loadFromNVS( void );                                      // write my port & alias settings to NVS
   virtual void saveToNVS( void );                                        // load my port & alias settings from NVS
   virtual void setState( SwOSState_t state, uint8_t members = 0, char *SSID = NULL ); // visualizes controller's state like booting, error,...
+  virtual SwOSState_t getState( void ) { return isOnline()?state:OFFLINE; };
   virtual void factorySettings( void );                                  // reset factory settings
   virtual void halt( void );                                             // stop all actors
   virtual void unsubscribe( bool cascade );                              // unsubscribe userevents and if cascade = true all IOs
