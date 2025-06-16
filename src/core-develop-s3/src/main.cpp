@@ -13,13 +13,12 @@
 // #define PIDTEST
 // #define LSM
 
-
 void setup() {
 
   Serial.begin(115200);
-
   firmware();
   ESP.restart();
+
   
 }
 

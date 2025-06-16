@@ -109,7 +109,7 @@ public:
   uint16_t apiCAMHMirror( uint16_t token, char *id, int hMirror, bool rotateToken );             // set CAM H-Mirror
   uint16_t apiCAMVFlip( uint16_t token, char *id, int vFlip, bool rotateToken );                 // set CAM V-Flip 
 
-  void setState( SwOSState_t state ); // visualizes controller's state
+  void setState( SwOSState_t state ); 
 
   // receiving data from other controllers
   void OnDataRecv( SwOSCom *buffer );

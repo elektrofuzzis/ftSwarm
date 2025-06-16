@@ -7,10 +7,11 @@
  * 
  */
 
- #include "SwOSHW/SwOSHWCam.h"
- #include "SwOSHW/SwOSHWBaseCtrl.h"
+#include "SwOSHW/SwOSHWCam.h"
+#include "SwOSHW/SwOSHWBaseCtrl.h"
+#include "SwOSLog.h"
  
- /***************************************************
+/***************************************************
  *
  *   SwOSCAM - Camera
  *
@@ -204,7 +205,7 @@ config.fb_count = 1;
 // camera init
 esp_err_t err = esp_camera_init(&config);
 if (err != ESP_OK) {
-  Serial.printf("Camera init failed with error 0x%x", err);
+  SWARM_LOG_ERROR("Camera init failed with error 0x%x", err);
   return;
 }
 

@@ -9,7 +9,6 @@
  
 #include <esp_err.h>
 #include <esp_http_server.h>
-#include <esp_log.h>
 #include <cJSON.h>
 //#include "esp_vfs.h"
 
@@ -19,7 +18,7 @@
 #include "SwOSSwarm.h"
 #include "SwOSWeb.h"
 #include "sfs_files.h"
-#include "redirect.h"
+#include "SwOSLog.h"
 
 #define SCRATCH_BUFSIZE (10240)
 #define HTTPD_401 "401 Unauthorized"
@@ -100,7 +99,7 @@ cJSON *getJSON( httpd_req_t *req ) {
   // get body
   char *body = getBody(req);
   if ( body == NULL ) {
-    ESP_LOGE( LOGFTSWARM, "getJSON: getBody failed");
+    SWARM_LOG_ERROR( "getJSON: getBody failed" );
     httpd_resp_set_status( req, HTTPD_400 );
     return NULL;
   }
@@ -110,7 +109,7 @@ cJSON *getJSON( httpd_req_t *req ) {
 
   // parsing error?
   if ( root == NULL ) { 
-    ESP_LOGE( LOGFTSWARM, "invalid JSON string" );
+    SWARM_LOG_ERROR( "invalid JSON string" );
     httpd_resp_set_status( req, HTTPD_400 );
     return NULL;
   }
@@ -148,7 +147,7 @@ bool getParameter( httpd_req_t *req, cJSON * root, const char *parameter, int *v
 
     } else {
 
-      ESP_LOGE( LOGFTSWARM, "%s has wrong type", parameter );
+      SWARM_LOG_ERROR( "%s has wrong type", parameter );
       httpd_resp_set_status( req, HTTPD_400 );
       return false;
     }
@@ -156,7 +155,7 @@ bool getParameter( httpd_req_t *req, cJSON * root, const char *parameter, int *v
 
   // mandatory
   if ( mandatory ){
-    ESP_LOGE( LOGFTSWARM, "Missing parameter %s.", parameter );
+    SWARM_LOG_ERROR( "Missing parameter %s.", parameter );
     httpd_resp_set_status( req, HTTPD_400 );
     return false;
   }
@@ -206,12 +205,12 @@ bool getParameter( httpd_req_t *req, cJSON * root, const char *parameter, char *
 
   // missing mandatory parameter?
   if ( ( p == NULL ) && ( mandatory ) ) {
-    ESP_LOGW( LOGFTSWARM, "Missing parameter %s.", parameter );
+    SWARM_LOG_ERROR( "Missing parameter %s.", parameter );
     httpd_resp_set_status( req, HTTPD_400 );
 
   // wrong type?
   } else if ( p != NULL )  {
-    ESP_LOGW( LOGFTSWARM, "%s has wrong type", parameter );
+    SWARM_LOG_ERROR( "%s has wrong type", parameter );
     httpd_resp_set_status( req, HTTPD_400 );
   }
   
@@ -640,19 +639,19 @@ esp_err_t stream_handler(httpd_req_t *req)
       
       if (res == ESP_OK) {
         res = httpd_resp_send_chunk(req, _STREAM_BOUNDARY, strlen(_STREAM_BOUNDARY));
-        if (res != ESP_OK ) { printf("Error 1 %d\n", res ); }
+        if (res != ESP_OK ) { SWARM_LOG_ERROR("Stream error 1 %d", res ); }
       }
 
       
       if (res == ESP_OK) {
         size_t hlen = snprintf((char *)part_buf, 128, _STREAM_PART, _jpg_buf_len, _timestamp.tv_sec, _timestamp.tv_usec);
         res = httpd_resp_send_chunk(req, (const char *)part_buf, hlen);
-        if (res != ESP_OK ) { printf("Error 2 %d\n", res ); }
+        if (res != ESP_OK ) { SWARM_LOG_ERROR("Strem error 2 %d", res ); }
       }
         
       if (res == ESP_OK) {
         res = httpd_resp_send_chunk(req, (const char *)_jpg_buf, _jpg_buf_len);
-        if (res != ESP_OK ) { printf("Error 3 %d\n", res ); }
+        if (res != ESP_OK ) { SWARM_LOG_ERROR("Stream error 3 %d", res ); }
       }
 
       if (fb) {
@@ -699,7 +698,7 @@ bool SwOSStartWebServer( void ) {
   esp_err_t x = httpd_start(&UIServer, &config);
 
   if ( x != ESP_OK) {
-      ESP_LOGE( LOGFTSWARM, "Failed to start web server! %04x", x);
+      SWARM_LOG_ERROR( "Failed to start web server! %04x", x);
       return false;
   }
 
@@ -709,7 +708,7 @@ bool SwOSStartWebServer( void ) {
     config.ctrl_port += 1;
     esp_err_t x = httpd_start(&streamServer, &config);
     if ( x != ESP_OK) {
-      ESP_LOGE( LOGFTSWARM, "Failed to start streaming server! %04x", x);
+      SWARM_LOG_ERROR( "Failed to start streaming server! %04x", x);
       return false;
     }
 

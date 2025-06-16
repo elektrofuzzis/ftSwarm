@@ -34,9 +34,6 @@ extern SwOSDuino *ftDuino;
 // forward declaration
 class SwOSCtrl; 
 
-// state
-typedef enum { OFFLINE, BOOTING, STARTWIFI, RUNNING, ERROR, WAITING, IDENTIFY, MAXSTATE } SwOSState_t;
-
 // comState
 typedef enum { 
   COMSTATE_UNDEFINED, 

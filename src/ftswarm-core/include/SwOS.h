@@ -15,9 +15,6 @@
 // #define DEBUG_COMMUNICATION_SWARM
 // #define DEBUG_READTASK
 
-// #define ARDUHAL_LOG_LEVEL_VERBOSE (5)
-
-static const char* LOGFTSWARM = "FTSWARM";
 #define MAXIDENTIFIER 32
 #define MAXACTORS 8
 #define MAXINPUTS 11
@@ -63,6 +60,9 @@ typedef enum { SWOS_OK, SWOS_TIMEOUT, SWOS_DENY } SwOSError_t;
 
 // communication
 typedef enum { swarmComWifi = 1, swarmComRS485 = 2, swarmComBoth= 3 } FtSwarmCommunication_t; 
+
+// state
+typedef enum { OFFLINE, BOOTING, STARTWIFI, RUNNING, ERROR, WAITING, IDENTIFY, MAXSTATE } SwOSState_t;
 
 // controller types
 typedef enum { FTSWARM_NOCTRL = -1, FTSWARM = 0, FTSWARMCONTROL, FTSWARMCAM, FTSWARMPWRDRIVE, FTSWARMDUINO, FTSWARM_MAXCONTROLLERTYPE } FtSwarmController_t;

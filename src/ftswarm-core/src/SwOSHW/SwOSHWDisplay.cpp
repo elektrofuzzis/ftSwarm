@@ -12,6 +12,7 @@
 #include "SwOSHW/SwOSHWDisplay.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWHAL.h"
+#include "SwOSLog.h"
 
 /***************************************************
  *
@@ -251,7 +252,7 @@ void SwOSPixel::onTrigger( int32_t value ) {
    if ( !_display->begin(SSD1306_SWITCHCAPVCC, 0x3C ) ) {
      delete _display;
      _display = NULL;
-     ESP_LOGE( LOGFTSWARM, "Couldn't initialize OLED display." );
+     SWARM_LOG_ERROR( "Couldn't initialize OLED display." );
      return;
    }
  

@@ -18,7 +18,7 @@
 
 #include "easyKey.h"
 #include <HardwareSerial.h>
-#include "redirect.h"
+#include "SwOSLog.h"
 
 bool easyKeyEcho = true;
 

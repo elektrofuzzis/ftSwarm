@@ -10,6 +10,8 @@
 #include "SwOSHW/SwOSHWI2CSensor.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWActor.h"
+#include "SwOSLog.h"
+
 #include <MPU6050_6Axis_MotionApps20.h>
 #include <LSM6DSRSensor.h>
 
@@ -113,8 +115,7 @@ void SwOSGyroMPU::setupLocal() {
 
     /*Verify connection*/
     if(mpu->testConnection() == false){
-      ESP_LOGE(LOGFTSWARM, "Gyro/MPU6050 connection failed.");
-      ctrl->setState( ERROR );
+      SWARM_LOG_ERROR( "Gyro/MPU6050 connection failed.");
       delete mpu;
       mpu = NULL;      
     }
@@ -139,8 +140,7 @@ void SwOSGyroMPU::setupLocal() {
     } else {
       // 1 = initial memory load failed
       // 2 = DMP configuration updates failed
-      ESP_LOGE(LOGFTSWARM, "Gyro/MPU6050: DMP initialisation error %d.", devStatus);
-      ctrl->setState( ERROR );
+      SWARM_LOG_ERROR( "Gyro/MPU6050: DMP initialisation error %d.", devStatus);
       delete mpu;
       mpu = NULL;      
     } 

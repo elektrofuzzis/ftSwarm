@@ -25,7 +25,7 @@
 #include "SwOSSwarm.h"
 #include "SwOSWeb.h"
 #include "easyKey.h"
-#include "redirect.h"
+#include "SwOSLog.h"
 
 // There can only be once!
 SwOSSwarm myOSSwarm;
@@ -193,8 +193,7 @@ SwOSIO *SwOSSwarm::waitFor( char *alias ) {
 
     // no success, wait 25 ms
     if ( (!me) && ( firstTry ) ) {
-      printf( "Waiting for device %s. Press anykey to enter setup and change remote control settings.\n", alias );
-      setState( WAITING );
+      SWARM_LOG_WAIT("Waiting for device %s. Press anykey to enter setup and change remote control settings.\n", alias );
       firstTry = false;
     }
     
@@ -323,8 +322,8 @@ void SwOSSwarm::startWifi( void ) {
 
     // connection failed?
     if (WiFi.status() != WL_CONNECTED) {
-      printf( "\e[0;31mERROR: Can't connect to SSID %s\e[0m\n\nstarting setup...\n", nvs.wifiSSID );
-      setState( ERROR );
+      SWARM_LOG_ERROR( "Can't connect to SSID %s", nvs.wifiSSID );
+      printf( "\nStarting setup..\n" );
       mainMenu();
       ESP.restart();
     }
@@ -428,11 +427,7 @@ SwOSCtrlConfig_t localCtrlConfig = {
   if ( nvs.wifiMode != wifiOFF ) startWifi( );
 
   // Init Communication
-  if (!myOSNetwork.begin( nvs.swarmSecret, nvs.swarmPIN, nvs.swarmCommunication )) {
-    if (verbose) printf("\e[0;31mError initializing swarm communication.\e[0;31m\n");
-    setState( ERROR );
-    return 0;
-  }
+  if (!myOSNetwork.begin( nvs.swarmSecret, nvs.swarmPIN, nvs.swarmCommunication )) SWARM_LOG_FATAL("Error initializing swarm communication.");
 
   // start the tasks
   xTaskCreatePinnedToCore( recvTask,    "RecvTask",    10000, NULL, 1, NULL, 0 );
@@ -1130,7 +1125,7 @@ void SwOSSwarm::replaceCtrl( SwOSCom *com, uint8_t source, uint8_t affected ) {
   SwOSCtrl *oldCtrl = Ctrl[source];
   
   if ( com->data.registerCmd.ctrlConfig.ctrlType >= FTSWARM_MAXCONTROLLERTYPE ) {
-    ESP_LOGW( LOGFTSWARM, "Unknown controller type while adding a new controller to my swarm." ); return;
+    SWARM_LOG_ERROR( "Unknown controller type while adding a new controller to my swarm." ); return;
 
   } else {
     

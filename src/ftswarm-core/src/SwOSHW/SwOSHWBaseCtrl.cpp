@@ -15,8 +15,8 @@
 #include "SwOSHW/SwOSHWCounter.h"
 #include "SwOSHW/SwOSHWCAM.h"
 #include "SwOSHW/SwOSHWHAL.h"
-
 #include "SwOSCom.h"
+#include "SwOSLog.h"
 
 // local pixels & oled
 SwOSPixel *pixel0 = NULL;
@@ -439,7 +439,7 @@ void SwOSCtrl::read() {
     ftDuino->read( );
     
     // errors during I2C communication?
-    if ( ftDuino->getError() != 0 ) setState( ERROR );
+    if ( ftDuino->getError() != 0 ) SWARM_LOG_ERROR( "ftDuino I2C connection broken." );
 
   }
 
@@ -449,7 +449,7 @@ void SwOSCtrl::read() {
     ftPwrDrive->read( );
     
     // errors during I2C communication?
-    if ( ftPwrDrive->getError() != 0 ) setState( ERROR );
+    if ( ftPwrDrive->getError() != 0 ) SWARM_LOG_ERROR( "ftPrwDrive I2C connection broken." );
 
   }
 
@@ -537,15 +537,13 @@ bool SwOSCtrl::changeIOType( uint8_t index, SwOSIOType_t newIOType ) {
 
   // in use?
   if ( io[index]->isInUse() ) {
-    printf("\e[0;31mERROR: Can't change IO Type. %s.%s is in use.\e[0m\n", getName(), io[index]->getName() );
-    setState( ERROR );
+    SWARM_LOG_ERROR( "Can't change IO Type. %s.%s is in use.", getName(), io[index]->getName() );
     return false;
   }
 
   // able to change?
   if ( ( SWOSIOCLASS[oldIOType] != SWOSIOCLASS[newIOType] ) || ( SWOSIOCLASS[oldIOType] == SWOSIOCLASS_SINGULAR ) ) {
-    printf("\e[0;31mERROR: Can't change IO type of %s.%s  from %d to %d due to incompatible io types.\e[0m\n", getName(), io[index]->getName(), oldIOType, newIOType );
-    setState( ERROR );
+    SWARM_LOG_ERROR("Can't change IO type of %s.%s  from %d to %d due to incompatible io types.", getName(), io[index]->getName(), oldIOType, newIOType );
     return false;
   }
 
@@ -667,9 +665,7 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, char *name, char 
     case SWOSIO_HC165:           io = new SwOSHC165( name, this );                      break;
     case SWOSIO_LIDAR:           io = new SwOSLidarInput( name, this );                 break;
     default:                     // This should newer happen
-                                 ESP_LOGE( LOGFTSWARM, "SwOSCtrl::createIO: Unkown ioType %d", ioType );
-                                 setState( ERROR );
-                                 forever( "" );
+                                 SWARM_LOG_FATAL( "SwOSCtrl::createIO: Unkown ioType %d", ioType );
     }
   
   if (alias) io->setAlias( alias );
@@ -1104,7 +1100,7 @@ bool SwOSCtrl::userEvent( SwOSCom *com ) {
 
     // send trigger event to local procedure
     if ( xQueueSend( myOSNetwork.userEvent, com, ESPNOW_MAXDELAY ) != pdTRUE ) {
-      ESP_LOGE( LOGFTSWARM, "Can't send data to user event." );
+      SWARM_LOG_ERROR( "Can't send data to user event." );
     }
 
   } else {
@@ -1173,7 +1169,7 @@ bool SwOSCtrl::ioConfig( SwOSCom *com ) {
       setComState( COMSTATE_ONLINE );
 
     } else if ( index >= IOs ) {
-      ESP_LOGE( LOGFTSWARM, "SwOSCtrl::ioConfig: index out of range %X", index );
+      SWARM_LOG_ERROR( "SwOSCtrl::ioConfig: index out of range %X", index );
 
     } else if ( io[index] ) {
       // set IOType + alias name as transmitted
@@ -1248,11 +1244,7 @@ SwOSCom *SwOSCtrl::state2Com( MacAddr destination ) {
       if (len>0) {
 
         // shouldn't happen at all
-        if ( ptr + len + 3 > MAXSTATECMDPAYLOAD ) {
-          printf( "\e[0;31mERROR: STATE2COM PAYLOAD excceded %s\e[0m\n" );
-          setState( ERROR );
-          forever( "" );
-        }
+        if ( ptr + len + 3 > MAXSTATECMDPAYLOAD ) SWARM_LOG_FATAL( "STATE2COM PAYLOAD excceded." );
 
         // move ptr
         ptr = ptr + len + 1;

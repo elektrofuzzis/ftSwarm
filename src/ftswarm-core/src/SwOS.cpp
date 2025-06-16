@@ -10,6 +10,7 @@
 #include "SwOS.h" 
 #include "SwOSSwarm.h"
 #include "easyKey.h"
+#include "SwOSLog.h"
 
 #include <MPU6050_6Axis_MotionApps20.h>
 
@@ -53,8 +54,7 @@ FtSwarmIO::FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, Sw
     
     // no success, wait 25 ms
     if ( (!me) && ( firstTry ) ) {
-      printf("# INFO: waiting on device - SN controler: %d port: %d ioType: %d\n", serialNumber, port, ioType );
-      myOSSwarm.setState( WAITING );
+      SWARM_LOG_WAIT("Waiting for device - SN controler: %d port: %d ioType: %d\n", serialNumber, port, ioType );
       firstTry = false;
     }
     
@@ -83,8 +83,7 @@ FtSwarmIO::FtSwarmIO( const char *name, SwOSIOType_t ioType ) {
 
     // no success, wait 25 ms
     if ( (!me) && ( firstTry ) ) {
-      printf("# INFO: waiting on device - IO: %s port ioType: %d\n", name, ioType );
-      myOSSwarm.setState( WAITING );
+      SWARM_LOG_WAIT("Waiting for device %s ioType: %d\n", name, ioType );
       firstTry = false;
     }
     
@@ -1283,8 +1282,7 @@ FtSwarmSerialNumber_t FtSwarm::begin( bool verbose ) {
   FtSwarmSerialNumber_t result = myOSSwarm.begin( verbose );
 
   if (!nvs.IAmKelda) {
-    printf("\e[0;31mERROR: Please configure this controller as Kelda.\e[0m\\n");
-    myOSSwarm.setState( ERROR );
+    SWARM_LOG_ERROR("Please configure this controller as Kelda.");
     firmware();
     ESP.restart();
   }

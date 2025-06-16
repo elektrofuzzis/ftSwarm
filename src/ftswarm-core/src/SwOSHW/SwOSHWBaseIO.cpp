@@ -12,6 +12,7 @@
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWHAL.h"
 #include "SwOSHW/SwOSHWDuino.h"
+#include "SwOSLog.h"
 
 const char EMPTYSTRING[] = "";
 
@@ -239,7 +240,7 @@ void SwOSIO::jsonize( JSONize *json, uint8_t id) {
 }
 
 void SwOSIO::onTrigger( int32_t value ) {
-  ESP_LOGE( LOGFTSWARM, "IO is unable to handle trigger events." );
+  SWARM_LOG_ERROR( "IO is unable to handle trigger events." );
 }
 
 char *SwOSIO::subscribe( char *IOName, uint32_t hysteresis ) {

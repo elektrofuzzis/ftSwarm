@@ -16,6 +16,7 @@
 #include "SwOSNVS.h"
 #include "easyKey.h"
 #include "SwOSHW/SwOSHWHAL.h"
+#include "SwOSLog.h"
 
 SwOSNVS nvs;
 
@@ -124,7 +125,7 @@ void SwOSNVS::begin() {
   if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
       // NVS partition was truncated and needs to be erased
       // Retry nvs_flash_init
-      ESP_LOGW( LOGFTSWARM, "Invalid NVS found. Erasing NVS.");
+      SWARM_LOG_ERROR( "Invalid NVS found. Erasing NVS.");
       ESP_ERROR_CHECK(nvs_flash_erase());
       err = nvs_flash_init();
   }

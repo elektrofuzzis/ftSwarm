@@ -13,6 +13,7 @@
 #include "SwOSSwarm.h"
 #include "SwOSFirmware.h"
 #include "SwOSCLIParameter.h"
+#include "SwOSLog.h"
 
 typedef struct {
   char cmd[20];
@@ -340,11 +341,11 @@ bool SwOSCLI::eval( void ) {
 }
 
 void SwOSCLI::wrongIOType( SwOSIOType_t ioType ) {
-  printf("[ERROR]: wrong IO type %d\n", ioType );
+  printf( "Error: Wrong IO type %d\n", ioType );
 }
 
 void SwOSCLI::OK ( void ) {
-  printf("R: ok\n");
+  printf( "R: ok\n" );
 }
 
 void SwOSCLI::executeControllerCmd(void ) {
@@ -371,7 +372,7 @@ void SwOSCLI::executeControllerCmd(void ) {
                                     // send event
                                     if ( ctrl->isLocal()) {
 
-                                      if ( xQueueSend( myOSNetwork.userEvent, userEvent, ESPNOW_MAXDELAY ) != pdTRUE ) ESP_LOGE( LOGFTSWARM, "Can't send data to user event." );
+                                      if ( xQueueSend( myOSNetwork.userEvent, userEvent, ESPNOW_MAXDELAY ) != pdTRUE )SWARM_LOG_ERROR( "Can't send data to user event." );
       
                                     } else {
                                       userEvent->data.userEventCmd.trigger = true;
@@ -492,7 +493,7 @@ void SwOSCLI::executeInputCmd( void ) {
                               if ( io->isDigitalInput() ) {
                                 printf("R: %f\n", ((SwOSDigitalInput*)io)->getToggle());
                               } else {
-                                printf("ERROR: wrong IO type %d\n", io->getIOType() );
+                                wrongIOType( io->getIOType() );
                               }
                               _io->unlock();
                               break;
@@ -554,7 +555,7 @@ void SwOSCLI::executeActorCmd( void ) {
 
                                   }
 
-                                } else printf("ERROR: wrong io type type %d\n", newIOType );
+                                } else wrongIOType( newIOType );
 
                                 break;
                               

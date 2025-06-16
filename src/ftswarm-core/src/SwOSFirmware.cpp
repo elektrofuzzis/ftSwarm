@@ -55,8 +55,6 @@ void ExtensionMenu() {
         Motor-IO 
     */
 
-    // printf( "I2C mode: %d\ngyro: %d\n", nvs.I2CMode, nvs.gyro);
-
     menu.start("Extension Port", 20);
 
     if ( myOSSwarm.Ctrl[0]->hasExtPort() ) menu.add("Mode", EXTMODE[ nvs.extensionPort] , EXTMENUMODE );
