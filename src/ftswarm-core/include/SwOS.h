@@ -82,15 +82,14 @@ typedef enum { SWOSIO_UNDEF = -1,
                SWOSIO_REEDSWITCH, 
                SWOSIO_LIGHTBARRIER, 
                SWOSIO_BUTTON,              
-               
                SWOSIO_ANALOG, 
                SWOSIO_VOLTMETER, 
                SWOSIO_OHMMETER,
                SWOSIO_THERMOMETER, 
                SWOSIO_LDR, 
                SWOSIO_JOYSTICK,
-
                SWOSIO_MOTOR, 
+               SWOSIO_XMOTOR, 
                SWOSIO_XMMOTOR, 
                SWOSIO_TRACTOR,  
                SWOSIO_ENCODER, 
@@ -99,24 +98,21 @@ typedef enum { SWOSIO_UNDEF = -1,
                SWOSIO_COMPRESSOR, 
                SWOSIO_BUZZER, 
                SWOSIO_STEPPER, 
-                            
                SWOSIO_COUNTER, 
                SWOSIO_ROTARYENCODER, 
                SWOSIO_FREQUENCYMETER, 
-               // SWOSIO_TRAILSENSOR, 
-               // SWOSIO_COLORSENSOR, 
-               SWOSIO_ULTRASONIC, 
                SWOSIO_LIDAR, 
-               
                SWOSIO_CAM, 
-
                SWOSIO_SERVO,
                SWOSIO_PIXEL,
                SWOSIO_OLED,
                SWOSIO_I2C,
-               
                SWOSIO_GYRO,
                SWOSIO_HC165,
+               SWOSIO_POWER,
+               SWOSIO_COLORSENSOR, 
+               SWOSIO_TRAILSENSOR, 
+               SWOSIO_ULTRASONIC, 
                SWOSIO_MAXIOTYPE } SwOSIOType_t;
 
 // technologies to change IO type
@@ -133,6 +129,7 @@ const SwOSIOClass_t SWOSIOCLASS[SWOSIO_MAXIOTYPE ] = {
   SWOSIOCLASS_INPUT, // SWOSIO_LDR
   SWOSIOCLASS_SINGULAR, // SWOSIO_JOYSTICK
   SWOSIOCLASS_MOTOR, // SWOSIO_MOTOR 
+  SWOSIOCLASS_MOTOR, // SWOSIO_XMOTOR
   SWOSIOCLASS_MOTOR, // SWOSIO_XMMOTOR
   SWOSIOCLASS_MOTOR, // SWOSIO_TRACTOR  
   SWOSIOCLASS_MOTOR, // SWOSIO_ENCODER 
@@ -144,9 +141,6 @@ const SwOSIOClass_t SWOSIOCLASS[SWOSIO_MAXIOTYPE ] = {
   SWOSIOCLASS_INPUT, // SWOSIO_COUNTER 
   SWOSIOCLASS_INPUT, // SWOSIO_ROTARYENCODER
   SWOSIOCLASS_INPUT, // SWOSIO_FREQUENCYMETER
-  // SWOSIO_TRAILSENSOR, 
-  // SWOSIO_COLORSENSOR, 
-  SWOSIOCLASS_SINGULAR, // SWOSIO_ULTRASONIC, 
   SWOSIOCLASS_SINGULAR, // SWOSIO_LIDAR
   SWOSIOCLASS_SINGULAR, // SWOSIO_CAM 
   SWOSIOCLASS_SINGULAR, // SWOSIO_SERVO
@@ -154,7 +148,11 @@ const SwOSIOClass_t SWOSIOCLASS[SWOSIO_MAXIOTYPE ] = {
   SWOSIOCLASS_SINGULAR, // SWOSIO_OLED
   SWOSIOCLASS_SINGULAR, // SWOSIO_I2C
   SWOSIOCLASS_SINGULAR, // SWOSIO_GYRO
-  SWOSIOCLASS_SINGULAR // SWOSIO_HC165
+  SWOSIOCLASS_SINGULAR, // SWOSIO_HC165
+  SWOSIOCLASS_SINGULAR, // SWOSIO_POWER
+  SWOSIOCLASS_INPUT, // SWOSIO_COLORSENSOR
+  SWOSIOCLASS_INPUT, // SWOSIO_TRAILSENSOR
+  SWOSIOCLASS_INPUT // SWOSIO_ULTRASONIC
 } ;  
 
 // show via api?
@@ -169,9 +167,9 @@ const bool SHOWIOINAPI[SWOSIO_MAXIOTYPE ] = {
   true, // SWOSIO_OHMMETER
   true, // SWOSIO_THERMOMETER
   true, // SWOSIO_LDR
-
   true, // SWOSIO_JOYSTICK
   true, // SWOSIO_MOTOR 
+  true, // SWOSIO_XMOTOR
   true, // SWOSIO_XMMOTOR
   true, // SWOSIO_TRACTOR  
   true, // SWOSIO_ENCODER 
@@ -180,13 +178,9 @@ const bool SHOWIOINAPI[SWOSIO_MAXIOTYPE ] = {
   true, // SWOSIO_COMPRESSOR
   true, // SWOSIO_BUZZER
   true, // SWOSIO_STEPPER
-
   true, // SWOSIO_COUNTER 
   true, // SWOSIO_ROTARYENCODER
   true, // SWOSIO_FREQUENCYMETER
-  // SWOSIO_TRAILSENSOR, 
-  // SWOSIO_COLORSENSOR, 
-  true, // SWOSIO_ULTRASONIC, 
   true, // SWOSIO_LIDAR
   false, // SWOSIO_CAM 
   true, // SWOSIO_SERVO
@@ -194,11 +188,15 @@ const bool SHOWIOINAPI[SWOSIO_MAXIOTYPE ] = {
   false, // SWOSIO_OLED
   false, // SWOSIO_I2C
   false, // SWOSIO_GYRO
-  false // SWOSIO_HC165
+  false, // SWOSIO_HC165
+  true, // SWOSIO_POWER
+  true, // SWOSIO_COLORSENSOR
+  true, // SWOSIO_TRAILSENSOR
+  true // SWOSIO_ULTRASONIC
 } ;  
 
 // show via api?
-const char SWOSIOTYPE[SWOSIO_MAXIOTYPE ][15] = {
+const char SWOSIOTYPE[SWOSIO_MAXIOTYPE][20] = {
   "DigitalInput",
   "Switch",
   "Reedswitch",
@@ -209,9 +207,9 @@ const char SWOSIOTYPE[SWOSIO_MAXIOTYPE ][15] = {
   "Ohmmeter",
   "Thermometer",
   "LDR",
-
   "Joystick",
   "Motor",
+  "XMotor",
   "XMMotor",
   "Tractor",
   "Encoder",
@@ -220,13 +218,9 @@ const char SWOSIOTYPE[SWOSIO_MAXIOTYPE ][15] = {
   "Compressor",
   "Buzzer",
   "Stepper",
-
   "Counter",
   "Rotaryencoder",
   "Frequencymeter",
-  // SWOSIO_TRAILSENSOR, 
-  // SWOSIO_COLORSENSOR, 
-  "Ultrasonic",
   "Lidar",
   "Cam",
   "Servo",
@@ -234,42 +228,12 @@ const char SWOSIOTYPE[SWOSIO_MAXIOTYPE ][15] = {
   "OLED",
   "I2C",
   "Gyro",
-  "HC165"
+  "HC165",
+  "Power",
+  "Colorsensor",
+  "Trailsensor",
+  "Ultrasonic"
 } ;  
-
-// icons
-typedef enum { FTSWARM_XX_UNDEF = -1, 
-               FTSWARM_00_DIGITAL, 
-               FTSWARM_01_ANALOG, 
-               FTSWARM_02_SWITCH, 
-               FTSWARM_03_REEDSWITCH, 
-               FTSWARM_04_VOLTAGE, 
-               FTSWARM_05_RESISTOR, 
-               FTSWARM_06_NTC, 
-               FTSWARM_07_LDR, 
-               FTSWARM_08_TRAILSENSOR, 
-               FTSWARM_09_COLORSENSOR, 
-               FTSWARM_10_ULTRASONIC, 
-               FTSWARM_11_JOYSTICK, 
-               FTSWARM_12_BUTTON, 
-               FTSWARM_13_MOTOR, 
-               FTSWARM_14_SERVO,
-               FTSWARM_15_RGBLED, 
-               FTSWARM_16_XMOTOR, 
-               FTSWARM_17_TRACTOR, 
-               FTSWARM_18_ENCODER, 
-               FTSWARM_19_LAMP, 
-               FTSWARM_20_XMMOTOR, 
-               FTSWARM_21_LIGHTBARRIER,
-               FTSWARM_22_COMPRESSOR, 
-               FTSWARM_23_VALVE, 
-               FTSWARM_24_BUZZER,
-               FTSWARM_25_COUNTER,
-               FTSWARM_26_CAM,
-               FTSWARM_27_ROTARYENCODER,
-               FTSWARM_28_FREQUENCY,
-               FTSWARM_29_GYRO
-   } FtSwarmIcon_t;
 
 // HW versions
 typedef enum { 

@@ -84,7 +84,6 @@ void SwOSMotor::jsonize( JSONize *json, uint8_t id) {
 
   json->startObject();
   SwOSIO::jsonize(json, id);
-  json->variableUI32("motiontype",   getMotionType() );
   json->variableI16 ("speed",        getSpeed() );
   json->variableB( "highResolution", highResolution );
   json->endObject();

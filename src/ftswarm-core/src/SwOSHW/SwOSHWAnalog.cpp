@@ -103,6 +103,8 @@ float SwOSAnalogInput::getVoltage() {
 
   if ( ctrl->getCPU() == FTSWARMDUINO_1V141 )
     return ( (float) lastRawValue ) / 1000;
+  else if ( ioType == SWOSIO_POWER )
+    return ( (float) lastRawValue ) / 1000 * (129.0/82.0) * 1.7; // ToDo correct power calculation
   else
     return ( (float) lastRawValue ) / 1000 * (129.0/82.0);
 }
@@ -229,7 +231,7 @@ void SwOSAnalogInput::jsonize( JSONize *json, uint8_t id) {
   json->startObject();
   SwOSIO::jsonize(json, id);
 
-  if ( ioType == SWOSIO_VOLTMETER ) {
+  if ( ( ioType == SWOSIO_VOLTMETER ) || ( ioType == SWOSIO_POWER ) ){
     json->variableVolt("value", getVoltage() );
   } else if ( ioType == SWOSIO_OHMMETER ) {
     json->variableOhm("value", getResistance() );

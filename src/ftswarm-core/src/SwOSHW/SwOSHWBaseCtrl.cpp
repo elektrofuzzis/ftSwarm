@@ -39,7 +39,7 @@ uint8_t SwOSCtrl::setupLocalInputs( uint8_t maxIO ) {
     // PwrCtl
     if ( ( MAXIOS[ CPU ].pwrctl != NOPWRCTL ) && ( MAXIOS[ CPU ].pwrctl == i ) ) {
 
-      io[ maxIO++ ] = new SwOSAnalogInput("PWRCTL", i, this, SWOSIO_VOLTMETER );
+      io[ maxIO++ ] = new SwOSAnalogInput("PWRCTL", i, this, SWOSIO_POWER );
 
     // normal input
     } else { 
@@ -641,12 +641,14 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, char *name, char 
     case SWOSIO_THERMOMETER:
     case SWOSIO_VOLTMETER:
     case SWOSIO_LDR:
+    case SWOSIO_POWER:
     case SWOSIO_ANALOG:          io = new SwOSAnalogInput( name, port, this, ioType );  break;
     case SWOSIO_LAMP:
     case SWOSIO_VALVE:
     case SWOSIO_COMPRESSOR:
     case SWOSIO_BUZZER:
     case SWOSIO_ENCODER:
+    case SWOSIO_XMOTOR:
     case SWOSIO_XMMOTOR:
     case SWOSIO_TRACTOR:
     case SWOSIO_MOTOR:           io = new SwOSMotor( name, port, this, ioType );        break; 

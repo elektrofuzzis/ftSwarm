@@ -42,6 +42,18 @@ typedef enum {
   COMSTATE_ONLINE, 
   COMSTATE_ERROR } SwOSComState_t;
 
+typedef enum {
+    UICLASS_NONE,
+    UICLASS_SENSOR,
+    UICLASS_PIXEL,
+    UICLASS_ONOFF,
+    UICLASS_MOTOR,
+    UICLASS_SERVO,
+    UICLASS_JOYSTICK,
+    UICLASS_CAM
+} SwOSUIClass_t;
+
+
 /***************************************************
  *
  *   SwOSObj - Base class for all SwOS objects.
@@ -106,7 +118,8 @@ public:
   virtual uint8_t         getPort() { return port; };
   virtual SwOSCtrl*       getCtrl() { return ctrl; };
 	virtual SwOSIOType_t    getIOType() { return ioType; };
-  virtual FtSwarmIcon_t   getIcon();
+  virtual SwOSUIClass_t   getUIClass();
+  virtual const char*     getIcon();
 	virtual void            jsonize( JSONize *json, uint8_t id);
   virtual void            take( void ) { useCounter++; };                      // register an instance using this IO
   virtual void            give( void ) { if (useCounter>0) useCounter--; };   // unregister an instance using this IO

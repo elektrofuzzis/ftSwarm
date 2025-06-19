@@ -423,15 +423,13 @@ esp_err_t apiActor( httpd_req_t *req ) {
     return sendResponse( req, 400 );
   }
   
-  // optional parameters
-  boolean hasCmd = ( req, getParameter( req, root, "cmd", &cmd, false ) );
+  // parameters
   boolean hasSpeed = ( req, getParameter( req, root, "speed", &speed, false ) );
 
   // cleanup
   cJSON_Delete( root );
 
   // let's do it 
-  if ( hasCmd )   status = myOSSwarm.apiActorCmd( token, id, cmd, !hasSpeed );
   if ( hasSpeed ) status = myOSSwarm.apiActorSpeed( token, id, speed, true); 
 
   return sendResponse( req, status );

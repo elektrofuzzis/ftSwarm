@@ -16,39 +16,83 @@
 
 const char EMPTYSTRING[] = "";
 
-FtSwarmIcon_t IO_ICON[SWOSIO_MAXIOTYPE] = 
-  { FTSWARM_00_DIGITAL, 
-    FTSWARM_02_SWITCH,
-    FTSWARM_03_REEDSWITCH, 
-    FTSWARM_21_LIGHTBARRIER, 
-    FTSWARM_12_BUTTON,
-    FTSWARM_01_ANALOG, 
-    FTSWARM_04_VOLTAGE, 
-    FTSWARM_05_RESISTOR,
-    FTSWARM_06_NTC,
-    FTSWARM_07_LDR,
-    FTSWARM_11_JOYSTICK,
-    FTSWARM_13_MOTOR,
-    FTSWARM_16_XMOTOR,
-    FTSWARM_20_XMMOTOR,
-    FTSWARM_17_TRACTOR,
-    FTSWARM_18_ENCODER,
-    FTSWARM_19_LAMP,
-    FTSWARM_23_VALVE,
-    FTSWARM_22_COMPRESSOR,
-    FTSWARM_24_BUZZER,
-    FTSWARM_13_MOTOR,
-    FTSWARM_25_COUNTER, 
-    FTSWARM_27_ROTARYENCODER, 
-    FTSWARM_28_FREQUENCY,
-    FTSWARM_00_DIGITAL, // TODO LIDAR Icon
-    FTSWARM_26_CAM,
-    FTSWARM_14_SERVO,
-    FTSWARM_15_RGBLED,
-    FTSWARM_XX_UNDEF,  // no OLED Icon
-    FTSWARM_XX_UNDEF,  // no I2C Icon
-    FTSWARM_29_GYRO
+const char IO_ICON[SWOSIO_MAXIOTYPE][20] = 
+  { "digital.svg", 
+    "switch.svg",
+    "reedswitch.svg", 
+    "lightbarrier.svg", 
+    "button.svg",
+    "analog.svg", 
+    "voltage.svg", 
+    "resistor.svg",
+    "ntc.svg",
+    "ldr.svg",
+    "joystick.svg",
+    "motor.svg",
+    "xmotor.svg",
+    "xmmotor.svg", // todo better icon xmmotor
+    "tractor.svg",
+    "encoder.svg",
+    "lamp.svg",
+    "valve.svg",
+    "compressor.svg",
+    "buzzer.svg",
+    "motor.svg", // todo Icon Stepper
+    "counter.svg", 
+    "rotaryencoder.svg", 
+    "frequency.svg",
+    "digital.svg", // todo lidar icon
+    "cam.svg",
+    "servo.svg",
+    "pixel.svg",
+    "undef.svg",  // no oled icon
+    "undef.svg",  // no i2c icon
+    "undef.svg",   // todo gyro icon
+    "undef.svg",   // no hc165 icon
+    "power.svg",
+    "colorsensor.svg", 
+    "trailsensor.svg",
+    "ultrasonic.svg"
   };
+
+SwOSUIClass_t UI_CLASS[SWOSIO_MAXIOTYPE] = 
+  { UICLASS_SENSOR, 
+    UICLASS_SENSOR,
+    UICLASS_SENSOR, 
+    UICLASS_SENSOR, 
+    UICLASS_SENSOR,
+    UICLASS_SENSOR, 
+    UICLASS_SENSOR, 
+    UICLASS_SENSOR,
+    UICLASS_SENSOR,
+    UICLASS_SENSOR,
+    UICLASS_JOYSTICK,
+    UICLASS_MOTOR,
+    UICLASS_MOTOR,
+    UICLASS_MOTOR,
+    UICLASS_MOTOR,
+    UICLASS_MOTOR,
+    UICLASS_MOTOR, // ToDo Lamp slider positive only
+    UICLASS_ONOFF,
+    UICLASS_ONOFF,
+    UICLASS_ONOFF,
+    UICLASS_MOTOR,
+    UICLASS_SENSOR,
+    UICLASS_SENSOR,
+    UICLASS_SENSOR,
+    UICLASS_SENSOR,
+    UICLASS_CAM,
+    UICLASS_SERVO,
+    UICLASS_PIXEL,
+    UICLASS_NONE,    // no oled 
+    UICLASS_NONE,    // no i2c
+    UICLASS_NONE,    // todo gyro
+    UICLASS_NONE,    // no hc165
+    UICLASS_SENSOR, 
+    UICLASS_SENSOR,
+    UICLASS_SENSOR
+  };
+  
 
 // reference to local ftPwrDrive
 FtPwrDrive *ftPwrDrive = NULL;
@@ -225,17 +269,24 @@ void SwOSIO::unlock( void ) {
   if (ctrl) ctrl->unlock();
 }
 
-FtSwarmIcon_t SwOSIO::getIcon() {
+const char *SwOSIO::getIcon() {
 
-  if ( ioType == SWOSIO_UNDEF ) return FTSWARM_XX_UNDEF;
+  if ( ioType == SWOSIO_UNDEF ) return IO_ICON[0];
   return IO_ICON[ioType];
+
+}
+
+SwOSUIClass_t SwOSIO::getUIClass() {
+
+  if ( ioType == SWOSIO_UNDEF ) return UICLASS_NONE;
+  return UI_CLASS[getIOType()];
 
 }
 
 void SwOSIO::jsonize( JSONize *json, uint8_t id) {
   SwOSObj::jsonize(json, id);
-  json->variableUI32("type", getIOType() );
-  json->variableUI32("icon", getIcon() );
+  json->variableUI32("type", getUIClass() );
+  json->variable("icon", (char *) getIcon() );
   json->variableB( "active", ( _alias != NULL ) || isInUse() );
 }
 
