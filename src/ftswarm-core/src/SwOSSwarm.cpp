@@ -354,6 +354,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
   if (initialized) return Ctrl[0]->serialNumber;
 
+  // redirect IO to feed the web console
   redirectStdIO();
 
   this->verbose = verbose;
@@ -446,15 +447,13 @@ SwOSCtrlConfig_t localCtrlConfig = {
       ESP.restart();
     }
 
-  delay(1000);
   setState( RUNNING );
 
   if (verbose) printf("Start normal operation.\n");
 
 
-
   if ( ( nvs.IAmKelda) && ( nvs.wifiMode == wifiAP ) ) 
-    printf("\n\n\e[0;31m*** WARNING ***:\nA swarm using wifi ap mode provided by the Kelda isn't stable.\nBest practice is to use your local wifi or to provide the AP via a swarm member.\e[0m\n\n");
+    SWARM_LOG_WARN( "A swarm using wifi ap mode provided by the Kelda isn't stable. Best practice is to use your local wifi or to provide the AP via a swarm member.");
 
   initialized = true;
   return Ctrl[0]->serialNumber;

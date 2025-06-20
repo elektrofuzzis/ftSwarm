@@ -32,10 +32,10 @@ class SwOSCAM;
 class SwOSCounter;
 class SwOSStepper;
 
-const uint32_t LEDCOLOR0[MAXSTATE] = { CRGB::Black, CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red, CRGB::Cyan, CRGB::Aquamarine };
-const uint32_t LEDCOLOR1[MAXSTATE] = { CRGB::Black, CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red, CRGB::Cyan, CRGB::Aquamarine };
+const uint32_t LEDCOLOR0[MAXSTATE] = { CRGB::Black, CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red, CRGB::Cyan, CRGB::Aquamarine, CRGB::DeepPink };
+const uint32_t LEDCOLOR1[MAXSTATE] = { CRGB::Black, CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red, CRGB::Cyan, CRGB::Aquamarine, CRGB::DeepPink };
 
-const char     OLEDMSG[MAXSTATE][20] = { "offline", "booting", "connecting wifi", "online", "ERROR - check logs", "waiting on HW", "It's me!" };
+const char     OLEDMSG[MAXSTATE][20] = { "offline", "booting", "connecting wifi", "online", "ERROR - check logs", "waiting on HW", "It's me!", "FATAL - check logs" };
 
 /***************************************************
  *
@@ -72,7 +72,6 @@ protected:
   bool saveToNVS( SwOSCom *com );
   bool setPixel( SwOSCom *com );
   bool resetCounter( SwOSCom *com );
-  bool setActorType( SwOSCom *com );
   bool setActorSpeed( SwOSCom *com );
   bool userEvent( SwOSCom *com );
   SwOSIO* createIO( SwOSIOType_t ioType, uint8_t port, char *name, char *alias ); // create an IO by type

@@ -24,18 +24,20 @@ const char ONOFF[2][5]    = { "off", "on" };
 const char OFFM1M2[3][5]  = { "off", "M1", "M2" };
 const char WIFI[3][12]    = { "off", "AP-Mode", "Client-Mode"};
 
-#define EXTMENUMODE 1
-#define EXTMENUGYRO 2
-#define EXTMENUI2C  3
-#define EXTMENUINT  4
-#define EXTMENUINT0 5
-#define EXTMENUINT1 6
-#define EXTMENUREG  7
+#define EXTMENUMODE  1
+#define EXTMENUGYRO  2
+#define EXTMENUI2C   3
+#define EXTMENUINT   4
+#define EXTMENUINT0  5
+#define EXTMENUINT1  6
+#define EXTMENUREG   7
+#define EXTCALIBRATE 8
 
 void ExtensionMenu() {
 
-  bool    anythingChanged = false;
-  char    prompt[255];
+  bool          anythingChanged = false;
+  char          prompt[255];
+  SwOSJoystick* joystick = NULL;
 
   Menu menu;
 
@@ -70,6 +72,11 @@ void ExtensionMenu() {
 
     // gyro if available
     if ( myOSSwarm.Ctrl[0]->hasGyro() ) menu.add("Gyro", ONOFF[nvs.gyro], EXTMENUGYRO );
+
+    if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
+      menu.add("Calibrate Joysticks", "", EXTCALIBRATE, false );
+
+    }
 
     switch( menu.userChoice() ) {
       
@@ -125,30 +132,7 @@ void ExtensionMenu() {
         nvs.I2CRegisters = (uint8_t) enterNumber( "I2C Registers [1..8]", nvs.I2CRegisters, 1, MAXI2CREGISTERS);
         break;
 
-    }
-  }
-
-}
-
-void SwarmControlMenu() {
-
-  bool          anythingChanged = false;
-  SwOSJoystick *joystick;
-
-  while (1) {
-    
-    printf("\n\nftSwarmControl settings\n\n");
-    switch( enterNumber( "(1) Calibrate Joysticks\n\n(0) exit\nftSwarmControl>", 0, 0, 1) ) {
-      
-      case 0: // exit
-        if ( ( anythingChanged) && ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) ) {
-          // save config
-          nvs.saveAndRestart();
-        } else {
-          return;
-        }
-        
-      case 1: // calibrate joysticks
+      case EXTCALIBRATE: // calibrate joysticks
         if  ( yesNo( "Start calibration (Y/N)?" ) ) {
           anythingChanged = true;
           for ( uint8_t i=0; i<2; i++ ) {
@@ -157,7 +141,7 @@ void SwarmControlMenu() {
           }
         }
         break;
-        
+
     }
   }
 
@@ -831,9 +815,8 @@ void remoteControl( void ) {
 #define MAINMENUSWARM     2
 #define MAINMENUALIAS     3
 #define MAINMENUFACTORY   4
-#define MAINMEUREMOTE     5
+#define MAINMENUREMOTE    5
 #define MAINMENUEXTENSION 6
-#define MAINMENUSWARMCTRL 7
 
 void mainMenu( void ) {
 
@@ -849,21 +832,19 @@ void mainMenu( void ) {
       menu.add("Swarm Configuration - activate WiFi", "", DEACTIVATED );
     }
     menu.add("Alias Names", "", MAINMENUALIAS );
-    menu.add("Factory Reset", "", MAINMENUFACTORY );
 
-    if (myOSSwarm.Ctrl[0]->IAmKelda) menu.add("Remote Control", "", MAINMEUREMOTE );
+    if (myOSSwarm.Ctrl[0]->IAmKelda) menu.add("Remote Control", "", MAINMENUREMOTE );
 
     // special HW
     switch (myOSSwarm.Ctrl[0]->getType()) {
 
-      case FTSWARM:         menu.add("Extension Port", "", MAINMENUEXTENSION );
-                            break;
-
-      case FTSWARMCONTROL:  menu.add("Extension Port", "", MAINMENUEXTENSION );
-                            menu.add("ftSwarmControl", "", MAINMENUSWARMCTRL );
+      case FTSWARMCONTROL:
+      case FTSWARM:         menu.add("other options", "", MAINMENUEXTENSION );
                             break;
 
     }
+
+    menu.add("Factory Reset", "", MAINMENUFACTORY );
 
     switch( menu.userChoice(  )  ) {
       case 0:                 return;
@@ -871,9 +852,8 @@ void mainMenu( void ) {
       case MAINMENUSWARM:     swarmMenu();        break;
       case MAINMENUALIAS:     aliasMenu();        break;
       case MAINMENUFACTORY:   factorySettings();  break;
-      case MAINMEUREMOTE:     remoteControl();    break;
+      case MAINMENUREMOTE:    remoteControl();    break;
       case MAINMENUEXTENSION: ExtensionMenu();    break;
-      case MAINMENUSWARMCTRL: SwarmControlMenu(); break;
     }
     
   }
