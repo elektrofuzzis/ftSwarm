@@ -280,12 +280,14 @@ class SwOSNetwork {
     QueueHandle_t recvNotification = NULL;
     QueueHandle_t userEvent = NULL;
 
-    uint16_t      secret = DEFAULTSECRET;
-    uint16_t      pin    = 0;
-    uint8_t       delayTime;
+    uint16_t               secret = DEFAULTSECRET;
+    uint16_t               pin    = 0;
+    uint8_t                delayTime;
     FtSwarmCommunication_t communication;
+    bool                   active = false;
 
     bool begin( uint16_t swarmSecret, uint16_t swarmPIN, FtSwarmCommunication_t swarmCommunication );
+    void stop( void );
     void setSecret( uint16_t swarmSecret, uint16_t swarmPIN );
     bool hasJoinedASwarm( void );
     void AddPeer( MacAddr macAddr );

@@ -311,6 +311,8 @@ void SwOSCom::send( void ) {
     return;
   #endif
 
+  if (!myOSNetwork.active ) return;
+
   // header
   data.size = size();
   
@@ -339,6 +341,7 @@ static void _OnDataSent(const uint8_t *macAddr, esp_now_send_status_t status) {
   
   // stop on uninitialized
   if (!myOSNetwork.sendNotificationWifi) return;
+  if (!myOSNetwork.active ) return;
 
   // store event
   sendNotificationEvent_t event;
@@ -353,6 +356,8 @@ static void _OnDataSent(const uint8_t *macAddr, esp_now_send_status_t status) {
 };
 
 bool _OnDataRecv( SwOSCom *payload ) {
+
+  if (!myOSNetwork.active ) return false;
 
   if (!payload) {
     // shouldn't happen at all
@@ -497,6 +502,8 @@ static void tx_Wifi( SwOSCom *com ) {
   int waitAck = 0;
   sendNotificationEvent_t event;
 
+  if (!myOSNetwork.active ) return;
+
   if ( com->macAddr.isNull() ) {
     SWARM_LOG_ERROR( "Try to send data via wifi to MAC 00:00:00:00\n" );
     com->print();
@@ -526,7 +533,7 @@ static void tx_task( void *pvParameters) {
   while(1) {
 
     // wait to send data
-    if (pdTRUE == xQueueReceive( myOSNetwork.tx_queue, &com, portMAX_DELAY )) {
+    if ( ( myOSNetwork.active ) && (pdTRUE == xQueueReceive( myOSNetwork.tx_queue, &com, portMAX_DELAY ) ) ) {
 
       if (rs485) tx_RS485( &com );
       if (wifi)  tx_Wifi( &com );
@@ -638,7 +645,7 @@ static void RS485_rx_task(void *pvParameters) {
   while(1) {
 
     // wait for data
-    if( pdTRUE == xQueueReceive(myOSNetwork.RS485_rx_queue, (void * )&event, portMAX_DELAY ) ) { 
+    if ( ( myOSNetwork.active ) && ( pdTRUE == xQueueReceive(myOSNetwork.RS485_rx_queue, (void * )&event, portMAX_DELAY ) ) ) { 
 
       #ifdef DEBUG_COMMUNICATION
         SWARM_LOG_INFO("RS485_rx_task event %d size %d", event.type, event.size);
@@ -802,6 +809,7 @@ bool SwOSNetwork::_StartWifi( void ) {
 bool SwOSNetwork::begin( uint16_t swarmSecret, uint16_t swarmPIN, FtSwarmCommunication_t swarmCommunication ) {
 
   // initialize all stuff
+  active = true;
   communication = swarmCommunication;
   myOSNetwork.setSecret( swarmSecret, swarmPIN );
   delayTime = 5 + nvs.serialNumber & 0x1F; // between 5 and 36 us
@@ -824,6 +832,10 @@ bool SwOSNetwork::begin( uint16_t swarmSecret, uint16_t swarmPIN, FtSwarmCommuni
   xTaskCreate( tx_task, "tx_task", 10240, NULL, 12, NULL);
   
   return ok;
+}
+
+void SwOSNetwork::stop( void ) {
+  active = false;
 }
 
 void SwOSNetwork::setSecret( uint16_t swarmSecret, uint16_t swarmPIN ) {
