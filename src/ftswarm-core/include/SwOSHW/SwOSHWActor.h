@@ -54,6 +54,7 @@ class SwOSAnalogInput;
     virtual void            onTrigger( int32_t value );
     virtual void            read( void );
     virtual bool            isMotor( void ) { return true; };
+    virtual bool            isActor( void ) { return true; };
 
     // commands
     virtual void    setSpeed( int16_t speed );
@@ -186,6 +187,7 @@ class SwOSDCMotor : public SwOSMotor {
     virtual void onTrigger( int32_t value );
     virtual void adjust( void ) {};
     virtual bool isServo( void ) { return true; };
+    virtual bool isActor( void ) { return true; };
 
     // commands
 	  virtual int16_t getOffset( )   { return offset; };

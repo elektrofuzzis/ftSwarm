@@ -129,7 +129,7 @@ void FtSwarmSensor::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, 
   // set trigger using static values
   if ( (me) && (actor) ) {
     static_cast<SwOSInput *>(me)->lock();
-    static_cast<SwOSInput *>(me)->registerEvent( triggerEvent, (SwOSIO *)actor->me, false, p1 );
+    static_cast<SwOSInput *>(me)->registerEvent( triggerEvent, (SwOSIO *)actor->me, p1 );
     static_cast<SwOSInput *>(me)->unlock();
   }
 
@@ -140,7 +140,7 @@ void FtSwarmSensor::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor )
   // set trigger using port's value
   if ( (me) && (actor) ) {
     static_cast<SwOSInput *>(me)->lock();
-    static_cast<SwOSInput *>(me)->registerEvent( triggerEvent, (SwOSIO *)actor->me, true, 0 );
+    static_cast<SwOSInput *>(me)->registerEvent( triggerEvent, (SwOSIO *)actor->me, 0 );
     static_cast<SwOSInput *>(me)->unlock();
   }
 
@@ -744,18 +744,7 @@ void FtSwarmJoystick::onTriggerLR( FtSwarmTrigger_t triggerEvent, FtSwarmIO *act
   // set trigger using static values
   if ( (me) && (actor) ) {
     static_cast<SwOSJoystick*>(me)->lock();
-    static_cast<SwOSJoystick *>(me)->triggerLR.registerEvent( triggerEvent, (SwOSIO *)actor->me, false, p1 );
-    static_cast<SwOSJoystick*>(me)->unlock();
-  }
-
-};
-
-void FtSwarmJoystick::onTriggerLR( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor )  {
-
-  // set trigger using port's value
-  if ( (me) && (actor) ) {
-    static_cast<SwOSJoystick*>(me)->lock();
-    static_cast<SwOSJoystick *>(me)->triggerLR.registerEvent( triggerEvent, (SwOSIO *)actor->me, true, 0 );
+    static_cast<SwOSJoystick *>(me)->triggerLR.registerEvent( triggerEvent, (SwOSIO *)actor->me, p1 );
     static_cast<SwOSJoystick*>(me)->unlock();
   }
 
@@ -766,22 +755,12 @@ void FtSwarmJoystick::onTriggerFB( FtSwarmTrigger_t triggerEvent, FtSwarmIO *act
   // set trigger using static values
   if ( (me) && (actor) ) {
     static_cast<SwOSJoystick*>(me)->lock();
-    static_cast<SwOSJoystick *>(me)->triggerFB.registerEvent( triggerEvent, (SwOSIO *)actor->me, false, p1 );
+    static_cast<SwOSJoystick *>(me)->triggerFB.registerEvent( triggerEvent, (SwOSIO *)actor->me, p1 );
     static_cast<SwOSJoystick*>(me)->unlock();
   }
 
 };
 
-void FtSwarmJoystick::onTriggerFB( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor )  {
-
-  // set trigger using port's value
-  if ( (me) && (actor) ) {
-    static_cast<SwOSJoystick*>(me)->lock();
-    static_cast<SwOSJoystick *>(me)->triggerFB.registerEvent( triggerEvent, (SwOSIO *)actor->me, true, 0 );
-    static_cast<SwOSJoystick*>(me)->unlock();
-  }
-
-};
 
 // **** FtSwarmPixel ****
 
@@ -861,7 +840,7 @@ void FtSwarmI2C::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int
   // set trigger using static values
   if ( (me) && (actor) ) {
     static_cast<SwOSI2C*>(me)->lock();
-    static_cast<SwOSI2C *>(me)->registerEvent( triggerEvent, (SwOSIO *)actor->me, false, p1 );
+    static_cast<SwOSI2C *>(me)->registerEvent( triggerEvent, (SwOSIO *)actor->me, p1 );
     static_cast<SwOSI2C*>(me)->unlock();
   }
 

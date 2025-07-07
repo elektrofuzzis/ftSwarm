@@ -41,6 +41,7 @@
     virtual void jsonize( JSONize *json, uint8_t id);
     virtual void onTrigger( int32_t value );
     virtual bool isPixel( void ) { return true; };
+    virtual bool isActor( void ) { return true; };
   
     // commands
     virtual uint32_t getColor()      { return color; };

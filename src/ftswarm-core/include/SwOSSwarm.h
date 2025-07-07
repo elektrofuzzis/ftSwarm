@@ -75,8 +75,17 @@ public:
   // Get a controller in the swarm using his serial number. Returns the controller's pointer or NULL if it doesn't exist.
   void *getController( FtSwarmSerialNumber_t SN );
 
-  // Get an IO in the swarm using controllers serial number, port and ioType. Returns the IO#s pointer or NULL if it doesn't exist.
+  // Get an IO in the swarm using controllers serial number, port and ioType. Returns the IO's pointer or NULL if it doesn't exist.
   virtual SwOSIO* getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType );
+
+  // Get an IO in the swarm using io's uid. Returns the IO's pointer or NULL if it doesn't exist.
+  virtual SwOSIO* getIO( SwOSIOUID_t uio ) { return getIO( uio.serialNumber, uio.port, uio.ioType ); };
+
+  // Get an IO in the swarm using controllers serial number, port and ioType. Returns the IO's alias name
+  virtual void getAlias( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType, char *alias );
+
+  // Get an IO in the swarm using io's uid. Returns the IO's alias name
+  virtual void getAlias( SwOSIOUID_t uio, char *alias ) { getAlias( uio.serialNumber, uio.port, uio.ioType, alias ); };
 
   // Get an IO in the swarm using his name/alias and ioType. Returns the IO#s pointer or NULL if it doesn't exist.
   virtual SwOSIO* getIO( const char *name, SwOSIOType_t ioType = SWOSIO_UNDEF );

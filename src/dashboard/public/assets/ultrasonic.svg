@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="48"
+   height="48"
+   fill="currentColor"
+   class="bi bi-binoculars"
+   viewBox="0 0 20 20"
+   version="1.1"
+   id="svg138"
+   sodipodi:docname="10_ultrasonic.svg"
+   inkscape:version="1.1 (c68e22c387, 2021-05-23)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview33"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="true"
+     showgrid="false"
+     inkscape:zoom="16.916667"
+     inkscape:cx="23.970443"
+     inkscape:cy="24.029557"
+     inkscape:window-width="1920"
+     inkscape:window-height="1001"
+     inkscape:window-x="-9"
+     inkscape:window-y="-9"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg138" />
+  <defs
+     id="defs142">
+    <clipPath
+       id="clip0">
+      <rect
+         x="132"
+         y="286"
+         width="28"
+         height="75"
+         id="rect121" />
+    </clipPath>
+    <clipPath
+       id="clip0-6">
+      <rect
+         x="132"
+         y="286"
+         width="28"
+         height="75"
+         id="rect1075" />
+    </clipPath>
+    <clipPath
+       id="clip0-9">
+      <rect
+         x="95"
+         y="401"
+         width="72"
+         height="75"
+         id="rect1325" />
+    </clipPath>
+    <clipPath
+       id="clip1">
+      <rect
+         x="95"
+         y="419"
+         width="40"
+         height="40"
+         id="rect1328" />
+    </clipPath>
+    <clipPath
+       id="clip2">
+      <rect
+         x="95"
+         y="419"
+         width="40"
+         height="40"
+         id="rect1331" />
+    </clipPath>
+    <clipPath
+       id="clip3">
+      <rect
+         x="95"
+         y="419"
+         width="40"
+         height="40"
+         id="rect1334" />
+    </clipPath>
+    <clipPath
+       id="clip0-65">
+      <rect
+         x="430"
+         y="70"
+         width="63"
+         height="78"
+         id="rect1482" />
+    </clipPath>
+    <clipPath
+       id="clip0-8">
+      <rect
+         x="424"
+         y="409"
+         width="47"
+         height="61"
+         id="rect1626" />
+    </clipPath>
+    <clipPath
+       id="clip1-4">
+      <rect
+         x="424"
+         y="421"
+         width="40"
+         height="40"
+         id="rect1629" />
+    </clipPath>
+    <clipPath
+       id="clip2-1">
+      <rect
+         x="424"
+         y="421"
+         width="40"
+         height="40"
+         id="rect1632" />
+    </clipPath>
+    <clipPath
+       id="clip3-7">
+      <rect
+         x="424"
+         y="421"
+         width="40"
+         height="40"
+         id="rect1635" />
+    </clipPath>
+  </defs>
+  <g
+     clip-path="url(#clip0-8)"
+     transform="matrix(0.24,0,0,0.24,-98.063245,-95.42276)"
+     id="g1652">
+    <g
+       clip-path="url(#clip1-4)"
+       id="g1648">
+      <g
+         clip-path="url(#clip2-1)"
+         id="g1646">
+        <g
+           clip-path="url(#clip3-7)"
+           id="g1644">
+          <path
+             d="m 448.712,459.46 c 0.467,0.48 1.235,0.492 1.715,0.025 0.046,-0.044 0.087,-0.092 0.125,-0.143 3.876,-5.329 5.958,-11.752 5.948,-18.342 0,-6.853 -2.205,-13.193 -5.948,-18.342 -0.4,-0.537 -1.16,-0.647 -1.697,-0.246 -0.05,0.038 -0.098,0.08 -0.143,0.126 -0.444,0.451 -0.497,1.157 -0.125,1.669 3.528,4.888 5.422,10.765 5.413,16.793 0,6.267 -2.005,12.068 -5.41,16.79 -0.37,0.512 -0.325,1.225 0.122,1.67 z"
+             stroke="#ffffff"
+             stroke-width="2.5"
+             fill="#ffffff"
+             id="path1640" />
+          <path
+             d="m 443.323,454.073 c 0.462,0.479 1.224,0.492 1.703,0.03 0.06,-0.057 0.113,-0.12 0.159,-0.188 2.497,-3.844 3.823,-8.331 3.815,-12.915 0,-4.763 -1.4,-9.2 -3.815,-12.915 -0.371,-0.549 -1.117,-0.694 -1.666,-0.323 -0.071,0.048 -0.137,0.103 -0.196,0.165 -0.429,0.439 -0.496,1.116 -0.163,1.63 2.187,3.416 3.347,7.387 3.34,11.443 0.006,4.055 -1.153,8.026 -3.34,11.44 -0.33,0.515 -0.27,1.2 0.163,1.633 z m -5.458,-5.458 c 0.565,0.565 1.513,0.463 1.875,-0.25 1.161,-2.281 1.764,-4.805 1.76,-7.365 0,-2.65 -0.635,-5.155 -1.76,-7.365 -0.362,-0.713 -1.31,-0.815 -1.875,-0.25 l -0.037,0.037 c -0.401,0.401 -0.475,1.018 -0.225,1.528 0.923,1.883 1.401,3.953 1.397,6.05 0,2.17 -0.503,4.225 -1.4,6.05 -0.25,0.507 -0.175,1.125 0.228,1.525 z M 432.9,443.65 c 0.49,0.49 1.3,0.495 1.65,-0.1 0.459,-0.771 0.701,-1.652 0.7,-2.55 10e-4,-0.898 -0.241,-1.779 -0.7,-2.55 -0.35,-0.595 -1.16,-0.59 -1.65,-0.1 l -1.765,1.765 c -0.488,0.488 -0.488,1.279 0,1.768 l 1.767,1.767 z"
+             stroke="#ffffff"
+             stroke-width="2.5"
+             fill="#ffffff"
+             id="path1642" />
+        </g>
+      </g>
+    </g>
+    <path
+       d="M 0,0 1.31234e-4,54.3982"
+       stroke="#ffffff"
+       stroke-width="6.25"
+       stroke-linecap="round"
+       stroke-miterlimit="8"
+       fill="none"
+       fill-rule="evenodd"
+       transform="matrix(1,0,0,-1,468,466.398)"
+       id="path1650" />
+  </g>
+</svg>

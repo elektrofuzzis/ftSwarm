@@ -413,14 +413,14 @@ void SwOSCLI::executeInputCmd( void ) {
   SwOSInput    *io = (SwOSInput *)_io;
   SwOSIOType_t newSensorType, newIOType;
 
-  SwOSCtrl *ctrl = _io->getCtrl();
-  uint8_t   index = ctrl->getIndex( _io );
+  SwOSCtrl     *ctrl = _io->getCtrl();
+  uint8_t      index = ctrl->getIndex( _io );
 
   switch ( _cmd ) {
 
-    case CLICMD_getIOType:    _io->lock();
+    case CLICMD_getIOType:    io->lock();
                               printf("R: %d\n", io->getIOType() ); 
-                              _io->unlock();
+                              io->unlock();
                               break;
 
     case CLICMD_setIOType:    if ( ( _parameter[0].inRange( "ioType", 0, SWOSIO_MAXIOTYPE-1 ) ) && 
@@ -439,79 +439,72 @@ void SwOSCLI::executeInputCmd( void ) {
 
                               break;
 
-    case CLICMD_getValue:     _io->lock();
+    case CLICMD_getValue:     io->lock();
                               printf("R: %d\n", io->getValueI32() );
-                              _io->unlock();
+                              io->unlock();
                               break;
 
-    case CLICMD_getVoltage:   _io->lock();
+    case CLICMD_getVoltage:   io->lock();
                               if ( io->getIOType() == SWOSIO_VOLTMETER ) {
                                 printf("R: %f\n", ((SwOSAnalogInput *)io)->getVoltage());
                               } else {
                                 wrongIOType( io->getIOType() );
                               }
-                              _io->unlock();
+                              io->unlock();
                               break;
 
-    case CLICMD_getResistance: _io->lock();
+    case CLICMD_getResistance: io->lock();
                               if ( io->getIOType() == SWOSIO_OHMMETER ) {
                                 printf("R: %f\n", ((SwOSAnalogInput *)io)->getResistance());
                               } else {
                                 wrongIOType( io->getIOType() );
                               }
-                              _io->unlock();
+                              io->unlock();
                               break;
 
-    case CLICMD_getKelvin:    _io->lock();
+    case CLICMD_getKelvin:    io->lock();
                               if ( io->getIOType() == SWOSIO_THERMOMETER ) {
                                 printf("R: %f\n", ((SwOSAnalogInput *)io)->getKelvin());
                               } else {
                                 wrongIOType( io->getIOType() );
                               }
-                              _io->unlock();
+                              io->unlock();
                               break;
 
-    case CLICMD_getCelcius:   _io->lock();
+    case CLICMD_getCelcius:   io->lock();
                               if ( io->getIOType() == SWOSIO_THERMOMETER ) {
                                 printf("R: %f\n", ((SwOSAnalogInput *)io)->getCelcius());
                               } else {
                                 wrongIOType( io->getIOType() );
                               }
-                              _io->unlock();
+                              io->unlock();
                               break;
 
-    case CLICMD_getFahrenheit: _io->lock();
+    case CLICMD_getFahrenheit: io->lock();
                               if ( io->getIOType() == SWOSIO_THERMOMETER ) {
                                 printf("R: %f\n", ((SwOSAnalogInput *)io)->getFahrenheit());
                               } else {
                                 wrongIOType( io->getIOType() );
                               }
-                              _io->unlock();
+                              io->unlock();
                               break;
 
-    case CLICMD_getToggle:    _io->lock();
+    case CLICMD_getToggle:    io->lock();
                               if ( io->isDigitalInput() ) {
                                 printf("R: %f\n", ((SwOSDigitalInput*)io)->getToggle());
                               } else {
                                 wrongIOType( io->getIOType() );
                               }
-                              _io->unlock();
+                              io->unlock();
                               break;
 
     case CLICMD_onTrigger:   if (( _parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER ) ) &&
                                  ( _parameter[1].isIO() ) &&
                                  ( _parameter[2].isConstant() ) ) {
                                 OK();
-                                _io->lock();
-                                if ( _maxParameter == 2 ) {
-                                  // work with a fixed value
-                                  io->registerEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), false, _parameter[2].getValue() );
-                                } else {
-                                  // work with input's value
-                                  io->registerEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), true, 0 );
-                                }
-
-                                _io->unlock();
+                                io->lock();
+                                io->registerEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), _parameter[2].getValue() );
+                                io->unlock();
                               }
                               break;
 
@@ -688,36 +681,22 @@ void SwOSCLI::executeJoystickCmd( void ) {
                               io->unlock();
                               break;
 
-    case CLICMD_onTriggerLR:   if (( _parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER ) ) &&
+    case CLICMD_onTriggerLR:  if (( _parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER ) ) &&
                                   ( _parameter[1].isIO() ) &&
                                   ( _parameter[2].isConstant() ) ) {
                                 OK();
                                 io->lock();
-                                if ( _maxParameter == 2 ) {
-                                  // work with a fixed value
-                                  io->triggerLR.registerEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), false, _parameter[2].getValue() );
-                                } else {
-                                  // work with input's value
-                                  io->triggerLR.registerEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), true, 0 );
-                                }
-
+                                io->triggerLR.registerEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), _parameter[2].getValue()  );
                                 io->unlock();
                               }
                               break;
 
-    case CLICMD_onTriggerFB:   if (( _parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER ) ) &&
+    case CLICMD_onTriggerFB:  if (( _parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER ) ) &&
                                   ( _parameter[1].isIO() ) &&
                                   ( _parameter[2].isConstant() ) ) {
                                 OK();
                                 io->lock();
-                                if ( _maxParameter == 2 ) {
-                                  // work with a fixed value
-                                  io->triggerFB.registerEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), false, _parameter[2].getValue() );
-                                } else {
-                                  // work with input's value
-                                  io->triggerFB.registerEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), true, 0 );
-                                }
-
+                                io->triggerFB.registerEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), _parameter[2].getValue() );
                                 io->unlock();
                               }
                               break;
@@ -824,18 +803,11 @@ void SwOSCLI::executeI2CCmd( void ) {
     case CLICMD_onTrigger:     if (( _parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER ) ) &&
                                   ( _parameter[1].isIO() ) &&
                                   ( _parameter[2].isConstant() ) ) {
-                                OK();
-                                io->lock();
-                                if ( _maxParameter == 2 ) {
-                                  // work with a fixed value
-                                  io->registerEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), false, _parameter[2].getValue() );
-                                } else {
-                                  // work with input's value
-                                  io->registerEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), true, 0 );
+                                  OK();
+                                  io->lock();
+                                  io->registerEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), _parameter[2].getValue() );
+                                  io->unlock();
                                 }
-
-                                io->unlock();
-                              }
 
 
     default:                    printf("Error: invalid command.\n");

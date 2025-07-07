@@ -212,6 +212,9 @@ bool SwOSSwarm::startEvents( void ) {
 
   SwOSIO *sensor;
   SwOSIO *actor;
+
+  /* TODO
+
   NVSEvent *event;
 
   // test if I'm not a Kelda, I won't start the events
@@ -238,18 +241,18 @@ bool SwOSSwarm::startEvents( void ) {
 
       if ( sensor->getIOType() == SWOSIO_JOYSTICK ) {
      
-        if ( event->LR == 1 ) static_cast<SwOSJoystick *>(sensor)->triggerLR.registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter );
-        else                  static_cast<SwOSJoystick *>(sensor)->triggerFB.registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter );
+        if ( event->LR == 1 ) static_cast<SwOSJoystick *>(sensor)->triggerLR.registerEvent( event->triggerEvent, actor, event->parameter );
+        else                  static_cast<SwOSJoystick *>(sensor)->triggerFB.registerEvent( event->triggerEvent, actor, event->parameter );
      
       } else {
 
-        static_cast<SwOSInput *>(sensor)->registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter ); 
+        static_cast<SwOSInput *>(sensor)->registerEvent( event->triggerEvent, actor, event->parameter ); 
 
       }
     
     }
     
-  }
+  } */
 
   return true;
 
@@ -519,6 +522,16 @@ SwOSIO* SwOSSwarm::getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port
 
   // return corrected io
   return ctrl->io[index];
+
+}
+
+void SwOSSwarm::getAlias( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType, char *alias ) {
+
+  SwOSIO* io=getIO( serialNumber, port, ioType );
+  if (io) 
+    strcpy( alias, io->getAlias() );
+  else
+    strcpy( alias, "" );
 
 }
 

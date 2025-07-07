@@ -592,6 +592,8 @@ void factorySettings( void ) {
 
 }
 
+/*
+
 bool changeEvent( NVSEvent *event ) {
 
   char actor[MAXIDENTIFIER];
@@ -664,12 +666,12 @@ bool changeEvent( NVSEvent *event ) {
     switch ( oldSensor->getIOType() ) {
     
       case SWOSIO_JOYSTICK: 
-        if ( LR == 1 ) static_cast<SwOSJoystick *>(oldSensor)->triggerLR.unregisterEvent( trigger );
-        else           static_cast<SwOSJoystick *>(oldSensor)->triggerFB.unregisterEvent( trigger );
+        if ( LR == 1 ) static_cast<SwOSJoystick *>(oldSensor)->triggerLR.unregisterEvent( trigger, oldSensor );
+        else           static_cast<SwOSJoystick *>(oldSensor)->triggerFB.unregisterEvent( trigger, oldSensor );
         break; 
         
       default: 
-        static_cast<SwOSInput *>(oldSensor)->unregisterEvent( trigger ); 
+        static_cast<SwOSInput *>(oldSensor)->unregisterEvent( trigger, oldSensor ); 
         break;
         
     }
@@ -680,12 +682,12 @@ bool changeEvent( NVSEvent *event ) {
   switch ( newSensor->getIOType() ) {
     
     case SWOSIO_JOYSTICK: 
-      if ( LR == 1 ) static_cast<SwOSJoystick *>(newSensor)->triggerLR.registerEvent( trigger, newActor, usePortValue, parameter );
-      else           static_cast<SwOSJoystick *>(newSensor)->triggerFB.registerEvent( trigger, newActor, usePortValue, parameter );
+      if ( LR == 1 ) static_cast<SwOSJoystick *>(newSensor)->triggerLR.registerEvent( trigger, newActor, parameter );
+      else           static_cast<SwOSJoystick *>(newSensor)->triggerFB.registerEvent( trigger, newActor, parameter );
       break;
 
     default: 
-      static_cast<SwOSInput *>(newSensor)->registerEvent( trigger, newActor, usePortValue, parameter ); 
+      static_cast<SwOSInput *>(newSensor)->registerEvent( trigger, newActor, parameter ); 
       break;
   }
 
@@ -694,7 +696,6 @@ bool changeEvent( NVSEvent *event ) {
   event->LR = LR; 
   strcpy( event->actor, actor);  
   event->triggerEvent = trigger;
-  event->usePortValue = usePortValue;
   event->parameter = parameter;
 
   return true;
@@ -715,7 +716,163 @@ void printX( char *str, uint8_t fill ) {
   printf( "%s ", line );
   
 }
+*/
 
+const char FTSWARMTRIGGER[FTSWARM_MAXTRIGGER][12] = {
+  "TriggerUp",
+  "TriggerDown",
+  "ChangeValue",
+  "I2CRead",
+  "I2CWrite"
+};
+
+bool enterIO( const char* prompt, SwOSIOUID_t *uio, bool input ) {
+
+  char   alias[MAXIDENTIFIER];
+  SwOSIO *io;
+
+  while (1) {
+
+    enterString( prompt, alias, sizeof(alias) );
+
+    // default
+    if ( alias[0] == '\0' ) {
+      io = myOSSwarm.getIO( *uio );
+      if (io) strcpy( alias, io->getAlias() );
+    }
+
+    // user abort
+    if ( alias[0] == '\0' ) return false;
+
+    // get IO
+    io = myOSSwarm.getIO( alias );
+
+    // error handling;
+    if      ( !io )                              printf("Error: %s doesn't exists.\n", alias); 
+    else if ( ( input  ) && ( !io->isInput() ) ) printf("Error: %s is not a sensor\n", alias);
+    else if ( ( !input ) && ( !io->isActor() ) ) printf("Error: %s is not a actor\n", alias);
+    // all good
+    else break;
+    
+  }
+
+  uio->serialNumber = io->getCtrl()->serialNumber;
+  uio->ioType       = io->getIOType();
+  uio->port         = io->getPort();
+
+  return true;
+
+}
+
+const char* getAction( SwOSIOUID_t uio ) {
+
+  SwOSIO *io = myOSSwarm.getIO( uio );
+
+  if (!io) return "";
+  if (io->isMotor()) return "setSpeed";
+  if (io->isPixel()) return "setColor";
+  if (io->isServo()) return "setPosition";
+
+  return "";
+
+}
+
+void changeTrigger( SwOSNVSEvent_t *event ) {
+
+  char   prompt[128];
+  SwOSIO *io;
+
+  // sensor
+  io = myOSSwarm.getIO( event->sensor );
+  if (io) sprintf( prompt, "Enter sensor name [%s]: ", io->getAlias() );
+  else    sprintf( prompt, "Enter sensor name: " );
+  if (! enterIO( prompt, &event->sensor, true  ) ) { return; }
+
+  // trigger
+  sprintf( prompt, "Enter trigger (0) trigger up (1) trigger down (2) change value [%d]: ", event->trigger );
+  event->trigger = (FtSwarmTrigger_t) enterNumber( prompt, event->trigger, 0, 2 );
+
+  // actor
+  io = myOSSwarm.getIO( event->actor );
+  if (io) sprintf( prompt, "Enter actor name [%s]: ", io->getAlias() );
+  else    sprintf( prompt, "Enter actor name: " );
+  if (! enterIO( prompt,  &event->actor,  false ) ) { event->sensor.serialNumber = 0; return; }
+  
+  // action?
+  sprintf( prompt, "Apply (0) constant value (1) sensor reading to %s.%s() [%d]? ", myOSSwarm.getIO( event->actor )->getAlias(), getAction( event->actor ), event->useSensorValue );
+  event->useSensorValue = enterNumber( prompt, event->useSensorValue, 0, 1 );
+
+  // constant value
+  if (!event->useSensorValue) {
+    sprintf( prompt, "Constant value [%d]: ", event->parameter );
+    event->parameter = enterNumberI32( prompt, event->parameter, -4096, 0xFFFFFF );
+  }
+
+}
+
+void addTrigger( void ) {
+
+  // search free place
+  uint8_t i=0;
+  while ( ( nvs.events[i].sensor.serialNumber ) && ( i<MAXNVSEVENTS ) ) i++;
+
+  if ( i>= MAXNVSEVENTS ) {
+    printf("max. number of triggers reached.\n");
+    return;
+  }
+
+  changeTrigger( &nvs.events[i] );
+
+}
+
+#define REMOTECTRL_ADD MAXNVSEVENTS + 2
+#define REMOTECTRL_DEL MAXNVSEVENTS + 3
+
+void remoteControl( void ) {
+
+  Menu menu;
+  char line[128];
+  char value[MAXIDENTIFIER];
+  char sensor[MAXIDENTIFIER];
+  char actor[MAXIDENTIFIER];
+
+  while (1) {
+
+    menu.start( "Remote Control", 0 );
+ 
+    for (uint8_t i=0; i<MAXNVSEVENTS; i++) {
+
+      if ( nvs.events[i].sensor.serialNumber != 0) {
+        
+        myOSSwarm.getAlias( nvs.events[i].sensor, sensor );
+        myOSSwarm.getAlias( nvs.events[i].actor,  actor  );
+        if ( nvs.events[i].useSensorValue ) sprintf( value, "%s", sensor );
+        else                                sprintf( value, "%d", nvs.events[i].parameter );
+        sprintf(line, "%s.%s -> %s.%s(%s)", sensor, FTSWARMTRIGGER[nvs.events[i].trigger], actor, getAction(nvs.events[i].actor), value );
+        menu.add( line, "", i+1 );
+        
+      }
+
+    }
+
+    menu.add( "add trigger", "", REMOTECTRL_ADD );
+    menu.add( "delete trigger", "", REMOTECTRL_DEL );
+
+    uint8_t choice = menu.userChoice( );
+    
+    switch (choice) {
+
+      case  0:             return;
+      case REMOTECTRL_ADD: addTrigger(); break;
+      case REMOTECTRL_DEL: printf("del\n"); break;
+      default:             changeTrigger( &nvs.events[choice -1 ] );
+    }
+
+  }
+
+}
+
+/*
 void remoteControl( void ) {
 
   uint8_t choice, maxChoice;
@@ -761,11 +918,6 @@ void remoteControl( void ) {
         }
         
         printX( nvs.eventList.event[i].actor, 15 );
-
-        if (nvs.eventList.event[i].usePortValue)
-          printf("SENSORVALUE\n");
-        else
-          printf("%" PRId32 "\n", nvs.eventList.event[i].parameter );
         
       } else if ( eventPtr[0] == 255 ){
         eventPtr[0] = i;
@@ -810,6 +962,7 @@ void remoteControl( void ) {
   }
 
 }
+  */
 
 #define MAINMENUWEB       1
 #define MAINMENUSWARM     2

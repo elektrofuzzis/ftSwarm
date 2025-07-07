@@ -732,10 +732,8 @@ class FtSwarmJoystick : public FtSwarmIO {
     int16_t getLR();         // left/right position
     bool getButtonState();   // button pressed/released
     void getValue( int16_t *FB, int16_t *LR, bool *buttonState );
-    void onTriggerLR( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 ); 
-    void onTriggerLR( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor ); 
-    void onTriggerFB( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 ); 
-    void onTriggerFB( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor ); 
+    void onTriggerLR( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 = 0 ); 
+    void onTriggerFB( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 = 0 ); 
 
 };
 
@@ -764,7 +762,7 @@ class FtSwarmI2C : public FtSwarmIO {
     uint8_t getRegister(uint8_t reg);
     void    setRegister(uint8_t reg, uint8_t value);
 
-    void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 ); 
+    void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 = 0 ); 
 
 };
 

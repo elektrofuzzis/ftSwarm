@@ -133,7 +133,8 @@ public:
   
   // Test, if I'm an ...
   virtual bool isMotor( void )        { return false; };  
-  virtual bool isInput( void )        { return false; };
+  virtual bool isActor( void )        { return false; }; // actor to be used with triggers
+  virtual bool isInput( void )        { return false; }; // input to be used with triggers
   virtual bool isGPIOInput( void )    { return false; };  
   virtual bool isDigitalInput( void ) { return false; };  
   virtual bool isAnalogInput( void )  { return false; };  
@@ -158,35 +159,25 @@ public:
  ***************************************************/
 
 class SwOSEventHandler {
-  protected:
-    SwOSIO           *actor;
-    boolean          usePortValue;
-    int32_t          parameter;
   public:
-    SwOSEventHandler( );
-    SwOSEventHandler( SwOSIO *actor, boolean usePortValue, int32_t parameter );
-    void trigger( int32_t portValue );
-};
+    FtSwarmTrigger_t trigger;
+    SwOSIO           *actor     = NULL;
+    int32_t          parameter  = 0;
+    SwOSEventHandler *next      = NULL;
+    bool             active     = true;
 
-class SwOSEventHandlers {
-  protected:
-    SwOSEventHandler *event[FTSWARM_MAXTRIGGER];
-  public:
-    SwOSEventHandlers( );
-    ~SwOSEventHandlers();
-    void registerEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, boolean usePortValue, int32_t parameter );
-    void unregisterEvent( FtSwarmTrigger_t triggerEvent );
-    void trigger( FtSwarmTrigger_t triggerEvent, int32_t portValue );
+    SwOSEventHandler( FtSwarmTrigger_t trigger, SwOSIO *actor, int32_t parameter );
+    ~SwOSEventHandler( );
 };
 
 class SwOSEventInput {
   protected:
-    SwOSEventHandlers *events = NULL;
+    SwOSEventHandler *eventList = NULL;
   public:
    ~SwOSEventInput();
-    void registerEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, boolean usePortValue, int32_t p1 );
-    void unregisterEvent( FtSwarmTrigger_t triggerEvent );
-    void trigger( FtSwarmTrigger_t triggerEvent, int32_t portValue );
+    void registerEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, int32_t parameter );
+    void unregisterEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor );
+    void trigger( FtSwarmTrigger_t triggerEvent, int32_t value );
 };
 
 /***************************************************

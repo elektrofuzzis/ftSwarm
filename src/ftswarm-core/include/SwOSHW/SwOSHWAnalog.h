@@ -89,6 +89,7 @@
   
     // administrative stuff
     virtual void jsonize( JSONize *json, uint8_t id);
+    virtual bool isInput( void ) { return true; };
   
     // read
     virtual void subscription();

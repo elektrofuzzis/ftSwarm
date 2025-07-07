@@ -20,20 +20,11 @@
 
 SwOSNVS nvs;
 
-NVSEvent::NVSEvent() {
-  reset();
-}
-
-void NVSEvent::reset( void ) {
-  sensor[0] = '\0';
-  actor[0]  = '\0';
-}
-
-void NVSEventList::reset( void ) {
-
-  for (uint8_t i=0; i<MAXNVSEVENT; i++) event[i].reset();
-
-}
+/***************************************************
+ *
+ *   SwOSNVS
+ *
+ ***************************************************/
 
 uint16_t generateSecret( FtSwarmSerialNumber_t serialNumber ) {
   return ( ( ( ( uint16_t) serialNumber ) & 0xFF ) << 8 ) | ( rand() & 0xFF ) ;
@@ -116,6 +107,9 @@ SwOSNVS::SwOSNVS() {
     for (uint8_t j=0;j<2;j++)
       joyZero[i][j]=2000;
 
+  // initialize events
+  bzero( events, sizeof( events ) );
+
 }
 
 void SwOSNVS::begin() {
@@ -190,8 +184,8 @@ bool SwOSNVS::load() {
   nvs_get_u8(  my_handle, "swarmSpeed",                &swarmSpeed );
 
   // events
-  dummy = sizeof( eventList );
-  nvs_get_blob( my_handle, "eventList", &eventList, &dummy );
+  dummy = sizeof( events );
+  nvs_get_blob( my_handle, "events", &events, &dummy );
 
   // Kelda & swarmMembers
   nvs_get_u8 ( my_handle, "IAmKelda", (uint8_t *) &IAmKelda );
@@ -256,7 +250,7 @@ void SwOSNVS::save( bool writeAll ) {
   ESP_ERROR_CHECK( nvs_set_str( my_handle, "swarmName",   swarmName ) );
 
   // events
-  ESP_ERROR_CHECK( nvs_set_blob( my_handle, "eventList",  (void *)&eventList, sizeof( eventList ) ) );
+  ESP_ERROR_CHECK( nvs_set_blob( my_handle, "events",  (void *)&events, sizeof( events ) ) );
    
   // Kelda & swarmMembers
   ESP_ERROR_CHECK( nvs_set_u8  ( my_handle, "IAmKelda",     (uint8_t) IAmKelda ) );
@@ -317,9 +311,8 @@ void SwOSNVS::factorySettings( void ) {
   I2CAddr            = 0x66;
   gyro               = false;
 
-  eventList.reset();
-
   bzero(swarmMember, sizeof(swarmMember));
+  bzero(events,      sizeof(events));
 
 }
 
@@ -416,6 +409,19 @@ void SwOSNVS::printNVS() {
   printf( "swarm members:");
   for (uint8_t i=0; i<MAXCTRL; i++) { if (swarmMember[i]) printf(" %d", swarmMember[i]); }
   printf( "\n");
+
+  printf( "events:\n" );
+  for (uint8_t i=0; i<MAXNVSEVENTS; i++ ) {
+    if ( events[i].sensor.serialNumber != 0 ) {
+      printf( "#%d input %d.%d.%d actor %d.%d.%d trigger %d parameter %d\n", 
+              i, 
+              events[i].sensor.serialNumber, events[i].sensor.ioType, events[i].sensor.port,
+              events[i].actor.serialNumber,  events[i].actor.ioType,  events[i].actor.port,
+              events[i].parameter,
+              events[i].trigger
+            );
+    }
+  }
  
 }
 
@@ -425,7 +431,7 @@ bool SwOSNVS::upgrade( void ) {
 
     printf("[INFO] upgrading NVS setting from version %d to %d\n", version, NVSVERSION );
    
-     // erase all
+    // erase all
     nvs_handle_t my_handle;
     ESP_ERROR_CHECK( nvs_open(NVSNAMESPACE, NVS_READWRITE, &my_handle) );   
     ESP_ERROR_CHECK( nvs_erase_all( my_handle ) );

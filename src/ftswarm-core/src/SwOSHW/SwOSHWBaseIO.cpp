@@ -322,69 +322,16 @@ void SwOSIO::unsubscribe() {
  *
  ***************************************************/
 
-SwOSEventHandler::SwOSEventHandler( ) {
-  actor        = NULL;
-  parameter    = 0;
-  usePortValue = true;
-}
-
-SwOSEventHandler::SwOSEventHandler( SwOSIO *actor, boolean usePortValue, int32_t parameter ) {
-  this->actor        = actor;
-  this->usePortValue = usePortValue;
-  this->parameter    = parameter;
-}
-
-void SwOSEventHandler::trigger( int32_t portValue ) {
-
-  if ( actor ) {
-    if (usePortValue) actor->onTrigger( portValue );
-    else              actor->onTrigger( parameter );
-  }
-}
-
-/***************************************************
- *
- *   SwOSEventHandlers
- *
- ***************************************************/
-
-SwOSEventHandlers::SwOSEventHandlers( ) {
-
-  for (uint8_t i=0; i<FTSWARM_MAXTRIGGER; i++ ) event[i] = NULL;
-
-};
-
-SwOSEventHandlers::~SwOSEventHandlers() {
-
-  for (uint8_t i=0; i<FTSWARM_MAXTRIGGER; i++ ) {
-    if (event[i]) delete event[i];
-  }
+SwOSEventHandler::~SwOSEventHandler( ) {
+  
+  if (next) delete next;
   
 }
 
-void SwOSEventHandlers::registerEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, boolean usePortValue, int32_t parameter ) {
-
-  // if there is already a registered event, delete it
-  if (event[triggerEvent]) delete event[triggerEvent];
-
-  event[triggerEvent] = new SwOSEventHandler( actor, usePortValue, parameter );
-  
-};
-
-void SwOSEventHandlers::unregisterEvent( FtSwarmTrigger_t triggerEvent ) {
-
-  // if there is already a registered event, delete it
-  if (event[triggerEvent]) delete event[triggerEvent];
-
-  event[triggerEvent] = NULL;
-  
-};
-
-void SwOSEventHandlers::trigger( FtSwarmTrigger_t triggerEvent, int32_t portValue ) {
-
-  if ( event[triggerEvent] ) {
-    event[triggerEvent]->trigger( portValue );
-  }
+SwOSEventHandler::SwOSEventHandler( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, int32_t parameter  ) {
+  this->trigger   = triggerEvent;
+  this->actor     = actor;
+  this->parameter = parameter;
 }
 
 /***************************************************
@@ -394,28 +341,73 @@ void SwOSEventHandlers::trigger( FtSwarmTrigger_t triggerEvent, int32_t portValu
  ***************************************************/
 
 SwOSEventInput::~SwOSEventInput() {
-  if (!events) delete events;
+
+  if (eventList) delete eventList;
+
 }
 
-void SwOSEventInput::registerEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, boolean usePortValue, int32_t p1 ) {
+void SwOSEventInput::registerEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, int32_t parameter ) {
 
-  if (!events) events = new SwOSEventHandlers( );
+  // first event?
+  if (!eventList) {
+    eventList = new SwOSEventHandler( triggerEvent, actor, parameter );
+    return;
+  }
 
-  events->registerEvent( triggerEvent, actor, usePortValue, p1 );
+  // check list
+  SwOSEventHandler *e = eventList;
+  while (e) {
+
+    // same event, replace parameter 
+    if ( ( e->trigger == triggerEvent ) && ( e->actor == actor ) ) {
+      e->parameter = parameter;
+      e->active = true;
+      return;
+    }
+
+    // EOL?
+    if (e->next) e = e->next;
+    else {
+      e->next = new SwOSEventHandler( triggerEvent, actor, parameter );
+      return;
+    }
+
+}
   
 }
 
-void SwOSEventInput::unregisterEvent( FtSwarmTrigger_t triggerEvent ) {
+void SwOSEventInput::unregisterEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor ) {
 
-  if (!events) return;
+  SwOSEventHandler *e = eventList;
 
-  events->unregisterEvent( triggerEvent );
+  while (e) {
+
+    if ( ( e->trigger == triggerEvent ) && ( e->actor == actor ) ) e->active = false;
+    
+    e = e->next;
+
+  }
   
 }
 
-void SwOSEventInput::trigger( FtSwarmTrigger_t triggerEvent, int32_t portValue ) {
+void SwOSEventInput::trigger( FtSwarmTrigger_t triggerEvent, int32_t value ) {
 
-  if ( events ) events->trigger( triggerEvent, portValue );
+  SwOSEventHandler *e = eventList;
+
+  while (e) {
+
+    // same trigger type & actor?
+    if ( ( e->actor ) && ( e->trigger == triggerEvent ) ) {
+
+      // send port value? or static parameter ?
+      e->actor->onTrigger( (e->trigger == FTSWARM_TRIGGERVALUE)?value:e->parameter );
+
+    }
+    
+    // next one
+    e = e->next;
+    
+  }
 
 }
 

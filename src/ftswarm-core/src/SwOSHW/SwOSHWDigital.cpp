@@ -129,7 +129,7 @@ void SwOSDigitalInput::setReading( int32_t newValue ) {
   }
 
   // send changed value event?
-  if ( (events) && ( lastRawValue != newValue ) ) trigger( FTSWARM_TRIGGERVALUE, newValue );
+  if ( (eventList) && ( lastRawValue != newValue ) ) trigger( FTSWARM_TRIGGERVALUE, newValue );
 
   // store new data
   lastRawValue = newValue;  
