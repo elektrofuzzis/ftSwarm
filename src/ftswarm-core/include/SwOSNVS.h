@@ -29,11 +29,11 @@ struct SwOSNVSEvent_t {
   SwOSIOUID_t      sensor;
   SwOSIOUID_t      actor;
   FtSwarmTrigger_t trigger;
-  bool             useSensorValue;
   int32_t          parameter;
 
 } __attribute__((packed));
 
+extern "C" bool isEqual( SwOSNVSEvent_t *a, SwOSNVSEvent_t *b );
 
 // wifi types
 typedef enum { wifiOFF, wifiAP, wifiClient } FtSwarmWifi_t;

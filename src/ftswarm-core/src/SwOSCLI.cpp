@@ -503,7 +503,7 @@ void SwOSCLI::executeInputCmd( void ) {
                                  ( _parameter[2].isConstant() ) ) {
                                 OK();
                                 io->lock();
-                                io->registerEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), _parameter[2].getValue() );
+                                io->addEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), _parameter[2].getValue() );
                                 io->unlock();
                               }
                               break;
@@ -686,7 +686,7 @@ void SwOSCLI::executeJoystickCmd( void ) {
                                   ( _parameter[2].isConstant() ) ) {
                                 OK();
                                 io->lock();
-                                io->triggerLR.registerEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), _parameter[2].getValue()  );
+                                io->triggerLR.addEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), _parameter[2].getValue()  );
                                 io->unlock();
                               }
                               break;
@@ -696,7 +696,7 @@ void SwOSCLI::executeJoystickCmd( void ) {
                                   ( _parameter[2].isConstant() ) ) {
                                 OK();
                                 io->lock();
-                                io->triggerFB.registerEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), _parameter[2].getValue() );
+                                io->triggerFB.addEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), _parameter[2].getValue() );
                                 io->unlock();
                               }
                               break;
@@ -805,7 +805,7 @@ void SwOSCLI::executeI2CCmd( void ) {
                                   ( _parameter[2].isConstant() ) ) {
                                   OK();
                                   io->lock();
-                                  io->registerEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), _parameter[2].getValue() );
+                                  io->addEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), _parameter[2].getValue() );
                                   io->unlock();
                                 }
 

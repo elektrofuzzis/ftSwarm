@@ -122,19 +122,20 @@ void SwOSDigitalInput::read() {
 
 void SwOSDigitalInput::setReading( int32_t newValue ) {
 
+  bool changes = (lastRawValue != newValue);
+
   // check if it's toggled?
-  if ( lastRawValue != newValue ) { 
+  if ( changes ) { 
     if (newValue) { toggle = FTSWARM_TOGGLEUP;   trigger( FTSWARM_TRIGGERUP, newValue ); }
     else          { toggle = FTSWARM_TOGGLEDOWN; trigger( FTSWARM_TRIGGERDOWN, newValue ); }
+    trigger( FTSWARM_TRIGGERVALUE, newValue );
   }
-
-  // send changed value event?
-  if ( (eventList) && ( lastRawValue != newValue ) ) trigger( FTSWARM_TRIGGERVALUE, newValue );
 
   // store new data
   lastRawValue = newValue;  
 
-  subscription();
+  // subscription only if needed
+  if ( changes ) subscription();
 
 }
 

@@ -777,36 +777,34 @@ const char* getAction( SwOSIOUID_t uio ) {
 
 }
 
-void changeTrigger( SwOSNVSEvent_t *event ) {
+bool enterTrigger( SwOSNVSEvent_t *event ) {
 
-  char   prompt[128];
-  SwOSIO *io;
+  char           prompt[128];
+  SwOSIO         *io;
 
   // sensor
   io = myOSSwarm.getIO( event->sensor );
-  if (io) sprintf( prompt, "Enter sensor name [%s]: ", io->getAlias() );
-  else    sprintf( prompt, "Enter sensor name: " );
-  if (! enterIO( prompt, &event->sensor, true  ) ) { return; }
+  if (io) sprintf( prompt, "Enter sensor's name [%s]: ", io->getAlias() );
+  else    sprintf( prompt, "Enter sensor's name: " );
+  if (! enterIO( prompt, &event->sensor, true  ) ) { return false; }
 
   // trigger
-  sprintf( prompt, "Enter trigger (0) trigger up (1) trigger down (2) change value [%d]: ", event->trigger );
+  sprintf( prompt, "Enter trigger event (0) trigger up (1) trigger down (2) use sensor value [%d]: ", event->trigger );
   event->trigger = (FtSwarmTrigger_t) enterNumber( prompt, event->trigger, 0, 2 );
 
   // actor
   io = myOSSwarm.getIO( event->actor );
-  if (io) sprintf( prompt, "Enter actor name [%s]: ", io->getAlias() );
-  else    sprintf( prompt, "Enter actor name: " );
-  if (! enterIO( prompt,  &event->actor,  false ) ) { event->sensor.serialNumber = 0; return; }
+  if (io) sprintf( prompt, "Enter actor's name [%s]: ", io->getAlias() );
+  else    sprintf( prompt, "Enter actor's name: " );
+  if (! enterIO( prompt,  &event->actor,  false ) ) { return false; }
   
-  // action?
-  sprintf( prompt, "Apply (0) constant value (1) sensor reading to %s.%s() [%d]? ", myOSSwarm.getIO( event->actor )->getAlias(), getAction( event->actor ), event->useSensorValue );
-  event->useSensorValue = enterNumber( prompt, event->useSensorValue, 0, 1 );
-
   // constant value
-  if (!event->useSensorValue) {
-    sprintf( prompt, "Constant value [%d]: ", event->parameter );
+  if (!event->trigger != FTSWARM_TRIGGERVALUE ) {
+    sprintf( prompt, "Enter value to apply to %s.%s() [%d]: ", myOSSwarm.getIO( event->actor )->getAlias(), getAction( event->actor ), event->parameter );
     event->parameter = enterNumberI32( prompt, event->parameter, -4096, 0xFFFFFF );
   }
+
+  return true;
 
 }
 
@@ -821,7 +819,26 @@ void addTrigger( void ) {
     return;
   }
 
-  changeTrigger( &nvs.events[i] );
+  // ask user
+  if (!enterTrigger( &nvs.events[i] ) ) return;
+
+}
+
+void changeTrigger( SwOSNVSEvent_t *event ) {
+
+  // create a copy of the event
+  SwOSNVSEvent_t *newEvent;
+  memcpy( newEvent, event, sizeof(SwOSNVSEvent_t) );
+
+  // ask user
+  if ( !enterTrigger( newEvent ) ) return;
+
+  // anything changed?
+  if ( isEqual(newEvent, event) ) return;
+
+  myOSSwarm.deleteEvent( event );
+  memcpy( event, newEvent, sizeof( SwOSNVSEvent_t ) );
+  myOSSwarm.addEvent( event );
 
 }
 
@@ -846,8 +863,12 @@ void remoteControl( void ) {
         
         myOSSwarm.getAlias( nvs.events[i].sensor, sensor );
         myOSSwarm.getAlias( nvs.events[i].actor,  actor  );
-        if ( nvs.events[i].useSensorValue ) sprintf( value, "%s", sensor );
-        else                                sprintf( value, "%d", nvs.events[i].parameter );
+        
+        if ( nvs.events[i].trigger == FTSWARM_TRIGGERVALUE ) 
+          sprintf( value, "%s", sensor );
+        else
+          sprintf( value, "%d", nvs.events[i].parameter );
+
         sprintf(line, "%s.%s -> %s.%s(%s)", sensor, FTSWARMTRIGGER[nvs.events[i].trigger], actor, getAction(nvs.events[i].actor), value );
         menu.add( line, "", i+1 );
         

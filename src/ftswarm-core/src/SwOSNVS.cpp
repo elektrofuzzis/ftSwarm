@@ -20,6 +20,10 @@
 
 SwOSNVS nvs;
 
+bool isEqual( SwOSNVSEvent_t *a, SwOSNVSEvent_t *b ) {
+  return memcmp( a, b, sizeof(SwOSNVSEvent_t) ) == 0;
+}
+
 /***************************************************
  *
  *   SwOSNVS

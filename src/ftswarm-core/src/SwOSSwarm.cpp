@@ -1399,3 +1399,25 @@ bool SwOSSwarm::deleteController( FtSwarmSerialNumber_t serialNumber ) {
   return true;
 
 }
+
+// delete an event
+bool SwOSSwarm::deleteEvent( SwOSNVSEvent_t *event ) {
+
+  // no event
+  if (!event) return false;
+
+  // get IOs
+  SwOSInput *sensor = (SwOSInput *) getIO( event->sensor );
+  SwOSIO    *actor  = getIO( event->actor );
+
+  // sensor or actor doesn't exist
+  if ( (!sensor) || (!actor) ) return false;
+
+  sensor->deleteEvent( event->trigger, actor );
+
+}
+
+// add an event
+bool SwOSSwarm::addEvent( SwOSNVSEvent_t *event ) {
+
+}

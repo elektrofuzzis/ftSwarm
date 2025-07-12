@@ -95,8 +95,8 @@ protected:
   SwOSCtrl     *ctrl; // pointer to my Controller
   SwOSIOType_t ioType = SWOSIO_UNDEF;
   bool         isSubscribed = false;
-  uint32_t     lastsubscribedValue = 0;
-  uint32_t     hysteresis = 0;
+  int32_t      lastsubscribedValue = 0;
+  int32_t      hysteresis = 0;
   char         *subscribedIOName = NULL;
   int16_t      useCounter = 0;
 
@@ -161,10 +161,10 @@ public:
 class SwOSEventHandler {
   public:
     FtSwarmTrigger_t trigger;
-    SwOSIO           *actor     = NULL;
-    int32_t          parameter  = 0;
-    SwOSEventHandler *next      = NULL;
-    bool             active     = true;
+    SwOSIO           *actor         = NULL;
+    bool             useSensorValue = NULL;
+    int32_t          parameter      = 0;
+    SwOSEventHandler *next          = NULL;
 
     SwOSEventHandler( FtSwarmTrigger_t trigger, SwOSIO *actor, int32_t parameter );
     ~SwOSEventHandler( );
@@ -175,8 +175,8 @@ class SwOSEventInput {
     SwOSEventHandler *eventList = NULL;
   public:
    ~SwOSEventInput();
-    void registerEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, int32_t parameter );
-    void unregisterEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor );
+    void deleteEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor );
+    void addEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, int32_t parameter );
     void trigger( FtSwarmTrigger_t triggerEvent, int32_t value );
 };
 

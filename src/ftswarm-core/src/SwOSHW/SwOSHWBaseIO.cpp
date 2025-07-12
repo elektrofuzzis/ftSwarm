@@ -323,15 +323,19 @@ void SwOSIO::unsubscribe() {
  ***************************************************/
 
 SwOSEventHandler::~SwOSEventHandler( ) {
-  
-  if (next) delete next;
+
+  if (actor) actor->give();
+  if (next)  delete next;
   
 }
 
 SwOSEventHandler::SwOSEventHandler( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, int32_t parameter  ) {
-  this->trigger   = triggerEvent;
-  this->actor     = actor;
-  this->parameter = parameter;
+  this->trigger        = triggerEvent;
+  this->actor          = actor;
+  this->parameter      = parameter;
+
+  actor->take();
+
 }
 
 /***************************************************
@@ -346,7 +350,7 @@ SwOSEventInput::~SwOSEventInput() {
 
 }
 
-void SwOSEventInput::registerEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, int32_t parameter ) {
+void SwOSEventInput::addEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, int32_t parameter ) {
 
   // first event?
   if (!eventList) {
@@ -361,7 +365,6 @@ void SwOSEventInput::registerEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor
     // same event, replace parameter 
     if ( ( e->trigger == triggerEvent ) && ( e->actor == actor ) ) {
       e->parameter = parameter;
-      e->active = true;
       return;
     }
 
@@ -372,17 +375,37 @@ void SwOSEventInput::registerEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor
       return;
     }
 
-}
+  }
   
 }
 
-void SwOSEventInput::unregisterEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor ) {
+void SwOSEventInput::deleteEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor ) {
 
-  SwOSEventHandler *e = eventList;
+  SwOSEventHandler *e   = eventList;
+  SwOSEventHandler *old = NULL;
 
-  while (e) {
+  // empty list
+  if (!eventList) return;
 
-    if ( ( e->trigger == triggerEvent ) && ( e->actor == actor ) ) e->active = false;
+  // first element fits
+  if ( ( eventList->trigger == triggerEvent ) && ( eventList->actor == actor ) ) {
+    old = eventList;
+    eventList = eventList->next;
+    old->next = NULL;
+    delete old;
+    return;
+  }
+
+  while (e->next) {
+
+    // just check if the next element is the one to kill
+    if ( ( e->next->trigger == triggerEvent ) && ( e->next->actor == actor ) ) {
+      old = e->next;
+      e->next = e->next->next;
+      old->next = NULL;
+      delete old;
+      return;
+    }
     
     e = e->next;
 
@@ -446,6 +469,8 @@ void SwOSInput::setupLocal() {
 } 
 
 void SwOSInput::subscription() {
+
+  printf("subscription %s %d %d %d\n", getName(), isSubscribed, lastRawValue, lastsubscribedValue );
 
   // test, if input is subscribed
   if (!isSubscribed) return;

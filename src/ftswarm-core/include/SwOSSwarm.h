@@ -146,6 +146,12 @@ public:
   // delete Controller SN
   bool deleteController( FtSwarmSerialNumber_t serialNumber ); 
 
+  // delete an event
+  bool deleteEvent( SwOSNVSEvent_t *event );
+
+  // add an event
+  bool addEvent( SwOSNVSEvent_t *event );
+
 };
 
 extern SwOSSwarm myOSSwarm;
