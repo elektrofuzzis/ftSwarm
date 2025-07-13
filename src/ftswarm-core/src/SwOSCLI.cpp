@@ -686,7 +686,7 @@ void SwOSCLI::executeJoystickCmd( void ) {
                                   ( _parameter[2].isConstant() ) ) {
                                 OK();
                                 io->lock();
-                                io->triggerLR.addEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), _parameter[2].getValue()  );
+                                io->lr->addEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), _parameter[2].getValue()  );
                                 io->unlock();
                               }
                               break;
@@ -696,7 +696,7 @@ void SwOSCLI::executeJoystickCmd( void ) {
                                   ( _parameter[2].isConstant() ) ) {
                                 OK();
                                 io->lock();
-                                io->triggerFB.addEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), _parameter[2].getValue() );
+                                io->fb->addEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), _parameter[2].getValue() );
                                 io->unlock();
                               }
                               break;

@@ -470,8 +470,6 @@ void SwOSInput::setupLocal() {
 
 void SwOSInput::subscription() {
 
-  printf("subscription %s %d %d %d\n", getName(), isSubscribed, lastRawValue, lastsubscribedValue );
-
   // test, if input is subscribed
   if (!isSubscribed) return;
 

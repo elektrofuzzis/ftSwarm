@@ -55,22 +55,23 @@ typedef struct {
   uint8_t buttons;
   uint8_t joysticks;
   int8_t  pwrctl;
+  uint8_t firstJPoti;
 } SwOSMaxIO_t;
 
 #define NOPWRCTL -1
 
 const SwOSMaxIO_t MAXIOS[FTSWARMMAXVERSION] = {
-                            //  inputs motors rcservos servos pixels, buttons, joysticks, pwrctl
-  /* FTSWARMJST_1V0 */       {  4,     2,     0,       1,     2,      0,       0,         NOPWRCTL },
-  /* FTSWARMCONTROL_1V3 */   {  4,     2,     0,       0,     0,      8,       2,         NOPWRCTL },
-  /* FTSWARMJST_1V15 */      {  4,     2,     0,       1,     2,      0,       0,         NOPWRCTL },
-  /* FTSWARMRS_2V0 */        {  7,     2,     0,       2,     2,      0,       0,         6 },
-  /* FTSWARMRS_2V1 */        {  7,     2,     0,       2,     2,      0,       0,         6 },
-  /* FTSWARMCAM_3V12 */      {  5,     2,     0,       1,     2,      0,       0,         4 }, 
-  /* FTSWARMPWRDRIVE_1V14 */ {  0,     0,     0,       0,     2,      0,       0,         NOPWRCTL },
-  /* FTSWARMDUINO_1V14 */    {  0,     0,     0,       0,     2,      0,       0,         NOPWRCTL },
-  /* FTSWARMXL_1V00 */       {  8,     8,     0,       0,     2,      0,       0,         NOPWRCTL },
-  /* FTSWARMRC_1V140 */      {  7,     4,     4,       0,     1,      0,       0,         6 }
+                            //  inputs motors rcservos servos pixels, buttons, joysticks, pwrctl,  firstJPoti
+  /* FTSWARMJST_1V0 */       {  4,     2,     0,       1,     2,      0,       0,         NOPWRCTL, 0 },
+  /* FTSWARMCONTROL_1V3 */   {  4,     2,     0,       0,     0,      8,       2,         NOPWRCTL, 4 },
+  /* FTSWARMJST_1V15 */      {  4,     2,     0,       1,     2,      0,       0,         NOPWRCTL, 0 },
+  /* FTSWARMRS_2V0 */        {  7,     2,     0,       2,     2,      0,       0,         6,        0 },
+  /* FTSWARMRS_2V1 */        {  7,     2,     0,       2,     2,      0,       0,         6,        0 },
+  /* FTSWARMCAM_3V12 */      {  5,     2,     0,       1,     2,      0,       0,         4,        0 }, 
+  /* FTSWARMPWRDRIVE_1V14 */ {  0,     0,     0,       0,     2,      0,       0,         NOPWRCTL, 0 },
+  /* FTSWARMDUINO_1V14 */    {  0,     0,     0,       0,     2,      0,       0,         NOPWRCTL, 0 },
+  /* FTSWARMXL_1V00 */       {  8,     8,     0,       0,     2,      0,       0,         NOPWRCTL, 0 },
+  /* FTSWARMRC_1V140 */      {  7,     4,     4,       0,     1,      0,       0,         6,        0 }
 };
 
 const SwOSIODefinition_t GPIO_INPUT[FTSWARMMAXVERSION][MAXINPUTS] = {
@@ -90,10 +91,10 @@ const SwOSIODefinition_t GPIO_INPUT[FTSWARMMAXVERSION][MAXINPUTS] = {
                                  { xGPIO_NUM_25, ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_26,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_27,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
-                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
-                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
-                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
-                                 { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
+                                 { GPIO_NUM_33,  ADC_UNIT_1, ADC1_CHANNEL_5,   ADC_ATTEN_DB_11 }, // JOY1.LR
+                                 { GPIO_NUM_36,  ADC_UNIT_1, ADC1_CHANNEL_0,   ADC_ATTEN_DB_11 }, // JOY1.FB
+                                 { GPIO_NUM_32,  ADC_UNIT_1, ADC1_CHANNEL_4,   ADC_ATTEN_DB_11 }, // JOY2.LR
+                                 { GPIO_NUM_34,  ADC_UNIT_1, ADC1_CHANNEL_6,   ADC_ATTEN_DB_11 }, // JOY2.FB
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }

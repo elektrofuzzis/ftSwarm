@@ -10,6 +10,7 @@
 #pragma once
 
 #include "SwOSHWBaseIO.h"
+#include "SwOSHWDigital.h"
 #include "SwOSHWBaseCtrl.h"
 #include "SwOSFilter.h"
 
@@ -49,8 +50,11 @@
     // add a new filter
     virtual void addFilter( SwOSFilter *filter );
 
+    // find first filter of type ft
+    virtual SwOSFilter *getFilter( SwOSFilter_t ft );
+
     // read sensor
-	  virtual void     read();
+	  virtual void read();
     virtual void setReading( int32_t newValue );
 
     // external commands
@@ -70,33 +74,26 @@
  *
  ***************************************************/
 
- class SwOSJoystick : public SwOSIO, SwOSEventInput {
-  protected:
-    adc1_channel_t ADCChannelLR, ADCChannelFB;
-    int16_t        lastLR, lastFB;
-    int16_t        lastSubscribedLR, lastSubscribedFB;
-    int16_t        zeroLR, zeroFB;
-    int16_t        lastRawLR, lastRawFB;
-  
-    // local HW procedures
-    virtual void setupLocal(); // initializes local HW
-    
+ class SwOSJoystick : public SwOSIO {
+
   public:
-    SwOSEventInput triggerLR, triggerFB;
-    
+
+    SwOSDigitalInput* button = NULL;
+    SwOSAnalogInput*  lr     = NULL;
+    SwOSAnalogInput*  fb     = NULL;
+              
     // constructors
-    SwOSJoystick(const char *name, uint8_t port, SwOSCtrl *ctrl, int16_t zeroLR, int16_t zeroFB );
+    SwOSJoystick(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSDigitalInput* button, SwOSAnalogInput* lr, SwOSAnalogInput* fb, int16_t zeroLR, int16_t zeroFB );
   
     // administrative stuff
     virtual void jsonize( JSONize *json, uint8_t id);
     virtual bool isInput( void ) { return true; };
-  
-    // read
-    virtual void subscription();
-    virtual void read();
+
+    virtual char* subscribe( char *IOName, uint32_t hysteresis ); // subscribe sensor to display value changes as console outputs 
+	  virtual void  unsubscribe();                                  // clear subscription
   
     // commands
-    virtual void getValue( int16_t* FB, int16_t* LR ) { *FB = lastFB; *LR = lastLR; };
-    virtual void setValue( int16_t  FB, int16_t  lastLR );
+    virtual void getValue( int16_t* FB, int16_t* LR ) { *FB = fb->getValueI32(); *LR = lr->getValueI32(); };
     virtual void calibrate( int16_t *zeroLR, int16_t *zeroFB );  // uses actual readings to calibrate
+
   };

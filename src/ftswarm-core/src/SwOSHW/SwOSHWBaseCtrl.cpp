@@ -126,8 +126,6 @@ uint8_t SwOSCtrl::getIndex( SwOSIO *x ) {
 
 }
 
-#include "easyKey.h"
-
 uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
 
   char name[10];
@@ -192,11 +190,34 @@ uint8_t SwOSCtrl::setupLocalButtons( uint8_t maxIO ) {
 
 uint8_t SwOSCtrl::setupLocalJoysticks( uint8_t maxIO, SwOSCtrlConfig_t ctrlConfig  ) {
 
-  char name[10];
+  char joy[10];
+  char subio[10];
+
+  SwOSDigitalInput* button;
+  SwOSAnalogInput*  lr;
+  SwOSAnalogInput*  fb;
   
   for ( uint8_t i=0; i<MAXIOS[ CPU ].joysticks; i++) {
-    sprintf( name, "JOY%d", i+1 );
-    io[ maxIO++ ] = new SwOSJoystick( name, i, this, ctrlConfig.zero[i][0], ctrlConfig.zero[i][1] );
+    
+    // joystick name
+    sprintf( joy, "JOY%d", i+1 );
+
+    // button is already created, just lookup
+    button = (SwOSDigitalInput*) getIO( SWOSIO_BUTTON, FTSWARM_J1 + i );
+    
+    // lr poti
+    sprintf( subio, "%sLR", joy);
+    lr = new SwOSAnalogInput( subio, MAXIOS[ getCPU() ].firstJPoti + 2*i,     this, SWOSIO_JOYSTICK_POTI );
+    io[ maxIO++] = (SwOSIO*) lr;
+    
+    // fb poti
+    sprintf( subio, "%sFB", joy);
+    fb = new SwOSAnalogInput( subio, MAXIOS[ getCPU() ].firstJPoti + 2*i + 1, this, SWOSIO_JOYSTICK_POTI );
+    io[ maxIO++] = (SwOSIO*) fb;
+
+    // create joystick
+    io[ maxIO++ ] = new SwOSJoystick( joy, i, this, button, lr, fb, ctrlConfig.zero[i][0], ctrlConfig.zero[i][1] );
+
   }
 
   return maxIO;
@@ -280,7 +301,7 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSC
   if (local) {
 
     // calculate needed IOs
-    IOs = MAXIOS[ CPU ].inputs + MAXIOS[ CPU ].motors + MAXIOS[ CPU ].servos + MAXIOS[ CPU ].joysticks + MAXLEDS;
+    IOs = MAXIOS[ CPU ].inputs + MAXIOS[ CPU ].motors + MAXIOS[ CPU ].servos + MAXIOS[ CPU ].joysticks * 3 + MAXLEDS;
 
     // Buttons + HC165?
     if ( MAXIOS[ CPU ].buttons > 0 ) IOs = IOs + MAXIOS[ CPU ].buttons + 1;
@@ -602,7 +623,7 @@ void SwOSCtrl::jsonize( JSONize *json, uint8_t id) {
 }
 
 void SwOSCtrl::jsonizeIO( JSONize *json, uint8_t id ) {
-  
+
   for (uint8_t i=0; i<IOs; i++) { 
     
     if ( ( io[i] ) && ( io[i]->showInApi() ) ) {
@@ -629,20 +650,30 @@ void SwOSCtrl::jsonizeIO( JSONize *json, uint8_t id ) {
 
 SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, char *name, char *alias ) {
 
+  // new io
   SwOSIO *io;
 
+  // joystick only
+  SwOSDigitalInput* button;
+  SwOSAnalogInput*  lr;
+  SwOSAnalogInput*  fb;
+  
   switch ( ioType ) {
     case SWOSIO_SWITCH:
     case SWOSIO_REEDSWITCH:
     case SWOSIO_LIGHTBARRIER:
     case SWOSIO_ULTRASONIC:
-    case SWOSIO_DIGITAL:         io = new SwOSDigitalInput( name, port, this, ioType ); break; 
+    case SWOSIO_DIGITAL:          io = new SwOSDigitalInput( name, port, this, ioType ); 
+                                  break; 
+
     case SWOSIO_OHMMETER:
     case SWOSIO_THERMOMETER:
     case SWOSIO_VOLTMETER:
     case SWOSIO_LDR:
     case SWOSIO_POWER:
-    case SWOSIO_ANALOG:          io = new SwOSAnalogInput( name, port, this, ioType );  break;
+    case SWOSIO_ANALOG:           io = new SwOSAnalogInput( name, port, this, ioType );  
+                                  break;
+
     case SWOSIO_LAMP:
     case SWOSIO_VALVE:
     case SWOSIO_COMPRESSOR:
@@ -651,23 +682,56 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, char *name, char 
     case SWOSIO_XMOTOR:
     case SWOSIO_XMMOTOR:
     case SWOSIO_TRACTOR:
-    case SWOSIO_MOTOR:           io = new SwOSMotor( name, port, this, ioType );        break; 
-    case SWOSIO_STEPPER:         io = new SwOSStepper( name, port, this);               break; 
-    case SWOSIO_BUTTON:          io = new SwOSDigitalInput( name, port, this, SWOSIO_BUTTON ); break;
-    case SWOSIO_JOYSTICK:        io = new SwOSJoystick( name, port, this, 0, 0 );       break; 
-    case SWOSIO_PIXEL:           io = new SwOSPixel( name, port, this );                break;
-    case SWOSIO_SERVO:           io = new SwOSServo( name, port, this );                break; 
-    case SWOSIO_OLED:            io = new SwOSOLED( name, this );                       break;
-    case SWOSIO_GYRO:            io = new SwOSGyro( name, this );                       break;
-    case SWOSIO_I2C:             io = new SwOSI2C( name, this, 0 );                     break;
-    case SWOSIO_COUNTER:         io = new SwOSCounter( name, port, port, this );        break;
-    case SWOSIO_FREQUENCYMETER:  io = new SwOSFrequencymeter( name, port, port, this ); break;
-    case SWOSIO_ROTARYENCODER:   io = new SwOSCounter( name, port, port + 1, this );    break;
-    case SWOSIO_CAM:             io = new SwOSCAM( name, this );                        break;
-    case SWOSIO_HC165:           io = new SwOSHC165( name, this );                      break;
-    case SWOSIO_LIDAR:           io = new SwOSLidarInput( name, this );                 break;
-    default:                     // This should newer happen
-                                 SWARM_LOG_FATAL( "SwOSCtrl::createIO: Unkown ioType %d", ioType );
+    case SWOSIO_MOTOR:            io = new SwOSMotor( name, port, this, ioType );
+                                  break; 
+
+    case SWOSIO_STEPPER:          io = new SwOSStepper( name, port, this);
+                                  break; 
+
+    case SWOSIO_BUTTON:           io = new SwOSDigitalInput( name, port, this, SWOSIO_BUTTON );
+                                  break;
+
+    case SWOSIO_JOYSTICK:         button = (SwOSDigitalInput*) getIO( SWOSIO_BUTTON, FTSWARM_J1 + port );
+                                  lr     = (SwOSAnalogInput*)  getIO( SWOSIO_JOYSTICK_POTI, MAXIOS[ getCPU() ].firstJPoti + 2* port );
+                                  fb     = (SwOSAnalogInput*)  getIO( SWOSIO_JOYSTICK_POTI, MAXIOS[ getCPU() ].firstJPoti + 2* port +1 );
+                                  io     = new SwOSJoystick( name, port, this, button, lr, fb, 0, 0 );
+                                  break; 
+
+    case SWOSIO_PIXEL:            io = new SwOSPixel( name, port, this );  
+                                  break; 
+
+    case SWOSIO_SERVO:            io = new SwOSServo( name, port, this ); 
+                                  break; 
+
+    case SWOSIO_OLED:             io = new SwOSOLED( name, this ); 
+                                  break; 
+
+    case SWOSIO_GYRO:             io = new SwOSGyro( name, this ); 
+                                  break; 
+
+    case SWOSIO_I2C:              io = new SwOSI2C( name, this, 0 );
+                                  break; 
+
+    case SWOSIO_COUNTER:          io = new SwOSCounter( name, port, port, this );       
+                                  break; 
+
+    case SWOSIO_FREQUENCYMETER:   io = new SwOSFrequencymeter( name, port, port, this );
+                                  break; 
+
+    case SWOSIO_ROTARYENCODER:    io = new SwOSCounter( name, port, port + 1, this );    
+                                  break; 
+
+    case SWOSIO_CAM:              io = new SwOSCAM( name, this );                        
+                                  break; 
+
+    case SWOSIO_HC165:            io = new SwOSHC165( name, this );                      
+                                  break; 
+
+    case SWOSIO_LIDAR:            io = new SwOSLidarInput( name, this );                 
+                                  break; 
+
+    default:                      // This should newer happen
+                                  SWARM_LOG_FATAL( "SwOSCtrl::createIO: Unkown ioType %d", ioType );
     }
   
   if (alias) io->setAlias( alias );

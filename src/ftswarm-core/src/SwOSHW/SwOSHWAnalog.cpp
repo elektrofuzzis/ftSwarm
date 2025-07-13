@@ -91,6 +91,18 @@ void SwOSAnalogInput::addFilter( SwOSFilter *filter ) {
 
 }
 
+SwOSFilter *SwOSAnalogInput::getFilter( SwOSFilter_t ft ) {
+
+  SwOSFilter *f = filter;
+  
+  while (f) {
+    if ( f->getType() == ft ) break;
+  }
+
+  return f;
+
+}
+
 bool SwOSAnalogInput::isXMeter() {
 
   return ( ( ioType == SWOSIO_VOLTMETER ) ||
@@ -197,14 +209,16 @@ void SwOSAnalogInput::read() {
 }
 
 void SwOSAnalogInput::setReading( int32_t newValue ) {
+
+  bool changes = (lastRawValue != newValue);
     
   // send changed value event?
-  if ( (eventList) && ( lastRawValue != newValue ) ) trigger( FTSWARM_TRIGGERVALUE, newValue );
+  if ( (eventList) && ( changes ) ) trigger( FTSWARM_TRIGGERVALUE, newValue );
 
   // store new data
   lastRawValue = newValue;  
 
-  subscription();
+  if (changes) subscription();
 
 }
 
@@ -258,56 +272,25 @@ void SwOSAnalogInput::jsonize( JSONize *json, uint8_t id) {
  *
  ***************************************************/
 
- SwOSJoystick::SwOSJoystick(const char *name, uint8_t port,SwOSCtrl *ctrl, int16_t zeroLR, int16_t zeroFB ) : SwOSIO( name, port, ctrl, SWOSIO_JOYSTICK ) {
+ SwOSJoystick::SwOSJoystick(const char *name, uint8_t port,SwOSCtrl *ctrl, SwOSDigitalInput* button, SwOSAnalogInput* lr, SwOSAnalogInput* fb, int16_t zeroLR, int16_t zeroFB ) : SwOSIO( name, port, ctrl, SWOSIO_JOYSTICK ) {
 
-  // set read values to undefined
-  this->lastLR = 0;
-  this->lastFB = 0;
-  this->lastSubscribedLR = 0;
-  this->lastSubscribedFB = 0;
-  this->zeroLR = 0;
-  this->zeroFB = 0;
-  this->lastRawLR = -1;
-  this->lastRawFB = -1;
+  this->button = button;
+  this->lr     = lr;
+  this->fb     = fb;
 
   // initialize local HW
   if (ctrl->isLocal()) {
-    this->zeroLR = zeroLR;
-    this->zeroFB = zeroFB;
-    setupLocal();
+
+    lr->addFilter( new SwOSFJoystick( 200, 1900, 3700) );
+    if ( port) lr->addFilter( new SwOSMultiply( -1 ) ); 
+
+    fb->addFilter( new SwOSFJoystick( 300, 1758, 3795) );
+    if (!port) fb->addFilter( new SwOSMultiply( -1 ) ); 
+
   }
   
 }
 
-void SwOSJoystick::setupLocal() {
-  // initialize local HW
-
-  // assign port to GPIO
-  ADCChannelLR = ADC1_CHANNEL_MAX;
-  ADCChannelFB = ADC1_CHANNEL_MAX;
-
-  if ( ctrl->getCPU() == FTSWARMCONTROL_1V3 ) {
-    switch (port) {
-    case 0:
-      ADCChannelLR = ADC1_CHANNEL_5;
-      ADCChannelFB = ADC1_CHANNEL_0;
-      break;
-    case 1:
-      ADCChannelLR = ADC1_CHANNEL_4;
-      ADCChannelFB = ADC1_CHANNEL_6;
-      break;
-    default: break;
-    }
-  }
-
-  // set ADC to 12 bits, scale 3.9V
-  adc1_config_width(ADC_WIDTH_BIT_12);
-  if (ADCChannelLR != ADC1_CHANNEL_MAX ) {
-    adc1_config_channel_atten( ADCChannelLR, ADC_ATTEN_DB_11);
-    adc1_config_channel_atten( ADCChannelFB, ADC_ATTEN_DB_11);
-  }
-
-}
 
 int16_t readChannel( adc1_channel_t channel, int16_t zero, int16_t *lastRaw, uint8_t port) {
 
@@ -334,86 +317,48 @@ int16_t readChannel( adc1_channel_t channel, int16_t zero, int16_t *lastRaw, uin
   
 }
 
-bool hasChanged( int16_t value1, int16_t value2, int16_t hysteresis ) {
-  
-  return abs( value1 - value2 ) > hysteresis;
-
-}
-
-void SwOSJoystick::subscription() {
-
-  // test, if input is subscribed
-  if (!isSubscribed) return;
-
-  if ( ( hasChanged( lastLR, lastSubscribedLR, hysteresis ) ) ||
-       ( hasChanged( lastFB, lastSubscribedFB, hysteresis ) ) ) {
-    printf("S: %s %d %d\n", subscribedIOName, lastLR, lastFB );
-    lastSubscribedLR = lastLR;
-    lastSubscribedFB = lastFB;
-
-  }
-
-}
-
-void SwOSJoystick::read() {
-
-  int16_t x;
-
-  // remote: no work
-  if (!ctrl->isLocal()) return;
-
-  x = readChannel( ADCChannelLR, zeroLR, &lastRawLR, port );
-  if ( x != lastLR ) triggerLR.trigger( FTSWARM_TRIGGERVALUE, x );
-  lastLR = x;
-
-  x = readChannel( ADCChannelFB, zeroFB, &lastRawFB, port );
-  if ( x != lastFB ) triggerFB.trigger( FTSWARM_TRIGGERVALUE, x );
-  lastFB = x;
-
-  subscription();
-
-}
-
-void SwOSJoystick::setValue( int16_t FB, int16_t LR ) {
-
-  if ( lastLR != LR )  triggerLR.trigger( FTSWARM_TRIGGERVALUE, LR );
-  if ( lastFB != FB )  triggerFB.trigger( FTSWARM_TRIGGERVALUE, FB );
-
-  lastLR = LR;
-  lastFB = FB;
-  
-}
-
-
 void SwOSJoystick::calibrate( int16_t *zeroLR, int16_t *zeroFB ) {
 
   /// remote: no work
   if (!ctrl->isLocal()) return;
-  if ( (ADCChannelLR == ADC1_CHANNEL_MAX ) || ( ADCChannelFB == ADC1_CHANNEL_MAX )) return;
 
-  // get 3 values
-  int16_t lr[3], fb[3];
-  for ( uint8_t i=0; i<3; i++ ) {
-    lr[i] =  adc1_get_raw( ADCChannelLR ); 
-    fb[i] =  adc1_get_raw( ADCChannelFB ); 
-    vTaskDelay( 25 / portTICK_PERIOD_MS );
-  }
+  SwOSAdd *f;
 
-  // and calculate mean value
-  *zeroLR = this->zeroLR = ( lr[0] + lr[1] + lr[2] ) / 3;
-  *zeroFB = this->zeroFB = ( fb[0] + fb[1] + fb[2] ) / 3;
+  // get zero offset lr-filter and add actual reading
+  f = (SwOSAdd *) lr->getFilter( SWOS_FILTER_ADD );
+  if (f) f->setConstant( f->getConstant() - lr->getValueI32() );
+
+  // get zero offset fb-filter and add actual reading
+  f = (SwOSAdd *) fb->getFilter( SWOS_FILTER_ADD );
+  if (f) f->setConstant( f->getConstant() - fb->getValueI32() );
   
 }
 
 void SwOSJoystick::jsonize( JSONize *json, uint8_t id) {
   json->startObject();
   SwOSIO::jsonize(json, id);
-  json->variableI16("valueLr", lastLR );
-  json->variableI16("valueFb", lastFB );
 
-  SwOSDigitalInput *button = (SwOSDigitalInput*) ctrl->getIO( SWOSIO_BUTTON, FTSWARM_J1 + port );
+  json->variableI16("valueLr", lr->getValueI32() );
+  json->variableI16("valueFb", fb->getValueI32() );
+
   if (button) json->variableB( "button", button->getValueI32() );
   
   json->endObject();
+
+}
+
+char* SwOSJoystick::subscribe( char *IOName, uint32_t hysteresis ) {
+
+  if( button ) button->subscribe( button->getAlias(), 0 ) ;
+  if( lr )     lr->subscribe( lr->getAlias(), 0 ) ;
+  if( fb )     fb->subscribe( lr->getAlias(), 0 ) ;
+  
+}
+
+void  SwOSJoystick::unsubscribe() {
+
+  if (button) button->unsubscribe();
+  if (lr)     lr->unsubscribe();
+  if (fb)     fb->unsubscribe();
 
 }

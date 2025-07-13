@@ -744,7 +744,7 @@ void FtSwarmJoystick::onTriggerLR( FtSwarmTrigger_t triggerEvent, FtSwarmIO *act
   // set trigger using static values
   if ( (me) && (actor) ) {
     static_cast<SwOSJoystick*>(me)->lock();
-    static_cast<SwOSJoystick *>(me)->triggerLR.addEvent( triggerEvent, (SwOSIO *)actor->me, p1 );
+    static_cast<SwOSJoystick*>(me)->lr->addEvent( triggerEvent, (SwOSIO *)actor->me, p1 );
     static_cast<SwOSJoystick*>(me)->unlock();
   }
 
@@ -755,7 +755,7 @@ void FtSwarmJoystick::onTriggerFB( FtSwarmTrigger_t triggerEvent, FtSwarmIO *act
   // set trigger using static values
   if ( (me) && (actor) ) {
     static_cast<SwOSJoystick*>(me)->lock();
-    static_cast<SwOSJoystick *>(me)->triggerFB.addEvent( triggerEvent, (SwOSIO *)actor->me, p1 );
+    static_cast<SwOSJoystick*>(me)->fb->addEvent( triggerEvent, (SwOSIO *)actor->me, p1 );
     static_cast<SwOSJoystick*>(me)->unlock();
   }
 

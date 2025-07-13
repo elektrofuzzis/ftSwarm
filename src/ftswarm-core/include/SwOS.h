@@ -113,6 +113,7 @@ typedef enum { SWOSIO_UNDEF = -1,
                SWOSIO_COLORSENSOR, 
                SWOSIO_TRAILSENSOR, 
                SWOSIO_ULTRASONIC, 
+               SWOSIO_JOYSTICK_POTI,
                SWOSIO_MAXIOTYPE } SwOSIOType_t;
 
 // technologies to change IO type
@@ -152,7 +153,8 @@ const SwOSIOClass_t SWOSIOCLASS[SWOSIO_MAXIOTYPE ] = {
   SWOSIOCLASS_SINGULAR, // SWOSIO_POWER
   SWOSIOCLASS_INPUT, // SWOSIO_COLORSENSOR
   SWOSIOCLASS_INPUT, // SWOSIO_TRAILSENSOR
-  SWOSIOCLASS_INPUT // SWOSIO_ULTRASONIC
+  SWOSIOCLASS_INPUT, // SWOSIO_ULTRASONIC
+  SWOSIOCLASS_SINGULAR // SWOSIO_JOYSTICK_POTI
 } ;  
 
 // show via api?
@@ -192,7 +194,8 @@ const bool SHOWIOINAPI[SWOSIO_MAXIOTYPE ] = {
   true, // SWOSIO_POWER
   true, // SWOSIO_COLORSENSOR
   true, // SWOSIO_TRAILSENSOR
-  true // SWOSIO_ULTRASONIC
+  true, // SWOSIO_ULTRASONIC
+  false // SWOSIO_JOYSTICK_POTI
 } ;  
 
 // show via api?
@@ -232,7 +235,8 @@ const char SWOSIOTYPE[SWOSIO_MAXIOTYPE][20] = {
   "Power",
   "Colorsensor",
   "Trailsensor",
-  "Ultrasonic"
+  "Ultrasonic",
+  "JoystickPoti"
 } ;  
 
 // HW versions
