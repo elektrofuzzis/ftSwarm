@@ -233,7 +233,7 @@ class SwOSDigitalServo : public SwOSServo {
     SwOSAnalogInput *poti   = NULL;
     SwOSMotor       *motor  = NULL;
     SwOSPID         *pid    = new SwOSPID( 2.0, 1, 0, 0, 100, -512, 512);
-    int16_t         target = FILTER_INVALID; // FILTER_INVALID -> don't regulate
+    int16_t         target  = FILTER_INVALID; // FILTER_INVALID -> don't regulate
     
     virtual void setLocal();       // set position locally
 

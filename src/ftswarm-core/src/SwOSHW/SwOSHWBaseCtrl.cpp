@@ -216,7 +216,7 @@ uint8_t SwOSCtrl::setupLocalJoysticks( uint8_t maxIO, SwOSCtrlConfig_t ctrlConfi
     io[ maxIO++] = (SwOSIO*) fb;
 
     // create joystick
-    io[ maxIO++ ] = new SwOSJoystick( joy, i, this, button, lr, fb, ctrlConfig.zero[i][0], ctrlConfig.zero[i][1] );
+    io[ maxIO++ ] = new SwOSJoystick( joy, i, this, button, lr, fb );
 
   }
 
@@ -694,7 +694,7 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, char *name, char 
     case SWOSIO_JOYSTICK:         button = (SwOSDigitalInput*) getIO( SWOSIO_BUTTON, FTSWARM_J1 + port );
                                   lr     = (SwOSAnalogInput*)  getIO( SWOSIO_JOYSTICK_POTI, MAXIOS[ getCPU() ].firstJPoti + 2* port );
                                   fb     = (SwOSAnalogInput*)  getIO( SWOSIO_JOYSTICK_POTI, MAXIOS[ getCPU() ].firstJPoti + 2* port +1 );
-                                  io     = new SwOSJoystick( name, port, this, button, lr, fb, 0, 0 );
+                                  io     = new SwOSJoystick( name, port, this, button, lr, fb );
                                   break; 
 
     case SWOSIO_PIXEL:            io = new SwOSPixel( name, port, this );  

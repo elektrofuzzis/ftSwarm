@@ -80,7 +80,6 @@ struct SwOSCtrlConfig_t {
   uint8_t               IOs;
   uint8_t               pixels;
   bool                  gyro;
-  int16_t               zero[2][2];
 } __attribute__((packed));
 
 struct registerCmd_t { 

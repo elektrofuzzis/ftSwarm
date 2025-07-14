@@ -599,7 +599,7 @@ void SwOSRCServo::adjust(void) {
   // remote: no work
   if (!ctrl->isLocal()) return;
 
-  // read poti value to fille up the filters
+  // read poti value to fill up the filters
   poti->read();
 
   // no target set - noting to do 

@@ -107,9 +107,11 @@ SwOSNVS::SwOSNVS() {
   gyro               = false;
 
   // initialize zero positions
-  for (uint8_t i=0;i<2;i++)
-    for (uint8_t j=0;j<2;j++)
-      joyZero[i][j]=2000;
+  for (uint8_t i=0;i<2;i++) {
+    calibration[i]->minValue = 200;
+    calibration[i]->midValue = 1900;
+    calibration[i]->maxValue = 3700;
+  }
 
   // initialize events
   bzero( events, sizeof( events ) );
@@ -162,19 +164,15 @@ bool SwOSNVS::load() {
     return false;
   }
 
-  // joystick zero position & # RGB Leds
-
-  // ftSwarmControl
-  nvs_get_i16( my_handle, "joyZero00", &joyZero[0][0]);
-  nvs_get_i16( my_handle, "joyZero01", &joyZero[0][1]);
-  nvs_get_i16( my_handle, "joyZero10", &joyZero[1][0]);
-  nvs_get_i16( my_handle, "joyZero11", &joyZero[1][1]);
+  size_t dummy;
+       
+  // ftSwarmControl / joystick calibration
+  dummy = sizeof( calibration );
+  nvs_get_blob( my_handle, "calibration", &calibration, &dummy );
 
   // RGBLeds
   nvs_get_u8( my_handle, "RGBLeds", &pixels );
   
-  size_t dummy;
-       
   // wifi
   nvs_get_u32( my_handle, "wifiMode", (uint32_t *) &wifiMode );
   nvs_get_u8 ( my_handle, "Channel",  &channel );
@@ -234,10 +232,7 @@ void SwOSNVS::save( bool writeAll ) {
   }
 
   // ftSwarmControl: set joystick calibration
-  ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero00", joyZero[0][0]) );
-  ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero01", joyZero[0][1]) );
-  ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero10", joyZero[1][0]) );
-  ESP_ERROR_CHECK( nvs_set_i16( my_handle, "joyZero11", joyZero[1][1]) );
+  ESP_ERROR_CHECK( nvs_set_blob( my_handle, "calbration",  (void *)&calibration, sizeof( calibration ) ) );
 
   // RGBLeds
   ESP_ERROR_CHECK( nvs_set_u8( my_handle, "RGBLeds", pixels ) );
@@ -308,6 +303,12 @@ void SwOSNVS::factorySettings( void ) {
   IAmKelda           = true;
   swarmCommunication = swarmComWifi;
   swarmSpeed         = 4;
+
+  for (uint8_t i=0;i<2;i++) {
+    calibration[i]->minValue = 200;
+    calibration[i]->midValue = 1900;
+    calibration[i]->maxValue = 3700;
+  }
 
   pixels             = MAXIOS[CPU].pixels;
 

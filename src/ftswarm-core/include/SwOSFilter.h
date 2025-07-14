@@ -7,9 +7,9 @@
  *
  */
  
- #pragma once
+#pragma once
 
- #include <stdint.h>
+#include <stdint.h>
 
 #define FILTER_INVALID 32767
 
@@ -31,14 +31,14 @@ class SwOSFilter {
 
     uint8_t    bufSize = 0;
     uint8_t    bufFill = 0;
-    int32_t    *buffer = NULL;
+    int16_t    *buffer = NULL;
     SwOSFilter *nextFilter = NULL;
 
-    bool addBuffer( int32_t newValue );
+    bool addBuffer( int16_t newValue );
 
   public:
 
-    // constructor - allocates a buffer of bufSize int32_t
+    // constructor - allocates a buffer of bufSize int16_t
     SwOSFilter( uint8_t bufSize );
 
     // destructor
@@ -48,7 +48,7 @@ class SwOSFilter {
     virtual SwOSFilter_t getType( void ) { return SWOS_FILTER_BASE; };
 
     // function to run the filter
-    virtual int32_t fx( int32_t newValue ) { return FILTER_INVALID; };
+    virtual int16_t fx( int16_t newValue ) { return FILTER_INVALID; };
 
     // add a next filter to the list
     virtual void addFilter( SwOSFilter *nextFilter);
@@ -67,7 +67,7 @@ class SwOSMovingAverage:public SwOSFilter {
     virtual SwOSFilter_t getType( void ) { return SWOS_FILTER_MOVINGAVERAGE; };
 
     // function to run the filter
-    virtual int32_t fx( int32_t newValue );
+    virtual int16_t fx( int16_t newValue );
 
 };
 
@@ -92,7 +92,7 @@ class SwOSSpike:public SwOSFilter {
     virtual SwOSFilter_t getType( void ) { return SWOS_FILTER_SPIKE; };
 
     // function to run the filter
-    virtual int32_t fx( int32_t newValue );
+    virtual int16_t fx( int16_t newValue );
 
 };
 
@@ -103,18 +103,18 @@ class SwOSLinear:public SwOSFilter {
   protected:
 
     float   a;
-    int32_t b;
+    int16_t b;
 
   public:
 
     // constructor
-    SwOSLinear( float a, int32_t b  );
+    SwOSLinear( float a, int16_t b  );
 
     // my type
     virtual SwOSFilter_t getType( void ) { return SWOS_FILTER_LINEAR; };
 
     // function to run the filter
-    virtual int32_t fx( int32_t newValue );
+    virtual int16_t fx( int16_t newValue );
 
 };
 
@@ -135,7 +135,7 @@ class SwOSMultiply:public SwOSFilter {
     virtual SwOSFilter_t getType( void ) { return SWOS_FILTER_MULTIPLY; };
 
     // function to run the filter
-    virtual int32_t fx( int32_t newValue );
+    virtual int16_t fx( int16_t newValue );
 
 };
 
@@ -145,21 +145,21 @@ class SwOSAdd:public SwOSFilter {
 
   protected:
 
-    int32_t a;
+    int16_t a;
 
   public:
 
     // constructor
-    SwOSAdd( int32_t a );
+    SwOSAdd( int16_t a );
 
     // my type
     virtual SwOSFilter_t getType( void ) { return SWOS_FILTER_ADD; };
 
-    int32_t getConstant( void ) { return this->a; };
-    void    setConstant( int32_t a ) { this->a = a; };
+    int16_t getConstant( void ) { return this->a; };
+    void    setConstant( int16_t a ) { this->a = a; };
 
     // function to run the filter
-    virtual int32_t fx( int32_t newValue );
+    virtual int16_t fx( int16_t newValue );
 
 };
 
@@ -169,18 +169,18 @@ class SwOSMinMax:public SwOSFilter {
 
   protected:
 
-    int32_t a, b;
+    int16_t a, b;
 
   public:
 
     // constructor
-    SwOSMinMax( int32_t a, int32_t b );
+    SwOSMinMax( int16_t a, int16_t b );
 
     // my type
     virtual SwOSFilter_t getType( void ) { return SWOS_FILTER_MINMAX; };
 
     // function to run the filter
-    virtual int32_t fx( int32_t newValue );
+    virtual int16_t fx( int16_t newValue );
 
 };
 
@@ -190,17 +190,17 @@ class SwOSFJoystick:public SwOSFilter {
 
   protected:
 
-    int32_t minValue, midValue, maxValue; 
+    int16_t minValue, midValue, maxValue; 
 
   public:
 
     // constructor
-    SwOSFJoystick( int32_t minValue, int32_t midValue, int32_t maxValue );
+    SwOSFJoystick( int16_t minValue, int16_t midValue, int16_t maxValue );
 
     // my type
     virtual SwOSFilter_t getType( void ) { return SWOS_FILTER_JOYSTICK; };
 
     // function to run the filter
-    virtual int32_t fx( int32_t newValue );
+    virtual int16_t fx( int16_t newValue );
 
 };

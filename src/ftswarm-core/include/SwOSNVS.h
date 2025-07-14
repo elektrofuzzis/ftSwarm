@@ -24,6 +24,14 @@ struct SwOSIOUID_t {
   uint8_t               port;
 } __attribute__((packed));
 
+struct SwOSJoyCalibration_t {
+
+  int16_t minValue;
+  int16_t midValue;
+  int16_t maxValue; 
+
+} __attribute__((packed));
+
 struct SwOSNVSEvent_t {
 
   SwOSIOUID_t      sensor;
@@ -50,7 +58,7 @@ class SwOSNVS {
     char                   swarmName[MAXIDENTIFIER];
     uint16_t               swarmSecret, swarmPIN;
     FtSwarmWifi_t          wifiMode;
-    int16_t                joyZero[2][2];
+    SwOSJoyCalibration_t   calibration[2][2];
     uint8_t                pixels;
     SwOSNVSEvent_t         events[MAXNVSEVENTS];
     bool                   webUI;

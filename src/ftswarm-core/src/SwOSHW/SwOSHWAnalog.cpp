@@ -272,7 +272,7 @@ void SwOSAnalogInput::jsonize( JSONize *json, uint8_t id) {
  *
  ***************************************************/
 
- SwOSJoystick::SwOSJoystick(const char *name, uint8_t port,SwOSCtrl *ctrl, SwOSDigitalInput* button, SwOSAnalogInput* lr, SwOSAnalogInput* fb, int16_t zeroLR, int16_t zeroFB ) : SwOSIO( name, port, ctrl, SWOSIO_JOYSTICK ) {
+ SwOSJoystick::SwOSJoystick(const char *name, uint8_t port,SwOSCtrl *ctrl, SwOSDigitalInput* button, SwOSAnalogInput* lr, SwOSAnalogInput* fb ) : SwOSIO( name, port, ctrl, SWOSIO_JOYSTICK ) {
 
   this->button = button;
   this->lr     = lr;
@@ -281,56 +281,13 @@ void SwOSAnalogInput::jsonize( JSONize *json, uint8_t id) {
   // initialize local HW
   if (ctrl->isLocal()) {
 
-    lr->addFilter( new SwOSFJoystick( 200, 1900, 3700) );
+    lr->addFilter( new SwOSFJoystick( nvs.calibration[port][0].minValue, nvs.calibration[port][0].midValue, nvs.calibration[port][0].maxValue ) );
     if ( port) lr->addFilter( new SwOSMultiply( -1 ) ); 
 
-    fb->addFilter( new SwOSFJoystick( 300, 1758, 3795) );
+    fb->addFilter( new SwOSFJoystick( nvs.calibration[port][1].minValue, nvs.calibration[port][1].midValue, nvs.calibration[port][1].maxValue) );
     if (!port) fb->addFilter( new SwOSMultiply( -1 ) ); 
 
   }
-  
-}
-
-
-int16_t readChannel( adc1_channel_t channel, int16_t zero, int16_t *lastRaw, uint8_t port) {
-
-  // with correct channels only
-  if ( channel == ADC1_CHANNEL_MAX ) return 0;
-
-  // get two readings and calc mean value
-  int16_t newRaw = ( adc1_get_raw( channel ) + adc1_get_raw( channel ) ) /2;
-
-  // hysteresis
-  if ( ( abs( newRaw - *lastRaw ) < 40 ) && ( lastRaw >= 0 ) ) { newRaw = *lastRaw; }
-  *lastRaw = newRaw;
-
-  // calc result
-  int16_t result = ( newRaw - zero ) / 20;
-
-  if ( result >  100 ) result =  100;
-  if ( result < -100 ) result = -100;
-
-  // change directions on right joystick
-  if (port>0) result = -result;
-
-  return result;
-  
-}
-
-void SwOSJoystick::calibrate( int16_t *zeroLR, int16_t *zeroFB ) {
-
-  /// remote: no work
-  if (!ctrl->isLocal()) return;
-
-  SwOSAdd *f;
-
-  // get zero offset lr-filter and add actual reading
-  f = (SwOSAdd *) lr->getFilter( SWOS_FILTER_ADD );
-  if (f) f->setConstant( f->getConstant() - lr->getValueI32() );
-
-  // get zero offset fb-filter and add actual reading
-  f = (SwOSAdd *) fb->getFilter( SWOS_FILTER_ADD );
-  if (f) f->setConstant( f->getConstant() - fb->getValueI32() );
   
 }
 
@@ -352,6 +309,8 @@ char* SwOSJoystick::subscribe( char *IOName, uint32_t hysteresis ) {
   if( button ) button->subscribe( button->getAlias(), 0 ) ;
   if( lr )     lr->subscribe( lr->getAlias(), 0 ) ;
   if( fb )     fb->subscribe( lr->getAlias(), 0 ) ;
+
+  return SwOSIO::subscribe( IOName, hysteresis );
   
 }
 
@@ -360,5 +319,7 @@ void  SwOSJoystick::unsubscribe() {
   if (button) button->unsubscribe();
   if (lr)     lr->unsubscribe();
   if (fb)     fb->unsubscribe();
+
+  SwOSIO::unsubscribe();
 
 }

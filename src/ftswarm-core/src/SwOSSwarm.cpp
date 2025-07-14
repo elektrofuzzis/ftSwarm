@@ -391,8 +391,6 @@ SwOSCtrlConfig_t localCtrlConfig = {
     .gyro          = nvs.gyro
   };
 
-  memcpy( &localCtrlConfig.zero, &nvs.joyZero, sizeof(nvs.joyZero) );
-
   // initial setup?
   if (nvs.controllerType >= FTSWARM_MAXCONTROLLERTYPE ) nvs.initialSetup();
 

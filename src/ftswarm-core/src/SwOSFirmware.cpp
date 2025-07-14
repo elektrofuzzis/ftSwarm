@@ -16,6 +16,7 @@
 #include "SwOSNVS.h"
 #include "easyKey.h"
 #include "SwOSCLI.h"
+#include "SwOSLog.h"
 #include "SwOSHW/SwOSHWHAL.h"
 
 const char EXTMODE[7][14] = { "off", "I2C-Master", "I2C-Slave", "Outputs", "Servos", "Lidar", "" }; // "" just to avoid seg faults
@@ -24,16 +25,99 @@ const char ONOFF[2][5]    = { "off", "on" };
 const char OFFM1M2[3][5]  = { "off", "M1", "M2" };
 const char WIFI[3][12]    = { "off", "AP-Mode", "Client-Mode"};
 
-#define EXTMENUMODE  1
-#define EXTMENUGYRO  2
-#define EXTMENUI2C   3
-#define EXTMENUINT   4
-#define EXTMENUINT0  5
-#define EXTMENUINT1  6
-#define EXTMENUREG   7
-#define EXTCALIBRATE 8
+#define MISCMENUMODE  1
+#define MISCMENUGYRO  2
+#define MISCMENUI2C   3
+#define MISCMENUINT   4
+#define MISCMENUINT0  5
+#define MISCMENUINT1  6
+#define MISCMENUREG   7
+#define MISCCALIBRATE 8
 
-void ExtensionMenu() {
+const char JOYSTICK[2][15] = { "left joystick", "right joystick" };
+
+void calibrateJoystick( uint8_t port, SwOSJoyCalibration_t calibration[2] ) {
+
+  SwOSDigitalInput*    button = (SwOSDigitalInput*) myOSSwarm.getIO( myOSSwarm.Ctrl[0]->serialNumber, FTSWARM_S1, SWOSIO_BUTTON );
+  SwOSAnalogInput*     joy[2];
+  int32_t              value, lastValue;
+  bool                 change;
+  uint8_t              stable;
+  char                 visualizer[5];
+
+  // get direct readings
+  joy[0] = new SwOSAnalogInput( "LR", MAXIOS[ myOSSwarm.Ctrl[0]->getCPU() ].firstJPoti + 2* port,    myOSSwarm.Ctrl[0], SWOSIO_JOYSTICK_POTI );
+  joy[1] = new SwOSAnalogInput( "FB", MAXIOS[ myOSSwarm.Ctrl[0]->getCPU() ].firstJPoti + 2* port +1, myOSSwarm.Ctrl[0], SWOSIO_JOYSTICK_POTI );
+  
+  // init calibration
+  for ( uint8_t p=0; p<2; p++ ) {
+    calibration[p].minValue = 500;
+    calibration[p].maxValue = 3500;
+  }
+
+  // 1st step: rotate the stick to get min/max values
+
+  strcpy( visualizer, "----" );
+  printf("\nPlease rotate %s.\nClick S1 to continue. %s", JOYSTICK[port], visualizer ); flushStdIO();
+
+  while ( ( button->getValueI32() == 0 ) || ( strcmp( visualizer, "++++") ) ) {
+
+    for ( uint8_t p=0; p<2; p++ ) {
+
+      change = false;
+      joy[p]->read();
+      value = joy[p]->getValueI32();
+
+      if ( value != FILTER_INVALID ) {
+
+        if (value < calibration[p].minValue ) { change = true; calibration[p].minValue = value; visualizer[p*2] = '+'; }
+        if (value > calibration[p].maxValue ) { change = true; calibration[p].maxValue = value; visualizer[p*2+1] = '+'; }
+
+        if ( change ) { printf("\b\b\b\b%s", visualizer); flushStdIO(); change = false; }
+
+      }
+
+    }
+
+  }
+  
+
+  // 2nd step: release to get mid value
+
+  printf("\nRelease the %s now", JOYSTICK[port]); flushStdIO();
+
+  for ( uint8_t p=0; p<2; p++ ) {
+
+    stable    = 0;
+    lastValue = FILTER_INVALID;
+
+    while( stable < 3) {
+
+      joy[p]->read();
+      value = joy[p]->getValueI32();
+
+      if ( ( value > 1500 ) && ( value < 2000 ) && ( value == lastValue ) ){
+        printf("."); flushStdIO();
+        stable++;
+      } else {
+        stable = 0;
+      }
+
+      lastValue = value;
+      delay(100);
+
+    }
+
+    calibration[p].midValue = value;
+
+  }
+
+  delete( joy[0] );
+  delete( joy[1] );
+  
+}
+
+void miscSettingsMenu() {
 
   bool          anythingChanged = false;
   char          prompt[255];
@@ -57,24 +141,24 @@ void ExtensionMenu() {
         Motor-IO 
     */
 
-    menu.start("Extension Port", 20);
+    menu.start("Misc Settings", 20);
 
-    if ( myOSSwarm.Ctrl[0]->hasExtPort() ) menu.add("Mode", EXTMODE[ nvs.extensionPort] , EXTMENUMODE );
+    if ( myOSSwarm.Ctrl[0]->hasExtPort() ) menu.add("Mode", EXTMODE[ nvs.extensionPort] , MISCMENUMODE );
 
     // I2C Slave Mode. Options I2C Slave Address and Interrupt Line
     if ( nvs.extensionPort == FTSWARM_EXT_I2C_SLAVE ) {
-      menu.add("I2C Slave Address", nvs.I2CAddr, EXTMENUI2C);
-      menu.add("Interrupt Line", OFFM1M2[nvs.interruptLine], EXTMENUINT);
-      menu.add("Interrupt Low Value",  nvs.interruptOnOff[0], EXTMENUINT0);
-      menu.add("Interrupt High Value", nvs.interruptOnOff[1], EXTMENUINT1);
-      menu.add("I2C Registers", nvs.I2CRegisters, EXTMENUREG);
+      menu.add("I2C Slave Address", nvs.I2CAddr, MISCMENUI2C);
+      menu.add("Interrupt Line", OFFM1M2[nvs.interruptLine], MISCMENUINT);
+      menu.add("Interrupt Low Value",  nvs.interruptOnOff[0], MISCMENUINT0);
+      menu.add("Interrupt High Value", nvs.interruptOnOff[1], MISCMENUINT1);
+      menu.add("I2C Registers", nvs.I2CRegisters, MISCMENUREG);
     }
 
     // gyro if available
-    if ( myOSSwarm.Ctrl[0]->hasGyro() ) menu.add("Gyro", ONOFF[nvs.gyro], EXTMENUGYRO );
+    if ( myOSSwarm.Ctrl[0]->hasGyro() ) menu.add("Gyro", ONOFF[nvs.gyro], MISCMENUGYRO );
 
     if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
-      menu.add("Calibrate Joysticks", "", EXTCALIBRATE, false );
+      menu.add("Calibrate Joysticks", "", MISCCALIBRATE, false );
 
     }
 
@@ -88,7 +172,7 @@ void ExtensionMenu() {
           return;
         }
         
-      case EXTMENUMODE: // ExtMode
+      case MISCMENUMODE: // ExtMode
         anythingChanged = true;
         if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
           FtSwarmExtMode_t newMode =  (FtSwarmExtMode_t) enterNumber( "(-) off (1) I2C-Master (-) I2C-Slave (-) Outputs (-) Servos (5) Lidar: ", nvs.extensionPort, 0, 5 );
@@ -101,44 +185,42 @@ void ExtensionMenu() {
         }
         break;
 
-      case EXTMENUGYRO: // Gyro
+      case MISCMENUGYRO: // Gyro
         anythingChanged = true;
         nvs.gyro = (FtSwarmGyroMode_t) enterNumber( "(0) off (1) on: ", nvs.gyro, 0, 1 );
         if ( ( nvs.gyro ) && ( nvs.CPU != FTSWARMRS_2V0 ) && ( nvs.CPU != FTSWARMRS_2V1 ) ) nvs.extensionPort = FTSWARM_EXT_I2C_MASTER;
         break;
 
-      case EXTMENUI2C: // I2C Addr
+      case MISCMENUI2C: // I2C Addr
         anythingChanged = true;
         nvs.I2CAddr = (uint8_t) enterNumber( "[16..127]: ", nvs.I2CAddr, 16, 127 );
         break;
         
-      case EXTMENUINT: // Interrupt Line
+      case MISCMENUINT: // Interrupt Line
         anythingChanged = true;
         nvs.interruptLine = (uint8_t) enterNumber( "motor (1 for M1, 2 for M2, ...) or 0 to skip: ", nvs.interruptLine, 0, MAXIOS[nvs.CPU].motors );
         break;
 
-      case EXTMENUINT0: // Interrupt Line Low
+      case MISCMENUINT0: // Interrupt Line Low
         anythingChanged = true;
         nvs.interruptOnOff[0] = (int16_t) enterNumberI32( "Low value [-255..255]", nvs.interruptOnOff[0], -255, 255 );
         break;
 
-      case EXTMENUINT1: // Interrupt Line High
+      case MISCMENUINT1: // Interrupt Line High
         anythingChanged = true;
         nvs.interruptOnOff[1] = (int16_t) enterNumberI32( "High Value [-255..255]", nvs.interruptOnOff[1], -255, 255 );
         break;
 
-      case EXTMENUREG: // Max I2CRegisters
+      case MISCMENUREG: // Max I2CRegisters
         anythingChanged = true;
         nvs.I2CRegisters = (uint8_t) enterNumber( "I2C Registers [1..8]", nvs.I2CRegisters, 1, MAXI2CREGISTERS);
         break;
 
-      case EXTCALIBRATE: // calibrate joysticks
-        if  ( yesNo( "Start calibration (Y/N)?" ) ) {
+      case MISCCALIBRATE: // calibrate joysticks
+        if  ( yesNo( "\nStart calibration (Y/N)?" ) ) {
           anythingChanged = true;
-          for ( uint8_t i=0; i<2; i++ ) {
-            joystick = (SwOSJoystick *) myOSSwarm.Ctrl[0]->getIO(SWOSIO_JOYSTICK, i);
-            if (joystick) joystick->calibrate( &nvs.joyZero[i][0], &nvs.joyZero[i][1] );
-          }
+          calibrateJoystick( 0, nvs.calibration[0] );
+          calibrateJoystick( 1, nvs.calibration[0] );
         }
         break;
 
@@ -863,7 +945,7 @@ void remoteControl( void ) {
         
         myOSSwarm.getAlias( nvs.events[i].sensor, sensor );
         myOSSwarm.getAlias( nvs.events[i].actor,  actor  );
-        
+
         if ( nvs.events[i].trigger == FTSWARM_TRIGGERVALUE ) 
           sprintf( value, "%s", sensor );
         else
@@ -990,7 +1072,7 @@ void remoteControl( void ) {
 #define MAINMENUALIAS     3
 #define MAINMENUFACTORY   4
 #define MAINMENUREMOTE    5
-#define MAINMENUEXTENSION 6
+#define MAINMENUMISC      6
 
 void mainMenu( void ) {
 
@@ -1013,7 +1095,7 @@ void mainMenu( void ) {
     switch (myOSSwarm.Ctrl[0]->getType()) {
 
       case FTSWARMCONTROL:
-      case FTSWARM:         menu.add("other options", "", MAINMENUEXTENSION );
+      case FTSWARM:         menu.add("Misc Settings", "", MAINMENUMISC );
                             break;
 
     }
@@ -1027,7 +1109,7 @@ void mainMenu( void ) {
       case MAINMENUALIAS:     aliasMenu();        break;
       case MAINMENUFACTORY:   factorySettings();  break;
       case MAINMENUREMOTE:    remoteControl();    break;
-      case MAINMENUEXTENSION: ExtensionMenu();    break;
+      case MAINMENUMISC:      miscSettingsMenu(); break;
     }
     
   }

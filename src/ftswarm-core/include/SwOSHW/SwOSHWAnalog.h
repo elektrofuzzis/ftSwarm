@@ -83,7 +83,7 @@
     SwOSAnalogInput*  fb     = NULL;
               
     // constructors
-    SwOSJoystick(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSDigitalInput* button, SwOSAnalogInput* lr, SwOSAnalogInput* fb, int16_t zeroLR, int16_t zeroFB );
+    SwOSJoystick(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSDigitalInput* button, SwOSAnalogInput* lr, SwOSAnalogInput* fb );
   
     // administrative stuff
     virtual void jsonize( JSONize *json, uint8_t id);
@@ -94,6 +94,4 @@
   
     // commands
     virtual void getValue( int16_t* FB, int16_t* LR ) { *FB = fb->getValueI32(); *LR = lr->getValueI32(); };
-    virtual void calibrate( int16_t *zeroLR, int16_t *zeroFB );  // uses actual readings to calibrate
-
   };
