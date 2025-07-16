@@ -306,9 +306,9 @@ void SwOSJoystick::jsonize( JSONize *json, uint8_t id) {
 
 char* SwOSJoystick::subscribe( char *IOName, uint32_t hysteresis ) {
 
-  if( button ) button->subscribe( button->getAlias(), 0 ) ;
-  if( lr )     lr->subscribe( lr->getAlias(), 0 ) ;
-  if( fb )     fb->subscribe( lr->getAlias(), 0 ) ;
+  if( button ) button->subscribe( button->getName(), 0 ) ;
+  if( lr )     lr->subscribe( lr->getName(), 0 ) ;
+  if( fb )     fb->subscribe( fb->getName(), 0 ) ;
 
   return SwOSIO::subscribe( IOName, hysteresis );
   

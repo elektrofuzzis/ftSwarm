@@ -295,7 +295,7 @@ void SwOSIO::onTrigger( int32_t value ) {
 }
 
 char *SwOSIO::subscribe( char *IOName, uint32_t hysteresis ) {
-  
+
   this->hysteresis = hysteresis;
   isSubscribed = true;
 

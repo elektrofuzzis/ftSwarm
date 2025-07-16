@@ -26,6 +26,7 @@ const IOCmdList_t IOCmdList [CLICMD_MAX] = {
   { "setMicrostepMode", 1, 1 },
   { "getMicrostepMode", 0, 0 },
   { "subscribe", 0, 1 },
+  { "unsubscribe", 0, 0 },
   { "setIOType", 2, 2},
   { "getIOType", 0, 0},
   { "getValue", 0, 0},
@@ -678,6 +679,7 @@ void SwOSCLI::executeJoystickCmd( void ) {
     case CLICMD_getValue:     io->lock();
                               int16_t lr, fb;
                               io->getValue( &lr, &fb );
+                              printf("R: %d %d\n", lr, fb ); 
                               io->unlock();
                               break;
 
@@ -839,6 +841,7 @@ void SwOSCLI::executeIOCommand( void ) {
       case SWOSIO_LDR:
       case SWOSIO_COUNTER:
       case SWOSIO_ROTARYENCODER:
+      case SWOSIO_JOYSTICK_POTI:
       case SWOSIO_FREQUENCYMETER: executeInputCmd(); break;
 
       case SWOSIO_MOTOR:
@@ -1019,6 +1022,23 @@ void SwOSCLI::evalIOCommand( char *token ) {
     } else {
       _io->lock();
       _io->subscribe( IOName, a);
+      _io->unlock();
+    }
+
+  } else if (_cmd==CLICMD_unsubscribe) {
+
+    // unsubscribe needs special handling due to non-int-parameters
+    // controller?
+
+    if ( (!_io) && (ctrl ) ) {
+      ctrl->lock();
+      ctrl->unsubscribe( true );
+      ctrl->unlock();
+    
+    // IO?
+    } else {
+      _io->lock();
+      _io->unsubscribe( );
       _io->unlock();
     }
 

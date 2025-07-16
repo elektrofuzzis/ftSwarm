@@ -17,6 +17,7 @@ typedef enum {
   CLICMD_setMicrostepMode,
   CLICMD_getMicrostepMode,
   CLICMD_subscribe,
+  CLICMD_unsubscribe,
   CLICMD_setIOType,
   CLICMD_getIOType,
   CLICMD_getValue,
