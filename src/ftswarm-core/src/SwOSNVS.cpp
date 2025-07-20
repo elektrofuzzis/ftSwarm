@@ -20,8 +20,19 @@
 
 SwOSNVS nvs;
 
-bool isEqual( SwOSNVSEvent_t *a, SwOSNVSEvent_t *b ) {
-  return memcmp( a, b, sizeof(SwOSNVSEvent_t) ) == 0;
+bool cmpEvent( SwOSNVSEvent_t *a, SwOSNVSEvent_t *b ) {
+
+  // 2 identical
+  // 1 only parameter different
+  // 0 else
+
+  if ( memcmp( a, b, sizeof(SwOSNVSEvent_t) - sizeof( int32_t ) ) == 0 ) {
+
+    if ( a->parameter == b->parameter ) return 2;
+    else return 1;
+
+  } else return 0;
+  
 }
 
 /***************************************************
@@ -114,6 +125,7 @@ SwOSNVS::SwOSNVS() {
   }
 
   // initialize events
+  activeEventConfig = 0;
   bzero( events, sizeof( events ) );
 
 }
@@ -141,7 +153,11 @@ bool SwOSNVS::load() {
 
   // Open
   nvs_handle_t my_handle;
-  ESP_ERROR_CHECK( nvs_open( NVSNAMESPACE, NVS_READONLY, &my_handle) );
+  
+  esp_err_t nvserror = nvs_open( NVSNAMESPACE, NVS_READONLY, &my_handle);
+  // initial setup?
+  if ( nvserror == ESP_ERR_NVS_NOT_FOUND ) return false; 
+  ESP_ERROR_CHECK( nvserror );
 
   // start reading my version to check my data is valid
   nvs_get_i32( my_handle, "NVSVersion", &version);
@@ -161,6 +177,7 @@ bool SwOSNVS::load() {
   if ( ( controllerType == FTSWARM_NOCTRL ) ||
        ( serialNumber == 0 ) ||
        ( CPU == FTSWARM_NOVERSION ) ) {
+   nvs_close( my_handle );
     return false;
   }
 
@@ -185,10 +202,6 @@ bool SwOSNVS::load() {
   dummy = sizeof( swarmName );  nvs_get_str( my_handle, "swarmName", swarmName, &dummy );
   nvs_get_u8(  my_handle, "swarmSpeed",                &swarmSpeed );
 
-  // events
-  dummy = sizeof( events );
-  nvs_get_blob( my_handle, "events", &events, &dummy );
-
   // Kelda & swarmMembers
   nvs_get_u8 ( my_handle, "IAmKelda", (uint8_t *) &IAmKelda );
   nvs_get_u32( my_handle, "swarmCom", (uint32_t *) &swarmCommunication);
@@ -207,11 +220,15 @@ bool SwOSNVS::load() {
   nvs_get_u8 ( my_handle, "I2CRegisters", &I2CRegisters );
   nvs_get_u8 ( my_handle, "Gyro",    (uint8_t *) &gyro);
 
+  nvs_close( my_handle );
+
+  loadEvents();
+
   return true;
 
 }
 
-void SwOSNVS::deleteAllControllers( void ) {
+void SwOSNVS::deleteAllControllers(  void ) {
 
   bzero( swarmMember, MAXCTRL );
 
@@ -247,10 +264,7 @@ void SwOSNVS::save( bool writeAll ) {
   ESP_ERROR_CHECK( nvs_set_u16( my_handle, "swarmSecret", swarmSecret ) );
   ESP_ERROR_CHECK( nvs_set_u16( my_handle, "swarmPIN",    swarmPIN ) );
   ESP_ERROR_CHECK( nvs_set_str( my_handle, "swarmName",   swarmName ) );
-
-  // events
-  ESP_ERROR_CHECK( nvs_set_blob( my_handle, "events",  (void *)&events, sizeof( events ) ) );
-   
+  
   // Kelda & swarmMembers
   ESP_ERROR_CHECK( nvs_set_u8  ( my_handle, "IAmKelda",     (uint8_t) IAmKelda ) );
   ESP_ERROR_CHECK( nvs_set_u32 ( my_handle, "swarmCom",     swarmCommunication ) );
@@ -272,11 +286,64 @@ void SwOSNVS::save( bool writeAll ) {
   // commit
   ESP_ERROR_CHECK( nvs_commit( my_handle ) );
 
+  nvs_close( my_handle );
+
+  saveEvents();
+
 }
 
 void SwOSNVS::saveAndRestart( void ) {
   save();
   ESP.restart();
+}
+
+void SwOSNVS::saveEvents( void ) {
+
+  char config[16];
+
+  // Open
+  nvs_handle_t my_handle;
+  ESP_ERROR_CHECK( nvs_open( NVSNAMESPACE, NVS_READWRITE, &my_handle) );
+
+  // active config
+  ESP_ERROR_CHECK( nvs_set_u8( my_handle, "activeConfig", activeEventConfig ) );
+
+  for ( uint8_t i=0; i<MAXEVENTCONFIGS; i++ ) {
+    sprintf( config, "config#%d", i );
+    ESP_ERROR_CHECK( nvs_set_blob( my_handle, config, (void *)events[i], sizeof( events[i] ) ) );
+  }
+
+  // commit
+  ESP_ERROR_CHECK( nvs_commit( my_handle ) );
+
+  nvs_close( my_handle );
+
+}
+
+void SwOSNVS::loadEvents( void ) {
+  
+  char   config[16];
+  size_t dummy;
+
+  // Open
+  nvs_handle_t my_handle;
+  ESP_ERROR_CHECK( nvs_open( NVSNAMESPACE, NVS_READWRITE, &my_handle) );
+
+  // active config
+  ESP_ERROR_CHECK( nvs_get_u8( my_handle, "activeConfig", &activeEventConfig ) );
+
+  // get configs
+  for ( uint8_t i=0; i<MAXEVENTCONFIGS; i++ ) {
+    sprintf( config, "config#%d", i );
+    dummy = sizeof( events );
+    ESP_ERROR_CHECK( nvs_get_blob( my_handle, config, events[i], &dummy ) );
+  }
+
+  // commit
+  ESP_ERROR_CHECK( nvs_commit( my_handle ) );
+
+  nvs_close( my_handle );
+
 }
 
 bool SwOSNVS::RS485Available( void ) {
@@ -317,6 +384,7 @@ void SwOSNVS::factorySettings( void ) {
   gyro               = false;
 
   bzero(swarmMember, sizeof(swarmMember));
+  activeEventConfig  = 0;
   bzero(events,      sizeof(events));
 
 }
@@ -416,16 +484,28 @@ void SwOSNVS::printNVS() {
   printf( "\n");
 
   printf( "events:\n" );
-  for (uint8_t i=0; i<MAXNVSEVENTS; i++ ) {
-    if ( events[i].sensor.serialNumber != 0 ) {
-      printf( "#%d input %d.%d.%d actor %d.%d.%d trigger %d parameter %d\n", 
-              i, 
-              events[i].sensor.serialNumber, events[i].sensor.ioType, events[i].sensor.port,
-              events[i].actor.serialNumber,  events[i].actor.ioType,  events[i].actor.port,
-              events[i].parameter,
-              events[i].trigger
-            );
-    }
+  printf( "activeEventConfig %d\n", activeEventConfig);
+
+  // configs
+  for ( uint8_t c=0; c<MAXEVENTCONFIGS; c++ ) {
+  
+    printf("Event configuration %d", c);
+    if ( c== activeEventConfig ) printf(" - active -");
+    printf("\n");
+
+    // events
+      for ( uint8_t i=0; i<MAXNVSEVENTS; i++ ) {
+
+        if ( events[c][i].sensor.serialNumber != 0 ) {
+          printf( "#%d input %d.%d.%d actor %d.%d.%d trigger %d parameter %d\n", 
+                  i, 
+                  events[c][i].sensor.serialNumber, events[c][i].sensor.ioType, events[c][i].sensor.port,
+                  events[c][i].actor.serialNumber,  events[c][i].actor.ioType,  events[c][i].actor.port,
+                  events[c][i].parameter,
+                  events[c][i].trigger
+                );
+        }
+      }
   }
  
 }
@@ -441,6 +521,7 @@ bool SwOSNVS::upgrade( void ) {
     ESP_ERROR_CHECK( nvs_open(NVSNAMESPACE, NVS_READWRITE, &my_handle) );   
     ESP_ERROR_CHECK( nvs_erase_all( my_handle ) );
     ESP_ERROR_CHECK( nvs_commit( my_handle ) );
+    nvs_close( my_handle );
     
     // save again
     save( true );

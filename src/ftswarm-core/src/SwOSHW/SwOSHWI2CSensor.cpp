@@ -282,72 +282,63 @@ void SwOSGyroMPU::jsonize( JSONize *json, uint8_t id) {
  *
  ***************************************************/
 
- VL53L0X Lidar;
+VL53L0X Lidar;
 
- SwOSLidarInput::SwOSLidarInput(const char *name, SwOSCtrl *ctrl ) : SwOSInput( name, SWOS_NOPORT, ctrl, SWOSIO_LIDAR ) {
+SwOSLidarInput::SwOSLidarInput(const char *name, SwOSCtrl *ctrl ) : SwOSInput( name, SWOS_NOPORT, ctrl, SWOSIO_LIDAR ) {
    
-   // initialize local HW
-   if (ctrl->isLocal()) {
-       setupLocal();
-   }
+  // initialize local HW
+  if (ctrl->isLocal()) {
+      setupLocal();
+  }
  
- }
+}
  
- void SwOSLidarInput::setupLocal() {
-   // initialize local HW
+void SwOSLidarInput::setupLocal() {
+  // initialize local HW
  
-   SwOSInput::setupLocal( );
+  SwOSInput::setupLocal( );
  
-   Lidar.setTimeout(500);
-   Lidar.init();
-   // Lidar.setMeasurementTimingBudget(20000);
-   Lidar.startContinuous(100);
- }
+  Lidar.setTimeout(500);
+  Lidar.init();
+  // Lidar.setMeasurementTimingBudget(20000);
+  Lidar.startContinuous(100);
+}
   
- void SwOSLidarInput::read() {
+void SwOSLidarInput::read() {
    
-   // no work on remote sensors
-   if (!ctrl->isLocal()) return;
- 
-   uint32_t newValue;
- 
-   // read new data
-   newValue = Lidar.readRangeContinuousMillimeters();
- 
-   setReading( newValue );
- 
- }
- 
- void SwOSLidarInput::setReading( int32_t newValue ) {
-     
-   // store new data
-   lastRawValue = newValue;  
- 
-   subscription();
- 
- }
- 
- void SwOSLidarInput::setValue( int32_t value ) {
- 
-   // no work on real local HW
-   if ( ( ctrl->isLocal()) && (!ctrl->isI2CSwarmCtrl() ) ) return;
-   
-   lastRawValue = value;
- 
-   subscription();
- 
- }
- 
- void SwOSLidarInput::jsonize( JSONize *json, uint8_t id) {
-   
-   json->startObject();
-   SwOSIO::jsonize(json, id);
-   json->variableI32("value", getValueI32() );   
-   json->endObject();
+  // no work on remote sensors
+  if (!ctrl->isLocal()) return;
 
- }
+  uint32_t newValue;
 
- /***************************************************
+  // read new data
+  newValue = Lidar.readRangeContinuousMillimeters();
+ 
+  setReading( newValue );
+ 
+}
+ 
+void SwOSLidarInput::setValue( int32_t value ) {
+ 
+  // no work on real local HW
+  if ( ( ctrl->isLocal()) && (!ctrl->isI2CSwarmCtrl() ) ) return;
+   
+  lastRawValue = value;
+ 
+  subscription();
+ 
+}
+ 
+void SwOSLidarInput::jsonize( JSONize *json, uint8_t id) {
+   
+  json->startObject();
+  SwOSIO::jsonize(json, id);
+  json->variableI32("value", getValueI32() );   
+  json->endObject();
+
+}
+
+/***************************************************
  *
  *   I2C Slave
  *

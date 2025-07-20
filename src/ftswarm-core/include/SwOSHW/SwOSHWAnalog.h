@@ -55,7 +55,6 @@
 
     // read sensor
 	  virtual void read();
-    virtual void setReading( int32_t newValue );
 
     // external commands
     virtual void   setValue( int32_t value );                    // set value by an external call

@@ -134,7 +134,8 @@ public:
   // Test, if I'm an ...
   virtual bool isMotor( void )        { return false; };  
   virtual bool isActor( void )        { return false; }; // actor to be used with triggers
-  virtual bool isInput( void )        { return false; }; // input to be used with triggers
+  virtual bool isInput( void )        { return false; }; 
+  virtual bool isEventInput( void )   { return false; }; // input to be used with triggers
   virtual bool isGPIOInput( void )    { return false; };  
   virtual bool isDigitalInput( void ) { return false; };  
   virtual bool isAnalogInput( void )  { return false; };  
@@ -171,12 +172,13 @@ class SwOSEventHandler {
 };
 
 class SwOSEventInput {
-  protected:
+  public:
     SwOSEventHandler *eventList = NULL;
   public:
    ~SwOSEventInput();
-    void deleteEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor );
-    void addEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, int32_t parameter );
+    bool deleteEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor );
+    void deleteEvents( void );
+    bool addEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, int32_t parameter );
     void trigger( FtSwarmTrigger_t triggerEvent, int32_t value );
 };
 
@@ -198,7 +200,7 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
 
   public:
  
-	  SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType ) : SwOSIO( name, port, ctrl, ioType ), SwOSEventInput( ) {};
+	  SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType ) : SwOSIO( name, port, ctrl, ioType ), SwOSEventInput( ) { };
   
     // administrative stuff
 	  virtual void jsonize( JSONize *json, uint8_t id) {};
@@ -208,9 +210,12 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
     // Test, if I'm an input
     virtual bool isInput( void ) { return true; };
 
+    // input to be used with triggers
+    virtual bool isEventInput( void )   { return true; }; 
+
     // read sensor
 	  virtual void read() {};
-    virtual void setReading( int32_t newValue ) {};
+    virtual void setReading( int32_t newValue );
 
     // external commands
 	  virtual int32_t getValueI32( void );                          // get raw reading

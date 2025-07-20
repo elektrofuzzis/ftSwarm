@@ -68,14 +68,14 @@ protected:
 
   uint8_t          pixels = 0;
 
+  SwOSIO* createIO( SwOSIOType_t ioType, uint8_t port, char *name, char *alias ); // create an IO by type
+  
   // communications
   bool saveToNVS( SwOSCom *com );
   bool setPixel( SwOSCom *com );
   bool resetCounter( SwOSCom *com );
   bool setActorSpeed( SwOSCom *com );
   bool userEvent( SwOSCom *com );
-  SwOSIO* createIO( SwOSIOType_t ioType, uint8_t port, char *name, char *alias ); // create an IO by type
-  bool ioConfig( SwOSCom *com );
   bool setServo( SwOSCom *com );
   bool setStepperDistance( SwOSCom *com );
   bool setStepperPosition( SwOSCom *com );
@@ -114,14 +114,29 @@ public:
   ~SwOSCtrl();
 
   // administrative stuff
-  uint8_t getIndex( SwOSIO *io );                                        // get index to io pointer
-  virtual void lock( void );
-  virtual void unlock( void );
-  virtual bool isInUse( void );
-  virtual SwOSIO *getIO( SwOSIOType_t ioType, FtSwarmPort_t port );      // get a pointer to an IO port by address
-	virtual SwOSIO *getIO( const char *name);                              // get a pointer to an IO port by name
-  virtual void tick( void );                                             // mark communcation in lastContact
-  virtual bool isOnline( void ) { return getComState() == COMSTATE_ONLINE; }; // Online?
+  // get index to io pointer
+  uint8_t getIndex( SwOSIO *io );                                        
+
+  // lock controller
+  void    lock( void );
+
+  // unlock controller
+  void    unlock( void );
+
+  // check, if the controller is actively used by someone
+  bool    isInUse( void );
+
+  // get a pointer to an IO port by address
+  SwOSIO* getIO( SwOSIOType_t ioType, FtSwarmPort_t port );
+
+  // get a pointer to an IO port by name
+	SwOSIO* getIO( const char *name);
+
+  // mark communcation in lastContact
+  void    tick( void );
+
+  // Online?
+  bool    isOnline( void ) { return getComState() == COMSTATE_ONLINE; };
 
   SwOSMotor*    getMotor( char *name );                                  // get a pointer to a motor by name
   SwOSMotor*    getMotor( uint8_t index );                               // get a pointer to a motor by index
@@ -133,63 +148,74 @@ public:
   SwOSServo*    getServo( uint8_t index );                               // get a pointer to a servo by index
   SwOSStepper*  getStepper( uint8_t index );                             // get a pointer to a stepper by index
 
-  virtual FtSwarmController_t getType();                                  // what I am?
-  virtual FtSwarmVersion_t   getCPU() { return CPU; };                   // my CPU type
-	virtual const char *       getVersionCPU();                            // my CPU type as string
-  virtual bool               isLocal() { return local; };                // local or remote?
-	virtual char *             getHostname( );                             // hostname
-	virtual void               jsonize( JSONize *json, uint8_t id);        // send board & IO device information as a json string
-  virtual void               jsonizeIO( JSONize *json, uint8_t id);      // send IO device information as a json string
-  virtual void loadFromNVS( void );                                      // write my port & alias settings to NVS
-  virtual void saveToNVS( void );                                        // load my port & alias settings from NVS
-  virtual void setState( SwOSState_t state, uint8_t members = 0, char *SSID = NULL ); // visualizes controller's state like booting, error,...
-  virtual SwOSState_t getState( void ) { return isOnline()?state:OFFLINE; };
-  virtual void factorySettings( void );                                  // reset factory settings
-  virtual void halt( void );                                             // stop all actors
-  virtual void unsubscribe( bool cascade );                              // unsubscribe userevents and if cascade = true all IOs
-  virtual bool isI2CSwarmCtrl( void );                                   // is a ftSwarmI2C-Board 
-  virtual void identify( void );                                         // set LEDs to aquamarine / OLED to "it's me" to identify HW 
-  virtual char *subscribe( char *ctrlName );                             // listen on user event data
-  virtual bool changeIOType( uint8_t index, SwOSIOType_t newIOType );    // change port's IO Type if possible
-  virtual bool hasGyro( void );                                          // test if HW has a gyro
-  virtual bool hasExtPort( void );                                       // test if HW has an ExtentionPort
+  FtSwarmController_t getType();                                  // what I am?
+  FtSwarmVersion_t   getCPU() { return CPU; };                   // my CPU type
+	const char *       getVersionCPU();                            // my CPU type as string
+  bool               isLocal() { return local; };                // local or remote?
+	char *             getHostname( );                             // hostname
+	void               jsonize( JSONize *json, uint8_t id);        // send board & IO device information as a json string
+  void               jsonizeIO( JSONize *json, uint8_t id);      // send IO device information as a json string
 
-  virtual void read(); // run measurements
+  void loadFromNVS( void );                                      // write my port & alias settings to NVS
+  void saveToNVS( void );                                        // load my port & alias settings from NVS
+
+  void setState( SwOSState_t state, uint8_t members = 0, char *SSID = NULL ); // visualizes controller's state like booting, error,...
+  SwOSState_t getState( void ) { return isOnline()?state:OFFLINE; };
+
+  bool changeIOType( uint8_t index, SwOSIOType_t newIOType );    // change port's IO Type if possible
+
+  void factorySettings( void );                                  // reset factory settings
+
+  void halt( void );                                             // stop all actors
+  bool isI2CSwarmCtrl( void );                                   // is a ftSwarmI2C-Board 
+  void identify( void );                                         // set LEDs to aquamarine / OLED to "it's me" to identify HW 
+  
+  bool hasGyro( void );                                          // test if HW has a gyro
+  bool hasExtPort( void );                                       // test if HW has an ExtentionPort
+
+  void deleteEvents( void );                                     // delete all events
+
+  char *subscribe( char *ctrlName );                             // listen on user event data
+  void unsubscribe( bool cascade );                              // unsubscribe userevents and if cascade = true all IOs
+
+  // run measurements
+  void read();
 
   // API commands
-	virtual bool apiActorCmd( char *id, int cmd );                 // send an actor's command (from api)
-  virtual bool apiActorSpeed( char *id, int speed );             // send an actors's speed (from api)
-	virtual bool apiLEDBrightness( char *id, int brightness );     // send a LED command (from api)
-	virtual bool apiLEDColor( char *id, int color );               // send a LED command (from api)
-  virtual bool apiServoOffset( char *id, int offset );           // send a Servo command (from api)
-  virtual bool apiServoPosition( char *id, int position );       // send a Servo command (from api)
-  virtual bool apiCAMStreaming( char *id, bool onOff );            // start/stops CAM streaming
-  virtual bool apiCAMFramesize( char *id, int framesize );         // set CAM framzesize / resolution
-  virtual bool apiCAMQuality( char *id, int quality );             // set CAM quality
-  virtual bool apiCAMBrightness( char *id, int brightness );       // set CAM brightness
-  virtual bool apiCAMContrast( char *id, int contrast );           // set CAM contrast
-  virtual bool apiCAMSaturation( char *id, int saturation );       // set CAM saturation
-  virtual bool apiCAMSpecialEffect( char *id, int specialEffect ); // set CAM special effect
-  virtual bool apiCAMWbMode( char *id, int wbMode );               // set CAM wbMode    
-  virtual bool apiCAMHMirror( char *id, bool hMirror );            // set CAM H-Mirror
-  virtual bool apiCAMVFlip( char *id, bool vFlip );                // set CAM V-Flip 
+	bool apiActorCmd( char *id, int cmd );                 // send an actor's command (from api)
+  bool apiActorSpeed( char *id, int speed );             // send an actors's speed (from api)
+	bool apiLEDBrightness( char *id, int brightness );     // send a LED command (from api)
+	bool apiLEDColor( char *id, int color );               // send a LED command (from api)
+  bool apiServoOffset( char *id, int offset );           // send a Servo command (from api)
+  bool apiServoPosition( char *id, int position );       // send a Servo command (from api)
+  bool apiCAMStreaming( char *id, bool onOff );            // start/stops CAM streaming
+  bool apiCAMFramesize( char *id, int framesize );         // set CAM framzesize / resolution
+  bool apiCAMQuality( char *id, int quality );             // set CAM quality
+  bool apiCAMBrightness( char *id, int brightness );       // set CAM brightness
+  bool apiCAMContrast( char *id, int contrast );           // set CAM contrast
+  bool apiCAMSaturation( char *id, int saturation );       // set CAM saturation
+  bool apiCAMSpecialEffect( char *id, int specialEffect ); // set CAM special effect
+  bool apiCAMWbMode( char *id, int wbMode );               // set CAM wbMode    
+  bool apiCAMHMirror( char *id, bool hMirror );            // set CAM H-Mirror
+  bool apiCAMVFlip( char *id, bool vFlip );                // set CAM V-Flip 
 
   // Communications
-  virtual bool OnDataRecv( SwOSCom *com );                         // data via espnow revceived
-  virtual bool recvState( SwOSCom *com );                          // receive state from another ftSwarmXX
-  virtual SwOSCom *state2Com( MacAddr destination );               // copy my state in a com struct
-  virtual void registerMe( SwOSCom *com );                         // fill in my own data in registerCmd datagram
-  virtual void sendIOConfig( MacAddr destination );                // send my IO config
-  virtual void setMicrostepMode( uint8_t mode );                   // set microstep mode
-  virtual uint8_t getMicrostepMode( void );                        // get microstep mode
+  bool OnDataRecv( SwOSCom *com );                         // data via espnow revceived
+  bool recvState( SwOSCom *com );                          // receive state from another ftSwarmXX
+  SwOSCom *state2Com( MacAddr destination );               // copy my state in a com struct
+  void registerMe( SwOSCom *com );                         // fill in my own data in registerCmd datagram
+  void sendIOConfig( MacAddr destination );                // send my IO config
+  void setMicrostepMode( uint8_t mode );                   // set microstep mode
+  uint8_t getMicrostepMode( void );                        // get microstep mode
+  bool ioConfig( SwOSCom *com );
 
   // set comState
-  virtual void setComState( SwOSComState_t comState ) { this->comState = comState; };
+  void setComState( SwOSComState_t comState ) { this->comState = comState; };
 
   // get comState
-  virtual SwOSComState_t getComState( void ) { return comState; };
+  SwOSComState_t getComState( void ) { return comState; };
 
   // ms since last received package
-  virtual unsigned long networkAge( void );
+  unsigned long networkAge( void );
     
 };

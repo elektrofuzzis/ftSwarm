@@ -574,12 +574,6 @@ void aliasMenu( void ) {
     uint8_t item = 0;
     menu.start( "alias menu:", 10, 255, ' ' );
 
-    // Kelda only: option to select another controller in the swarm
-    if ( myOSSwarm.Ctrl[0]->IAmKelda ) {
-      menu.add( "Controller", myOSSwarm.Ctrl[controller]->getName(), 99 );
-      printf("\n");
-    }
-
     printf("      Name        Type            Alias\n");
 
     // show existing alias
@@ -596,6 +590,12 @@ void aliasMenu( void ) {
       }
     }
   
+    // Kelda only: option to select another controller in the swarm
+    if ( myOSSwarm.Ctrl[0]->IAmKelda ) {
+      printf("\n");
+      menu.add( "Controller", myOSSwarm.Ctrl[controller]->getName(), 99 );
+    }
+
     // User's choice
     uint8_t choice = menu.userChoice( );
     
@@ -674,135 +674,9 @@ void factorySettings( void ) {
 
 }
 
-/*
-
-bool changeEvent( NVSEvent *event ) {
-
-  char actor[MAXIDENTIFIER];
-  char sensor[MAXIDENTIFIER];
-
-  SwOSIO *newSensor = NULL;
-  SwOSIO *newActor = NULL;
-
-  FtSwarmTrigger_t trigger;
-  int32_t parameter;
-  bool    usePortValue;
-  uint8_t LR;
-
-  // enter sensor
-  while (true) {
-    enterString( "sensor: ", sensor, sizeof(sensor) );
-    newSensor = myOSSwarm.getIO( sensor );
-    
-    if (sensor[0] == '\0' ) 
-      return false;
-
-    else if (!newSensor) 
-      printf("sensor %s doesn't exist in the swarm.\n", sensor);
-    
-    else if ( !newSensor->isInput() )
-      printf("%s needs to be a sensor.\n", sensor);
-
-    else
-      // now, I'm fine
-      break;
-  }
-
-  // which poti?
-  if ( newSensor->getIOType() == SWOSIO_JOYSTICK ) 
-    LR = enterNumber( "joystick direction: (1) left/right (2) forward/backward: ", 1, 1, 2 );
-  else
-    LR = 0;
-  
-  // enter trigger event
-  trigger = (FtSwarmTrigger_t) enterNumber( "Trigger event: (0) TriggerUp (1) TriggerDown (2) ChangeValue: ", 0, 0, 2 );
-  
-  // enter actor
-  while (true) {
-    enterString( "actor: ", actor, sizeof(actor) );
-    newActor = myOSSwarm.getIO( actor );
-    
-    if (actor[0] == '\0' ) 
-      return false;
-      
-    else if (!newActor) 
-      printf("actor %s doesn't exist in the swarm.\n", actor);
-
-    else if ( !( ( newActor->isMotor() ) || ( newActor->isServo() ) || ( newActor->isPixel() ) ) )
-      printf("%s needs to be an actor, a LED or a servo.\n", actor);
-    
-    else
-      // now, I'm fine
-      break;
-  }
-
-  // enter parameter
-  usePortValue = enterNumber( "(0) set a static value OR (1) use the sensors value? ", 0, 0, 1 );
-  if (!usePortValue) parameter = enterNumberI32( "Which value should be set? ", 0, 0, 0xFFFFFF );
-
-  // delete old trigger
-  SwOSIO *oldSensor = myOSSwarm.getIO( event->sensor, SWOSIO_UNDEF );
-  
-  if ( oldSensor != NULL ) {
-  
-    switch ( oldSensor->getIOType() ) {
-    
-      case SWOSIO_JOYSTICK: 
-        if ( LR == 1 ) static_cast<SwOSJoystick *>(oldSensor)->triggerLR.unregisterEvent( trigger, oldSensor );
-        else           static_cast<SwOSJoystick *>(oldSensor)->triggerFB.unregisterEvent( trigger, oldSensor );
-        break; 
-        
-      default: 
-        static_cast<SwOSInput *>(oldSensor)->unregisterEvent( trigger, oldSensor ); 
-        break;
-        
-    }
-
-  }
-
-  // modify trigger
-  switch ( newSensor->getIOType() ) {
-    
-    case SWOSIO_JOYSTICK: 
-      if ( LR == 1 ) static_cast<SwOSJoystick *>(newSensor)->triggerLR.registerEvent( trigger, newActor, parameter );
-      else           static_cast<SwOSJoystick *>(newSensor)->triggerFB.registerEvent( trigger, newActor, parameter );
-      break;
-
-    default: 
-      static_cast<SwOSInput *>(newSensor)->registerEvent( trigger, newActor, parameter ); 
-      break;
-  }
-
-  // change event
-  strcpy( event->sensor, sensor ); 
-  event->LR = LR; 
-  strcpy( event->actor, actor);  
-  event->triggerEvent = trigger;
-  event->parameter = parameter;
-
-  return true;
-  
-}
-
-void printX( char *str, uint8_t fill ) {
-
-  char line[255];
-
-  // copy string with max fill chars
-  strncpy( line, str, fill );
-
-  // fill training blanks
-  for (uint8_t i=strlen(line); i<fill; i++) line[i] = ' ';
-
-  // print
-  printf( "%s ", line );
-  
-}
-*/
-
 const char FTSWARMTRIGGER[FTSWARM_MAXTRIGGER][12] = {
-  "TriggerUp",
   "TriggerDown",
+  "TriggerUp",
   "ChangeValue",
   "I2CRead",
   "I2CWrite"
@@ -859,7 +733,7 @@ const char* getAction( SwOSIOUID_t uio ) {
 
 }
 
-bool enterTrigger( SwOSNVSEvent_t *event ) {
+bool enterEvent( SwOSNVSEvent_t *event ) {
 
   char           prompt[128];
   SwOSIO         *io;
@@ -871,7 +745,7 @@ bool enterTrigger( SwOSNVSEvent_t *event ) {
   if (! enterIO( prompt, &event->sensor, true  ) ) { return false; }
 
   // trigger
-  sprintf( prompt, "Enter trigger event (0) trigger up (1) trigger down (2) use sensor value [%d]: ", event->trigger );
+  sprintf( prompt, "Enter trigger event (0) trigger down (1) trigger up (2) use sensor value [%d]: ", event->trigger );
   event->trigger = (FtSwarmTrigger_t) enterNumber( prompt, event->trigger, 0, 2 );
 
   // actor
@@ -881,7 +755,7 @@ bool enterTrigger( SwOSNVSEvent_t *event ) {
   if (! enterIO( prompt,  &event->actor,  false ) ) { return false; }
   
   // constant value
-  if (!event->trigger != FTSWARM_TRIGGERVALUE ) {
+  if (event->trigger != FTSWARM_TRIGGERVALUE ) {
     sprintf( prompt, "Enter value to apply to %s.%s() [%d]: ", myOSSwarm.getIO( event->actor )->getAlias(), getAction( event->actor ), event->parameter );
     event->parameter = enterNumberI32( prompt, event->parameter, -4096, 0xFFFFFF );
   }
@@ -890,182 +764,147 @@ bool enterTrigger( SwOSNVSEvent_t *event ) {
 
 }
 
-void addTrigger( void ) {
+bool changeEvent( uint8_t config, SwOSNVSEvent_t *event ) {
 
-  // search free place
-  uint8_t i=0;
-  while ( ( nvs.events[i].sensor.serialNumber ) && ( i<MAXNVSEVENTS ) ) i++;
-
-  if ( i>= MAXNVSEVENTS ) {
-    printf("max. number of triggers reached.\n");
-    return;
-  }
+  // create a copy of the event
+  SwOSNVSEvent_t newEvent;
+  memcpy( &newEvent, event, sizeof(SwOSNVSEvent_t) );
 
   // ask user
-  if (!enterTrigger( &nvs.events[i] ) ) return;
+  if ( !enterEvent( &newEvent ) ) return false;
+
+  // nothing changed?
+  if ( cmpEvent( &newEvent, event ) == 2 ) return false;
+
+  // duplicates?
+  for (uint8_t i=0; i< MAXNVSEVENTS; i++ ) {
+
+    if ( ( cmpEvent( &newEvent, &nvs.events[config][i] ) >0 ) &&
+         ( event != &nvs.events[config][i])
+       ) {
+
+      printf("ERROR: This event already exists.");
+      return false;
+    
+    }
+
+  }
+
+  // change event
+  myOSSwarm.deleteEvent( event );
+  memcpy( event, &newEvent, sizeof( SwOSNVSEvent_t ) );
+  myOSSwarm.addEvent( event );
+
+  return true;
 
 }
 
-void changeTrigger( SwOSNVSEvent_t *event ) {
+bool deleteEvent( uint8_t config, uint8_t events ) {
 
-  // create a copy of the event
-  SwOSNVSEvent_t *newEvent;
-  memcpy( newEvent, event, sizeof(SwOSNVSEvent_t) );
+  char prompt[255];
+  sprintf( prompt, "Which event should be deleted? [0 - abort, 1..%d]:", events );
+  uint8_t event = enterNumber( prompt, 0, 0, events );
 
-  // ask user
-  if ( !enterTrigger( newEvent ) ) return;
+  // abort
+  if ( event==0 ) return false;
 
-  // anything changed?
-  if ( isEqual(newEvent, event) ) return;
+  // delete event
+  myOSSwarm.deleteEvent( &nvs.events[config][event-1] );
 
-  myOSSwarm.deleteEvent( event );
-  memcpy( event, newEvent, sizeof( SwOSNVSEvent_t ) );
-  myOSSwarm.addEvent( event );
+  // move all successors
+  if ( event < MAXNVSEVENTS ) memcpy( &nvs.events[config][event-1], &nvs.events[config][event], ( MAXNVSEVENTS - event ) * sizeof( SwOSNVSEvent_t ) );
+
+  // cleanup last event
+  bzero( &nvs.events[config][MAXNVSEVENTS-1], sizeof( SwOSNVSEvent_t) );
+
+  return true;
 
 }
 
 #define REMOTECTRL_ADD MAXNVSEVENTS + 2
 #define REMOTECTRL_DEL MAXNVSEVENTS + 3
+#define REMOTECTRL_CFG MAXNVSEVENTS + 4
 
 void remoteControl( void ) {
 
-  Menu menu;
-  char line[128];
-  char value[MAXIDENTIFIER];
-  char sensor[MAXIDENTIFIER];
-  char actor[MAXIDENTIFIER];
+  Menu    menu;
+  char    line[128];
+  char    value[MAXIDENTIFIER];
+  char    sensor[MAXIDENTIFIER];
+  char    actor[MAXIDENTIFIER];
+  uint8_t events = 0;
+  bool    anythingChanged = false;
+  uint8_t newConfig;
 
   while (1) {
 
-    menu.start( "Remote Control", 0 );
- 
+    sprintf( line, "Remote Control #%d", nvs.activeEventConfig +1 );
+    menu.start( line, 0 );
+
+    events = 0;
+  
     for (uint8_t i=0; i<MAXNVSEVENTS; i++) {
 
-      if ( nvs.events[i].sensor.serialNumber != 0) {
-        
-        myOSSwarm.getAlias( nvs.events[i].sensor, sensor );
-        myOSSwarm.getAlias( nvs.events[i].actor,  actor  );
+      // end of list?
+      if ( nvs.events[nvs.activeEventConfig][i].sensor.serialNumber == 0) break;
 
-        if ( nvs.events[i].trigger == FTSWARM_TRIGGERVALUE ) 
-          sprintf( value, "%s", sensor );
-        else
-          sprintf( value, "%d", nvs.events[i].parameter );
-
-        sprintf(line, "%s.%s -> %s.%s(%s)", sensor, FTSWARMTRIGGER[nvs.events[i].trigger], actor, getAction(nvs.events[i].actor), value );
-        menu.add( line, "", i+1 );
+      // increase events counter
+      events++;
         
-      }
+      // add menu item
+      myOSSwarm.getAlias( nvs.events[nvs.activeEventConfig][i].sensor, sensor );
+      myOSSwarm.getAlias( nvs.events[nvs.activeEventConfig][i].actor,  actor  );
+
+      if ( nvs.events[nvs.activeEventConfig][i].trigger == FTSWARM_TRIGGERVALUE ) 
+        sprintf( value, "%s", sensor );
+      else
+        sprintf( value, "%d", nvs.events[nvs.activeEventConfig][i].parameter );
+
+      sprintf(line, "%s.%s -> %s.%s(%s)", sensor, FTSWARMTRIGGER[nvs.events[nvs.activeEventConfig][i].trigger], actor, getAction(nvs.events[nvs.activeEventConfig][i].actor), value );
+      menu.add( line, "", i+1 );
 
     }
 
-    menu.add( "add trigger", "", REMOTECTRL_ADD );
-    menu.add( "delete trigger", "", REMOTECTRL_DEL );
+    printf("\n");
+
+    if ( events < MAXNVSEVENTS ) menu.add( "add event", "", REMOTECTRL_ADD );
+    menu.add( "delete event", "", REMOTECTRL_DEL );
+    menu.add( "switch configuration", "", REMOTECTRL_CFG );
 
     uint8_t choice = menu.userChoice( );
     
     switch (choice) {
 
-      case  0:             return;
-      case REMOTECTRL_ADD: addTrigger(); break;
-      case REMOTECTRL_DEL: printf("del\n"); break;
-      default:             changeTrigger( &nvs.events[choice -1 ] );
+      case 0:               if ( ( anythingChanged ) && ( yesNo("Save configuration [Y/N]?") ) ) nvs.saveEvents();
+                            return;
+
+      case REMOTECTRL_ADD:  printf("\n" ); 
+                            if ( changeEvent( nvs.activeEventConfig, &nvs.events[nvs.activeEventConfig][events] ) ) anythingChanged = true;
+                            break;
+
+      case REMOTECTRL_DEL:  printf("\n");
+                            if ( deleteEvent( nvs.activeEventConfig, events ) ) anythingChanged = true;
+                            break;
+
+      case REMOTECTRL_CFG:  sprintf( line, "Switch to configuration [1..%d]", MAXEVENTCONFIGS );
+                            newConfig = enterNumber( line, nvs.activeEventConfig+1, 1, MAXEVENTCONFIGS ) -1;
+                            if ( newConfig != nvs.activeEventConfig ) {
+                              anythingChanged = true;
+                              nvs.activeEventConfig = newConfig;
+                              myOSSwarm.deleteEvents();
+                              myOSSwarm.addEvents( newConfig );
+                            }
+                            break;
+
+      default:              printf("\n"); 
+                            if ( changeEvent( nvs.activeEventConfig, &nvs.events[nvs.activeEventConfig][choice -1] ) ) anythingChanged = true;
+                            break;
+
     }
 
   }
 
 }
-
-/*
-void remoteControl( void ) {
-
-  uint8_t choice, maxChoice;
-  uint8_t item;
-  uint8_t eventPtr[MAXNVSEVENT+1];
-  bool anythingChanged = false;
-
-  while ( 1 ) {
-
-    // clear eventPtr
-    memset( eventPtr, 255, sizeof( eventPtr ) );
-
-    // reset item
-    item = 0;
-    eventPtr[0] = 255;
-
-    // list events
-    printf("\n\n***** Remote Control *****\n\n");
-    printf("     sensor             event       actor           value\n");
-
-    for ( uint8_t i=0; i<MAXNVSEVENT; i++ ) {
-      
-      if ( nvs.eventList.event[i].sensor[0] != '\0' ) {
-        // used event
-        item++;
-        eventPtr[item] = i;
-
-        printf("(%2d) ", item);
-        
-        printX( nvs.eventList.event[i].sensor, 15 );
-
-        switch ( nvs.eventList.event[i].LR ) {
-          case 0: printf( "   "); break;
-          case 1: printf( "LR "); break;
-          case 2: printf( "FB "); break;          
-        }
-        
-        switch( nvs.eventList.event[i].triggerEvent ) {
-          case FTSWARM_TRIGGERUP:    printf("TriggerUp   "); break;
-          case FTSWARM_TRIGGERDOWN:  printf("TriggerDown "); break;
-          case FTSWARM_TRIGGERVALUE: printf("ChangeValue "); break;
-          default:                   printf("?           "); break;
-        }
-        
-        printX( nvs.eventList.event[i].actor, 15 );
-        
-      } else if ( eventPtr[0] == 255 ){
-        eventPtr[0] = i;
-      }
-    }
-
-    // additional commands
-    printf("\n(%d) add event\n", item + 1 );
-    maxChoice = item + 1;
-
-    if ( item > 0 ) {
-      printf("(%d) delete event\n", item + 2 );
-      maxChoice = item + 2;
-    }
-    
-    printf("\n(%d) exit\n", 0 );
-
-    // get user's choice
-    choice = enterNumber("\nremote control>", 0, 0, maxChoice );    
-
-    // do what the user wants
-    if ( choice == 0 ) {
-     if ( ( anythingChanged ) && yesNo( "Save changes to nvs [Y/N]? " ) ) nvs.save();
-     return;
-      
-    } else if ( choice == ( item + 1 ) ) {
-      // add
-      if ( changeEvent( &nvs.eventList.event[eventPtr[0]] ) ) anythingChanged = true;
-      
-    } else if ( choice == ( item + 2 ) ) {
-      // delete
-      choice = enterNumber( "Which event should be deleted? ", 1, 1, item );
-      nvs.eventList.event[eventPtr[choice]].actor[0] = '\0';
-      nvs.eventList.event[eventPtr[choice]].sensor[0] = '\0';
-      anythingChanged = true;
-      
-    } else {
-      // modify item
-      if ( changeEvent( &nvs.eventList.event[eventPtr[choice]] ) ) anythingChanged = true;
-    }
-
-  }
-
-}
-  */
 
 #define MAINMENUWEB       1
 #define MAINMENUSWARM     2

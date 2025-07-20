@@ -13,8 +13,9 @@
 
 #include <stdint.h>
 
-#define MAXNVSEVENTS 100
-#define NVSVERSION   3
+#define MAXNVSEVENTS    50
+#define MAXEVENTCONFIGS 4
+#define NVSVERSION      3
 
 static const char* NVSNAMESPACE = "ftSwarm";
 
@@ -41,7 +42,13 @@ struct SwOSNVSEvent_t {
 
 } __attribute__((packed));
 
-extern "C" bool isEqual( SwOSNVSEvent_t *a, SwOSNVSEvent_t *b );
+/* cmpEvent
+    2 identical
+    1 only parameter different
+    0 else
+*/
+extern "C" bool cmpEvent( SwOSNVSEvent_t *a, SwOSNVSEvent_t *b );
+
 
 // wifi types
 typedef enum { wifiOFF, wifiAP, wifiClient } FtSwarmWifi_t;
@@ -60,7 +67,8 @@ class SwOSNVS {
     FtSwarmWifi_t          wifiMode;
     SwOSJoyCalibration_t   calibration[2][2];
     uint8_t                pixels;
-    SwOSNVSEvent_t         events[MAXNVSEVENTS];
+    uint8_t                activeEventConfig;
+    SwOSNVSEvent_t         events[MAXEVENTCONFIGS][MAXNVSEVENTS];
     bool                   webUI;
     bool                   IAmKelda;
     FtSwarmCommunication_t swarmCommunication;
@@ -78,6 +86,8 @@ class SwOSNVS {
     bool load();                           // load data from nvs, return false if nvs contains invalid data
 	  void save( bool writeAll = false );    // save config to flash
     void saveAndRestart();                 // save config & restart
+    void saveEvents();                     // save events
+    void loadEvents();                     // load events
     void createSwarm( char *name, uint16_t pin ); // create a new swarm
     bool addController( FtSwarmSerialNumber_t serialNumber );                       // add a controller
     bool deleteController( FtSwarmSerialNumber_t serialNumber );                    // delete a controller

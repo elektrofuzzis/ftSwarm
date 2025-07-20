@@ -208,56 +208,6 @@ SwOSIO *SwOSSwarm::waitFor( char *alias ) {
   
 }
 
-bool SwOSSwarm::startEvents( void ) {
-
-  SwOSIO *sensor;
-  SwOSIO *actor;
-
-  /* TODO
-
-  NVSEvent *event;
-
-  // test if I'm not a Kelda, I won't start the events
-  if ( !Ctrl[0]->IAmKelda ) return true;
-
-  for (uint8_t i=0; i<MAXNVSEVENT; i++ ) {
-
-    event = &nvs.eventList.event[i];
-    
-    if ( ( event->sensor[0] != '\0' ) && ( event->actor[0] != '\0' ) ) {
-
-      if (verbose) printf("connecting %s to %s\n", event->sensor, event->actor);
-      // get IOs and stop on error
-      sensor = waitFor( event->sensor );  
-      if (!sensor) return false;
-      if (!sensor->isInput()) {
-        printf("[ERROR] %s is not an input. Please check configuration\n", event->sensor );
-        return false;
-      }
-      
-      actor  = waitFor( event->actor );  
-      if (!actor)            return false;
-      if (!actor->isMotor()) return false;
-
-      if ( sensor->getIOType() == SWOSIO_JOYSTICK ) {
-     
-        if ( event->LR == 1 ) static_cast<SwOSJoystick *>(sensor)->triggerLR.registerEvent( event->triggerEvent, actor, event->parameter );
-        else                  static_cast<SwOSJoystick *>(sensor)->triggerFB.registerEvent( event->triggerEvent, actor, event->parameter );
-     
-      } else {
-
-        static_cast<SwOSInput *>(sensor)->registerEvent( event->triggerEvent, actor, event->parameter ); 
-
-      }
-    
-    }
-    
-  } */
-
-  return true;
-
-}
-
 void SwOSSwarm::startWifi( void ) {
 
   // no wifi config?
@@ -381,7 +331,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
     if ( nvs.IAmKelda )  { printf( "I am KELDA!\n"); }
   }
 
-SwOSCtrlConfig_t localCtrlConfig = {
+  SwOSCtrlConfig_t localCtrlConfig = {
     .ctrlType      = nvs.controllerType,
     .CPU           = nvs.CPU,
     .IAmKelda      = nvs.IAmKelda,
@@ -440,13 +390,8 @@ SwOSCtrlConfig_t localCtrlConfig = {
   if ( ( nvs.webUI ) && ( nvs.wifiMode != wifiOFF ) ) SwOSStartWebServer();
 
   // firmware events?
-  
   if (verbose) printf("Starting events.\n");
-  if ( !startEvents( ) ) {
-      printf( "\nStarting setup..\n" );
-      mainMenu();
-      ESP.restart();
-    }
+  addEvents( nvs.activeEventConfig, myOSSwarm.Ctrl[0]->serialNumber );
 
   setState( RUNNING );
 
@@ -1185,10 +1130,11 @@ void SwOSSwarm::cmdJoinMySwarm( SwOSCom *com, uint8_t source, uint8_t affected )
   replaceCtrl( com, source, affected );
 
   // getting member, knowing my Kelda
+  deleteEvents();
   Ctrl[0]->IAmKelda = false;
   nvs.IAmKelda = false;
   Kelda = Ctrl[source];
-
+  
   // Send my data      
   SwOSCom reply( com->macAddr, com->data.sourceSN, CMD_JOINACK );
   Ctrl[0]->registerMe( &reply );
@@ -1265,6 +1211,12 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
                               break;
 
     case CMD_HARTBEAT:        if ( Ctrl[source] ) Ctrl[source]->tick();
+                              break;
+
+    case CMD_IOCONFIG:        // needs to be initiated at swarm level to be able to start events
+                              if ( ( Ctrl[affected]->ioConfig( com ) ) && ( Ctrl[0]->IAmKelda ) ) {
+                                addEvents( nvs.activeEventConfig, Ctrl[affected]->serialNumber );
+                              }
                               break;
 
     default:                  if ( Ctrl[affected] ) {
@@ -1411,11 +1363,54 @@ bool SwOSSwarm::deleteEvent( SwOSNVSEvent_t *event ) {
   // sensor or actor doesn't exist
   if ( (!sensor) || (!actor) ) return false;
 
-  sensor->deleteEvent( event->trigger, actor );
+  return sensor->deleteEvent( event->trigger, actor );
 
 }
 
 // add an event
 bool SwOSSwarm::addEvent( SwOSNVSEvent_t *event ) {
+
+  // no event
+  if (!event) return false;
+
+  // get IOs
+  SwOSInput *sensor = (SwOSInput *) getIO( event->sensor );
+  SwOSIO    *actor  = getIO( event->actor );
+
+  // sensor or actor doesn't exist
+  if ( (!sensor) || (!actor) ) return false;
+
+  return sensor->addEvent( event->trigger, actor, event->parameter );
+
+}
+
+void SwOSSwarm::deleteEvents( void ) {
+
+  for (uint8_t i=0; i<=maxCtrl; i++) {
+
+    if (Ctrl[i]) Ctrl[i]->deleteEvents();
+
+  }
+
+}
+
+void SwOSSwarm::addEvents( uint8_t config, FtSwarmSerialNumber_t sn ) {
+
+  // Kelda only
+  if (!Ctrl[0]->IAmKelda) return;
+
+  // stop old config
+  deleteEvents();
+
+  // start new config
+  for ( uint i=0; i<MAXNVSEVENTS; i++ ) {
+
+    // end of list?
+    if ( nvs.events[config][i].sensor.serialNumber == 0 ) return;
+
+    // add event, if sn is fitting
+    if ( ( sn == 0 ) || ( nvs.events[config][i].sensor.serialNumber == sn ) || ( nvs.events[config][i].actor.serialNumber == sn ) ) addEvent( &nvs.events[config][i] );
+
+  }
 
 }

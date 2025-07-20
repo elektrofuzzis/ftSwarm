@@ -1445,3 +1445,22 @@ uint8_t SwOSCtrl::getMicrostepMode( void ) {
   return microstepMode;
 
 }
+
+void SwOSCtrl::deleteEvents( void ) {
+
+  SwOSInput* input;
+
+  for ( uint8_t i=0; i<IOs; i++ ) {
+
+    if ( ( io[i] ) && ( io[i]->isEventInput() ) ) {
+
+      input = (SwOSInput *) io[i];
+      io[i]->lock();
+      input->deleteEvents();
+      io[i]->unlock();
+
+    }
+
+  }
+
+}

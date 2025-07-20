@@ -34,7 +34,6 @@ protected:
 	bool     splitID( char *id, uint8_t *index, char *io, size_t sizeIO);  // split identifier
   uint16_t nextToken( bool rotateToken);
   SwOSIO  *waitFor( char *alias );
-  bool     startEvents( void );
   void     startWifi( void );
 
   // replace controller in swarm list
@@ -151,6 +150,12 @@ public:
 
   // add an event
   bool addEvent( SwOSNVSEvent_t *event );
+
+  // add all events
+  void addEvents( uint8_t config, FtSwarmSerialNumber_t sn = 0 );
+
+  // delete all events
+  void deleteEvents( void );
 
 };
 

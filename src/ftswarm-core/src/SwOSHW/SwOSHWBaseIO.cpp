@@ -350,12 +350,12 @@ SwOSEventInput::~SwOSEventInput() {
 
 }
 
-void SwOSEventInput::addEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, int32_t parameter ) {
+bool SwOSEventInput::addEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, int32_t parameter ) {
 
   // first event?
   if (!eventList) {
     eventList = new SwOSEventHandler( triggerEvent, actor, parameter );
-    return;
+    return true;
   }
 
   // check list
@@ -365,27 +365,38 @@ void SwOSEventInput::addEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, int
     // same event, replace parameter 
     if ( ( e->trigger == triggerEvent ) && ( e->actor == actor ) ) {
       e->parameter = parameter;
-      return;
+      return true;
     }
 
     // EOL?
     if (e->next) e = e->next;
     else {
       e->next = new SwOSEventHandler( triggerEvent, actor, parameter );
-      return;
+      return true;
     }
 
   }
+
+  return false;
   
 }
 
-void SwOSEventInput::deleteEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor ) {
+void SwOSEventInput::deleteEvents( void ) {
+
+  if ( !eventList ) return;
+  
+  delete eventList;
+  eventList = NULL;
+
+}
+
+bool SwOSEventInput::deleteEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor ) {
 
   SwOSEventHandler *e   = eventList;
   SwOSEventHandler *old = NULL;
 
   // empty list
-  if (!eventList) return;
+  if (!eventList) return false;
 
   // first element fits
   if ( ( eventList->trigger == triggerEvent ) && ( eventList->actor == actor ) ) {
@@ -393,7 +404,7 @@ void SwOSEventInput::deleteEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor )
     eventList = eventList->next;
     old->next = NULL;
     delete old;
-    return;
+    return true;
   }
 
   while (e->next) {
@@ -404,12 +415,14 @@ void SwOSEventInput::deleteEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor )
       e->next = e->next->next;
       old->next = NULL;
       delete old;
-      return;
+      return true;
     }
     
     e = e->next;
 
   }
+
+  return false;
   
 }
 
@@ -507,3 +520,17 @@ uint8_t SwOSInput::popState( uint8_t *buffer ) {
   return sizeof( newValue );
   
 };
+
+void SwOSInput::setReading( int32_t newValue ) {
+
+  bool changes = (lastRawValue != newValue);
+    
+  // send changed value event?
+  if ( (eventList) && ( changes ) ) trigger( FTSWARM_TRIGGERVALUE, newValue );
+
+  // store new data
+  lastRawValue = newValue;  
+
+  if (changes) subscription();
+
+}

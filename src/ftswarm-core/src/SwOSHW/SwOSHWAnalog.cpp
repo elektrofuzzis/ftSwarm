@@ -208,20 +208,6 @@ void SwOSAnalogInput::read() {
 
 }
 
-void SwOSAnalogInput::setReading( int32_t newValue ) {
-
-  bool changes = (lastRawValue != newValue);
-    
-  // send changed value event?
-  if ( (eventList) && ( changes ) ) trigger( FTSWARM_TRIGGERVALUE, newValue );
-
-  // store new data
-  lastRawValue = newValue;  
-
-  if (changes) subscription();
-
-}
-
 void SwOSAnalogInput::setValue( int32_t value ) {
 
   // stop, if it's not local HW
