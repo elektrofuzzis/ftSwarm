@@ -545,31 +545,31 @@ void *SwOSSwarm::getController( FtSwarmSerialNumber_t SN ) {
 }
 
 
-void SwOSSwarm::jsonize( JSONize *json) {
+void SwOSSwarm::serialize( Serialize *serialize) {
 
-	json->startArray( NULL );
+	serialize->startArray( );
 
 	for (uint8_t i=0; i<=maxCtrl;i++) {
 
     // send data
-    if ( Ctrl[i] ) { Ctrl[i]->lock(); Ctrl[i]->jsonize( json, i ); Ctrl[i]->unlock(); }
+    if ( Ctrl[i] ) { Ctrl[i]->lock(); Ctrl[i]->serialize( serialize, i ); Ctrl[i]->unlock(); }
 
     // visualize others only if I'm a Kelda
     if ( !Ctrl[0]->IAmKelda ) break;
     
 	}
 
-	json->endArray();
+	serialize->endArray();
 
 }
 
-void SwOSSwarm::getToken( JSONize *json) {
+void SwOSSwarm::getToken( Serialize* serialize) {
 
   lastToken = rand();
 
-  json->startObject();
-  json->variableUI16( "token", lastToken );
-  json->endObject();
+  serialize->startObject( );
+  serialize->item( SERIALIZE_LITERAL_TOKEN, lastToken );
+  serialize->endObject();
   
 }
 

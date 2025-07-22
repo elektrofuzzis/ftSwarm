@@ -34,7 +34,7 @@
 	  SwOSCounter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl );
   
     // administrative stuff
-    virtual void jsonize( JSONize *json, uint8_t id);
+    virtual void serialize( Serialize *serialize, uint8_t id);
     virtual bool isCounter( void ) { return true; };
 
     // read sensor
@@ -70,7 +70,7 @@ class SwOSFrequencymeter : public SwOSInput {
     ~SwOSFrequencymeter();
   
     // administrative stuff
-    virtual void jsonize( JSONize *json, uint8_t id);
+    virtual void serialize( Serialize *serialize, uint8_t id);
 
     // read sensor
 	  virtual void read();

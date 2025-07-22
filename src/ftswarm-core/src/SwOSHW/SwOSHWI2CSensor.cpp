@@ -265,15 +265,15 @@ void SwOSGyroMPU::getEuler(float *alpha, float *beta, float *gamma, bool radiant
 
 };
 
-void SwOSGyroMPU::jsonize( JSONize *json, uint8_t id) {
+void SwOSGyroMPU::serialize( Serialize *serialize, uint8_t id) {
 
-  json->startObject();
-  SwOSIO::jsonize(json, id);
+  serialize->startObject( );
+  SwOSIO::serialize( serialize, id);
   
-  json->variable4F( "Quaternion", q.w, q.x, q.y, q.z);
-  json->variable3I16( "Acceleration", aa.x, aa.y, aa.z );
+  serialize->item( SERIALIZE_LITERAL_QUATERNION,   q.w,  q.x,  q.y, q.z);
+  serialize->item( SERIALIZE_LITERAL_ACCELERATION, aa.x, aa.y, aa.z );
   
-  json->endObject();
+  serialize->endObject();
 }
 
 /***************************************************
@@ -329,12 +329,12 @@ void SwOSLidarInput::setValue( int32_t value ) {
  
 }
  
-void SwOSLidarInput::jsonize( JSONize *json, uint8_t id) {
+void SwOSLidarInput::serialize( Serialize *serialize, uint8_t id) {
    
-  json->startObject();
-  SwOSIO::jsonize(json, id);
-  json->variableI32("value", getValueI32() );   
-  json->endObject();
+  serialize->startObject( );
+  SwOSIO::serialize( serialize, id);
+  serialize->item( SERIALIZE_LITERAL_VALUE, getValueI32() );   
+  serialize->endObject();
 
 }
 

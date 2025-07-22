@@ -349,6 +349,7 @@ release/
 arduino-cpp-library/src/src.ino
 arduino-cpp-library/src/debug.cfg
 src/core-develop
+src/core-develop-s3
 
 # Build Files
 deployment/

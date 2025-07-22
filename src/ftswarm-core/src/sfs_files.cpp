@@ -5046,119 +5046,119 @@ const char *sfs_get_file( char *filename, uint32_t *length ) {
         *length = 308;
         return sfs_index_html;
     } else 
-    if (strcmp(filename, "/assets/00_digital.svg") == 0) {
+    if (strcmp(filename, "/assets/digital.svg") == 0) {
         *length = 729;
         return sfs_assets_00_digital_svg;
     } else 
-    if (strcmp(filename, "/assets/01_analog.svg") == 0) {
+    if (strcmp(filename, "/assets/analog.svg") == 0) {
         *length = 1033;
         return sfs_assets_01_analog_svg;
     } else 
-    if (strcmp(filename, "/assets/02_switch.svg") == 0) {
+    if (strcmp(filename, "/assets/switch.svg") == 0) {
         *length = 806;
         return sfs_assets_02_switch_svg;
     } else 
-    if (strcmp(filename, "/assets/03_reedswitch.svg") == 0) {
+    if (strcmp(filename, "/assets/reedswitch.svg") == 0) {
         *length = 1612;
         return sfs_assets_03_reedswitch_svg;
     } else 
-    if (strcmp(filename, "/assets/04_voltage.svg") == 0) {
+    if (strcmp(filename, "/assets/voltage.svg") == 0) {
         *length = 874;
         return sfs_assets_04_voltage_svg;
     } else 
-    if (strcmp(filename, "/assets/05_resistor.svg") == 0) {
+    if (strcmp(filename, "/assets/resistor.svg") == 0) {
         *length = 1120;
         return sfs_assets_05_resistor_svg;
     } else 
-    if (strcmp(filename, "/assets/06_ntc.svg") == 0) {
+    if (strcmp(filename, "/assets/ntc.svg") == 0) {
         *length = 756;
         return sfs_assets_06_ntc_svg;
     } else 
-    if (strcmp(filename, "/assets/07_ldr.svg") == 0) {
+    if (strcmp(filename, "/assets/ldr.svg") == 0) {
         *length = 1124;
         return sfs_assets_07_ldr_svg;
     } else 
-    if (strcmp(filename, "/assets/08_trailsensor.svg") == 0) {
+    if (strcmp(filename, "/assets/trailsensor.svg") == 0) {
         *length = 915;
         return sfs_assets_08_trailsensor_svg;
     } else 
-    if (strcmp(filename, "/assets/09_colorsensor.svg") == 0) {
+    if (strcmp(filename, "/assets/colorsensor.svg") == 0) {
         *length = 996;
         return sfs_assets_09_colorsensor_svg;
     } else 
-    if (strcmp(filename, "/assets/10_ultrasonic.svg") == 0) {
+    if (strcmp(filename, "/assets/ultrasonic.svg") == 0) {
         *length = 1641;
         return sfs_assets_10_ultrasonic_svg;
     } else 
-    if (strcmp(filename, "/assets/11_joystick.svg") == 0) {
+    if (strcmp(filename, "/assets/joystick.svg") == 0) {
         *length = 1438;
         return sfs_assets_11_joystick_svg;
     } else 
-    if (strcmp(filename, "/assets/12_button.svg") == 0) {
+    if (strcmp(filename, "/assets/button.svg") == 0) {
         *length = 882;
         return sfs_assets_12_button_svg;
     } else 
-    if (strcmp(filename, "/assets/13_motor.svg") == 0) {
+    if (strcmp(filename, "/assets/motor.svg") == 0) {
         *length = 814;
         return sfs_assets_13_motor_svg;
     } else 
-    if (strcmp(filename, "/assets/14_servo.svg") == 0) {
+    if (strcmp(filename, "/assets/servo.svg") == 0) {
         *length = 1129;
         return sfs_assets_14_servo_svg;
     } else 
-    if (strcmp(filename, "/assets/15_rgbled.svg") == 0) {
+    if (strcmp(filename, "/assets/rgbled.svg") == 0) {
         *length = 981;
         return sfs_assets_15_rgbled_svg;
     } else 
-    if (strcmp(filename, "/assets/16_xmotor.svg") == 0) {
+    if (strcmp(filename, "/assets/xmotor.svg") == 0) {
         *length = 2624;
         return sfs_assets_16_xmotor_svg;
     } else 
-    if (strcmp(filename, "/assets/17_tractor.svg") == 0) {
+    if (strcmp(filename, "/assets/tractor.svg") == 0) {
         *length = 2549;
         return sfs_assets_17_tractor_svg;
     } else 
-    if (strcmp(filename, "/assets/18_encoder.svg") == 0) {
+    if (strcmp(filename, "/assets/encoder.svg") == 0) {
         *length = 2579;
         return sfs_assets_18_encoder_svg;
     } else 
-    if (strcmp(filename, "/assets/19_lamp.svg") == 0) {
+    if (strcmp(filename, "/assets/lamp.svg") == 0) {
         *length = 806;
         return sfs_assets_19_lamp_svg;
     } else 
-    if (strcmp(filename, "/assets/20_xmmotor.svg") == 0) {
+    if (strcmp(filename, "/assets/xmmotor.svg") == 0) {
         *length = 2613;
         return sfs_assets_20_xmmotor_svg;
     } else 
-    if (strcmp(filename, "/assets/21_lightbarrier.svg") == 0) {
+    if (strcmp(filename, "/assets/lightbarrier.svg") == 0) {
         *length = 1172;
         return sfs_assets_21_lightbarrier_svg;
     } else 
-    if (strcmp(filename, "/assets/22_compressor.svg") == 0) {
+    if (strcmp(filename, "/assets/compressor.svg") == 0) {
         *length = 850;
         return sfs_assets_22_compressor_svg;
     } else 
-    if (strcmp(filename, "/assets/23_valve.svg") == 0) {
+    if (strcmp(filename, "/assets/valve.svg") == 0) {
         *length = 1012;
         return sfs_assets_23_valve_svg;
     } else 
-    if (strcmp(filename, "/assets/24_buzzer.svg") == 0) {
+    if (strcmp(filename, "/assets/buzzer.svg") == 0) {
         *length = 1583;
         return sfs_assets_24_buzzer_svg;
     } else 
-    if (strcmp(filename, "/assets/25_counter.svg") == 0) {
+    if (strcmp(filename, "/assets/counter.svg") == 0) {
         *length = 1217;
         return sfs_assets_25_counter_svg;
     } else 
-    if (strcmp(filename, "/assets/26_cam.svg") == 0) {
+    if (strcmp(filename, "/assets/cam.svg") == 0) {
         *length = 319;
         return sfs_assets_26_cam_svg;
     } else 
-    if (strcmp(filename, "/assets/27_rotaryEncoder.svg") == 0) {
+    if (strcmp(filename, "/assets/rotaryEncoder.svg") == 0) {
         *length = 1062;
         return sfs_assets_27_rotaryEncoder_svg;
     } else 
-    if (strcmp(filename, "/assets/28_frequency.svg") == 0) {
+    if (strcmp(filename, "/assets/frequency.svg") == 0) {
         *length = 301;
         return sfs_assets_28_frequency_svg;
     } else 

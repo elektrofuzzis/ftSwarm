@@ -18,7 +18,7 @@
 #include <freertos/task.h>
 #include <freertos/semphr.h>
 
-#include "jsonize.h"
+#include "serialize.h"
 #include "SwOSCom.h"
 #include "SwOSHW.h"
 #include "SwOSNVS.h"
@@ -96,8 +96,8 @@ public:
   uint16_t getReadDelay( void ) { return readDelay; };
 
   // **** REST API ****
-	void jsonize( JSONize *json);                                                               // transfer my swarm to a JSON structure
-  void getToken( JSONize *json);                                                              // get a new token
+	void serialize( Serialize *serialize );                                                        // transfer my swarm to a JSON structure
+  void getToken( Serialize *serialize );                                                         // get a new token
   uint16_t apiIsAuthorized( uint16_t token, bool rotateToken );                               // check, if it's a correct token
   bool apiPeekIsAuthorized( uint16_t token );
   uint16_t apiActorCmd( uint16_t token, char *id, int cmd, bool rotateToken );                // send an actor's command (from api)

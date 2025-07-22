@@ -21,7 +21,7 @@
 
 #include "SwOS.h"
 #include "SwOSCom.h"
-#include "jsonize.h"
+#include "serialize.h"
 
 #define BRIGHTNESSDEFAULT 48
 
@@ -80,7 +80,7 @@ public:
 
 	bool equals(const char *name);     // check if hw name or alias is equal to name
 
-	virtual void jsonize( JSONize *json, uint8_t id);
+	virtual void serialize( Serialize *serialize, uint8_t id);
 };
 
 /***************************************************
@@ -120,7 +120,7 @@ public:
 	virtual SwOSIOType_t    getIOType() { return ioType; };
   virtual SwOSUIClass_t   getUIClass();
   virtual const char*     getIcon();
-	virtual void            jsonize( JSONize *json, uint8_t id);
+	virtual void            serialize( Serialize *serialize, uint8_t id);
   virtual void            take( void ) { useCounter++; };                      // register an instance using this IO
   virtual void            give( void ) { if (useCounter>0) useCounter--; };   // unregister an instance using this IO
   virtual bool            isInUse( void ) { return useCounter > 0; };          // test, if an IO is used by some user elements
@@ -203,7 +203,7 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
 	  SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType ) : SwOSIO( name, port, ctrl, ioType ), SwOSEventInput( ) { };
   
     // administrative stuff
-	  virtual void jsonize( JSONize *json, uint8_t id) {};
+	  virtual void serialize( Serialize *serialize, uint8_t id) {};
     virtual uint8_t pushState( uint8_t *buffer );
     virtual uint8_t popState( uint8_t *buffer );
   

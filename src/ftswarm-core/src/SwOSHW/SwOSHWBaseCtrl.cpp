@@ -605,24 +605,24 @@ bool SwOSCtrl::changeIOType( uint8_t index, SwOSIOType_t newIOType ) {
 
 }
 
-void SwOSCtrl::jsonize( JSONize *json, uint8_t id) {
+void SwOSCtrl::serialize( Serialize *serialize, uint8_t id) {
 
-  json->startObject();
-  json->variable( "name", getHostname());
-  json->variableUI8( "id", id);
-  json->variableUI16( "serialNumber", serialNumber);
-  json->variableUI8( "type", getType() );
-  json->variableUI8( "state", getState() );
+  serialize->startObject( );
+  serialize->item( SERIALIZE_LITERAL_NAME, getHostname());
+  serialize->item( SERIALIZE_LITERAL_ID, id);
+  serialize->item( SERIALIZE_LITERAL_SERIALNUMBER, serialNumber);
+  serialize->item( SERIALIZE_LITERAL_TYPE, getType() );
+  serialize->item( SERIALIZE_LITERAL_STATE, getState() );
   
-  json->startArray( "io" );
-  jsonizeIO( json, id );
-  json->endArray();
+  serialize->startArray( SERIALIZE_LITERAL_IO );
+  serializeIO( serialize, id );
+  serialize->endArray();
 
-  json->endObject();
+  serialize->endObject();
 
 }
 
-void SwOSCtrl::jsonizeIO( JSONize *json, uint8_t id ) {
+void SwOSCtrl::serializeIO( Serialize *serialize, uint8_t id ) {
 
   for (uint8_t i=0; i<IOs; i++) { 
     
@@ -631,7 +631,7 @@ void SwOSCtrl::jsonizeIO( JSONize *json, uint8_t id ) {
       if ( io[i]->getIOType() == SWOSIO_PIXEL ) {
 
         // show pixels only, if they are marked as show in WebUI or the pixel is used
-        if ( ( io[i]->getPort() < pixels ) || ( io[i]->isInUse() ) ) io[i]->jsonize( json, id ); 
+        if ( ( io[i]->getPort() < pixels ) || ( io[i]->isInUse() ) ) io[i]->serialize( serialize, id ); 
 
       } else if ( ( io[i]->getIOType() == SWOSIO_BUTTON ) && ( io[i]->getPort() >= FTSWARM_J1 ) && ( io[i]->getPort() <= FTSWARM_J2 ) ) {
         
@@ -639,7 +639,7 @@ void SwOSCtrl::jsonizeIO( JSONize *json, uint8_t id ) {
 
       } else {
         // all other stuff
-        io[i]->jsonize( json, id ); 
+        io[i]->serialize( serialize, id ); 
       }
 
     }

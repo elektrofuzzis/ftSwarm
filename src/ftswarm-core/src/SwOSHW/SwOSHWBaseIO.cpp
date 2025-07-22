@@ -16,43 +16,44 @@
 
 const char EMPTYSTRING[] = "";
 
-const char IO_ICON[SWOSIO_MAXIOTYPE][20] = 
-  { "digital.svg", 
-    "switch.svg",
-    "reedswitch.svg", 
-    "lightbarrier.svg", 
-    "button.svg",
-    "analog.svg", 
-    "voltage.svg", 
-    "resistor.svg",
-    "ntc.svg",
-    "ldr.svg",
-    "joystick.svg",
-    "motor.svg",
-    "xmotor.svg",
-    "xmmotor.svg", // todo better icon xmmotor
-    "tractor.svg",
-    "encoder.svg",
-    "lamp.svg",
-    "valve.svg",
-    "compressor.svg",
-    "buzzer.svg",
-    "motor.svg", // todo Icon Stepper
-    "counter.svg", 
-    "rotaryencoder.svg", 
-    "frequency.svg",
-    "digital.svg", // todo lidar icon
-    "cam.svg",
-    "servo.svg",
-    "pixel.svg",
-    "undef.svg",  // no oled icon
-    "undef.svg",  // no i2c icon
-    "undef.svg",   // todo gyro icon
-    "undef.svg",   // no hc165 icon
-    "power.svg",
-    "colorsensor.svg", 
-    "trailsensor.svg",
-    "ultrasonic.svg"
+const char IO_ICON[SWOSIO_MAXIOTYPE][6] = 
+  { "0.svg",          // digital 
+    "1.svg",          // switch
+    "2.svg",          // reedswitch 
+    "3.svg",          // lightbarrier 
+    "4.svg",          // button
+    "5.svg",          // analog 
+    "6.svg",          // voltage 
+    "7.svg",          // resistor
+    "8.svg",          // ntc
+    "9.svg",          // ldr
+    "A.svg",          // joystick
+    "B.svg",          // motor
+    "C.svg",          // xmotor
+    "D.svg",          // xmmotor - todo better icon xmmotor
+    "E.svg",          // tractor
+    "F.svg",          // encoder
+    "G.svg",          // lamp
+    "H.svg",          // valve
+    "I.svg",          // compressor
+    "J.svg",          // buzzer
+    "B.svg",          // stepper - todo Icon Stepper
+    "K.svg",          // counter 
+    "L.svg",          // rotaryencoder 
+    "M.svg",          // frequency
+    "0.svg",          // todo lidar icon
+    "N.svg",          // cam
+    "O.svg",          // servo
+    "P.svg",          // pixel
+    "0.svg",      // no oled icon
+    "0.svg",      // no i2c icon
+    "0.svg",      // todo gyro icon
+    "0.svg",      // no hc165 icon
+    "Q.svg",          // power
+    "R.svg",          // colorsensor 
+    "S.svg",          // trailsensor
+    "T.svg",           // ultrasonic
+    "0.svg"      // no joystick icon
   };
 
 SwOSUIClass_t UI_CLASS[SWOSIO_MAXIOTYPE] = 
@@ -188,18 +189,18 @@ char * SwOSObj::getAlias( ) {
 }
 
 
- void SwOSObj::jsonize( JSONize *json, uint8_t id) {
+ void SwOSObj::serialize( Serialize *serialize, uint8_t id) {
 
    // display name
    if (_alias) {
-     json->variable("name", _alias);
+     serialize->item( SERIALIZE_LITERAL_NAME, _alias );
    } else {
-     json->variable("name", _name);
+     serialize->item( SERIALIZE_LITERAL_NAME, _name );
    }
 
    // unique ID
    char str[50];
-   sprintf(str, "%d-%s", id, _name);   json->variable("id", str);
+   sprintf(str, "%d-%s", id, _name);   serialize->item( SERIALIZE_LITERAL_ID, str);
 
 }
 
@@ -283,11 +284,11 @@ SwOSUIClass_t SwOSIO::getUIClass() {
 
 }
 
-void SwOSIO::jsonize( JSONize *json, uint8_t id) {
-  SwOSObj::jsonize(json, id);
-  json->variableUI32("type", getUIClass() );
-  json->variable("icon", (char *) getIcon() );
-  json->variableB( "active", ( _alias != NULL ) || isInUse() );
+void SwOSIO::serialize( Serialize *serialize, uint8_t id) {
+  SwOSObj::serialize( serialize, id);
+  serialize->item( SERIALIZE_LITERAL_TYPE, getUIClass() );
+  serialize->item( SERIALIZE_LITERAL_ICON, getIcon() );
+  serialize->item( SERIALIZE_LITERAL_ACTIVE, ( _alias != NULL ) || isInUse() );
 }
 
 void SwOSIO::onTrigger( int32_t value ) {

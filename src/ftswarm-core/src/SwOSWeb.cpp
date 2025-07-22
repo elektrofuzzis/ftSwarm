@@ -12,7 +12,7 @@
 #include <cJSON.h>
 //#include "esp_vfs.h"
 
-#include "jsonize.h"
+#include "serialize.h"
 #include "SwOSNVS.h"
 #include "SwOSHW.h"
 #include "SwOSSwarm.h"
@@ -72,10 +72,15 @@ static char *getBody(httpd_req_t *req) {
   
 }
 
-esp_err_t sendResponse( httpd_req_t *req, uint16_t status, bool keepOpen = false ) {
+esp_err_t sendResponse( httpd_req_t *req, uint16_t status, SerialFormat_t format, bool keepOpen = false ) {
 
-  httpd_resp_set_type( req, "application/json; charset=utf-8" );
-  
+  if ( format == SERIALIZE_RAW ) {
+    httpd_resp_set_type( req, "application/ftSwarm; charset=utf-8" );
+
+  } else {
+    httpd_resp_set_type( req, "application/json; charset=utf-8" );
+
+  }
   switch (status) {
     case 200: httpd_resp_set_status( req, HTTPD_200 ); break;
     case 400: httpd_resp_set_status( req, HTTPD_400 ); break;
@@ -318,53 +323,67 @@ esp_err_t fileHandler(httpd_req_t *req ) {
 
 }
 
-esp_err_t apiGetSwarm(httpd_req_t *req ) {
+esp_err_t apiGetSwarm(httpd_req_t *req, SerialFormat_t format ) {
   // reply on /api/getSwarm
 
   uint16_t token;
   bool provided = getAuthorization( req, &token);  
   bool status = false;
 
-  sendResponse( req, 200, true );
+  sendResponse( req, 200, format, true );
 
-  JSONize json(req);
+  Serialize serialize( format );
 
-  json.startObject();
+  serialize.startObject();
   
-  json.startObject("auth");
+  serialize.startObject( SERIALIZE_LITERAL_AUTH );
 
   if (provided) {
     status = myOSSwarm.apiPeekIsAuthorized(token);    
   }
 
-  json.variableB("provided", provided);
-  json.variableB("status", status);
-  json.variableB("kelda", myOSSwarm.Ctrl[0]->IAmKelda );
-  json.endObject();
+  serialize.item( SERIALIZE_LITERAL_PROVIDED, provided);
+  serialize.item( SERIALIZE_LITERAL_STATE, status);
+  serialize.item( SERIALIZE_LITERAL_KELDA, myOSSwarm.Ctrl[0]->IAmKelda );
+  serialize.endObject();
 
+  serialize.newObject( SERIALIZE_Object );
 
-  json.newObject(JSONObject);
-  json.text2string((char *)"swarms");
-  json.assign();
+  // array of controllers
+  serialize.startArray( SERIALIZE_LITERAL_CTRL );
 
-  myOSSwarm.jsonize(&json);
+	for (uint8_t i=0; i<=myOSSwarm.maxCtrl; i++) {
 
-  json.endObject();
+    // send data
+    if ( myOSSwarm.Ctrl[i] ) { 
+      myOSSwarm.Ctrl[i]->lock(); 
+      myOSSwarm.Ctrl[i]->serialize( &serialize, i ); 
+      myOSSwarm.Ctrl[i]->unlock(); 
+      httpd_resp_sendstr_chunk( req, serialize.buffer );
+      serialize.reset();
+    }
 
+    // visualize others only if I'm a Kelda
+    if ( !myOSSwarm.Ctrl[0]->IAmKelda ) break;
+    
+	}
+
+	serialize.endArray();
+  serialize.endObject();
+
+  httpd_resp_sendstr_chunk( req, serialize.buffer );
   httpd_resp_sendstr_chunk(req, NULL);
   
   return ESP_OK;
 }
 
-esp_err_t apiGetLog(httpd_req_t *req ) {
+esp_err_t apiGetLog(httpd_req_t *req, SerialFormat_t format ) {
   // reply on /api/getToken
 
   char buffer[STDIO_BUFFER_SIZE];
   dumpStdIO(buffer, STDIO_BUFFER_SIZE);
 
-  sendResponse( req, 200, true );
-
-  JSONize json(req);
+  sendResponse( req, 200, format, true );
 
   httpd_resp_sendstr_chunk( req, buffer);
   
@@ -373,14 +392,14 @@ esp_err_t apiGetLog(httpd_req_t *req ) {
   return ESP_OK;
 }
 
-esp_err_t apiGetToken(httpd_req_t *req ) {
+esp_err_t apiGetToken(httpd_req_t *req, SerialFormat_t format ) {
   // reply on /api/getToken
 
-  sendResponse( req, 200, true );
+  sendResponse( req, 200, format, true );
 
-  JSONize json(req);
+  Serialize serialize( format );
 
-  myOSSwarm.getToken(&json);
+  myOSSwarm.getToken(&serialize);
   
   httpd_resp_sendstr_chunk(req, NULL);
 
@@ -390,15 +409,19 @@ esp_err_t apiGetToken(httpd_req_t *req ) {
 esp_err_t apiGetHandler(httpd_req_t *req ) {
   // reply on get /api/*
 
+  char accept[100];
+  httpd_req_get_hdr_value_str( req, "Accept", accept, sizeof(accept));
+  SerialFormat_t format = ( strcmp( accept, "application/ftSwarm" ) == 0 )?SERIALIZE_RAW:SERIALIZE_JSON;
+
   httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
 
   // check on sub urls, apiGetSwarm will lock
-  if (strcmp( req->uri, "/api/getSwarm" ) == 0 ) { return apiGetSwarm( req ); }
-  if (strcmp( req->uri, "/api/getLog"   ) == 0 ) { return apiGetLog( req ); }
-  if (strcmp( req->uri, "/api/getToken" ) == 0 ) { return apiGetToken( req ); }
+  if (strcmp( req->uri, "/api/getSwarm" ) == 0 ) { return apiGetSwarm( req, format ); }
+  if (strcmp( req->uri, "/api/getLog"   ) == 0 ) { return apiGetLog( req, format ); }
+  if (strcmp( req->uri, "/api/getToken" ) == 0 ) { return apiGetToken( req, format ); }
 
   // unknown URL: FAIL
-  return sendResponse( req, 404, NULL );
+  return sendResponse( req, 404, format, NULL );
 }
 
 
@@ -406,7 +429,7 @@ esp_err_t apiActor( httpd_req_t *req ) {
   // reply on /api/actor
 
   // check on valid json 
-  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400 );
+  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400, SERIALIZE_JSON );
  
   char id[64];
   int  cmd = 0;
@@ -420,7 +443,7 @@ esp_err_t apiActor( httpd_req_t *req ) {
 
   if ( !( hasID && hasAuthorization ) ) {
     cJSON_Delete( root );
-    return sendResponse( req, 400 );
+    return sendResponse( req, 400, SERIALIZE_JSON );
   }
   
   // parameters
@@ -432,7 +455,7 @@ esp_err_t apiActor( httpd_req_t *req ) {
   // let's do it 
   if ( hasSpeed ) status = myOSSwarm.apiActorSpeed( token, id, speed, true); 
 
-  return sendResponse( req, status );
+  return sendResponse( req, status, SERIALIZE_JSON );
 
 }
 
@@ -440,7 +463,7 @@ esp_err_t apiLED( httpd_req_t *req ) {
   // reply on /api/led
 
   // check on valid json 
-  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400 );
+  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400, SERIALIZE_JSON );
 
   char     id[64];
   int      brightness, color;
@@ -453,7 +476,7 @@ esp_err_t apiLED( httpd_req_t *req ) {
   
   if ( !( hasID && hasAuthorization ) ) {
     cJSON_Delete( root );
-    return sendResponse( req, 400 );
+    return sendResponse( req, 400, SERIALIZE_JSON );
   }
 
   // one of both?
@@ -467,7 +490,7 @@ esp_err_t apiLED( httpd_req_t *req ) {
   if ( hasBrightness ) status = myOSSwarm.apiLEDBrightness( token, id, brightness, !hasColor );
   if ( hasColor )      status = myOSSwarm.apiLEDColor( token, id, color, true );
   
-  return sendResponse( req, status );
+  return sendResponse( req, status, SERIALIZE_JSON );
 
 }
 
@@ -475,7 +498,7 @@ esp_err_t apiServo(httpd_req_t *req ) {
   // reply on /api/servo
 
   // check on valid json 
-  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400 );
+  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400, SERIALIZE_JSON );
 
   char     id[64];
   int      offset, position;
@@ -488,7 +511,7 @@ esp_err_t apiServo(httpd_req_t *req ) {
 
   if ( !( hasID && hasAuthorization ) ) {
     cJSON_Delete( root );
-    return sendResponse( req, 400 );
+    return sendResponse( req, 400, SERIALIZE_JSON );
   }
 
   // optional
@@ -502,7 +525,7 @@ esp_err_t apiServo(httpd_req_t *req ) {
   if (hasOffset)   status = myOSSwarm.apiServoOffset( token, id, offset, !hasPosition);
   if (hasPosition) status = myOSSwarm.apiServoPosition( token, id, position, true );
 
-  return sendResponse( req, status );
+  return sendResponse( req, status, SERIALIZE_JSON );
 
 }
 
@@ -510,7 +533,7 @@ esp_err_t apiCam(httpd_req_t *req ) {
   // reply on /api/cam
 
   // check on valid json 
-  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400 );
+  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400, SERIALIZE_JSON );
 
   char     id[64];
   uint16_t token;
@@ -523,7 +546,7 @@ esp_err_t apiCam(httpd_req_t *req ) {
 
   if ( !( hasID && hasAuthorization ) ) {
     cJSON_Delete( root );
-    return sendResponse( req, 400 );
+    return sendResponse( req, 400, SERIALIZE_JSON );
   }
 
   // let's do it
@@ -541,7 +564,7 @@ esp_err_t apiCam(httpd_req_t *req ) {
   // cleanup
   cJSON_Delete(root);
   
-  return sendResponse( req, status );
+  return sendResponse( req, status, SERIALIZE_JSON);
 
 }
 
@@ -549,7 +572,7 @@ esp_err_t apiIsAuthorized( httpd_req_t *req ) {
   // reply on api/isAuthorized
 
   // check on valid json 
-  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400 );
+  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400, SERIALIZE_JSON );
 
   // get Token
   uint16_t token;
@@ -558,11 +581,11 @@ esp_err_t apiIsAuthorized( httpd_req_t *req ) {
   // cleanup
   cJSON_Delete(root);
 
-  if (!hasAuthorization ) return sendResponse( req, 400 );
+  if (!hasAuthorization ) return sendResponse( req, 400, SERIALIZE_JSON );
 
   uint16_t status = myOSSwarm.apiIsAuthorized( token, true );
 
-  return sendResponse( req, status );
+  return sendResponse( req, status, SERIALIZE_JSON );
 
 }
 
@@ -577,7 +600,7 @@ esp_err_t apiPostHandler(httpd_req_t *req ) {
   if (strcmp( req->uri, "/api/isAuthenticated") == 0 ) return apiIsAuthorized( req ); 
  
   // unknown URL: FAIL
-  return sendResponse( req, 404 );
+  return sendResponse( req, 404, SERIALIZE_JSON );
 
 }
 

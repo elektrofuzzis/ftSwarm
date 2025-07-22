@@ -59,7 +59,7 @@
     SwOSCAM(const char *name, SwOSCtrl *ctrl );
 
     // administrative stuff
-    virtual void jsonize( JSONize *json, uint8_t id);
+    virtual void serialize( Serialize *serialize, uint8_t id);
     virtual bool isCAM( void )   { return true; };
 
     void setStreaming( bool onOff, bool dontSendToRemote );

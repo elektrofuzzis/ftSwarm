@@ -6,6 +6,8 @@
 #include "easyKey.h"
 #include "SwOSFilter.h"
 #include <fastLed.h>
+#include "pb_encode.h"
+#include "ftswarm.pb.h"
 
 //#define FIRMWARE
 // #define SEILBAHN
@@ -15,7 +17,19 @@
 
 void setup() {
 
-  Serial.begin(115200);
+    Serial.begin(115200);
+
+  _ftSwarm_Controller pbctl = {
+    .cpu = (_ftSwarm_version) FTSWARMRC_1V140
+  };
+
+  uint8_t buffer[256];
+  pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+  bool ok = pb_encode(&stream, ftSwarm_Controller_fields, &pbctl);
+  printf("ok %d bytes %d\n", ok, stream.bytes_written );
+
+  while(1) loop;
+
   firmware();
   ESP.restart();
 

@@ -220,12 +220,12 @@ void SwOSPixel::setBrightnessLocal() {
 
 }
 
-void SwOSPixel::jsonize( JSONize *json, uint8_t id) {
-  json->startObject();
-  SwOSIO::jsonize(json, id);
-  json->variableUI8  ("brightness", brightness);
-  json->variableUI32X("color",      color);
-  json->endObject();
+void SwOSPixel::serialize( Serialize *serialize, uint8_t id) {
+  serialize->startObject( );
+  SwOSIO::serialize( serialize, id);
+  serialize->item( SERIALIZE_LITERAL_BRIGHTNESS, brightness);
+  serialize->item( SERIALIZE_LITERAL_COLOR,      color);
+  serialize->endObject();
 }
 
 void SwOSPixel::onTrigger( int32_t value ) {

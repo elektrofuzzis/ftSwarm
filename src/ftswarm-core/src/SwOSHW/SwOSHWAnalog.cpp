@@ -227,21 +227,21 @@ void SwOSAnalogInput::setValue( int32_t value ) {
 
 }
 
-void SwOSAnalogInput::jsonize( JSONize *json, uint8_t id) {
-  json->startObject();
-  SwOSIO::jsonize(json, id);
+void SwOSAnalogInput::serialize( Serialize *serialize, uint8_t id) {
+  serialize->startObject( );
+  SwOSIO::serialize( serialize, id);
 
   if ( ( ioType == SWOSIO_VOLTMETER ) || ( ioType == SWOSIO_POWER ) ){
-    json->variableVolt("value", getVoltage() );
+    serialize->item( SERIALIZE_LITERAL_VALUE, getVoltage(), 3, "V" );
   } else if ( ioType == SWOSIO_OHMMETER ) {
-    json->variableOhm("value", getResistance() );
+    serialize->item( SERIALIZE_LITERAL_VALUE, getResistance(), 0, "Ohm" );
   } else if ( ioType == SWOSIO_THERMOMETER ) {
-    json->variableCelcius("value", getCelcius() );
+    serialize->item( SERIALIZE_LITERAL_VALUE, getCelcius(), 1, "°C" );
   } else {
-    json->variableI32("value", getValueI32() );
+    serialize->item( SERIALIZE_LITERAL_VALUE, getValueI32() );
   }
   
-  json->endObject();
+  serialize->endObject();
 }
 
 /***************************************************
@@ -277,16 +277,16 @@ void SwOSAnalogInput::jsonize( JSONize *json, uint8_t id) {
   
 }
 
-void SwOSJoystick::jsonize( JSONize *json, uint8_t id) {
-  json->startObject();
-  SwOSIO::jsonize(json, id);
+void SwOSJoystick::serialize( Serialize *serialize, uint8_t id) {
+  serialize->startObject( );
+  SwOSIO::serialize( serialize, id);
 
-  json->variableI16("valueLr", lr->getValueI32() );
-  json->variableI16("valueFb", fb->getValueI32() );
+  serialize->item( SERIALIZE_LITERAL_VALUELR, lr->getValueI32() );
+  serialize->item( SERIALIZE_LITERAL_VALUEFB, fb->getValueI32() );
 
-  if (button) json->variableB( "button", button->getValueI32() );
+  if (button) serialize->item( SERIALIZE_LITERAL_VALUE, button->getValueI32() );
   
-  json->endObject();
+  serialize->endObject();
 
 }
 

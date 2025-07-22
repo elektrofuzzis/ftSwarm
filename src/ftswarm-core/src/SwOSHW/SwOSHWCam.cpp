@@ -217,19 +217,19 @@ if(config.pixel_format == PIXFORMAT_JPEG){
 
 }
 
-void SwOSCAM::jsonize( JSONize *json, uint8_t id) {
+void SwOSCAM::serialize( Serialize *serialize, uint8_t id) {
 
-  json->startObject();
-  SwOSIO::jsonize(json, id);
-  json->variable("url", (char *) "/stream" );
-  json->variableUI8( "framesize",  framesize );
-  json->variableUI8( "quality",    quality );
-  json->variableI16( "brightness", brightness );
-  json->variableI16( "contrast",   contrast );
-  json->variableI16( "saturation", saturation );
-  json->variableB( "H-Mirror", hMirror );
-  json->variableB( "v-Flip",   vFlip );
-  json->endObject();
+  serialize->startObject();
+  SwOSIO::serialize( serialize, id);
+  serialize->item( SERIALIZE_LITERAL_URL,        "/stream" );
+  serialize->item( SERIALIZE_LITERAL_FRAMESIZE,  framesize );
+  serialize->item( SERIALIZE_LITERAL_QUALITY,    quality );
+  serialize->item( SERIALIZE_LITERAL_BRIGHTNESS, brightness );
+  serialize->item( SERIALIZE_LITERAL_CONTRAST,   contrast );
+  serialize->item( SERIALIZE_LITERAL_SATURATION, saturation );
+  serialize->item( SERIALIZE_LITERAL_HMIRROR,    hMirror );
+  serialize->item( SERIALIZE_LITERAL_VFLIP,      vFlip );
+  serialize->endObject();
 
 }
 

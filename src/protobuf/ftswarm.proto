@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package ftSwarm;
+
+enum version {
+  JST_1V0         = 0;
+  CONTROL_1V3     = 1; 
+  JST_1V15        = 2; 
+  RS_2V0          = 3; 
+  RS_2V1          = 4;
+  CAM_3V12        = 5;
+  DUINO_1V141     = 6;
+  PWRDRIVE_1V141  = 7;
+  XL_1V00         = 8;
+  RC_1V140        = 9;
+}
+
+message Controller {
+  optional string  x            = 1;
+  optional int32   serialNumber = 2;
+  optional version cpu          = 3;
+}

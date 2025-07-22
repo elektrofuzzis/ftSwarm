@@ -40,7 +40,7 @@
     ~SwOSAnalogInput();
   
     // administrative stuff
-	  virtual void jsonize( JSONize *json, uint8_t id);
+	  virtual void serialize( Serialize *serialize, uint8_t id);
     virtual bool isGPIOInput( void );  
     virtual bool isAnalogInput( void ) { return true; };
 
@@ -85,7 +85,7 @@
     SwOSJoystick(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSDigitalInput* button, SwOSAnalogInput* lr, SwOSAnalogInput* fb );
   
     // administrative stuff
-    virtual void jsonize( JSONize *json, uint8_t id);
+    virtual void serialize( Serialize *serialize, uint8_t id);
     virtual bool isInput( void ) { return true; };
 
     virtual char* subscribe( char *IOName, uint32_t hysteresis ); // subscribe sensor to display value changes as console outputs 

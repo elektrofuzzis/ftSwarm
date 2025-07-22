@@ -80,13 +80,13 @@ void SwOSMotor::apply(void) {
 
 }
 
-void SwOSMotor::jsonize( JSONize *json, uint8_t id) {
+void SwOSMotor::serialize( Serialize *serialize, uint8_t id) {
 
-  json->startObject();
-  SwOSIO::jsonize(json, id);
-  json->variableI16 ("speed",        getSpeed() );
-  json->variableB( "highResolution", highResolution );
-  json->endObject();
+  serialize->startObject( );
+  SwOSIO::serialize( serialize, id);
+  serialize->item( SERIALIZE_LITERAL_SPEED, getSpeed() );
+  serialize->item( SERIALIZE_LITERAL_HIGHRESOLUTION, highResolution );
+  serialize->endObject();
 }
 
 void SwOSMotor::onTrigger( int32_t value ) {
@@ -446,13 +446,13 @@ void SwOSStepper::setValue( long distance, long position, bool isHoming, bool is
  *
  ***************************************************/
 
-void SwOSServo::jsonize( JSONize *json, uint8_t id) {
+void SwOSServo::serialize( Serialize *serialize, uint8_t id) {
 
-  json->startObject();
-  SwOSIO::jsonize(json, id);
-  json->variableI16("offset",   offset);
-  json->variableI16("position", position);
-  json->endObject();
+  serialize->startObject( );
+  SwOSIO::serialize( serialize, id);
+  serialize->item( SERIALIZE_LITERAL_OFFSET,   offset);
+  serialize->item( SERIALIZE_LITERAL_POSITION, position);
+  serialize->endObject();
 
 }
 

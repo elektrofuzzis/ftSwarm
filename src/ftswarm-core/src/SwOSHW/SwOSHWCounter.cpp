@@ -171,12 +171,12 @@ void SwOSCounter::setValue( int32_t value ) {
 
 }
 
-void SwOSCounter::jsonize( JSONize *json, uint8_t id) {
+void SwOSCounter::serialize( Serialize *serialize, uint8_t id) {
 
-  json->startObject();
-  SwOSIO::jsonize(json, id);
-  json->variableI32("value", getValueI32() );
-  json->endObject();
+  serialize->startObject( );
+  SwOSIO::serialize( serialize, id);
+  serialize->item( SERIALIZE_LITERAL_VALUE, getValueI32() );
+  serialize->endObject();
 
 }
 
@@ -288,11 +288,11 @@ void SwOSFrequencymeter::setValue( int32_t value ) {
 
 }
 
-void SwOSFrequencymeter::jsonize( JSONize *json, uint8_t id) {
+void SwOSFrequencymeter::serialize( Serialize *serialize, uint8_t id) {
 
-  json->startObject();
-  SwOSIO::jsonize(json, id);
-  json->variableI32("value", getValueI32() );
-  json->endObject();
+  serialize->startObject( );
+  SwOSIO::serialize( serialize, id);
+  serialize->item( SERIALIZE_LITERAL_VALUE, getValueI32() );
+  serialize->endObject();
 
 }

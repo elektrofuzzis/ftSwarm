@@ -149,12 +149,12 @@ public:
   SwOSStepper*  getStepper( uint8_t index );                             // get a pointer to a stepper by index
 
   FtSwarmController_t getType();                                  // what I am?
-  FtSwarmVersion_t   getCPU() { return CPU; };                   // my CPU type
-	const char *       getVersionCPU();                            // my CPU type as string
-  bool               isLocal() { return local; };                // local or remote?
-	char *             getHostname( );                             // hostname
-	void               jsonize( JSONize *json, uint8_t id);        // send board & IO device information as a json string
-  void               jsonizeIO( JSONize *json, uint8_t id);      // send IO device information as a json string
+  FtSwarmVersion_t   getCPU() { return CPU; };                    // my CPU type
+	const char *       getVersionCPU();                             // my CPU type as string
+  bool               isLocal() { return local; };                 // local or remote?
+	char *             getHostname( );                              // hostname
+	void               serialize( Serialize *serialize, uint8_t id);   // send board & IO device information as a json string
+  void               serializeIO( Serialize *serialize, uint8_t id); // send IO device information as a json string
 
   void loadFromNVS( void );                                      // write my port & alias settings to NVS
   void saveToNVS( void );                                        // load my port & alias settings from NVS
