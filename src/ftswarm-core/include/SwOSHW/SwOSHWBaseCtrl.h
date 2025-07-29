@@ -71,7 +71,6 @@ protected:
   SwOSIO* createIO( SwOSIOType_t ioType, uint8_t port, char *name, char *alias ); // create an IO by type
   
   // communications
-  bool saveToNVS( SwOSCom *com );
   bool setPixel( SwOSCom *com );
   bool resetCounter( SwOSCom *com );
   bool setActorSpeed( SwOSCom *com );
@@ -138,6 +137,12 @@ public:
   // Online?
   bool    isOnline( void ) { return getComState() == COMSTATE_ONLINE; };
 
+  // set wifi
+  void setWifi( FtSwarmWifi_t mode, char *SSID, char*PSK );
+
+  // reboot
+  void reboot( void );
+
   SwOSMotor*    getMotor( char *name );                                  // get a pointer to a motor by name
   SwOSMotor*    getMotor( uint8_t index );                               // get a pointer to a motor by index
   SwOSCAM*      getCAM( char *name );                                    // get a pointer to a cam by name
@@ -153,11 +158,17 @@ public:
 	const char *       getVersionCPU();                             // my CPU type as string
   bool               isLocal() { return local; };                 // local or remote?
 	char *             getHostname( );                              // hostname
-	void               serialize( Serialize *serialize, uint8_t id);   // send board & IO device information as a json string
-  void               serializeIO( Serialize *serialize, uint8_t id); // send IO device information as a json string
+	void               serialize( Serialize *serialize );   // send board & IO device information as a json string
+  void               serializeIO( Serialize *serialize ); // send IO device information as a json string
 
-  void loadFromNVS( void );                                      // write my port & alias settings to NVS
-  void saveToNVS( void );                                        // load my port & alias settings from NVS
+  // load my port & alias settings from NVS
+  void loadFromNVS( void );                                      
+  
+  // write my port & alias settings to NVS
+  void saveToNVS( void );                  
+  
+  // save settings to nvs: scope 0 - all, 1 - controller, 2 - alias, 3 - events
+  void save( uint8_t scope );
 
   void setState( SwOSState_t state, uint8_t members = 0, char *SSID = NULL ); // visualizes controller's state like booting, error,...
   SwOSState_t getState( void ) { return isOnline()?state:OFFLINE; };

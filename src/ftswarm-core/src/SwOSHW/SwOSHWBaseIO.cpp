@@ -16,7 +16,7 @@
 
 const char EMPTYSTRING[] = "";
 
-const char IO_ICON[SWOSIO_MAXIOTYPE][6] = 
+const char IO_ICON[SWOSIO_MAXIOTYPE][10] = 
   { "0.svg",          // digital 
     "1.svg",          // switch
     "2.svg",          // reedswitch 
@@ -189,18 +189,16 @@ char * SwOSObj::getAlias( ) {
 }
 
 
- void SwOSObj::serialize( Serialize *serialize, uint8_t id) {
+ void SwOSObj::serialize( Serialize *serialize) {
 
    // display name
    if (_alias) {
      serialize->item( SERIALIZE_LITERAL_NAME, _alias );
-   } else {
-     serialize->item( SERIALIZE_LITERAL_NAME, _name );
-   }
 
-   // unique ID
-   char str[50];
-   sprintf(str, "%d-%s", id, _name);   serialize->item( SERIALIZE_LITERAL_ID, str);
+   } else {
+    serialize->item( SERIALIZE_LITERAL_NAME, _name );
+
+   }
 
 }
 
@@ -284,8 +282,8 @@ SwOSUIClass_t SwOSIO::getUIClass() {
 
 }
 
-void SwOSIO::serialize( Serialize *serialize, uint8_t id) {
-  SwOSObj::serialize( serialize, id);
+void SwOSIO::serialize( Serialize *serialize ) {
+  SwOSObj::serialize( serialize );
   serialize->item( SERIALIZE_LITERAL_TYPE, getUIClass() );
   serialize->item( SERIALIZE_LITERAL_ICON, getIcon() );
   serialize->item( SERIALIZE_LITERAL_ACTIVE, ( _alias != NULL ) || isInUse() );

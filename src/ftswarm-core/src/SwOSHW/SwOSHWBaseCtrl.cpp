@@ -605,24 +605,23 @@ bool SwOSCtrl::changeIOType( uint8_t index, SwOSIOType_t newIOType ) {
 
 }
 
-void SwOSCtrl::serialize( Serialize *serialize, uint8_t id) {
+void SwOSCtrl::serialize( Serialize *serialize ) {
 
   serialize->startObject( );
   serialize->item( SERIALIZE_LITERAL_NAME, getHostname());
-  serialize->item( SERIALIZE_LITERAL_ID, id);
   serialize->item( SERIALIZE_LITERAL_SERIALNUMBER, serialNumber);
   serialize->item( SERIALIZE_LITERAL_TYPE, getType() );
   serialize->item( SERIALIZE_LITERAL_STATE, getState() );
   
   serialize->startArray( SERIALIZE_LITERAL_IO );
-  serializeIO( serialize, id );
+  serializeIO( serialize );
   serialize->endArray();
 
   serialize->endObject();
 
 }
 
-void SwOSCtrl::serializeIO( Serialize *serialize, uint8_t id ) {
+void SwOSCtrl::serializeIO( Serialize *serialize ) {
 
   for (uint8_t i=0; i<IOs; i++) { 
     
@@ -631,7 +630,7 @@ void SwOSCtrl::serializeIO( Serialize *serialize, uint8_t id ) {
       if ( io[i]->getIOType() == SWOSIO_PIXEL ) {
 
         // show pixels only, if they are marked as show in WebUI or the pixel is used
-        if ( ( io[i]->getPort() < pixels ) || ( io[i]->isInUse() ) ) io[i]->serialize( serialize, id ); 
+        if ( ( io[i]->getPort() < pixels ) || ( io[i]->isInUse() ) ) io[i]->serialize( serialize ); 
 
       } else if ( ( io[i]->getIOType() == SWOSIO_BUTTON ) && ( io[i]->getPort() >= FTSWARM_J1 ) && ( io[i]->getPort() <= FTSWARM_J2 ) ) {
         
@@ -639,7 +638,7 @@ void SwOSCtrl::serializeIO( Serialize *serialize, uint8_t id ) {
 
       } else {
         // all other stuff
-        io[i]->serialize( serialize, id ); 
+        io[i]->serialize( serialize ); 
       }
 
     }
@@ -1064,15 +1063,6 @@ unsigned long SwOSCtrl::networkAge( void ) {
 
 }
 
-bool SwOSCtrl::saveToNVS( SwOSCom *com ) {
-  // save in local nvs
-
-  saveToNVS( );
-  
-  return true;
-
-}
-
 bool SwOSCtrl::setPixel( SwOSCom *com ) {
 
   if (!io[com->data.pixelCmd.index]) return false;
@@ -1266,7 +1256,9 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
     
   switch (com->data.cmd) {
 
-    case CMD_SAVETONVS:               return saveToNVS( com );
+    case CMD_SAVE:                    save( com->data.saveCmd.scope ); return true;
+    case CMD_REBOOT:                  ESP.restart();
+    case CMD_SETWIFI:                 setWifi( com->data.wifiCmd.mode, com->data.wifiCmd.SSID, com->data.wifiCmd.PSK ); return true;
     case CMD_STATE:                   return recvState( com );
     case CMD_SETPIXEL:                return setPixel( com );
     case CMD_SETACTORSPEED:           return setActorSpeed( com );
@@ -1461,6 +1453,51 @@ void SwOSCtrl::deleteEvents( void ) {
 
     }
 
+  }
+
+}
+
+void SwOSCtrl::setWifi( FtSwarmWifi_t mode, char *SSID, char*PSK ) {
+
+  if (isLocal()) {
+    nvs.wifiMode = mode;
+    strcpy( nvs.wifiSSID, SSID );
+    strcpy( nvs.wifiPwd, PSK );
+
+  } else {
+    SwOSCom cmd( macAddr, serialNumber, CMD_SETMICROSTEPMODE );
+    cmd.data.wifiCmd.mode = mode;
+    strcpy( cmd.data.wifiCmd.SSID, SSID );
+    strcpy( cmd.data.wifiCmd.PSK, PSK );
+    cmd.send();
+  }
+
+}
+
+void SwOSCtrl::reboot( void ) {
+
+  if (isLocal()) {
+    ESP.restart();
+
+  } else {
+    SwOSCom cmd( macAddr, serialNumber, CMD_REBOOT );
+    cmd.send();
+  }
+
+}
+
+void SwOSCtrl::save( uint8_t scope ){
+
+  if (local) {
+
+    if ( ( scope == 0) || ( scope == 1 ) ) nvs.save();
+    if ( ( scope == 0) || ( scope == 2 ) ) saveToNVS();
+    if ( ( scope == 0) || ( scope == 3 ) ) nvs.saveEvents();
+
+  } else {
+    SwOSCom cmd( macAddr, serialNumber, CMD_SAVE );
+    cmd.data.saveCmd.scope = scope;
+    cmd.send();
   }
 
 }

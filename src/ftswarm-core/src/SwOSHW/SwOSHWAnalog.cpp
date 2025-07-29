@@ -227,9 +227,9 @@ void SwOSAnalogInput::setValue( int32_t value ) {
 
 }
 
-void SwOSAnalogInput::serialize( Serialize *serialize, uint8_t id) {
+void SwOSAnalogInput::serialize( Serialize *serialize ) {
   serialize->startObject( );
-  SwOSIO::serialize( serialize, id);
+  SwOSIO::serialize( serialize );
 
   if ( ( ioType == SWOSIO_VOLTMETER ) || ( ioType == SWOSIO_POWER ) ){
     serialize->item( SERIALIZE_LITERAL_VALUE, getVoltage(), 3, "V" );
@@ -277,9 +277,9 @@ void SwOSAnalogInput::serialize( Serialize *serialize, uint8_t id) {
   
 }
 
-void SwOSJoystick::serialize( Serialize *serialize, uint8_t id) {
+void SwOSJoystick::serialize( Serialize *serialize ) {
   serialize->startObject( );
-  SwOSIO::serialize( serialize, id);
+  SwOSIO::serialize( serialize );
 
   serialize->item( SERIALIZE_LITERAL_VALUELR, lr->getValueI32() );
   serialize->item( SERIALIZE_LITERAL_VALUEFB, fb->getValueI32() );

@@ -80,10 +80,10 @@ void SwOSMotor::apply(void) {
 
 }
 
-void SwOSMotor::serialize( Serialize *serialize, uint8_t id) {
+void SwOSMotor::serialize( Serialize *serialize ) {
 
   serialize->startObject( );
-  SwOSIO::serialize( serialize, id);
+  SwOSIO::serialize( serialize );
   serialize->item( SERIALIZE_LITERAL_SPEED, getSpeed() );
   serialize->item( SERIALIZE_LITERAL_HIGHRESOLUTION, highResolution );
   serialize->endObject();
@@ -446,10 +446,10 @@ void SwOSStepper::setValue( long distance, long position, bool isHoming, bool is
  *
  ***************************************************/
 
-void SwOSServo::serialize( Serialize *serialize, uint8_t id) {
+void SwOSServo::serialize( Serialize *serialize ) {
 
   serialize->startObject( );
-  SwOSIO::serialize( serialize, id);
+  SwOSIO::serialize( serialize );
   serialize->item( SERIALIZE_LITERAL_OFFSET,   offset);
   serialize->item( SERIALIZE_LITERAL_POSITION, position);
   serialize->endObject();

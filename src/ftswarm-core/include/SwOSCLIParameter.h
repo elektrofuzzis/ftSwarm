@@ -12,8 +12,15 @@
 #include <SwOSHW.h>
 
 typedef enum {
+  CLICMD_login,
   CLICMD_triggerUserEvent,
   CLICMD_show,
+  CLICMD_getSwarm,
+  CLICMD_save,
+  CLICMD_useConfig,
+  CLICMD_setAlias,
+  CLICMD_setWifi,
+  CLICMD_reboot,
   CLICMD_setMicrostepMode,
   CLICMD_getMicrostepMode,
   CLICMD_subscribe,
@@ -56,18 +63,27 @@ typedef enum {
 } CLICmd_t;
 
 class SwOSCLIParameter {
+
   protected:
-    char *_value = NULL;
-    SwOSIO *_io  = NULL;
+    char   *str = NULL;
+    char   *num = NULL;
+    SwOSIO *io  = NULL;
+
   public:
     ~SwOSCLIParameter();
-    void setValue( char *value );
-    void setValue( SwOSIO *io, char *ioName );
-    int  getValue( void );
-    long  getLongValue( void );
-    SwOSIO *getIO( void ) { return _io; };
-    bool isConstant( void ) { return (_io == NULL); };
-    bool isIO( void ) { return !isConstant(); };
+    void setNumber( char *value );
+    long getNumber( void );
+    
+    void setString( char *value );
+    char *getString( void ) { return str; };
+    
+    void setIO( SwOSIO *io );
+    SwOSIO *getIO( void ) { return io; };
+
+    bool isNumber( void ) { return (!num); };
+    bool isIO( void ) { return (!io); };
+
     // Test, if an "execute"-parameter is in Range or not
-    bool inRange( const char *name, int minValue, int maxValue );
-} ;
+    bool inRange( const char *name, int minValue, int maxValue, char *error );
+
+};

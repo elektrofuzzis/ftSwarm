@@ -11,8 +11,6 @@
 
 #include <esp_http_server.h>
 
-#define MAXJSONBUFFER 10240
-
 typedef enum {
   SERIALIZE_RAW,
   SERIALIZE_JSON
@@ -33,6 +31,7 @@ typedef enum {
   SERIALIZE_LITERAL_TOKEN,
   SERIALIZE_LITERAL_AUTH,
   SERIALIZE_LITERAL_PROVIDED,
+  SERIALIZE_LITERAL_STATE,
   SERIALIZE_LITERAL_SPEED,
   SERIALIZE_LITERAL_HIGHRESOLUTION,
   SERIALIZE_LITERAL_OFFSET,
@@ -44,7 +43,6 @@ typedef enum {
   SERIALIZE_LITERAL_ID,
   SERIALIZE_LITERAL_SERIALNUMBER,
   SERIALIZE_LITERAL_TYPE,
-  SERIALIZE_LITERAL_STATE,
   SERIALIZE_LITERAL_ICON,
   SERIALIZE_LITERAL_ACTIVE,
   SERIALIZE_LITERAL_BRIGHTNESS,
@@ -70,20 +68,23 @@ protected:
   bool           noSpacer   = true;            // supress first ,
   uint32_t       ptr        = 0;
   SerialFormat_t format     = SERIALIZE_RAW;
+  size_t         bufSize    = 0;
 
-  void write( const char *str );
   void write( SerialLiteral_t literal );
   void write( int value );
+  void writeX( uint32_t value );
   void writeBinary( uint8_t v );
 
 public:
 
-  char buffer[ MAXJSONBUFFER ];
+  char *buffer;
 
-	Serialize( SerialFormat_t format = SERIALIZE_RAW );
+	Serialize( char *buffer, size_t bufSize, SerialFormat_t format );
 
   // reset the buffer
   void reset( void );
+
+  void write( const char *str );
 
   // start and end a new object
   void startObject( SerialLiteral_t literal = SERIALIZE_LITERAL_NULL );
@@ -97,25 +98,9 @@ public:
   // items
   void item( SerialLiteral_t literal, const char *value );
   void item( SerialLiteral_t literal, int value);
+  void itemX( SerialLiteral_t literal, uint32_t value);
   void item( SerialLiteral_t literal, float value, uint8_t decimalPlaces, const char *unit = NULL );
   void item( SerialLiteral_t literal, float v1, float v2, float v3, float v4 );
   void item( SerialLiteral_t literal, float v1, float v2, float v3 );
-  
-  // write variables 
-  /*
-	void variable( SerialLiteral_t literal, char *value);
-  void variableB( SerialLiteral_t literal, bool b );
-  void variableUI8( SerialLiteral_t literal, uint8_t i );
-  void variableI16( SerialLiteral_t literal, int16_t i );
-  void variableUI16( SerialLiteral_t literal, uint16_t i );
-	void variableUI32( SerialLiteral_t literal, uint32_t i );
-	void variableI32( const char *identifier, int32_t i );
-  void variableUI32X( const char *identifier, uint32_t i );
-  void variableVolt( const char *identifier, float f);
-	void variableOhm( const char *identifier, float f);
-  void variableCelcius( const char *identifier, float f);
-  void variable4F( const char *identifier, float f1, float f2, float f3, float f4 );
-  void variable3I16( const char *identifier, int16_t i1, int16_t i2, int16_t i3 );
-  */
     
 };

@@ -38,7 +38,7 @@
     SwOSPixel(const char *name, uint8_t port, SwOSCtrl *ctrl);
   
     // administrative stuff
-    virtual void serialize( Serialize *serialize, uint8_t id);
+    virtual void serialize( Serialize *serialize );
     virtual void onTrigger( int32_t value );
     virtual bool isPixel( void ) { return true; };
     virtual bool isActor( void ) { return true; };

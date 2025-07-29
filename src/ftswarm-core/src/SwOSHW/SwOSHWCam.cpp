@@ -217,10 +217,10 @@ if(config.pixel_format == PIXFORMAT_JPEG){
 
 }
 
-void SwOSCAM::serialize( Serialize *serialize, uint8_t id) {
+void SwOSCAM::serialize( Serialize *serialize ) {
 
   serialize->startObject();
-  SwOSIO::serialize( serialize, id);
+  SwOSIO::serialize( serialize );
   serialize->item( SERIALIZE_LITERAL_URL,        "/stream" );
   serialize->item( SERIALIZE_LITERAL_FRAMESIZE,  framesize );
   serialize->item( SERIALIZE_LITERAL_QUALITY,    quality );

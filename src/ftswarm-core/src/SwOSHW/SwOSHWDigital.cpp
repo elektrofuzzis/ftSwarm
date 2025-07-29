@@ -171,10 +171,10 @@ FtSwarmToggle_t SwOSDigitalInput::getToggle() {
 
 }
 
-void SwOSDigitalInput::serialize( Serialize *serialize, uint8_t id) {
+void SwOSDigitalInput::serialize( Serialize *serialize ) {
 
   serialize->startObject( );
-  SwOSIO::serialize( serialize, id);
+  SwOSIO::serialize( serialize );
   serialize->item( SERIALIZE_LITERAL_VALUE, getValueI32() ); 
   serialize->endObject();
   

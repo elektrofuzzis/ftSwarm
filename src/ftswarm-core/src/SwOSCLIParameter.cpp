@@ -11,56 +11,67 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "easyKey.h"
 #include "SwOSCLIParameter.h"
 
 SwOSCLIParameter::~SwOSCLIParameter(){
 
-    if (_value) free(_value);
-    _value = NULL;
+    if ( num ) free( num );
+    if ( str ) free( str );
+    
+    num = NULL;
+    str = NULL;
 
 };
 
-void SwOSCLIParameter::setValue( char *value ){
+void SwOSCLIParameter::setNumber( char *value ){
 
-    if (_value) free(_value);
+  if ( num ) free( num );
 
-    _value = (char *) malloc( strlen(value)+1 );
-    strcpy( _value, value );
+  num = (char *) malloc( strlen(value)+1 );
+  strcpy( num, value );
     
 };
 
-void SwOSCLIParameter::setValue( SwOSIO *io, char *ioName ) {
+void SwOSCLIParameter::setString( char *value ){
 
-    setValue( ioName);
-    _io = io;
+  if ( str ) free( str );
+
+  int len = strlen( value );
+  int pos = 0;
+
+  // mark endorsing " to kill
+  if ( ( value[0] == '"' ) && ( value[len-1] == '"' ) ) { pos=1; len-=2; }
+
+  // copy content
+  str = (char *) calloc( sizeof( char ), len+1 );
+  strncpy( str, &(value[pos]), len );
+     
 }
 
-int SwOSCLIParameter::getValue( void ){
+void SwOSCLIParameter::setIO( SwOSIO *io ) {
 
-    if (!_value) return 0;
+  this->io = io;
 
-    return atoi(_value);
+}
 
-};
+long SwOSCLIParameter::getNumber( void ){
 
-long SwOSCLIParameter::getLongValue( void ){
-
-    if (!_value) return 0;
-
-    return atoi(_value);
+  return xToL( num );
 
 };
 
+bool SwOSCLIParameter::inRange( const char *name, int minValue, int maxValue, char *error ) {
 
-  bool SwOSCLIParameter::inRange( const char *name, int minValue, int maxValue ) {
-
-  if (!isConstant()) {
-    printf("Error: parameter %s is not a number.\n", name);
+  if ( !num ) {
+    if (error) sprintf( error, "Error: parameter %s is not a number.\n", name);
     return false;
   }
 
-  if ( (getValue()<minValue) || (getValue()>maxValue) ) {
-    printf("Error: parameter %s needs to be between %d and %d, but %d found.\n", name, minValue, maxValue, getValue());
+  int v = getNumber();
+
+  if ( ( v<minValue ) || ( v>maxValue ) ) {
+    if (error) sprintf( error, "Error: parameter %s needs to be between %d and %d, but %d found.\n", name, minValue, maxValue, v );
     return false;
   }
 

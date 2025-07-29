@@ -203,12 +203,12 @@ void miscSettingsMenu() {
 
       case MISCMENUINT0: // Interrupt Line Low
         anythingChanged = true;
-        nvs.interruptOnOff[0] = (int16_t) enterNumberI32( "Low value [-255..255]", nvs.interruptOnOff[0], -255, 255 );
+        nvs.interruptOnOff[0] = (int16_t) enterNumber( "Low value [-255..255]", nvs.interruptOnOff[0], -255, 255 );
         break;
 
       case MISCMENUINT1: // Interrupt Line High
         anythingChanged = true;
-        nvs.interruptOnOff[1] = (int16_t) enterNumberI32( "High Value [-255..255]", nvs.interruptOnOff[1], -255, 255 );
+        nvs.interruptOnOff[1] = (int16_t) enterNumber( "High Value [-255..255]", nvs.interruptOnOff[1], -255, 255 );
         break;
 
       case MISCMENUREG: // Max I2CRegisters
@@ -601,7 +601,6 @@ void aliasMenu( void ) {
     
     uint8_t i;
     bool changes = false;
-    SwOSCom *alias2nvs = NULL;
 
     switch (choice) {
 
@@ -616,7 +615,7 @@ void aliasMenu( void ) {
                   if ( anythingChanged[0] ) {
 
                     // save in local nvs
-                    myOSSwarm.Ctrl[0]->saveToNVS( );
+                    myOSSwarm.Ctrl[0]->save(2);
 
                     // send new config to Kelda
                     if ( ( myOSSwarm.Kelda ) && ( myOSSwarm.Kelda != myOSSwarm.Ctrl[0] ) ) myOSSwarm.Ctrl[0]->sendIOConfig( myOSSwarm.Kelda->macAddr );
@@ -627,10 +626,7 @@ void aliasMenu( void ) {
                   for ( i=1; i<MAXCTRL; i++ ) {
                     if ( anythingChanged[i] ) {
                       myOSSwarm.Ctrl[i]->sendIOConfig( myOSSwarm.Ctrl[i]->macAddr );
-                      alias2nvs = new SwOSCom( myOSSwarm.Ctrl[i]->macAddr, myOSSwarm.Ctrl[i]->serialNumber, CMD_SAVETONVS );
-                      alias2nvs->send( );
-                      delete alias2nvs;
-                      alias2nvs = NULL;
+                      myOSSwarm.Ctrl[i]->save( 2 );
                     }
                   }
           
@@ -757,7 +753,7 @@ bool enterEvent( SwOSNVSEvent_t *event ) {
   // constant value
   if (event->trigger != FTSWARM_TRIGGERVALUE ) {
     sprintf( prompt, "Enter value to apply to %s.%s() [%d]: ", myOSSwarm.getIO( event->actor )->getAlias(), getAction( event->actor ), event->parameter );
-    event->parameter = enterNumberI32( prompt, event->parameter, -4096, 0xFFFFFF );
+    event->parameter = enterNumber( prompt, event->parameter, -4096, 0xFFFFFF );
   }
 
   return true;

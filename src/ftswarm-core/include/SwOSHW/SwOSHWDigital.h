@@ -32,7 +32,7 @@
 	  SwOSDigitalInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType );
   
     // administrative stuff
-	  virtual void serialize( Serialize *serialize, uint8_t id);
+	  virtual void serialize( Serialize *serialize );
     virtual bool isGPIOInput( void );
     virtual bool isDigitalInput( void ) { return true; };
 

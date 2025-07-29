@@ -9,8 +9,6 @@
  
 #include <esp_err.h>
 #include <esp_http_server.h>
-#include <cJSON.h>
-//#include "esp_vfs.h"
 
 #include "serialize.h"
 #include "SwOSNVS.h"
@@ -19,6 +17,7 @@
 #include "SwOSWeb.h"
 #include "sfs_files.h"
 #include "SwOSLog.h"
+#include "SwOSCLI.h"
 
 #define SCRATCH_BUFSIZE (10240)
 #define HTTPD_401 "401 Unauthorized"
@@ -28,227 +27,34 @@ typedef struct http_server_context {
     char scratch[SCRATCH_BUFSIZE];
 } http_server_context_t;
 
-esp_err_t httpd_resp_sendstr_chunk_cr(httpd_req_t *req, const char *line ) {
-
-  char cr[10];
-
-  httpd_resp_sendstr_chunk( req, line );
-
-  sprintf(cr, "\n");
-  httpd_resp_sendstr_chunk( req, cr);
-
-  return ESP_OK;
-}
-
-static char *getBody(httpd_req_t *req) {
-
-  int total_len = req->content_len;
-  int cur_len = 0;
-  char *buf = ((http_server_context_t *)(req->user_ctx))->scratch;
-  int received = 0;
-  
-  if (total_len >= SCRATCH_BUFSIZE) {
-    // Respond with 500 Internal Server Error 
-    httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "content too long");
-    return NULL;
-  }
-  
-  while (cur_len < total_len) {
-    
-    received = httpd_req_recv(req, buf + cur_len, total_len);
-    
-    if (received <= 0) {
-      // Respond with 500 Internal Server Error
-      httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to post control value");
-      return NULL;
-    }
-    
-    cur_len += received;
-  }
-  
-  buf[total_len] = '\0';
-
-  return buf;
-  
-}
-
-esp_err_t sendResponse( httpd_req_t *req, uint16_t status, SerialFormat_t format, bool keepOpen = false ) {
-
-  if ( format == SERIALIZE_RAW ) {
-    httpd_resp_set_type( req, "application/ftSwarm; charset=utf-8" );
-
-  } else {
-    httpd_resp_set_type( req, "application/json; charset=utf-8" );
-
-  }
-  switch (status) {
-    case 200: httpd_resp_set_status( req, HTTPD_200 ); break;
-    case 400: httpd_resp_set_status( req, HTTPD_400 ); break;
-    case 401: httpd_resp_set_status( req, HTTPD_401 ); break;
-    case 404: httpd_resp_set_status( req, HTTPD_404 ); break;
-    default:  httpd_resp_set_status( req, HTTPD_500 ); break;
-  }
-
-  if (!keepOpen) {
-    // reply noting
-    httpd_resp_sendstr(req, "{}" ); 
-    httpd_resp_sendstr(req, NULL );
-  }
-  
-  return ESP_OK;
-}
-
-cJSON *getJSON( httpd_req_t *req ) {
-  // test on valid JSON
-
-  // get body
-  char *body = getBody(req);
-  if ( body == NULL ) {
-    SWARM_LOG_ERROR( "getJSON: getBody failed" );
-    httpd_resp_set_status( req, HTTPD_400 );
-    return NULL;
-  }
-
-  // parse data
-  cJSON *root = cJSON_Parse(body);
-
-  // parsing error?
-  if ( root == NULL ) { 
-    SWARM_LOG_ERROR( "invalid JSON string" );
-    httpd_resp_set_status( req, HTTPD_400 );
-    return NULL;
-  }
-
-  return root;
-
-}
-
-bool getParameter( httpd_req_t *req, cJSON * root, const char *parameter, int *value, bool mandatory = true ) {
-  // get a number
-
-  cJSON *p = cJSON_GetObjectItem(root, parameter );
-
-  // check if everything is ok
-  if ( p != NULL ) {
-
-    if ( p->type == cJSON_Number ) {
-      *value = p->valueint;
-      return true;
-
-    } else if ( p->type == cJSON_String ) {
-
-      char *ptr = p->valuestring;
-
-      // quoted string?
-      if ( ( ptr[0] == '"' ) && ( ptr[strlen(ptr)] == '"' ) ) { ptr[strlen(ptr)] = '\0'; ptr++; }
-      if ( ptr[0] == '\0' ) return false;
-
-      // start with #?
-      int base = 10;
-      if ( ptr[0] == '#' ) { base = 16; ptr++; }
-
-      *value = (int) strtol( ptr, NULL, base );
-      return true;
-
-    } else {
-
-      SWARM_LOG_ERROR( "%s has wrong type", parameter );
-      httpd_resp_set_status( req, HTTPD_400 );
-      return false;
-    }
-  }
-
-  // mandatory
-  if ( mandatory ){
-    SWARM_LOG_ERROR( "Missing parameter %s.", parameter );
-    httpd_resp_set_status( req, HTTPD_400 );
-    return false;
-  }
-  
-  // optional
-  return false;
-
-}
-
-bool getParameter( httpd_req_t *req, cJSON * root, const char *parameter, uint16_t *value, bool mandatory = true ) {
-  // get uint16_t
-  int v;
-  
-  if ( getParameter( req, root, parameter, &v, mandatory ) ) {
-    *value = (uint16_t) v;
-    return true;
-  }
-
-  return false;
-}
-
-
-bool getParameter( httpd_req_t *req, cJSON * root, const char *parameter, bool *value, bool mandatory = true ) {
-  // get a boolean
-  
-  int i;
-
-  if ( getParameter( req, root, parameter, &i, mandatory ) ) {
-    *value = (i!=0);
-    return true;
-  }
-
-  return false;
-
-}
-
-bool getParameter( httpd_req_t *req, cJSON * root, const char *parameter, char *value, bool mandatory = true ) {
-  // get a string
-
-  cJSON *p = cJSON_GetObjectItem( root, parameter );
-
-  // check if everything is ok
-  if ( ( p != NULL ) && ( p->type == cJSON_String ) ) {
-    strcpy( value, p->valuestring );
-    return true;
-  }
-
-  // missing mandatory parameter?
-  if ( ( p == NULL ) && ( mandatory ) ) {
-    SWARM_LOG_ERROR( "Missing parameter %s.", parameter );
-    httpd_resp_set_status( req, HTTPD_400 );
-
-  // wrong type?
-  } else if ( p != NULL )  {
-    SWARM_LOG_ERROR( "%s has wrong type", parameter );
-    httpd_resp_set_status( req, HTTPD_400 );
-  }
-  
-  return false;    
-
-}
-
+httpd_handle_t UIServer = NULL;
+httpd_handle_t streamServer = NULL;
 
 #define CHECK_FILE_EXTENSION(filename, ext) (strcasecmp(&filename[strlen(filename) - strlen(ext)], ext) == 0)
 
 /* Set HTTP response content type according to file extension */
-esp_err_t set_content_type_from_file(httpd_req_t *req, const char *filepath)
-{
+esp_err_t set_content_type_from_file(httpd_req_t *req, const char *filepath)  {
 
-    const char *type = "text/plain";
-    if (CHECK_FILE_EXTENSION(filepath, ".html")) {
-        type = "text/html";
-    } else if (CHECK_FILE_EXTENSION(filepath, ".js")) {
-        type = "application/javascript";
-    } else if (CHECK_FILE_EXTENSION(filepath, ".css")) {
-        type = "text/css";
-    } else if (CHECK_FILE_EXTENSION(filepath, ".png")) {
-        type = "image/png";
-    } else if (CHECK_FILE_EXTENSION(filepath, ".ico")) {
-        type = "image/x-icon";
-    } else if (CHECK_FILE_EXTENSION(filepath, ".svg")) {
-        type = "image/svg+xml";
-    }
+  const char *type = "text/plain";
+  if (CHECK_FILE_EXTENSION(filepath, ".html")) {
+      type = "text/html";
+  } else if (CHECK_FILE_EXTENSION(filepath, ".js")) {
+      type = "application/javascript";
+  } else if (CHECK_FILE_EXTENSION(filepath, ".css")) {
+      type = "text/css";
+  } else if (CHECK_FILE_EXTENSION(filepath, ".png")) {
+      type = "image/png";
+  } else if (CHECK_FILE_EXTENSION(filepath, ".ico")) {
+      type = "image/x-icon";
+  } else if (CHECK_FILE_EXTENSION(filepath, ".svg")) {
+      type = "image/svg+xml";
+  }
     
-    return httpd_resp_set_type(req, type);
+  return httpd_resp_set_type(req, type);
+
 }
 
-char * findlast( char *str, char ch) {
+char *findlast( char *str, char ch) {
 
   char *result = str;
   char *test   = result;
@@ -320,287 +126,6 @@ esp_err_t fileHandler(httpd_req_t *req ) {
   
   httpd_resp_sendstr_chunk(req, NULL);
   return ESP_OK;
-
-}
-
-esp_err_t apiGetSwarm(httpd_req_t *req, SerialFormat_t format ) {
-  // reply on /api/getSwarm
-
-  uint16_t token;
-  bool provided = getAuthorization( req, &token);  
-  bool status = false;
-
-  sendResponse( req, 200, format, true );
-
-  Serialize serialize( format );
-
-  serialize.startObject();
-  
-  serialize.startObject( SERIALIZE_LITERAL_AUTH );
-
-  if (provided) {
-    status = myOSSwarm.apiPeekIsAuthorized(token);    
-  }
-
-  serialize.item( SERIALIZE_LITERAL_PROVIDED, provided);
-  serialize.item( SERIALIZE_LITERAL_STATE, status);
-  serialize.item( SERIALIZE_LITERAL_KELDA, myOSSwarm.Ctrl[0]->IAmKelda );
-  serialize.endObject();
-
-  serialize.newObject( SERIALIZE_Object );
-
-  // array of controllers
-  serialize.startArray( SERIALIZE_LITERAL_CTRL );
-
-	for (uint8_t i=0; i<=myOSSwarm.maxCtrl; i++) {
-
-    // send data
-    if ( myOSSwarm.Ctrl[i] ) { 
-      myOSSwarm.Ctrl[i]->lock(); 
-      myOSSwarm.Ctrl[i]->serialize( &serialize, i ); 
-      myOSSwarm.Ctrl[i]->unlock(); 
-      httpd_resp_sendstr_chunk( req, serialize.buffer );
-      serialize.reset();
-    }
-
-    // visualize others only if I'm a Kelda
-    if ( !myOSSwarm.Ctrl[0]->IAmKelda ) break;
-    
-	}
-
-	serialize.endArray();
-  serialize.endObject();
-
-  httpd_resp_sendstr_chunk( req, serialize.buffer );
-  httpd_resp_sendstr_chunk(req, NULL);
-  
-  return ESP_OK;
-}
-
-esp_err_t apiGetLog(httpd_req_t *req, SerialFormat_t format ) {
-  // reply on /api/getToken
-
-  char buffer[STDIO_BUFFER_SIZE];
-  dumpStdIO(buffer, STDIO_BUFFER_SIZE);
-
-  sendResponse( req, 200, format, true );
-
-  httpd_resp_sendstr_chunk( req, buffer);
-  
-  httpd_resp_sendstr_chunk(req, NULL);
-
-  return ESP_OK;
-}
-
-esp_err_t apiGetToken(httpd_req_t *req, SerialFormat_t format ) {
-  // reply on /api/getToken
-
-  sendResponse( req, 200, format, true );
-
-  Serialize serialize( format );
-
-  myOSSwarm.getToken(&serialize);
-  
-  httpd_resp_sendstr_chunk(req, NULL);
-
-  return ESP_OK;
-}
-
-esp_err_t apiGetHandler(httpd_req_t *req ) {
-  // reply on get /api/*
-
-  char accept[100];
-  httpd_req_get_hdr_value_str( req, "Accept", accept, sizeof(accept));
-  SerialFormat_t format = ( strcmp( accept, "application/ftSwarm" ) == 0 )?SERIALIZE_RAW:SERIALIZE_JSON;
-
-  httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
-
-  // check on sub urls, apiGetSwarm will lock
-  if (strcmp( req->uri, "/api/getSwarm" ) == 0 ) { return apiGetSwarm( req, format ); }
-  if (strcmp( req->uri, "/api/getLog"   ) == 0 ) { return apiGetLog( req, format ); }
-  if (strcmp( req->uri, "/api/getToken" ) == 0 ) { return apiGetToken( req, format ); }
-
-  // unknown URL: FAIL
-  return sendResponse( req, 404, format, NULL );
-}
-
-
-esp_err_t apiActor( httpd_req_t *req ) {
-  // reply on /api/actor
-
-  // check on valid json 
-  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400, SERIALIZE_JSON );
- 
-  char id[64];
-  int  cmd = 0;
-  int  speed = 0;
-  uint16_t token;
-  uint16_t status = 400;
-
-  // mandatory parameters
-  bool hasID = getParameter( req, root, "id", id, true );
-  bool hasAuthorization = getAuthorization( req, &token );
-
-  if ( !( hasID && hasAuthorization ) ) {
-    cJSON_Delete( root );
-    return sendResponse( req, 400, SERIALIZE_JSON );
-  }
-  
-  // parameters
-  boolean hasSpeed = ( req, getParameter( req, root, "speed", &speed, false ) );
-
-  // cleanup
-  cJSON_Delete( root );
-
-  // let's do it 
-  if ( hasSpeed ) status = myOSSwarm.apiActorSpeed( token, id, speed, true); 
-
-  return sendResponse( req, status, SERIALIZE_JSON );
-
-}
-
-esp_err_t apiLED( httpd_req_t *req ) {
-  // reply on /api/led
-
-  // check on valid json 
-  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400, SERIALIZE_JSON );
-
-  char     id[64];
-  int      brightness, color;
-  uint16_t status = 400;
-  uint16_t token;
-
-  // mandatory parameters
-  bool hasID = getParameter( req, root, "id", id, true );
-  bool hasAuthorization = getAuthorization( req, &token );
-  
-  if ( !( hasID && hasAuthorization ) ) {
-    cJSON_Delete( root );
-    return sendResponse( req, 400, SERIALIZE_JSON );
-  }
-
-  // one of both?
-  bool hasBrightness = getParameter( req, root, "brightness", &brightness, false );
-  bool hasColor      = getParameter( req, root, "color", &color, false );
-
-  // cleanup
-  cJSON_Delete(root);
-
-  // let's do it
-  if ( hasBrightness ) status = myOSSwarm.apiLEDBrightness( token, id, brightness, !hasColor );
-  if ( hasColor )      status = myOSSwarm.apiLEDColor( token, id, color, true );
-  
-  return sendResponse( req, status, SERIALIZE_JSON );
-
-}
-
-esp_err_t apiServo(httpd_req_t *req ) {
-  // reply on /api/servo
-
-  // check on valid json 
-  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400, SERIALIZE_JSON );
-
-  char     id[64];
-  int      offset, position;
-  uint16_t token;
-  uint16_t status = 400;
-
-  // mandatory parameters
-  bool hasID = getParameter( req, root, "id", id, true );
-  bool hasAuthorization = getAuthorization( req, &token );
-
-  if ( !( hasID && hasAuthorization ) ) {
-    cJSON_Delete( root );
-    return sendResponse( req, 400, SERIALIZE_JSON );
-  }
-
-  // optional
-  boolean hasOffset   = getParameter( req, root, "offset", &offset, false);
-  boolean hasPosition = getParameter( req, root, "position", &position, false);
-
-  // cleanup
-  cJSON_Delete(root);
-  
-  // let's do it
-  if (hasOffset)   status = myOSSwarm.apiServoOffset( token, id, offset, !hasPosition);
-  if (hasPosition) status = myOSSwarm.apiServoPosition( token, id, position, true );
-
-  return sendResponse( req, status, SERIALIZE_JSON );
-
-}
-
-esp_err_t apiCam(httpd_req_t *req ) {
-  // reply on /api/cam
-
-  // check on valid json 
-  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400, SERIALIZE_JSON );
-
-  char     id[64];
-  uint16_t token;
-  int      value;
-  uint16_t status = 400;
-
-  // mandatory parameters
-  bool hasID = getParameter( req, root, "id", id, true );
-  bool hasAuthorization = getAuthorization( req, &token );
-
-  if ( !( hasID && hasAuthorization ) ) {
-    cJSON_Delete( root );
-    return sendResponse( req, 400, SERIALIZE_JSON );
-  }
-
-  // let's do it
-  if ( getParameter( req, root, "streaming", &value, false) )      status = myOSSwarm.apiCAMStreaming( token, id, value>0, false );
-  if ( getParameter( req, root, "framesize", &value, false) )      status = myOSSwarm.apiCAMFramesize( token, id, value, false );
-  if ( getParameter( req, root, "quality", &value, false) )        status = myOSSwarm.apiCAMQuality( token, id, value, false );
-  if ( getParameter( req, root, "brightness", &value, false) )     status = myOSSwarm.apiCAMBrightness( token, id, value, false );
-  if ( getParameter( req, root, "contrast", &value, false) )       status = myOSSwarm.apiCAMContrast( token, id, value, false );
-  if ( getParameter( req, root, "saturation", &value, false) )     status = myOSSwarm.apiCAMSaturation( token, id, value, false );
-  if ( getParameter( req, root, "specialEffect", &value, false) )  status = myOSSwarm.apiCAMSpecialEffect( token, id, value, false );
-  if ( getParameter( req, root, "wbMode", &value, false) )         status = myOSSwarm.apiCAMWbMode( token, id, value, false );
-  if ( getParameter( req, root, "hMirror", &value, false) )        status = myOSSwarm.apiCAMHMirror( token, id, value, false );
-  if ( getParameter( req, root, "vFlip", &value, false) )          status = myOSSwarm.apiCAMVFlip( token, id, value, false );
-  
-  // cleanup
-  cJSON_Delete(root);
-  
-  return sendResponse( req, status, SERIALIZE_JSON);
-
-}
-
-esp_err_t apiIsAuthorized( httpd_req_t *req ) {
-  // reply on api/isAuthorized
-
-  // check on valid json 
-  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400, SERIALIZE_JSON );
-
-  // get Token
-  uint16_t token;
-  bool hasAuthorization = getAuthorization( req, &token );
-
-  // cleanup
-  cJSON_Delete(root);
-
-  if (!hasAuthorization ) return sendResponse( req, 400, SERIALIZE_JSON );
-
-  uint16_t status = myOSSwarm.apiIsAuthorized( token, true );
-
-  return sendResponse( req, status, SERIALIZE_JSON );
-
-}
-
-esp_err_t apiPostHandler(httpd_req_t *req ) {
-  // reply on post /api
-
-  // check on sub url
-  if (strcmp( req->uri, "/api/led" )   == 0 )          return apiLED( req ); 
-  if (strcmp( req->uri, "/api/servo" ) == 0 )          return apiServo( req ); 
-  if (strcmp( req->uri, "/api/actor")  == 0 )          return apiActor( req ); 
-  if (strcmp( req->uri, "/api/cam")  == 0 )            return apiCam( req ); 
-  if (strcmp( req->uri, "/api/isAuthenticated") == 0 ) return apiIsAuthorized( req ); 
- 
-  // unknown URL: FAIL
-  return sendResponse( req, 404, SERIALIZE_JSON );
 
 }
 
@@ -703,6 +228,99 @@ esp_err_t stream_handler(httpd_req_t *req)
     return res;
 }
 
+struct async_resp_arg {
+    httpd_handle_t handle;
+    int fd;
+    uint8_t* message;
+};
+
+static void wsAsyncHandler( void *varg )
+{
+    httpd_ws_frame_t ws_pkt;
+    struct async_resp_arg* arg = (async_resp_arg*) varg;
+
+    char *response;
+    SwOSCLI cli;
+    bool loggedIn = false;
+    response = cli.eval( (char*) arg->message, &loggedIn );
+    
+    memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+    ws_pkt.payload = (uint8_t *)response;
+    ws_pkt.len     = strlen(response);
+    ws_pkt.type    = HTTPD_WS_TYPE_TEXT;
+    
+    static size_t max_clients = CONFIG_LWIP_MAX_LISTENING_TCP;
+    size_t        fds          = max_clients;
+    int           client_fds[max_clients];
+
+    esp_err_t ret = httpd_get_client_list( UIServer, &fds, client_fds);
+
+    // stop in case of any error
+    if (ret != ESP_OK) return;
+
+    httpd_ws_send_frame_async( arg->handle, arg->fd, &ws_pkt );
+    free(response);
+    
+    /*
+
+    // send response to all clients
+    for (int i = 0; i < fds; i++) {
+        int client_info = httpd_ws_get_fd_info( UIServer, client_fds[i]) ;
+        if ( client_info == HTTPD_WS_CLIENT_WEBSOCKET ) {
+            httpd_ws_send_frame_async( arg->handle, client_fds[i], &ws_pkt );
+        }
+    }
+
+    */
+
+    free( arg->message );
+    free( arg );
+}
+
+static const char *TAG = "WebSocket Server";
+
+static esp_err_t wsHandler(httpd_req_t *req) {
+
+  // http_get to open a connection
+  if (req->method == HTTP_GET) return ESP_OK;
+
+  // get frame
+  httpd_ws_frame_t ws_pkt;
+  uint8_t *buf = NULL;
+  memset( &ws_pkt, 0, sizeof( httpd_ws_frame_t ) );
+  ws_pkt.type = HTTPD_WS_TYPE_TEXT;
+  esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 0);
+  
+  // any error?
+  if (ret != ESP_OK)  {
+    ESP_LOGE(TAG, "httpd_ws_recv_frame failed to get frame len with %d", ret);
+    return ret;
+  }
+
+  // ignore messages without content
+  if (!ws_pkt.len) return ESP_OK;
+
+  // allocate a butter to get the message
+  buf = (uint8_t *) calloc(1, ws_pkt.len + 1);
+  if (buf == NULL) { ESP_LOGE(TAG, "Failed to calloc memory for buf"); return ESP_ERR_NO_MEM; }
+
+  // catch the message
+  ws_pkt.payload = buf;
+  ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
+  if (ret != ESP_OK) { ESP_LOGE(TAG, "httpd_ws_recv_frame failed with %d", ret); free(buf); return ret; }
+
+  // accept text only
+  if (ws_pkt.type != HTTPD_WS_TYPE_TEXT ) { free(buf); return ESP_ERR_NOT_SUPPORTED; }
+
+  // send all stuff to asyncHandler
+  struct async_resp_arg *arg = (async_resp_arg*) malloc( sizeof( struct async_resp_arg ) );
+  arg->handle  = req->handle;
+  arg->fd      = httpd_req_to_sockfd( req );
+  arg->message = buf;
+  return httpd_queue_work( req->handle, wsAsyncHandler, arg );
+
+}
+
 bool SwOSStartWebServer( void ) {
 
   http_server_context_t *http_context = (http_server_context_t*)calloc(1, sizeof(http_server_context_t));
@@ -712,9 +330,6 @@ bool SwOSStartWebServer( void ) {
   config.max_uri_handlers = 10;
   config.stack_size = 100000;
   config.core_id = 0;
-
-  httpd_handle_t UIServer = NULL;
-  httpd_handle_t streamServer = NULL;
 
   esp_err_t x = httpd_start(&UIServer, &config);
 
@@ -742,14 +357,6 @@ bool SwOSStartWebServer( void ) {
   // /
   httpd_uri_t index = { .uri = "/", .method = HTTP_GET, .handler = &indexHandler, .user_ctx = NULL };
   httpd_register_uri_handler(UIServer, &index);
-
-  // /api/* HTTP_GET
-  httpd_uri_t apiGet = { .uri = "/api/*", .method = HTTP_GET, .handler = &apiGetHandler, .user_ctx = http_context };
-  httpd_register_uri_handler(UIServer, &apiGet);
-
-  // /api/* HTTP_POST
-  httpd_uri_t apiPost = { .uri = "/api/*", .method = HTTP_POST, .handler = &apiPostHandler, .user_ctx = http_context };
-  httpd_register_uri_handler(UIServer, &apiPost);
     
   // css
   httpd_uri_t cssGet = { .uri = "/css/*", .method = HTTP_GET, .handler = &fileHandler, .user_ctx = NULL };
@@ -762,6 +369,10 @@ bool SwOSStartWebServer( void ) {
   // assets
   httpd_uri_t assetsGet = { .uri = "/assets/*", .method = HTTP_GET, .handler = &fileHandler, .user_ctx = NULL };
   httpd_register_uri_handler(UIServer, &assetsGet);
+
+  // ws
+  httpd_uri_t ws = { .uri = "/ws", .method = HTTP_GET, .handler = &wsHandler, .user_ctx = NULL, .is_websocket  = true };
+  httpd_register_uri_handler(UIServer, &ws);
 
   return true;
 

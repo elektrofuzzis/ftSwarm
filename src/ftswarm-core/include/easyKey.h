@@ -10,8 +10,21 @@
 #pragma once
 
 #include <stdint.h>
+#include <climits>
 
 #define DEACTIVATED 255
+
+int isValidFloat( char *str );
+// test, if str is a valid float number
+
+int isValidInteger( char *str );
+// test, if str is a valid decimal or hex number
+
+int isValidIdentifier( char *str );
+// test if str is a valid identifier, starting with an alpha followed by alphnums
+
+long xToL( char *str );
+// convert a str (decimal or hex) to an long value
 
 void keyboardEcho( bool on );
 // set on to false to disable all keyboard echo
@@ -22,11 +35,8 @@ bool anyKey( void );
 bool yesNo( const char *prompt, bool defaultValue = false );
 // write prompt and check on y/n keys. true, if Y pressed
 
-uint16_t enterNumber( const char *prompt, uint16_t defaultValue, uint16_t minValue = 0, uint16_t maxValue = 0xFFFF );
-// write a prompt and get a uint16_t reading
-
-int32_t enterNumberI32( const char *prompt, uint16_t defaultValue, int32_t minValue = 0, int32_t maxValue = 0xFFFFFF );
-// write a prompt and get a int32_t reading
+int enterNumber( const char *prompt, int defaultValue, int minValue = 0, int maxValue = INT_MAX );
+// write a prompt and get a int  reading
 
 float enterNumberF( const char *prompt, float defaultValue, float minValue, float maxValue );
 // write a prompt and get a float reading

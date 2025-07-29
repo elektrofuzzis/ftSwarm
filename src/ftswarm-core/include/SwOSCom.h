@@ -17,6 +17,7 @@
 #include <freertos/semphr.h>
 
 #include "SwOS.h"
+#include "SwOSNVS.h"
 
 #define ESPNOW_MAXDELAY     128
 #define DEFAULTSECRET       0x2506
@@ -32,7 +33,9 @@ typedef enum {
   CMD_JOINNACK,               // Member to Kelda: no, I don't want to join your swarm
   CMD_REVOKEFROMSWARM,        // Kelda to member: Please leave my swarm
 
-  CMD_SAVETONVS,              // Kelda to Member: save port & alias setting to NVS
+  CMD_SAVE,                   // Kelda to Member: save settings to NVS
+  CMD_SETWIFI,                // set wifi settings
+  CMD_REBOOT,                 // reboot controller
 
   CMD_GOTYOU,                 // anybody's reply on ANYBODYOUTTHERE
   CMD_STATE,                  // send my input's readings
@@ -180,7 +183,7 @@ struct parameterCmd_t {
   int32_t parameter;
 } __attribute__((packed));
 
-  struct setIOTypeCmd_t{ 
+struct setIOTypeCmd_t{ 
   uint8_t      index; 
   SwOSIOType_t newIOType;
   int32_t      payload;
@@ -188,6 +191,16 @@ struct parameterCmd_t {
 
 struct counterCmd_t{ 
   uint8_t index;
+} __attribute__((packed));
+
+struct wifiCmd_t {
+  FtSwarmWifi_t mode;
+  char          SSID[64];
+  char          PSK[128];
+} __attribute__((packed));
+
+struct saveCmd_t {
+  uint8_t scope;
 } __attribute__((packed));
 
 struct SwOSDatagram_t {
@@ -215,6 +228,8 @@ struct SwOSDatagram_t {
     setIOTypeCmd_t setIOTypeCmd;
     counterCmd_t counterCmd;
     parameterCmd_t parameterCmd;
+    wifiCmd_t wifiCmd;
+    saveCmd_t saveCmd;
   };
 } __attribute__((packed));
 

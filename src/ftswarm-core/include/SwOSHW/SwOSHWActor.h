@@ -50,7 +50,7 @@ class SwOSAnalogInput;
     // administrative stuff
     virtual void            setMotionType( FtSwarmMotion_t motionType );
     virtual FtSwarmMotion_t getMotionType() { return motionType; }; 
-    virtual void            serialize( Serialize *serialize, uint8_t id); // serialize object to JSON
+    virtual void            serialize( Serialize *serialize ); // serialize object to JSON
     virtual void            onTrigger( int32_t value );
     virtual void            read( void );
     virtual bool            isMotor( void ) { return true; };
@@ -183,7 +183,7 @@ class SwOSDCMotor : public SwOSMotor {
 	  SwOSServo(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSIO( name, port, ctrl, SWOSIO_SERVO ) {};
     
     // administrative stuff
-    virtual void serialize( Serialize *serialize, uint8_t id);
+    virtual void serialize( Serialize *serialize );
     virtual void onTrigger( int32_t value );
     virtual void adjust( void ) {};
     virtual bool isServo( void ) { return true; };

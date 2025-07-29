@@ -101,16 +101,8 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
   
 }
 
-int printable( int ch ) {
-  return (ch>=32) && (ch <= 126);
-}
-
-int isdigitExt( int ch ) {
-  return isdigit( ch ) || ( ch == '-') || ( ch == '+');
-}
-
 int isdigitFloat( int ch ) {
-  return isdigitExt( ch ) || ( ch == 'e') || ( ch == 'E') || ( ch == '.') || ( ch == ' ');
+  return isdigit( ch ) || ( ch == 'e') || ( ch == 'E') || ( ch == '.') || ( ch == ' ');
 }
 
 void skip( char **str, int (*validChar)( int ch ) ) {
@@ -171,55 +163,126 @@ int isValidFloat( char *str ) {
 
 }
 
-void enterString( const char *prompt, char *s, uint16_t size, bool hidden ) {
+int isValidIdentifier( char *str ) {
 
-  if (!enterSomething( prompt, s, size, hidden, printable, NULL ) ) s[0] = '\0';
-  
+  char *ptr = str;
+
+  if (!isalpha( *ptr )) return false;
+
+  while ( *ptr != '\0' ) {
+    if ( !isalnum( *ptr ) ) return 0;
+    ptr++;
+  }
+
+  return 1;
+
 }
 
-int identifier( int ch ) {
-  return isdigit(ch) || isalpha(ch);
+int isValidInteger( char *str ) {
+
+  char *ptr = str;
+  int  sign = 1;
+  int  base = 10;
+
+  switch (ptr[0]) {
+
+    case '#': // RGB hex
+              ptr++; 
+              base = 16; 
+              break;
+
+    case '-': // Negative
+              ptr++; 
+              sign = -1; 
+              break;
+
+    case '+': // Positive
+              ptr++; 
+              break;
+
+    case '0': // hex
+              if ( ( ptr[1] == 'x' ) || ( ptr[1] == 'X' ) ) {
+                ptr++;
+                ptr++;
+                base = 16;
+              }
+              break;
+  }
+
+  if ( base == 16 ) {
+    while ( (*ptr != '\0') && ( isxdigit( *ptr ) ) ) ptr++;
+  } else {
+    while ( (*ptr != '\0') && ( isdigit( *ptr ) ) ) ptr++;
+  }
+
+  return (*ptr == '\0');
+
+}
+
+long xToL( char *str ) {
+
+  char *ptr = str;
+  int  sign = 1;
+  int  base = 10;
+
+  switch (ptr[0]) {
+
+    case '#': // RGB hex
+              ptr++; 
+              base = 16; 
+              break;
+
+    case '-': // Negative
+              ptr++; 
+              sign = -1; 
+              break;
+
+    case '+': // Positive
+              ptr++; 
+              break;
+
+    case '0': // hex
+              if ( ( ptr[1] == 'x' ) || ( ptr[1] == 'X' ) ) {
+                ptr++;
+                ptr++;
+                base = 16;
+              }
+              break;
+  }
+
+  // get number
+  return strtol( ptr, NULL, base ) * sign;
+
+}
+
+void enterString( const char *prompt, char *s, uint16_t size, bool hidden ) {
+
+  if (!enterSomething( prompt, s, size, hidden, isprint, NULL ) ) s[0] = '\0';
+  
 }
 
 void enterIdentifier( const char *prompt, char *s, uint16_t size ) {
 
-  if (!enterSomething( prompt, s, size, false, identifier, NULL ) ) s[0] = '\0';
+  if (!enterSomething( prompt, s, size, false, isalnum, isValidIdentifier ) ) s[0] = '\0';
   
 }
 
-uint16_t enterNumber( const char *prompt, uint16_t defaultValue, uint16_t minValue, uint16_t maxValue ) {
-
-  char str[6];
-  uint16_t i;
-
-  while (1) {
-
-    // get number and check on defaults
-    if ( ( !enterSomething( prompt, str, 6, false, isdigit, NULL ) ) || ( str[0] == '\0' ) ) {
-      return defaultValue;
-    } else {
-      i = atoi( str );
-    }
-
-    // in range?
-    if ( ( i >= minValue ) && ( i <= maxValue ) ) return i;
-
-  }
-
+int isDigitExt( int ch ) {
+  return ( isxdigit(ch) || ( ch == '+' ) || ( ch == '-' ) || ( ch == 'x' ) || ( ch == 'X' ) || ( ch == '#' ) );
 }
 
-int32_t enterNumberI32( const char *prompt, uint16_t defaultValue, int32_t minValue, int32_t maxValue ) {
+int enterNumber( const char *prompt, int defaultValue, int minValue, int maxValue ) {
 
   char str[6];
-  int32_t i;
+  int i;
 
   while (1) {
 
     // get number and check on defaults
-    if ( ( !enterSomething( prompt, str, 10, false, isdigitExt, NULL ) ) || ( str[0] == '\0' ) ) {
+    if ( ( !enterSomething( prompt, str, 10, false, isDigitExt, isValidInteger ) ) || ( str[0] == '\0' ) ) {
       return defaultValue;
     } else {
-      i = atoi( str );
+      i = xToL( str );
     }
 
     // in range?

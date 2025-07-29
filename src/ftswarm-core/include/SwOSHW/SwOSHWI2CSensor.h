@@ -81,7 +81,7 @@ class SwOSMotor;
     ~SwOSGyroMPU();
     uint8_t popState( uint8_t *buffer );
     uint8_t pushState( uint8_t *buffer );
-    virtual void serialize( Serialize *serialize, uint8_t id);
+    virtual void serialize( Serialize *serialize );
 
     // read sensor
     virtual void read();
@@ -110,7 +110,7 @@ class SwOSMotor;
 	  SwOSLidarInput(const char *name, SwOSCtrl *ctrl );
   
     // administrative stuff
-    virtual void serialize( Serialize *serialize, uint8_t id);
+    virtual void serialize( Serialize *serialize );
 
     // read sensor
 	  virtual void read();

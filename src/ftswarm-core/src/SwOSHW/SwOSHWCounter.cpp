@@ -171,10 +171,10 @@ void SwOSCounter::setValue( int32_t value ) {
 
 }
 
-void SwOSCounter::serialize( Serialize *serialize, uint8_t id) {
+void SwOSCounter::serialize( Serialize *serialize  ) {
 
   serialize->startObject( );
-  SwOSIO::serialize( serialize, id);
+  SwOSIO::serialize( serialize );
   serialize->item( SERIALIZE_LITERAL_VALUE, getValueI32() );
   serialize->endObject();
 
@@ -288,10 +288,10 @@ void SwOSFrequencymeter::setValue( int32_t value ) {
 
 }
 
-void SwOSFrequencymeter::serialize( Serialize *serialize, uint8_t id) {
+void SwOSFrequencymeter::serialize( Serialize *serialize ) {
 
   serialize->startObject( );
-  SwOSIO::serialize( serialize, id);
+  SwOSIO::serialize( serialize );
   serialize->item( SERIALIZE_LITERAL_VALUE, getValueI32() );
   serialize->endObject();
 

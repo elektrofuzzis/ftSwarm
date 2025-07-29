@@ -7,6 +7,8 @@
  * 
  */
 
+#include <ctype.h>
+
 #include "SwOS.h"
 #include "SwOSCLI.h"
 #include "easyKey.h"
@@ -15,162 +17,286 @@
 #include "SwOSCLIParameter.h"
 #include "SwOSLog.h"
 
+#define CLIMAXLINE 255
+
 typedef struct {
   char cmd[20];
-  int minParams, maxParams;
+  bool loginNeeded;
+  int  minParams, maxParams;
 } IOCmdList_t;
 
 const IOCmdList_t IOCmdList [CLICMD_MAX] = {
-  { "triggerUserEvent", 0, 10 },
-  { "show", 0, 0 },
-  { "setMicrostepMode", 1, 1 },
-  { "getMicrostepMode", 0, 0 },
-  { "subscribe", 0, 1 },
-  { "unsubscribe", 0, 0 },
-  { "setIOType", 2, 2},
-  { "getIOType", 0, 0},
-  { "getValue", 0, 0},
-  { "getVoltage", 0, 0},
-  { "getResistance", 0, 0},
-  { "getKelvin", 0, 0},
-  { "getCelcius", 0, 0},
-  { "getFahrenheit", 0, 0},
-  { "getToggle", 0, 0},
-  { "setSpeed", 1, 1},
-  { "getSpeed", 0, 0},
-  { "setMotionType", 0, 0},
-  { "getMotionType", 0, 0},
-  { "onTrigger", 2, 3},
-  { "onTriggerLR", 2, 3},
-  { "onTriggerFB", 2, 3},
-  { "setPosition", 1, 1},
-  { "getPosition", 0, 0},
-  { "setOffset", 1, 1},
-  { "getOffset", 0, 0},
-  { "setColor", 1, 1},
-  { "getColor", 0, 0},
-  { "setBrightness", 1, 1},
-  { "getBrightness", 0, 0},
-  { "setRegister", 2, 2},
-  { "getRegister", 1, 1},
-  { "setDistance", 2, 2},
-  { "getDistance", 0, 0},
-  { "run", 0, 0},
-  { "isRunning", 0, 0},
-  { "stop", 0, 0},
-  { "homing", 1, 1},
-  { "isHoming", 0, 0},
-  { "setHomingOffset", 1, 1}
+  { "login", false, 1, 1 },
+  { "triggerUserEvent", false, 0, 10 },
+  { "show", false, 0, 0 },
+  { "getSwarm", false, 1, 1 },
+  { "save", true, 1, 1 },
+  { "useConfig", true, 1, 1 },
+  { "setAlias", true, 1, 1 },
+  { "setWifi", true, 3, 3 },
+  { "reboot", true, 0, 0 },
+  { "setMicrostepMode", true, 1, 1 },
+  { "getMicrostepMode", false, 0, 0 },
+  { "subscribe", true, 0, 1 },
+  { "unsubscribe", true, 0, 0 },
+  { "setIOType", true, 2, 2},
+  { "getIOType", false, 0, 0},
+  { "getValue", false, 0, 0},
+  { "getVoltage", false, 0, 0},
+  { "getResistance", false, 0, 0},
+  { "getKelvin", false, 0, 0},
+  { "getCelcius", false, 0, 0},
+  { "getFahrenheit", false, 0, 0},
+  { "getToggle", false, 0, 0},
+  { "setSpeed", true, 1, 1},
+  { "getSpeed", false, 0, 0},
+  { "setMotionType", true, 0, 0},
+  { "getMotionType", false, 0, 0},
+  { "onTrigger", true, 2, 3},
+  { "onTriggerLR", true, 2, 3},
+  { "onTriggerFB", true, 2, 3},
+  { "setPosition", true, 1, 1},
+  { "getPosition", false, 0, 0},
+  { "setOffset", true, 1, 1},
+  { "getOffset", false, 0, 0},
+  { "setColor", true, 1, 1},
+  { "getColor", false, 0, 0},
+  { "setBrightness", true, 1, 1},
+  { "getBrightness", false, 0, 0},
+  { "setRegister", true, 2, 2},
+  { "getRegister", false, 1, 1},
+  { "setDistance", true, 2, 2},
+  { "getDistance", false, 0, 0},
+  { "run", true, 0, 0},
+  { "isRunning", true, 0, 0},
+  { "stop", true, 0, 0},
+  { "homing", true, 1, 1},
+  { "isHoming", true, 0, 0},
+  { "setHomingOffset", true, 1, 1}
 };
 
-SwOSCLI::SwOSCLI() {
-  _line[0] = '\0';
-  _evalPtr = NULL;
-  _start   = NULL;
-}
+const char help[] = R"(help   - list all commands
+setup  - start setup mode
+halt   - stop all motors
+whoami - my own hostname
+uptime - my own uptime
+exit   - end command line interface.
+
+nvs.<Command>(<parameter>, ...) or
+swarm.<Command>(<parameter>, ...) or
+<Alias-Name>.<Command>(<parameter>, ...) or
+<Hostname>.<Controller-xcommand>(<parameter>, ...) or
+<Hostname>.<IO-Name>.<Command>(<parameter>, ...)
+
+Swarm Commands:
+  get( format )                 - get swarm info aka getSwarm
+
+NVS commands:
+  save(scope)                   - save settings to nvs - 0 config, 1 events
+  useConfig(config)             - use event config
+
+Controller commands:
+  show                          - identify controller by blue LEDs
+  reboot                        - reboot controller
+  save(scope)                   - save settings to nvs - 0 config, 1 events
+  setWifi(mode, SSID, PSK)      - set wifi settings
+  triggerUserEvent(P1,P2,..P10) - Trigger a user remote code.
+  setMicroStepMode(mode)        - set Microstep Mode / ftSwarmPwrDrive only
+  getMicroStepMode()            - get Microstep Mode / ftSwarmPwrDrive only
+
+Input commands (A1..A6):
+  subscribe( hysteresis )
+  getIOType()
+  setIOType( sensorType )
+  getValue()
+  getVoltage()
+  getResistance()
+  getKelvin()
+  getCelcius()
+  getFahrenheit()
+  getToggle()
+  onTrigger( triggerEvent, actor, p1)
+  onTrigger( triggerEvent, actor)
+    
+Joystick commands (JOY1..JOY2):
+  subscribe( int hysteresis )
+  getValue()
+  onTriggerLR( triggerEvent, actor, p1)
+  onTriggerLR( triggerEvent, actor)
+  onTriggerFB( triggerEvent, actor, p1)
+  onTriggerFB( triggerEvent, actor)
+
+Actor commands (M1..M2):
+  getIOType()
+  setIOType( actorType )
+  setSpeed( speed )
+  getSpeed()
+  setMotionType( motionType )
+  getMotionType()
+
+Servo commands (SERVO1..SERVO2):
+  setPosition( position )
+  getPosition()
+  setOffset( position )
+  getOffset()
+
+ftPixel commands (LED1..LED18):
+  setColor( color )
+  getColor()
+  setBrightness( brightness )
+  getBrightness()    
+
+I2C commands:
+  setRegister( register, value )
+  getRegister( register )
+  onTrigger( triggerEvent, actor, p1)
+)";
+
 
 void SwOSCLI::Error( Error_t error, int expected, int found ) {
 
   int pos = 0;
 
   // calc error postion
-  if ( (_start) && (_line) && ( _start > _line ) ) pos = _start - _line; 
+  if ( (start) && (in) && ( start > in ) ) pos = start - in; 
 
-  // print marker
-  for (int i=0; i<pos; i++) printf(" ");
-  printf( "^ Error: " );
+  const char err[] = "^ Error: ";
 
   // print error
   switch ( error ) {
-    case ERROR_SYNTAXERROR:             printf("Syntax error.\n"); break;
-    case ERROR_DOTEXPECTED:             printf("\".\" expected.\n"); break;  
-    case ERROR_LITERALEXPECTED:         printf("Literal expected.\n"); break; 
-    case ERROR_IOEXPECTED:              printf("Not a valid IO port or IO port is offline.\n"); break;
-    case ERROR_NUMBEREXPECTED:          printf("Number expected.\n"); break;
-    case ERROR_LPARANTHESISEXPECTED:    printf("\"(\" expected.\n"); break;
-    case ERROR_RPARANTHESISEXPECTED:    printf("\")\" expected.\n"); break;
-    case ERROR_UNKOWNCMD:               printf("unkown command\n"); break;
-    case ERROR_WRONGNUMBEROFARGUMENTS:  printf("%d parameters expected, %d found.\n", expected, found ); break;
-    default:                            printf("Syntax error.\n"); break;
+    case ERROR_SYNTAXERROR:             sprintf( response, "%*ssyntax error.", pos, err); break;
+    case ERROR_DOTEXPECTED:             sprintf( response, "%*s\".\" expected.", pos, err); break;  
+    case ERROR_LITERALEXPECTED:         sprintf( response, "%*sliteral expected.", pos, err); break; 
+    case ERROR_IOEXPECTED:              sprintf( response, "%*snot a valid IO port or IO port is offline.", pos, err); break;
+    case ERROR_NUMBEREXPECTED:          sprintf( response, "%*snumber expected.", pos, err); break;
+    case ERROR_LPARANTHESISEXPECTED:    sprintf( response, "%*s\"(\" expected.", pos, err); break;
+    case ERROR_RPARANTHESISEXPECTED:    sprintf( response, "%*s\")\" expected.", pos, err); break;
+    case ERROR_UNKOWNCMD:               sprintf( response, "%*sunkown command", pos, err); break;
+    case ERROR_WRONGNUMBEROFARGUMENTS:  sprintf( response, "%*s%d parameters expected, %d found.", pos, err, expected, found ); break;
+    case ERROR_NOTAUTHENTICATED:        sprintf( response, "%*snot authenticated.", pos, err); break;
+    case ERROR_WRONGIOTYPE:             sprintf( response, "%*s%d wrong io-type.", pos, err, found); break;
+    case ERROR_INVALIDCMD:              sprintf( response, "%*sinvalid command.", pos, err); break;
+    case ERROR_WRONGPIN:                sprintf( response, "%*swrong pin.", pos, err); break;
+    case ERROR_STRINGEXPECTED:          sprintf( response, "%*sstring expected.", pos, err); break;
+    case ERROR_ALIASNOTNUNIQUE:         sprintf( response, "%*salias name must be unique.", pos, err); break;
+    case ERROR_PARAMETEREXPECTED:       sprintf( response, "%*sparameter expected.", pos, err); break;
+    case ERROR_SSIDEXPECTED:            sprintf( response, "%*sSSID expected.", pos, err); break;
+    case ERROR_PSKEXPECTED:             sprintf( response, "%*sPSK expected.", pos, err); break;
+    default:                            sprintf( response, "%*sSyntax error.", pos, err); break;
   }
   
 }
 
-bool SwOSCLI::isDigit( char ch) {
-  return ( (ch >= '0') &&  (ch <= '9' ) );
-}
-
-bool SwOSCLI::isAlpha( char ch ) {
-  return ( (ch >= 'A') && (ch <= 'Z' ) ) ||
-         ( (ch >= 'a') && (ch <= 'z' ) ) ||
-         (ch == '_');
-}
-
-bool SwOSCLI::isLiteral( char ch) {
-  return (isDigit(ch) ) || isAlpha(ch);
-}
-
 EvalResult_t SwOSCLI::getNumber( void ) {
-  // _evalPtr is already on the first char
+  // evalPtr is already on the first char
 
-  // if the number starts with + or -, the next char needs to be a digit
-  if ( ( (*_evalPtr=='+') || (*_evalPtr=='-') ) && 
-       ( !isDigit(_evalPtr[1]) ) )
-    return EVAL_SYNTAXERROR;
+  int base   = 10;
+  int digits = 0;
 
-  // now loop until end of digits
-  while (isDigit(*++_evalPtr));
+  switch (evalPtr[0]) {
 
-  return EVAL_NUMBER;
+    case '#': // RGB hex
+              evalPtr++; 
+              base = 16; 
+              break;
+
+    case '-': // Negative
+              evalPtr++; 
+              break;
+
+    case '+': // Positive
+              evalPtr++; 
+              break;
+
+    case '0': // hex
+              if ( ( evalPtr[1] == 'x' ) || ( evalPtr[1] == 'X' ) ) {
+                evalPtr++;
+                evalPtr++;
+                base = 16;
+              }
+              break;
+  }
+
+  if ( base == 16 ) {
+    while ( (*evalPtr != '\0') && ( isxdigit( *evalPtr ) ) ) { evalPtr++; digits++; }
+
+  } else {
+    while ( (*evalPtr != '\0') && ( isdigit( *evalPtr ) ) ) { evalPtr++; digits++; }
+
+  }
+
+  if ( digits > 0 ) return EVAL_NUMBER;
+
+  return EVAL_SYNTAXERROR;
 
 }
 
 EvalResult_t SwOSCLI::getLiteral( void ) {
-  // _evalPtr is already on the first char
+  // evalPtr is already on the first char
 
   // now loop until end of literals
-  while (isLiteral(*_evalPtr)) _evalPtr++;
+  while (isalnum(*evalPtr)) evalPtr++;
 
   return EVAL_LITERAL;
+
+}
+
+EvalResult_t SwOSCLI::getString( void ) {
+  // evalPtr is already on the first char
+
+  // move behind "
+  if ( *evalPtr == '"' ) evalPtr++;
+  else return EVAL_SYNTAXERROR;
+
+  // now loop until end of literals
+  while ( ( *evalPtr != '\0' ) && ( *evalPtr != '"' ) ) evalPtr++;
+
+  if ( *evalPtr == '"' ) evalPtr++;
+  else return EVAL_SYNTAXERROR;
+
+  return EVAL_STRING;
 
 }
 
 EvalResult_t SwOSCLI::getNextToken( char *token ) {
 
   // kill white spaces
-  while (*_evalPtr==' ') _evalPtr++;
+  while (*evalPtr==' ') evalPtr++;
 
   // remember where we started
-  _start = _evalPtr;  
+  start = evalPtr;  
 
   // different behaviour based on first char
   EvalResult_t eval = EVAL_OK;
-  switch (*_evalPtr) {
-    case '\0':        eval = EVAL_EOL; break; // no _evalPtr++, so we can't skip EOL
+  switch (*evalPtr) {
+    case '\0':        eval = EVAL_EOL; break; // no evalPtr++, so we can't skip EOL
     
-    case '.':         eval = EVAL_DOT; _evalPtr++; break;
+    case '.':         eval = EVAL_DOT; evalPtr++; break;
     
-    case ',':         eval = EVAL_COMMA; _evalPtr++; break;
+    case ',':         eval = EVAL_COMMA; evalPtr++; break;
 
-    case '(':         eval = EVAL_LPARANTHESIS; _evalPtr++; break;
+    case '(':         eval = EVAL_LPARANTHESIS; evalPtr++; break;
     
-    case ')':         eval = EVAL_RPARANTHESIS; _evalPtr++; break;
+    case ')':         eval = EVAL_RPARANTHESIS; evalPtr++; break;
     
     case '+':
     case '-':  
+    case '#':
     case '0' ... '9': eval = getNumber( ); break;
     
     case 'a' ... 'z':
     case 'A' ... 'Z': eval = getLiteral( ); break;
+
+    case '"':         eval = getString( ); break;
     
     default:          eval = EVAL_SYNTAXERROR; break;
 
   }
 
-   // valid data? copy token or clear it
+  // valid data? copy token or clear it
   if ( eval >= EVAL_OK ) {
-    strncpy( token, _start, (_evalPtr - _start) );
-    token[_evalPtr - _start]='\0';
+    strncpy( token, start, (evalPtr - start) );
+    token[evalPtr - start]='\0';
     
   } else {
     token[0] = '\0';
@@ -180,90 +306,10 @@ EvalResult_t SwOSCLI::getNextToken( char *token ) {
   return eval;
 }
 
-void SwOSCLI::startCLI( bool noEcho ) {
-
-  printf("@@@ ftSwarmOS CLI started\n");
-  
-  if ( noEcho ) {
-    keyboardEcho( false );
-    prompt[0] = '\0';
-  }
-
-  myOSSwarm.unsubscribe();
-  
-}
-
 void SwOSCLI::halt( void ) {
 
   myOSSwarm.halt();
 
-}
-
-void SwOSCLI::help( void ) {
-
-    printf("help   - list all commands\n");
-    printf("setup  - start setup mode\n");
-    printf("halt   - stop all motors\n");
-    printf("whoami - my own hostname\n");
-    printf("uptime - my own uptime\n");
-    printf("exit   - end command line interface.\n\n");
-
-    printf("<Alias-Name>.<Command>(<parameter>, ...) or\n");
-    printf("<Hostname>.<Controller-xcommand>(<parameter>, ...) or\n");
-    printf("<Hostname>.<IO-Name>.<Command>(<parameter>, ...)\n\n");
-
-    printf("Controller commands:\n");
-    printf("  show                          - identify controller by blue LEDs\n" );
-    printf("  triggerUserEvent(P1,P2,..P10) - Trigger a user remote code.\n");
-    printf("  setMicroStepMode(mode)        - set Microstep Mode / ftSwarmPwrDrive only\n");
-    printf("  getMicroStepMode()            - get Microstep Mode / ftSwarmPwrDrive only\n\n");
-
-    printf("Input commands (A1..A6):\n");
-    printf("  subscribe( hysteresis )\n" );
-    printf("  getIOType()\n");
-    printf("  setIOType( sensorType )\n");
-    printf("  getValue()\n");
-    printf("  getVoltage()\n");
-    printf("  getResistance()\n");
-    printf("  getKelvin()\n");
-    printf("  getCelcius()\n");
-    printf("  getFahrenheit()\n");
-    printf("  getToggle()\n");
-    printf("  onTrigger( triggerEvent, actor, p1)\n");
-    printf("  onTrigger( triggerEvent, actor)\n\n");
-    
-    printf("Joystick commands (JOY1..JOY2):\n");
-    printf("  subscribe( int hysteresis )\n" );
-    printf("  getValue()\n");
-    printf("  onTriggerLR( triggerEvent, actor, p1)\n");
-    printf("  onTriggerLR( triggerEvent, actor)\n");
-    printf("  onTriggerFB( triggerEvent, actor, p1)\n");
-    printf("  onTriggerFB( triggerEvent, actor)\n\n");
-
-    printf("Actor commands (M1..M2):\n");
-    printf("  getIOType()\n");
-    printf("  setIOType( actorType )\n");
-    printf("  setSpeed( speed )\n");
-    printf("  getSpeed()\n");
-    printf("  setMotionType( motionType )\n");
-    printf("  getMotionType()\n\n");
-
-    printf("Servo commands (SERVO1..SERVO2):\n");
-    printf("  setPosition( position )\n");
-    printf("  getPosition()\n");
-    printf("  setOffset( position )\n");
-    printf("  getOffset()\n\n");
-
-    printf("ftPixel commands (LED1..LED18):\n");
-    printf("  setColor( color )\n");
-    printf("  getColor()\n");
-    printf("  setBrightness( brightness )\n");
-    printf("  getBrightness()\n\n");    
-
-    printf("I2C commands:\n");
-    printf("  setRegister( register, value )\n");
-    printf("  getRegister( register )\n");
-    printf("  onTrigger( triggerEvent, actor, p1)\n\n");
 }
 
 Cmd_t SwOSCLI::evalSimpleCommand( char *token ) {
@@ -271,13 +317,13 @@ Cmd_t SwOSCLI::evalSimpleCommand( char *token ) {
   Cmd_t cmd = CMD_UNKONWN;
 
    // did I found a command?
-  if      ( strcmp( token, "help"  ) == 0 ) cmd = CMD_HELP;
-  else if ( strcmp( token, "whoami" ) == 0 ) cmd = CMD_WHOAMI;
-  else if ( strcmp( token, "uptime" ) == 0 ) cmd = CMD_UPTIME;
-  else if ( strcmp( token, "setup" ) == 0 ) cmd = CMD_SETUP;
+  if      ( strcmp( token, "help"  ) == 0 )    cmd = CMD_HELP;
+  else if ( strcmp( token, "whoami" ) == 0 )   cmd = CMD_WHOAMI;
+  else if ( strcmp( token, "uptime" ) == 0 )   cmd = CMD_UPTIME;
+  else if ( strcmp( token, "setup" ) == 0 )    cmd = CMD_SETUP;
   else if ( strcmp( token, "startCLI" ) == 0 ) cmd = CMD_STARTCLI;
-  else if ( strcmp( token, "halt" ) == 0 ) cmd = CMD_HALT;
-  else if ( strcmp( token, "exit" ) == 0 )  cmd = CMD_EXIT;
+  else if ( strcmp( token, "halt" ) == 0 )     cmd = CMD_HALT;
+  else if ( strcmp( token, "exit" ) == 0 )     cmd = CMD_EXIT;
   
   // command found?
   if ( cmd >= 0 ) {
@@ -288,22 +334,36 @@ Cmd_t SwOSCLI::evalSimpleCommand( char *token ) {
       return CMD_ERROR;
     }
 
-    float uptime;
-    
+    float          uptime;
+
     // execute 
     switch (cmd) {
-      case CMD_HELP:      help();           break;
+      case CMD_HELP:      free(response);
+                          response = (char *) calloc( 1, sizeof( help ) );
+                          strcpy(response, help);
+                          break;
+
       case CMD_WHOAMI:    myOSSwarm.Ctrl[0]->lock();
-                          printf("%s/%s\n", myOSSwarm.Ctrl[0]->getName(), myOSSwarm.Ctrl[0]->getAlias() );   
+                          sprintf( response, "%s/%s", myOSSwarm.Ctrl[0]->getName(), myOSSwarm.Ctrl[0]->getAlias() );  
                           myOSSwarm.Ctrl[0]->identify();  
                           myOSSwarm.Ctrl[0]->unlock();
                           break;
+
       case CMD_UPTIME:    uptime = millis()/1000;
-                          printf("uptime: %.3f s\n", uptime);
+                          sprintf( response, "uptime: %.3f s", uptime);
                           break;
-      case CMD_SETUP:     mainMenu();       break;
-      case CMD_STARTCLI:  startCLI( true ); break;
-      case CMD_HALT:      halt();           break;
+
+      case CMD_SETUP:     if (interactive) mainMenu();
+                          else Error( ERROR_INVALIDCMD );              
+                          break;
+
+      case CMD_STARTCLI:  if (interactive) startCLI( true ); 
+                          else Error( ERROR_INVALIDCMD );              
+                          break;
+
+      case CMD_HALT:      halt();
+                          break;
+    
     }
 
   }
@@ -312,41 +372,54 @@ Cmd_t SwOSCLI::evalSimpleCommand( char *token ) {
 
 }
 
-bool SwOSCLI::eval( void ) {
+char *SwOSCLI::eval( char* in, bool *loggedIn ) {
   // returns false on command exit
+
+  this->in       = in;
+  this->response = (char *) calloc( 1, CLIMAXLINE );
+
+  strcpy( this->response, "");
 
   char token[CLIMAXLINE];
   
   // rest variables to run the evaluation
-  _evalPtr = _line;
+  evalPtr = in;
 
   // every line must start with a literal
   switch ( getNextToken( token ) ) {
+
     case EVAL_LITERAL: break;         // everything ok
-    case EVAL_EOL:     return true;   // just an emoty line, ignore
-    default:           Error( ERROR_LITERALEXPECTED ); return true;
+
+    case EVAL_EOL:     return response;   // just an empty line, ignore
+
+    default:           Error( ERROR_LITERALEXPECTED ); return response;
+
   }
 
-  // interpret as a simple command
+  // interpret as a simple command?
   switch ( evalSimpleCommand( token ) ) {
-    case CMD_EXIT:    return false;   // exit: stop CLI
-    case CMD_UNKONWN: break;          // not a command: continue
-    default:          return true;    // error, setup, help, startcli, halt: stop evaluation
+
+    case CMD_EXIT:    exit = true;
+                      if (interactive) return response;   // exit: stop CLI
+                      else Error( ERROR_INVALIDCMD );
+
+    case CMD_UNKONWN: break;           // not a simple command: continue
+
+    default:          return response; // error, setup, help, startcli, halt: stop evaluation
+
   }
 
   // if it's not a command, it should be a host or an io.
-  evalIOCommand( token );
+  evalComplexCommand( token, loggedIn );
  
-  return true;
+  return response;
 
-}
-
-void SwOSCLI::wrongIOType( SwOSIOType_t ioType ) {
-  printf( "Error: Wrong IO type %d\n", ioType );
 }
 
 void SwOSCLI::OK ( void ) {
-  printf( "R: ok\n" );
+
+  sprintf( response, "R: ok" );
+
 }
 
 void SwOSCLI::executeControllerCmd(void ) {
@@ -354,7 +427,7 @@ void SwOSCLI::executeControllerCmd(void ) {
   SwOSCom *userEvent;
   int      p, microStepMode;
 
-  switch ( _cmd ) {
+  switch ( cmd ) {
     case CLICMD_show:               // show controller
                                     ctrl->lock();
                                     ctrl->identify();  
@@ -365,8 +438,8 @@ void SwOSCLI::executeControllerCmd(void ) {
                                     userEvent = new SwOSCom( ctrl->macAddr, ctrl->serialNumber, CMD_USEREVENT );
 
                                     // copy parameters
-                                    for (uint8_t i=0; i<=_maxParameter; i++) {
-                                      p = _parameter[i].getValue();
+                                    for (uint8_t i=0; i<=maxParameter; i++) {
+                                      p = parameter[i].getNumber();
                                       memcpy( &userEvent->data.userEventCmd.payload[i*sizeof(int)], &p, sizeof(int) );
                                     }
 
@@ -385,11 +458,11 @@ void SwOSCLI::executeControllerCmd(void ) {
 
                                     break;
 
-    case CLICMD_setMicrostepMode:   if (_parameter[0].inRange( "MicroStepMode", 0, 7 ) ) {
+    case CLICMD_setMicrostepMode:   if (parameter[0].inRange( "MicroStepMode", 0, 7, response ) ) {
                                       OK();
                                       if ( ctrl->getType() == FTSWARMPWRDRIVE ) {
                                         ctrl->lock();
-                                        ctrl->setMicrostepMode( (uint8_t) _parameter[0].getValue() );
+                                        ctrl->setMicrostepMode( (uint8_t) parameter[0].getNumber() );
                                         ctrl->unlock();
                                       }
                                     }
@@ -399,11 +472,34 @@ void SwOSCLI::executeControllerCmd(void ) {
                                       ctrl->lock();
                                       microStepMode = ctrl->getMicrostepMode();
                                       ctrl->unlock();
-                                      printf("R: %d\n", microStepMode );
-                                    } else { printf("kein PwrDrive\n"); }
+                                      sprintf( response, "R: %d", microStepMode );
+                                    } else { sprintf( response, "kein PwrDrive"); }
                                     break;
 
-    default:                        printf("Error: invalid command.\n");
+    case CLICMD_save:               if ( parameter[0].inRange( "scope", 0, 3, response ) ) {
+                                      OK();
+                                      ctrl->save( parameter[0].getNumber() );
+                                    }
+                                    break;
+
+    case CLICMD_reboot:             ctrl->reboot();
+                                    OK();
+                                    break;
+
+    case CLICMD_setWifi:            // wifi mode in range from 0 to 2?
+                                    if ( !parameter[0].inRange( "mode", 0, 2, response ) ) {}
+                                    // wifi is on, a SSID is needed
+                                    else if ( ( parameter[0].getNumber() != wifiOFF ) && ( !parameter[1].getString() ) ) Error( ERROR_SSIDEXPECTED );
+                                    // wifi is in client mode, a PSK is needed
+                                    else if ( ( parameter[0].getNumber() == wifiClient ) && ( !parameter[2].getString() ) ) Error( ERROR_PSKEXPECTED );
+                                    // everything is fine
+                                    else {
+                                      OK();
+                                      ctrl->setWifi( (FtSwarmWifi_t) parameter[0].getNumber(), parameter[1].getString(), parameter[2].getString() );
+                                    }
+    
+                                    break;
+    default:                        Error( ERROR_INVALIDCMD );
                                     break;
   }
 
@@ -411,127 +507,128 @@ void SwOSCLI::executeControllerCmd(void ) {
 
 void SwOSCLI::executeInputCmd( void ) {
 
-  SwOSInput    *io = (SwOSInput *)_io;
   SwOSIOType_t newSensorType, newIOType;
 
-  SwOSCtrl     *ctrl = _io->getCtrl();
-  uint8_t      index = ctrl->getIndex( _io );
+  SwOSCtrl     *ctrl = io->getCtrl();
+  uint8_t      index = ctrl->getIndex( io );
 
-  switch ( _cmd ) {
+  switch ( cmd ) {
 
-    case CLICMD_getIOType:    io->lock();
-                              printf("R: %d\n", io->getIOType() ); 
-                              io->unlock();
-                              break;
+    case CLICMD_getIOType:      io->lock();
+                                sprintf( response, "R: %d", io->getIOType() ); 
+                                io->unlock();
+                                break;
 
-    case CLICMD_setIOType:    if ( ( _parameter[0].inRange( "ioType", 0, SWOSIO_MAXIOTYPE-1 ) ) && 
-                                   ( _parameter[1].inRange( "normallyOpen", 0, 1 ) ) ) {
+    case CLICMD_setIOType:      if ( ( parameter[0].inRange( "ioType", 0, SWOSIO_MAXIOTYPE-1, response ) ) && 
+                                     ( parameter[1].inRange( "normallyOpen", 0, 1, response ) ) ) {
 
-                                // which sensor type?
-                                newIOType =  (SwOSIOType_t) _parameter[0].getValue();
+                                  // which sensor type?
+                                  newIOType =  (SwOSIOType_t) parameter[0].getNumber();
 
-                                if ( ctrl->changeIOType( index, newIOType ) ) {
-                                  _io = ctrl->io[ index ];
-                                  if (_io) _io->setParameter( _parameter[1].getValue() );
-                                  OK();
+                                  if ( ctrl->changeIOType( index, newIOType ) ) {
+                                    io = ctrl->io[ index ];
+                                    if (io) io->setParameter( parameter[1].getNumber() );
+                                    OK();
+                                  }
+
+                                } else Error( ERROR_WRONGIOTYPE, 0, newIOType );
+
+                                break;
+
+    case CLICMD_getValue:       io->lock();
+                                sprintf( response, "R: %d", ((SwOSInput *)io)->getValueI32() );
+                                io->unlock();
+                                break;
+
+    case CLICMD_getVoltage:     io->lock();
+                                if ( io->getIOType() == SWOSIO_VOLTMETER ) {
+                                  sprintf( response, "R: %f", ((SwOSAnalogInput *)io)->getVoltage());
+                                } else {
+                                  Error( ERROR_WRONGIOTYPE, 0, io->getIOType() );
                                 }
-
-                              } else wrongIOType( newIOType );
-
-                              break;
-
-    case CLICMD_getValue:     io->lock();
-                              printf("R: %d\n", io->getValueI32() );
-                              io->unlock();
-                              break;
-
-    case CLICMD_getVoltage:   io->lock();
-                              if ( io->getIOType() == SWOSIO_VOLTMETER ) {
-                                printf("R: %f\n", ((SwOSAnalogInput *)io)->getVoltage());
-                              } else {
-                                wrongIOType( io->getIOType() );
-                              }
-                              io->unlock();
-                              break;
+                                io->unlock();
+                                break;
 
     case CLICMD_getResistance: io->lock();
-                              if ( io->getIOType() == SWOSIO_OHMMETER ) {
-                                printf("R: %f\n", ((SwOSAnalogInput *)io)->getResistance());
-                              } else {
-                                wrongIOType( io->getIOType() );
-                              }
-                              io->unlock();
-                              break;
-
-    case CLICMD_getKelvin:    io->lock();
-                              if ( io->getIOType() == SWOSIO_THERMOMETER ) {
-                                printf("R: %f\n", ((SwOSAnalogInput *)io)->getKelvin());
-                              } else {
-                                wrongIOType( io->getIOType() );
-                              }
-                              io->unlock();
-                              break;
-
-    case CLICMD_getCelcius:   io->lock();
-                              if ( io->getIOType() == SWOSIO_THERMOMETER ) {
-                                printf("R: %f\n", ((SwOSAnalogInput *)io)->getCelcius());
-                              } else {
-                                wrongIOType( io->getIOType() );
-                              }
-                              io->unlock();
-                              break;
-
-    case CLICMD_getFahrenheit: io->lock();
-                              if ( io->getIOType() == SWOSIO_THERMOMETER ) {
-                                printf("R: %f\n", ((SwOSAnalogInput *)io)->getFahrenheit());
-                              } else {
-                                wrongIOType( io->getIOType() );
-                              }
-                              io->unlock();
-                              break;
-
-    case CLICMD_getToggle:    io->lock();
-                              if ( io->isDigitalInput() ) {
-                                printf("R: %f\n", ((SwOSDigitalInput*)io)->getToggle());
-                              } else {
-                                wrongIOType( io->getIOType() );
-                              }
-                              io->unlock();
-                              break;
-
-    case CLICMD_onTrigger:   if (( _parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER ) ) &&
-                                 ( _parameter[1].isIO() ) &&
-                                 ( _parameter[2].isConstant() ) ) {
-                                OK();
-                                io->lock();
-                                io->addEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), _parameter[2].getValue() );
+                                if ( io->getIOType() == SWOSIO_OHMMETER ) {
+                                  sprintf( response, "R: %f", ((SwOSAnalogInput *)io)->getResistance());
+                                } else {
+                                  Error( ERROR_WRONGIOTYPE, 0, io->getIOType() );
+                                }
                                 io->unlock();
-                              }
-                              break;
+                                break;
 
-    default:                  printf("Error: invalid command.\n");
-                              break;
+    case CLICMD_getKelvin:      io->lock();
+                                if ( io->getIOType() == SWOSIO_THERMOMETER ) {
+                                  sprintf( response, "R: %f", ((SwOSAnalogInput *)io)->getKelvin());
+                                } else {
+                                  Error( ERROR_WRONGIOTYPE, 0, io->getIOType() );
+                                }
+                                io->unlock();
+                                break;
+
+    case CLICMD_getCelcius:     io->lock();
+                                if ( io->getIOType() == SWOSIO_THERMOMETER ) {
+                                  sprintf( response, "R: %f", ((SwOSAnalogInput *)io)->getCelcius());
+                                } else {
+                                  Error( ERROR_WRONGIOTYPE, 0, io->getIOType() );
+                                }
+                                io->unlock();
+                                break;
+
+    case CLICMD_getFahrenheit:  io->lock();
+                                if ( io->getIOType() == SWOSIO_THERMOMETER ) {
+                                  sprintf( response, "R: %f", ((SwOSAnalogInput *)io)->getFahrenheit());
+                                } else {
+                                  Error( ERROR_WRONGIOTYPE, 0, io->getIOType() );
+                                }
+                                io->unlock();
+                                break;
+
+    case CLICMD_getToggle:      io->lock();
+                                if ( io->isDigitalInput() ) {
+                                  sprintf( response, "R: %f", ((SwOSDigitalInput*)io)->getToggle());
+                                } else {
+                                  Error( ERROR_WRONGIOTYPE, 0, io->getIOType() );
+                                }
+                                io->unlock();
+                                break;
+
+    case CLICMD_onTrigger:      // TODO better error handling
+                                if (( parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER-1, response ) ) &&
+                                    ( parameter[1].isIO() ) &&
+                                    ( parameter[2].isNumber() ) ) {
+                                  OK();
+                                  io->lock();
+                                  ((SwOSInput *)io)->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), parameter[1].getIO(), parameter[2].getNumber() );
+                                  io->unlock();
+                                }
+                                break;
+
+    default:                    Error( ERROR_INVALIDCMD );
+                                break;
   }
+
 }
 
 void SwOSCLI::executeActorCmd( void ) {
 
-  SwOSMotor    *motor   = (SwOSMotor *)_io;
-  SwOSStepper  *stepper = (SwOSStepper *)_io;
+  SwOSMotor    *motor   = (SwOSMotor *)io;
+  SwOSStepper  *stepper = (SwOSStepper *)io;
   int          maxspeed;
   bool         highResolution = false;
   bool         ok = true;
-  SwOSCtrl     *ctrl = _io->getCtrl();
-  uint8_t      index = ctrl->getIndex( _io );
+  SwOSCtrl     *ctrl = io->getCtrl();
+  uint8_t      index = ctrl->getIndex( io );
   SwOSIOType_t newIOType;
   
-  switch ( _cmd ) {
+  switch ( cmd ) {
 
-    case CLICMD_setIOType:      if ( ( _parameter[0].inRange( "ioType", 0, SWOSIO_MAXIOTYPE-1 ) ) && 
-                                     ( _parameter[1].inRange( "highResolution", 0, 1 ) ) ) {
+    case CLICMD_setIOType:      if ( ( parameter[0].inRange( "ioType", 0, SWOSIO_MAXIOTYPE-1, response ) ) && 
+                                     ( parameter[1].inRange( "highResolution", 0, 1, response ) ) ) {
 
                                   // which sensor type?
-                                  newIOType =  (SwOSIOType_t) _parameter[0].getValue();
+                                  newIOType =  (SwOSIOType_t) parameter[0].getNumber();
 
                                   if ( ctrl->changeIOType( index, newIOType ) ) {
                                   
@@ -539,7 +636,7 @@ void SwOSCLI::executeActorCmd( void ) {
                                   
                                     if (motor) {
                                       motor->lock();
-                                      motor->setParameter( _parameter[1].getValue() );
+                                      motor->setParameter( parameter[1].getNumber() );
                                       motor->setSpeed(0);
                                       motor->apply();
                                       motor->unlock();
@@ -549,58 +646,58 @@ void SwOSCLI::executeActorCmd( void ) {
 
                                   }
 
-                                } else wrongIOType( newIOType );
+                                } else Error( ERROR_WRONGIOTYPE, 0, newIOType );
 
                                 break;
                               
     case CLICMD_getIOType:      motor->lock();
-                                printf("R: %d\n", (int) motor->getIOType() ); 
+                                sprintf( response, "R: %d", (int) motor->getIOType() ); 
                                 motor->unlock();
                                 break;
 
     case CLICMD_setSpeed:       if ( motor->highResolution ) maxspeed = 4095;
                                 else maxspeed = 255;
-                                if (_parameter[0].inRange( "speed", -maxspeed, maxspeed ) ) { 
+                                if (parameter[0].inRange( "speed", -maxspeed, maxspeed, response ) ) { 
                                   OK();
                                   motor->lock(); 
-                                  motor->setSpeed( _parameter[0].getValue() );
+                                  motor->setSpeed( parameter[0].getNumber() );
                                   motor->apply();
                                   motor->unlock();
                                 }
                                 break;
 
     case CLICMD_getSpeed:       motor->lock();
-                                printf("R: %d\n", motor->getSpeed() ); 
+                                sprintf( response, "R: %d", motor->getSpeed() ); 
                                 motor->unlock();
                                 break;
 
-    case CLICMD_setMotionType:  if (_parameter[0].inRange( "motionType", 0, FTSWARM_MAXMOTION-1) ) { 
+    case CLICMD_setMotionType:  if (parameter[0].inRange( "motionType", 0, FTSWARM_MAXMOTION-1, response) ) { 
                                   OK();
                                   motor->lock(); 
-                                  motor->setMotionType( (FtSwarmMotion_t) _parameter[0].getValue() );
+                                  motor->setMotionType( (FtSwarmMotion_t) parameter[0].getNumber() );
                                   motor->apply();
                                   motor->unlock();
                                 }
                                 break;
 
     case CLICMD_getMotionType:  motor->lock();
-                                printf("R: %d\n", (int) motor->getMotionType() ); 
+                                sprintf( response, "R: %d", (int) motor->getMotionType() ); 
                                 motor->unlock();
                                 break;
 
     case CLICMD_setDistance:    if ( stepper->getIOType() == SWOSIO_STEPPER ) {
                                   OK();
                                   stepper->lock(); 
-                                  stepper->setDistance( _parameter[0].getLongValue(), (_parameter[1].getValue() > 0) );
+                                  stepper->setDistance( parameter[0].getNumber(), (parameter[1].getNumber() > 0) );
                                   stepper->unlock();
-                                } else wrongIOType( stepper->getIOType() );
+                                } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
                                 break;
 
     case CLICMD_getDistance:    if ( stepper->getIOType() == SWOSIO_STEPPER ) {
                                   stepper->lock();
-                                  printf("R: %lu\n", stepper->getDistance() ); 
+                                  sprintf( response, "R: %lu", stepper->getDistance() ); 
                                   stepper->unlock();
-                                } else wrongIOType( stepper->getIOType() );
+                                } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
                                 break;
 
     case CLICMD_run:            if ( stepper->getIOType() == SWOSIO_STEPPER ) {
@@ -608,14 +705,14 @@ void SwOSCLI::executeActorCmd( void ) {
                                   stepper->lock(); 
                                   stepper->startStop( true );
                                   stepper->unlock();
-                                } else wrongIOType( stepper->getIOType() );
+                                } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
                                 break;
 
     case CLICMD_isRunning:      if ( stepper->getIOType() == SWOSIO_STEPPER ) {
                                   stepper->lock();
-                                  if ( stepper->isRunning() ) printf("R: 1\n"  ); else printf("R: 1\n"  );
+                                  sprintf( response, "R: %s",stepper->isRunning() );
                                   stepper->unlock();
-                                } else wrongIOType( stepper->getIOType() );
+                                } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
                                 break;
 
     case CLICMD_stop:           if ( stepper->getIOType() == SWOSIO_STEPPER ) {
@@ -623,48 +720,48 @@ void SwOSCLI::executeActorCmd( void ) {
                                   stepper->lock(); 
                                   stepper->startStop( false );
                                   stepper->unlock();
-                                } else wrongIOType( stepper->getIOType() );
+                                } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
                                 break;
 
     case CLICMD_setPosition:    if ( stepper->getIOType() == SWOSIO_STEPPER ) {
                                   OK();
                                   stepper->lock(); 
-                                  stepper->setPosition( _parameter[0].getLongValue() );
+                                  stepper->setPosition( parameter[0].getNumber() );
                                   stepper->unlock();
-                                } else wrongIOType( stepper->getIOType() );
+                                } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
                                 break;
 
     case CLICMD_getPosition:    if ( stepper->getIOType() == SWOSIO_STEPPER ) {
                                   stepper->lock();
-                                  printf("R: %lu\n", stepper->getPosition() ); 
+                                  sprintf( response, "R: %lu", stepper->getPosition() ); 
                                   stepper->unlock();
-                                } else wrongIOType( stepper->getIOType() );
+                                } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
                                 break;
 
     case CLICMD_homing:         if ( stepper->getIOType() == SWOSIO_STEPPER ) {
                                   OK();
                                   stepper->lock(); 
-                                  stepper->homing( _parameter[0].getLongValue() );
+                                  stepper->homing( parameter[0].getNumber() );
                                   stepper->unlock();
-                                } else wrongIOType( stepper->getIOType() );
+                                } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
                                 break;
                                 
     case CLICMD_isHoming:       if ( stepper->getIOType() == SWOSIO_STEPPER ) {
                                   stepper->lock();
-                                  printf("R: %d\n", stepper->isHoming() ); 
+                                  sprintf( response, "R: %d", stepper->isHoming() ); 
                                   stepper->unlock();
-                                } else wrongIOType( stepper->getIOType() );
+                                } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
                                 break;
 
     case CLICMD_setHomingOffset: if ( stepper->getIOType() == SWOSIO_STEPPER ) {
                                   OK();
                                   stepper->lock(); 
-                                  stepper->setHomingOffset( _parameter[0].getLongValue() );
+                                  stepper->setHomingOffset( parameter[0].getNumber() );
                                   stepper->unlock();
-                                } else wrongIOType( stepper->getIOType() );
+                                } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
                                 break;
 
-    default:                    printf("Error: invalid command.\n");
+    default:                    Error( ERROR_INVALIDCMD );
                                 break;
   }
 
@@ -672,75 +769,71 @@ void SwOSCLI::executeActorCmd( void ) {
 
 void SwOSCLI::executeJoystickCmd( void ) {
 
-  SwOSJoystick *io = (SwOSJoystick *)_io;
-
-  switch ( _cmd ) {
+  switch ( cmd ) {
 
     case CLICMD_getValue:     io->lock();
                               int16_t lr, fb;
-                              io->getValue( &lr, &fb );
-                              printf("R: %d %d\n", lr, fb ); 
+                              ((SwOSJoystick*)io)->getValue( &lr, &fb );
+                              sprintf(response, "R: %d %d", lr, fb ); 
                               io->unlock();
                               break;
 
-    case CLICMD_onTriggerLR:  if (( _parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER ) ) &&
-                                  ( _parameter[1].isIO() ) &&
-                                  ( _parameter[2].isConstant() ) ) {
+    case CLICMD_onTriggerLR:  if (( parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER-1, response ) ) &&
+                                  ( parameter[1].isIO() ) &&
+                                  ( parameter[2].isNumber() ) ) {
                                 OK();
                                 io->lock();
-                                io->lr->addEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), _parameter[2].getValue()  );
+                                ((SwOSJoystick*)io)->lr->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), parameter[1].getIO(), parameter[2].getNumber()  );
                                 io->unlock();
                               }
                               break;
 
-    case CLICMD_onTriggerFB:  if (( _parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER ) ) &&
-                                  ( _parameter[1].isIO() ) &&
-                                  ( _parameter[2].isConstant() ) ) {
+    case CLICMD_onTriggerFB:  if (( parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER-1, response ) ) &&
+                                  ( parameter[1].isIO() ) &&
+                                  ( parameter[2].isNumber() ) ) {
                                 OK();
                                 io->lock();
-                                io->fb->addEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), _parameter[2].getValue() );
+                                ((SwOSJoystick*)io)->fb->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), parameter[1].getIO(), parameter[2].getNumber() );
                                 io->unlock();
                               }
                               break;
 
-    default:                  printf("Error: invalid command.\n");
+    default:                  Error( ERROR_INVALIDCMD );
                               break;
   }
 
 }
 
 void SwOSCLI::executeServoCmd( void ) {
-
-  SwOSServo *io = (SwOSServo *)_io;
   
-  switch ( _cmd ) {
-    case CLICMD_setPosition:    if (_parameter[0].inRange( "position", -255, 255 ) ) { 
+  switch ( cmd ) {
+    case CLICMD_setPosition:    if (parameter[0].inRange( "position", -255, 255, response ) ) { 
                                   OK();
                                   io->lock(); 
-                                  io->setPosition( (int16_t) _parameter[0].getValue() );
+                                  ((SwOSServo*) io)->setPosition( (int16_t) parameter[0].getNumber() );
                                   io->unlock();
                                 }
                                 break;
 
     case CLICMD_getPosition:    io->lock();
-                                printf("R: %d\n", io->getPosition() ); 
+                                sprintf( response, "R: %d", ((SwOSServo*) io)->getPosition() ); 
                                 io->unlock();
                                 break;
 
-    case CLICMD_setOffset:      if (_parameter[0].inRange( "offset", -255, 255 ) ) { 
+    case CLICMD_setOffset:      if (parameter[0].inRange( "offset", -255, 255, response ) ) { 
                                   OK();
                                   io->lock(); 
-                                  io->setOffset( (int16_t) _parameter[0].getValue() );
+                                  ((SwOSServo*) io)->setOffset( (int16_t) parameter[0].getNumber() );
                                   io->unlock();
                                 }
                                 break;
 
     case CLICMD_getOffset:      io->lock();
-                                printf("R: %d\n", io->getOffset() ); 
+                                sprintf( response, "R: %d", ((SwOSServo*) io)->getOffset() ); 
                                 io->unlock();
                                 break;
 
-    default:                    printf("Error: invalid command.\n");
+    default:                    Error( ERROR_INVALIDCMD );
                                 break;
   }
 
@@ -748,34 +841,32 @@ void SwOSCLI::executeServoCmd( void ) {
 
 void SwOSCLI::executePixelCmd( void ) {
 
-  SwOSPixel *io = (SwOSPixel *)_io;
-  
-  switch ( _cmd ) {
-    case CLICMD_setBrightness:   if (_parameter[0].inRange( "brightness", 0, 255 ) ) { 
+  switch ( cmd ) {
+    case CLICMD_setBrightness:   if (parameter[0].inRange( "brightness", 0, 255, response ) ) { 
                                   OK();
                                   io->lock(); 
-                                  io->setBrightness( (uint8_t) _parameter[0].getValue() );
+                                  ((SwOSPixel *)io)->setBrightness( (uint8_t) parameter[0].getNumber() );
                                   io->unlock();
                                 }
                                 break;
 
     case CLICMD_getBrightness:  io->lock();
-                                printf("R: %d\n", io->getBrightness() ); 
+                                sprintf( response, "R: %d", ((SwOSPixel *)io)->getBrightness() ); 
                                 io->unlock();
                                 break;
 
     case CLICMD_setColor:       OK();
                                 io->lock(); 
-                                io->setColor( (uint) _parameter[0].getValue() );
+                                ((SwOSPixel *)io)->setColor( (uint) parameter[0].getNumber() );
                                 io->unlock();
                                 break;
 
     case CLICMD_getColor:       io->lock();
-                                printf("R: %u\n", io->getColor() ); 
+                                sprintf( response, "R: #%X", ((SwOSPixel *)io)->getColor() ); 
                                 io->unlock();
                                 break;
 
-    default:                    printf("Error: invalid command.\n");
+    default:                    Error( ERROR_INVALIDCMD );
                                 break;
   }
 
@@ -783,36 +874,95 @@ void SwOSCLI::executePixelCmd( void ) {
 
 void SwOSCLI::executeI2CCmd( void ) {
 
-  SwOSI2C *io = (SwOSI2C *)_io;
-  
-  switch ( _cmd ) {
-    case CLICMD_setRegister:    if ( (_parameter[0].inRange( "register", 0, MAXI2CREGISTERS ) ) &&
-                                   (_parameter[1].inRange( "value", 0, 255 ) ) ) { 
+  switch ( cmd ) {
+    case CLICMD_setRegister:    if ( (parameter[0].inRange( "register", 0, MAXI2CREGISTERS-1, response ) ) &&
+                                     ( parameter[1].inRange( "value", 0, 255, response ) ) ) { 
                                   OK();
                                   io->lock(); 
-                                  io->setRegister( (uint8_t) _parameter[0].getValue(), (uint8_t) _parameter[1].getValue() );
+                                  ((SwOSI2C *)io)->setRegister( (uint8_t) parameter[0].getNumber(), (uint8_t) parameter[1].getNumber() );
                                   io->unlock();
                                 }
                                 break;
 
-    case CLICMD_getRegister:    if (_parameter[0].inRange( "register", 0, MAXI2CREGISTERS ) ) {
+    case CLICMD_getRegister:    if ( parameter[0].inRange( "register", 0, MAXI2CREGISTERS-1, response ) ) {
                                   io->lock();
-                                  printf("R: %d\n", io->getRegister( (uint8_t) _parameter[0].getValue() ) ); 
+                                  sprintf( response, "R: %d", ((SwOSI2C *)io)->getRegister( (uint8_t) parameter[0].getNumber() ) ); 
                                   io->unlock();
                                 }
                                 break;
 
-    case CLICMD_onTrigger:     if (( _parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER ) ) &&
-                                  ( _parameter[1].isIO() ) &&
-                                  ( _parameter[2].isConstant() ) ) {
+    case CLICMD_onTrigger:     if ( ( parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER-1, response ) ) &&
+                                  ( parameter[1].isIO() ) &&
+                                  ( parameter[2].isNumber() ) ) {
                                   OK();
                                   io->lock();
-                                  io->addEvent( (FtSwarmTrigger_t)_parameter[0].getValue(), _parameter[1].getIO(), _parameter[2].getValue() );
+                                  ((SwOSI2C *)io)->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), parameter[1].getIO(), parameter[2].getNumber() );
                                   io->unlock();
                                 }
 
 
-    default:                    printf("Error: invalid command.\n");
+    default:                    Error( ERROR_INVALIDCMD );
+                                break;
+  }
+
+}
+
+void SwOSCLI::executeNvsCmd( void ) {
+
+  uint8_t newConfig;
+
+  switch ( cmd ) {
+
+    case CLICMD_save:           if ( parameter[0].inRange( "scope", 0, 3, response ) ) {
+                                  OK();
+                                  myOSSwarm.Ctrl[0]->save( parameter[0].getNumber() );
+                                }
+                                break;
+
+    case CLICMD_useConfig:      if ( parameter[0].inRange( "config", 1, MAXEVENTCONFIGS, response ) ) {
+                                  OK();
+                                  newConfig = parameter[0].getNumber()-1;
+                                  nvs.activeEventConfig = newConfig;
+                                  myOSSwarm.deleteEvents();
+                                  myOSSwarm.addEvents( newConfig );
+                                }
+                                break;
+
+    default:                    Error( ERROR_INVALIDCMD );
+                                break;
+  }
+
+}
+
+void SwOSCLI::executeSwarmCmd( bool *loggedIn ) {
+
+  SerialFormat_t format;
+  size_t         size;
+  Serialize      *serialize = NULL;
+
+  switch ( cmd ) {
+
+    case CLICMD_login:          if ( parameter[0].inRange( "pin", 0, 9999, response ) ) {
+                                  *loggedIn = ( parameter[0].getNumber() == myOSNetwork.pin );
+                                  if (!*loggedIn) Error( ERROR_WRONGPIN );
+                                  else OK();
+                                }
+                                break;
+
+    case CLICMD_getSwarm:       // aka /api/getSwarm
+                                if ( parameter[0].inRange( "format", 0, 1, response ) ) {
+                                  free( response );
+                                  format = (SerialFormat_t)parameter[0].getNumber();
+                                  size = myOSSwarm.approxSerialize( format );
+                                  response = (char *) calloc( myOSSwarm.maxCtrl, size );
+                                  serialize = new Serialize( response, size, format );
+                                  serialize->write("R: ");
+                                  myOSSwarm.serialize( serialize );
+                                  delete serialize;
+                                }
+                                break;
+    
+    default:                    Error( ERROR_INVALIDCMD );
                                 break;
   }
 
@@ -820,14 +970,31 @@ void SwOSCLI::executeI2CCmd( void ) {
 
 void SwOSCLI::executeIOCommand( void ) {
 
-  if ( (!_io) && (ctrl ) ) {
+  // set alias name io or ctrl
+  if ( cmd == CLICMD_setAlias ) {
+
+    char *alias = parameter[0].getString();
+
+    if (!alias) { Error( ERROR_STRINGEXPECTED ); return; }
+
+    if (!isValidIdentifier(alias)) { Error( ERROR_LITERALEXPECTED ); return; }
+
+    if (myOSSwarm.getIO(alias)) { Error( ERROR_ALIASNOTNUNIQUE ); return; }
+
+    OK();
+    if (io)     { io->setAlias(alias); return; }
+    if (ctrl)   { ctrl->setAlias(alias); return; }
+
+  }
+
+  if ( (!io) && (ctrl ) ) {
     // controller cmd?
     executeControllerCmd( );
 
-  } else if (_io ) { 
+  } else if (io ) { 
    
     // io cmd?
-    switch (_io->getIOType() ) {
+    switch (io->getIOType() ) {
 
       case SWOSIO_DIGITAL: 
       case SWOSIO_SWITCH:
@@ -845,6 +1012,7 @@ void SwOSCLI::executeIOCommand( void ) {
       case SWOSIO_FREQUENCYMETER: executeInputCmd(); break;
 
       case SWOSIO_MOTOR:
+      case SWOSIO_XMOTOR:
       case SWOSIO_XMMOTOR: 
       case SWOSIO_TRACTOR:  
       case SWOSIO_ENCODER:
@@ -862,7 +1030,7 @@ void SwOSCLI::executeIOCommand( void ) {
 
       case SWOSIO_I2C:            executeI2CCmd(); break;
       
-      default:                    printf("Error: unsupported IO\n");
+      default:                    sprintf( response, "Error: unsupported IO");
                                   break;
     }
 
@@ -874,7 +1042,7 @@ bool SwOSCLI::tokenizeCmd( char *cmd ) {
 
   for (uint8_t i=0; i<=CLICMD_MAX; i++) {
     if ( strcmp( IOCmdList[i].cmd, cmd ) == 0 ) {
-      _cmd = (CLICmd_t) i;
+      this->cmd = (CLICmd_t) i;
       return true;
     }
   }
@@ -893,8 +1061,8 @@ bool  SwOSCLI::getIO( char *token, char *IOName, SwOSCtrl **ctrl, SwOSIO **io ) 
   if (xctrl) { 
     // it's a controller, now we need the io port
 
-    // first I need to save the position of _evalPtr 
-    xrollback = _evalPtr;
+    // first I need to save the position of evalPtr 
+    xrollback = evalPtr;
 
     // I need to store the original ctrl.io-Text for subscribe
     strcpy( IOName, token);
@@ -913,7 +1081,7 @@ bool  SwOSCLI::getIO( char *token, char *IOName, SwOSCtrl **ctrl, SwOSIO **io ) 
 
     } else {
       // if it's not an io, it was a controller: revoke last 2 getNextToken
-      _evalPtr = xrollback;
+      evalPtr = xrollback;
     }
 
   } else {
@@ -931,32 +1099,34 @@ bool  SwOSCLI::getIO( char *token, char *IOName, SwOSCtrl **ctrl, SwOSIO **io ) 
 
 }
 
-void SwOSCLI::evalIOCommand( char *token ) {
+void SwOSCLI::evalComplexCommand( char *token, bool *loggedIn ) {
   // token is already the first literal. Could be a host or an IO
 
   SwOSIO   *paramIO;
   SwOSCtrl *paramCtrl;
-  char     cmd[CLIMAXLINE];
+  char     command[CLIMAXLINE];
   char     IOName[CLIMAXLINE];
   char     paramIOName[CLIMAXLINE];
+  bool     nvs   = ( strcmp( token, "nvs"   ) == 0 );
+  bool     swarm = ( strcmp( token, "swarm" ) == 0 );
 
-  // check, if the token is a controller or an io
-  if (!getIO( token, IOName, &ctrl, &_io ) ) { Error( ERROR_IOEXPECTED ); return; }
+  // check, if the token is a controller or an io or nvs or swarm
+  if ( (!nvs) && (!swarm) && (!getIO( token, IOName, &ctrl, &io ) ) ) { Error( ERROR_IOEXPECTED ); return; }
 
   // unvalid io?
-  if ( ( !_io ) && ( !ctrl ) ) { Error( ERROR_IOEXPECTED ); return; }
+  if ( ( !io ) && ( !ctrl ) && (!swarm) && (!nvs) ) { Error( ERROR_IOEXPECTED ); return; }
 
   // now we need another "." and a method
   if ( getNextToken( token ) != EVAL_DOT ) { Error( ERROR_DOTEXPECTED ); return; }
 
   // next token should be a command
-  if ( getNextToken( cmd ) != EVAL_LITERAL ) { Error( ERROR_LITERALEXPECTED ); return; }
+  if ( getNextToken( command ) != EVAL_LITERAL ) { Error( ERROR_LITERALEXPECTED ); return; }
 
-  // let's tokenize the cmd
-  if ( !tokenizeCmd( cmd ) ) { Error( ERROR_UNKOWNCMD ); return; }
+  // let's tokenize the command
+  if ( !tokenizeCmd( command ) ) { Error( ERROR_UNKOWNCMD ); return; }
 
   // optional parameters
-  _maxParameter = -1;
+  maxParameter = -1;
   switch ( getNextToken( token ) ) {
     case EVAL_EOL: break;
     case EVAL_LPARANTHESIS: {
@@ -965,20 +1135,31 @@ void SwOSCLI::evalIOCommand( char *token ) {
 
         // get a parameter
         switch ( getNextToken( token ) ) {
+
           case EVAL_LITERAL:        if ( ( getIO( token, paramIOName, &paramCtrl, &paramIO ) ) && ( &paramIO ) ) {
-                                      _maxParameter++;
-                                      _parameter[_maxParameter].setValue(paramIO, paramIOName);
+                                      maxParameter++;
+                                      parameter[maxParameter].setIO( paramIO );
                                     } else {
                                       Error( ERROR_LITERALEXPECTED );
                                       return;
                                     }
                                     break;
-          case EVAL_NUMBER:         _maxParameter++;
-                                    _parameter[_maxParameter].setValue(token);
+
+          case EVAL_STRING:         maxParameter++;
+                                    parameter[maxParameter].setString( token );
                                     break;
+
+          case EVAL_NUMBER:         maxParameter++;
+                                    parameter[maxParameter].setNumber( token);
+                                    break;
+
           case EVAL_RPARANTHESIS:   cont=false;
                                     break;
-          default:                  Error( ERROR_NUMBEREXPECTED ); 
+
+          default:                  if ( *evalPtr == '\0' )
+                                      Error( ERROR_RPARANTHESISEXPECTED );
+                                    else 
+                                      Error( ERROR_PARAMETEREXPECTED ); 
                                     return;
         }
         
@@ -999,48 +1180,41 @@ void SwOSCLI::evalIOCommand( char *token ) {
       return;
   }
 
-  if ( ( _maxParameter+1 < IOCmdList[ _cmd ].minParams ) ||
-       ( _maxParameter+1 > IOCmdList[ _cmd ].maxParams ) ) { 
-    Error( ERROR_WRONGNUMBEROFARGUMENTS, IOCmdList[ _cmd ].maxParams, _maxParameter+1 ); return;
+  if ( ( maxParameter+1 < IOCmdList[ cmd ].minParams ) ||
+       ( maxParameter+1 > IOCmdList[ cmd ].maxParams ) ) { 
+    Error( ERROR_WRONGNUMBEROFARGUMENTS, IOCmdList[ cmd ].maxParams, maxParameter+1 ); return;
   } 
 
   // nothing should be left
   if ( getNextToken( token ) != EVAL_EOL ) { Error( ERROR_SYNTAXERROR ); return; }
 
-  if (_cmd==CLICMD_subscribe) {
+  if ( IOCmdList[ cmd ].loginNeeded && (!*loggedIn) ) { Error( ERROR_NOTAUTHENTICATED); return; }
+
+  if ( cmd==CLICMD_subscribe ) {
 
     // subscribe needs special handling due to non-int-parameters
-    int a = _parameter[0].getValue();
+    int a = parameter[0].getNumber();
 
     // controller?
-    if ( (!_io) && (ctrl ) ) {
+    if ( (!io) && (ctrl ) ) {
       ctrl->lock();
       ctrl->subscribe( IOName );
       ctrl->unlock();
     
     // IO?
     } else {
-      _io->lock();
-      _io->subscribe( IOName, a);
-      _io->unlock();
+      io->lock();
+      io->subscribe( IOName, a);
+      io->unlock();
     }
 
-  } else if (_cmd==CLICMD_unsubscribe) {
+  } else if (nvs) {
 
-    // unsubscribe needs special handling due to non-int-parameters
-    // controller?
+    executeNvsCmd();
 
-    if ( (!_io) && (ctrl ) ) {
-      ctrl->lock();
-      ctrl->unsubscribe( true );
-      ctrl->unlock();
-    
-    // IO?
-    } else {
-      _io->lock();
-      _io->unsubscribe( );
-      _io->unlock();
-    }
+  } else if (swarm) {
+
+    executeSwarmCmd( loggedIn );
 
   } else {
 
@@ -1051,19 +1225,42 @@ void SwOSCLI::evalIOCommand( char *token ) {
 
 }
 
+void SwOSCLI::startCLI( bool noEcho ) {
+
+  printf("@@@ ftSwarmOS CLI started\n");
+  
+  if ( noEcho ) {
+    keyboardEcho( false );
+    prompt[0] = '\0';
+  }
+
+  myOSSwarm.unsubscribe();
+  
+}
+
 void SwOSCLI::run( void ) {
 
-  printf("\n\nsetup - starts configuration menu\nexit - end CLI mode\nhelp - show commands\n\n");
+  char cmd[CLIMAXLINE];
+  char *out;
+  bool loggedIn = true;
 
+  printf("\n\nsetup - starts configuration menu\nexit - end CLI mode\nhelp - show commands\n\n");
+  
+  interactive = true;
   startCLI( false );
 
-  while (true) {
+  while (!exit) {
 
     // wait on user
-    enterString( prompt, _line, CLIMAXLINE-1 );
+    enterString( ">", cmd, CLIMAXLINE-1 );
     
     // eval string
-    if (!eval() ) break;
+    out = eval( cmd, &loggedIn );
+
+    // print result
+    printf( out );
+    printf( "\n" );
+    free(out);
   
   }
 

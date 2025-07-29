@@ -220,11 +220,11 @@ void SwOSPixel::setBrightnessLocal() {
 
 }
 
-void SwOSPixel::serialize( Serialize *serialize, uint8_t id) {
+void SwOSPixel::serialize( Serialize *serialize ) {
   serialize->startObject( );
-  SwOSIO::serialize( serialize, id);
+  SwOSIO::serialize( serialize );
   serialize->item( SERIALIZE_LITERAL_BRIGHTNESS, brightness);
-  serialize->item( SERIALIZE_LITERAL_COLOR,      color);
+  serialize->itemX( SERIALIZE_LITERAL_COLOR,     color);
   serialize->endObject();
 }
 

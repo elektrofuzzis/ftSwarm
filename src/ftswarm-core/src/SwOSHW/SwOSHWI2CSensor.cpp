@@ -265,10 +265,10 @@ void SwOSGyroMPU::getEuler(float *alpha, float *beta, float *gamma, bool radiant
 
 };
 
-void SwOSGyroMPU::serialize( Serialize *serialize, uint8_t id) {
+void SwOSGyroMPU::serialize( Serialize *serialize ) {
 
   serialize->startObject( );
-  SwOSIO::serialize( serialize, id);
+  SwOSIO::serialize( serialize );
   
   serialize->item( SERIALIZE_LITERAL_QUATERNION,   q.w,  q.x,  q.y, q.z);
   serialize->item( SERIALIZE_LITERAL_ACCELERATION, aa.x, aa.y, aa.z );
@@ -329,10 +329,10 @@ void SwOSLidarInput::setValue( int32_t value ) {
  
 }
  
-void SwOSLidarInput::serialize( Serialize *serialize, uint8_t id) {
+void SwOSLidarInput::serialize( Serialize *serialize ) {
    
   serialize->startObject( );
-  SwOSIO::serialize( serialize, id);
+  SwOSIO::serialize( serialize );
   serialize->item( SERIALIZE_LITERAL_VALUE, getValueI32() );   
   serialize->endObject();
 
