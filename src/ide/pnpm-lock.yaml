@@ -11,6 +11,9 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.1.11
         version: 4.1.11(vite@7.0.6(jiti@2.5.1)(lightningcss@1.30.1))
+      lucide-solid:
+        specifier: ^0.534.0
+        version: 0.534.0(solid-js@1.9.7)
       solid-js:
         specifier: ^1.9.7
         version: 1.9.7
@@ -664,6 +667,11 @@ packages:
 
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
+
+  lucide-solid@0.534.0:
+    resolution: {integrity: sha512-6KnkYa7omfZJzFAQN7P8tQLzWExCehtJvRC1/ZWx/7vwNXqTqxy5KxXOgo27oZ0H/6Vn3HOqH+sRQ0OTpMN+Ew==}
+    peerDependencies:
+      solid-js: ^1.4.7
 
   magic-string@0.30.17:
     resolution: {integrity: sha512-sNPKHvyjVf7gyjwS4xGTaW/mCnF8wnjtifKBEhxfZ7E/S8tQ0rssrwGNn6q8JH/ohItJfSQp9mBtQYuTlH5QnA==}
@@ -1350,6 +1358,10 @@ snapshots:
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
+
+  lucide-solid@0.534.0(solid-js@1.9.7):
+    dependencies:
+      solid-js: 1.9.7
 
   magic-string@0.30.17:
     dependencies:
