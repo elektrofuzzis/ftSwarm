@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@solidjs/router": "^0.15.3",
     "@tailwindcss/vite": "^4.1.11",
     "lucide-solid": "^0.534.0",
     "solid-js": "^1.9.7",

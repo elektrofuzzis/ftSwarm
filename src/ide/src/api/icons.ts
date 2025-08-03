@@ -1,0 +1,80 @@
+import ToggleLeft from "lucide-solid/icons/toggle-left";
+import SwitchCameraIcon from "lucide-solid/icons/switch-camera";
+import Magnet from "lucide-solid/icons/magnet";
+import Gauge from "lucide-solid/icons/gauge";
+import MousePointerClick from "lucide-solid/icons/mouse-pointer-click";
+import LineChart from "lucide-solid/icons/line-chart";
+import Zap from "lucide-solid/icons/zap";
+import CircuitBoard from "lucide-solid/icons/circuit-board";
+import Thermometer from "lucide-solid/icons/thermometer";
+import Eye from "lucide-solid/icons/eye";
+import Gamepad from "lucide-solid/icons/gamepad";
+import Cog from "lucide-solid/icons/cog";
+import Tractor from "lucide-solid/icons/tractor";
+import Lightbulb from "lucide-solid/icons/lightbulb";
+import Droplet from "lucide-solid/icons/droplet";
+import AirVent from "lucide-solid/icons/air-vent";
+import Speaker from "lucide-solid/icons/speaker";
+import Clock from "lucide-solid/icons/clock";
+import RotateCw from "lucide-solid/icons/rotate-cw";
+import Activity from "lucide-solid/icons/activity";
+import Radar from "lucide-solid/icons/radar";
+import Camera from "lucide-solid/icons/camera";
+import Sparkles from "lucide-solid/icons/sparkles";
+import Monitor from "lucide-solid/icons/monitor";
+import Network from "lucide-solid/icons/network";
+import Orbit from "lucide-solid/icons/orbit";
+import Power from "lucide-solid/icons/power";
+import Palette from "lucide-solid/icons/palette";
+import Footprints from "lucide-solid/icons/footprints";
+import FileQuestionMark from "lucide-solid/icons/file-question-mark";
+import type { Component } from "solid-js";
+
+export type IconComponent = Component<{ class: string }>;
+
+const ioIconMap: Record<number, IconComponent> = {
+  0: ToggleLeft,
+  1: SwitchCameraIcon,
+  2: Magnet,
+  3: Gauge,
+  4: MousePointerClick,
+  5: LineChart,
+  6: Zap,
+  7: CircuitBoard,
+  8: Thermometer,
+  9: Eye,
+  10: Gamepad,
+  11: Cog,
+  12: Cog,
+  13: Cog,
+  14: Tractor,
+  15: Cog,
+  16: Lightbulb,
+  17: Droplet,
+  18: AirVent,
+  19: Speaker,
+  20: Cog,
+  21: Clock,
+  22: RotateCw,
+  23: Activity,
+  24: Radar,
+  25: Camera,
+  26: Gauge,
+  27: Sparkles,
+  28: Monitor,
+  29: Network,
+  30: Orbit,
+  31: CircuitBoard,
+  32: Power,
+  33: Palette,
+  34: Footprints,
+  35: Radar,
+  36: Gamepad,
+};
+
+export function getIoIcon(iconName: string): IconComponent {
+  const iconId = parseInt(iconName.split(/[\._-]/)[0]);
+  const icon = ioIconMap[iconId];
+  if (!icon) return FileQuestionMark;
+  return icon;
+}
