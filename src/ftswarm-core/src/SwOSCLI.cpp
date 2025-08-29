@@ -30,6 +30,7 @@ const IOCmdList_t IOCmdList [CLICMD_MAX] = {
   { "triggerUserEvent", false, 0, 10 },
   { "show", false, 0, 0 },
   { "getSwarm", false, 1, 1 },
+  { "getEvents", false, 1, 1 },
   { "save", true, 1, 1 },
   { "useConfig", true, 1, 1 },
   { "setAlias", true, 1, 1 },
@@ -82,7 +83,6 @@ whoami - my own hostname
 uptime - my own uptime
 exit   - end command line interface.
 
-nvs.<Command>(<parameter>, ...) or
 swarm.<Command>(<parameter>, ...) or
 <Alias-Name>.<Command>(<parameter>, ...) or
 <Hostname>.<Controller-xcommand>(<parameter>, ...) or
@@ -90,15 +90,13 @@ swarm.<Command>(<parameter>, ...) or
 
 Swarm Commands:
   get( format )                 - get swarm info aka getSwarm
-
-NVS commands:
-  save(scope)                   - save settings to nvs - 0 config, 1 events
+  save(scope)                   - save settings of all swarm members to nvs - 0 all, 1 config, 2 alias, 3 events
   useConfig(config)             - use event config
 
 Controller commands:
   show                          - identify controller by blue LEDs
   reboot                        - reboot controller
-  save(scope)                   - save settings to nvs - 0 config, 1 events
+  save(scope)                   - save settings to nvs - 0 all, 1 config, 2 alias, 3 events
   setWifi(mode, SSID, PSK)      - set wifi settings
   triggerUserEvent(P1,P2,..P10) - Trigger a user remote code.
   setMicroStepMode(mode)        - set Microstep Mode / ftSwarmPwrDrive only
@@ -106,6 +104,7 @@ Controller commands:
 
 Input commands (A1..A6):
   subscribe( hysteresis )
+  unsubscribe()
   getIOType()
   setIOType( sensorType )
   getValue()
@@ -120,19 +119,38 @@ Input commands (A1..A6):
     
 Joystick commands (JOY1..JOY2):
   subscribe( int hysteresis )
+  unsubscribe()
   getValue()
   onTriggerLR( triggerEvent, actor, p1)
   onTriggerLR( triggerEvent, actor)
   onTriggerFB( triggerEvent, actor, p1)
   onTriggerFB( triggerEvent, actor)
 
-Actor commands (M1..M2):
+DC-Motor commands (M1..M8):
   getIOType()
   setIOType( actorType )
   setSpeed( speed )
   getSpeed()
   setMotionType( motionType )
   getMotionType()
+
+Stepper commands (M1..M4):
+  setIOType( Stepper, highResolution)
+  getIOType()
+  setSpeed( speed )
+  getSpeed()
+  setMotionType( type )
+  getMotionType()
+  setPosition( position )
+  getPosition()
+  setDistance( steps, relative )
+  getDistance()
+  run()
+  isRunning()
+  stop()
+  homing( maxsteps )
+  isHoming()
+  setHomingOffset( steps )
 
 Servo commands (SERVO1..SERVO2):
   setPosition( position )
@@ -489,9 +507,9 @@ void SwOSCLI::executeControllerCmd(void ) {
     case CLICMD_setWifi:            // wifi mode in range from 0 to 2?
                                     if ( !parameter[0].inRange( "mode", 0, 2, response ) ) {}
                                     // wifi is on, a SSID is needed
-                                    else if ( ( parameter[0].getNumber() != wifiOFF ) && ( !parameter[1].getString() ) ) Error( ERROR_SSIDEXPECTED );
+                                    else if ( ( parameter[0].getNumber() != wifiOFF ) && ( !parameter[1].isString() ) ) Error( ERROR_SSIDEXPECTED );
                                     // wifi is in client mode, a PSK is needed
-                                    else if ( ( parameter[0].getNumber() == wifiClient ) && ( !parameter[2].getString() ) ) Error( ERROR_PSKEXPECTED );
+                                    else if ( ( parameter[0].getNumber() == wifiClient ) && ( !parameter[2].isString() ) ) Error( ERROR_PSKEXPECTED );
                                     // everything is fine
                                     else {
                                       OK();
@@ -710,7 +728,7 @@ void SwOSCLI::executeActorCmd( void ) {
 
     case CLICMD_isRunning:      if ( stepper->getIOType() == SWOSIO_STEPPER ) {
                                   stepper->lock();
-                                  sprintf( response, "R: %s",stepper->isRunning() );
+                                  sprintf( response, "R: %d",stepper->isRunning() );
                                   stepper->unlock();
                                 } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
                                 break;
@@ -907,38 +925,12 @@ void SwOSCLI::executeI2CCmd( void ) {
 
 }
 
-void SwOSCLI::executeNvsCmd( void ) {
-
-  uint8_t newConfig;
-
-  switch ( cmd ) {
-
-    case CLICMD_save:           if ( parameter[0].inRange( "scope", 0, 3, response ) ) {
-                                  OK();
-                                  myOSSwarm.Ctrl[0]->save( parameter[0].getNumber() );
-                                }
-                                break;
-
-    case CLICMD_useConfig:      if ( parameter[0].inRange( "config", 1, MAXEVENTCONFIGS, response ) ) {
-                                  OK();
-                                  newConfig = parameter[0].getNumber()-1;
-                                  nvs.activeEventConfig = newConfig;
-                                  myOSSwarm.deleteEvents();
-                                  myOSSwarm.addEvents( newConfig );
-                                }
-                                break;
-
-    default:                    Error( ERROR_INVALIDCMD );
-                                break;
-  }
-
-}
-
 void SwOSCLI::executeSwarmCmd( bool *loggedIn ) {
 
   SerialFormat_t format;
   size_t         size;
   Serialize      *serialize = NULL;
+  uint8_t        newConfig;
 
   switch ( cmd ) {
 
@@ -954,14 +946,40 @@ void SwOSCLI::executeSwarmCmd( bool *loggedIn ) {
                                   free( response );
                                   format = (SerialFormat_t)parameter[0].getNumber();
                                   size = myOSSwarm.approxSerialize( format );
-                                  response = (char *) calloc( myOSSwarm.maxCtrl, size );
+                                  response = (char *) calloc( myOSSwarm.maxCtrl+1, size );
                                   serialize = new Serialize( response, size, format );
                                   serialize->write("R: ");
                                   myOSSwarm.serialize( serialize );
                                   delete serialize;
                                 }
                                 break;
+
+    case CLICMD_getEvents:      if ( parameter[0].inRange( "format", 0, 1, response ) ) {
+                                  free( response );
+                                  format = (SerialFormat_t)parameter[0].getNumber();
+                                  response = (char *) calloc( myOSSwarm.maxCtrl, 10240 );
+                                  serialize = new Serialize( response, 10240, format );
+                                  serialize->write("R: ");
+                                  myOSSwarm.serializeEvents( serialize );
+                                  delete serialize;
+                                }
+                                break;
     
+    case CLICMD_save:           if ( parameter[0].inRange( "scope", 0, 3, response ) ) {
+                                  OK();
+                                  myOSSwarm.save( parameter[0].getNumber() );
+                                }
+                                break;
+
+    case CLICMD_useConfig:      if ( parameter[0].inRange( "config", 1, MAXEVENTCONFIGS-1, response ) ) {
+                                  OK();
+                                  newConfig = parameter[0].getNumber()-1;
+                                  nvs.activeEventConfig = newConfig;
+                                  myOSSwarm.deleteEvents();
+                                  myOSSwarm.addEvents( newConfig );
+                                }
+                                break;
+
     default:                    Error( ERROR_INVALIDCMD );
                                 break;
   }
@@ -1107,14 +1125,13 @@ void SwOSCLI::evalComplexCommand( char *token, bool *loggedIn ) {
   char     command[CLIMAXLINE];
   char     IOName[CLIMAXLINE];
   char     paramIOName[CLIMAXLINE];
-  bool     nvs   = ( strcmp( token, "nvs"   ) == 0 );
   bool     swarm = ( strcmp( token, "swarm" ) == 0 );
 
   // check, if the token is a controller or an io or nvs or swarm
-  if ( (!nvs) && (!swarm) && (!getIO( token, IOName, &ctrl, &io ) ) ) { Error( ERROR_IOEXPECTED ); return; }
+  if ( (!swarm) && (!getIO( token, IOName, &ctrl, &io ) ) ) { Error( ERROR_IOEXPECTED ); return; }
 
   // unvalid io?
-  if ( ( !io ) && ( !ctrl ) && (!swarm) && (!nvs) ) { Error( ERROR_IOEXPECTED ); return; }
+  if ( ( !io ) && ( !ctrl ) && (!swarm) ) { Error( ERROR_IOEXPECTED ); return; }
 
   // now we need another "." and a method
   if ( getNextToken( token ) != EVAL_DOT ) { Error( ERROR_DOTEXPECTED ); return; }
@@ -1208,9 +1225,20 @@ void SwOSCLI::evalComplexCommand( char *token, bool *loggedIn ) {
       io->unlock();
     }
 
-  } else if (nvs) {
+  } else if ( cmd==CLICMD_unsubscribe ) {
 
-    executeNvsCmd();
+    // controller?
+    if ( (!io) && (ctrl ) ) {
+      ctrl->lock();
+      ctrl->unsubscribe( IOName );
+      ctrl->unlock();
+    
+    // IO?
+    } else {
+      io->lock();
+      io->unsubscribe( );
+      io->unlock();
+    }
 
   } else if (swarm) {
 

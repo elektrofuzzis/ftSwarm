@@ -526,6 +526,9 @@ bool setAliasAndType( SwOSObj *selected, SwOSCtrl *ctrl ) {
   // singular class -> done
   if ( SWOSIOCLASS[ioType] == SWOSIOCLASS_SINGULAR ) return anythingChanged;
 
+  // ftPwrDrive -> done
+  if ( io->getCtrl()->getCPU() == FTSWARMPWRDRIVE_1V141 ) return anythingChanged;
+
   // list compatible types and ask user
   int8_t       maxType = -1;
   SwOSIOType_t defaultValue, type[99];

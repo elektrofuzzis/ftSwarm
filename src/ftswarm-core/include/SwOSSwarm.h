@@ -25,14 +25,12 @@
 
 class SwOSSwarm {
 protected:
-  uint16_t lastToken = rand();
   uint16_t readDelay = 25;
   bool     verbose = false;
   bool     initialized = false;
 
   uint8_t  getIndex( FtSwarmSerialNumber_t serialNumber );               // return index of controller with this s/n or are free slot if not found
 	bool     splitID( char *id, uint8_t *index, char *io, size_t sizeIO);  // split identifier
-  uint16_t nextToken( bool rotateToken);
   SwOSIO  *waitFor( char *alias );
   void     startWifi( void );
 
@@ -98,9 +96,7 @@ public:
   // **** API ****
   size_t approxSerialize( SerialFormat_t format );
 	void serialize( Serialize *serialize );                                                        // transfer my swarm to a JSON structure
-  void getToken( Serialize *serialize );                                                         // get a new token
-  uint16_t apiIsAuthorized( uint16_t token, bool rotateToken );                               // check, if it's a correct token
-  bool apiPeekIsAuthorized( uint16_t token );
+  void serializeEvents( Serialize *serialize );
 
   void setState( SwOSState_t state ); 
 
@@ -141,6 +137,8 @@ public:
 
   // delete all events
   void deleteEvents( void );
+
+  void save( uint8_t scope );
 
 };
 

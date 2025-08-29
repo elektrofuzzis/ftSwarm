@@ -440,6 +440,36 @@ void SwOSStepper::setValue( long distance, long position, bool isHoming, bool is
   this->motorIsRunning = isRunning;
 }
 
+void SwOSStepper::read() {
+  
+  // no work on remote sensors
+  if (!ctrl->isLocal()) return;
+
+  // ftPwrDrive
+  if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && ( ftPwrDrive ) ) { 
+  
+    distance = ftPwrDrive->lastDistance[port];
+    position = ftPwrDrive->lastPosition[port];
+    motorIsRunning = ( ftPwrDrive->lastState[port] & ISMOVING ) > 0;
+    motorIsHoming  = ( ftPwrDrive->lastState[port] & HOMING ) > 0;
+
+  }
+
+}
+
+void SwOSStepper::serialize( Serialize *serialize ) {
+
+  serialize->startObject( );
+  SwOSIO::serialize( serialize );
+  serialize->item( SERIALIZE_LITERAL_SPEED, getSpeed() );
+  serialize->item( SERIALIZE_LITERAL_HIGHRESOLUTION, highResolution );
+  serialize->item( SERIALIZE_LITERAL_POSITION, position );
+  serialize->item( SERIALIZE_LITERAL_DISTANCE, distance );
+  serialize->item( SERIALIZE_LITERAL_HOMING, isHoming() );
+  serialize->item( SERIALIZE_LITERAL_RUNNING, isRunning() );
+  serialize->endObject();
+}
+
 /***************************************************
  *
  *   SwOSServo

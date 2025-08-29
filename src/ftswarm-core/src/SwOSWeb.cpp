@@ -10,6 +10,8 @@
 #include <esp_err.h>
 #include <esp_http_server.h>
 
+#include <freertos/task.h>
+
 #include "serialize.h"
 #include "SwOSNVS.h"
 #include "SwOSHW.h"
@@ -18,6 +20,8 @@
 #include "sfs_files.h"
 #include "SwOSLog.h"
 #include "SwOSCLI.h"
+
+#define GETSWARMDELAY 1000
 
 #define SCRATCH_BUFSIZE (10240)
 #define HTTPD_401 "401 Unauthorized"
@@ -29,6 +33,7 @@ typedef struct http_server_context {
 
 httpd_handle_t UIServer = NULL;
 httpd_handle_t streamServer = NULL;
+int authenticatedSession = -1;
 
 #define CHECK_FILE_EXTENSION(filename, ext) (strcasecmp(&filename[strlen(filename) - strlen(ext)], ext) == 0)
 
@@ -234,6 +239,48 @@ struct async_resp_arg {
     uint8_t* message;
 };
 
+#define MAXWSTASKPAYLOAD 50 * 1024
+
+static void wsTask( void *args ) {
+
+  size_t max_clients = CONFIG_LWIP_MAX_LISTENING_TCP;
+
+  int client_fds[max_clients];
+  int client_info;
+  httpd_ws_frame_t ws_pkt;
+
+  memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+  ws_pkt.type    = HTTPD_WS_TYPE_TEXT;
+  ws_pkt.payload = (uint8_t*) calloc( MAXWSTASKPAYLOAD, 1 );
+  
+  Serialize        serialize( (char*) ws_pkt.payload, MAXWSTASKPAYLOAD, SERIALIZE_RAW );
+
+  while(1) {
+
+    max_clients = CONFIG_LWIP_MAX_LISTENING_TCP;
+    esp_err_t ret = httpd_get_client_list( UIServer, &max_clients, client_fds);
+
+    // nobody connected?
+    if ( max_clients == 0 ) continue;
+
+    serialize.reset();
+    myOSSwarm.serialize( &serialize );
+    ws_pkt.len = strlen( (char *)  ws_pkt.payload );
+
+    for (int i = 0; i < max_clients; i++) {
+
+        client_info = httpd_ws_get_fd_info( UIServer, client_fds[i]) ;
+        
+        if ( client_info == HTTPD_WS_CLIENT_WEBSOCKET ) httpd_ws_send_frame_async( UIServer, client_fds[i], &ws_pkt );
+
+    }
+
+    delay( GETSWARMDELAY );
+
+  }
+
+}
+
 static void wsAsyncHandler( void *varg )
 {
     httpd_ws_frame_t ws_pkt;
@@ -241,43 +288,23 @@ static void wsAsyncHandler( void *varg )
 
     char *response;
     SwOSCLI cli;
-    bool loggedIn = false;
+    bool loggedIn = ( arg->fd == authenticatedSession );
+
     response = cli.eval( (char*) arg->message, &loggedIn );
+
+    if ( loggedIn ) authenticatedSession = arg->fd;
     
     memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
     ws_pkt.payload = (uint8_t *)response;
     ws_pkt.len     = strlen(response);
     ws_pkt.type    = HTTPD_WS_TYPE_TEXT;
-    
-    static size_t max_clients = CONFIG_LWIP_MAX_LISTENING_TCP;
-    size_t        fds          = max_clients;
-    int           client_fds[max_clients];
-
-    esp_err_t ret = httpd_get_client_list( UIServer, &fds, client_fds);
-
-    // stop in case of any error
-    if (ret != ESP_OK) return;
 
     httpd_ws_send_frame_async( arg->handle, arg->fd, &ws_pkt );
     free(response);
     
-    /*
-
-    // send response to all clients
-    for (int i = 0; i < fds; i++) {
-        int client_info = httpd_ws_get_fd_info( UIServer, client_fds[i]) ;
-        if ( client_info == HTTPD_WS_CLIENT_WEBSOCKET ) {
-            httpd_ws_send_frame_async( arg->handle, client_fds[i], &ws_pkt );
-        }
-    }
-
-    */
-
     free( arg->message );
     free( arg );
 }
-
-static const char *TAG = "WebSocket Server";
 
 static esp_err_t wsHandler(httpd_req_t *req) {
 
@@ -293,7 +320,7 @@ static esp_err_t wsHandler(httpd_req_t *req) {
   
   // any error?
   if (ret != ESP_OK)  {
-    ESP_LOGE(TAG, "httpd_ws_recv_frame failed to get frame len with %d", ret);
+    SWARM_LOG_ERROR("httpd_ws_recv_frame failed to get frame len with %d", ret);
     return ret;
   }
 
@@ -302,12 +329,12 @@ static esp_err_t wsHandler(httpd_req_t *req) {
 
   // allocate a butter to get the message
   buf = (uint8_t *) calloc(1, ws_pkt.len + 1);
-  if (buf == NULL) { ESP_LOGE(TAG, "Failed to calloc memory for buf"); return ESP_ERR_NO_MEM; }
+  if (buf == NULL) { SWARM_LOG_ERROR( "Failed to calloc memory for buf"); return ESP_ERR_NO_MEM; }
 
   // catch the message
   ws_pkt.payload = buf;
   ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
-  if (ret != ESP_OK) { ESP_LOGE(TAG, "httpd_ws_recv_frame failed with %d", ret); free(buf); return ret; }
+  if (ret != ESP_OK) { SWARM_LOG_ERROR( "httpd_ws_recv_frame failed with %d", ret); free(buf); return ret; }
 
   // accept text only
   if (ws_pkt.type != HTTPD_WS_TYPE_TEXT ) { free(buf); return ESP_ERR_NOT_SUPPORTED; }
@@ -373,6 +400,8 @@ bool SwOSStartWebServer( void ) {
   // ws
   httpd_uri_t ws = { .uri = "/ws", .method = HTTP_GET, .handler = &wsHandler, .user_ctx = NULL, .is_websocket  = true };
   httpd_register_uri_handler(UIServer, &ws);
+
+  xTaskCreatePinnedToCore( wsTask, "wsTask", 10000, NULL, 1, NULL, 0 );
 
   return true;
 

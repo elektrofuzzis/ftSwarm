@@ -42,6 +42,11 @@ void SwOSDigitalInput::setupLocal() {
     return;
   }
 
+  // ftPwrDrive
+  if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && (ftPwrDrive) ) {
+    return;
+  }
+  
   if ( ioType == SWOSIO_BUTTON ) return; // all done
 
   // local init
@@ -94,9 +99,22 @@ void SwOSDigitalInput::read() {
   // no work on remote sensors
   if (!ctrl->isLocal()) return;
 
-  // ftDuino?
-  if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && ( ftPwrDrive ) ) { setReading( ftDuino->input[port] ); return; }
-  if ( ( ctrl->getCPU() == FTSWARMDUINO_1V141 )    && ( ftDuino ) )    { setReading( ftDuino->input[port] ); return; }
+  // ftPwrDrive
+  if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && ( ftPwrDrive ) ) { 
+    
+    if (port == SWOS_NOPORT) 
+      setReading( ( ftPwrDrive->lastState[0] & EMERCENCYSTOP ) > 0 ); 
+    else                     
+      setReading( ( ftPwrDrive->lastState[port] & ENDSTOP ) > 0 ); 
+
+    return;
+  }
+
+  // ftDuino
+  if ( ( ctrl->getCPU() == FTSWARMDUINO_1V141 ) && ( ftDuino ) ) { 
+    setReading( ftDuino->input[port] ); 
+    return; 
+  }
 
   if ( ioType == SWOSIO_BUTTON ) {
     if (hc165) setReading( ( ( hc165->getValue( ) & (1<<port) ) >0 ) );

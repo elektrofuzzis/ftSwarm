@@ -33,7 +33,6 @@ uint8_t SwOSCtrl::setupLocalInputs( uint8_t maxIO ) {
 
   char name[10];
 
-  // GPIO-based
   for ( uint8_t i=0; i<MAXIOS[ CPU ].inputs; i++ ) {
 
     // PwrCtl
@@ -41,30 +40,24 @@ uint8_t SwOSCtrl::setupLocalInputs( uint8_t maxIO ) {
 
       io[ maxIO++ ] = new SwOSAnalogInput("PWRCTL", i, this, SWOSIO_POWER );
 
+    // ftPwrDrive
+    } else if (CPU == FTSWARMPWRDRIVE_1V141 ) {
+
+      if ( i==4 ) {
+
+        io[ maxIO++ ] = new SwOSDigitalInput( "EM", SWOS_NOPORT, this, SWOSIO_DIGITAL );
+
+      } else {
+
+        sprintf( name, "ES%d", i+1 );
+        io[ maxIO++ ] = new SwOSDigitalInput( name, i, this, SWOSIO_DIGITAL );
+
+      }
+
     // normal input
     } else { 
       sprintf( name, "A%d", i+1 );
       io[ maxIO++ ] = new SwOSDigitalInput( name, i, this, SWOSIO_DIGITAL );
-    }
-
-  }
-  
-  // PWRDRIVE
-  if (CPU == FTSWARMPWRDRIVE_1V141 ) {
-
-    for (uint8_t i=0; i<4; i++) { 
-
-      if (i==4) {
-        // general emergency button
-        sprintf( name, "EM", i+1 );
-        io[ maxIO++ ] = new SwOSDigitalInput( name, SWOS_NOPORT, this, SWOSIO_DIGITAL );
-
-      } else {
-        // normal endstops
-        sprintf( name, "ES", i+1 );
-        io[ maxIO++ ] = new SwOSDigitalInput( name, i, this, SWOSIO_DIGITAL );
-      }
-
     }
 
   }
@@ -226,28 +219,26 @@ uint8_t SwOSCtrl::setupLocalJoysticks( uint8_t maxIO, SwOSCtrlConfig_t ctrlConfi
 
 uint8_t SwOSCtrl::setupLocalI2C( uint8_t maxIO, FtSwarmExtMode_t extensionPort ) {
 
-  // Start I2C, if extention port is configured as I2C. 
-  // ToDo I2CSlave 
-  if ( ( local ) && 
-       ( ( nvs.extensionPort == FTSWARM_EXT_I2C_MASTER ) ||
-         ( nvs.extensionPort == FTSWARM_EXT_LIDAR ) 
-       )
-      ) {
+  if (!local) return maxIO;
 
-    if ( GPIO_I2C[CPU][0][0] != GPIO_NUM_NC ) {
-    
-      // start I2C
-      Wire.begin(  GPIO_I2C[CPU][0][0], GPIO_I2C[CPU][0][1] );
-  
-      // 400kHz only
-      Wire.setClock(400000);
+  // external I2C
+  if ( ( GPIO_I2C[CPU][0][0] != GPIO_NUM_NC ) && ( ( nvs.extensionPort == FTSWARM_EXT_I2C_MASTER ) || ( nvs.extensionPort == FTSWARM_EXT_LIDAR ) ) ) {
+    Wire.begin( GPIO_I2C[CPU][0][0], GPIO_I2C[CPU][0][1], 400000 );
+  }
 
-    }
-
+  // internal I2C
+  if ( GPIO_I2C[CPU][1][0] != GPIO_NUM_NC ) {
+    Wire1.begin( GPIO_I2C[CPU][1][0], GPIO_I2C[CPU][1][1], 400000 );
   }
 
   // use parameter to handle remote devices correctly
   if ( extensionPort == FTSWARM_EXT_I2C_SLAVE ) { io[ maxIO++ ] = new SwOSI2C ( "I2C", this, nvs.I2CAddr ); };
+
+  // ftPwrDrive
+  if ( CPU == FTSWARMPWRDRIVE_1V141 ) ftPwrDrive = new FtPwrDrive( 32, &Wire1 ); 
+
+  // ftDuino
+  if ( CPU == FTSWARMDUINO_1V141)     ftDuino    = new SwOSDuino( &Wire1 );
 
   return maxIO;
 
@@ -333,19 +324,16 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSC
   io = (SwOSIO **) calloc( IOs, sizeof(SwOSIO*) );
 
   // define common hardware
-  if (local) {
-
-    if ( CPU == FTSWARMPWRDRIVE_1V141 ) ftPwrDrive = new FtPwrDrive( 32, 5, 4 );
-    if ( CPU == FTSWARMDUINO_1V141)     ftDuino = new SwOSDuino();
+  if (local) { 
 
     uint8_t maxIO = 0;
+    maxIO = setupLocalI2C( maxIO, ctrlConfig.extensionPort );
     maxIO = setupLocalInputs( maxIO );
     maxIO = setupLocalMotors( maxIO, motors );
     maxIO = setupLocalServos( maxIO, servos );
     if ( MAXIOS[ CPU ].pixels ) maxIO = setupLocalPixels( maxIO );
     maxIO = setupLocalButtons( maxIO );
     maxIO = setupLocalJoysticks( maxIO, ctrlConfig );
-    maxIO = setupLocalI2C( maxIO, ctrlConfig.extensionPort );
     if ( ctrlConfig.gyro ) maxIO = setupLocalGyro( maxIO );
     if ( CPU == FTSWARMCONTROL_1V3 ) maxIO = setupLocalOLED( maxIO );
   }
@@ -466,11 +454,11 @@ void SwOSCtrl::read() {
 
   if (ftPwrDrive) {
 
-    // get data from ftDuino
+    // get data from ftPwrDrive
     ftPwrDrive->read( );
     
     // errors during I2C communication?
-    if ( ftPwrDrive->getError() != 0 ) SWARM_LOG_ERROR( "ftPrwDrive I2C connection broken." );
+    if ( ftPwrDrive->getError() != 0 ) SWARM_LOG_ERROR( "ftPrwDrive I2C error %d.", ftPwrDrive->getError() );
 
   }
 
@@ -602,6 +590,16 @@ bool SwOSCtrl::changeIOType( uint8_t index, SwOSIOType_t newIOType ) {
   }
 
   return true;
+
+}
+
+void SwOSCtrl::serializeEvents( Serialize *serialize ) {
+
+  for (uint8_t i=0; i<IOs; i++) { 
+
+    if ( ( io[i] ) && ( io[i]->isEventInput() ) ) ( ( SwOSInput* ) io[i])->serializeEvents( serialize );
+
+  }
 
 }
 
@@ -995,7 +993,7 @@ void SwOSCtrl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
 
   // *** classic ftSwarm ***
   if (pixel0) pixel0->setColor( LEDCOLOR0[state] );
-  if (pixel1) pixel1->setColor( LEDCOLOR0[state] );
+  if (pixel1) pixel1->setColor( LEDCOLOR1[state] );
   
   // *** ftSwarmControl ***
   if (!oled) return;

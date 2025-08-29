@@ -32,7 +32,8 @@ class SwOSCAM;
 class SwOSCounter;
 class SwOSStepper;
 
-const uint32_t LEDCOLOR0[MAXSTATE] = { CRGB::Black, CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red, CRGB::Cyan, CRGB::Aquamarine, CRGB::DeepPink };
+const uint32_t 
+LEDCOLOR0[MAXSTATE] = { CRGB::Black, CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red, CRGB::Cyan, CRGB::Aquamarine, CRGB::DeepPink };
 const uint32_t LEDCOLOR1[MAXSTATE] = { CRGB::Black, CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red, CRGB::Cyan, CRGB::Aquamarine, CRGB::DeepPink };
 
 const char     OLEDMSG[MAXSTATE][20] = { "offline", "booting", "connecting wifi", "online", "ERROR - check logs", "waiting on HW", "It's me!", "FATAL - check logs" };
@@ -158,8 +159,9 @@ public:
 	const char *       getVersionCPU();                             // my CPU type as string
   bool               isLocal() { return local; };                 // local or remote?
 	char *             getHostname( );                              // hostname
-	void               serialize( Serialize *serialize );   // send board & IO device information as a json string
-  void               serializeIO( Serialize *serialize ); // send IO device information as a json string
+	void               serialize( Serialize *serialize );           // send board & IO device information as a json string
+	void               serializeEvents( Serialize *serialize );
+  void               serializeIO( Serialize *serialize );         // send IO device information as a json string
 
   // load my port & alias settings from NVS
   void loadFromNVS( void );                                      

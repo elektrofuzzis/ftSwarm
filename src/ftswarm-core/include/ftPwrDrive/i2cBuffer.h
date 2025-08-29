@@ -2,8 +2,11 @@
 #define i2cBuffer_h
 
 #include <Arduino.h>
+#include <Wire.h>
 
 class i2cBuffer {
+  private:
+    TwoWire *twi = NULL;
   public:
     uint8_t data[64];
     uint8_t len = 0;
@@ -59,6 +62,8 @@ class i2cBuffer {
     void sendBuffer( uint8_t address );
       // send data
     void receiveBuffer( uint8_t address, uint8_t quantity );
+
+    void begin( TwoWire *twi ) { this->twi = twi; };
 };
 
 #endif

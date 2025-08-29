@@ -7,6 +7,8 @@
 #include "SwOSFilter.h"
 #include <fastLed.h>
 
+#include <ftPwrDrive/ftPwrDrive.h>
+
 //#define FIRMWARE
 // #define SEILBAHN
 // #define CONVENTION24
@@ -16,10 +18,34 @@
 void setup() {
 
   Serial.begin(115200);
+/*
+  Wire.begin( 5, 4, 400000 );
+
+  FtPwrDrive *ftPwrDrive = new FtPwrDrive( 32, &Wire );
+
+  ftPwrDrive->setPosition( M1, 0 );
+  printf( "ftPwrDrive->getError() %d\n", ftPwrDrive->getError() );
+  printf( "ftPwrDrive->getPosition( M1 ) %ld\n", ftPwrDrive->getPosition( M1 ) );
+  printf( "getPosition ftPwrDrive->getError() %d\n", ftPwrDrive->getError() );
+  ftPwrDrive->setPosition( M1, 1000 );
+  printf( "setPosition ftPwrDrive->getError() %d\n", ftPwrDrive->getError() );
+  printf( "ftPwrDrive->getPosition( M1 ) %ld\n", ftPwrDrive->getPosition( M1 ) );
+  printf( "getPosition ftPwrDrive->getError() %d\n", ftPwrDrive->getError() );
+
+  uint8_t  lastState[4];
+  long     lastPosition[4];
+  long     lastDistance[4];
+
+  ftPwrDrive->getStateAll( &lastState[0], &lastState[1], &lastState[2], &lastState[3] );
+  printf( "getStateAll ftPwrDrive->getError() %d %X %X %X %x\n", ftPwrDrive->getError(), lastState[0], lastState[1], lastState[2], lastState[3] );
+  ftPwrDrive->getPositionAll( &lastPosition[0], &lastPosition[1], &lastPosition[2], &lastPosition[3] );
+  printf( "getPositionAll ftPwrDrive->getError() %d\n", ftPwrDrive->getError() );
+  ftPwrDrive->getStepsToGoAll( &lastDistance[0], &lastDistance[1], &lastDistance[2], &lastDistance[3] );
+  printf( "getStepsToGoAll ftPwrDrive->getError() %d\n", ftPwrDrive->getError() );
+*/
   firmware();
   ESP.restart();
 
-  
 }
 
 

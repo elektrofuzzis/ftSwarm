@@ -116,8 +116,8 @@ class SwOSDCMotor : public SwOSMotor {
   protected:
   
     // stepper motors
-    long    distance;
-    long    position;
+    long    distance = 0;
+    long    position = 0;
     uint8_t pwrDriveMotor;
     bool    motorIsHoming;
     bool    motorIsRunning;
@@ -135,6 +135,8 @@ class SwOSDCMotor : public SwOSMotor {
     SwOSStepper(const char *name, uint8_t port, SwOSCtrl *ctrl);
     virtual ~SwOSStepper( );
     virtual bool isStepper( void ) { return true; };
+    virtual void read();
+    virtual void serialize( Serialize *serialize );
    
     // commands
     virtual void setValue( long distance, long position, bool isHoming, bool isRunning );

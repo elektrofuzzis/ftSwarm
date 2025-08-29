@@ -68,8 +68,8 @@ const SwOSMaxIO_t MAXIOS[FTSWARMMAXVERSION] = {
   /* FTSWARMRS_2V0 */        {  7,     2,     0,       2,     2,      0,       0,         6,        0 },
   /* FTSWARMRS_2V1 */        {  7,     2,     0,       2,     2,      0,       0,         6,        0 },
   /* FTSWARMCAM_3V12 */      {  5,     2,     0,       1,     2,      0,       0,         4,        0 }, 
-  /* FTSWARMPWRDRIVE_1V14 */ {  0,     0,     0,       0,     2,      0,       0,         NOPWRCTL, 0 },
   /* FTSWARMDUINO_1V14 */    {  0,     0,     0,       0,     2,      0,       0,         NOPWRCTL, 0 },
+  /* FTSWARMPWRDRIVE_1V14 */ {  5,     4,     0,       0,     2,      0,       0,         NOPWRCTL, 0 },
   /* FTSWARMXL_1V00 */       {  8,     8,     0,       0,     2,      0,       0,         NOPWRCTL, 0 },
   /* FTSWARMRC_1V140 */      {  7,     4,     4,       0,     1,      0,       0,         6,        0 }
 };
@@ -151,7 +151,7 @@ const SwOSIODefinition_t GPIO_INPUT[FTSWARMMAXVERSION][MAXINPUTS] = {
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }
                                },
 
-    /* FTSWARMPWRDRIVE_1V14 */ { { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
+    /* FTSWARMDUINO_1V14 */    { { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
@@ -164,7 +164,7 @@ const SwOSIODefinition_t GPIO_INPUT[FTSWARMMAXVERSION][MAXINPUTS] = {
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }
                                },
 
-    /* FTSWARMDUINO_1V14 */    { { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }, 
+    /* FTSWARMPWRDRIVE_1V14 */ { { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 }, 
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
                                  { GPIO_NUM_NC,  ADC_UNIT_1, ADC1_CHANNEL_MAX, ADC_ATTEN_DB_11 },
@@ -212,8 +212,8 @@ const gpio_num_t USTCPUA[FTSWARMMAXVERSION][2] =
     /* FTSWARMRS_2V0 */        { xGPIO_NUM_42, xGPIO_NUM_41},
     /* FTSWARMRS_2V1 */        { xGPIO_NUM_42, xGPIO_NUM_41},
     /* FTSWARMCAM_3V12 */      { GPIO_NUM_3,   GPIO_NUM_NC},
-    /* FTSWARMPWRDRIVE_1V14 */ { GPIO_NUM_NC,  GPIO_NUM_NC},
     /* FTSWARMDUINO_1V14 */    { GPIO_NUM_NC,  GPIO_NUM_NC},
+    /* FTSWARMPWRDRIVE_1V14 */ { GPIO_NUM_NC,  GPIO_NUM_NC},
     /* FTSWARMXL_1V00 */       { GPIO_NUM_NC,  GPIO_NUM_NC},
     /* FTSWARMRC_1V140 */      { xGPIO_NUM_42, xGPIO_NUM_41}
   };   
@@ -225,8 +225,8 @@ const gpio_num_t GPIO_ACTOR[FTSWARMMAXVERSION][8][2] =
     /* FTSWARMRS_2V0 */       { { GPIO_NUM_14,  GPIO_NUM_21 }, { xGPIO_NUM_45, xGPIO_NUM_46}, { GPIO_NUM_NC, GPIO_NUM_8},  { GPIO_NUM_NC, GPIO_NUM_9},    { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC},  { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
     /* FTSWARMRS_2V1 */       { { GPIO_NUM_14,  GPIO_NUM_21 }, { xGPIO_NUM_45, xGPIO_NUM_46}, { GPIO_NUM_NC, GPIO_NUM_8},  { GPIO_NUM_NC, GPIO_NUM_9},    { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC},  { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
     /* FTSWARMCAM_3V12 */     { { xGPIO_NUM_40, xGPIO_NUM_41}, { GPIO_NUM_1,   GPIO_NUM_2},   { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC},   { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC},  { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
-    /* FTSWARMPWRDRIVE_1V14*/ { { GPIO_NUM_NC,  GPIO_NUM_NC},  { GPIO_NUM_NC,  GPIO_NUM_NC},  { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC},   { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC},  { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
     /* FTSWARMDUINO_1V14*/    { { GPIO_NUM_NC,  GPIO_NUM_NC},  { GPIO_NUM_NC,  GPIO_NUM_NC},  { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC},   { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC},  { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
+    /* FTSWARMPWRDRIVE_1V14*/ { { GPIO_NUM_NC,  GPIO_NUM_NC},  { GPIO_NUM_NC,  GPIO_NUM_NC},  { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC},   { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC},  { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} },
     /* FTSWARMXL_1V00*/       { { GPIO_NUM_16,  GPIO_NUM_15},  { GPIO_NUM_14,  GPIO_NUM_13},  { GPIO_NUM_11, GPIO_NUM_12}, { xGPIO_NUM_42, xGPIO_NUM_41}, { xGPIO_NUM_40, GPIO_NUM_39}, { GPIO_NUM_38, GPIO_NUM_37}, { GPIO_NUM_19, GPIO_NUM_20}, { GPIO_NUM_35, GPIO_NUM_36} },
     /* FTSWARMRC_1V140 */     { { GPIO_NUM_14,  GPIO_NUM_21 }, { xGPIO_NUM_45, xGPIO_NUM_46}, { GPIO_NUM_15, GPIO_NUM_17}, { GPIO_NUM_18, xGPIO_NUM_47},  { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC},  { GPIO_NUM_NC, GPIO_NUM_NC}, { GPIO_NUM_NC, GPIO_NUM_NC} }
   };   
@@ -238,8 +238,8 @@ const gpio_num_t GPIO_SERVO[FTSWARMMAXVERSION][4] =
     /* FTSWARMRS_2V0 */        { xGPIO_NUM_47,  GPIO_NUM_8,  GPIO_NUM_9, GPIO_NUM_NC},
     /* FTSWARMRS_2V1 */        { xGPIO_NUM_47,  GPIO_NUM_15, GPIO_NUM_8,  GPIO_NUM_9},
     /* FTSWARMCAM_3V12 */      { xGPIO_NUM_47,  GPIO_NUM_NC, GPIO_NUM_NC, GPIO_NUM_NC},
-    /* FTSWARMPWRDRIVE_1V14 */ { GPIO_NUM_NC,   GPIO_NUM_NC, GPIO_NUM_NC, GPIO_NUM_NC},
     /* FTSWARMDUINO_1V14 */    { GPIO_NUM_NC,   GPIO_NUM_NC, GPIO_NUM_NC, GPIO_NUM_NC},
+    /* FTSWARMPWRDRIVE_1V14 */ { GPIO_NUM_NC,   GPIO_NUM_NC, GPIO_NUM_NC, GPIO_NUM_NC},
     /* FTSWARMXL_1V00 */       { GPIO_NUM_33,   GPIO_NUM_21, GPIO_NUM_NC, GPIO_NUM_NC},
     /* FTSWARMRC_1V140 */      { GPIO_NUM_NC,   GPIO_NUM_NC, GPIO_NUM_NC, GPIO_NUM_NC}
   };
@@ -251,8 +251,8 @@ const bool HASEXTPORT[FTSWARMMAXVERSION] = {
   /* FTSWARMRS_2V0 */        true,
   /* FTSWARMRS_2V1 */        true,
   /* FTSWARMCAM_3V12 */      false, 
-  /* FTSWARMPWRDRIVE_1V14 */ false,
   /* FTSWARMDUINO_1V14 */    false,
+  /* FTSWARMPWRDRIVE_1V14 */ false,
   /* FTSWARMXL_1V00 */       true,
   /* FTSWARMRC_1V140 */      false
 };
@@ -270,10 +270,10 @@ const gpio_num_t GPIO_I2C[FTSWARMMAXVERSION][2][2] = {
                                { GPIO_NUM_NC, GPIO_NUM_NC } },
   /* FTSWARMCAM_3V12 */      { { GPIO_NUM_NC, GPIO_NUM_NC }, 
                                { GPIO_NUM_NC, GPIO_NUM_NC } }, 
-  /* FTSWARMPWRDRIVE_1V14 */ { { GPIO_NUM_5,  GPIO_NUM_4  }, 
-                               { GPIO_NUM_NC, GPIO_NUM_NC } }, 
-  /* FTSWARMDUINO_1V14 */    { { GPIO_NUM_5,  GPIO_NUM_4  }, 
-                               { GPIO_NUM_NC, GPIO_NUM_NC } }, 
+  /* FTSWARMDUINO_1V14 */    { { GPIO_NUM_NC, GPIO_NUM_NC }, 
+                               { GPIO_NUM_5,  GPIO_NUM_4  } }, 
+  /* FTSWARMPWRDRIVE_1V14 */ { { GPIO_NUM_NC, GPIO_NUM_NC },
+                               { GPIO_NUM_5,  GPIO_NUM_4 } }, 
   /* FTSWARMXL_1V00 */       { { GPIO_NUM_33, GPIO_NUM_21 }, 
                                { GPIO_NUM_NC, GPIO_NUM_NC } },
   /* FTSWARMRC_1V140 */      { { GPIO_NUM_NC, GPIO_NUM_NC }, 

@@ -16,6 +16,7 @@ typedef enum {
   CLICMD_triggerUserEvent,
   CLICMD_show,
   CLICMD_getSwarm,
+  CLICMD_getEvents,
   CLICMD_save,
   CLICMD_useConfig,
   CLICMD_setAlias,
@@ -80,8 +81,9 @@ class SwOSCLIParameter {
     void setIO( SwOSIO *io );
     SwOSIO *getIO( void ) { return io; };
 
-    bool isNumber( void ) { return (!num); };
-    bool isIO( void ) { return (!io); };
+    bool isNumber( void ) { return (num); };
+    bool isIO( void ) { return (io); };
+    bool isString( void ) { return ( (str) && (*str) ); }  // ptr not null and not an empty string
 
     // Test, if an "execute"-parameter is in Range or not
     bool inRange( const char *name, int minValue, int maxValue, char *error );

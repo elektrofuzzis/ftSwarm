@@ -171,17 +171,6 @@ void SwOSSwarm::connect( void ) {
 
 }
 
-
-uint16_t SwOSSwarm::nextToken( bool rotateToken ) {
-
-  uint16_t newToken = ( 2 + ( lastToken ^ nvs.swarmPIN ) ) & 0xFFFF;
-
-  if ( rotateToken ) lastToken = newToken;
-
-  return newToken;
-  
-}
-
 SwOSIO *SwOSSwarm::waitFor( char *alias ) {
 
   SwOSIO *me = NULL;
@@ -561,9 +550,26 @@ size_t SwOSSwarm::approxSerialize( SerialFormat_t format ) {
 
 }
 
+void SwOSSwarm::serializeEvents( Serialize *serialize ) {
+
+  serialize->startObject( );
+  serialize->item( SERIALIZE_LITERAL_ACTIVECONFIG, nvs.activeEventConfig );
+  serialize->startArray( SERIALIZE_LITERAL_EVENTS );
+  for (uint8_t i=0; i<=maxCtrl; i++ ) {
+    if ( Ctrl ) Ctrl[i]->serializeEvents( serialize );
+  }
+  serialize->endArray();
+  serialize->endObject();                                  
+
+}
+
 void SwOSSwarm::serialize( Serialize *serialize) {
 
-	serialize->startArray( );
+  serialize->startObject( );
+  serialize->item( SERIALIZE_LITERAL_NAME, nvs.swarmName );
+  serialize->item( SERIALIZE_LITERAL_KELDA, Ctrl[0]->IAmKelda );
+
+	serialize->startArray( SERIALIZE_LITERAL_CTRLS );
 
 	for (uint8_t i=0; i<=maxCtrl;i++) {
 
@@ -576,17 +582,8 @@ void SwOSSwarm::serialize( Serialize *serialize) {
 	}
 
 	serialize->endArray();
-
-}
-
-void SwOSSwarm::getToken( Serialize* serialize) {
-
-  lastToken = rand();
-
-  serialize->startObject( );
-  serialize->item( SERIALIZE_LITERAL_TOKEN, lastToken );
   serialize->endObject();
-  
+
 }
 
 bool SwOSSwarm::splitID( char *id, uint8_t *index, char *io, size_t sizeIO) {
@@ -627,20 +624,9 @@ bool SwOSSwarm::splitID( char *id, uint8_t *index, char *io, size_t sizeIO) {
 	return true;
 } 
 
-uint16_t SwOSSwarm::apiIsAuthorized( uint16_t token, bool rotateToken ) {
-
-  uint16_t n = nextToken(rotateToken);
-
-  if ( token != n ) return 401;
-
-  return 200;
-}
-
-bool SwOSSwarm::apiPeekIsAuthorized( uint16_t token ) {
-  return token == lastToken;
-}
-
 void SwOSSwarm::setState( SwOSState_t state ) {
+
+  printf("setState %d\n", state);
 
   if (Ctrl[0]) {
     Ctrl[0]->lock();
@@ -1006,4 +992,12 @@ void SwOSSwarm::addEvents( uint8_t config, FtSwarmSerialNumber_t sn ) {
 
   }
 
+}
+
+void SwOSSwarm::save( uint8_t scope ) {
+ 
+  for (uint8_t i=0; i<=maxCtrl; i++) {
+    if ( Ctrl[i] ) Ctrl[i]->save( scope );
+  }
+  
 }

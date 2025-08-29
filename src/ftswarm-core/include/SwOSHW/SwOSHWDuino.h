@@ -24,6 +24,7 @@ class SwOSDuino {
     public:
         uint16_t input[8];
         uint16_t error = 0;
+        SwOSDuino( TwoWire *twi ) { i2c.begin( twi ); };
         void setIOType( uint8_t port, SwOSIOType_t ioType );
         void setMotor( uint8_t port, FtSwarmMotion_t _motionType, int16_t speed);
         void read( void );

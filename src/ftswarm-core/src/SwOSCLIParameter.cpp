@@ -55,7 +55,9 @@ void SwOSCLIParameter::setIO( SwOSIO *io ) {
 
 }
 
-long SwOSCLIParameter::getNumber( void ){
+long SwOSCLIParameter::getNumber( void ) {
+
+  if (!num) return 0;
 
   return xToL( num );
 

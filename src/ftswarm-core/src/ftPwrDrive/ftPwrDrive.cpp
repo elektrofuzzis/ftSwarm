@@ -67,10 +67,12 @@
 
 i2cBuffer i2c;
 
-FtPwrDrive::FtPwrDrive( uint8_t myI2CAddress, int sda, int scl ) { 
+FtPwrDrive::FtPwrDrive( uint8_t myI2CAddress, TwoWire *twi ) { 
   // // constructor
+  
   i2cAddress = myI2CAddress;
-  Wire.begin( sda, scl );
+  i2c.begin( twi );
+
 }
 
 void FtPwrDrive::Watchdog( long wtime ) {
@@ -365,7 +367,7 @@ void FtPwrDrive::read( void ) {
   getPositionAll( &lastPosition[0], &lastPosition[1], &lastPosition[2], &lastPosition[3] );
   getStepsToGoAll( &lastDistance[0], &lastDistance[1], &lastDistance[2], &lastDistance[3] );
 
-  error += i2c.error;
+  error = i2c.error;
   
 }
 

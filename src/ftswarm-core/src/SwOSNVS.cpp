@@ -339,9 +339,6 @@ void SwOSNVS::loadEvents( void ) {
     ESP_ERROR_CHECK( nvs_get_blob( my_handle, config, events[i], &dummy ) );
   }
 
-  // commit
-  ESP_ERROR_CHECK( nvs_commit( my_handle ) );
-
   nvs_close( my_handle );
 
 }

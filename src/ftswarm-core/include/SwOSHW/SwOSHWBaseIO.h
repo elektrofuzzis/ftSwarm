@@ -204,6 +204,7 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
   
     // administrative stuff
 	  virtual void serialize( Serialize *serialize ) {};
+	  void serializeEvents( Serialize *serialize );
     virtual uint8_t pushState( uint8_t *buffer );
     virtual uint8_t popState( uint8_t *buffer );
   

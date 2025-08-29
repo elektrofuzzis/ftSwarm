@@ -11,12 +11,12 @@
 
 const char SLITERAL[ SERIALIZE_LITERAL_MAX ][24] = {
   "",                   // SERIALIZE_LITERAL_NULL
-  "ctrl",               // SERIALIZE_LITERAL_CTRL
+  "controllers",        // SERIALIZE_LITERAL_CTRL
   "io",                 // SERIALIZE_LITERAL_IO
   "kelda",              // SERIALIZE_LITERAL_KELDA
-  "token",              // SERIALIZE_LITERAL_TOKEN
-  "auth",               // SERIALIZE_LITERAL_AUTH
-  "provided",           // SERIALIZE_LITERAL_PROVIDED
+  "sensor",             // SERIALIZE_LITERAL_SENSOR
+  "actor",              // SERIALIZE_LITERAL_ACTOR
+  "trigger",            // SERIALIZE_LITERAL_TRIGGER
   "state",              // SERIALIZE_LITERAL_STATE
   "speed",              // SERIALIZE_LITERAL_SPEED
   "highResolution",     // SERIALIZE_LITERAL_HIGHRESOLUTION
@@ -41,7 +41,12 @@ const char SLITERAL[ SERIALIZE_LITERAL_MAX ][24] = {
   "contrast",           // SERIALIZE_LITERAL_CONTRAST
   "saturation",         // SERIALIZE_LITERAL_SATURATION
   "h-Mirror",           // SERIALIZE_LITERAL_HMIRROR
-  "v-Flip"              // SERIALIZE_LITERAL_VFLIP
+  "v-Flip",             // SERIALIZE_LITERAL_VFLIP
+  "activeConfig",       // SERIALIZE_LITERAL_ACTIVECONFIG
+  "events",             // SERIALIZE_LITERAL_EVENTS
+  "distance",           // SERIALIZE_LITERAL_DISTANCE
+  "homing",             // SERIALIZE_LITERAL_HOMING
+  "running"             // SERIALIZE_LITERAL_RUNNING
 };
 
 Serialize::Serialize( char *buffer, size_t bufSize, SerialFormat_t format ) {
@@ -57,7 +62,7 @@ Serialize::Serialize( char *buffer, size_t bufSize, SerialFormat_t format ) {
 
 void Serialize::reset( void ) {
 
-  bzero( buffer, bufSize );
+  if (!buffer) bzero( buffer, bufSize );
   ptr = 0;
 
 }

@@ -111,7 +111,6 @@ class SwOSCLI {
     void executeIOCommand( void );
     void executeControllerCmd( void );
     void executeSwarmCmd( bool *loggedIn );
-    void executeNvsCmd( void );
     void startCLI( bool noEcho );
     void halt( void );
 

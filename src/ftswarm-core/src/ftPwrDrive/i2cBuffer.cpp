@@ -17,9 +17,9 @@ void i2cBuffer::sendBuffer( uint8_t address  ) {
     Serial.println();
   #endif
  
-  Wire.beginTransmission( address );
-  Wire.write( data, len );
-  error = Wire.endTransmission();
+  twi->beginTransmission( address );
+  twi->write( data, len );
+  error = twi->endTransmission();
 }
 
 void i2cBuffer::receiveBuffer( uint8_t address, uint8_t quantity ) {
@@ -36,13 +36,13 @@ void i2cBuffer::receiveBuffer( uint8_t address, uint8_t quantity ) {
   len = 0;
 
   // request quantity uint8_ts
-  if ( Wire.requestFrom( address, quantity) != quantity ) error = 4; 
+  if ( twi->requestFrom( address, quantity) != quantity ) error = 4; 
   else error = 0;
 
   uint8_t x;
   // receive data
-  while (Wire.available()) { 
-    x = Wire.read();
+  while (twi->available()) { 
+    x = twi->read();
     data[len++] = x;
 
     #ifdef DEBUG_COM

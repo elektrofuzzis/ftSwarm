@@ -13,6 +13,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <Wire.h>
 
 // some constant to make live easier:
  
@@ -70,7 +71,7 @@ class FtPwrDrive {
     long     lastPosition[4];
     long     lastDistance[4];
     
-    FtPwrDrive( uint8_t myI2CAddress = 32, int sda = -1, int scl = -1 );
+    FtPwrDrive( uint8_t myI2CAddress = 32, TwoWire *twi = &Wire );
       // constructor
       
     void Watchdog( long w );

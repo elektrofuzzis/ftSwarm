@@ -188,8 +188,7 @@ char * SwOSObj::getAlias( ) {
   }
 }
 
-
- void SwOSObj::serialize( Serialize *serialize) {
+void SwOSObj::serialize( Serialize *serialize) {
 
    // display name
    if (_alias) {
@@ -461,6 +460,11 @@ void SwOSInput::setupLocal() {
     return;
   }
 
+  // ftPwrDrive
+  if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && (ftPwrDrive) ) {
+    return;
+  }
+
   if ( ioType == SWOSIO_BUTTON ) GPIO = GPIO_NUM_NC;
   else                           GPIO = GPIO_INPUT[ctrl->getCPU()][port].io;
 
@@ -531,5 +535,39 @@ void SwOSInput::setReading( int32_t newValue ) {
   lastRawValue = newValue;  
 
   if (changes) subscription();
+
+}
+
+void SwOSInput::serializeEvents( Serialize *serialize ) {
+
+  SwOSEventHandler *e = eventList;
+
+  char sensor[2*MAXIDENTIFIER+2];
+  char actor[2*MAXIDENTIFIER+2];
+  
+  // calc my name
+  strcpy( sensor, getAlias());
+  if (!sensor) sprintf(sensor, "%s.%s", ctrl->getName(), getName() );
+
+  while (e) {
+
+    if (e->actor) {
+
+      // calc actor's name
+      strcpy( actor, e->actor->getAlias() );
+      if (!actor) sprintf(actor, "%s.%s", e->actor->getCtrl()->getName(), e->actor->getName() );
+
+      serialize->startObject( );
+      serialize->item( SERIALIZE_LITERAL_SENSOR, sensor );
+      serialize->item( SERIALIZE_LITERAL_ACTOR,  actor );
+      serialize->item( SERIALIZE_LITERAL_TRIGGER, e->trigger );
+      serialize->item( SERIALIZE_LITERAL_VALUE,   e->parameter );
+      serialize->endObject( );
+
+      e = e->next;
+
+    }
+
+  }
 
 }
