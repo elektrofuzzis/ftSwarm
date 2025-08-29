@@ -43,8 +43,6 @@ class SwOSAnalogInput;
 
   public:
 
-    bool highResolution = false;
-
     SwOSMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType );
 
     // administrative stuff
@@ -64,7 +62,6 @@ class SwOSAnalogInput;
     virtual void    setValue( FtSwarmMotion_t motionType, int16_t speed ) { this->motionType = motionType; this->speed = speed; };  // set values                             // get speed
     virtual void    setAcceleration( uint32_t rampUpT,  uint32_t rampUpY ) {};
     virtual void    getAcceleration( uint32_t *rampUpT, uint32_t *rampUpY ) {};
-    virtual void    setParameter( int32_t parameter );
 
  };
 
@@ -129,7 +126,6 @@ class SwOSDCMotor : public SwOSMotor {
     virtual void setRemote(); 
   
   public:
-    bool highResolution = false;
   
     // Constructors
     SwOSStepper(const char *name, uint8_t port, SwOSCtrl *ctrl);

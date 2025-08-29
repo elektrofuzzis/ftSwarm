@@ -673,9 +673,7 @@ void SwOSCLI::executeActorCmd( void ) {
                                 motor->unlock();
                                 break;
 
-    case CLICMD_setSpeed:       if ( motor->highResolution ) maxspeed = 4095;
-                                else maxspeed = 255;
-                                if (parameter[0].inRange( "speed", -maxspeed, maxspeed, response ) ) { 
+    case CLICMD_setSpeed:       if (parameter[0].inRange( "speed", -4095, 4095, response ) ) { 
                                   OK();
                                   motor->lock(); 
                                   motor->setSpeed( parameter[0].getNumber() );
@@ -1280,7 +1278,7 @@ void SwOSCLI::run( void ) {
   while (!exit) {
 
     // wait on user
-    enterString( ">", cmd, CLIMAXLINE-1 );
+    enterString( prompt, cmd, CLIMAXLINE-1 );
     
     // eval string
     out = eval( cmd, &loggedIn );

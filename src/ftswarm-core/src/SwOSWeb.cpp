@@ -260,18 +260,20 @@ static void wsTask( void *args ) {
     max_clients = CONFIG_LWIP_MAX_LISTENING_TCP;
     esp_err_t ret = httpd_get_client_list( UIServer, &max_clients, client_fds);
 
-    // nobody connected?
-    if ( max_clients == 0 ) continue;
+    // anybody connected?
+    if ( max_clients != 0 ) {
 
-    serialize.reset();
-    myOSSwarm.serialize( &serialize );
-    ws_pkt.len = strlen( (char *)  ws_pkt.payload );
+      serialize.reset();
+      myOSSwarm.serialize( &serialize );
+      ws_pkt.len = strlen( (char *)  ws_pkt.payload );
 
-    for (int i = 0; i < max_clients; i++) {
+      for (int i = 0; i < max_clients; i++) {
 
         client_info = httpd_ws_get_fd_info( UIServer, client_fds[i]) ;
         
         if ( client_info == HTTPD_WS_CLIENT_WEBSOCKET ) httpd_ws_send_frame_async( UIServer, client_fds[i], &ws_pkt );
+
+      }
 
     }
 
@@ -348,6 +350,22 @@ static esp_err_t wsHandler(httpd_req_t *req) {
 
 }
 
+static esp_err_t apiGetLogHandler(httpd_req_t *req ) {
+  // reply on /api/getToken
+
+  char buffer[STDIO_BUFFER_SIZE];
+  dumpStdIO(buffer, STDIO_BUFFER_SIZE);
+
+  httpd_resp_set_type( req, "application/json; charset=utf-8" );
+  httpd_resp_set_status( req, HTTPD_200 );
+
+  httpd_resp_sendstr_chunk( req, buffer);
+  
+  httpd_resp_sendstr_chunk(req, NULL);
+
+  return ESP_OK;
+}
+
 bool SwOSStartWebServer( void ) {
 
   http_server_context_t *http_context = (http_server_context_t*)calloc(1, sizeof(http_server_context_t));
@@ -396,6 +414,10 @@ bool SwOSStartWebServer( void ) {
   // assets
   httpd_uri_t assetsGet = { .uri = "/assets/*", .method = HTTP_GET, .handler = &fileHandler, .user_ctx = NULL };
   httpd_register_uri_handler(UIServer, &assetsGet);
+
+  // log
+  httpd_uri_t getLog = { .uri = "/api/getLog", .method = HTTP_GET, .handler = &apiGetLogHandler, .user_ctx = NULL };
+  httpd_register_uri_handler(UIServer, &getLog);
 
   // ws
   httpd_uri_t ws = { .uri = "/ws", .method = HTTP_GET, .handler = &wsHandler, .user_ctx = NULL, .is_websocket  = true };

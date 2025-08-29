@@ -34,24 +34,6 @@ void SwOSMotor::setMotionType( FtSwarmMotion_t motionType ) {
   
 }
 
-void SwOSMotor::setParameter( int32_t parameter ) {
-
-  if ( ctrl->isLocal() ) {
-    
-    this->highResolution = (bool) parameter;
-
-  } else {
-
-    // send 
-    SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETPARAMETER );
-    cmd.data.parameterCmd.index     = ctrl->getIndex( this );
-    cmd.data.parameterCmd.parameter = parameter;
-    cmd.send( );
-
-  }
-
-} 
-
 void SwOSMotor::setSpeed( int16_t speed ) {
 
   // if no change is needed, return
@@ -64,8 +46,7 @@ void SwOSMotor::setSpeed( int16_t speed ) {
   }
   
   // limit speed values
-  int16_t maxSpeed = MAXSPEED256;
-  if (highResolution) maxSpeed = MAXSPEED4096;
+  int16_t maxSpeed = MAXSPEED4096;
   if      (speed> maxSpeed) this->speed =  maxSpeed;
   else if (speed<-maxSpeed) this->speed = -maxSpeed;
   else                      this->speed =  speed;
@@ -85,7 +66,6 @@ void SwOSMotor::serialize( Serialize *serialize ) {
   serialize->startObject( );
   SwOSIO::serialize( serialize );
   serialize->item( SERIALIZE_LITERAL_SPEED, getSpeed() );
-  serialize->item( SERIALIZE_LITERAL_HIGHRESOLUTION, highResolution );
   serialize->endObject();
 }
 
@@ -176,9 +156,8 @@ void SwOSDCMotor::setupLocal() {
 
 void SwOSDCMotor::setPWM( int16_t xin1, int16_t xin2, gpio_num_t pwm, uint32_t duty ) {
 
-  // calc duty based on _highResolution
+  // calc duty 
   uint32_t duty1 = duty;
-  if ( (!highResolution) && (duty) ) duty1 = ( duty1 << 4 ) + 0xF;
 
   // 1st step, check if the old pwm pin is different to the new one
 
@@ -282,7 +261,6 @@ SwOSStepper::SwOSStepper(const char *name, uint8_t port, SwOSCtrl *ctrl ):SwOSMo
 
   // ftPwrDrive has a bitmap motor representation, so precalc the Mx values
   pwrDriveMotor = 1 << port;
-  highResolution = true;
 
   // initialize local HW
   if (ctrl->isLocal()) {
@@ -462,7 +440,6 @@ void SwOSStepper::serialize( Serialize *serialize ) {
   serialize->startObject( );
   SwOSIO::serialize( serialize );
   serialize->item( SERIALIZE_LITERAL_SPEED, getSpeed() );
-  serialize->item( SERIALIZE_LITERAL_HIGHRESOLUTION, highResolution );
   serialize->item( SERIALIZE_LITERAL_POSITION, position );
   serialize->item( SERIALIZE_LITERAL_DISTANCE, distance );
   serialize->item( SERIALIZE_LITERAL_HOMING, isHoming() );

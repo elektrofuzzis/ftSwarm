@@ -626,8 +626,6 @@ bool SwOSSwarm::splitID( char *id, uint8_t *index, char *io, size_t sizeIO) {
 
 void SwOSSwarm::setState( SwOSState_t state ) {
 
-  printf("setState %d\n", state);
-
   if (Ctrl[0]) {
     Ctrl[0]->lock();
     Ctrl[0]->setState( state, members(), nvs.wifiSSID );
