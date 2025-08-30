@@ -113,8 +113,8 @@ class SwOSDCMotor : public SwOSMotor {
   protected:
   
     // stepper motors
-    long    distance = 0;
-    long    position = 0;
+    int32_t distance = 0;
+    int32_t position = 0;
     uint8_t pwrDriveMotor;
     bool    motorIsHoming;
     bool    motorIsRunning;
@@ -133,28 +133,30 @@ class SwOSDCMotor : public SwOSMotor {
     virtual bool isStepper( void ) { return true; };
     virtual void read();
     virtual void serialize( Serialize *serialize );
+    virtual uint8_t pushState( uint8_t *buffer );
+    virtual uint8_t popState( uint8_t *buffer );
    
     // commands
-    virtual void setValue( long distance, long position, bool isHoming, bool isRunning );
-    virtual void setDistance( long distance, bool relative  );  // set a distance to go
-    virtual long getDistance( void );                          // get distance
-    virtual void startStop( bool start );                      // start/stop motor
-    virtual void setPosition( long position );                 // set absolute motor position
-    virtual long getPosition( void );                          // get motor position
-    virtual void homing( long maxDistance );                   // start homing
-    virtual void setHomingOffset( long offset );               // set homing offset
-    virtual bool isHoming( void );                             // check if motor is in homing procedure
-    virtual bool isRunning( void );                            // check if motor is running
-    virtual void setIsHoming( bool isHoming );                 // used by controller during read() to set local info
-    virtual void setIsRunning( bool isRunning );               // used by controller during read() to set local info
+    virtual void setValue( int32_t distance, int32_t position, bool isHoming, bool isRunning );
+    virtual void setDistance( int32_t distance, bool relative  );  // set a distance to go
+    virtual int32_t getDistance( void );                           // get distance
+    virtual void startStop( bool start );                          // start/stop motor
+    virtual void setPosition( int32_t position );                  // set absolute motor position
+    virtual int32_t getPosition( void );                           // get motor position
+    virtual void homing( int32_t maxDistance );                    // start homing
+    virtual void setHomingOffset( int32_t offset );                // set homing offset
+    virtual bool isHoming( void );                                 // check if motor is in homing procedure
+    virtual bool isRunning( void );                                // check if motor is running
+    virtual void setIsHoming( bool isHoming );                     // used by controller during read() to set local info
+    virtual void setIsRunning( bool isRunning );                   // used by controller during read() to set local info
     
-    /*virtual void setAbsDistance(long distance );            // set a absolute distance to go
-    virtual long getStepsToGo( void );                        // number of needed steps to go to distance
-    virtual void setMaxSpeed( long speed );                   // set a max speed
-    virtual long getMaxSpeed(void );                          // get max speed
-    virtual void startMoving( boolean disableOnStop = true ); // start motor moving, disableOnStop disables the motor driver at the end of the movement
-    virtual void stopMoving( void );                          // stop motor moving immediately
-    virtual boolean isMoving( void );                         // check, if a motor is moving
+    /*virtual void setAbsDistance(int32_t distance );              // set a absolute distance to go
+    virtual int32_t getStepsToGo( void );                          // number of needed steps to go to distance
+    virtual void setMaxSpeed( int32_t speed );                     // set a max speed
+    virtual int32_t getMaxSpeed(void );                            // get max speed
+    virtual void startMoving( boolean disableOnStop = true );      // start motor moving, disableOnStop disables the motor driver at the end of the movement
+    virtual void stopMoving( void );                               // stop motor moving immediately
+    virtual boolean isMoving( void );                              // check, if a motor is moving
     */
   
   };

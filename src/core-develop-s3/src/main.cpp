@@ -18,31 +18,44 @@
 void setup() {
 
   Serial.begin(115200);
-/*
+
+  /*
   Wire.begin( 5, 4, 400000 );
 
   FtPwrDrive *ftPwrDrive = new FtPwrDrive( 32, &Wire );
 
-  ftPwrDrive->setPosition( M1, 0 );
-  printf( "ftPwrDrive->getError() %d\n", ftPwrDrive->getError() );
-  printf( "ftPwrDrive->getPosition( M1 ) %ld\n", ftPwrDrive->getPosition( M1 ) );
-  printf( "getPosition ftPwrDrive->getError() %d\n", ftPwrDrive->getError() );
-  ftPwrDrive->setPosition( M1, 1000 );
-  printf( "setPosition ftPwrDrive->getError() %d\n", ftPwrDrive->getError() );
-  printf( "ftPwrDrive->getPosition( M1 ) %ld\n", ftPwrDrive->getPosition( M1 ) );
-  printf( "getPosition ftPwrDrive->getError() %d\n", ftPwrDrive->getError() );
+  printf("setSpeed(M4, 500)\n");
+  ftPwrDrive->setMaxSpeed( M4, 500 );
+  printf("getMaxSpeed %d\n", ftPwrDrive->getMaxSpeed(M4) );
 
-  uint8_t  lastState[4];
-  long     lastPosition[4];
-  long     lastDistance[4];
+  printf("setPosition(0)\n");
+  ftPwrDrive->setPosition(M4, 0);
+  printf("getPosition %d\n", ftPwrDrive->getPosition(M4) );
 
-  ftPwrDrive->getStateAll( &lastState[0], &lastState[1], &lastState[2], &lastState[3] );
-  printf( "getStateAll ftPwrDrive->getError() %d %X %X %X %x\n", ftPwrDrive->getError(), lastState[0], lastState[1], lastState[2], lastState[3] );
-  ftPwrDrive->getPositionAll( &lastPosition[0], &lastPosition[1], &lastPosition[2], &lastPosition[3] );
-  printf( "getPositionAll ftPwrDrive->getError() %d\n", ftPwrDrive->getError() );
-  ftPwrDrive->getStepsToGoAll( &lastDistance[0], &lastDistance[1], &lastDistance[2], &lastDistance[3] );
-  printf( "getStepsToGoAll ftPwrDrive->getError() %d\n", ftPwrDrive->getError() );
-*/
+  printf("setAbsDistance(M4, 100)\n");
+  ftPwrDrive->setAbsDistance(M4, 100);
+  printf("getStepsToGo %d\n", ftPwrDrive->getStepsToGo(M4) );
+
+  printf("startMoving(M4)\n");
+  ftPwrDrive->startMoving( M4 );
+  printf("wait(M4)\n");
+  ftPwrDrive->wait( M4 );
+  printf("getPosition %d\n", ftPwrDrive->getPosition(M4) );
+  
+  printf("setAbsDistance(M4, -100)\n");
+  ftPwrDrive->setAbsDistance(M4, -100);
+  printf("getStepsToGo %d\n", ftPwrDrive->getStepsToGo(M4) );
+
+  printf("startMoving(M4)\n");
+  ftPwrDrive->startMoving( M4 );
+  printf("wait(M4)\n");
+  ftPwrDrive->wait( M4 );
+  printf("getPosition %d\n", ftPwrDrive->getPosition(M4) );
+
+  ftPwrDrive->read();
+  printf("Read getPosition(M4) %d\n", ftPwrDrive->lastPosition[3] );
+  */
+
   firmware();
   ESP.restart();
 

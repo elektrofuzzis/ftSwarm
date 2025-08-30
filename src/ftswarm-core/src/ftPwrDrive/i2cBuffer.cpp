@@ -68,28 +68,28 @@ void i2cBuffer::push( uint8_t v ) {
   data[len++] = v;
 }
 
-void i2cBuffer::push( long v ) {
-  // writes a long into the buffer
+void i2cBuffer::push( int32_t v ) {
+  // writes a int32_t into the buffer
   memcpy( &data[len], &v, sizeof(v) );
   len += sizeof(v);
 }
 
-void i2cBuffer::push( int v ) {
-  // writes an int into the buffer
+void i2cBuffer::push( int16_t v ) {
+  // writes an int16_t into the buffer
   memcpy( &data[len], &v, sizeof(v) );
   len += sizeof(v);
 }
 
-long i2cBuffer::popLong( uint8_t pos ) {
-  // reads a long out of the buffer
-  long v;
+int32_t i2cBuffer::popInt32_t( uint8_t pos ) {
+  // reads a int32_t out of the buffer
+  int32_t v;
   memcpy( &v, &data[pos], sizeof(v) );
   return v;
 }
 
-int i2cBuffer::popInt( uint8_t pos ) {
-  // reads an int out of the buffer
-  int v;
+int16_t i2cBuffer::popInt16_t( uint8_t pos ) {
+  // reads an int16_t out of the buffer
+  int16_t v;
   memcpy( &v, &data[pos], sizeof(v) );
   return v;
 }
@@ -102,23 +102,23 @@ void i2cBuffer::sendData( uint8_t address, uint8_t cmd ) {
 }
 
 void i2cBuffer::sendData( uint8_t address, uint8_t cmd, uint8_t v1 ) {
-  // send a command with a long value
+  // send a command with a int32_t value
   len = 0;
   push( cmd );
   push( v1 );
   sendBuffer( address );
 }
 
-void i2cBuffer::sendData( uint8_t address, uint8_t cmd, long v1 ) {
-  // send a command with a long value
+void i2cBuffer::sendData( uint8_t address, uint8_t cmd, int32_t v1 ) {
+  // send a command with a int32_t value
   len = 0;
   push( cmd );
   push( v1 );
   sendBuffer( address );
 }
 
-void i2cBuffer::sendData( uint8_t address, uint8_t cmd, int v1 ) {
-  // send a command with a long value
+void i2cBuffer::sendData( uint8_t address, uint8_t cmd, int16_t v1 ) {
+  // send a command with a int32_t value
   len = 0;
   push( cmd );
   push( v1 );
@@ -144,8 +144,8 @@ void i2cBuffer::sendData( uint8_t address, uint8_t cmd, uint8_t v1, uint8_t v2, 
   sendBuffer( address );
 }
 
-void i2cBuffer::sendData( uint8_t address, uint8_t cmd, uint8_t v1, long v2, uint8_t v3 ) {
-  // send a command with a uint8_t, a long value and another uint8_t
+void i2cBuffer::sendData( uint8_t address, uint8_t cmd, uint8_t v1, int32_t v2, uint8_t v3 ) {
+  // send a command with a uint8_t, a int32_t value and another uint8_t
   len = 0;
   push( cmd );
   push( v1 );
@@ -154,8 +154,8 @@ void i2cBuffer::sendData( uint8_t address, uint8_t cmd, uint8_t v1, long v2, uin
   sendBuffer( address );
 }
 
-void i2cBuffer::sendData( uint8_t address, uint8_t cmd, uint8_t v1, long v2 ) {
-  // send a command with a uint8_t and a long value
+void i2cBuffer::sendData( uint8_t address, uint8_t cmd, uint8_t v1, int32_t v2 ) {
+  // send a command with a uint8_t and a int32_t value
   len = 0;
   push( cmd );
   push( v1 );
@@ -164,8 +164,8 @@ void i2cBuffer::sendData( uint8_t address, uint8_t cmd, uint8_t v1, long v2 ) {
 }
 
 
-void i2cBuffer::sendData( uint8_t address, uint8_t cmd,long v1, long v2, long v3, long v4 ) {
-  // send a command with 4 long values
+void i2cBuffer::sendData( uint8_t address, uint8_t cmd,int32_t v1, int32_t v2, int32_t v3, int32_t v4 ) {
+  // send a command with 4 int32_t values
   
   len = 0;
   push( cmd );
@@ -177,21 +177,21 @@ void i2cBuffer::sendData( uint8_t address, uint8_t cmd,long v1, long v2, long v3
   sendBuffer( address );
 }
 
-uint8_t i2cBuffer::receiveuint8_t( uint8_t address, uint8_t cmd ) {
+uint8_t i2cBuffer::receiveUint8_t( uint8_t address, uint8_t cmd ) {
   // receive a uint8_t value 
   sendData( address, cmd );
   receiveBuffer( address, 1 );
   return data[0];
 }
 
-uint8_t i2cBuffer::receiveuint8_t( uint8_t address, uint8_t cmd, uint8_t v1 ) {
+uint8_t i2cBuffer::receiveUint8_t( uint8_t address, uint8_t cmd, uint8_t v1 ) {
   // receive a uint8_t value 
   sendData( address, cmd, v1 );
   receiveBuffer( address, 1 );
   return data[0];
 }
 
-void i2cBuffer::receive4uint8_t( uint8_t address, uint8_t cmd, uint8_t *v1, uint8_t *v2, uint8_t *v3, uint8_t *v4 ) {
+void i2cBuffer::receive4Uint8_t( uint8_t address, uint8_t cmd, uint8_t *v1, uint8_t *v2, uint8_t *v3, uint8_t *v4 ) {
   // receive a uint8_t value 
   sendData( address, cmd );
   receiveBuffer( address, 4 );
@@ -202,36 +202,36 @@ void i2cBuffer::receive4uint8_t( uint8_t address, uint8_t cmd, uint8_t *v1, uint
    
 }
 
-long i2cBuffer::receiveLong( uint8_t address, uint8_t cmd, uint8_t v1 ) {
-  // receive a long value 
+int32_t i2cBuffer::receiveInt32_t( uint8_t address, uint8_t cmd, uint8_t v1 ) {
+  // receive a int32_t value 
   sendData( address, cmd, v1 );
   receiveBuffer( address, 4 );
-  return popLong( 0 );
+  return popInt32_t( 0 );
 }
 
-void i2cBuffer::receive4Long( uint8_t address, uint8_t cmd, long *v1, long *v2, long *v3, long *v4 ) {
-  // receive 4 long values
+void i2cBuffer::receive4Int32_t( uint8_t address, uint8_t cmd, int32_t *v1, int32_t *v2, int32_t *v3, int32_t *v4 ) {
+  // receive 4 int32_t values
   sendData( address, cmd );
   receiveBuffer( address, 16 );
-  *v1 = popLong( 0 );
-  *v2 = popLong( 4 );
-  *v3 = popLong( 8 );
-  *v4 = popLong( 12 );
+  *v1 = popInt32_t( 0 );
+  *v2 = popInt32_t( 4 );
+  *v3 = popInt32_t( 8 );
+  *v4 = popInt32_t( 12 );
 } 
 
-int i2cBuffer::receiveInt( uint8_t address, uint8_t cmd, uint8_t v1 ) {
-  // receive an int value 
+int16_t i2cBuffer::receiveInt16_t( uint8_t address, uint8_t cmd, uint8_t v1 ) {
+  // receive an int16_t value 
   sendData( address, cmd, v1 );
   receiveBuffer( address, 2 );
-  return popInt( 0 );
+  return popInt16_t( 0 );
 }
 
-void i2cBuffer::receive4Int( uint8_t address, uint8_t cmd, int &v1, int &v2, int &v3, int &v4 ) {
-  // receive 4 int values
+void i2cBuffer::receive4Int16_t( uint8_t address, uint8_t cmd, int16_t &v1, int16_t &v2, int16_t &v3, int16_t &v4 ) {
+  // receive 4 int16_t values
   sendData( address, cmd );
   receiveBuffer( address, 16 );
-  v1 = popInt( 0 );
-  v2 = popInt( 2 );
-  v3 = popInt( 4 );
-  v4 = popInt( 8 );
+  v1 = popInt32_t( 0 );
+  v2 = popInt32_t( 2 );
+  v3 = popInt32_t( 4 );
+  v4 = popInt32_t( 8 );
 } 

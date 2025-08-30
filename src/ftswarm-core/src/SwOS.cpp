@@ -527,7 +527,7 @@ FtSwarmEncoderMotor::FtSwarmEncoderMotor( const char *name, bool highResolution 
 FtSwarmStepperMotor::FtSwarmStepperMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmTractorMotor( serialNumber, port, SWOSIO_STEPPER, true ) {};
 FtSwarmStepperMotor::FtSwarmStepperMotor( const char * name ):FtSwarmTractorMotor( name, SWOSIO_STEPPER, true ) {};
 
-void FtSwarmStepperMotor::setDistance( long distance, bool relative ) {
+void FtSwarmStepperMotor::setDistance( int32_t distance, bool relative ) {
 
   if (me) {
     static_cast<SwOSStepper *>(me)->lock();
@@ -537,9 +537,9 @@ void FtSwarmStepperMotor::setDistance( long distance, bool relative ) {
 
 }
 
-long FtSwarmStepperMotor::getDistance( void ) {
+int32_t FtSwarmStepperMotor::getDistance( void ) {
 
-  long distance = 0;
+  int32_t distance = 0;
 
   if (me) {
     static_cast<SwOSStepper *>(me)->lock();
@@ -585,7 +585,7 @@ void FtSwarmStepperMotor::stop( void ) {
 
 }
 
-void FtSwarmStepperMotor::setPosition( long position ) {
+void FtSwarmStepperMotor::setPosition( int32_t position ) {
 
   if (me) {
     static_cast<SwOSStepper *>(me)->lock();
@@ -595,9 +595,9 @@ void FtSwarmStepperMotor::setPosition( long position ) {
 
 }
 
-long FtSwarmStepperMotor::getPosition( void ) {
+int32_t FtSwarmStepperMotor::getPosition( void ) {
 
-  long position = 0;
+  int32_t position = 0;
 
   if (me) {
     static_cast<SwOSStepper *>(me)->lock();
@@ -623,7 +623,7 @@ bool FtSwarmStepperMotor::isHoming( void ) {
 
 }
 
-void FtSwarmStepperMotor::homing( long maxDistance ) {
+void FtSwarmStepperMotor::homing( int32_t maxDistance ) {
 
   if (me) {
     static_cast<SwOSStepper *>(me)->lock();
@@ -633,7 +633,7 @@ void FtSwarmStepperMotor::homing( long maxDistance ) {
 
 }
 
-void FtSwarmStepperMotor::setHomingOffset( long offset ) {
+void FtSwarmStepperMotor::setHomingOffset( int32_t offset ) {
 
   if (me) {
     static_cast<SwOSStepper *>(me)->lock();

@@ -295,7 +295,7 @@ void SwOSStepper::setLocal() {
 
 }
 
-void SwOSStepper::setDistance( long distance, bool relative ) {
+void SwOSStepper::setDistance( int32_t distance, bool relative ) {
 
   if   (!ctrl->isLocal()) {
 
@@ -317,7 +317,7 @@ void SwOSStepper::setDistance( long distance, bool relative ) {
 
 }
 
-long SwOSStepper::getDistance( void ) {
+int32_t SwOSStepper::getDistance( void ) {
   return distance;
 }
 
@@ -339,7 +339,7 @@ void SwOSStepper::startStop( bool start ) {
 
 }
 
-void SwOSStepper::setPosition( long position ) {
+void SwOSStepper::setPosition( int32_t position ) {
 
   this->position = position;
 
@@ -358,11 +358,11 @@ void SwOSStepper::setPosition( long position ) {
 
 }
 
-long SwOSStepper::getPosition( void ) {
+int32_t SwOSStepper::getPosition( void ) {
   return position;
 }
 
-void SwOSStepper::homing( long maxDistance ) {
+void SwOSStepper::homing( int32_t maxDistance ) {
 
   if   (!ctrl->isLocal()) {
     // send remote
@@ -378,7 +378,7 @@ void SwOSStepper::homing( long maxDistance ) {
 
 }
 
-void SwOSStepper::setHomingOffset( long offset ) {
+void SwOSStepper::setHomingOffset( int32_t offset ) {
 
   if   (!ctrl->isLocal()) {
     // send remote
@@ -410,7 +410,7 @@ bool SwOSStepper::isRunning( void ) {
   return motorIsRunning;
 }
 
-void SwOSStepper::setValue( long distance, long position, bool isHoming, bool isRunning ) {
+void SwOSStepper::setValue( int32_t distance, int32_t position, bool isHoming, bool isRunning ) {
 
   this->distance = distance;
   this->position = position;
@@ -446,6 +446,32 @@ void SwOSStepper::serialize( Serialize *serialize ) {
   serialize->item( SERIALIZE_LITERAL_RUNNING, isRunning() );
   serialize->endObject();
 }
+
+uint8_t SwOSStepper::pushState( uint8_t *buffer ) { 
+  
+  uint8_t *buf = buffer;
+
+  memcpy( buf, &position,       sizeof( position ) );       buf += sizeof( position );
+  memcpy( buf, &distance,       sizeof( distance ) );       buf += sizeof( distance );
+  memcpy( buf, &motorIsHoming,  sizeof( motorIsHoming ) );  buf += sizeof( motorIsHoming );
+  memcpy( buf, &motorIsRunning, sizeof( motorIsRunning ) ); buf += sizeof( motorIsRunning ); 
+
+  return sizeof( position ) + sizeof( distance ) + sizeof( motorIsHoming ) + sizeof( motorIsRunning );
+
+};
+
+uint8_t SwOSStepper::popState( uint8_t *buffer ) { 
+
+  uint8_t *buf = buffer;
+
+  memcpy( &position,       buf, sizeof( position ) );       buf += sizeof( position );
+  memcpy( &distance,       buf, sizeof( distance ) );       buf += sizeof( distance );
+  memcpy( &motorIsHoming,  buf, sizeof( motorIsHoming ) );  buf += sizeof( motorIsHoming );
+  memcpy( &motorIsRunning, buf, sizeof( motorIsRunning ) ); buf += sizeof( motorIsRunning );
+
+  return sizeof( position ) + sizeof( distance ) + sizeof( motorIsHoming ) + sizeof( motorIsRunning );
+  
+};
 
 /***************************************************
  *

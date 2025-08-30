@@ -116,8 +116,8 @@ struct stepperStateCmd_t{
   bool isHoming[4]; 
   bool isRunning[4]; 
   uint32_t inputValue[5]; 
-  long distance[4]; 
-  long position[4];
+  int32_t distance[4]; 
+  int32_t position[4];
 } __attribute__((packed));
 
 struct sensorCmd_t { 
@@ -142,14 +142,13 @@ struct actorSpeedCmd_t{
 
 struct actorStepperCmd_t{ 
   uint8_t index; 
-  long paraml; 
-  bool paramb;
+  int32_t paraml; 
+  int32_t paramb;
 } __attribute__((packed));
 
 struct actorTypeCmd_t{ 
   uint8_t index; 
   SwOSIOType_t actorType; 
-  bool highResolution;
 } __attribute__((packed));
 
 struct pixelCmd_t { 

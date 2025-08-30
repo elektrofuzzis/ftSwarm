@@ -663,16 +663,16 @@ class FtSwarmStepperMotor : public FtSwarmTractorMotor {
   public:
     FtSwarmStepperMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
     FtSwarmStepperMotor( const char * name );
-    virtual void setDistance( long distance, bool relative = false );  // set steps to go
-    virtual long getDistance( void );                                  // get steps to go
-    virtual void run( void );                                          // start motor
-    virtual bool isRunning( void );                                    // true, if motor is running, false if not
-    virtual void stop( void );                                         // stop immediately
-    virtual void setPosition( long position );                         // set an absolute position
-    virtual long getPosition( void );                                  // get absolute position
-    virtual void homing( long maxDistance );                           // run a homing cycle
-    virtual bool isHoming( void );                                     // true, if homing cycle is active
-    virtual void setHomingOffset( long offset );                       // set Offset to run in homing, after endstop is free again
+    virtual void setDistance( int32_t distance, bool relative = false );  // set steps to go
+    virtual int32_t getDistance( void );                                  // get steps to go
+    virtual void run( void );                                             // start motor
+    virtual bool isRunning( void );                                       // true, if motor is running, false if not
+    virtual void stop( void );                                            // stop immediately
+    virtual void setPosition( int32_t position );                         // set an absolute position
+    virtual int32_t getPosition( void );                                  // get absolute position
+    virtual void homing( int32_t maxDistance );                           // run a homing cycle
+    virtual bool isHoming( void );                                        // true, if homing cycle is active
+    virtual void setHomingOffset( int32_t offset );                       // set Offset to run in homing, after endstop is free again
 };
 
 

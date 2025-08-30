@@ -711,7 +711,7 @@ void SwOSCLI::executeActorCmd( void ) {
 
     case CLICMD_getDistance:    if ( stepper->getIOType() == SWOSIO_STEPPER ) {
                                   stepper->lock();
-                                  sprintf( response, "R: %lu", stepper->getDistance() ); 
+                                  sprintf( response, "R: %d", stepper->getDistance() ); 
                                   stepper->unlock();
                                 } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
                                 break;
@@ -749,7 +749,7 @@ void SwOSCLI::executeActorCmd( void ) {
 
     case CLICMD_getPosition:    if ( stepper->getIOType() == SWOSIO_STEPPER ) {
                                   stepper->lock();
-                                  sprintf( response, "R: %lu", stepper->getPosition() ); 
+                                  sprintf( response, "R: %d", stepper->getPosition() ); 
                                   stepper->unlock();
                                 } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
                                 break;

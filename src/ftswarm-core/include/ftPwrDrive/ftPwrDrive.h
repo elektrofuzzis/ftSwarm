@@ -68,13 +68,13 @@ class FtPwrDrive {
 
     // readings from last read() cmd;
     uint8_t  lastState[4];
-    long     lastPosition[4];
-    long     lastDistance[4];
+    int32_t     lastPosition[4];
+    int32_t     lastDistance[4];
     
     FtPwrDrive( uint8_t myI2CAddress = 32, TwoWire *twi = &Wire );
       // constructor
       
-    void Watchdog( long w );
+    void Watchdog( int32_t w );
       // set watchog timer
       
     void setMicrostepMode( uint8_t mode );
@@ -85,28 +85,28 @@ class FtPwrDrive {
       // get microstep mode
       // FILLSTEP, HALFSTEP, QUARTERSTEP, EIGTHSTEP, SIXTEENTHSTEP
       
-    void setRelDistance( uint8_t motor, long distance );
+    void setRelDistance( uint8_t motor, int32_t distance );
       // set a distance to go, relative to actual position
       
-    void setRelDistanceAll( long d1, long d2, long d3, long d4 );
+    void setRelDistanceAll( int32_t d1, int32_t d2, int32_t d3, int32_t d4 );
       // set a absolute distance to go for all motors
 
-    void setAbsDistance( uint8_t motor, long distance );
+    void setAbsDistance( uint8_t motor, int32_t distance );
       // set a absolute distance to go
       
-    void setAbsDistanceAll( long d1, long d2, long d3, long d4 );
+    void setAbsDistanceAll( int32_t d1, int32_t d2, int32_t d3, int32_t d4 );
       // set a absolute distance to go for all motors
       
-    long getStepsToGo( uint8_t motor );
+    int32_t getStepsToGo( uint8_t motor );
       // number of needed steps to go to distance
 
-    void getStepsToGoAll( long *d1, long *d2, long *d3, long *d4);
+    void getStepsToGoAll( int32_t *d1, int32_t *d2, int32_t *d3, int32_t *d4);
       // number of needed steps to go to distance
 
-    void setMaxSpeed( uint8_t motor, long speed );
+    void setMaxSpeed( uint8_t motor, int32_t speed );
       // set a max speed
       
-    long getMaxSpeed( uint8_t motor);
+    int32_t getMaxSpeed( uint8_t motor);
       // get max speed
       
     void startMoving( uint8_t motor, boolean disableOnStop = true );
@@ -142,69 +142,69 @@ class FtPwrDrive {
     boolean emergencyStopActive( void );
       // check, if emergeny stop is pressed
       
-    void setPosition( uint8_t motor, long position );
+    void setPosition( uint8_t motor, int32_t position );
       // set position
       
-    void setPositionAll( long p1, long p2, long p3, long p4 );
+    void setPositionAll( int32_t p1, int32_t p2, int32_t p3, int32_t p4 );
       // set position of all motors
       
-    long getPosition( uint8_t motor );
+    int32_t getPosition( uint8_t motor );
       // get position
       
-    void getPositionAll( long *p1, long *p2, long *p3, long *p4 );
+    void getPositionAll( int32_t *p1, int32_t *p2, int32_t *p3, int32_t *p4 );
       // get position of all motors
 
     // don't use acceleration yet - just stub implementation
       
-    void setAcceleration( uint8_t motor, long acceleration );
+    void setAcceleration( uint8_t motor, int32_t acceleration );
       // set acceleration
       
-    void setAccelerationAll( long a1, long a2, long a3, long a4 );
+    void setAccelerationAll( int32_t a1, int32_t a2, int32_t a3, int32_t a4 );
       // set accelerationof all motors
       
-    long getAcceleration( uint8_t motor );
+    int32_t getAcceleration( uint8_t motor );
       // get acceleration
 
-    void getAccelerationAll( long *a1, long *a2, long *a3, long *a4 );
+    void getAccelerationAll( int32_t *a1, int32_t *a2, int32_t *a3, int32_t *a4 );
       // get acceleration of all motors
 
-    void setServo( uint8_t servo, long position );
+    void setServo( uint8_t servo, int32_t position );
       // set servo position
 
-    long getServo( uint8_t servo );
+    int32_t getServo( uint8_t servo );
       // get servo position
 
-    void setServoAll( long p1, long p2, long p3, long p4 );
+    void setServoAll( int32_t p1, int32_t p2, int32_t p3, int32_t p4 );
       // set all servos positions
 
-    void getServoAll( long *p1, long *p2, long *p3, long *p4 );
+    void getServoAll( int32_t *p1, int32_t *p2, int32_t *p3, int32_t *p4 );
       // get all servo positions
       
-    void setServoOffset( uint8_t servo, long offset );
+    void setServoOffset( uint8_t servo, int32_t offset );
       // set servo offset
 
-    long getServoOffset( uint8_t servo );
+    int32_t getServoOffset( uint8_t servo );
       // get servo offset
 
-    void setServoOffsetAll( long o1, long o2, long o3, long o4 );
+    void setServoOffsetAll( int32_t o1, int32_t o2, int32_t o3, int32_t o4 );
       // set servo offset all
 
-    void getServoOffsetAll( long *o1, long *o2, long *o3, long *o4 );
+    void getServoOffsetAll( int32_t *o1, int32_t *o2, int32_t *o3, int32_t *o4 );
       // get all servo offset
 
     void setServoOnOff( uint8_t servo, boolean on );
       // set servo pin On or Off without PWM
 
-    void homing( uint8_t motor, long maxDistance, boolean disableOnStop = true );
+    void homing( uint8_t motor, int32_t maxDistance, boolean disableOnStop = true );
       // homing of motor using end stop
 
     boolean isHoming( uint8_t motor );
       // check, homing is active
 	  
-	  void homingOffset( uint8_t motor, long offset );
+	  void homingOffset( uint8_t motor, int32_t offset );
 	  // set Offset to run in homing, after endstop is free again
 
-    float setGearFactor( uint8_t motor, long gear1, long gear2 );
+    float setGearFactor( uint8_t motor, int32_t gear1, int32_t gear2 );
       // Sets the gear factor. Please read setRelDistanceR for details.
       
     float setGearFactor( uint8_t motor, float gear1, float gear2 );
