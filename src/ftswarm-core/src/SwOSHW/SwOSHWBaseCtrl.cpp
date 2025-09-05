@@ -143,7 +143,6 @@ uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
     poti->read();
     if (( poti->getValueI32() > 0 ) && ( poti->getValueI32() < 4095 ) ) {
       sprintf( name, "RCSERVO%d", i+1 );
-      printf("%s found.\n", name );
       SwOSMotor *motor = (SwOSMotor *) getIO( SWOSIO_MOTOR, i );
       io[ getIndex( motor ) ] = new SwOSRCServo( name, i, this, poti, motor );
 
@@ -458,7 +457,7 @@ void SwOSCtrl::read() {
     ftPwrDrive->read( );
     
     // errors during I2C communication?
-    if ( ftPwrDrive->getError() != 0 ) SWARM_LOG_ERROR( "ftPrwDrive I2C error %d.", ftPwrDrive->getError() );
+    if ( ftPwrDrive->getError() != 0 ) SWARM_LOG_ERROR( "ftPwrDrive I2C error %d.", ftPwrDrive->getError() );
 
   }
 
@@ -1076,9 +1075,13 @@ bool SwOSCtrl::setPixel( SwOSCom *com ) {
 
 bool SwOSCtrl::setActorSpeed( SwOSCom *com ) {
 
-  SwOSMotor *io = getMotor( com->data.actorSpeedCmd.index );
-  if (!io) return false;
+  printf("setActorSpeed\n");
 
+  SwOSMotor *io = getMotor( com->data.actorSpeedCmd.index );
+  printf("1\n");
+  if (!io) return false;
+  printf("2\n");
+  
   io->setMotionType( com->data.actorSpeedCmd.motionType );
   io->setAcceleration( com->data.actorSpeedCmd.rampUpT, com->data.actorSpeedCmd.rampUpY );
   io->setSpeed( com->data.actorSpeedCmd.speed );

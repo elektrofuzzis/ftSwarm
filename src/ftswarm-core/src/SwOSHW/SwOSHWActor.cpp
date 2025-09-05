@@ -46,10 +46,9 @@ void SwOSMotor::setSpeed( int16_t speed ) {
   }
   
   // limit speed values
-  int16_t maxSpeed = MAXSPEED4096;
-  if      (speed> maxSpeed) this->speed =  maxSpeed;
-  else if (speed<-maxSpeed) this->speed = -maxSpeed;
-  else                      this->speed =  speed;
+  if      (speed> maxSpeed()) this->speed =  maxSpeed();
+  else if (speed<-maxSpeed()) this->speed = -maxSpeed();
+  else                        this->speed =  speed;
 
 }
 
@@ -240,6 +239,8 @@ void SwOSDCMotor::getAcceleration( uint32_t *rampUpT,  uint32_t *rampUpY ) {
 }
 
 void SwOSDCMotor::setRemote() {
+
+  printf("SwOSDCMotor.setRemote\n");
   
   SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETACTORSPEED  );
   cmd.data.actorSpeedCmd.index      = ctrl->getIndex( this );
@@ -426,10 +427,18 @@ void SwOSStepper::read() {
   // ftPwrDrive
   if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && ( ftPwrDrive ) ) { 
   
-    distance = ftPwrDrive->lastDistance[port];
-    position = ftPwrDrive->lastPosition[port];
-    motorIsRunning = ( ftPwrDrive->lastState[port] & ISMOVING ) > 0;
-    motorIsHoming  = ( ftPwrDrive->lastState[port] & HOMING ) > 0;
+    bool newMotorIsRunning = ( ftPwrDrive->lastState[port] & ISMOVING ) > 0;
+    bool newMotorIsHoming  = ( ftPwrDrive->lastState[port] & HOMING ) > 0;
+
+    if ( (isSubscribed) && ( hysteresis & 0x01 ) && ( motorIsRunning != newMotorIsRunning ) )        printf("S: %s running %d\n",  subscribedIOName, newMotorIsRunning );
+    if ( (isSubscribed) && ( hysteresis & 0x02 ) && ( motorIsHoming  != newMotorIsHoming  ) )        printf("S: %s homing %d\n",   subscribedIOName, newMotorIsHoming );
+    if ( (isSubscribed) && ( hysteresis & 0x04 ) && ( distance != ftPwrDrive->lastDistance[port] ) ) printf("S: %s distance %d\n", subscribedIOName, ftPwrDrive->lastDistance[port] );
+    if ( (isSubscribed) && ( hysteresis & 0x08 ) && ( position != ftPwrDrive->lastPosition[port] ) ) printf("S: %s position %d\n", subscribedIOName, ftPwrDrive->lastPosition[port] );
+    
+    distance       = ftPwrDrive->lastDistance[port];
+    position       = ftPwrDrive->lastPosition[port];
+    motorIsHoming  = newMotorIsHoming;
+    motorIsRunning = newMotorIsRunning;
 
   }
 
