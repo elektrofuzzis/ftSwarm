@@ -38,7 +38,7 @@ class SwOSAnalogInput;
     virtual bool autoCoast( ) { return true; }
 
     // remote HW procedures
-    virtual void setRemote() { printf("SwOSMotor.setRemote\n"); }
+    virtual void setRemote() { }
 
   public:
 

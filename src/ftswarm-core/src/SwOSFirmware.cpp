@@ -553,6 +553,7 @@ bool setAliasAndType( SwOSObj *selected, SwOSCtrl *ctrl ) {
 
   sprintf( prompt, "Choose new IO Type - default %s:", SWOSIOTYPE[defaultValue]);
   SwOSIOType_t newIOType = type[enterNumber( prompt, defaultValue, 0, maxType )];
+
   if ( ioType != newIOType ) { 
     if ( ctrl->changeIOType( ctrl->getIndex( io ), newIOType ) ) anythingChanged = true;
   }

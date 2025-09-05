@@ -233,8 +233,6 @@ void SwOSDCMotor::getAcceleration( uint32_t *rampUpT,  uint32_t *rampUpY ) {
 }
 
 void SwOSDCMotor::setRemote() {
-
-  printf("SwOSDCMotor.setRemote\n");
   
   SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETACTORSPEED  );
   cmd.data.actorSpeedCmd.index      = ctrl->getIndex( this );

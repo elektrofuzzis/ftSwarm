@@ -708,10 +708,10 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, char *name, char 
     case SWOSIO_I2C:              io = new SwOSI2C( name, this, 0 );
                                   break; 
 
-    case SWOSIO_COUNTER:          io = new SwOSCounter( name, port, port, this );       
+    case SWOSIO_COUNTER:          io = new SwOSCounter( name, port, SWOS_NOPORT, this );       
                                   break; 
 
-    case SWOSIO_FREQUENCYMETER:   io = new SwOSFrequencymeter( name, port, port, this );
+    case SWOSIO_FREQUENCYMETER:   io = new SwOSFrequencymeter( name, port, port + 1, this );
                                   break; 
 
     case SWOSIO_ROTARYENCODER:    io = new SwOSCounter( name, port, port + 1, this );    
@@ -1075,12 +1075,8 @@ bool SwOSCtrl::setPixel( SwOSCom *com ) {
 
 bool SwOSCtrl::setActorSpeed( SwOSCom *com ) {
 
-  printf("setActorSpeed\n");
-
   SwOSMotor *io = getMotor( com->data.actorSpeedCmd.index );
-  printf("1\n");
   if (!io) return false;
-  printf("2\n");
   
   io->setMotionType( com->data.actorSpeedCmd.motionType );
   io->setAcceleration( com->data.actorSpeedCmd.rampUpT, com->data.actorSpeedCmd.rampUpY );
