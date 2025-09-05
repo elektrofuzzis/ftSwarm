@@ -20,7 +20,7 @@
  ***************************************************/
 
  SwOSAnalogInput::SwOSAnalogInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType ) : SwOSInput( name, port, ctrl, ioType ) {
-  
+
   // initialize local HW
   if ( ctrl->isLocal() ) setupLocal( );
 

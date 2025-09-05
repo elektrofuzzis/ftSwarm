@@ -40,7 +40,7 @@ const IOCmdList_t IOCmdList [CLICMD_MAX] = {
   { "getMicrostepMode", false, 0, 0 },
   { "subscribe", true, 0, 1 },
   { "unsubscribe", true, 0, 0 },
-  { "setIOType", true, 2, 2},
+  { "setIOType", true, 1, 2},
   { "getIOType", false, 0, 0},
   { "getValue", false, 0, 0},
   { "getVoltage", false, 0, 0},
@@ -106,7 +106,7 @@ Input commands (A1..A6):
   subscribe( hysteresis )
   unsubscribe()
   getIOType()
-  setIOType( sensorType )
+  setIOType( sensorType, normallyOpen )
   getValue()
   getVoltage()
   getResistance()
@@ -135,7 +135,7 @@ DC-Motor commands (M1..M8):
   getMotionType()
 
 Stepper commands (M1..M4):
-  setIOType( Stepper, highResolution)
+  setIOType( Stepper )
   getIOType()
   setSpeed( speed )
   getSpeed()
@@ -151,6 +151,7 @@ Stepper commands (M1..M4):
   homing( maxsteps )
   isHoming()
   setHomingOffset( steps )
+  subscribe( event )
 
 Servo commands (SERVO1..SERVO2):
   setPosition( position )
@@ -634,7 +635,6 @@ void SwOSCLI::executeActorCmd( void ) {
   SwOSMotor    *motor   = (SwOSMotor *)io;
   SwOSStepper  *stepper = (SwOSStepper *)io;
   int          maxspeed;
-  bool         highResolution = false;
   bool         ok = true;
   SwOSCtrl     *ctrl = io->getCtrl();
   uint8_t      index = ctrl->getIndex( io );
@@ -642,8 +642,7 @@ void SwOSCLI::executeActorCmd( void ) {
   
   switch ( cmd ) {
 
-    case CLICMD_setIOType:      if ( ( parameter[0].inRange( "ioType", 0, SWOSIO_MAXIOTYPE-1, response ) ) && 
-                                     ( parameter[1].inRange( "highResolution", 0, 1, response ) ) ) {
+    case CLICMD_setIOType:      if ( parameter[0].inRange( "ioType", 0, SWOSIO_MAXIOTYPE-1, response ) ) {
 
                                   // which sensor type?
                                   newIOType =  (SwOSIOType_t) parameter[0].getNumber();
@@ -654,7 +653,6 @@ void SwOSCLI::executeActorCmd( void ) {
                                   
                                     if (motor) {
                                       motor->lock();
-                                      motor->setParameter( parameter[1].getNumber() );
                                       motor->setSpeed(0);
                                       motor->apply();
                                       motor->unlock();
@@ -673,7 +671,7 @@ void SwOSCLI::executeActorCmd( void ) {
                                 motor->unlock();
                                 break;
 
-    case CLICMD_setSpeed:       if (parameter[0].inRange( "speed", -4095, 4095, response ) ) { 
+    case CLICMD_setSpeed:       if (parameter[0].inRange( "speed", -motor->maxSpeed(), motor->maxSpeed(), response ) ) { 
                                   OK();
                                   motor->lock(); 
                                   motor->setSpeed( parameter[0].getNumber() );
@@ -1223,6 +1221,8 @@ void SwOSCLI::evalComplexCommand( char *token, bool *loggedIn ) {
       io->unlock();
     }
 
+    OK();
+
   } else if ( cmd==CLICMD_unsubscribe ) {
 
     // controller?
@@ -1237,6 +1237,8 @@ void SwOSCLI::evalComplexCommand( char *token, bool *loggedIn ) {
       io->unsubscribe( );
       io->unlock();
     }
+
+    OK();
 
   } else if (swarm) {
 

@@ -11,7 +11,7 @@
 #include <string.h>
 
 #include "ftPwrDrive/i2cBuffer.h"
-#include "SwOSHW/SWOSHWDuino.h"
+#include "SwOSHW/SwOSHWDuino.h"
 #include "SwOSCom.h"
 
 void SwOSDuino::setIOType( uint8_t port, SwOSIOType_t ioType ) {

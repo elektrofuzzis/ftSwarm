@@ -18,7 +18,7 @@
 #include "SwOSHW/SwOSHWBaseIO.h"
 #include "SwOSHW/SwOSHWActor.h"
 #include "SwOSHW/SwOSHWI2CSensor.h"
-#include "SwOSHW/SwOSHWCAM.h"
+#include "SwOSHW/SWOSHWCam.h"
 #include "SwOSHW/SwOSHWCounter.h"
 #include "SwOSHW/SwOSHWDisplay.h"
 

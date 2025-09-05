@@ -34,12 +34,11 @@ class SwOSAnalogInput;
     int16_t         speed = 0;
 
     // local HW procedures
-    virtual void setupLocal( void ) {};
-    virtual void setLocal( void ) {};
-    virtual bool autoCoast( void ) { return true; };
+    virtual void setLocal( ) = 0;
+    virtual bool autoCoast( ) { return true; }
 
     // remote HW procedures
-    virtual void setRemote() {};  
+    virtual void setRemote() { printf("SwOSMotor.setRemote\n"); }
 
   public:
 
@@ -53,6 +52,7 @@ class SwOSAnalogInput;
     virtual void            read( void );
     virtual bool            isMotor( void ) { return true; };
     virtual bool            isActor( void ) { return true; };
+    virtual uint16_t        maxSpeed( void ) { return 4095; };
 
     // commands
     virtual void    setSpeed( int16_t speed );
@@ -82,12 +82,12 @@ class SwOSDCMotor : public SwOSMotor {
     uint32_t               rampUpY = 0;
   
     // local HW procedures
-    virtual void setupLocal( void );
-    virtual void setLocal( void );
+    virtual void setupLocal( void ) override;
+    virtual void setLocal( void ) override;
     virtual void setPWM( int16_t xin1, int16_t xin2, gpio_num_t pwm, uint32_t duty );
   
     // remote HW procedures
-    virtual void setRemote();
+    virtual void setRemote() override;
   
     virtual bool autoCoast( void ) { return ( ( ioType != SWOSIO_XMMOTOR ) && ( ioType != SWOSIO_TRACTOR ) && ( ioType != SWOSIO_ENCODER ) ); };
 
@@ -120,10 +120,10 @@ class SwOSDCMotor : public SwOSMotor {
     bool    motorIsRunning;
   
     // local HW procedures
-    virtual void setLocal( void );
+    virtual void setLocal( void ) override;
   
     // remote HW procedures
-    virtual void setRemote(); 
+    virtual void setRemote() override; 
   
   public:
   
@@ -133,8 +133,9 @@ class SwOSDCMotor : public SwOSMotor {
     virtual bool isStepper( void ) { return true; };
     virtual void read();
     virtual void serialize( Serialize *serialize );
-    virtual uint8_t pushState( uint8_t *buffer );
-    virtual uint8_t popState( uint8_t *buffer );
+    virtual uint8_t  pushState( uint8_t *buffer );
+    virtual uint8_t  popState( uint8_t *buffer );
+    virtual uint16_t maxSpeed( void ) { return 10240; };
    
     // commands
     virtual void setValue( int32_t distance, int32_t position, bool isHoming, bool isRunning );
@@ -209,11 +210,11 @@ class SwOSDigitalServo : public SwOSServo {
 	  ledc_channel_t  channelSERVO;
     
     // local HW procedures
-    virtual void setupLocal(); // initializes local HW
-    virtual void setLocal();   // set position locally
+    virtual void setupLocal() override; // initializes local HW
+    virtual void setLocal() override;   // set position locally
 
     // remote HW procedures
-    virtual void setRemote();  // setPosition remotely 
+    virtual void setRemote() override;  // setPosition remotely 
   
   public:
     // constructor
@@ -235,7 +236,7 @@ class SwOSDigitalServo : public SwOSServo {
     SwOSPID         *pid    = new SwOSPID( 2.0, 1, 0, 0, 100, -512, 512);
     int16_t         target  = FILTER_INVALID; // FILTER_INVALID -> don't regulate
     
-    virtual void setLocal();       // set position locally
+    virtual void setLocal() override;       // set position locally
 
   public:
     // constructor
