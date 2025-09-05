@@ -34,12 +34,11 @@ class SwOSAnalogInput;
     int16_t         speed = 0;
 
     // local HW procedures
-    virtual void setupLocal( void ) = 0;
-    virtual void setLocal( void ) = 0;
-    virtual bool autoCoast( void ) { return true; };
+    virtual void setLocal( ) = 0;
+    virtual bool autoCoast( ) { return true; }
 
     // remote HW procedures
-    virtual void setRemote() { printf("SwOSMotor.setRemote\n"); };  
+    virtual void setRemote() { printf("SwOSMotor.setRemote\n"); }
 
   public:
 

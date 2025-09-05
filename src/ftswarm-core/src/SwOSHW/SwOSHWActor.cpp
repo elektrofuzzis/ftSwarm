@@ -20,12 +20,6 @@
  ***************************************************/
 
  SwOSMotor::SwOSMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType ):SwOSIO(name, port, ctrl, ioType ){
-
-  // initialize local HW
-  if (ctrl->isLocal()) {
-    setupLocal();
-  }
-
 }
 
 void SwOSMotor::setMotionType( FtSwarmMotion_t motionType ) {

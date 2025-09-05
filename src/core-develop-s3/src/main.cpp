@@ -5,7 +5,7 @@
 #include "SwOSSwarm.h"
 #include "easyKey.h"
 #include "SwOSFilter.h"
-#include <fastLed.h>
+#include <FastLED.h>
 
 #include <ftPwrDrive/ftPwrDrive.h>
 

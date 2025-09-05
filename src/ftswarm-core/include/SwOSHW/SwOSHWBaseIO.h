@@ -67,7 +67,7 @@ protected:
 public:
   SwOSObj() {};                     // std constructor
 	SwOSObj( const char *name);		    // constructor, sets the objects HW name
-  ~SwOSObj();                       // destructor
+	virtual ~SwOSObj();                       // destructor
 
   virtual void loadFromNVS(  nvs_handle_t my_handle ); // load my port & alias settings from NVS
   virtual void saveToNVS(  nvs_handle_t my_handle );   // dave my port & alias settings from NVS

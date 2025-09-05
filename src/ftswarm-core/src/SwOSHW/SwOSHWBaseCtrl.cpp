@@ -13,7 +13,7 @@
 #include "SwOSHW/SwOSHWActor.h"
 #include "SwOSHW/SwOSHWDisplay.h"
 #include "SwOSHW/SwOSHWCounter.h"
-#include "SwOSHW/SwOSHWCAM.h"
+#include "SwOSHW/SWOSHWCam.h"
 #include "SwOSHW/SwOSHWHAL.h"
 #include "SwOSCom.h"
 #include "SwOSLog.h"
@@ -678,7 +678,7 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, char *name, char 
     case SWOSIO_XMOTOR:
     case SWOSIO_XMMOTOR:
     case SWOSIO_TRACTOR:
-    case SWOSIO_MOTOR:            io = new SwOSMotor( name, port, this, ioType );
+    case SWOSIO_MOTOR:            io = new SwOSDCMotor( name, port, this, ioType );
                                   break; 
 
     case SWOSIO_STEPPER:          io = new SwOSStepper( name, port, this);

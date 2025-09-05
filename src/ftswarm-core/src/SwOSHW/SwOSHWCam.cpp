@@ -7,7 +7,7 @@
  * 
  */
 
-#include "SwOSHW/SwOSHWCam.h"
+#include "SwOSHW/SWOSHWCam.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSLog.h"
  
