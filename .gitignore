@@ -339,11 +339,6 @@ Backup of *.doc*
 
 
 # my ignores
-dist/
-src/core-develop
-src/core-develop-s3
-
-# Build Files
 deployment/
 src/ftswarm-*/examples/
 *.gz
