@@ -424,25 +424,12 @@ FtSwarmLDR::FtSwarmLDR( const char *name ):FtSwarmAnalogInput( name, SWOSIO_LDR 
 
 // **** FtSwarmMotor ****
 
-FtSwarmMotor::FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType, bool highResolution):FtSwarmIO( serialNumber, port, ioType) {
-
-  // set io type
-  if (me) {
-    static_cast<SwOSMotor *>(me)->lock();
-    static_cast<SwOSMotor *>(me)->setParameter( highResolution );
-    static_cast<SwOSMotor *>(me)->unlock();
-  }
+FtSwarmMotor::FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType):FtSwarmIO( serialNumber, port, ioType) {
 
 };
 
-FtSwarmMotor::FtSwarmMotor( const char *name, SwOSIOType_t ioType, bool highResolution):FtSwarmIO( name, ioType ) {
+FtSwarmMotor::FtSwarmMotor( const char *name, SwOSIOType_t ioType):FtSwarmIO( name, ioType ) {
   
-  // set io type
-  if (me) {
-    static_cast<SwOSMotor *>(me)->lock();
-    static_cast<SwOSMotor *>(me)->setParameter( highResolution );
-    static_cast<SwOSMotor *>(me)->unlock();
-  }
 };
     
 void FtSwarmMotor::setSpeed( int16_t speed ) {
@@ -485,10 +472,10 @@ void FtSwarmMotor::getAcceleration( uint32_t *rampUpT, uint32_t *rampUpY ) {
 
 // **** FtSwarmTractorMotor
 
-FtSwarmTractorMotor::FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType, bool highResolution):FtSwarmMotor( serialNumber, port, ioType, highResolution) {};
-FtSwarmTractorMotor::FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool highResolution):FtSwarmMotor( serialNumber, port, SWOSIO_TRACTOR, highResolution) {};
-FtSwarmTractorMotor::FtSwarmTractorMotor( const char *name, SwOSIOType_t ioType, bool highResolution ):FtSwarmMotor( name, ioType, highResolution ) {};
-FtSwarmTractorMotor::FtSwarmTractorMotor( const char *name, bool highResolution ):FtSwarmMotor( name, SWOSIO_TRACTOR, highResolution ) {};
+FtSwarmTractorMotor::FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType):FtSwarmMotor( serialNumber, port, ioType) {};
+FtSwarmTractorMotor::FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmMotor( serialNumber, port, SWOSIO_TRACTOR) {};
+FtSwarmTractorMotor::FtSwarmTractorMotor( const char *name, SwOSIOType_t ioType ):FtSwarmMotor( name, ioType ) {};
+FtSwarmTractorMotor::FtSwarmTractorMotor( const char *name ):FtSwarmMotor( name, SWOSIO_TRACTOR ) {};
 
 void FtSwarmTractorMotor::setMotionType( FtSwarmMotion_t motionType ) {
   if (me) {
@@ -514,18 +501,18 @@ FtSwarmMotion_t FtSwarmTractorMotor::getMotionType( void ) {
 
 // **** FtSwarmXMMotor
 
-FtSwarmXMMotor::FtSwarmXMMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool highResolution):FtSwarmTractorMotor( serialNumber, port, SWOSIO_XMMOTOR, highResolution ) {};
-FtSwarmXMMotor::FtSwarmXMMotor( const char *name, bool highResolution ):FtSwarmTractorMotor( name, SWOSIO_XMMOTOR, highResolution ) {};
+FtSwarmXMMotor::FtSwarmXMMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmTractorMotor( serialNumber, port, SWOSIO_XMMOTOR ) {};
+FtSwarmXMMotor::FtSwarmXMMotor( const char *name ):FtSwarmTractorMotor( name, SWOSIO_XMMOTOR ) {};
 
 // **** FtSwarmEncoderMotor
 
-FtSwarmEncoderMotor::FtSwarmEncoderMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, bool highResolution):FtSwarmTractorMotor( serialNumber, port, SWOSIO_ENCODER, highResolution ) {};
-FtSwarmEncoderMotor::FtSwarmEncoderMotor( const char *name, bool highResolution ):FtSwarmTractorMotor( name, SWOSIO_ENCODER, highResolution ) {};
+FtSwarmEncoderMotor::FtSwarmEncoderMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmTractorMotor( serialNumber, port, SWOSIO_ENCODER ) {};
+FtSwarmEncoderMotor::FtSwarmEncoderMotor( const char *name ):FtSwarmTractorMotor( name, SWOSIO_ENCODER ) {};
 
 // **** FtSwarmStepperMotor
 
-FtSwarmStepperMotor::FtSwarmStepperMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmTractorMotor( serialNumber, port, SWOSIO_STEPPER, true ) {};
-FtSwarmStepperMotor::FtSwarmStepperMotor( const char * name ):FtSwarmTractorMotor( name, SWOSIO_STEPPER, true ) {};
+FtSwarmStepperMotor::FtSwarmStepperMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmTractorMotor( serialNumber, port, SWOSIO_STEPPER ) {};
+FtSwarmStepperMotor::FtSwarmStepperMotor( const char * name ):FtSwarmTractorMotor( name, SWOSIO_STEPPER ) {};
 
 void FtSwarmStepperMotor::setDistance( int32_t distance, bool relative ) {
 
@@ -645,8 +632,8 @@ void FtSwarmStepperMotor::setHomingOffset( int32_t offset ) {
 
 // **** FtSwarmOnOffActor ****
 
-FtSwarmOnOffActor::FtSwarmOnOffActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType):FtSwarmMotor( serialNumber, port, ioType, false ) {};
-FtSwarmOnOffActor::FtSwarmOnOffActor( const char *name, SwOSIOType_t ioType ):FtSwarmMotor( name, ioType, false ) {};
+FtSwarmOnOffActor::FtSwarmOnOffActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType):FtSwarmMotor( serialNumber, port, ioType ) {};
+FtSwarmOnOffActor::FtSwarmOnOffActor( const char *name, SwOSIOType_t ioType ):FtSwarmMotor( name, ioType ) {};
 
 void FtSwarmOnOffActor::on( int16_t speed ) {
   if (me) {

@@ -19,7 +19,7 @@ const char SLITERAL[ SERIALIZE_LITERAL_MAX ][24] = {
   "trigger",            // SERIALIZE_LITERAL_TRIGGER
   "state",              // SERIALIZE_LITERAL_STATE
   "speed",              // SERIALIZE_LITERAL_SPEED
-  "highResolution",     // SERIALIZE_LITERAL_HIGHRESOLUTION
+  "UNUSED",             // SERIALIZE_LITERAL_UNUSED
   "offset",             // SERIALIZE_LITERAL_OFFSET
   "position",           // SERIALIZE_LITERAL_POSITION
   "value",              // SERIALIZE_LITERAL_VALUE

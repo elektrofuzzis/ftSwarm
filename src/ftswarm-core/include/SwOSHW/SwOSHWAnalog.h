@@ -25,9 +25,9 @@
  class SwOSAnalogInput : public SwOSInput {
 
   protected:
-    int8_t                         ADCChannel = ADC1_CHANNEL_MAX;
-    int8_t                         ADCUnit    = GPIO_NUM_NC;
-    adc_atten_t                    attenuation = ADC_ATTEN_DB_11;
+    int8_t                        ADCChannel  = ADC1_CHANNEL_MAX;
+    int8_t                        ADCUnit     = GPIO_NUM_NC;
+    adc_atten_t                   attenuation = ADC_ATTEN_DB_12;
     esp_adc_cal_characteristics_t *adc_chars  = NULL;
     SwOSFilter                    *filter     = NULL;
 	

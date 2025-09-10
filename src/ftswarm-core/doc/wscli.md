@@ -303,15 +303,13 @@ Motor, x-motor, xm-motor, tractor, encoder, lamp, valve, compressor, buzzer
 
 | json              | ftSwarm | value        | example | description |
 |:------------------|:--------|:-------------|:--------|:------------|
-| "speed":          | \\008   | \<integer\>  | 64      | output speed, range dependend on highResolution<br>0 +/-255<BR>1 +/-4095
-| "highResolution": | \\009   | [0\|1]       | 1       |
+| "speed":          | \\008   | \<integer\>  | 64      | output speed, range dependend on device<br>0 +/-255<BR>1 +/-4095
 
 ##### Stepper
 
 | json              | ftSwarm | value        | example | description |
 |:------------------|:--------|:-------------|:--------|:------------|
-| "speed":          | \\008   | \<integer\>  | 64      | output speed, range dependend on highResolution<br>0 +/-255<BR>1 +/-4095
-| "highResolution": | \\009   | [0\|1]       | 1       | 0 - maxspeed [-255, 255], 1 maxspeed [-4095,4095]
+| "speed":          | \\008   | \<integer\>  | 64      | output speed, range +/-10240
 | "homing":         | \\035   | [0\|1]       | 0       | 1 - homing procedure ongoing
 | "running":        | \\036   | [0\|1]       | 0       | 1 - stepper in progress
 | "position":       | \\011   | \<long\>     | 10000   | actual position in steps

@@ -41,7 +41,7 @@ typedef enum {
   CMD_STATE,                  // send my input's readings
   CMD_IOCONFIG,               // send my io config to kelda
   CMD_SETIOTYPE,              // change a port's IO Type
-  CMD_SETPARAMETER,           // send a parameter to the IO, e.g. normallyOpen, highResolution
+  CMD_SETPARAMETER,           // send a parameter to the IO, e.g. normallyOpen
   CMD_HARTBEAT,               // Kelda to Member: I'm still out there
   
   CMD_IDENTIFY,               // show myself

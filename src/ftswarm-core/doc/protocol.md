@@ -311,8 +311,7 @@ Motor, x-motor, xm-motor, tractor, encoder, lamp, valve, compressor, stepper, bu
 
 | json              | ftSwarm | value        | example | description |
 |:------------------|:--------|:-------------|:--------|:------------|
-| "speed":          | \\008   | \<integer\>  | 64      | output speed, range dependend on highResolution<br>0 +/-255<BR>1 +/-4095
-| "highResolution": | \\009   | [0\|1]       | 1       |
+| "speed":          | \\008   | \<integer\>  | 64      | output speed, range dependend on device<br>0 +/-255<BR>1 +/-4095
 
 ##### Servo
 
