@@ -192,7 +192,7 @@ public:
   void unsubscribe( bool cascade );                              // unsubscribe userevents and if cascade = true all IOs
 
   // run measurements
-  void read();
+  void operate();
 
   // API commands
 	bool apiActorCmd( char *id, int cmd );                 // send an actor's command (from api)

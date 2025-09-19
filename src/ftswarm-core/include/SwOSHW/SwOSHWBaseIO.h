@@ -93,12 +93,12 @@ class SwOSIO : public SwOSObj {
 protected:
 	uint8_t      port;  // local port
   SwOSCtrl     *ctrl; // pointer to my Controller
-  SwOSIOType_t ioType = SWOSIO_UNDEF;
-  bool         isSubscribed = false;
+  SwOSIOType_t ioType              = SWOSIO_UNDEF;
+  bool         isSubscribed        = false;
   int32_t      lastsubscribedValue = 0;
-  int32_t      hysteresis = 0;
-  char         *subscribedIOName = NULL;
-  int16_t      useCounter = 0;
+  int32_t      hysteresis          = 0;
+  char         *subscribedIOName   = NULL;
+  int16_t      useCounter          = 0;
 
   // local HW 
   virtual void setupLocal() {};
@@ -148,7 +148,7 @@ public:
   virtual bool isCounter( void )      { return false; };
   virtual bool isStepper( void )      { return false; };
 
-  virtual void read( void ) { };
+  virtual void operate( void ) { };
   virtual void onTrigger( int32_t value );
 
 };
@@ -215,7 +215,7 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
     virtual bool isEventInput( void )   { return true; }; 
 
     // read sensor
-	  virtual void read() {};
+	  virtual void operate() {};
     virtual void setReading( int32_t newValue );
 
     // external commands

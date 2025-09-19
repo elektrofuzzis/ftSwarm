@@ -10,6 +10,26 @@
 #include "SwOSHW/SwOSHWCounter.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWHAL.h"
+
+// ISR to handle counter events
+
+typedef void (*SwOSHaltHandler_t)();
+
+SwOSHaltHandler_t haltHandlers[10];
+
+static void IRAM_ATTR pcnt_example_intr_handler(void *arg) {
+
+  int unit = (int)arg;
+  uint32_t status;
+
+  // get event data
+  pcnt_get_event_status( (pcnt_unit_t)unit, &status);
+  pcnt_event_disable( (pcnt_unit_t)unit, PCNT_EVT_THRES_1 );
+
+  // setSpeed(0)
+  haltHandlers[unit]();
+
+}
  
  /***************************************************
  *
@@ -17,7 +37,7 @@
  *
  ***************************************************/
 
- SwOSCounter::SwOSCounter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl ) : SwOSInput( name, port1, ctrl, SWOSIO_COUNTER ) {
+SwOSCounter::SwOSCounter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl ) : SwOSInput( name, port1, ctrl, SWOSIO_COUNTER ) {
 
   portControl = port2;
 
@@ -38,7 +58,7 @@ void SwOSCounter::setupLocal() {
   // setup _CONTROL Input if needed.
   // counter: portControl = SWOS_NOPORT -> no _CONTROL
   // encode:  if counter post is the highest input port, portControl = ctrl->inputs  -> no _CONTROL
-  if ( portControl < MAXIOS[ ctrl->getCPU() ].inputs ) { 
+  if ( portControl < MAXIOS[ctrl->getCPU()].inputs ) { 
 
     CONTROL = (gpio_num_t) GPIO_INPUT[ctrl->getCPU()][portControl].io;
 
@@ -68,11 +88,11 @@ void SwOSCounter::setupLocal() {
     .ctrl_gpio_num  = CONTROL,
     // What to do when control input is low or high?
     .lctrl_mode = PCNT_MODE_KEEP, // Reverse counting direction if low
-    .hctrl_mode = PCNT_MODE_KEEP,    // Keep the primary counter mode if high
+    .hctrl_mode = PCNT_MODE_KEEP, // Keep the primary counter mode if high
     // What to do on the positive / negative edge of pulse input?
     .pos_mode = PCNT_COUNT_INC,   // Count up on the positive edge
     .neg_mode = PCNT_COUNT_DIS,   // Keep the counter value on the negative edge
-    .unit = this->unit,
+    .unit     = this->unit,
     .channel = PCNT_CHANNEL_0,
     };
   
@@ -106,12 +126,32 @@ void SwOSCounter::setupLocal() {
   pcnt_counter_pause(unit);
   pcnt_counter_clear(unit);
 
+  /* Install interrupt service and add isr callback handler */
+  pcnt_isr_service_install(0);
+  pcnt_isr_handler_add( unit, pcnt_example_intr_handler, (void *)unit) ;
+
   /* Everything is set up, now go to counting */
   pcnt_counter_resume(unit);
+  
 
 }
 
-void SwOSCounter::read( void ) {
+/*
+void SwOSCounter::registerEvent( int32_t value, SwOSHaltHandler_t haltHandler ) {
+
+  // Events are limited to local ports
+  if (! ctrl->isLocal() ) return;
+
+  // enable callback
+  haltHandlers[unit] = haltHandler;
+  pcnt_set_event_value(unit, PCNT_EVT_THRES_1, value );
+  pcnt_event_enable(unit, PCNT_EVT_THRES_1);
+
+}
+
+*/
+
+void SwOSCounter::operate( void ) {
 
   // no work on remote sensors
   if ( !ctrl->isLocal() ) return;
@@ -231,7 +271,7 @@ void SwOSFrequencymeter::setupLocal() {
 
 }
 
-void SwOSFrequencymeter::read( void ) {
+void SwOSFrequencymeter::operate( void ) {
 
   // no work on remote sensors
   if (!ctrl->isLocal()) return;

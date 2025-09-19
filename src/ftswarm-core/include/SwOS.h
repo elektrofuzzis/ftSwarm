@@ -15,6 +15,8 @@
 // #define DEBUG_COMMUNICATION_SWARM
 // #define DEBUG_READTASK
 
+#define SWOSCORE 0
+
 #define MAXIDENTIFIER 32
 #define MAXACTORS 8
 #define MAXINPUTS 11

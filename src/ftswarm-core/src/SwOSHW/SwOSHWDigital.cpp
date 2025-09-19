@@ -94,7 +94,7 @@ bool SwOSDigitalInput::isGPIOInput( void ) {
 
 };
 
-void SwOSDigitalInput::read() {
+void SwOSDigitalInput::operate() {
   
   // no work on remote sensors
   if (!ctrl->isLocal()) return;
@@ -263,7 +263,7 @@ void SwOSHC165::setupLocal() {
 
 }
 
-void SwOSHC165::read( ) {
+void SwOSHC165::operate( ) {
 
   // no work on remote HW
   if (!ctrl->isLocal()) return;

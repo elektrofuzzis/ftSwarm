@@ -135,14 +135,14 @@ uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
     poti->addFilter(new SwOSMovingAverage(3) );
 
     // need to read multiple times to get consistent values
-    poti->read();
+    poti->operate();
     while (poti->getValueI32() == FILTER_INVALID ) {
-      poti->read();
+      poti->operate();
     }
 
-    poti->read();
-    if (( poti->getValueI32() > 0 ) && ( poti->getValueI32() < 4095 ) ) {
-      sprintf( name, "RCSERVO%d", i+1 );
+    poti->operate();
+    if ( poti->getValueI32() < 4095 ) {
+      sprintf( name, "RC%d", i+1 );
       SwOSMotor *motor = (SwOSMotor *) getIO( SWOSIO_MOTOR, i );
       io[ getIndex( motor ) ] = new SwOSRCServo( name, i, this, poti, motor );
 
@@ -335,6 +335,7 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSC
     maxIO = setupLocalJoysticks( maxIO, ctrlConfig );
     if ( ctrlConfig.gyro ) maxIO = setupLocalGyro( maxIO );
     if ( CPU == FTSWARMCONTROL_1V3 ) maxIO = setupLocalOLED( maxIO );
+
   }
 
 }
@@ -436,7 +437,7 @@ FtSwarmController_t SwOSCtrl::getType() {
 
 }
 
-void SwOSCtrl::read() {
+void SwOSCtrl::operate() {
 
   // don't send packets to myself, so I need to now last reading time
   lastContact = millis();
@@ -444,7 +445,7 @@ void SwOSCtrl::read() {
   if (ftDuino) {
 
     // get data from ftDuino
-    ftDuino->read( );
+    ftDuino->operate( );
     
     // errors during I2C communication?
     if ( ftDuino->getError() != 0 ) SWARM_LOG_ERROR( "ftDuino I2C connection broken." );
@@ -454,16 +455,16 @@ void SwOSCtrl::read() {
   if (ftPwrDrive) {
 
     // get data from ftPwrDrive
-    ftPwrDrive->read( );
+    ftPwrDrive->operate( );
     
     // errors during I2C communication?
     if ( ftPwrDrive->getError() != 0 ) SWARM_LOG_ERROR( "ftPwrDrive I2C error %d.", ftPwrDrive->getError() );
 
   }
 
-  if (hc165) hc165->read();
+  if (hc165) hc165->operate();
 
-  for (uint8_t i=0; i<IOs; i++) { if ( io[i] ) io[i]->read(); }
+  for (uint8_t i=0; i<IOs; i++) { if ( io[i] ) io[i]->operate(); }
 
 }
 

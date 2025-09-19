@@ -83,7 +83,7 @@ static void readTask( void *parameter ) {
     myOSSwarm.Ctrl[0]->lock();
     
     // read sensors
-    myOSSwarm.Ctrl[0]->read();
+    myOSSwarm.Ctrl[0]->operate();
 
     // Do I know a Kelda and I am not the Kelda, so I need to send my state
     if ( ( myOSSwarm.Kelda ) && ( myOSSwarm.Kelda != myOSSwarm.Ctrl[0] ) ) {
@@ -363,7 +363,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
   // now I can visualize my state
   setState( BOOTING );
-
+  
   // wifi
   if ( nvs.wifiMode != wifiOFF ) startWifi( );
 
@@ -371,9 +371,9 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   if (!myOSNetwork.begin( nvs.swarmSecret, nvs.swarmPIN, nvs.swarmCommunication )) SWARM_LOG_FATAL("Error initializing swarm communication.");
 
   // start the tasks
-  xTaskCreatePinnedToCore( recvTask,    "RecvTask",    10000, NULL, 1, NULL, 0 );
-  xTaskCreatePinnedToCore( readTask,    "ReadTask",    20000, NULL, 1, NULL, 0 );
-  xTaskCreatePinnedToCore( connectTask, "connectTask", 10000, NULL, 1, NULL, 0 );
+  xTaskCreatePinnedToCore( recvTask,    "RecvTask",    10000, NULL, 1, NULL, SWOSCORE );
+  xTaskCreatePinnedToCore( readTask,    "ReadTask",    20000, NULL, 1, NULL, SWOSCORE );
+  xTaskCreatePinnedToCore( connectTask, "connectTask", 10000, NULL, 1, NULL, SWOSCORE );
 
   // start web server
   if ( ( nvs.webUI ) && ( nvs.wifiMode != wifiOFF ) ) SwOSStartWebServer();

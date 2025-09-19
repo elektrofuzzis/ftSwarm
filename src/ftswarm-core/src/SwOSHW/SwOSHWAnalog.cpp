@@ -19,7 +19,7 @@
  *
  ***************************************************/
 
- SwOSAnalogInput::SwOSAnalogInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType ) : SwOSInput( name, port, ctrl, ioType ) {
+SwOSAnalogInput::SwOSAnalogInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType ) : SwOSInput( name, port, ctrl, ioType ) {
 
   // initialize local HW
   if ( ctrl->isLocal() ) setupLocal( );
@@ -174,7 +174,7 @@ float SwOSAnalogInput::getFahrenheit() {
 
 }
 
-void SwOSAnalogInput::read() {
+void SwOSAnalogInput::operate() {
 
   // remote: no work
   if (!ctrl->isLocal()) return;

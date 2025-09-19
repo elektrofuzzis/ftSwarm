@@ -69,7 +69,7 @@ void SwOSMotor::onTrigger( int32_t value ) {
 
 }
 
-void SwOSMotor::read( void ) {
+void SwOSMotor::operate( void ) {
 
 }
 
@@ -144,6 +144,8 @@ void SwOSDCMotor::setupLocal() {
   ledc_channel->duty           = 0; 
   ledc_channel->hpoint         = 0;
   ledc_channel->flags.output_invert = 1;
+
+  setLocal();
 
 }
 
@@ -411,7 +413,7 @@ void SwOSStepper::setValue( int32_t distance, int32_t position, bool isHoming, b
   this->motorIsRunning = isRunning;
 }
 
-void SwOSStepper::read() {
+void SwOSStepper::operate() {
   
   // no work on remote sensors
   if (!ctrl->isLocal()) return;
@@ -611,13 +613,16 @@ void SwOSDigitalServo::setRemote( ) {
 #define RCSERVO_LOW  1700.0
 #define RCSERVO_HIGH 3750.0
 #define RCMAXDELTA   20
-#define RCMINSPEED   65
+#define RCMINSPEED   2000
 
 SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSAnalogInput *poti, SwOSMotor *motor): SwOSServo( name, port, ctrl ) {
 
   this->poti  = poti;
   this->motor = motor;
-  
+
+  target   = poti->getValueI32();
+  position = ( ( target - RCSERVO_LOW ) / ( RCSERVO_HIGH - RCSERVO_LOW ) * 256 ) - offset;
+ 
 }
 
 SwOSRCServo::~SwOSRCServo() {
@@ -628,13 +633,13 @@ SwOSRCServo::~SwOSRCServo() {
 
 }
 
-void SwOSRCServo::adjust(void) {
+void SwOSRCServo::operate(void) {
 
   // remote: no work
   if (!ctrl->isLocal()) return;
 
   // read poti value to fill up the filters
-  poti->read();
+  poti->operate();
 
   // no target set - noting to do 
   if ( target == FILTER_INVALID ) return;
@@ -660,8 +665,10 @@ void SwOSRCServo::adjust(void) {
 
   }
 
-  motor->setSpeed( speed );
-  motor->apply();
+  if ( motor->getSpeed() != speed ) {
+    motor->setSpeed( speed );
+    motor->apply();
+  }
 
 }
 

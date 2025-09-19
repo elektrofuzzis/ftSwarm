@@ -37,7 +37,7 @@
     virtual bool isDigitalInput( void ) { return true; };
 
     // read sensor
-	  virtual void read();
+	  virtual void operate();
     virtual void setReading( int32_t newValue );
 
     // external commands
@@ -67,7 +67,7 @@
     SwOSHC165(const char *name, SwOSCtrl *ctrl);
   
     // administrative stuff
-    virtual void read();
+    virtual void operate();
   
     // commands
     virtual void    setValue( uint8_t value ) { this->lastValue = value; };

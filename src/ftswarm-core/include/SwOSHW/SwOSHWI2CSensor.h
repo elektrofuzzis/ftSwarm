@@ -58,7 +58,7 @@ class SwOSMotor;
     ~SwOSGyroLSM();
 
     // read sensor
-    virtual void read();
+    virtual void operate();
 };
 
 /***************************************************
@@ -84,7 +84,7 @@ class SwOSMotor;
     virtual void serialize( Serialize *serialize );
 
     // read sensor
-    virtual void read();
+    virtual void operate();
 
     // interface
     virtual void getAcceleration( float *x, float *y, float *z );
@@ -113,7 +113,7 @@ class SwOSMotor;
     virtual void serialize( Serialize *serialize );
 
     // read sensor
-	  virtual void read();
+	  virtual void operate();
 
     // external commands
     virtual void setValue( int32_t value );                    // set value by an external call
@@ -143,7 +143,7 @@ class SwOSMotor;
     virtual uint8_t pushState( uint8_t *buffer );
     virtual uint8_t popState( uint8_t *buffer );
 
-    virtual void read();
+    virtual void operate();
 
     virtual void setRegister( uint8_t reg, uint8_t value );
     virtual uint8_t getRegister( uint8_t reg );

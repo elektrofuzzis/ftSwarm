@@ -29,7 +29,7 @@
 #define GPIO_RED         GPIO_NUM_4
 #define GPIO_GREEN       GPIO_NUM_5
 #define GPIO_BLUE        GPIO_NUM_10
-#define LED_BASE_CHANNEL LEDC_CHANNEL_3
+#define LED_BASE_CHANNEL LEDC_CHANNEL_4
 
 class RGBLed {
 

@@ -74,7 +74,7 @@ void SwOSGyroLSM::setupLocal() {
 
 }
 
-void SwOSGyroLSM::read() {
+void SwOSGyroLSM::operate() {
 
   // lsm->Get_X_Axes( _accelerometer );
   // lsm->Get_G_Axes( _gyroscope );
@@ -181,7 +181,7 @@ uint8_t SwOSGyroMPU::popState( uint8_t *buffer ) {
   
 };
 
-void SwOSGyroMPU::read() {
+void SwOSGyroMPU::operate() {
 
   uint8_t FIFOBuffer[64]; // FIFO storage buffer
 
@@ -304,7 +304,7 @@ void SwOSLidarInput::setupLocal() {
   Lidar.startContinuous(100);
 }
   
-void SwOSLidarInput::read() {
+void SwOSLidarInput::operate() {
    
   // no work on remote sensors
   if (!ctrl->isLocal()) return;
@@ -388,7 +388,7 @@ void I2CRequestEvent() {
   
 }
 
-void SwOSI2C::read( ) {
+void SwOSI2C::operate( ) {
   
   for( uint8_t i=0; i<MAXI2CREGISTERS; i++) myRegister[i] = I2CSlave_value[i];
 

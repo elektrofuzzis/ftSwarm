@@ -52,7 +52,7 @@ void SwOSDuino::setMotor( uint8_t port, FtSwarmMotion_t _motionType, int16_t spe
     i2c.sendData( i2cAddress, I2C_MOTOR_SET, port, mode, pwm );
 }
 
-void SwOSDuino::read( void ) {
+void SwOSDuino::operate( void ) {
 
     i2c.sendData( i2cAddress, I2C_GETSTATE );
     i2c.receiveBuffer( i2cAddress, 16 );

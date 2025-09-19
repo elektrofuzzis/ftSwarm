@@ -54,7 +54,7 @@
     virtual SwOSFilter *getFilter( SwOSFilter_t ft );
 
     // read sensor
-	  virtual void read();
+	  virtual void operate();
 
     // external commands
     virtual void   setValue( int32_t value );                    // set value by an external call

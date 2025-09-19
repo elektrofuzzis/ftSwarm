@@ -11,8 +11,8 @@
 
 #include "SwOSHWBaseIO.h"
 
-#include <driver/pcnt.h>
- 
+#include "driver/pcnt.h"
+
  /***************************************************
  *
  *   SwOSCounter
@@ -36,9 +36,10 @@
     // administrative stuff
     virtual void serialize( Serialize *serialize );
     virtual bool isCounter( void ) { return true; };
+    // virtual void registerEvent( int32_t value );
 
     // read sensor
-	  virtual void read();
+	  virtual void operate();
 
     // external commands
     virtual void resetCounter( void );
@@ -73,7 +74,7 @@ class SwOSFrequencymeter : public SwOSInput {
     virtual void serialize( Serialize *serialize );
 
     // read sensor
-	  virtual void read();
+	  virtual void operate();
     virtual void setValue( int32_t value );                 // set value by an external call
     
 };

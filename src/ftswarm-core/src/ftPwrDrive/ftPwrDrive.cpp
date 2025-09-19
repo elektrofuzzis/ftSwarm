@@ -357,7 +357,7 @@ uint8_t FtPwrDrive::motorIndex( uint8_t motor ) {
   
 }
 
-void FtPwrDrive::read( void ) {
+void FtPwrDrive::operate( void ) {
   
   // I'm alive
   Watchdog( 500 );

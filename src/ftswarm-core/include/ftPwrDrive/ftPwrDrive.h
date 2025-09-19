@@ -228,7 +228,7 @@ class FtPwrDrive {
     void setInSync( uint8_t motor1, uint8_t motor2, boolean OnOff);
       // set two motors running in sync
 
-    void read( void );
+    void operate( void );
     uint8_t getError( void );
 
 };

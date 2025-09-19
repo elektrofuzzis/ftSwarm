@@ -49,7 +49,7 @@ class SwOSAnalogInput;
     virtual FtSwarmMotion_t getMotionType() { return motionType; }; 
     virtual void            serialize( Serialize *serialize ); // serialize object to JSON
     virtual void            onTrigger( int32_t value );
-    virtual void            read( void );
+    virtual void            operate( void );
     virtual bool            isMotor( void ) { return true; };
     virtual bool            isActor( void ) { return true; };
     virtual uint16_t        maxSpeed( void ) { return 4095; };
@@ -131,7 +131,7 @@ class SwOSDCMotor : public SwOSMotor {
     SwOSStepper(const char *name, uint8_t port, SwOSCtrl *ctrl);
     virtual ~SwOSStepper( );
     virtual bool isStepper( void ) { return true; };
-    virtual void read();
+    virtual void operate();
     virtual void serialize( Serialize *serialize );
     virtual uint8_t  pushState( uint8_t *buffer );
     virtual uint8_t  popState( uint8_t *buffer );
@@ -148,8 +148,8 @@ class SwOSDCMotor : public SwOSMotor {
     virtual void setHomingOffset( int32_t offset );                // set homing offset
     virtual bool isHoming( void );                                 // check if motor is in homing procedure
     virtual bool isRunning( void );                                // check if motor is running
-    virtual void setIsHoming( bool isHoming );                     // used by controller during read() to set local info
-    virtual void setIsRunning( bool isRunning );                   // used by controller during read() to set local info
+    virtual void setIsHoming( bool isHoming );                     // used by controller during operate() to set local info
+    virtual void setIsRunning( bool isRunning );                   // used by controller during operate() to set local info
     
     /*virtual void setAbsDistance(int32_t distance );              // set a absolute distance to go
     virtual int32_t getStepsToGo( void );                          // number of needed steps to go to distance
@@ -243,6 +243,6 @@ class SwOSDigitalServo : public SwOSServo {
 	  SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSAnalogInput *poti, SwOSMotor *motor );
     ~SwOSRCServo();
 
-    virtual void adjust( void );
+    virtual void operate( void ) override;
 
 };

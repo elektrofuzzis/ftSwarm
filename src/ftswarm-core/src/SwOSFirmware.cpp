@@ -65,7 +65,7 @@ void calibrateJoystick( uint8_t port, SwOSJoyCalibration_t calibration[2] ) {
     for ( uint8_t p=0; p<2; p++ ) {
 
       change = false;
-      joy[p]->read();
+      joy[p]->operate();
       value = joy[p]->getValueI32();
 
       if ( value != FILTER_INVALID ) {
@@ -93,7 +93,7 @@ void calibrateJoystick( uint8_t port, SwOSJoyCalibration_t calibration[2] ) {
 
     while( stable < 3) {
 
-      joy[p]->read();
+      joy[p]->operate();
       value = joy[p]->getValueI32();
 
       if ( ( value > 1500 ) && ( value < 2000 ) && ( value == lastValue ) ){

@@ -638,7 +638,7 @@ FtSwarmOnOffActor::FtSwarmOnOffActor( const char *name, SwOSIOType_t ioType ):Ft
 void FtSwarmOnOffActor::on( int16_t speed ) {
   if (me) {
     static_cast<SwOSMotor *>(me)->lock();
-    static_cast<SwOSMotor *>(me)->setSpeed( speed);
+    static_cast<SwOSMotor *>(me)->setSpeed(speed);
     static_cast<SwOSMotor *>(me)->apply();
     static_cast<SwOSMotor *>(me)->unlock();
   }
