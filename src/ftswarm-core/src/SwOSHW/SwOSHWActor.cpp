@@ -30,6 +30,8 @@ void SwOSMotor::setMotionType( FtSwarmMotion_t motionType ) {
 
 void SwOSMotor::setSpeed( int16_t speed ) {
 
+  // printf("setSpeed %s %d\n", getName(), speed );
+
   // if no change is needed, return
   if ( speed == this->speed ) return;
 
@@ -107,7 +109,9 @@ void SwOSDCMotor::setupLocal() {
   // set HW Pins
   IN1 = GPIO_ACTOR[ctrl->getCPU()][port][0];
   IN2 = GPIO_ACTOR[ctrl->getCPU()][port][1];
-  
+
+  // printf("SwOSDCMotor::setupLocal %s %d %d %d\n", getName(), port, IN1, IN2);
+
   // set digital ports IN1 & in2 to output
   gpio_config_t io_conf = {
     .pin_bit_mask = 0,
@@ -144,8 +148,6 @@ void SwOSDCMotor::setupLocal() {
   ledc_channel->duty           = 0; 
   ledc_channel->hpoint         = 0;
   ledc_channel->flags.output_invert = 1;
-
-  setLocal();
 
 }
 
@@ -518,6 +520,15 @@ void SwOSServo::onTrigger( int32_t value ) {
 
 }
 
+void SwOSServo::setRemote( ) {
+
+  SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETSERVO );
+  cmd.data.servoCmd.index    = ctrl->getIndex(this);
+  cmd.data.servoCmd.position = position;
+  cmd.data.servoCmd.offset   = offset;
+  cmd.send( );
+}
+
 /***************************************************
  *
  *   SwOSDigitalServo
@@ -532,6 +543,8 @@ void SwOSServo::onTrigger( int32_t value ) {
 
 void SwOSDigitalServo::setupLocal() {
   // initialize local HW
+
+  // printf("SwOSDigitalServo::setupLocal\n");
 
   SERVO = GPIO_SERVO[ctrl->getCPU()][port];
 
@@ -591,16 +604,6 @@ void SwOSDigitalServo::setLocal() {
   ESP_ERROR_CHECK(ledc_update_duty(LEDC_LOW_SPEED_MODE, channelSERVO));
 
 }
-
-void SwOSDigitalServo::setRemote( ) {
-  
-  SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETSERVO );
-  cmd.data.servoCmd.index    = ctrl->getIndex(this);
-  cmd.data.servoCmd.position = position;
-  cmd.data.servoCmd.offset   = offset;
-  cmd.send( );
-}
-
 
 /***************************************************
  *

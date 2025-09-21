@@ -155,7 +155,7 @@ FtSwarmDigitalInput::FtSwarmDigitalInput( FtSwarmSerialNumber_t serialNumber, Ft
 
 }
 
-FtSwarmDigitalInput::FtSwarmDigitalInput( const char *name, SwOSIOType_t ioType, bool normallyOpen ):FtSwarmSensor( name, SWOSIO_DIGITAL) {
+FtSwarmDigitalInput::FtSwarmDigitalInput( const char *name, SwOSIOType_t ioType, bool normallyOpen ):FtSwarmSensor( name, ioType) {
 
   if (me) static_cast<SwOSInput *>(me)->setParameter( normallyOpen );
 
@@ -221,7 +221,7 @@ FtSwarmReedSwitch::FtSwarmReedSwitch( const char * name, bool normallyOpen):FtSw
 // **** FtSwarmButton ****
 
 FtSwarmButton::FtSwarmButton( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmDigitalInput( serialNumber, port, SWOSIO_BUTTON ) {};
-FtSwarmButton::FtSwarmButton( const char *name):FtSwarmDigitalInput( name, SWOSIO_BUTTON ) {};
+FtSwarmButton::FtSwarmButton( const char *name):FtSwarmDigitalInput( name, SWOSIO_BUTTON, true ) {};
 
 // **** FtSwarmCounter
 
@@ -1243,7 +1243,7 @@ void FtSwarmCAM::setVFlip( bool vFlip ) {
 
 // **** FtSwarm ****
 
-FtSwarmSerialNumber_t FtSwarm::begin( bool verbose ) {
+FtSwarmSerialNumber_t FtSwarm::begin( bool verbose, bool waitOnControllers ) {
 
   FtSwarmSerialNumber_t result = myOSSwarm.begin( verbose );
 
@@ -1251,6 +1251,10 @@ FtSwarmSerialNumber_t FtSwarm::begin( bool verbose ) {
     SWARM_LOG_ERROR("Please configure this controller as Kelda.");
     firmware();
     ESP.restart();
+  }
+
+  while (!myOSSwarm.isOnline()) {
+    delay(250);
   }
 
   return result;

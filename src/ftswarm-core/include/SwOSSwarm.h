@@ -120,6 +120,9 @@ public:
   // Test, if SN is online
   bool isOnline( FtSwarmSerialNumber_t serialNumber );  
   
+  // Test, if complete swarm is online
+  bool isOnline( void );  
+
   // add Controller SN to the swarm
   bool addController( FtSwarmSerialNumber_t serialNumber );    
 

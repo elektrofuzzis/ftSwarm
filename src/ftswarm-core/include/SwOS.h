@@ -623,6 +623,15 @@ class FtSwarmMotor : public FtSwarmIO {
     
 };
 
+class FtSwarmXMotor : public FtSwarmMotor {
+  // general motor class, use this class for (old) gray motors, mini motors, XS motors
+  // M1..M2 all contollers - keep power budget in mind!
+  public:
+    FtSwarmXMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port ):FtSwarmMotor( serialNumber, port, SWOSIO_XMOTOR ) {};
+    FtSwarmXMotor( const char *name ):FtSwarmMotor( name, SWOSIO_XMOTOR ) {};
+    
+};
+
 class FtSwarmTractorMotor : public FtSwarmMotor {
   // tractor & XM motor
   // M1..M2 all contollers - keep power budget in mind!
@@ -863,7 +872,7 @@ class FtSwarm {
   // my swarm...
     
   public:
-    FtSwarmSerialNumber_t begin( bool verbose = false );   // start my swarm
+    FtSwarmSerialNumber_t begin( bool verbose = false, bool waitOnControllers = true );   // start my swarm
     void halt( void );                                     // stop all actors
     bool waitOnUserEvent( int parameter[10], TickType_t xTicksToWait = 512 );
     bool sendEventData( uint8_t *buffer, size_t size );

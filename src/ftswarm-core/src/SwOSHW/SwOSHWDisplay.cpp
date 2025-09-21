@@ -49,6 +49,8 @@ class RGBLed {
 
 RGBLed::RGBLed() {
 
+  printf("** RGBLED **\n");
+
   // initialize local HW
   ledc_timer_config_t ledc_timer = {
     .speed_mode       = LEDC_LOW_SPEED_MODE,

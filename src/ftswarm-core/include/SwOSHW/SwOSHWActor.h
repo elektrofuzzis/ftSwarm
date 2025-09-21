@@ -177,7 +177,7 @@ class SwOSDCMotor : public SwOSMotor {
     virtual void setLocal() {};   // set position locally
 
     // remote HW procedures
-    virtual void setRemote() {};  // setPosition remotely 
+    virtual void setRemote();  // setPosition remotely 
 
   public:
     // constructor
@@ -212,9 +212,6 @@ class SwOSDigitalServo : public SwOSServo {
     // local HW procedures
     virtual void setupLocal() override; // initializes local HW
     virtual void setLocal() override;   // set position locally
-
-    // remote HW procedures
-    virtual void setRemote() override;  // setPosition remotely 
   
   public:
     // constructor

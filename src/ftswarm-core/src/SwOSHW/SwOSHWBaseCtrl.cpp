@@ -158,7 +158,7 @@ uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
   for ( uint8_t i=0; i<MAXIOS[ CPU ].servos; i++ ) {
 
     sprintf( name, "SERVO%d", i+1 );
-    io[ maxIO++ ] = new SwOSServo( name, i, this);
+    io[ maxIO++ ] = new SwOSDigitalServo( name, i, this);
 
   }
 
@@ -541,6 +541,8 @@ bool SwOSCtrl::changeIOType( uint8_t index, SwOSIOType_t newIOType ) {
   // get my type
   SwOSIOType_t oldIOType = io[index]->getIOType();
 
+  // printf("changeIOType %s %d %d\n", io[index]->getName(), oldIOType, newIOType);
+
   // nothing changed?
   if ( oldIOType == newIOType ) return true;
 
@@ -726,6 +728,9 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, char *name, char 
 
     case SWOSIO_LIDAR:            io = new SwOSLidarInput( name, this );                 
                                   break; 
+
+    case SWOSIO_JOYSTICK_POTI:    // io = new SwOSJoystick( name, this );
+                                  break;
 
     default:                      // This should newer happen
                                   SWARM_LOG_FATAL( "SwOSCtrl::createIO: Unkown ioType %d", ioType );

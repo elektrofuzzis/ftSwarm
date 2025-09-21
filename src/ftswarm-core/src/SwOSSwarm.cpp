@@ -398,7 +398,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 void SwOSSwarm::halt( void ) {
 
   for (uint8_t i=0; i<=maxCtrl; i++)
-    Ctrl[i]->halt();
+    if (Ctrl[i]) Ctrl[i]->halt();
 }
 
 void SwOSSwarm::unsubscribe( void ) {
@@ -869,6 +869,17 @@ bool SwOSSwarm::isOnline( FtSwarmSerialNumber_t serialNumber ) {
   }
 
   return false;
+
+}
+
+bool SwOSSwarm::isOnline( void ) {
+  // Test, if SN is online
+
+  for (uint8_t i=0; i<=maxCtrl; i++) {
+    if ( ( Ctrl[i] ) && ( !Ctrl[i]->isOnline( ) ) ) return false;
+  }
+
+  return true;
 
 }
 
