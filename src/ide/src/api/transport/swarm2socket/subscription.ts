@@ -17,5 +17,5 @@ export function parseSubscriptionResponse(
       portName,
       value: parseRpcReturnParam(value),
     };
-  }, SwarmToSocketMessageParseError.INVALID_SUBSCRIPTION_FORMAT);
+  }, SwarmToSocketMessageParseError.SUB_PARSE);
 }

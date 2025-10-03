@@ -8,7 +8,7 @@ import logger from "./util/logger";
 import { WebSocketTransportFactory } from "./api/transport/wsTransport";
 
 const root = document.getElementById("root");
-const factory = new WebSocketTransportFactory("ws://localhost:8080");
+const factory = new WebSocketTransportFactory("ws://ftSwarm63/ws");
 
 logger.info("Welcome to ftSwarm IDE");
 logger.debug("Debug logging active");

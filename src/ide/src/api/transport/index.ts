@@ -1,16 +1,55 @@
 import type {
-  SwarmToSocketError,
   SwarmToSocketRpcResponse,
   SwarmToSocketSubscription,
 } from "./swarm2socket";
 
-export interface Transport {
-  send(data: string): Promise<void>;
-  receiveResult(): Promise<SwarmToSocketRpcResponse | SwarmToSocketError>;
+export enum ErrorResolution {
+  FAIL,
+  RECONNECT,
+  IGNORE,
 }
 
-export interface TransportFactory {
-  createTransport(
-    onSubscriptionResult: (message: SwarmToSocketSubscription) => void,
-  ): Transport;
+export interface CommunicationError {
+  what(): string;
+  resolution(): ErrorResolution;
+}
+
+export class TransportError implements CommunicationError {
+  constructor(
+    private readonly message: string,
+    private readonly resolve: ErrorResolution,
+  ) {}
+
+  what(): string {
+    return this.message;
+  }
+
+  resolution(): ErrorResolution {
+    return this.resolve;
+  }
+}
+
+export interface Transport {
+  applySync<T>(func: () => Promise<T>): Promise<T>;
+  send(data: string): Promise<void>;
+  receiveResult(): Promise<SwarmToSocketRpcResponse>;
+}
+
+export interface TransportAdapter {
+  onSubscription(message: SwarmToSocketSubscription): Promise<void>;
+  onError(error: CommunicationError): Promise<void>;
+}
+
+export type TransportFactory = (
+  adapter: TransportAdapter,
+) => Promise<Transport>;
+
+async function transactMessage(
+  transport: Transport,
+  message: string,
+): Promise<SwarmToSocketRpcResponse> {
+  return transport.applySync(async () => {
+    await transport.send(message);
+    return await transport.receiveResult();
+  });
 }
