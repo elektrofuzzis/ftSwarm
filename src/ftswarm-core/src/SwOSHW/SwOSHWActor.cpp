@@ -28,6 +28,38 @@ void SwOSMotor::setMotionType( FtSwarmMotion_t motionType ) {
   
 }
 
+/*
+int16_t SwOSMotor::speed2Duty( void ) {
+
+  // speed zer0 is a 0 duty as well
+  if ( speed == 0 ) return 0;
+
+  // set motor type specific parameters
+  uint32_t x45  = 2048;  // 4.5V power supply
+  uint32_t x90  = 1024;  // 9V power suppy
+  uint32_t xMax = 4096;  // max. power
+  switch ( ioType ) {
+    case SWOSIO_MOTOR:      
+    case SWOSIO_XMOTOR:     
+    case SWOSIO_XMMOTOR:    
+    case SWOSIO_TRACTOR:    
+    case SWOSIO_ENCODER:    
+    case SWOSIO_LAMP:       
+    case SWOSIO_VALVE:      
+    case SWOSIO_COMPRESSOR: 
+    case SWOSIO_BUZZER:     
+    case SWOSIO_STEPPER:    break;
+    default:                break;
+  }
+
+  // TODO get PWR Values
+  xMin = x90;
+
+  return xMin + int32_t( (xMax -xMin) ) * abs(speed) / 100;
+
+}
+*/
+
 void SwOSMotor::setSpeed( int16_t speed ) {
 
   // printf("setSpeed %s %d\n", getName(), speed );
@@ -128,30 +160,24 @@ void SwOSDCMotor::setupLocal() {
   if ( IN1 != GPIO_NUM_NC ) gpio_set_level( IN1, 0 );
   if ( IN2 != GPIO_NUM_NC ) gpio_set_level( IN2, 0 );
 
-  // use Timer 0
-  ledc_timer_config_t ledc_timer = {
-    .speed_mode       = LEDC_LOW_SPEED_MODE,
-    .duty_resolution  = LEDC_TIMER_12_BIT,
-    .timer_num        = LEDC_TIMER_0,
-    .freq_hz          = 600,  // Set output frequency to 60 Hz
-    .clk_cfg          = LEDC_AUTO_CLK,
-  };
-  ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
-
   // just prepare led channel, don't register yet
   ledc_channel = (ledc_channel_config_t *) calloc( sizeof( ledc_channel_config_t ), 1 );
-  ledc_channel->gpio_num       = IN1;
+  ledc_channel->gpio_num       = GPIO_NUM_NC;
   ledc_channel->speed_mode     = LEDC_LOW_SPEED_MODE;
   ledc_channel->channel        = (ledc_channel_t) (port);
   ledc_channel->intr_type      = LEDC_INTR_DISABLE;
   ledc_channel->timer_sel      = LEDC_TIMER_0;
   ledc_channel->duty           = 0; 
   ledc_channel->hpoint         = 0;
-  ledc_channel->flags.output_invert = 1;
+  ledc_channel->flags.output_invert = 0;
 
 }
 
+/*
+
 void SwOSDCMotor::setPWM( int16_t xin1, int16_t xin2, gpio_num_t pwm, uint32_t duty ) {
+
+  // printf( "SwOSDCMotor::setPWM %d %d %d %d\n", xin1, xin2, pwm, duty);
 
   // calc duty 
   uint32_t duty1 = duty;
@@ -189,6 +215,72 @@ void SwOSDCMotor::setPWM( int16_t xin1, int16_t xin2, gpio_num_t pwm, uint32_t d
   // 3rd step: set static levels if applicable
   if ( IN1 != GPIO_NUM_NC ) gpio_set_level( IN1, xin1 );
   if ( IN2 != GPIO_NUM_NC ) gpio_set_level( IN2, xin2 );
+
+}
+
+*/
+
+void SwOSDCMotor::setPWM( int16_t xin1, int16_t xin2, gpio_num_t pwm, uint32_t duty ) {
+
+  printf("setPWM %d %d %d %d\n", xin1, xin2, pwm, duty);
+
+  // check if it's needed to stop running pwm
+  if ( ( ( duty == 0 ) || ( pwm != ledc_channel->gpio_num ) ) && ( ledc_channel->gpio_num != GPIO_NUM_NC ) ) {
+
+    printf("stop LEDC\n");
+
+    ESP_ERROR_CHECK( ledc_stop( LEDC_LOW_SPEED_MODE, ledc_channel->channel, 0 ) );
+    ESP_ERROR_CHECK( gpio_reset_pin( (gpio_num_t) ledc_channel->gpio_num ) );
+    ledc_channel->gpio_num = GPIO_NUM_NC;
+      gpio_config_t io_conf = {
+    .pin_bit_mask = 0,
+    .mode = GPIO_MODE_OUTPUT,
+    .pull_up_en = GPIO_PULLUP_DISABLE,
+    .pull_down_en = GPIO_PULLDOWN_DISABLE,
+    .intr_type = GPIO_INTR_DISABLE,
+  };
+  if ( IN1 != GPIO_NUM_NC ) io_conf.pin_bit_mask = io_conf.pin_bit_mask | (1ULL << IN1);
+  if ( IN2 != GPIO_NUM_NC ) io_conf.pin_bit_mask = io_conf.pin_bit_mask | (1ULL << IN2);
+  gpio_config(&io_conf);
+  
+    if ( IN1 != GPIO_NUM_NC ) gpio_set_level( IN1, 0 );
+    if ( IN2 != GPIO_NUM_NC ) gpio_set_level( IN2, 0 );
+
+  }
+
+  if ( duty==0 ) {
+
+    printf("duty==0\n");
+    
+    if ( IN1 != GPIO_NUM_NC ) gpio_set_level( IN1, xin1 );
+    if ( IN2 != GPIO_NUM_NC ) gpio_set_level( IN2, xin2 );
+    
+    return;
+
+  }
+
+  // reconfigure ledc  due to a change of direction?
+  if ( pwm != ledc_channel->gpio_num ) {
+
+    printf("reconf\n");
+
+    // reconfigure to new pin
+    ledc_channel->gpio_num = pwm;
+    ledc_channel->duty     = 0;
+    ESP_ERROR_CHECK( ledc_channel_config( ledc_channel ) );
+
+  }
+
+
+  // TODO rampUp
+
+  printf("set duty\n");
+
+  if ( duty <= 1500 ) ESP_ERROR_CHECK( ledc_set_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel, 1500 ) );
+
+  // set fading & new duty
+  ESP_ERROR_CHECK( ledc_set_fade_with_step( LEDC_LOW_SPEED_MODE, ledc_channel->channel, duty, 10, 30 ) );
+  ESP_ERROR_CHECK( ledc_update_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel ) );
 
 }
 

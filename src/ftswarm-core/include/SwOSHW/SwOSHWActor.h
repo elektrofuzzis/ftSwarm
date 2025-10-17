@@ -52,7 +52,7 @@ class SwOSAnalogInput;
     virtual void            operate( void );
     virtual bool            isMotor( void ) { return true; };
     virtual bool            isActor( void ) { return true; };
-    virtual uint16_t        maxSpeed( void ) { return 4095; };
+    virtual int16_t         maxSpeed( void ) { return 4095; };
 
     // commands
     virtual void    setSpeed( int16_t speed );
@@ -135,7 +135,7 @@ class SwOSDCMotor : public SwOSMotor {
     virtual void serialize( Serialize *serialize );
     virtual uint8_t  pushState( uint8_t *buffer );
     virtual uint8_t  popState( uint8_t *buffer );
-    virtual uint16_t maxSpeed( void ) { return 10240; };
+    virtual int16_t  maxSpeed( void ) { return 10240; };
    
     // commands
     virtual void setValue( int32_t distance, int32_t position, bool isHoming, bool isRunning );

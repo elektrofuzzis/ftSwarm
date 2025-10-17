@@ -49,18 +49,7 @@ class RGBLed {
 
 RGBLed::RGBLed() {
 
-  printf("** RGBLED **\n");
-
   // initialize local HW
-  ledc_timer_config_t ledc_timer = {
-    .speed_mode       = LEDC_LOW_SPEED_MODE,
-    .duty_resolution  = LEDC_TIMER_12_BIT,
-    .timer_num        = LEDC_TIMER_0,
-    .freq_hz          = 600,  // Set output frequency to 60 Hz
-    .clk_cfg          = LEDC_AUTO_CLK,
-  };
-  ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
-
   ledc_channel_config_t ledc;
   ledc.speed_mode     = LEDC_LOW_SPEED_MODE;
   ledc.intr_type      = LEDC_INTR_DISABLE;

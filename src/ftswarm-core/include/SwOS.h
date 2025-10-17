@@ -234,7 +234,7 @@ const char SWOSIOTYPE[SWOSIO_MAXIOTYPE][20] = {
   "I2C",
   "Gyro",
   "HC165",
-  "Power",
+  "Powersensor",
   "Colorsensor",
   "Trailsensor",
   "Ultrasonic",

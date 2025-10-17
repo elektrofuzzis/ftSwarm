@@ -86,6 +86,7 @@ protected:
   bool setParameter( SwOSCom *com );
 
   // initialize Hardware
+  void    setupLocalCommonHardware( void ) ;  // setup general hardware like TIMER0
   uint8_t setupLocalInputs( uint8_t maxIO );
   uint8_t setupLocalMotors( uint8_t maxIO, uint8_t motors );
   uint8_t setupLocalServos( uint8_t maxIO, uint8_t servos );

@@ -267,6 +267,25 @@ uint8_t SwOSCtrl::setupLocalOLED( uint8_t maxIO ) {
 
 }
 
+void SwOSCtrl::setupLocalCommonHardware( void ) {
+
+  // Setup local common hardwrae like TIMER0
+
+  // Timer0 to be used with PWM outputs
+  ledc_timer_config_t ledc_timer = {
+    .speed_mode       = LEDC_LOW_SPEED_MODE,
+    .duty_resolution  = LEDC_TIMER_12_BIT,
+    .timer_num        = LEDC_TIMER_0,
+    .freq_hz          = 15000,
+    .clk_cfg          = LEDC_AUTO_CLK,
+  };
+  ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
+
+  // Enable complex fading
+  ESP_ERROR_CHECK( ledc_fade_func_install( 0 ) );
+
+}
+
 SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSCtrlConfig_t ctrlConfig  ):SwOSObj() {
 
   // copy master data
@@ -324,6 +343,8 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSC
 
   // define common hardware
   if (local) { 
+
+    setupLocalCommonHardware();
 
     uint8_t maxIO = 0;
     maxIO = setupLocalI2C( maxIO, ctrlConfig.extensionPort );

@@ -560,7 +560,7 @@ void SwOSCLI::executeInputCmd( void ) {
                                 break;
 
     case CLICMD_getVoltage:     io->lock();
-                                if ( io->getIOType() == SWOSIO_VOLTMETER ) {
+                                if ( ( io->getIOType() == SWOSIO_VOLTMETER ) | ( io->getIOType() == SWOSIO_POWER ) ) {
                                   sprintf( response, "R: %f", ((SwOSAnalogInput *)io)->getVoltage());
                                 } else {
                                   Error( ERROR_WRONGIOTYPE, 0, io->getIOType() );
@@ -1023,6 +1023,7 @@ void SwOSCLI::executeIOCommand( void ) {
       case SWOSIO_COUNTER:
       case SWOSIO_ROTARYENCODER:
       case SWOSIO_JOYSTICK_POTI:
+      case SWOSIO_POWER:
       case SWOSIO_FREQUENCYMETER: executeInputCmd(); break;
 
       case SWOSIO_MOTOR:

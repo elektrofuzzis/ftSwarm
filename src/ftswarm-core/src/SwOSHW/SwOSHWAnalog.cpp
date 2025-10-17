@@ -61,7 +61,8 @@ void SwOSAnalogInput::setupLocal() {
   }
 
   filter = new SwOSSpike( 10, 60 );
-  filter->addFilter( new SwOSMovingAverage( 3) );
+  if (ioType==SWOS_PWRCTL)  filter->addFilter( new SwOSMovingAverage( 10 ) );
+  else filter->addFilter( new SwOSMovingAverage( 3 ) );
 
 }
 
@@ -116,7 +117,7 @@ float SwOSAnalogInput::getVoltage() {
   if ( ctrl->getCPU() == FTSWARMDUINO_1V141 )
     return ( (float) lastRawValue ) / 1000;
   else if ( ioType == SWOSIO_POWER )
-    return ( (float) lastRawValue ) / 1000 * (129.0/82.0) * 1.7; // ToDo correct power calculation
+    return round( ( 0.000009545 * lastRawValue * lastRawValue - 0.0297 * lastRawValue + 27.273 ) * 10 ) / 10;
   else
     return ( (float) lastRawValue ) / 1000 * (129.0/82.0);
 }
