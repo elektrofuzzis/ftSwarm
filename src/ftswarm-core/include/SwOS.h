@@ -91,7 +91,7 @@ typedef enum { SWOSIO_UNDEF = -1,
                SWOSIO_LDR, 
                SWOSIO_JOYSTICK,
                SWOSIO_MOTOR, 
-               SWOSIO_XMOTOR, 
+               SWOSIO_XSMOTOR, 
                SWOSIO_XMMOTOR, 
                SWOSIO_TRACTOR,  
                SWOSIO_ENCODER, 
@@ -116,6 +116,11 @@ typedef enum { SWOSIO_UNDEF = -1,
                SWOSIO_TRAILSENSOR, 
                SWOSIO_ULTRASONIC, 
                SWOSIO_JOYSTICK_POTI,
+               SWOSIO_WHEELDRIVE,
+               SWOSIO_MINIMOTOR,
+               SWOSIO_SMOTOR,
+               SWOSIO_POWERMOTOR,
+               SWOSIO_MMOTOR,
                SWOSIO_MAXIOTYPE } SwOSIOType_t;
 
 // technologies to change IO type
@@ -132,7 +137,7 @@ const SwOSIOClass_t SWOSIOCLASS[SWOSIO_MAXIOTYPE ] = {
   SWOSIOCLASS_INPUT, // SWOSIO_LDR
   SWOSIOCLASS_SINGULAR, // SWOSIO_JOYSTICK
   SWOSIOCLASS_MOTOR, // SWOSIO_MOTOR 
-  SWOSIOCLASS_MOTOR, // SWOSIO_XMOTOR
+  SWOSIOCLASS_MOTOR, // SWOSIO_XSMOTOR
   SWOSIOCLASS_MOTOR, // SWOSIO_XMMOTOR
   SWOSIOCLASS_MOTOR, // SWOSIO_TRACTOR  
   SWOSIOCLASS_MOTOR, // SWOSIO_ENCODER 
@@ -156,7 +161,12 @@ const SwOSIOClass_t SWOSIOCLASS[SWOSIO_MAXIOTYPE ] = {
   SWOSIOCLASS_INPUT, // SWOSIO_COLORSENSOR
   SWOSIOCLASS_INPUT, // SWOSIO_TRAILSENSOR
   SWOSIOCLASS_INPUT, // SWOSIO_ULTRASONIC
-  SWOSIOCLASS_SINGULAR // SWOSIO_JOYSTICK_POTI
+  SWOSIOCLASS_SINGULAR, // SWOSIO_JOYSTICK_POTI
+  SWOSIOCLASS_MOTOR,    // SWOSIO_WHEELDRIVE
+  SWOSIOCLASS_MOTOR,    // SWOSIO_MINIMOTOR
+  SWOSIOCLASS_MOTOR,    // SWOSIO_SMOTOR
+  SWOSIOCLASS_MOTOR,    // SWOSIO_POWERMOTOR
+  SWOSIOCLASS_MOTOR     // SWOSIO_MMOTOR
 } ;  
 
 // show via api?
@@ -173,7 +183,7 @@ const bool SHOWIOINAPI[SWOSIO_MAXIOTYPE ] = {
   true, // SWOSIO_LDR
   true, // SWOSIO_JOYSTICK
   true, // SWOSIO_MOTOR 
-  true, // SWOSIO_XMOTOR
+  true, // SWOSIO_XSMOTOR
   true, // SWOSIO_XMMOTOR
   true, // SWOSIO_TRACTOR  
   true, // SWOSIO_ENCODER 
@@ -197,7 +207,12 @@ const bool SHOWIOINAPI[SWOSIO_MAXIOTYPE ] = {
   true, // SWOSIO_COLORSENSOR
   true, // SWOSIO_TRAILSENSOR
   true, // SWOSIO_ULTRASONIC
-  false // SWOSIO_JOYSTICK_POTI
+  false, // SWOSIO_JOYSTICK_POTI
+  true,  // SWOSIO_WHEELDRIVE
+  true,  // SWOSIO_MINIMOTOR
+  true,  // SWOSIO_SMOTOR
+  true,  // SWOSIO_POWERMOTOR
+  true  // SWOSIO_MMOTOR
 } ;  
 
 // show via api?
@@ -214,7 +229,7 @@ const char SWOSIOTYPE[SWOSIO_MAXIOTYPE][20] = {
   "LDR",
   "Joystick",
   "Motor",
-  "XMotor",
+  "XSMotor",
   "XMMotor",
   "Tractor",
   "Encoder",
@@ -238,7 +253,12 @@ const char SWOSIOTYPE[SWOSIO_MAXIOTYPE][20] = {
   "Colorsensor",
   "Trailsensor",
   "Ultrasonic",
-  "JoystickPoti"
+  "JoystickPoti",
+  "WheelDrive",
+  "MiniMotor",
+  "SMotor",
+  "PowerMotor",
+  "MMotor"
 } ;  
 
 // HW versions
@@ -607,9 +627,10 @@ class FtSwarmLDR : public FtSwarmAnalogInput {
     FtSwarmLDR( const char * name );
 };
 
+// Motor types
+
 class FtSwarmMotor : public FtSwarmIO {
-  // general motor class, use this class for (old) gray motors, mini motors, XS motors
-  // M1..M2 all contollers - keep power budget in mind!
+  // general motor class, don't use it
   protected:
     FtSwarmMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType );
     FtSwarmMotor( const char *name, SwOSIOType_t ioType );
@@ -623,18 +644,50 @@ class FtSwarmMotor : public FtSwarmIO {
     
 };
 
-class FtSwarmXMotor : public FtSwarmMotor {
-  // general motor class, use this class for (old) gray motors, mini motors, XS motors
-  // M1..M2 all contollers - keep power budget in mind!
+class FtSwarmMiniMotor : public FtSwarmMotor {
+  // Mini Motor 31062 & 75245
   public:
-    FtSwarmXMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port ):FtSwarmMotor( serialNumber, port, SWOSIO_XMOTOR ) {};
-    FtSwarmXMotor( const char *name ):FtSwarmMotor( name, SWOSIO_XMOTOR ) {};
-    
+    FtSwarmMiniMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port ):FtSwarmMotor( serialNumber, port, SWOSIO_MINIMOTOR ) {};
+    FtSwarmMiniMotor( const char *name ):FtSwarmMotor( name, SWOSIO_MINIMOTOR ) {};  
+};
+
+class FtSwarmXSMotor : public FtSwarmMotor {
+  // XS Motor 137096
+  public:
+    FtSwarmXSMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port ):FtSwarmMotor( serialNumber, port, SWOSIO_XSMOTOR ) {};
+    FtSwarmXSMotor( const char *name ):FtSwarmMotor( name, SWOSIO_XSMOTOR ) {};
+};
+
+class FtSwarmSMotor : public FtSwarmMotor {
+  // S Motor 32293 & 32240
+  public:
+    FtSwarmSMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port ):FtSwarmMotor( serialNumber, port, SWOSIO_SMOTOR ) {};
+    FtSwarmSMotor( const char *name ):FtSwarmMotor( name, SWOSIO_SMOTOR ) {};  
+};
+
+class FtSwarmWheelDrive : public FtSwarmMotor {
+  // Wheel Drive 31494
+  public:
+    FtSwarmWheelDrive( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port ):FtSwarmMotor( serialNumber, port, SWOSIO_WHEELDRIVE ) {};
+    FtSwarmWheelDrive( const char *name ):FtSwarmMotor( name, SWOSIO_WHEELDRIVE ) {};   
+};
+
+class FtSwarmPowerMotor : public FtSwarmMotor {
+  // Power Motor 35481, 104589, 104574
+  public:
+    FtSwarmPowerMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port ):FtSwarmMotor( serialNumber, port, SWOSIO_POWERMOTOR) {};
+    FtSwarmPowerMotor( const char *name ):FtSwarmMotor( name, SWOSIO_POWERMOTOR ) {}; 
+};
+
+class FtSwarmMMotor : public FtSwarmMotor {
+  // M Motor "gray" 31039, 32618
+  public:
+    FtSwarmMMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port ):FtSwarmMotor( serialNumber, port, SWOSIO_MMOTOR) {};
+    FtSwarmMMotor( const char *name ):FtSwarmMotor( name, SWOSIO_MMOTOR ) {}; 
 };
 
 class FtSwarmTractorMotor : public FtSwarmMotor {
-  // tractor & XM motor
-  // M1..M2 all contollers - keep power budget in mind!
+  // tractor motor 151178
   protected:
     FtSwarmTractorMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType );
     FtSwarmTractorMotor( const char * name, SwOSIOType_t ioType );
@@ -652,20 +705,17 @@ class FtSwarmTractorMotor : public FtSwarmMotor {
 };
 
 class FtSwarmXMMotor : public FtSwarmTractorMotor {
-  // xm motor
-  // M1..M2 all contollers - keep power budget in mind!
+  // xm motor 135485
   public:
-    FtSwarmXMMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
-    FtSwarmXMMotor( const char * name );
+    FtSwarmXMMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmTractorMotor( serialNumber, port, SWOSIO_XMMOTOR ) {};
+    FtSwarmXMMotor( const char * name ):FtSwarmTractorMotor( name, SWOSIO_XMMOTOR ) {};
 };
 
 class FtSwarmEncoderMotor : public FtSwarmTractorMotor {
-  // encoder motor
-  // M1..M2 all contollers - keep power budget in mind!
-  // TODO: implement encoder input
+  // encoder motor 153422, 186175, 135484, 75150
   public:
-    FtSwarmEncoderMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
-    FtSwarmEncoderMotor( const char * name );
+    FtSwarmEncoderMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port ):FtSwarmTractorMotor( serialNumber, port, SWOSIO_ENCODER ) {};
+    FtSwarmEncoderMotor( const char * name ):FtSwarmTractorMotor( name, SWOSIO_ENCODER ) {};
 };
 
 class FtSwarmStepperMotor : public FtSwarmTractorMotor {

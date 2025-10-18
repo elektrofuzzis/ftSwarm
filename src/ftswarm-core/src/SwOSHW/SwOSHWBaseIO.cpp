@@ -29,7 +29,7 @@ const char IO_ICON[SWOSIO_MAXIOTYPE][10] =
     "9.svg",          // ldr
     "A.svg",          // joystick
     "B.svg",          // motor
-    "C.svg",          // xmotor
+    "C.svg",          // xsmotor
     "D.svg",          // xmmotor - todo better icon xmmotor
     "E.svg",          // tractor
     "F.svg",          // encoder
@@ -45,15 +45,20 @@ const char IO_ICON[SWOSIO_MAXIOTYPE][10] =
     "N.svg",          // cam
     "O.svg",          // servo
     "P.svg",          // pixel
-    "0.svg",      // no oled icon
-    "0.svg",      // no i2c icon
-    "0.svg",      // todo gyro icon
-    "0.svg",      // no hc165 icon
+    "0.svg",          // no oled icon
+    "0.svg",          // no i2c icon
+    "0.svg",          // todo gyro icon
+    "0.svg",          // no hc165 icon
     "Q.svg",          // power
     "R.svg",          // colorsensor 
     "S.svg",          // trailsensor
-    "T.svg",           // ultrasonic
-    "0.svg"      // no joystick icon
+    "T.svg",          // ultrasonic
+    "0.svg",          // no joystick icon
+    "B.svg",          // TODO wheelDrive
+    "B.svg",          // TODO MiniMotor
+    "B.svg",          // TODO SMotor
+    "B.svg",          // TODO PowerMotor
+    "B.svg"           // TODO MMotor
   };
 
 SwOSUIClass_t UI_CLASS[SWOSIO_MAXIOTYPE] = 
@@ -91,7 +96,12 @@ SwOSUIClass_t UI_CLASS[SWOSIO_MAXIOTYPE] =
     UICLASS_NONE,    // no hc165
     UICLASS_SENSOR, 
     UICLASS_SENSOR,
-    UICLASS_SENSOR
+    UICLASS_SENSOR,
+    UICLASS_MOTOR,
+    UICLASS_MOTOR,
+    UICLASS_MOTOR,
+    UICLASS_MOTOR,
+    UICLASS_MOTOR
   };
   
 

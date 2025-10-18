@@ -499,16 +499,6 @@ FtSwarmMotion_t FtSwarmTractorMotor::getMotionType( void ) {
   
 }
 
-// **** FtSwarmXMMotor
-
-FtSwarmXMMotor::FtSwarmXMMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmTractorMotor( serialNumber, port, SWOSIO_XMMOTOR ) {};
-FtSwarmXMMotor::FtSwarmXMMotor( const char *name ):FtSwarmTractorMotor( name, SWOSIO_XMMOTOR ) {};
-
-// **** FtSwarmEncoderMotor
-
-FtSwarmEncoderMotor::FtSwarmEncoderMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmTractorMotor( serialNumber, port, SWOSIO_ENCODER ) {};
-FtSwarmEncoderMotor::FtSwarmEncoderMotor( const char *name ):FtSwarmTractorMotor( name, SWOSIO_ENCODER ) {};
-
 // **** FtSwarmStepperMotor
 
 FtSwarmStepperMotor::FtSwarmStepperMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmTractorMotor( serialNumber, port, SWOSIO_STEPPER ) {};

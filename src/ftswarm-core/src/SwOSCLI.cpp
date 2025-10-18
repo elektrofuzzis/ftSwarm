@@ -1027,10 +1027,15 @@ void SwOSCLI::executeIOCommand( void ) {
       case SWOSIO_FREQUENCYMETER: executeInputCmd(); break;
 
       case SWOSIO_MOTOR:
-      case SWOSIO_XMOTOR:
+      case SWOSIO_XSMOTOR:
       case SWOSIO_XMMOTOR: 
       case SWOSIO_TRACTOR:  
       case SWOSIO_ENCODER:
+      case SWOSIO_WHEELDRIVE:
+      case SWOSIO_MINIMOTOR:
+      case SWOSIO_SMOTOR:
+      case SWOSIO_POWERMOTOR:
+      case SWOSIO_MMOTOR:
       case SWOSIO_LAMP:
       case SWOSIO_VALVE:
       case SWOSIO_COMPRESSOR:

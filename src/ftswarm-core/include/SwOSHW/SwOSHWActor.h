@@ -36,6 +36,7 @@ class SwOSAnalogInput;
     // local HW procedures
     virtual void setLocal( ) = 0;
     virtual bool autoCoast( ) { return true; }
+    virtual int16_t speed2Duty( void );
 
     // remote HW procedures
     virtual void setRemote() { }

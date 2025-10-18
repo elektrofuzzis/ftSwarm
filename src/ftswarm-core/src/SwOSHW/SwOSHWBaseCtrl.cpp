@@ -699,9 +699,14 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, char *name, char 
     case SWOSIO_COMPRESSOR:
     case SWOSIO_BUZZER:
     case SWOSIO_ENCODER:
-    case SWOSIO_XMOTOR:
+    case SWOSIO_XSMOTOR:
     case SWOSIO_XMMOTOR:
     case SWOSIO_TRACTOR:
+    case SWOSIO_WHEELDRIVE:
+    case SWOSIO_MINIMOTOR:
+    case SWOSIO_SMOTOR:
+    case SWOSIO_POWERMOTOR:
+    case SWOSIO_MMOTOR:
     case SWOSIO_MOTOR:            io = new SwOSDCMotor( name, port, this, ioType );
                                   break; 
 

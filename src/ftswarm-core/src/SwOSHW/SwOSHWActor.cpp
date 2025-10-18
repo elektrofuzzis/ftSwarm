@@ -28,37 +28,41 @@ void SwOSMotor::setMotionType( FtSwarmMotion_t motionType ) {
   
 }
 
-/*
+
 int16_t SwOSMotor::speed2Duty( void ) {
 
   // speed zer0 is a 0 duty as well
   if ( speed == 0 ) return 0;
 
   // set motor type specific parameters
-  uint32_t x45  = 2048;  // 4.5V power supply
-  uint32_t x90  = 1024;  // 9V power suppy
-  uint32_t xMax = 4096;  // max. power
+  int32_t x45  = 2800;  // 4.5V power supply
+  int32_t x90  = 1990;  // 9V power suppy
+  int32_t xMax = 4096;  // max. power
   switch ( ioType ) {
     case SWOSIO_MOTOR:      
-    case SWOSIO_XMOTOR:     
+    case SWOSIO_XSMOTOR:     
     case SWOSIO_XMMOTOR:    
     case SWOSIO_TRACTOR:    
     case SWOSIO_ENCODER:    
-    case SWOSIO_LAMP:       
+    case SWOSIO_WHEELDRIVE:
+    case SWOSIO_MINIMOTOR:
+    case SWOSIO_SMOTOR:
+    case SWOSIO_POWERMOTOR:
+    case SWOSIO_MMOTOR:
     case SWOSIO_VALVE:      
     case SWOSIO_COMPRESSOR: 
     case SWOSIO_BUZZER:     
+    case SWOSIO_LAMP:       break;
     case SWOSIO_STEPPER:    break;
     default:                break;
   }
 
   // TODO get PWR Values
-  xMin = x90;
+  int32_t xMin = x90;
 
   return xMin + int32_t( (xMax -xMin) ) * abs(speed) / 100;
 
 }
-*/
 
 void SwOSMotor::setSpeed( int16_t speed ) {
 
