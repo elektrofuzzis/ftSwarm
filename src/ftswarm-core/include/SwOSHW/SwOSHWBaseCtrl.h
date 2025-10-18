@@ -31,6 +31,7 @@ class SwOSI2C;
 class SwOSCAM;
 class SwOSCounter;
 class SwOSStepper;
+class SwOSAnalogInput;
 
 const uint32_t 
 LEDCOLOR0[MAXSTATE] = { CRGB::Black, CRGB::Blue, CRGB::Yellow, CRGB::Green, CRGB::Red, CRGB::Cyan, CRGB::Aquamarine, CRGB::DeepPink };
@@ -101,6 +102,7 @@ public:
 	FtSwarmSerialNumber_t serialNumber;
   MacAddr               macAddr;
   bool                  IAmKelda;
+  SwOSAnalogInput       *pwrctl = NULL;
   
   // dynamically allocated array SwOSIO *io[]
 	SwOSIO **io = NULL;

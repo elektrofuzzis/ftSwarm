@@ -36,7 +36,6 @@ class SwOSAnalogInput;
     // local HW procedures
     virtual void setLocal( ) = 0;
     virtual bool autoCoast( ) { return true; }
-    virtual int16_t speed2Duty( void );
 
     // remote HW procedures
     virtual void setRemote() { }
@@ -85,6 +84,7 @@ class SwOSDCMotor : public SwOSMotor {
     // local HW procedures
     virtual void setupLocal( void ) override;
     virtual void setLocal( void ) override;
+    virtual int16_t duty( void );
     virtual void setPWM( int16_t xin1, int16_t xin2, gpio_num_t pwm, uint32_t duty );
   
     // remote HW procedures
@@ -97,6 +97,7 @@ class SwOSDCMotor : public SwOSMotor {
     // Constructors
     SwOSDCMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType );
     virtual ~SwOSDCMotor( );
+    virtual int16_t maxSpeed( void ) { return 100; };
   
     // commands
     virtual void setAcceleration( uint32_t rampUpT,  uint32_t rampUpY );    // set acceleration ramp

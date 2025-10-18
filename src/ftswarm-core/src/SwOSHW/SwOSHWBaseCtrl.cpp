@@ -38,7 +38,7 @@ uint8_t SwOSCtrl::setupLocalInputs( uint8_t maxIO ) {
     // PwrCtl
     if ( ( MAXIOS[ CPU ].pwrctl != NOPWRCTL ) && ( MAXIOS[ CPU ].pwrctl == i ) ) {
 
-      io[ maxIO++ ] = new SwOSAnalogInput("PWRCTL", i, this, SWOSIO_POWER );
+      io[ maxIO++ ] = pwrctl = new SwOSAnalogInput("PWRCTL", i, this, SWOSIO_POWER );
 
     // ftPwrDrive
     } else if (CPU == FTSWARMPWRDRIVE_1V141 ) {

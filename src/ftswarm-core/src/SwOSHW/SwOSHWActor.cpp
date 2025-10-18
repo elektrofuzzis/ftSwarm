@@ -28,45 +28,7 @@ void SwOSMotor::setMotionType( FtSwarmMotion_t motionType ) {
   
 }
 
-
-int16_t SwOSMotor::speed2Duty( void ) {
-
-  // speed zer0 is a 0 duty as well
-  if ( speed == 0 ) return 0;
-
-  // set motor type specific parameters
-  int32_t x45  = 2800;  // 4.5V power supply
-  int32_t x90  = 1990;  // 9V power suppy
-  int32_t xMax = 4096;  // max. power
-  switch ( ioType ) {
-    case SWOSIO_MOTOR:      
-    case SWOSIO_XSMOTOR:     
-    case SWOSIO_XMMOTOR:    
-    case SWOSIO_TRACTOR:    
-    case SWOSIO_ENCODER:    
-    case SWOSIO_WHEELDRIVE:
-    case SWOSIO_MINIMOTOR:
-    case SWOSIO_SMOTOR:
-    case SWOSIO_POWERMOTOR:
-    case SWOSIO_MMOTOR:
-    case SWOSIO_VALVE:      
-    case SWOSIO_COMPRESSOR: 
-    case SWOSIO_BUZZER:     
-    case SWOSIO_LAMP:       break;
-    case SWOSIO_STEPPER:    break;
-    default:                break;
-  }
-
-  // TODO get PWR Values
-  int32_t xMin = x90;
-
-  return xMin + int32_t( (xMax -xMin) ) * abs(speed) / 100;
-
-}
-
 void SwOSMotor::setSpeed( int16_t speed ) {
-
-  // printf("setSpeed %s %d\n", getName(), speed );
 
   // if no change is needed, return
   if ( speed == this->speed ) return;
@@ -177,84 +139,120 @@ void SwOSDCMotor::setupLocal() {
 
 }
 
-/*
+int16_t SwOSDCMotor::duty( void ) {
 
-void SwOSDCMotor::setPWM( int16_t xin1, int16_t xin2, gpio_num_t pwm, uint32_t duty ) {
-
-  // printf( "SwOSDCMotor::setPWM %d %d %d %d\n", xin1, xin2, pwm, duty);
-
-  // calc duty 
-  uint32_t duty1 = duty;
-
-  // 1st step, check if the old pwm pin is different to the new one
-
-  if ( ledc_channel->gpio_num != pwm ) {
+  // calculate pwm duty based on actor + power supply
   
-    // reconfigure old pin
-    if ( ledc_channel->gpio_num != GPIO_NUM_NC ) ESP_ERROR_CHECK( gpio_reset_pin( (gpio_num_t) ledc_channel->gpio_num ) );
-  
-    // set ledc_channel to new pin
-    ledc_channel->gpio_num = pwm;
-    if ( ledc_channel->gpio_num != GPIO_NUM_NC ) ESP_ERROR_CHECK( ledc_channel_config( ledc_channel ) );
-  
-  }
+  // Motortype    4.5V   9.0V
+  // Mini         2700   2200
+  // XS           2700   2200   not measured, seems to be same like MiniMot
+  // S            2700   1900
+  // XM           3200   2300
+  // Tractor      
+  // Encoder      1600    500
+  // WheelDrive   3173   2354   measured: 4.9V: 3100  6V: 2900  NOT WORKING BELOW 4.9V!
+  // Power
+  // M            2700   2600
+  // Lamp          400    100
+  // Valve
+  // Compressor
+  // Buzzer
 
-  // 2rd step: set pwm
-  if ( ledc_channel->gpio_num != GPIO_NUM_NC ) {
+  // LED            50     10
 
-    if ( rampUpT | rampUpY ) {
-      // acceleration
-      uint32_t oldDuty = ledc_get_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel );
-      ESP_ERROR_CHECK( ledc_set_fade( LEDC_LOW_SPEED_MODE, ledc_channel->channel, oldDuty, ( oldDuty > duty1 ) ? LEDC_DUTY_DIR_DECREASE : LEDC_DUTY_DIR_INCREASE, rampUpT, rampUpY, duty1 ) );
-      ESP_ERROR_CHECK( ledc_update_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel ) );
+  // speed zer0 is a 0 duty as well
+  if ( speed == 0 ) return 0;
+
+  // SWOSIO_MOTOR: Range 0..4095, no corrections
+  if ( ioType == SWOSIO_MOTOR ) return abs(speed);
+
+  // DC Motors 100 % = 4095
+  if ( ( speed <= -100 ) || ( speed >= 100 ) ) return 4095;
+
+  // set motor type specific parameters
+  int32_t x45  = 2700;  // 4.5V power supply
+  int32_t x90  = 1900;  // 9V power suppy
+  int32_t xMax = 4096;  // max. power
+  switch ( ioType ) {    
+    case SWOSIO_POWERMOTOR:  
+    case SWOSIO_BUZZER:     break;
+
+    case SWOSIO_MINIMOTOR:
+    case SWOSIO_XSMOTOR:    x45 = 2700; x90 = 2200;
+                            break;
+
+    case SWOSIO_XMMOTOR:    x45 = 3200; x90 = 2300;
+                            break;
+
+    case SWOSIO_ENCODER:    
+    case SWOSIO_TRACTOR:    x45 = 1600; x90 = 500;
+                            break;
+
+    case SWOSIO_WHEELDRIVE: x45 = 1373; x90 = 2350;
+
+    case SWOSIO_SMOTOR:     x45 = 2700; x90 = 1900;
+                            break;
+
+    case SWOSIO_MMOTOR:     x45 = 2700; x90 = 2600; 
+                            break;
     
-    } else {
-      // pwm signal
-      ESP_ERROR_CHECK( ledc_set_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel, duty1 ) );
-      ESP_ERROR_CHECK( ledc_update_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel ) );
-    }
+    case SWOSIO_VALVE:      
+    case SWOSIO_COMPRESSOR: x45 = x90 = 4095;
+                            break;
 
+    case SWOSIO_LAMP:       x45 = x90 = 0;
+                            break;
   }
 
-  // 3rd step: set static levels if applicable
-  if ( IN1 != GPIO_NUM_NC ) gpio_set_level( IN1, xin1 );
-  if ( IN2 != GPIO_NUM_NC ) gpio_set_level( IN2, xin2 );
+  float xMin = x90;
+  if (ctrl->pwrctl) {
+
+    // % power supply between 4.5 and 9.0 V
+    float p = ( ctrl->pwrctl->getVoltage() - 4.5 ) / 4.5;
+
+    // calc xMin
+    if      ( p <= 0 ) xMin = x45;
+    else if ( p >= 1 ) xMin = x90;
+    else               xMin = ( x90 - x45 ) * p + x45;
+
+  } else {
+    // no PWRCTL available, take 9.0V value
+    xMin = x90;
+  }
+
+  return xMin + int32_t( (xMax -xMin) ) * abs(speed) / 100;
 
 }
 
-*/
-
 void SwOSDCMotor::setPWM( int16_t xin1, int16_t xin2, gpio_num_t pwm, uint32_t duty ) {
-
-  printf("setPWM %d %d %d %d\n", xin1, xin2, pwm, duty);
 
   // check if it's needed to stop running pwm
   if ( ( ( duty == 0 ) || ( pwm != ledc_channel->gpio_num ) ) && ( ledc_channel->gpio_num != GPIO_NUM_NC ) ) {
 
-    printf("stop LEDC\n");
-
     ESP_ERROR_CHECK( ledc_stop( LEDC_LOW_SPEED_MODE, ledc_channel->channel, 0 ) );
     ESP_ERROR_CHECK( gpio_reset_pin( (gpio_num_t) ledc_channel->gpio_num ) );
+
+    // reconfigure pin
     ledc_channel->gpio_num = GPIO_NUM_NC;
-      gpio_config_t io_conf = {
-    .pin_bit_mask = 0,
-    .mode = GPIO_MODE_OUTPUT,
-    .pull_up_en = GPIO_PULLUP_DISABLE,
-    .pull_down_en = GPIO_PULLDOWN_DISABLE,
-    .intr_type = GPIO_INTR_DISABLE,
-  };
-  if ( IN1 != GPIO_NUM_NC ) io_conf.pin_bit_mask = io_conf.pin_bit_mask | (1ULL << IN1);
-  if ( IN2 != GPIO_NUM_NC ) io_conf.pin_bit_mask = io_conf.pin_bit_mask | (1ULL << IN2);
-  gpio_config(&io_conf);
+    gpio_config_t io_conf = {
+      .pin_bit_mask = 0,
+      .mode = GPIO_MODE_OUTPUT,
+      .pull_up_en = GPIO_PULLUP_DISABLE,
+      .pull_down_en = GPIO_PULLDOWN_DISABLE,
+      .intr_type = GPIO_INTR_DISABLE,
+    };
+    if ( IN1 != GPIO_NUM_NC ) io_conf.pin_bit_mask = io_conf.pin_bit_mask | (1ULL << IN1);
+    if ( IN2 != GPIO_NUM_NC ) io_conf.pin_bit_mask = io_conf.pin_bit_mask | (1ULL << IN2);
+    gpio_config(&io_conf);
   
+    // set start levels
     if ( IN1 != GPIO_NUM_NC ) gpio_set_level( IN1, 0 );
     if ( IN2 != GPIO_NUM_NC ) gpio_set_level( IN2, 0 );
 
   }
 
+  // off?
   if ( duty==0 ) {
-
-    printf("duty==0\n");
     
     if ( IN1 != GPIO_NUM_NC ) gpio_set_level( IN1, xin1 );
     if ( IN2 != GPIO_NUM_NC ) gpio_set_level( IN2, xin2 );
@@ -266,8 +264,6 @@ void SwOSDCMotor::setPWM( int16_t xin1, int16_t xin2, gpio_num_t pwm, uint32_t d
   // reconfigure ledc  due to a change of direction?
   if ( pwm != ledc_channel->gpio_num ) {
 
-    printf("reconf\n");
-
     // reconfigure to new pin
     ledc_channel->gpio_num = pwm;
     ledc_channel->duty     = 0;
@@ -275,15 +271,19 @@ void SwOSDCMotor::setPWM( int16_t xin1, int16_t xin2, gpio_num_t pwm, uint32_t d
 
   }
 
-
   // TODO rampUp
 
-  printf("set duty\n");
-
-  if ( duty <= 1500 ) ESP_ERROR_CHECK( ledc_set_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel, 1500 ) );
-
   // set fading & new duty
-  ESP_ERROR_CHECK( ledc_set_fade_with_step( LEDC_LOW_SPEED_MODE, ledc_channel->channel, duty, 10, 30 ) );
+  if ( ioType == SWOSIO_WHEELDRIVE ) {
+    if ( duty < 2500 ) {
+      ESP_ERROR_CHECK( ledc_set_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel, 2500 ) );
+      ESP_ERROR_CHECK( ledc_update_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel ) );
+    }
+    ESP_ERROR_CHECK( ledc_set_fade_with_step( LEDC_LOW_SPEED_MODE, ledc_channel->channel, duty, 10, 30 ) );
+  } else {
+    ESP_ERROR_CHECK( ledc_set_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel, duty ) );
+  }
+
   ESP_ERROR_CHECK( ledc_update_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel ) );
 
 }
@@ -305,10 +305,10 @@ void SwOSDCMotor::setLocal() {
 
     case FTSWARM_ON:    if ( speed <  0) {
                           // SLEEP HIGH, IN1 PWM, IN2 HIGH
-                          setPWM( 0, 1, IN1, abs(speed) );
+                          setPWM( 0, 1, IN1, duty( ) );
                         } else {
                           // SLEEP HIGH, IN1 HIGH, IN2 PWM
-                          setPWM( 1, 0, IN2, abs(speed) );
+                          setPWM( 1, 0, IN2, duty( ) );
                         }
                         break;
 
