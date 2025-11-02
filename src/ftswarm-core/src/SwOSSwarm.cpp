@@ -463,7 +463,8 @@ void SwOSSwarm::getAlias( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port
   if (io) 
     strcpy( alias, io->getAlias() );
   else
-    strcpy( alias, "" );
+    // offline?
+    strcpy( alias, "???" );
 
 }
 

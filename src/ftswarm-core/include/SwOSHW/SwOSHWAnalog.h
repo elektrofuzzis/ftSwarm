@@ -86,7 +86,8 @@
   
     // administrative stuff
     virtual void serialize( Serialize *serialize );
-    virtual bool isInput( void ) { return true; };
+    // not an input due to firmware check during events. Might be a TODO in other cases
+    // virtual bool isInput( void ) { return true; };
 
     virtual char* subscribe( char *IOName, uint32_t hysteresis ); // subscribe sensor to display value changes as console outputs 
 	  virtual void  unsubscribe();                                  // clear subscription

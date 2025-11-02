@@ -211,8 +211,6 @@ int16_t SwOSDCMotor::duty( void ) {
     // % power supply between 4.5 and 9.0 V
     float p = ( ctrl->pwrctl->getVoltage() - 4.5 ) / 4.5;
 
-    printf("p: %f v: %f x90: %d x45: %d\n", p, ctrl->pwrctl->getVoltage(), x90, x45 );
-
     // calc xMin
     if      ( p <= 0 ) xMin = x45;
     else if ( p >= 1 ) xMin = x90;
@@ -222,8 +220,6 @@ int16_t SwOSDCMotor::duty( void ) {
     // no PWRCTL available, take 9.0V value
     xMin = x90;
   }
-
-  printf("xMin: %f\n", xMin);
 
   return xMin + int32_t( (xMax -xMin) ) * abs(speed) / 100;
 

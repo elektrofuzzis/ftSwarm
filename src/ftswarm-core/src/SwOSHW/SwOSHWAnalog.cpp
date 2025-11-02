@@ -245,21 +245,10 @@ void SwOSAnalogInput::serialize( Serialize *serialize ) {
   serialize->endObject();
 }
 
-/***************************************************
- *
- *   SwOSJoystick
- *
- *   Port Mapping:
- *
- *        1v0           1v3           1v15
- *   JOY1 LR  GPIO39/ADC1_CHANNEL_3 GPIO33/ADC1_CHANNEL_5 n/a
- *   JOY1 FB  GPIO36/ADC1_CHANNEL_0 GPIO36/ADC1_CHANNEL_0 n/a
- *   JOY2 LR  GPIO32/ADC1_CHANNEL_4 GPIO32/ADC1_CHANNEL_4 n/a
- *   JOY2 FB  GPIO34/ADC1_CHANNEL_6 GPIO34/ADC1_CHANNEL_6 n/a
- *
- ***************************************************/
 
- SwOSJoystick::SwOSJoystick(const char *name, uint8_t port,SwOSCtrl *ctrl, SwOSDigitalInput* button, SwOSAnalogInput* lr, SwOSAnalogInput* fb ) : SwOSIO( name, port, ctrl, SWOSIO_JOYSTICK ) {
+// SwOSJoystick
+
+SwOSJoystick::SwOSJoystick(const char *name, uint8_t port,SwOSCtrl *ctrl, SwOSDigitalInput* button, SwOSAnalogInput* lr, SwOSAnalogInput* fb ) : SwOSIO( name, port, ctrl, SWOSIO_JOYSTICK ) {
 
   this->button = button;
   this->lr     = lr;

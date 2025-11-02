@@ -71,8 +71,7 @@ const SwOSMaxIO_t MAXIOS[FTSWARMMAXVERSION] = {
   /* FTSWARMDUINO_1V14 */    {  0,     0,     0,       0,     2,      0,       0,         NOPWRCTL, 0 },
   /* FTSWARMPWRDRIVE_1V14 */ {  5,     4,     0,       0,     2,      0,       0,         NOPWRCTL, 0 },
   /* FTSWARMXL_1V00 */       {  8,     8,     0,       0,     2,      0,       0,         NOPWRCTL, 0 },
-  /* FTSWARMRC_1V140       {  7,     4,     4,       0,     1,      0,       0,         6,        0 } */
-  /* FTSWARMRC_1V140  */     { 11,     4,     0,       0,     1,      0,       0,         6,        0 } 
+  /* FTSWARMRC_1V140 */      {  7,     4,     4,       0,     1,      0,       0,         6,        0 } 
 };
 
 const SwOSIODefinition_t GPIO_INPUT[FTSWARMMAXVERSION][MAXINPUTS] = {
