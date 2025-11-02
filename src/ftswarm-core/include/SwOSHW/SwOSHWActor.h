@@ -97,7 +97,7 @@ class SwOSDCMotor : public SwOSMotor {
     // Constructors
     SwOSDCMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType );
     virtual ~SwOSDCMotor( );
-    virtual int16_t maxSpeed( void ) { return 100; };
+    virtual int16_t maxSpeed( void ) { return ( ioType == SWOSIO_MOTOR) ? 4096 : 100; };
   
     // commands
     virtual void setAcceleration( uint32_t rampUpT,  uint32_t rampUpY );    // set acceleration ramp

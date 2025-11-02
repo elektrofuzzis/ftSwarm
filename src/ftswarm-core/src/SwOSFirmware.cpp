@@ -562,13 +562,14 @@ bool setAliasAndType( SwOSObj *selected, SwOSCtrl *ctrl ) {
                
 }
 
-void aliasMenu( void ) {
+void ioTypesMenu( void ) {
 
   SwOSObj      *OSObj[99];
   bool         anythingChanged[MAXCTRL];
   uint8_t      controller = 0;
   Menu         menu;
   char         data[80];
+  bool         showPixel = false;
 
   // initialize anythingChanged
   for (uint8_t i=0; i<MAXCTRL; i++) anythingChanged[i] = false;
@@ -576,7 +577,7 @@ void aliasMenu( void ) {
   while (1) {
 
     uint8_t item = 0;
-    menu.start( "alias menu:", 10, 255, ' ' );
+    menu.start( "io types menu:", 10, 255, ' ' );
 
     printf("      Name        Type            Alias\n");
 
@@ -587,12 +588,25 @@ void aliasMenu( void ) {
   
     // list IOs
     for (uint8_t i=0; i<myOSSwarm.Ctrl[controller]->IOs; i++ ) {
+
       if ( myOSSwarm.Ctrl[controller]->io[i] ) { 
-        OSObj[item++] = myOSSwarm.Ctrl[controller]->io[i];
-        sprintf( data, "%-15s %s", SWOSIOTYPE[myOSSwarm.Ctrl[controller]->io[i]->getIOType()], myOSSwarm.Ctrl[controller]->io[i]->getAlias() );
-        menu.add( myOSSwarm.Ctrl[controller]->io[i]->getName(), data, item, true );
+
+        SwOSIOType_t ioType = myOSSwarm.Ctrl[controller]->io[i]->getIOType();
+
+        if ( ( showPixel && ( ioType == SWOSIO_PIXEL ) ) || ( !showPixel && ( ioType != SWOSIO_PIXEL ) ) ) {
+
+          OSObj[item++] = myOSSwarm.Ctrl[controller]->io[i];
+          sprintf( data, "%-15s %s", SWOSIOTYPE[ioType], myOSSwarm.Ctrl[controller]->io[i]->getAlias() );
+          menu.add( myOSSwarm.Ctrl[controller]->io[i]->getName(), data, item, true );
+        }
+
       }
+
     }
+
+    printf("\n");
+    if ( showPixel ) menu.add( "Standard IO", "", 98 );
+    else             menu.add( "ftPixel",     "", 98 );
   
     // Kelda only: option to select another controller in the swarm
     if ( myOSSwarm.Ctrl[0]->IAmKelda ) {
@@ -636,6 +650,9 @@ void aliasMenu( void ) {
           
                 }
                 return;
+
+      case 98:  showPixel = !showPixel;
+                break;
       
       case 99:  controller = selectController( controller );
                 printf("controller: %d\n", controller);
@@ -908,7 +925,7 @@ void remoteControl( void ) {
 
 #define MAINMENUWEB       1
 #define MAINMENUSWARM     2
-#define MAINMENUALIAS     3
+#define MAINMENUIOTYPES   3
 #define MAINMENUFACTORY   4
 #define MAINMENUREMOTE    5
 #define MAINMENUMISC      6
@@ -926,7 +943,7 @@ void mainMenu( void ) {
     } else {
       menu.add("Swarm Configuration - activate WiFi", "", DEACTIVATED );
     }
-    menu.add("Alias Names", "", MAINMENUALIAS );
+    menu.add("IO Types & Alias Names", "", MAINMENUIOTYPES );
 
     if (myOSSwarm.Ctrl[0]->IAmKelda) menu.add("Remote Control", "", MAINMENUREMOTE );
 
@@ -945,7 +962,7 @@ void mainMenu( void ) {
       case 0:                 return;
       case MAINMENUWEB:       wifiMenu();         break;
       case MAINMENUSWARM:     swarmMenu();        break;
-      case MAINMENUALIAS:     aliasMenu();        break;
+      case MAINMENUIOTYPES:   ioTypesMenu();      break;
       case MAINMENUFACTORY:   factorySettings();  break;
       case MAINMENUREMOTE:    remoteControl();    break;
       case MAINMENUMISC:      miscSettingsMenu(); break;

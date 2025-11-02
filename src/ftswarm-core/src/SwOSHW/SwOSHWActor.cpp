@@ -188,7 +188,8 @@ int16_t SwOSDCMotor::duty( void ) {
     case SWOSIO_TRACTOR:    x45 = 1600; x90 = 500;
                             break;
 
-    case SWOSIO_WHEELDRIVE: x45 = 1373; x90 = 2350;
+    case SWOSIO_WHEELDRIVE: x45 = 3200; x90 = 2350;  // 3200
+                            break;
 
     case SWOSIO_SMOTOR:     x45 = 2700; x90 = 1900;
                             break;
@@ -210,6 +211,8 @@ int16_t SwOSDCMotor::duty( void ) {
     // % power supply between 4.5 and 9.0 V
     float p = ( ctrl->pwrctl->getVoltage() - 4.5 ) / 4.5;
 
+    printf("p: %f v: %f x90: %d x45: %d\n", p, ctrl->pwrctl->getVoltage(), x90, x45 );
+
     // calc xMin
     if      ( p <= 0 ) xMin = x45;
     else if ( p >= 1 ) xMin = x90;
@@ -220,11 +223,14 @@ int16_t SwOSDCMotor::duty( void ) {
     xMin = x90;
   }
 
+  printf("xMin: %f\n", xMin);
+
   return xMin + int32_t( (xMax -xMin) ) * abs(speed) / 100;
 
 }
 
 void SwOSDCMotor::setPWM( int16_t xin1, int16_t xin2, gpio_num_t pwm, uint32_t duty ) {
+
 
   // check if it's needed to stop running pwm
   if ( ( ( duty == 0 ) || ( pwm != ledc_channel->gpio_num ) ) && ( ledc_channel->gpio_num != GPIO_NUM_NC ) ) {
@@ -275,16 +281,25 @@ void SwOSDCMotor::setPWM( int16_t xin1, int16_t xin2, gpio_num_t pwm, uint32_t d
 
   // set fading & new duty
   if ( ioType == SWOSIO_WHEELDRIVE ) {
-    if ( duty < 2500 ) {
-      ESP_ERROR_CHECK( ledc_set_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel, 2500 ) );
+
+    if ( duty < 3500 ) {
+      // use standard duty for "small" values
+      ESP_ERROR_CHECK( ledc_set_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel, duty ) );
       ESP_ERROR_CHECK( ledc_update_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel ) );
+
+    } else {
+      // need to do a ramp for higher values
+      ESP_ERROR_CHECK( ledc_set_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel, 3500 ) );
+      ESP_ERROR_CHECK( ledc_update_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel ) );
+
+      ESP_ERROR_CHECK( ledc_set_fade_with_step( LEDC_LOW_SPEED_MODE, ledc_channel->channel, duty, 1, 2 ) );
+      ESP_ERROR_CHECK( ledc_fade_start( LEDC_LOW_SPEED_MODE, ledc_channel->channel, LEDC_FADE_NO_WAIT ) );
     }
-    ESP_ERROR_CHECK( ledc_set_fade_with_step( LEDC_LOW_SPEED_MODE, ledc_channel->channel, duty, 10, 30 ) );
+
   } else {
     ESP_ERROR_CHECK( ledc_set_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel, duty ) );
+    ESP_ERROR_CHECK( ledc_update_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel ) );
   }
-
-  ESP_ERROR_CHECK( ledc_update_duty( LEDC_LOW_SPEED_MODE, ledc_channel->channel ) );
 
 }
 
@@ -314,7 +329,7 @@ void SwOSDCMotor::setLocal() {
 
     default:            // SLEEP HIGH, IN1 LOW, IN2 LOW
                         setPWM( 0, 0, IN1, 0 );
-                        break;
+                        break; 
   }  
   
 }
