@@ -1,6 +1,6 @@
 import type { ParentComponent } from "solid-js";
 
-export const Surface1: ParentComponent<{ class?: String }> = (props) => {
+export const Surface1: ParentComponent<{ class?: string }> = (props) => {
   return (
     <div
       class={
@@ -13,7 +13,7 @@ export const Surface1: ParentComponent<{ class?: String }> = (props) => {
   );
 };
 
-export const Surface2: ParentComponent<{ class?: String }> = (props) => {
+export const Surface2: ParentComponent<{ class?: string }> = (props) => {
   return (
     <div
       class={
@@ -26,7 +26,7 @@ export const Surface2: ParentComponent<{ class?: String }> = (props) => {
   );
 };
 
-export const Surface3: ParentComponent<{ class?: String }> = (props) => {
+export const Surface3: ParentComponent<{ class?: string }> = (props) => {
   return (
     <div
       class={

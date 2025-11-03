@@ -30,7 +30,7 @@ export class WebSocketTransport implements Transport {
     return this.lock.runExclusive(func);
   }
 
-  private handleError(error: Event) {
+  private handleError = (error: Event) => {
     console.error("WebSocket error:", error);
     this.adapter.onError(
       new TransportError(
@@ -38,9 +38,9 @@ export class WebSocketTransport implements Transport {
         ErrorResolution.RECONNECT,
       ),
     );
-  }
+  };
 
-  private handleClose(event: CloseEvent) {
+  private handleClose = (event: CloseEvent) => {
     console.log(`WebSocket connection closed: ${event.code} ${event.reason}`);
     this.adapter.onError(
       new TransportError(
@@ -48,9 +48,9 @@ export class WebSocketTransport implements Transport {
         ErrorResolution.RECONNECT,
       ),
     );
-  }
+  };
 
-  private handleMessage(event: MessageEvent) {
+  private handleMessage = (event: MessageEvent) => {
     const message = event.data as string;
     // Skip empty messages
     if (!message.trim()) {
@@ -92,7 +92,7 @@ export class WebSocketTransport implements Transport {
         console.log("ftSwarm CLI started");
         break;
     }
-  }
+  };
 
   async send(data: string): Promise<void> {
     this.webSocket.send(data);

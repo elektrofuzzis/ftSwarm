@@ -76,8 +76,6 @@ export function parseSwarmToSocketMessage(
     }));
   } else if (isError(message)) {
     return Result.ok({ kind: "error", message });
-  } else if (isStartCli(message)) {
-    return Result.ok({ kind: "start-cli" });
   } else {
     return Result.err(SwarmToSocketMessageParseError.UNKNOWN);
   }

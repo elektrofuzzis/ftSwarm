@@ -114,7 +114,7 @@ class Logger {
 
     switch (level) {
       case LogLevel.ERROR:
-        console.warn(messageString, ...logArgs);
+        console.error(messageString, ...logArgs);
         break;
       case LogLevel.WARN:
         console.warn(messageString, ...logArgs);

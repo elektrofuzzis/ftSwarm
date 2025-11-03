@@ -47,7 +47,7 @@ const Activity: Component<{ active: boolean }> = (props) => {
 };
 
 const MenuEntry: ParentComponent<{
-  icon: Component;
+  icon: Component<{ class?: string }>;
   text: string;
   active: boolean;
   disabled?: boolean;

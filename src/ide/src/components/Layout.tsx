@@ -1,7 +1,7 @@
 import { useIsRouting } from "@solidjs/router";
 import { Sidebar } from "./Sidebar";
 import { Surface1 } from "./Surface";
-import type { ParentComponent } from "solid-js/types/server/rendering.js";
+import type { ParentComponent } from "solid-js";
 
 const Content: ParentComponent = (props) => {
   const isRouting = useIsRouting();
