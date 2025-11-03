@@ -38,7 +38,7 @@ const char JOYSTICK[2][15] = { "left joystick", "right joystick" };
 
 void calibrateJoystick( uint8_t port, SwOSJoyCalibration_t calibration[2] ) {
 
-  SwOSDigitalInput*    button = (SwOSDigitalInput*) myOSSwarm.getIO( myOSSwarm.Ctrl[0]->serialNumber, FTSWARM_S1, SWOSIO_BUTTON );
+  SwOSDigitalInput*    s1 = (SwOSDigitalInput*) myOSSwarm.getIO( myOSSwarm.Ctrl[0]->serialNumber, FTSWARM_S1, SWOSIO_BUTTON );
   SwOSAnalogInput*     joy[2];
   int32_t              value, lastValue;
   bool                 change;
@@ -60,7 +60,7 @@ void calibrateJoystick( uint8_t port, SwOSJoyCalibration_t calibration[2] ) {
   strcpy( visualizer, "----" );
   printf("\nPlease rotate %s.\nClick S1 to continue. %s", JOYSTICK[port], visualizer ); flushStdIO();
 
-  while ( ( button->getValueI32() == 0 ) || ( strcmp( visualizer, "++++") ) ) {
+  while ( ( s1->getValueI32() == 0 ) || ( strcmp( visualizer, "++++") ) ) {
 
     for ( uint8_t p=0; p<2; p++ ) {
 
@@ -114,6 +114,7 @@ void calibrateJoystick( uint8_t port, SwOSJoyCalibration_t calibration[2] ) {
 
   delete( joy[0] );
   delete( joy[1] );
+  delete( s1 );
   
 }
 
@@ -220,7 +221,7 @@ void miscSettingsMenu() {
         if  ( yesNo( "\nStart calibration (Y/N)?" ) ) {
           anythingChanged = true;
           calibrateJoystick( 0, nvs.calibration[0] );
-          calibrateJoystick( 1, nvs.calibration[0] );
+          calibrateJoystick( 1, nvs.calibration[1] );
         }
         break;
 

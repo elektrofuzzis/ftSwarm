@@ -64,6 +64,7 @@ void Serialize::reset( void ) {
 
   if (!buffer) bzero( buffer, bufSize );
   ptr = 0;
+  noSpacer = true;
 
 }
 
@@ -93,10 +94,8 @@ void Serialize::write( SerialLiteral_t literal ) {
     } else {
       write("\"");
       write( SLITERAL[ literal ] );
-      write("\"");
+      write("\":");
     }
-
-    write( ":" );
   
   }
 
