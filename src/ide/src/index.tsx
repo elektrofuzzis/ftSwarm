@@ -5,20 +5,33 @@ import { App } from "./app";
 import { HashRouter, Route } from "@solidjs/router";
 import { SwarmOverviewRoute } from "./routes/SwarmOverviewRoute";
 import logger from "./util/logger";
-import { WebSocketTransportFactory } from "./api/transport/wsTransport";
+import { websocketTransportFactory } from "./api/transport/wsTransport";
+import { TransportContext } from "./components/TransportContext";
+import { LoadingScreen } from "./components/LoadingScreen";
+
+function getSourceIp() {
+  if (import.meta.env.DEV && import.meta.env.VITE_VITE_SOURCE_IP) {
+    return import.meta.env.VITE_VITE_SOURCE_IP;
+  } else {
+    return window.location.hostname;
+  }
+}
 
 const root = document.getElementById("root");
-const factory = new WebSocketTransportFactory("ws://ftSwarm63/ws");
+const sourceIp = getSourceIp();
+const factory = websocketTransportFactory(`ws://${sourceIp}/ws`);
 
 logger.info("Welcome to ftSwarm IDE");
 logger.debug("Debug logging active");
 
 render(
   () => (
-    <HashRouter root={App}>
-      <Route path="/" component={SwarmOverviewRoute} />
-      <Route path="/bla" component={SwarmOverviewRoute} />
-    </HashRouter>
+    <TransportContext sourceIp={sourceIp} factory={factory}>
+      <HashRouter root={App}>
+        <Route path="/" component={SwarmOverviewRoute} />
+        <Route path="/bla" component={SwarmOverviewRoute} />
+      </HashRouter>
+    </TransportContext>
   ),
   root!,
 );
