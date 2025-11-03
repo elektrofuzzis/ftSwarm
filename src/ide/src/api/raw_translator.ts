@@ -1,4 +1,5 @@
 import logger from "../util/logger";
+import { Result } from "../util/result";
 
 const ftSwarmReplacements: Record<string, string> = {
   [String.fromCharCode(2)]: '"io":',
@@ -32,28 +33,46 @@ const ftSwarmReplacements: Record<string, string> = {
   [String.fromCharCode(31)]: '"v-Flip":',
 };
 
+const REPLACEMENT_KEYS = Object.keys(ftSwarmReplacements).map((key) =>
+  key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+);
+
+const REPLACEMENT_REGEX = new RegExp(REPLACEMENT_KEYS.join("|"), "g");
+
 function translateStringToObject<T>(
   jsonString: string,
-  replacements: Record<string, string>,
-): T | null {
+  replacements: Record<string, string> | null,
+  regex: RegExp | null,
+): Result<T, Error> {
   let processedString = jsonString;
 
-  for (const key in replacements) {
-    processedString = processedString.replace(key, replacements[key]);
+  if (replacements && regex) {
+    processedString = jsonString.replace(regex, (match) => replacements[match]);
   }
 
   try {
-    return JSON.parse(processedString) as T;
+    return Result.ok(JSON.parse(processedString) as T);
   } catch (error) {
-    logger.error("Failed to parse JSON:", error);
-    return null;
+    logger.error("Failed to parse JSON:", error, {
+      originalString: jsonString,
+      processedString: processedString,
+    });
+    return Result.err(error as Error);
   }
 }
 
-export function translateSwarmJson(jsonString: string) {
-  return translateStringToObject(jsonString, ftSwarmReplacements);
+export function translateSwarmJson<T = any>(
+  jsonString: string,
+): Result<T, Error> {
+  return translateStringToObject<T>(
+    jsonString,
+    ftSwarmReplacements,
+    REPLACEMENT_REGEX,
+  );
 }
 
-export function translateRawJson(jsonString: string) {
-  return translateStringToObject(jsonString, {});
+export function translateRawJson<T = any>(
+  jsonString: string,
+): Result<T, Error> {
+  return translateStringToObject<T>(jsonString, null, null);
 }
