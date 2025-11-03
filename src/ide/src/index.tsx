@@ -6,12 +6,11 @@ import { HashRouter, Route } from "@solidjs/router";
 import { SwarmOverviewRoute } from "./routes/SwarmOverviewRoute";
 import logger from "./util/logger";
 import { websocketTransportFactory } from "./api/transport/wsTransport";
-import { TransportContext } from "./components/TransportContext";
-import { LoadingScreen } from "./components/LoadingScreen";
+import { TransportContextProvider } from "./components/transport/TransportContextProvider";
 
 function getSourceIp() {
-  if (import.meta.env.DEV && import.meta.env.VITE_VITE_SOURCE_IP) {
-    return import.meta.env.VITE_VITE_SOURCE_IP;
+  if (import.meta.env.DEV && import.meta.env.VITE_SOURCE_IP) {
+    return import.meta.env.VITE_SOURCE_IP;
   } else {
     return window.location.hostname;
   }
@@ -26,12 +25,12 @@ logger.debug("Debug logging active");
 
 render(
   () => (
-    <TransportContext sourceIp={sourceIp} factory={factory}>
+    <TransportContextProvider sourceIp={sourceIp} factory={factory}>
       <HashRouter root={App}>
         <Route path="/" component={SwarmOverviewRoute} />
         <Route path="/bla" component={SwarmOverviewRoute} />
       </HashRouter>
-    </TransportContext>
+    </TransportContextProvider>
   ),
   root!,
 );
