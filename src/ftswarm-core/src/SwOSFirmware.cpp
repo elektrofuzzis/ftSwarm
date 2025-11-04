@@ -34,31 +34,60 @@ const char WIFI[3][12]    = { "off", "AP-Mode", "Client-Mode"};
 #define MISCMENUREG   7
 #define MISCCALIBRATE 8
 
-const char JOYSTICK[2][15] = { "left joystick", "right joystick" };
+void initCalibration( SwOSJoyCalibration_t *calibration ) {
+  calibration.minValue = 500;
+  calibration.maxValue = 3500;
+}
 
-void calibrateJoystick( uint8_t port, SwOSJoyCalibration_t calibration[2] ) {
+bool testCalibration( int32_t value, SwOSJoyCalibration_t *calibration, char visualizer[], p1, p2 ) {
 
-  SwOSDigitalInput*    s1 = (SwOSDigitalInput*) myOSSwarm.getIO( myOSSwarm.Ctrl[0]->serialNumber, FTSWARM_S1, SWOSIO_BUTTON );
-  SwOSAnalogInput*     joy[2];
-  int32_t              value, lastValue;
-  bool                 change;
-  uint8_t              stable;
-  char                 visualizer[5];
+  bool change = false;
+
+  if (value < calibration->minValue ) { change = true; calibration->minValue = value; visualizer[p1] = '+'; }
+  if (value < calibration->maxValue ) { change = true; calibration->maxValue = value; visualizer[p2] = '+'; }
+
+  return change;
+
+}
+
+bool calibrateJoysticks( uint8_t port, SwOSJoyCalibration_t calibration[4] ) {
+
+  SwOSDigitalInput* s1 = myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON FTSWARM_S1 );
+  SwOSDigitalInput* s2 = myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON FTSWARM_S2 );
+  SwOSJoystick* joy[2];
+  char          visualizer[5];
 
   // get direct readings
-  joy[0] = new SwOSAnalogInput( "LR", MAXIOS[ myOSSwarm.Ctrl[0]->getCPU() ].firstJPoti + 2* port,    myOSSwarm.Ctrl[0], SWOSIO_JOYSTICK_POTI );
-  joy[1] = new SwOSAnalogInput( "FB", MAXIOS[ myOSSwarm.Ctrl[0]->getCPU() ].firstJPoti + 2* port +1, myOSSwarm.Ctrl[0], SWOSIO_JOYSTICK_POTI );
+  joy[0] = myOSSwarm.Ctrl[0]->getIO("JOY1");
+  joy[1] = myOSSwarm.Ctrl[0]->getIO("JOY2");
   
   // init calibration
-  for ( uint8_t p=0; p<2; p++ ) {
-    calibration[p].minValue = 500;
-    calibration[p].maxValue = 3500;
-  }
+  for ( uint8_t i=0; i<4; i++ ) initCalibration( &calibration[i] );
 
   // 1st step: rotate the stick to get min/max values
 
-  strcpy( visualizer, "----" );
-  printf("\nPlease rotate %s.\nClick S1 to continue. %s", JOYSTICK[port], visualizer ); flushStdIO();
+  strcpy( visualizer, "---- ----" );
+  printf("\nPlease rotate both joysticks.\nClick S1 when finished, S2 to abort. %s", visualizer ); flushStdIO();
+
+  while ( true ) {
+
+    // abort?
+    if ( s2->getToggle() == FTSWARM_TOGGLEUP ) { return false; }
+
+    // finish?
+    if ( ( s1->getToggle() == FTSWARM_TOGGLEUP ) && ( strcmp( visualizer, "++++ ++++" ) ) ) { break; }
+
+    if ( testCalibration( joy[0]->lr.getValue(), &calibration[0], visualizer, 0, 3 ) ||
+         testCalibration( joy[0]->fb.getValue(), &calibration[1], visualizer, 1, 2 ) ||
+         testCalibraiton( joy[1]->lr.getValue(), &calibration[2], visualizer, 5, 8 ) ||
+         testCalibraiton( joy[1]->fb.getValue(), &calibration[3], visualizer, 6, 7 ) ) {
+      printf("\b\b\b\b\b\b\b\b\b%s", visualizer)
+    }
+    
+    // wait for new measures
+    delay(25);
+
+  }
 
   while ( ( s1->getValueI32() == 0 ) || ( strcmp( visualizer, "++++") ) ) {
 
@@ -80,41 +109,8 @@ void calibrateJoystick( uint8_t port, SwOSJoyCalibration_t calibration[2] ) {
     }
 
   }
-  
 
-  // 2nd step: release to get mid value
-
-  printf("\nRelease the %s now", JOYSTICK[port]); flushStdIO();
-
-  for ( uint8_t p=0; p<2; p++ ) {
-
-    stable    = 0;
-    lastValue = FILTER_INVALID;
-
-    while( stable < 3) {
-
-      joy[p]->operate();
-      value = joy[p]->getValueI32();
-
-      if ( ( value > 1500 ) && ( value < 2000 ) && ( value == lastValue ) ){
-        printf("."); flushStdIO();
-        stable++;
-      } else {
-        stable = 0;
-      }
-
-      lastValue = value;
-      delay(100);
-
-    }
-
-    calibration[p].midValue = value;
-
-  }
-
-  delete( joy[0] );
-  delete( joy[1] );
-  delete( s1 );
+  printf("store %d %d %d %d - %d %d %d %d", calibration[0].minValue, calibration[0].maxValue, calibration[1].minValue, calibration[1].maxValue, calibration[2].minValue, calibration[2].maxValue, calibration[3].minValue, calibration[3].maxValue)
   
 }
 

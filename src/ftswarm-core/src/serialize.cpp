@@ -172,9 +172,9 @@ void Serialize::item( SerialLiteral_t literal, const char* value ) {
   
   newObject( SERIALIZE_Item );
   write( literal);
-  if ( format == SERIALIZE_JSON ) write( "\"" );
+  write( "\"" );
   write( value );
-  if ( format == SERIALIZE_JSON ) write( "\"" );
+  write( "\"" );
 
 }
 
@@ -203,11 +203,11 @@ void Serialize::item( SerialLiteral_t literal, float value, uint8_t decimalPlace
   
   // value
   char str[64];
-  sprintf( str, "%0.*f", decimalPlaces, value);
-  write( str );
 
-  // unit if given
-  if (unit) { write(" "); write( unit ); }
+  if (unit) 
+    sprintf( str, "[%0.*f,\"%s\"]", decimalPlaces, value, unit);
+  else
+    sprintf( str, "%0.*f", decimalPlaces, value);
 
 }
 
