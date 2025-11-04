@@ -35,11 +35,11 @@ const char WIFI[3][12]    = { "off", "AP-Mode", "Client-Mode"};
 #define MISCCALIBRATE 8
 
 void initCalibration( SwOSJoyCalibration_t *calibration ) {
-  calibration.minValue = 500;
-  calibration.maxValue = 3500;
+  calibration->minValue = 500;
+  calibration->maxValue = 3500;
 }
 
-bool testCalibration( int32_t value, SwOSJoyCalibration_t *calibration, char visualizer[], p1, p2 ) {
+bool testCalibration( int32_t value, SwOSJoyCalibration_t *calibration, char visualizer[], uint8_t p1, uint8_t p2 ) {
 
   bool change = false;
 
@@ -52,14 +52,14 @@ bool testCalibration( int32_t value, SwOSJoyCalibration_t *calibration, char vis
 
 bool calibrateJoysticks( uint8_t port, SwOSJoyCalibration_t calibration[4] ) {
 
-  SwOSDigitalInput* s1 = myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON FTSWARM_S1 );
-  SwOSDigitalInput* s2 = myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON FTSWARM_S2 );
+  SwOSDigitalInput* s1 = (SwOSDigitalInput*)myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_S1 );
+  SwOSDigitalInput* s2 = (SwOSDigitalInput*)myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_S2 );
   SwOSJoystick* joy[2];
-  char          visualizer[5];
+  char          visualizer[15];
 
   // get direct readings
-  joy[0] = myOSSwarm.Ctrl[0]->getIO("JOY1");
-  joy[1] = myOSSwarm.Ctrl[0]->getIO("JOY2");
+  joy[0] = (SwOSJoystick *)myOSSwarm.Ctrl[0]->getIO("JOY1");
+  joy[1] = (SwOSJoystick *)myOSSwarm.Ctrl[0]->getIO("JOY2");
   
   // init calibration
   for ( uint8_t i=0; i<4; i++ ) initCalibration( &calibration[i] );
@@ -77,11 +77,11 @@ bool calibrateJoysticks( uint8_t port, SwOSJoyCalibration_t calibration[4] ) {
     // finish?
     if ( ( s1->getToggle() == FTSWARM_TOGGLEUP ) && ( strcmp( visualizer, "++++ ++++" ) ) ) { break; }
 
-    if ( testCalibration( joy[0]->lr.getValue(), &calibration[0], visualizer, 0, 3 ) ||
-         testCalibration( joy[0]->fb.getValue(), &calibration[1], visualizer, 1, 2 ) ||
-         testCalibraiton( joy[1]->lr.getValue(), &calibration[2], visualizer, 5, 8 ) ||
-         testCalibraiton( joy[1]->fb.getValue(), &calibration[3], visualizer, 6, 7 ) ) {
-      printf("\b\b\b\b\b\b\b\b\b%s", visualizer)
+    if ( testCalibration( joy[0]->lr->getValueI32(), &calibration[0], visualizer, 0, 3 ) ||
+         testCalibration( joy[0]->fb->getValueI32(), &calibration[1], visualizer, 1, 2 ) ||
+         testCalibration( joy[1]->lr->getValueI32(), &calibration[2], visualizer, 5, 8 ) ||
+         testCalibration( joy[1]->fb->getValueI32(), &calibration[3], visualizer, 6, 7 ) ) {
+      printf("\b\b\b\b\b\b\b\b\b%s", visualizer);
     }
     
     // wait for new measures
@@ -89,28 +89,7 @@ bool calibrateJoysticks( uint8_t port, SwOSJoyCalibration_t calibration[4] ) {
 
   }
 
-  while ( ( s1->getValueI32() == 0 ) || ( strcmp( visualizer, "++++") ) ) {
-
-    for ( uint8_t p=0; p<2; p++ ) {
-
-      change = false;
-      joy[p]->operate();
-      value = joy[p]->getValueI32();
-
-      if ( value != FILTER_INVALID ) {
-
-        if (value < calibration[p].minValue ) { change = true; calibration[p].minValue = value; visualizer[p*2] = '+'; }
-        if (value > calibration[p].maxValue ) { change = true; calibration[p].maxValue = value; visualizer[p*2+1] = '+'; }
-
-        if ( change ) { printf("\b\b\b\b%s", visualizer); flushStdIO(); change = false; }
-
-      }
-
-    }
-
-  }
-
-  printf("store %d %d %d %d - %d %d %d %d", calibration[0].minValue, calibration[0].maxValue, calibration[1].minValue, calibration[1].maxValue, calibration[2].minValue, calibration[2].maxValue, calibration[3].minValue, calibration[3].maxValue)
+  printf("store %d %d %d %d - %d %d %d %d\n", calibration[0].minValue, calibration[0].maxValue, calibration[1].minValue, calibration[1].maxValue, calibration[2].minValue, calibration[2].maxValue, calibration[3].minValue, calibration[3].maxValue);
   
 }
 
@@ -216,8 +195,7 @@ void miscSettingsMenu() {
       case MISCCALIBRATE: // calibrate joysticks
         if  ( yesNo( "\nStart calibration (Y/N)?" ) ) {
           anythingChanged = true;
-          calibrateJoystick( 0, nvs.calibration[0] );
-          calibrateJoystick( 1, nvs.calibration[1] );
+          // calibrateJoysticks( nvs.calibration );
         }
         break;
 

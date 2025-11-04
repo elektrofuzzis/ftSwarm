@@ -90,7 +90,7 @@ void Serialize::write( SerialLiteral_t literal ) {
   if ( literal ) {
 
     if ( format == SERIALIZE_RAW ) { 
-      writeBinary( literal );
+      writeBinary( literal+128 );
     } else {
       write("\"");
       write( SLITERAL[ literal ] );

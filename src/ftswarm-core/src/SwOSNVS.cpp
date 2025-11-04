@@ -118,12 +118,10 @@ SwOSNVS::SwOSNVS() {
   gyro               = false;
 
   // initialize zero positions
-  for (uint8_t j=0;j<2;j++) {
-    for (uint8_t i=0;i<2;i++) {
-      calibration[j][i].minValue = 200;
-      calibration[j][i].midValue = 1900;
-      calibration[j][i].maxValue = 3700;
-    }
+  for (uint8_t j=0;j<4;j++) {
+    calibration[j].minValue = 200;
+    calibration[j].midValue = 1900;
+    calibration[j].maxValue = 3700;
   }
 
   // initialize events
@@ -370,12 +368,10 @@ void SwOSNVS::factorySettings( void ) {
   swarmCommunication = swarmComWifi;
   swarmSpeed         = 4;
 
-  for (uint8_t j=0;j<2;j++) {
-    for (uint8_t i=0;i<2;i++) {
-      calibration[j][i].minValue = 200;
-      calibration[j][i].midValue = 1900;
-      calibration[j][i].maxValue = 3700;
-    }
+  for (uint8_t j=0;j<4;j++) {
+    calibration[j].minValue = 200;
+    calibration[j].midValue = 1900;
+    calibration[j].maxValue = 3700;
   }
 
   pixels             = MAXIOS[CPU].pixels;

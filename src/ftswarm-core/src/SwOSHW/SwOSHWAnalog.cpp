@@ -257,10 +257,10 @@ SwOSJoystick::SwOSJoystick(const char *name, uint8_t port,SwOSCtrl *ctrl, SwOSDi
   // initialize local HW
   if (ctrl->isLocal()) {
 
-    lr->addFilter( new SwOSFJoystick( nvs.calibration[port][0].minValue, nvs.calibration[port][0].midValue, nvs.calibration[port][0].maxValue ) );
+    lr->addFilter( new SwOSFJoystick( nvs.calibration[port*2].minValue, nvs.calibration[port*2].midValue, nvs.calibration[port*2].maxValue ) );
     if ( port) lr->addFilter( new SwOSMultiply( -1 ) ); 
 
-    fb->addFilter( new SwOSFJoystick( nvs.calibration[port][1].minValue, nvs.calibration[port][1].midValue, nvs.calibration[port][1].maxValue) );
+    fb->addFilter( new SwOSFJoystick( nvs.calibration[port*2+1].minValue, nvs.calibration[port*2+1].midValue, nvs.calibration[port*2+1].maxValue) );
     if (!port) fb->addFilter( new SwOSMultiply( -1 ) ); 
 
   }

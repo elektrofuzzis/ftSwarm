@@ -65,7 +65,7 @@ class SwOSNVS {
     char                   swarmName[MAXIDENTIFIER];
     uint16_t               swarmSecret, swarmPIN;
     FtSwarmWifi_t          wifiMode;
-    SwOSJoyCalibration_t   calibration[2][2];
+    SwOSJoyCalibration_t   calibration[4];
     uint8_t                pixels;
     uint8_t                activeEventConfig;
     SwOSNVSEvent_t         events[MAXEVENTCONFIGS][MAXNVSEVENTS];

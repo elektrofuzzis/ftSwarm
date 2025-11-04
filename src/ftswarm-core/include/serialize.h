@@ -65,6 +65,8 @@ typedef enum {
   SERIALIZE_LITERAL_MAX
 } SerialLiteral_t; 
 
+// IMPORTANT: °-char ist \176 - in case of additional literals enum #48 needs to be left unused.
+
 // simple class to build a json string and send it immediately
 class Serialize {
   
