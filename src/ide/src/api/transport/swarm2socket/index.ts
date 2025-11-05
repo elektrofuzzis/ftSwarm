@@ -1,4 +1,5 @@
 import { Result } from "../../../util/result";
+import { jsonify } from "../../rawTranslator";
 import { SwarmToSocketMessageParseError } from "./error";
 import { parseRpcReturnParam, type RpcReturnParam } from "./rpc";
 import {
@@ -30,12 +31,18 @@ export type SwarmToSocketStartCli = {
   kind: "start-cli";
 };
 
+export type SwarmToSocketStateUpdate = {
+  kind: "state-update";
+  value: any; // TODO
+};
+
 export type SwarmToSocketMessage =
   | SwarmToSocketLog
   | SwarmToSocketRpcResponse
   | SwarmToSocketSubscription
   | SwarmToSocketError
-  | SwarmToSocketStartCli;
+  | SwarmToSocketStartCli
+  | SwarmToSocketStateUpdate;
 
 function isLogMessage(message: string): boolean {
   return message.startsWith("[");
@@ -57,6 +64,10 @@ function isStartCli(message: string): boolean {
   return message.includes("@@@ ftSwarmOS CLI started");
 }
 
+function isStateUpdate(message: string): boolean {
+  return message.startsWith("{");
+}
+
 export function parseSwarmToSocketMessage(
   message: string,
 ): Result<SwarmToSocketMessage, SwarmToSocketMessageParseError> {
@@ -76,6 +87,15 @@ export function parseSwarmToSocketMessage(
     }));
   } else if (isError(message)) {
     return Result.ok({ kind: "error", message });
+  } else if (isStateUpdate(message)) {
+    return jsonify<any>(message)
+      .map<{ kind: "state-update"; value: any }>((value) => ({
+        kind: "state-update",
+        value,
+      }))
+      .mapErr<SwarmToSocketMessageParseError>(
+        (_: any) => SwarmToSocketMessageParseError.STATE_UPDATE_ERROR,
+      );
   } else {
     return Result.err(SwarmToSocketMessageParseError.UNKNOWN);
   }

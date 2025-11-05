@@ -15,13 +15,14 @@ import { LoadingScreen, LoadingStep } from "../LoadingScreen";
 import type { SwarmToSocketSubscription } from "../../api/transport/swarm2socket";
 import logger from "../../util/logger";
 import { TransportContext } from "./context";
+import { ErrorScreen } from "../ErrorScreen";
 
 class ContextTransportAdapter implements TransportAdapter {
   async onSubscription(message: SwarmToSocketSubscription): Promise<void> {
     logger.info(`Received subscription message: ${JSON.stringify(message)}`);
   }
   async onError(error: CommunicationError): Promise<void> {
-    logger.error(`Transport error: ${error}`);
+    logger.error(`Transport error: ${error.what()}: ${error.resolution()}`);
   }
 }
 
@@ -30,14 +31,23 @@ export const TransportContextProvider: ParentComponent<{
   factory: TransportFactory;
 }> = (props) => {
   const [step, setStep] = createSignal(LoadingStep.CONNECTING);
-  const [transport, { refetch: reloadTransport }] = createResource(() =>
-    props.factory(new ContextTransportAdapter()),
-  );
+  const [transport] = createResource(() => {
+    setStep(LoadingStep.CONNECTING);
+    return props.factory(new ContextTransportAdapter());
+  });
+
+  const loading = <LoadingScreen currentStep={step()} />;
 
   return (
-    <Suspense fallback={<LoadingScreen currentStep={step()} />}>
+    <Suspense fallback={loading}>
       <Switch>
-        <Match when={transport.error}>error happened: {transport.error}</Match>
+        <Match when={transport.loading}>{loading}</Match>
+        <Match when={transport.error}>
+          <ErrorScreen
+            message={transport.error.message}
+            onRestart={location.reload}
+          />
+        </Match>
         <Match when={transport()}>
           <TransportContext.Provider value={transport()}>
             {props.children}

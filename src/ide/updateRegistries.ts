@@ -12,6 +12,15 @@ const ENUM_ISOLATION_REGEX =
 const ENUM_CONSTANT_REGEX =
   /\s*(\w+)\s*(?:\=\s*(-?(?:0x)?[a-fA-F0-9]+))?\s*(?:(?:\/\/[^\n]*|\/\*[\s\S]*?\*))?\s*,?\s*(?:(?:\/\/[^\n]*|\/\*[\s\S]*?\*))?/gm;
 
+// Captures the full SLITERAL block
+// Group 1: The content between { ... }
+const TRANSLATION_LITERAL_SEPARATOR_REGEX =
+  /const\s+char\s+SLITERAL.*{([\s\S]*?)};/gm;
+
+// Captures a single translation literal element.
+// Group 1: The literal string (e.g., "Hello", including quotes)
+const TRANSLATION_LITERAL_ELEMENT_REGEX = /(".*"),?/gm;
+
 class CEnumeration {
   constructor(
     public readonly name: string,
@@ -25,34 +34,68 @@ class CEnumeration {
   }
 }
 
-const includePath = process.cwd() + "/ftSwarm/src/ftswarm-core/include/SwOS.h";
-const content = (await readFile(includePath)).toString();
+async function generateEnums() {
+  const includePath =
+    process.cwd() + "/ftSwarm/src/ftswarm-core/include/SwOS.h";
+  const content = (await readFile(includePath)).toString();
 
-let enums: CEnumeration[] = [];
-const enumMatches = content.matchAll(ENUM_ISOLATION_REGEX) || [];
+  let enums: CEnumeration[] = [];
+  const enumMatches = content.matchAll(ENUM_ISOLATION_REGEX) || [];
 
-for (const match of enumMatches) {
-  const enumName = match[2];
-  const enumValueString = match[1];
-  const constantMatches = enumValueString.matchAll(ENUM_CONSTANT_REGEX) || [];
+  for (const match of enumMatches) {
+    const enumName = match[2];
+    const enumValueString = match[1];
+    const constantMatches = enumValueString.matchAll(ENUM_CONSTANT_REGEX) || [];
 
-  let lastValue = -1;
-  let values: Record<string, number> = {};
+    let lastValue = -1;
+    let values: Record<string, number> = {};
 
-  for (const constantMatch of constantMatches) {
-    const constantName = constantMatch[1];
-    const constantValue = constantMatch[2]
-      ? Number(constantMatch[2])
-      : lastValue + 1;
-    values[constantName] = constantValue;
-    lastValue = constantValue;
+    for (const constantMatch of constantMatches) {
+      const constantName = constantMatch[1];
+      const constantValue = constantMatch[2]
+        ? Number(constantMatch[2])
+        : lastValue + 1;
+      values[constantName] = constantValue;
+      lastValue = constantValue;
+    }
+
+    enums.push(new CEnumeration(enumName, values));
   }
 
-  enums.push(new CEnumeration(enumName, values));
+  const targetFileContent =
+    "// GENERATED ENUMERATIONS FROM ftSwarm/src/ftswarm-core/include/SwOS.h\n" +
+    enums.map((enumObj) => enumObj.toString()).join("\n\n");
+
+  await writeFile("src/api/generated/genApiEnums.ts", targetFileContent);
 }
 
-const targetFileContent =
-  "// GENERATED ENUMERATIONS FROM ftSwarm/src/ftswarm-core/include/SwOS.h\n" +
-  enums.map((enumObj) => enumObj.toString()).join("\n\n");
+async function generateTranslations() {
+  const includePath =
+    process.cwd() + "/ftSwarm/src/ftswarm-core/src/serialize.cpp";
+  const content = (await readFile(includePath)).toString();
+  const [literalBlockMatch] = content.matchAll(
+    TRANSLATION_LITERAL_SEPARATOR_REGEX,
+  );
+  const literalBlock = literalBlockMatch ? literalBlockMatch[1] : "";
 
-await writeFile("src/api/api_enums.ts", targetFileContent);
+  let translations: string[] = [];
+
+  const translationMatches =
+    literalBlock.matchAll(TRANSLATION_LITERAL_ELEMENT_REGEX) || [];
+
+  let index = 0;
+  for (const match of translationMatches) {
+    const translationValue = match[1] + ":";
+    const id = index++ + 128;
+    translations.push(`  ${id}: '${translationValue}'`);
+  }
+
+  const targetFileContent =
+    "// GENERATED TRANSLATIONS FROM ftSwarm/src/ftswarm-core/src/serialize.cpp\n" +
+    `export const ftSwarmReplacements: Record<string, string> = {\n${translations.join(",\n")}\n};`;
+
+  await writeFile("src/api/generated/genApiTranslations.ts", targetFileContent);
+}
+
+await generateEnums();
+await generateTranslations();

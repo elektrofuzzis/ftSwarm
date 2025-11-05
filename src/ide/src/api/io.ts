@@ -1,4 +1,4 @@
-import type { ApiGeneralIoType, ApiOutputIoType } from "./api_types";
+import type { ApiGeneralIoType, ApiOutputIoType } from "./apiTypes";
 import { getIoIcon, type IconComponent } from "./icons";
 
 export abstract class Io<T extends ApiGeneralIoType> {

@@ -7,6 +7,7 @@ import {
 } from ".";
 import { Mutex } from "../../util/lock";
 import logger from "../../util/logger";
+import { decompressBlob } from "../rawTranslator";
 import type { SwarmToSocketRpcResponse } from "./swarm2socket";
 import { parseSwarmToSocketMessage } from "./swarm2socket";
 
@@ -33,15 +34,12 @@ export class WebSocketTransport implements Transport {
   private handleError = (error: Event) => {
     console.error("WebSocket error:", error);
     this.adapter.onError(
-      new TransportError(
-        "WebSocket error occurred: " + error,
-        ErrorResolution.RECONNECT,
-      ),
+      new TransportError("WebSocket error occurred", ErrorResolution.RECONNECT),
     );
   };
 
   private handleClose = (event: CloseEvent) => {
-    console.log(`WebSocket connection closed: ${event.code} ${event.reason}`);
+    console.log(`WebSocket connection closed`, event);
     this.adapter.onError(
       new TransportError(
         `WebSocket connection closed: ${event.code} ${event.reason}`,
@@ -50,8 +48,10 @@ export class WebSocketTransport implements Transport {
     );
   };
 
-  private handleMessage = (event: MessageEvent) => {
-    const message = event.data as string;
+  private handleMessage = async (event: MessageEvent) => {
+    // Binary message received
+    const message = await decompressBlob(event.data);
+
     // Skip empty messages
     if (!message.trim()) {
       return;
