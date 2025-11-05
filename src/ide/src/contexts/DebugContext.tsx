@@ -20,6 +20,11 @@ export type DebugContextType = {
   mode: Accessor<DebugMode>;
   setMode: (mode: DebugMode) => void;
   forceScroll: Accessor<number>;
+  searchTerm: Accessor<string>;
+  setSearchTerm: (term: string) => void;
+  isPaused: Accessor<boolean>;
+  togglePause: () => void;
+  clearLogs: () => void;
 };
 
 const DebugContext = createContext<DebugContextType>();
@@ -36,8 +41,12 @@ export const DebugContextProvider: ParentComponent = (props) => {
   ]);
   const [mode, setMode] = createSignal<DebugMode>(DebugMode.SCREEN_RIGHT);
   const [forceScroll, setForceScroll] = createSignal(0);
+  const [searchTerm, setSearchTerm] = createSignal("");
+  const [isPaused, setIsPaused] = createSignal(false);
 
   const addLog = (channel: LogChannel, data: string) => {
+    // Do not add new logs if paused to prevent memory build-up of hidden logs
+    if (isPaused()) return;
     setLogs((prev) => {
       const list = [...prev, { channel, data, timestamp: Date.now() }];
       if (list.length > MAX_LOGS) {
@@ -46,6 +55,13 @@ export const DebugContextProvider: ParentComponent = (props) => {
       return list;
     });
   };
+
+  const clearLogs = () => {
+    setLogs([]);
+    addLog(LogChannel.APP, "Logs cleared.");
+  };
+
+  const togglePause = () => setIsPaused(!isPaused());
 
   const toggleChannel = (channel: LogChannel) => {
     if (visibleChannels().includes(channel)) {
@@ -86,6 +102,11 @@ export const DebugContextProvider: ParentComponent = (props) => {
         mode,
         setMode,
         forceScroll,
+        searchTerm,
+        setSearchTerm,
+        isPaused,
+        togglePause,
+        clearLogs,
       }}
     >
       {props.children}

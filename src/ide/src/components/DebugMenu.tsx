@@ -8,6 +8,7 @@ import {
   createRenderEffect,
   on,
   createSignal,
+  createMemo,
 } from "solid-js";
 import { useDebug } from "../contexts/DebugContext";
 import { Surface1 } from "./Surface";
@@ -16,6 +17,10 @@ import PanelRight from "lucide-solid/icons/panel-right";
 import PanelBottom from "lucide-solid/icons/panel-bottom";
 import SquareArrowOutUpRight from "lucide-solid/icons/square-arrow-out-up-right";
 import ArrowDown from "lucide-solid/icons/arrow-down";
+import Trash2 from "lucide-solid/icons/trash-2";
+import Play from "lucide-solid/icons/play";
+import Pause from "lucide-solid/icons/pause";
+import Search from "lucide-solid/icons/search";
 import {
   LogChannel,
   channelColors,
@@ -53,12 +58,21 @@ export const DebugMenu: Component = () => {
     mode,
     setMode,
     forceScroll,
+    searchTerm,
+    setSearchTerm,
+    isPaused,
+    togglePause,
+    clearLogs,
   } = useDebug();
 
   let logContainerRef: HTMLDivElement | null = null;
   const [isScrolledToBottom, setIsScrolledToBottom] = createSignal(true);
   const [showToLatest, setShowToLatest] = createSignal(false);
+  const [isSearchVisible, setIsSearchVisible] = createSignal(false);
 
+  const toggleSearch = () => setIsSearchVisible(!isSearchVisible());
+
+  // --- Scrolling Logic ---
   createRenderEffect(() => {
     if (logContainerRef == null) return;
     const ref = logContainerRef as HTMLDivElement;
@@ -70,7 +84,7 @@ export const DebugMenu: Component = () => {
   createEffect(
     on(logs, () => {
       // This runs after the DOM is updated with the new log.
-      if (isScrolledToBottom() && logContainerRef) {
+      if (isScrolledToBottom() && logContainerRef && !isPaused()) {
         const ref = logContainerRef as HTMLDivElement;
         ref.scrollTop = ref.scrollHeight;
       }
@@ -102,8 +116,13 @@ export const DebugMenu: Component = () => {
     }
   };
 
-  const filteredLogs = () =>
-    logs().filter((log) => isChannelVisible(log.channel));
+  const displayedLogs = createMemo(() => {
+    return logs().filter(
+      (log) =>
+        isChannelVisible(log.channel) &&
+        log.data.toLowerCase().includes(searchTerm().toLowerCase()),
+    );
+  });
 
   const menuContent = (
     <Surface1 class="p-4 flex-grow flex flex-col gap-2 h-full">
@@ -119,7 +138,7 @@ export const DebugMenu: Component = () => {
                 return (
                   <button
                     onClick={() => toggleChannel(channel)}
-                    class={`p-2 text-sm transition-all ${
+                    class={`p-2 text-sm transition-all cursor-pointer ${
                       isVisible()
                         ? `${colorInfo.bg} ${colorInfo.text}`
                         : "bg-thm-surface-2 text-thm-font-muted"
@@ -135,8 +154,10 @@ export const DebugMenu: Component = () => {
           <div class="flex items-center gap-1 p-1 bg-thm-surface-2 rounded-md">
             <button
               onClick={() => setMode(DebugMode.SCREEN_RIGHT)}
-              class={`p-1.5 rounded ${
-                mode() === DebugMode.SCREEN_RIGHT ? "bg-thm-primary" : ""
+              class={`p-1.5 rounded cursor-pointer transition-all ${
+                mode() === DebugMode.SCREEN_RIGHT
+                  ? "bg-thm-primary hover:brightness-110"
+                  : "hover:bg-thm-surface-3"
               }`}
               title={DebugMode.SCREEN_RIGHT}
             >
@@ -144,8 +165,10 @@ export const DebugMenu: Component = () => {
             </button>
             <button
               onClick={() => setMode(DebugMode.ATTACHED_RIGHT)}
-              class={`p-1.5 rounded ${
-                mode() === DebugMode.ATTACHED_RIGHT ? "bg-thm-primary" : ""
+              class={`p-1.5 rounded cursor-pointer transition-all ${
+                mode() === DebugMode.ATTACHED_RIGHT
+                  ? "bg-thm-primary hover:brightness-110"
+                  : "hover:bg-thm-surface-3"
               }`}
               title={DebugMode.ATTACHED_RIGHT}
             >
@@ -153,8 +176,10 @@ export const DebugMenu: Component = () => {
             </button>
             <button
               onClick={() => setMode(DebugMode.ATTACHED_BOTTOM)}
-              class={`p-1.5 rounded ${
-                mode() === DebugMode.ATTACHED_BOTTOM ? "bg-thm-primary" : ""
+              class={`p-1.5 rounded cursor-pointer transition-all ${
+                mode() === DebugMode.ATTACHED_BOTTOM
+                  ? "bg-thm-primary hover:brightness-110"
+                  : "hover:bg-thm-surface-3"
               }`}
               title={DebugMode.ATTACHED_BOTTOM}
             >
@@ -164,8 +189,34 @@ export const DebugMenu: Component = () => {
             <div class="border-l border-thm-surface-border-3 h-5 mx-1"></div>
 
             <button
+              onClick={toggleSearch}
+              class={`p-1.5 rounded cursor-pointer transition-all ${isSearchVisible() ? "bg-thm-primary hover:brightness-110" : "hover:bg-thm-surface-3"}`}
+              title="Filter Logs"
+            >
+              <Search class="w-5 h-5" />
+            </button>
+            <button
+              onClick={togglePause}
+              class="p-1.5 rounded cursor-pointer transition-colors hover:bg-thm-surface-3"
+              title={isPaused() ? "Resume" : "Pause"}
+            >
+              <Show when={isPaused()} fallback={<Pause class="w-5 h-5" />}>
+                <Play class="w-5 h-5" />
+              </Show>
+            </button>
+            <button
+              onClick={clearLogs}
+              class="p-1.5 rounded hover:bg-thm-error cursor-pointer transition-colors"
+              title="Clear Logs"
+            >
+              <Trash2 class="w-5 h-5" />
+            </button>
+
+            <div class="border-l border-thm-surface-border-3 h-5 mx-1"></div>
+
+            <button
               onClick={toggleMenu}
-              class="p-1.5 rounded hover:bg-thm-error"
+              class="p-1.5 rounded hover:bg-thm-error cursor-pointer transition-colors"
               title="Close Menu"
             >
               <X class="w-5 h-5" />
@@ -173,6 +224,15 @@ export const DebugMenu: Component = () => {
           </div>
         </div>
       </div>
+      <Show when={isSearchVisible()}>
+        <input
+          type="text"
+          placeholder="Filter logs..."
+          class="w-full bg-thm-surface-2 border border-thm-surface-border-2 rounded-md p-2 text-sm"
+          value={searchTerm()}
+          onInput={(e) => setSearchTerm(e.currentTarget.value)}
+        />
+      </Show>
 
       <div class="flex-1 flex flex-col relative min-h-0">
         <div
@@ -180,7 +240,7 @@ export const DebugMenu: Component = () => {
           onScroll={handleScroll}
           class="flex flex-col gap-1 p-2 rounded bg-thm-surface-2 flex-grow overflow-y-scroll"
         >
-          <For each={filteredLogs()}>{(log) => <LogEntry log={log} />}</For>
+          <For each={displayedLogs()}>{(log) => <LogEntry log={log} />}</For>
         </div>
         <Show when={showToLatest()}>
           <button
