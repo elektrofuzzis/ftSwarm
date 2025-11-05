@@ -6,9 +6,9 @@ import {
   type Accessor,
   onMount,
 } from "solid-js";
-import { LogChannel, type LogMessage } from "./logtypes";
+import { LogChannel, type LogMessage, DebugMode } from "./logtypes";
 
-type DebugContextType = {
+export type DebugContextType = {
   isOpen: Accessor<boolean>;
   isUnlocked: Accessor<boolean>;
   toggleMenu: () => void;
@@ -17,6 +17,8 @@ type DebugContextType = {
   visibleChannels: Accessor<LogChannel[]>;
   toggleChannel: (channel: LogChannel) => void;
   isChannelVisible: (channel: LogChannel) => boolean;
+  mode: Accessor<DebugMode>;
+  setMode: (mode: DebugMode) => void;
 };
 
 const DebugContext = createContext<DebugContextType>();
@@ -31,6 +33,7 @@ export const DebugContextProvider: ParentComponent = (props) => {
     LogChannel.RPC,
     LogChannel.APP,
   ]);
+  const [mode, setMode] = createSignal<DebugMode>(DebugMode.SCREEN_RIGHT);
 
   const addLog = (channel: LogChannel, data: string) => {
     setLogs((prev) => {
@@ -77,6 +80,8 @@ export const DebugContextProvider: ParentComponent = (props) => {
         visibleChannels,
         toggleChannel,
         isChannelVisible,
+        mode,
+        setMode,
       }}
     >
       {props.children}

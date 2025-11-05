@@ -1,11 +1,15 @@
-import { For, type Component } from "solid-js";
+import { For, type Component, Switch, Match, Show } from "solid-js";
 import { useDebug } from "../contexts/DebugContext";
 import { Surface1 } from "./Surface";
 import X from "lucide-solid/icons/x";
+import PanelRight from "lucide-solid/icons/panel-right";
+import PanelBottom from "lucide-solid/icons/panel-bottom";
+import SquareArrowOutUpRight from "lucide-solid/icons/square-arrow-out-up-right";
 import {
   LogChannel,
   channelColors,
   type LogMessage,
+  DebugMode,
 } from "../contexts/logtypes";
 
 const LogEntry = (props: { log: LogMessage }) => {
@@ -35,70 +39,112 @@ export const DebugMenu: Component = () => {
     visibleChannels,
     toggleChannel,
     isChannelVisible,
+    mode,
+    setMode,
   } = useDebug();
 
   const filteredLogs = () =>
     logs().filter((log) => isChannelVisible(log.channel));
 
-  return (
-    <>
-      <div
-        class="fixed inset-0 bg-[#00000080] z-40 transition-opacity duration-300 ease-in-out"
-        classList={{
-          "opacity-100": isOpen(),
-          "opacity-0 pointer-events-none": !isOpen(),
-        }}
-      />
-      <div
-        class="fixed top-0 right-0 h-full w-2/3 z-50 shadow-lg p-4 flex flex-col gap-4 transition-transform duration-300 ease-in-out"
-        classList={{
-          "translate-x-0": isOpen(),
-          "translate-x-full": !isOpen(),
-        }}
-      >
-        <Surface1 class="p-4 flex-grow flex flex-col gap-2">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold">Debug Communication</h2>
-            <button
-              onClick={toggleMenu}
-              class="p-1 rounded-full hover:bg-thm-surface-2"
-            >
-              <X class="w-6 h-6" />
-            </button>
-          </div>
+  const menuContent = (
+    <Surface1 class="p-4 flex-grow flex flex-col gap-2 h-full overflow-y-auto">
+      <div class="flex justify-between items-center mb-2">
+        <h2 class="text-xl font-bold">Debug Communication</h2>
 
-          <div>
-            <h3 class="font-bold mb-2">Visible Channels</h3>
-            <div class="flex flex-wrap gap-2">
-              <For each={Object.values(LogChannel)}>
-                {(channel) => {
-                  const colorInfo = channelColors[channel];
-                  const isVisible = () => visibleChannels().includes(channel);
-                  return (
-                    <button
-                      onClick={() => toggleChannel(channel)}
-                      class={`px-2 py-1 text-sm rounded transition-all ${
-                        isVisible()
-                          ? `${colorInfo.bg} ${colorInfo.text}`
-                          : "bg-thm-surface-2 text-thm-font-muted"
-                      } hover:brightness-125`}
-                    >
-                      {channel}
-                    </button>
-                  );
-                }}
-              </For>
-            </div>
-          </div>
+        <div class="flex items-center gap-1 p-1 bg-thm-surface-2 rounded-md">
+          <button
+            onClick={() => setMode(DebugMode.SCREEN_RIGHT)}
+            class={`p-1.5 rounded ${
+              mode() === DebugMode.SCREEN_RIGHT ? "bg-thm-primary" : ""
+            }`}
+            title={DebugMode.SCREEN_RIGHT}
+          >
+            <SquareArrowOutUpRight class="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setMode(DebugMode.ATTACHED_RIGHT)}
+            class={`p-1.5 rounded ${
+              mode() === DebugMode.ATTACHED_RIGHT ? "bg-thm-primary" : ""
+            }`}
+            title={DebugMode.ATTACHED_RIGHT}
+          >
+            <PanelRight class="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setMode(DebugMode.ATTACHED_BOTTOM)}
+            class={`p-1.5 rounded ${
+              mode() === DebugMode.ATTACHED_BOTTOM ? "bg-thm-primary" : ""
+            }`}
+            title={DebugMode.ATTACHED_BOTTOM}
+          >
+            <PanelBottom class="w-5 h-5" />
+          </button>
 
-          <div class="flex-1 flex flex-col mt-4">
-            <h3 class="font-bold mb-2">Logs</h3>
-            <div class="flex flex-col gap-1 p-2 rounded bg-thm-surface-2 flex-grow overflow-y-scroll">
-              <For each={filteredLogs()}>{(log) => <LogEntry log={log} />}</For>
-            </div>
-          </div>
-        </Surface1>
+          <div class="border-l border-thm-surface-border-3 h-5 mx-1"></div>
+
+          <button
+            onClick={toggleMenu}
+            class="p-1.5 rounded hover:bg-thm-error"
+            title="Close Menu"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
       </div>
-    </>
+
+      <div class="flex gap-4">
+        <div>
+          <h3 class="font-bold mb-2">Visible Channels</h3>
+          <div class="flex flex-wrap gap-2">
+            <For each={Object.values(LogChannel)}>
+              {(channel) => {
+                const colorInfo = channelColors[channel];
+                const isVisible = () => visibleChannels().includes(channel);
+                return (
+                  <button
+                    onClick={() => toggleChannel(channel)}
+                    class={`px-2 py-1 text-sm rounded transition-all ${
+                      isVisible()
+                        ? `${colorInfo.bg} ${colorInfo.text}`
+                        : "bg-thm-surface-2 text-thm-font-muted"
+                    } hover:brightness-125`}
+                  >
+                    {channel}
+                  </button>
+                );
+              }}
+            </For>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex-1 flex flex-col mt-4">
+        <h3 class="font-bold mb-2">Logs</h3>
+        <div class="flex flex-col gap-1 p-2 rounded bg-thm-surface-2 flex-grow overflow-y-scroll">
+          <For each={filteredLogs()}>{(log) => <LogEntry log={log} />}</For>
+        </div>
+      </div>
+    </Surface1>
+  );
+
+  return (
+    <Switch>
+      <Match when={mode() === DebugMode.SCREEN_RIGHT}>
+        <Show when={isOpen()}>
+          <div class="fixed inset-0 bg-[#00000080] z-40" />
+          <div class="fixed top-0 right-0 h-full w-2/3 z-50 shadow-lg p-4 flex flex-col gap-4">
+            {menuContent}
+          </div>
+        </Show>
+      </Match>
+      <Match
+        when={
+          mode() === DebugMode.ATTACHED_RIGHT ||
+          mode() === DebugMode.ATTACHED_BOTTOM
+        }
+      >
+        {menuContent}
+      </Match>
+    </Switch>
   );
 };
