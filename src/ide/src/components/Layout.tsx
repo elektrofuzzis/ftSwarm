@@ -2,6 +2,8 @@ import { useIsRouting } from "@solidjs/router";
 import { Sidebar } from "./Sidebar";
 import { Surface1 } from "./Surface";
 import type { ParentComponent } from "solid-js";
+import { DebugMenu } from "./DebugMenu";
+import { DebugToggle } from "./DebugToggle";
 
 const Content: ParentComponent = (props) => {
   const isRouting = useIsRouting();
@@ -19,6 +21,8 @@ export const Layout: ParentComponent = (props) => {
     <div class="w-full h-full flex p-4 gap-4">
       <Sidebar />
       <Content>{props.children}</Content>
+      <DebugMenu />
+      <DebugToggle />
     </div>
   );
 };

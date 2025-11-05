@@ -13,9 +13,24 @@ import Cable from "lucide-solid/icons/cable";
 import Update from "lucide-solid/icons/circle-fading-arrow-up";
 import { Dynamic } from "solid-js/web";
 import { Surface1 } from "./Surface";
+import { useDebug } from "../contexts/DebugContext";
 
 export const Title = () => {
-  return <img src={TitleImage} class="min-w-32 px-6" />;
+  const { toggleMenu } = useDebug();
+  let clickTimestamps: number[] = [];
+
+  const handleClick = () => {
+    const now = Date.now();
+    clickTimestamps.push(now);
+    // Filter timestamps to keep only those within the last second
+    clickTimestamps = clickTimestamps.filter((t) => now - t < 1000);
+    if (clickTimestamps.length >= 5) {
+      toggleMenu();
+      clickTimestamps = []; // Reset after activation
+    }
+  };
+
+  return <img src={TitleImage} class="min-w-32 px-6" onClick={handleClick} />;
 };
 
 const Category: ParentComponent<{
