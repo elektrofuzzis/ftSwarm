@@ -57,6 +57,8 @@ export class WebSocketTransport implements Transport {
       return;
     }
 
+    this.adapter.onIncoming(message);
+
     const parsedResult = parseSwarmToSocketMessage(message);
 
     if (parsedResult.isErr()) {
@@ -85,6 +87,9 @@ export class WebSocketTransport implements Transport {
           ),
         );
         break;
+      case "state-update":
+        this.adapter.onUpdate(parsedMessage);
+        break;
       case "log":
         logger.info("ftSwarm log:", parsedMessage.message);
         break;
@@ -95,6 +100,7 @@ export class WebSocketTransport implements Transport {
   };
 
   async send(data: string): Promise<void> {
+    this.adapter.onOutgoing(data);
     this.webSocket.send(data);
   }
 

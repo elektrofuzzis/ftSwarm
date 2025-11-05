@@ -36,6 +36,9 @@ export interface Transport {
 }
 
 export interface TransportAdapter {
+  onOutgoing(message: string): Promise<void>;
+  onIncoming(message: string): Promise<void>;
+  onUpdate(message: any): Promise<void>;
   onSubscription(message: SwarmToSocketSubscription): Promise<void>;
   onError(error: CommunicationError): Promise<void>;
 }

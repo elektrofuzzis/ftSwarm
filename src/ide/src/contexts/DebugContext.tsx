@@ -19,11 +19,12 @@ export type DebugContextType = {
   isChannelVisible: (channel: LogChannel) => boolean;
   mode: Accessor<DebugMode>;
   setMode: (mode: DebugMode) => void;
+  forceScroll: Accessor<number>;
 };
 
 const DebugContext = createContext<DebugContextType>();
 
-const MAX_LOGS = 200;
+const MAX_LOGS = 1000;
 
 export const DebugContextProvider: ParentComponent = (props) => {
   const [isOpen, setIsOpen] = createSignal(false);
@@ -34,6 +35,7 @@ export const DebugContextProvider: ParentComponent = (props) => {
     LogChannel.APP,
   ]);
   const [mode, setMode] = createSignal<DebugMode>(DebugMode.SCREEN_RIGHT);
+  const [forceScroll, setForceScroll] = createSignal(0);
 
   const addLog = (channel: LogChannel, data: string) => {
     setLogs((prev) => {
@@ -51,6 +53,7 @@ export const DebugContextProvider: ParentComponent = (props) => {
     } else {
       setVisibleChannels([...visibleChannels(), channel]);
     }
+    setForceScroll((p) => p + 1);
   };
 
   const isChannelVisible = (channel: LogChannel) => {
@@ -82,6 +85,7 @@ export const DebugContextProvider: ParentComponent = (props) => {
         isChannelVisible,
         mode,
         setMode,
+        forceScroll,
       }}
     >
       {props.children}
