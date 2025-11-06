@@ -208,7 +208,7 @@ int16_t SwOSFJoystick::fx( int16_t newValue ) {
     if ( newValue == FILTER_INVALID ) return FILTER_INVALID;
 
     int16_t nv;
-    int16_t offset = 15; 
+    int16_t offset = 40; 
 
     float counter, denominator, percentage;
 

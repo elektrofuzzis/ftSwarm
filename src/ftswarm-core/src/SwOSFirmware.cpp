@@ -69,7 +69,10 @@ bool calibrateJoysticks( SwOSJoyCalibration_t calibration[4] ) {
   joy[0]->lr->deleteFilter( SWOS_FILTER_JOYSTICK );
   joy[1]->fb->deleteFilter( SWOS_FILTER_JOYSTICK );
   joy[1]->lr->deleteFilter( SWOS_FILTER_JOYSTICK );
-  
+
+  joy[0]->fb->deleteFilter( SWOS_FILTER_MULTIPLY );
+  joy[1]->lr->deleteFilter( SWOS_FILTER_MULTIPLY );
+
   // init calibration
   for ( uint8_t i=0; i<4; i++ ) initCalibration( &newCalibration[i] );
 
@@ -85,10 +88,15 @@ bool calibrateJoysticks( SwOSJoyCalibration_t calibration[4] ) {
 
     // abort?
     if ( s4->getToggle() == FTSWARM_TOGGLEUP ) { 
+      
       joy[0]->fb->addFilter( new SwOSFJoystick( calibration[0].minValue, calibration[0].midValue, calibration[0].maxValue ) );
       joy[0]->lr->addFilter( new SwOSFJoystick( calibration[1].minValue, calibration[1].midValue, calibration[1].maxValue ) );
+      joy[0]->fb->addFilter( new SwOSMultiply( -1 ) );
+
       joy[1]->fb->addFilter( new SwOSFJoystick( calibration[2].minValue, calibration[2].midValue, calibration[2].maxValue ) );
       joy[1]->lr->addFilter( new SwOSFJoystick( calibration[3].minValue, calibration[3].midValue, calibration[3].maxValue ) );
+      joy[1]->lr->addFilter( new SwOSMultiply( -1 ) );
+
       return false; 
     }
 
