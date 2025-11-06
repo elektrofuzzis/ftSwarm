@@ -32,11 +32,12 @@ class SwOSFilter {
     uint8_t    bufSize = 0;
     uint8_t    bufFill = 0;
     int16_t    *buffer = NULL;
-    SwOSFilter *nextFilter = NULL;
-
+    
     bool addBuffer( int16_t newValue );
 
   public:
+
+    SwOSFilter *nextFilter = NULL;
 
     // constructor - allocates a buffer of bufSize int16_t
     SwOSFilter( uint8_t bufSize );
@@ -52,6 +53,8 @@ class SwOSFilter {
 
     // add a next filter to the list
     virtual void addFilter( SwOSFilter *nextFilter);
+
+    virtual void deleteFilter( SwOSFilter_t filterType );
 
     void printBuffer( void );
 

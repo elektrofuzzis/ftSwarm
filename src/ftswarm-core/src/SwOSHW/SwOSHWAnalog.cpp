@@ -85,6 +85,19 @@ void SwOSAnalogInput::deleteFilter( void ) {
 
 }
 
+void SwOSAnalogInput::deleteFilter( SwOSFilter_t filterType ) {
+
+  while ( ( filter ) && ( filter->getType() == filterType ) ) {
+    SwOSFilter *obsolete = filter;
+    filter = filter->nextFilter;
+    obsolete->nextFilter = NULL;
+    delete obsolete;
+  }
+
+  if (filter) filter->deleteFilter( filterType );
+
+}
+
 void SwOSAnalogInput::addFilter( SwOSFilter *filter ) {
 
   if (this->filter) this->filter->addFilter( filter );
@@ -257,10 +270,10 @@ SwOSJoystick::SwOSJoystick(const char *name, uint8_t port,SwOSCtrl *ctrl, SwOSDi
   // initialize local HW
   if (ctrl->isLocal()) {
 
-    lr->addFilter( new SwOSFJoystick( nvs.calibration[port*2].minValue, nvs.calibration[port*2].midValue, nvs.calibration[port*2].maxValue ) );
+    lr->addFilter( new SwOSFJoystick( nvs.calibration[port*2+1].minValue, nvs.calibration[port*2+1].midValue, nvs.calibration[port*2].maxValue ) );
     if ( port) lr->addFilter( new SwOSMultiply( -1 ) ); 
 
-    fb->addFilter( new SwOSFJoystick( nvs.calibration[port*2+1].minValue, nvs.calibration[port*2+1].midValue, nvs.calibration[port*2+1].maxValue) );
+    fb->addFilter( new SwOSFJoystick( nvs.calibration[port*2].minValue, nvs.calibration[port*2].midValue, nvs.calibration[port*2].maxValue) );
     if (!port) fb->addFilter( new SwOSMultiply( -1 ) ); 
 
   }

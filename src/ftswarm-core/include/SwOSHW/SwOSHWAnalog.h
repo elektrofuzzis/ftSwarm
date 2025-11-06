@@ -47,6 +47,9 @@
     // delete all existing filtes
     virtual void deleteFilter( void );
 
+    // delete a specific filter type
+    virtual void deleteFilter( SwOSFilter_t filterType );
+
     // add a new filter
     virtual void addFilter( SwOSFilter *filter );
 

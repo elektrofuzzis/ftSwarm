@@ -250,7 +250,7 @@ static void wsTask( void *args ) {
   httpd_ws_frame_t ws_pkt;
 
   memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
-  ws_pkt.type    = HTTPD_WS_TYPE_TEXT;
+  ws_pkt.type    = HTTPD_WS_TYPE_BINARY;
   ws_pkt.payload = (uint8_t*) calloc( MAXWSTASKPAYLOAD, 1 );
   
   Serialize        serialize( (char*) ws_pkt.payload, MAXWSTASKPAYLOAD, SERIALIZE_RAW );

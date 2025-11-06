@@ -33,6 +33,24 @@ void SwOSFilter::addFilter( SwOSFilter *nextFilter) {
 
 }
 
+void SwOSFilter::deleteFilter( SwOSFilter_t filterType) {
+
+  while ( nextFilter ) {
+
+    if ( nextFilter->getType() == filterType ) {
+      SwOSFilter *obsolete = nextFilter;
+      nextFilter = nextFilter->nextFilter;
+      obsolete->nextFilter = NULL;
+      delete obsolete;
+
+    } else {
+      nextFilter = nextFilter->nextFilter;
+    }
+
+  }
+
+}
+
 void SwOSFilter::printBuffer( void ) {
     
     printf("buffer =");
@@ -190,19 +208,23 @@ int16_t SwOSFJoystick::fx( int16_t newValue ) {
     if ( newValue == FILTER_INVALID ) return FILTER_INVALID;
 
     int16_t nv;
+    int16_t offset = 15; 
 
     float counter, denominator, percentage;
 
-    if ( newValue < midValue ) {
+    if ( abs( newValue - midValue ) < offset ) {
+      nv = 0;
+
+    } else if ( newValue < ( midValue - offset ) ) {
       counter     = newValue - minValue;
-      denominator = midValue - minValue;
+      denominator = ( midValue - offset) - minValue;
       percentage  = counter/denominator * 100;
       nv          = -100 + percentage;
       if (nv < -100 ) nv = -100;
 
-    } else {
-      counter     = newValue - midValue;
-      denominator = maxValue - midValue;
+    } else  {
+      counter     = newValue - (midValue + offset);
+      denominator = maxValue - (midValue + offset);
       percentage  = counter/denominator * 100;
       nv          = percentage;
       if (nv > 100 ) nv = 100;

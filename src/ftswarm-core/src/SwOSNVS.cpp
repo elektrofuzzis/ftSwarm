@@ -249,7 +249,7 @@ void SwOSNVS::save( bool writeAll ) {
   }
 
   // ftSwarmControl: set joystick calibration
-  ESP_ERROR_CHECK( nvs_set_blob( my_handle, "calbration",  (void *)&calibration, sizeof( calibration ) ) );
+  ESP_ERROR_CHECK( nvs_set_blob( my_handle, "calibration",  (void *)&calibration, sizeof( calibration ) ) );
 
   // RGBLeds
   ESP_ERROR_CHECK( nvs_set_u8( my_handle, "RGBLeds", pixels ) );
