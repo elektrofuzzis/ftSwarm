@@ -8,6 +8,7 @@ import {
 import { Mutex } from "../../util/lock";
 import logger from "../../util/logger";
 import { decompressBlob } from "../rawTranslator";
+import { WatchdogTimer } from "../watchdog";
 import type { SwarmToSocketRpcResponse } from "./swarm2socket";
 import { parseSwarmToSocketMessage } from "./swarm2socket";
 
@@ -17,6 +18,7 @@ export class WebSocketTransport implements Transport {
   private readonly messageQueue: SwarmToSocketRpcResponse[] = [];
   private readonly lock: Mutex = new Mutex();
   private readonly waitLocks: (() => void)[] = [];
+  private watchdogTimer: WatchdogTimer;
 
   constructor(webSocket: WebSocket, adapter: TransportAdapter) {
     this.webSocket = webSocket;
@@ -25,6 +27,17 @@ export class WebSocketTransport implements Transport {
     this.webSocket.addEventListener("message", this.handleMessage);
     this.webSocket.addEventListener("error", this.handleError);
     this.webSocket.addEventListener("close", this.handleClose);
+
+    this.watchdogTimer = new WatchdogTimer(
+      this.webSocket,
+      adapter.setMissedTimer.bind(adapter),
+      3000,
+      () => {
+        this.adapter.onError(
+          new TransportError("Connection timed out", ErrorResolution.RECONNECT),
+        );
+      },
+    );
   }
 
   async applySync<T>(func: () => Promise<T>): Promise<T> {
@@ -40,6 +53,7 @@ export class WebSocketTransport implements Transport {
 
   private handleClose = (event: CloseEvent) => {
     console.log(`WebSocket connection closed`, event);
+    this.watchdogTimer.close();
     this.adapter.onError(
       new TransportError(
         `WebSocket connection closed: ${event.code} ${event.reason}`,
@@ -49,6 +63,7 @@ export class WebSocketTransport implements Transport {
   };
 
   private handleMessage = async (event: MessageEvent) => {
+    this.watchdogTimer.reset();
     // Binary message received
     const message = await decompressBlob(event.data);
 

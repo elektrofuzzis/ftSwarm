@@ -41,13 +41,14 @@ export interface TransportAdapter {
   onUpdate(message: any): Promise<void>;
   onSubscription(message: SwarmToSocketSubscription): Promise<void>;
   onError(error: CommunicationError): Promise<void>;
+  setMissedTimer(count: number): Promise<void>;
 }
 
 export type TransportFactory = (
   adapter: TransportAdapter,
 ) => Promise<Transport>;
 
-async function transactMessage(
+export async function transactMessage(
   transport: Transport,
   message: string,
 ): Promise<SwarmToSocketRpcResponse> {
