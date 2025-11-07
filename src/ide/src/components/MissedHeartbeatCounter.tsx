@@ -6,6 +6,7 @@ export function MissedHeartbeatCounter({ count }: { count: Accessor<number> }) {
   const [isShown, setIsShown] = createSignal(false);
   createEffect(() => {
     const shouldShow = count() > 1 && count() < 5;
+    if (isShown() == shouldShow) return;
     if (document.startViewTransition)
       document.startViewTransition(() => {
         setIsShown(shouldShow);
