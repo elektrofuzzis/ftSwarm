@@ -14,6 +14,8 @@ import Update from "lucide-solid/icons/circle-fading-arrow-up";
 import { Dynamic } from "solid-js/web";
 import { Surface1 } from "./Surface";
 import { useDebug } from "../contexts/DebugContext";
+import { useOMContext } from "../contexts/transport/context";
+import { For } from "solid-js/web";
 
 export const Title = () => {
   const { toggleMenu } = useDebug();
@@ -90,6 +92,8 @@ const BottomRowIndicator: ParentComponent = (props) => {
 };
 
 export const Sidebar = () => {
+  const swarm = useOMContext();
+
   return (
     <aside class="flex flex-col gap-3 h-full">
       <div class="flex flex-col gap-3 flex-1 overflow-scroll">
@@ -99,24 +103,13 @@ export const Sidebar = () => {
           <Surface1 class="px-1 py-px ml-4">5/6</Surface1>
         </Category>
         <MenuEntry icon={FolderPen} text="My Swarm" active={true} />
-        <MenuEntry icon={Cpu} text="ftSwarm400" active={false}>
-          <StatusCircle class="bg-thm-ok animate-pulse" />
-        </MenuEntry>
-        <MenuEntry icon={Cpu} text="ftSwarm401" active={false}>
-          <StatusCircle class="bg-thm-ok animate-pulse" />
-        </MenuEntry>
-        <MenuEntry icon={Cpu} text="ftSwarm402" active={false}>
-          <StatusCircle class="bg-thm-ok animate-pulse" />
-        </MenuEntry>
-        <MenuEntry icon={Gamepad2} text="ftSwarm403" active={false}>
-          <StatusCircle class="bg-thm-ok animate-pulse" />
-        </MenuEntry>
-        <MenuEntry icon={Plug} text="ftSwarm404" active={false}>
-          <StatusCircle class="bg-thm-ok animate-pulse" />
-        </MenuEntry>
-        <MenuEntry icon={Plug} text="ftSwarm405" active={false}>
-          <StatusCircle class="bg-thm-error" />
-        </MenuEntry>
+        <For each={swarm.controllers()}>
+          {(it, _) => (
+            <MenuEntry icon={Cpu} text={it.name} active={false}>
+              <StatusCircle class="bg-thm-ok animate-pulse" />
+            </MenuEntry>
+          )}
+        </For>
 
         <Category icon={Workflow} title="Event Configuration" disabled={true} />
         <MenuEntry

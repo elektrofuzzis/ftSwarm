@@ -1,4 +1,5 @@
 import {
+  createMemo,
   createResource,
   createSignal,
   Match,
@@ -11,19 +12,24 @@ import type {
   TransportFactory,
 } from "../../api/transport";
 import { LoadingScreen, LoadingStep } from "../../components/LoadingScreen";
-import type { SwarmToSocketSubscription } from "../../api/transport/swarm2socket";
+import type {
+  SwarmToSocketStateUpdate,
+  SwarmToSocketSubscription,
+} from "../../api/transport/swarm2socket";
 import logger from "../../util/logger";
-import { TransportContext } from "./context";
+import { TransportContext, OMContext } from "./context";
 import { ErrorScreen } from "../../components/ErrorScreen";
 import { useDebug, type DebugContextType } from "../DebugContext";
 import { LogChannel } from "../logtypes";
 import { MissedHeartbeatCounter } from "../../components/MissedHeartbeatCounter";
+import { RootObjectModel } from "../../api/om";
 
 class ContextTransportAdapter implements TransportAdapter {
   constructor(
     private readonly debug: DebugContextType,
     private readonly setMissedHeartbeatCount: (count: number) => void,
     private readonly setCommunicationError: (error: CommunicationError) => void,
+    private readonly om: RootObjectModel,
   ) {}
 
   async onOutgoing(message: string): Promise<void> {
@@ -34,8 +40,9 @@ class ContextTransportAdapter implements TransportAdapter {
     this.debug.addLog(LogChannel.RAW_IN, message);
   }
 
-  async onUpdate(message: any): Promise<void> {
+  async onUpdate(message: SwarmToSocketStateUpdate): Promise<void> {
     this.debug.addLog(LogChannel.UPDATES, JSON.stringify(message));
+    this.om.update(message.value);
   }
 
   async onSubscription(message: SwarmToSocketSubscription): Promise<void> {
@@ -61,6 +68,9 @@ export const TransportContextProvider: ParentComponent<{
   const [missedHeartbeatCount, setMissedHeartbeatCount] = createSignal(0);
   const [communicationError, setCommunicationError] =
     createSignal<CommunicationError | null>(null);
+
+  const om = createMemo(() => new RootObjectModel());
+
   const [transport] = createResource(() => {
     setStep(LoadingStep.CONNECTING);
     return props.factory(
@@ -68,6 +78,7 @@ export const TransportContextProvider: ParentComponent<{
         debug,
         setMissedHeartbeatCount,
         setCommunicationError,
+        om(),
       ),
     );
   });
@@ -75,7 +86,7 @@ export const TransportContextProvider: ParentComponent<{
   const loading = <LoadingScreen currentStep={step()} />;
 
   return (
-    <>
+    <OMContext.Provider value={om()}>
       <MissedHeartbeatCounter count={missedHeartbeatCount} />
       <Switch>
         <Match when={communicationError() != null}>
@@ -97,6 +108,6 @@ export const TransportContextProvider: ParentComponent<{
           </TransportContext.Provider>
         </Match>
       </Switch>
-    </>
+    </OMContext.Provider>
   );
 };
