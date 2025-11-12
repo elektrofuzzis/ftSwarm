@@ -36,6 +36,7 @@ export interface Transport {
 }
 
 export interface TransportAdapter {
+  onConnected(): Promise<void>;
   onOutgoing(message: string): Promise<void>;
   onIncoming(message: string): Promise<void>;
   onUpdate(message: any): Promise<void>;

@@ -29,8 +29,14 @@ class ContextTransportAdapter implements TransportAdapter {
     private readonly debug: DebugContextType,
     private readonly setMissedHeartbeatCount: (count: number) => void,
     private readonly setCommunicationError: (error: CommunicationError) => void,
+    private readonly setLoaded: () => void,
+    private readonly setUpdated: () => void,
     private readonly om: RootObjectModel,
   ) {}
+
+  async onConnected(): Promise<void> {
+    this.setLoaded();
+  }
 
   async onOutgoing(message: string): Promise<void> {
     this.debug.addLog(LogChannel.RAW_OUT, message);
@@ -43,6 +49,7 @@ class ContextTransportAdapter implements TransportAdapter {
   async onUpdate(message: SwarmToSocketStateUpdate): Promise<void> {
     this.debug.addLog(LogChannel.UPDATES, JSON.stringify(message));
     this.om.update(message.value);
+    this.setUpdated();
   }
 
   async onSubscription(message: SwarmToSocketSubscription): Promise<void> {
@@ -73,14 +80,24 @@ export const TransportContextProvider: ParentComponent<{
 
   const [transport] = createResource(() => {
     setStep(LoadingStep.CONNECTING);
-    return props.factory(
-      new ContextTransportAdapter(
-        debug,
-        setMissedHeartbeatCount,
-        setCommunicationError,
-        om(),
-      ),
-    );
+    return new Promise((res) => {
+      const transport = props.factory(
+        new ContextTransportAdapter(
+          debug,
+          setMissedHeartbeatCount,
+          setCommunicationError,
+          () => {
+            if (step() == LoadingStep.CONNECTING) {
+              setStep(LoadingStep.LOADING);
+            }
+          },
+          () => {
+            res(transport);
+          },
+          om(),
+        ),
+      );
+    });
   });
 
   const loading = <LoadingScreen currentStep={step()} />;

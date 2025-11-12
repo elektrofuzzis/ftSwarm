@@ -28,6 +28,8 @@ export class WebSocketTransport implements Transport {
     this.webSocket.addEventListener("error", this.handleError);
     this.webSocket.addEventListener("close", this.handleClose);
 
+    adapter.onConnected();
+
     this.watchdogTimer = new WatchdogTimer(
       this.webSocket,
       adapter.setMissedTimer.bind(adapter),
