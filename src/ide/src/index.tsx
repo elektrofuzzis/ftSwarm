@@ -8,6 +8,7 @@ import logger from "./util/logger";
 import { websocketTransportFactory } from "./api/transport/wsTransport";
 import { TransportContextProvider } from "./contexts/transport/TransportContextProvider";
 import { DebugContextProvider } from "./contexts/DebugContext";
+import { HomeRedirectorRoute } from "./routes/HomeRedirectorRoute";
 
 function getSourceIp() {
   if (import.meta.env.DEV && import.meta.env.VITE_SOURCE_IP) {
@@ -29,7 +30,7 @@ render(
     <DebugContextProvider>
       <TransportContextProvider sourceIp={sourceIp} factory={factory}>
         <HashRouter root={App}>
-          <Route path="/" component={SwarmOverviewRoute} />
+          <Route path="/" component={HomeRedirectorRoute} />
           <Route path="/bla" component={SwarmOverviewRoute} />
         </HashRouter>
       </TransportContextProvider>

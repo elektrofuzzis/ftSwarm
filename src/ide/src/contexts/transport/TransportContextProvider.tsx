@@ -8,6 +8,7 @@ import {
 } from "solid-js";
 import type {
   CommunicationError,
+  Transport,
   TransportAdapter,
   TransportFactory,
 } from "../../api/transport";
@@ -78,7 +79,7 @@ export const TransportContextProvider: ParentComponent<{
 
   const om = createMemo(() => new RootObjectModel());
 
-  const [transport] = createResource(() => {
+  const [transport] = createResource<Transport>(() => {
     setStep(LoadingStep.CONNECTING);
     return new Promise((res) => {
       const transport = props.factory(

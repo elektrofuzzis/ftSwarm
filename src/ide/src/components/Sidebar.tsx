@@ -1,9 +1,7 @@
-import type { Component, ParentComponent } from "solid-js";
+import { createEffect, type Component, type ParentComponent } from "solid-js";
 import TitleImage from "../assets/ftswarm.svg";
 import Telescope from "lucide-solid/icons/telescope";
 import Cpu from "lucide-solid/icons/cpu";
-import Gamepad2 from "lucide-solid/icons/gamepad-2";
-import Plug from "lucide-solid/icons/plug";
 import FolderPen from "lucide-solid/icons/folder-pen";
 import Workflow from "lucide-solid/icons/workflow";
 import Box from "lucide-solid/icons/box";
@@ -16,6 +14,8 @@ import { Surface1 } from "./Surface";
 import { useDebug } from "../contexts/DebugContext";
 import { useOMContext } from "../contexts/transport/context";
 import { For } from "solid-js/web";
+import { SwOSState } from "../api/generated/genApiEnums";
+import { useLocation } from "@solidjs/router";
 
 export const Title = () => {
   const { toggleMenu } = useDebug();
@@ -91,8 +91,28 @@ const BottomRowIndicator: ParentComponent = (props) => {
   return <div class="flex items-center p-3 gap-3">{props.children}</div>;
 };
 
+const state2Bg: Record<SwOSState, string> = {
+  [SwOSState.OFFLINE]: "bg-thm-error",
+  [SwOSState.BOOTING]: "bg-thm-primary",
+  [SwOSState.STARTWIFI]: "bg-thm-primary",
+  [SwOSState.RUNNING]: "bg-thm-ok animate-pulse",
+  [SwOSState.ERROR]: "bg-thm-error animate-pulse",
+  [SwOSState.WAITING]: "bg-thm-primary",
+  [SwOSState.IDENTIFY]: "bg-thm-primary",
+  [SwOSState.FATAL]: "bg-thm-error",
+  [SwOSState.MAXSTATE]: "bg-thm-error",
+};
+
 export const Sidebar = () => {
   const swarm = useOMContext();
+  const controllers = swarm.controllers();
+  const totalControllers = controllers.length;
+  const onlineControllers = controllers.filter(
+    (it) => it.state === SwOSState.RUNNING,
+  ).length;
+
+  const location = useLocation();
+  const route = () => location.pathname;
 
   return (
     <aside class="flex flex-col gap-3 h-full">
@@ -100,14 +120,32 @@ export const Sidebar = () => {
         <Title />
 
         <Category icon={Telescope} title="Monitor Swarm">
-          <Surface1 class="px-1 py-px ml-4">5/6</Surface1>
+          <Surface1 class="px-1 py-px ml-4">
+            {onlineControllers}/{totalControllers}
+          </Surface1>
         </Category>
-        <MenuEntry icon={FolderPen} text="My Swarm" active={true} />
-        <For each={swarm.controllers()}>
+
+        <a href="/controller/overview" class="w-full flex flex-col">
+          <MenuEntry
+            icon={FolderPen}
+            text="My Swarm"
+            active={route() === "/controller/overview"}
+          />
+        </a>
+        <For each={controllers}>
           {(it, _) => (
-            <MenuEntry icon={Cpu} text={it.name} active={false}>
-              <StatusCircle class="bg-thm-ok animate-pulse" />
-            </MenuEntry>
+            <a
+              href={`/controller/${it.serialNumber}`}
+              class="w-full flex flex-col"
+            >
+              <MenuEntry
+                icon={Cpu}
+                text={it.name}
+                active={route() === `/controller/${it.serialNumber}`}
+              >
+                <StatusCircle class={state2Bg[it.state]} />
+              </MenuEntry>
+            </a>
           )}
         </For>
 
