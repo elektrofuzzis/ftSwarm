@@ -73,7 +73,8 @@ const IOCmdList_t IOCmdList [CLICMD_MAX] = {
   { "stop", true, 0, 0},
   { "homing", true, 1, 1},
   { "isHoming", true, 0, 0},
-  { "setHomingOffset", true, 1, 1}
+  { "setHomingOffset", true, 1, 1},
+  { "testPixels", true, 1, 1}
 };
 
 const char help[] = R"(help   - list all commands
@@ -101,6 +102,7 @@ Controller commands:
   triggerUserEvent(P1,P2,..P10) - Trigger a user remote code.
   setMicroStepMode(mode)        - set Microstep Mode / ftSwarmPwrDrive only
   getMicroStepMode()            - get Microstep Mode / ftSwarmPwrDrive only
+  testPixels(#pixels)           - test Pixels
 
 Input commands (A1..A6):
   subscribe( hysteresis )
@@ -441,6 +443,34 @@ void SwOSCLI::OK ( void ) {
 
 }
 
+void testPixels( uint8_t pixels ) {
+  SwOSPixel *px[MAXLEDS];
+
+  // get IOs
+  for (uint8_t i=0; i<pixels; i++ ) px[i] = (SwOSPixel *)myOSSwarm.Ctrl[0]->getIO(SWOSIO_PIXEL, i );
+
+  while ( true ) {
+
+    for (uint8_t c=0; c<3; c++) {
+
+      for (uint8_t i=0; i<pixels; i++ ) {
+
+        if      (c==0) px[i]->setColor(0xFF0000);
+        else if (c==1) px[i]->setColor(0x00FF00);
+        else           px[i]->setColor(0x0000FF);
+
+        delay(100);
+
+      }
+
+      delay(250);
+
+    }
+
+  }
+
+}
+
 void SwOSCLI::executeControllerCmd(void ) {
 
   SwOSCom *userEvent;
@@ -516,8 +546,11 @@ void SwOSCLI::executeControllerCmd(void ) {
                                       OK();
                                       ctrl->setWifi( (FtSwarmWifi_t) parameter[0].getNumber(), parameter[1].getString(), parameter[2].getString() );
                                     }
-    
                                     break;
+
+    case CLICMD_testPixels:         if ( parameter[0].inRange( "number of pixels", 0, MAXLEDS, response ) ) testPixels( parameter[0].getNumber() );
+                                    break;
+
     default:                        Error( ERROR_INVALIDCMD );
                                     break;
   }

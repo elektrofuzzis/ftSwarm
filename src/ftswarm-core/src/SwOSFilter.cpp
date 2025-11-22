@@ -194,6 +194,27 @@ int16_t SwOSMinMax::fx( int16_t newValue ) {
     
 }
 
+SwOSHysterese::SwOSHysterese( int16_t hysterese ):SwOSFilter(1) { 
+    
+  this->hysterese = abs( hysterese );
+
+}
+
+int16_t SwOSHysterese::fx( int16_t newValue ) {
+
+  if ( ( newValue == FILTER_INVALID ) || ( buffer[0] == FILTER_INVALID ) ) {
+    buffer[0] = newValue;
+    return FILTER_INVALID;
+  }
+
+  buffer[0] = (abs( newValue - buffer[0] ) > hysterese )? newValue : buffer[0];
+
+  if (nextFilter) return nextFilter->fx( buffer[0] );
+    
+  return buffer[0];
+
+}
+
 SwOSFJoystick::SwOSFJoystick( int16_t minValue, int16_t midValue, int16_t maxValue ):SwOSFilter(0){ 
     
   this->minValue = minValue;
@@ -201,7 +222,6 @@ SwOSFJoystick::SwOSFJoystick( int16_t minValue, int16_t midValue, int16_t maxVal
   this->maxValue = maxValue;
 
 };
-
 
 int16_t SwOSFJoystick::fx( int16_t newValue ) {
 

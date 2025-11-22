@@ -22,7 +22,8 @@ typedef enum {
   SWOS_FILTER_MULTIPLY, 
   SWOS_FILTER_ADD, 
   SWOS_FILTER_MINMAX,
-  SWOS_FILTER_JOYSTICK
+  SWOS_FILTER_JOYSTICK,
+  SWOS_FILTER_HYSTERESE
 } SwOSFilter_t;
 
 class SwOSFilter {
@@ -185,6 +186,25 @@ class SwOSMinMax:public SwOSFilter {
     // function to run the filter
     virtual int16_t fx( int16_t newValue );
 
+};
+
+class SwOSHysterese:public SwOSFilter {
+
+  protected:
+
+    int16_t hysterese;
+
+  public:
+
+    // Constructor
+    SwOSHysterese( int16_t hysterese );
+
+    // my type
+    virtual SwOSFilter_t getType( void ) { return SWOS_FILTER_HYSTERESE; };
+
+    // function to run the filter
+    virtual int16_t fx( int16_t newValue );
+  
 };
 
 // f(x) = max( b , min( a, x) )

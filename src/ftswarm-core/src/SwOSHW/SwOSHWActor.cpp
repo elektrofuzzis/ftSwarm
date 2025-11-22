@@ -723,12 +723,13 @@ void SwOSDigitalServo::setLocal() {
 #define RCSERVO_LOW  1700.0
 #define RCSERVO_HIGH 3750.0
 #define RCMAXDELTA   20
-#define RCMINSPEED   2000
+#define RCMINSPEED   2700
 
 SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSAnalogInput *poti, SwOSMotor *motor): SwOSServo( name, port, ctrl ) {
 
   this->poti  = poti;
   this->motor = motor;
+  this->pid   = new SwOSPID( 2.0, 1, 0, 0, 100, -motor->maxSpeed(), motor->maxSpeed() );
 
   target   = poti->getValueI32();
   position = ( ( target - RCSERVO_LOW ) / ( RCSERVO_HIGH - RCSERVO_LOW ) * 256 ) - offset;
@@ -759,7 +760,7 @@ void SwOSRCServo::operate(void) {
 
   // target reached?
   if ( abs( sensor - target ) < RCMAXDELTA ) { 
-    speed = 0; 
+    speed  = 0; 
     target = FILTER_INVALID;
 
   } else {
@@ -776,6 +777,7 @@ void SwOSRCServo::operate(void) {
   }
 
   if ( motor->getSpeed() != speed ) {
+    printf("setSpeed speed %d sensor %d\n", speed, sensor);
     motor->setSpeed( speed );
     motor->apply();
   }
@@ -788,5 +790,7 @@ void SwOSRCServo::setLocal( void ) {
   target = ( position + offset ) / 256.0 * ( RCSERVO_HIGH - RCSERVO_LOW ) + RCSERVO_LOW;
   if ( target > RCSERVO_HIGH ) target = RCSERVO_HIGH;
   if ( target < RCSERVO_LOW )  target = RCSERVO_LOW;
+
+  printf("RCServo::setLocal offset %d position %d target %d poti %d\n", offset, position, target, poti->getValueI32() );
 
 }

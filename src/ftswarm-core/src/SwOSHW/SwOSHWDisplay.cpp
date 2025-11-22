@@ -128,7 +128,7 @@ void SwOSPixel::setupLocal() {
                                     break;
 
         case FTSWARMRC_1V140:       FastLED.addLeds<WS2812, xGPIO_NUM_48, GRB>(led, MAXLEDS).setCorrection( TypicalLEDStrip ); 
-                                    rgbLed = new RGBLed();
+                                    // rgbLed = new RGBLed();
                                     break;
       #endif
       case FTSWARMJST_1V15:         FastLED.addLeds<WS2812, GPIO_NUM_26, GRB>(led, MAXLEDS).setCorrection( TypicalLEDStrip ); 

@@ -132,7 +132,7 @@ uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
     // need different filters
     poti->deleteFilter();
     poti->addFilter(new SwOSSpike( 120, 30 ) );
-    poti->addFilter(new SwOSMovingAverage(3) );
+    poti->addFilter(new SwOSMovingAverage(5) );
 
     // need to read multiple times to get consistent values
     poti->operate();

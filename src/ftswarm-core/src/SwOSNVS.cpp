@@ -138,10 +138,9 @@ void SwOSNVS::begin() {
       // NVS partition was truncated and needs to be erased
       // Retry nvs_flash_init
       SWARM_LOG_ERROR( "Invalid NVS found. Erasing NVS.");
-      ESP_ERROR_CHECK(nvs_flash_erase());
+      nvs_flash_erase();
       err = nvs_flash_init();
   }
-  ESP_ERROR_CHECK( err );
 
    if (!load() ) {
     initialSetup();
@@ -157,7 +156,6 @@ bool SwOSNVS::load() {
   esp_err_t nvserror = nvs_open( NVSNAMESPACE, NVS_READONLY, &my_handle);
   // initial setup?
   if ( nvserror == ESP_ERR_NVS_NOT_FOUND ) return false; 
-  ESP_ERROR_CHECK( nvserror );
 
   // start reading my version to check my data is valid
   nvs_get_i32( my_handle, "NVSVersion", &version);
@@ -177,7 +175,7 @@ bool SwOSNVS::load() {
   if ( ( controllerType == FTSWARM_NOCTRL ) ||
        ( serialNumber == 0 ) ||
        ( CPU == FTSWARM_NOVERSION ) ) {
-   nvs_close( my_handle );
+    nvs_close( my_handle );
     return false;
   }
 
@@ -238,53 +236,53 @@ void SwOSNVS::save( bool writeAll ) {
 
   // Open
   nvs_handle_t my_handle;
-  ESP_ERROR_CHECK( nvs_open(NVSNAMESPACE, NVS_READWRITE, &my_handle) );
+  if ( nvs_open(NVSNAMESPACE, NVS_READWRITE, &my_handle) != ESP_OK ) { SWARM_LOG_ERROR("NVS save: Can't open NVS."); return; };
 
   // Write
   if (writeAll) {
-    ESP_ERROR_CHECK( nvs_set_i32( my_handle, "NVSVersion", NVSVERSION ) );
-    ESP_ERROR_CHECK( nvs_set_u32( my_handle, "controlerType", (uint32_t) controllerType ) );
-    ESP_ERROR_CHECK( nvs_set_u16( my_handle, "serialNumber", (FtSwarmSerialNumber_t) serialNumber ) );
-    ESP_ERROR_CHECK( nvs_set_u32( my_handle, "CPU", (uint32_t) CPU ) );
+    nvs_set_i32( my_handle, "NVSVersion", NVSVERSION ) ;
+    nvs_set_u32( my_handle, "controlerType", (uint32_t) controllerType ) ;
+    nvs_set_u16( my_handle, "serialNumber", (FtSwarmSerialNumber_t) serialNumber ) ;
+    nvs_set_u32( my_handle, "CPU", (uint32_t) CPU ) ;
   }
 
   // ftSwarmControl: set joystick calibration
-  ESP_ERROR_CHECK( nvs_set_blob( my_handle, "calibration",  (void *)&calibration, sizeof( calibration ) ) );
+  nvs_set_blob( my_handle, "calibration",  (void *)&calibration, sizeof( calibration ) );
 
   // RGBLeds
-  ESP_ERROR_CHECK( nvs_set_u8( my_handle, "RGBLeds", pixels ) );
+  nvs_set_u8( my_handle, "RGBLeds", pixels );
 
   // wifi
-  ESP_ERROR_CHECK( nvs_set_u32( my_handle, "wifiMode", wifiMode ) );
-  ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "Channel",  (uint8_t) channel ) );
-  ESP_ERROR_CHECK( nvs_set_str( my_handle, "wifiSSID",           wifiSSID)  );
-  ESP_ERROR_CHECK( nvs_set_str( my_handle, "wifiPwd",            wifiPwd)  );
+  nvs_set_u32( my_handle, "wifiMode", wifiMode );
+  nvs_set_u8 ( my_handle, "Channel",  (uint8_t) channel );
+  nvs_set_str( my_handle, "wifiSSID",           wifiSSID);
+  nvs_set_str( my_handle, "wifiPwd",            wifiPwd);
 
   // swarm
-  ESP_ERROR_CHECK( nvs_set_u16( my_handle, "swarmSecret", swarmSecret ) );
-  ESP_ERROR_CHECK( nvs_set_u16( my_handle, "swarmPIN",    swarmPIN ) );
-  ESP_ERROR_CHECK( nvs_set_str( my_handle, "swarmName",   swarmName ) );
+  nvs_set_u16( my_handle, "swarmSecret", swarmSecret );
+  nvs_set_u16( my_handle, "swarmPIN",    swarmPIN );
+  nvs_set_str( my_handle, "swarmName",   swarmName );
   
   // Kelda & swarmMembers
-  ESP_ERROR_CHECK( nvs_set_u8  ( my_handle, "IAmKelda",     (uint8_t) IAmKelda ) );
-  ESP_ERROR_CHECK( nvs_set_u32 ( my_handle, "swarmCom",     swarmCommunication ) );
-  ESP_ERROR_CHECK( nvs_set_blob( my_handle, "swarmMember",  (void *)&swarmMember, sizeof( swarmMember ) ) );
-  ESP_ERROR_CHECK( nvs_set_u8  ( my_handle, "swarmSpeed",   swarmSpeed ) );
+  nvs_set_u8  ( my_handle, "IAmKelda",     (uint8_t) IAmKelda );
+  nvs_set_u32 ( my_handle, "swarmCom",     swarmCommunication );
+  nvs_set_blob( my_handle, "swarmMember",  (void *)&swarmMember, sizeof( swarmMember ) );
+  nvs_set_u8  ( my_handle, "swarmSpeed",   swarmSpeed );
 
   // webUI
-  ESP_ERROR_CHECK( nvs_set_u8 ( my_handle,  "webUI",   (uint8_t) webUI ) );
+  nvs_set_u8 ( my_handle,  "webUI",   (uint8_t) webUI );
 
   // extensionPort
-  ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "I2CAddr", I2CAddr ) );
-  ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "interruptLine", interruptLine ) );
-  ESP_ERROR_CHECK( nvs_set_i16( my_handle, "interruptLow", interruptOnOff[0] ) );
-  ESP_ERROR_CHECK( nvs_set_i16( my_handle, "interruptHigh", interruptOnOff[1] ) );
-  ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "I2CRegisters", I2CRegisters ) );
-  ESP_ERROR_CHECK( nvs_set_u32( my_handle, "extensionPort", (uint32_t) extensionPort) );
-  ESP_ERROR_CHECK( nvs_set_u8 ( my_handle, "Gyro",    (uint8_t)  gyro) );
+  nvs_set_u8 ( my_handle, "I2CAddr", I2CAddr );
+  nvs_set_u8 ( my_handle, "interruptLine", interruptLine );
+  nvs_set_i16( my_handle, "interruptLow", interruptOnOff[0] );
+  nvs_set_i16( my_handle, "interruptHigh", interruptOnOff[1] );
+  nvs_set_u8 ( my_handle, "I2CRegisters", I2CRegisters );
+  nvs_set_u32( my_handle, "extensionPort", (uint32_t) extensionPort);
+  nvs_set_u8 ( my_handle, "Gyro",    (uint8_t)  gyro);
 
   // commit
-  ESP_ERROR_CHECK( nvs_commit( my_handle ) );
+  nvs_commit( my_handle );
 
   nvs_close( my_handle );
 
@@ -303,18 +301,18 @@ void SwOSNVS::saveEvents( void ) {
 
   // Open
   nvs_handle_t my_handle;
-  ESP_ERROR_CHECK( nvs_open( NVSNAMESPACE, NVS_READWRITE, &my_handle) );
+  if ( nvs_open( NVSNAMESPACE, NVS_READWRITE, &my_handle) != ESP_OK ) { SWARM_LOG_ERROR("Save events failed: Can't open NVS."); return; };
 
   // active config
-  ESP_ERROR_CHECK( nvs_set_u8( my_handle, "activeConfig", activeEventConfig ) );
+  nvs_set_u8( my_handle, "activeConfig", activeEventConfig );
 
   for ( uint8_t i=0; i<MAXEVENTCONFIGS; i++ ) {
     sprintf( config, "config#%d", i );
-    ESP_ERROR_CHECK( nvs_set_blob( my_handle, config, (void *)events[i], sizeof( events[i] ) ) );
+    nvs_set_blob( my_handle, config, (void *)events[i], sizeof( events[i] ) );
   }
 
   // commit
-  ESP_ERROR_CHECK( nvs_commit( my_handle ) );
+  nvs_commit( my_handle );
 
   nvs_close( my_handle );
 
@@ -327,16 +325,16 @@ void SwOSNVS::loadEvents( void ) {
 
   // Open
   nvs_handle_t my_handle;
-  ESP_ERROR_CHECK( nvs_open( NVSNAMESPACE, NVS_READWRITE, &my_handle) );
+  if ( nvs_open( NVSNAMESPACE, NVS_READWRITE, &my_handle) != ESP_OK ) SWARM_LOG_FATAL("Can't open NVS.");
 
   // active config
-  ESP_ERROR_CHECK( nvs_get_u8( my_handle, "activeConfig", &activeEventConfig ) );
+  nvs_get_u8( my_handle, "activeConfig", &activeEventConfig );
 
   // get configs
   for ( uint8_t i=0; i<MAXEVENTCONFIGS; i++ ) {
     sprintf( config, "config#%d", i );
     dummy = sizeof( events );
-    ESP_ERROR_CHECK( nvs_get_blob( my_handle, config, events[i], &dummy ) );
+    nvs_get_blob( my_handle, config, events[i], &dummy );
   }
 
   nvs_close( my_handle );
@@ -515,9 +513,9 @@ bool SwOSNVS::upgrade( void ) {
    
     // erase all
     nvs_handle_t my_handle;
-    ESP_ERROR_CHECK( nvs_open(NVSNAMESPACE, NVS_READWRITE, &my_handle) );   
-    ESP_ERROR_CHECK( nvs_erase_all( my_handle ) );
-    ESP_ERROR_CHECK( nvs_commit( my_handle ) );
+    if ( nvs_open(NVSNAMESPACE, NVS_READWRITE, &my_handle) != ESP_OK ) SWARM_LOG_FATAL("NVS-Upgrade failed: Can't open NVS.");
+    if ( nvs_erase_all( my_handle ) != ESP_OK ) SWARM_LOG_FATAL("NVS-Upgrade failed: Can't earase NVS.");
+    if ( nvs_commit( my_handle ) != ESP_OK ) SWARM_LOG_FATAL("NVS-Upgrade failed: Can't commit NVS.");
     nvs_close( my_handle );
     
     // save again
