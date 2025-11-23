@@ -151,6 +151,7 @@ int16_t SwOSDCMotor::duty( void ) {
   // Tractor      
   // Encoder      1600    500
   // WheelDrive   3173   2354   measured: 4.9V: 3100  6V: 2900  NOT WORKING BELOW 4.9V!
+  // RCMotor      2700   2700   just run with max 6V!
   // Power
   // M            2700   2600
   // Lamp          400    100
@@ -202,6 +203,9 @@ int16_t SwOSDCMotor::duty( void ) {
                             break;
 
     case SWOSIO_LAMP:       x45 = x90 = 0;
+                            break;
+
+    case SWOSIO_RCMOTOR:    x45 = x90 = 2700;
                             break;
   }
 
@@ -723,7 +727,6 @@ void SwOSDigitalServo::setLocal() {
 #define RCSERVO_LOW  1700.0
 #define RCSERVO_HIGH 3750.0
 #define RCMAXDELTA   20
-#define RCMINSPEED   2700
 
 SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSAnalogInput *poti, SwOSMotor *motor): SwOSServo( name, port, ctrl ) {
 
@@ -768,12 +771,6 @@ void SwOSRCServo::operate(void) {
     // calc next speed
     speed = pid->solve( target, sensor );
     
-    // keep minimum speed
-    if ( abs( speed ) < RCMINSPEED ) { 
-      if ( speed < 0 ) speed = -RCMINSPEED;
-      else             speed =  RCMINSPEED;
-    }
-
   }
 
   if ( motor->getSpeed() != speed ) {

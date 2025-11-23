@@ -58,7 +58,8 @@ const char IO_ICON[SWOSIO_MAXIOTYPE][10] =
     "B.svg",          // TODO MiniMotor
     "B.svg",          // TODO SMotor
     "B.svg",          // TODO PowerMotor
-    "B.svg"           // TODO MMotor
+    "B.svg",          // TODO MMotor
+    "B.svg"           // TODO RCMotor
   };
 
 SwOSUIClass_t UI_CLASS[SWOSIO_MAXIOTYPE] = 
@@ -97,6 +98,7 @@ SwOSUIClass_t UI_CLASS[SWOSIO_MAXIOTYPE] =
     UICLASS_SENSOR, 
     UICLASS_SENSOR,
     UICLASS_SENSOR,
+    UICLASS_MOTOR,
     UICLASS_MOTOR,
     UICLASS_MOTOR,
     UICLASS_MOTOR,

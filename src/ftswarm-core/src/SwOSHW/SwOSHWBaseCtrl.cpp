@@ -143,7 +143,7 @@ uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
     poti->operate();
     if ( poti->getValueI32() < 4095 ) {
       sprintf( name, "RC%d", i+1 );
-      SwOSMotor *motor = (SwOSMotor *) getIO( SWOSIO_MOTOR, i );
+      SwOSMotor *motor = (SwOSMotor *) getIO( SWOSIO_RCMOTOR, i );
       io[ getIndex( motor ) ] = new SwOSRCServo( name, i, this, poti, motor );
 
     } else {
@@ -707,6 +707,7 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, char *name, char 
     case SWOSIO_SMOTOR:
     case SWOSIO_POWERMOTOR:
     case SWOSIO_MMOTOR:
+    case SWOSIO_RCMOTOR:
     case SWOSIO_MOTOR:            io = new SwOSDCMotor( name, port, this, ioType );
                                   break; 
 

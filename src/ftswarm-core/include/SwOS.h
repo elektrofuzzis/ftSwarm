@@ -121,6 +121,7 @@ typedef enum { SWOSIO_UNDEF = -1,
                SWOSIO_SMOTOR,
                SWOSIO_POWERMOTOR,
                SWOSIO_MMOTOR,
+               SWOSIO_RCMOTOR,
                SWOSIO_MAXIOTYPE } SwOSIOType_t;
 
 // technologies to change IO type
@@ -166,7 +167,8 @@ const SwOSIOClass_t SWOSIOCLASS[SWOSIO_MAXIOTYPE ] = {
   SWOSIOCLASS_MOTOR,    // SWOSIO_MINIMOTOR
   SWOSIOCLASS_MOTOR,    // SWOSIO_SMOTOR
   SWOSIOCLASS_MOTOR,    // SWOSIO_POWERMOTOR
-  SWOSIOCLASS_MOTOR     // SWOSIO_MMOTOR
+  SWOSIOCLASS_MOTOR,    // SWOSIO_MMOTOR
+  SWOSIOCLASS_MOTOR     // SWOSIO_RCMOTOR
 } ;  
 
 // show via api?
@@ -212,7 +214,8 @@ const bool SHOWIOINAPI[SWOSIO_MAXIOTYPE ] = {
   true,  // SWOSIO_MINIMOTOR
   true,  // SWOSIO_SMOTOR
   true,  // SWOSIO_POWERMOTOR
-  true  // SWOSIO_MMOTOR
+  true,  // SWOSIO_MMOTOR
+  true  // SWOSIO_RCMOTOR
 } ;  
 
 // show via api?
@@ -258,7 +261,8 @@ const char SWOSIOTYPE[SWOSIO_MAXIOTYPE][20] = {
   "MiniMotor",
   "SMotor",
   "PowerMotor",
-  "MMotor"
+  "MMotor",
+  "RCMotor"
 } ;  
 
 // HW versions

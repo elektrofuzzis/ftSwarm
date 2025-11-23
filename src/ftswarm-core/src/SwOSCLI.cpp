@@ -1069,6 +1069,7 @@ void SwOSCLI::executeIOCommand( void ) {
       case SWOSIO_SMOTOR:
       case SWOSIO_POWERMOTOR:
       case SWOSIO_MMOTOR:
+      case SWOSIO_RCMOTOR:
       case SWOSIO_LAMP:
       case SWOSIO_VALVE:
       case SWOSIO_COMPRESSOR:
