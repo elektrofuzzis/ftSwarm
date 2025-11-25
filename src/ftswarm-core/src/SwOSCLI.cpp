@@ -704,7 +704,7 @@ void SwOSCLI::executeActorCmd( void ) {
                                 motor->unlock();
                                 break;
 
-    case CLICMD_setSpeed:       if (parameter[0].inRange( "speed", -motor->maxSpeed(), motor->maxSpeed(), response ) ) { 
+    case CLICMD_setSpeed:       if (parameter[0].inRange( "speed", -motor->getMaxSpeed(), motor->getMaxSpeed(), response ) ) { 
                                   OK();
                                   motor->lock(); 
                                   motor->setSpeed( parameter[0].getNumber() );

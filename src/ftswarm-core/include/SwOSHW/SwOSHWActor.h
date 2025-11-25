@@ -52,7 +52,7 @@ class SwOSAnalogInput;
     virtual void            operate( void );
     virtual bool            isMotor( void ) { return true; };
     virtual bool            isActor( void ) { return true; };
-    virtual int16_t         maxSpeed( void ) { return 4095; };
+    virtual int16_t         getMaxSpeed( void );
 
     // commands
     virtual void    setSpeed( int16_t speed );
@@ -97,7 +97,6 @@ class SwOSDCMotor : public SwOSMotor {
     // Constructors
     SwOSDCMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType );
     virtual ~SwOSDCMotor( );
-    virtual int16_t maxSpeed( void ) { return ( ioType == SWOSIO_MOTOR) ? 4096 : 100; };
   
     // commands
     virtual void setAcceleration( uint32_t rampUpT,  uint32_t rampUpY );    // set acceleration ramp
@@ -137,7 +136,6 @@ class SwOSDCMotor : public SwOSMotor {
     virtual void serialize( Serialize *serialize );
     virtual uint8_t  pushState( uint8_t *buffer );
     virtual uint8_t  popState( uint8_t *buffer );
-    virtual int16_t  maxSpeed( void ) { return 10240; };
    
     // commands
     virtual void setValue( int32_t distance, int32_t position, bool isHoming, bool isRunning );
@@ -231,7 +229,7 @@ class SwOSDigitalServo : public SwOSServo {
   protected:
 
     SwOSAnalogInput *poti   = NULL;
-    SwOSMotor       *motor  = NULL;
+    SwOSDCMotor     *motor  = NULL;
     SwOSPID         *pid    = NULL;
     int16_t         target  = FILTER_INVALID; // FILTER_INVALID -> don't regulate
     
@@ -239,7 +237,7 @@ class SwOSDigitalServo : public SwOSServo {
 
   public:
     // constructor
-	  SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSAnalogInput *poti, SwOSMotor *motor );
+	  SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSAnalogInput *poti, SwOSDCMotor *motor );
     ~SwOSRCServo();
 
     virtual void operate( void ) override;

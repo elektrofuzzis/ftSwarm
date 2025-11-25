@@ -28,6 +28,16 @@ void SwOSMotor::setMotionType( FtSwarmMotion_t motionType ) {
   
 }
 
+int16_t SwOSMotor::getMaxSpeed( void ) {
+
+  switch ( ioType ) {
+    case SWOSIO_MOTOR:   return 4096;
+    case SWOSIO_STEPPER: return 10240;
+    default:             return 100;
+  }
+
+}
+
 void SwOSMotor::setSpeed( int16_t speed ) {
 
   // if no change is needed, return
@@ -40,9 +50,9 @@ void SwOSMotor::setSpeed( int16_t speed ) {
   }
   
   // limit speed values
-  if      (speed> maxSpeed()) this->speed =  maxSpeed();
-  else if (speed<-maxSpeed()) this->speed = -maxSpeed();
-  else                        this->speed =  speed;
+  if      (speed> getMaxSpeed()) this->speed =  getMaxSpeed();
+  else if (speed<-getMaxSpeed()) this->speed = -getMaxSpeed();
+  else                           this->speed =  speed;
 
 }
 
@@ -728,11 +738,11 @@ void SwOSDigitalServo::setLocal() {
 #define RCSERVO_HIGH 3750.0
 #define RCMAXDELTA   20
 
-SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSAnalogInput *poti, SwOSMotor *motor): SwOSServo( name, port, ctrl ) {
+SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSAnalogInput *poti, SwOSDCMotor *motor): SwOSServo( name, port, ctrl ) {
 
   this->poti  = poti;
   this->motor = motor;
-  this->pid   = new SwOSPID( 2.0, 1, 0, 0, 100, -motor->maxSpeed(), motor->maxSpeed() );
+  this->pid   = new SwOSPID( 2.0, 1, 0, 0, 100, -motor->getMaxSpeed(), motor->getMaxSpeed() );
 
   target   = poti->getValueI32();
   position = ( ( target - RCSERVO_LOW ) / ( RCSERVO_HIGH - RCSERVO_LOW ) * 256 ) - offset;

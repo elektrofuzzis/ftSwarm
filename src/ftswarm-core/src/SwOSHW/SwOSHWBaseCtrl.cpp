@@ -143,7 +143,7 @@ uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
     poti->operate();
     if ( poti->getValueI32() < 4095 ) {
       sprintf( name, "RC%d", i+1 );
-      SwOSMotor *motor = (SwOSMotor *) getIO( SWOSIO_RCMOTOR, i );
+      SwOSDCMotor *motor = (SwOSDCMotor *) getIO( SWOSIO_SMOTOR, i );  // TODO RCMOTOR
       io[ getIndex( motor ) ] = new SwOSRCServo( name, i, this, poti, motor );
 
     } else {
@@ -432,13 +432,27 @@ SwOSIO *SwOSCtrl::getIO( const char *name) {
 
 SwOSIO *SwOSCtrl::getIO( SwOSIOType_t ioType, FtSwarmPort_t port) {
 
+  // test all IOs
   for ( uint8_t i=0; i<IOs; i++ ) {
+
+    // existing IO?
     if ( io[i] ) {
+
       if ( ( SWOSIOCLASS[ io[i]->getIOType() ] == SWOSIOCLASS[ ioType ] ) &&                             // IO has the same io class as requested
            ( ( SWOSIOCLASS[ ioType ] != SWOSIOCLASS_SINGULAR ) || ( io[i]->getIOType() == ioType ) ) &&  // if IO is class SWOSCLASS_SINGULAR, both io types need to be the same
            ( io[i]->getPort() == port )                                                                  // same port
-         ) { return io[i]; }
+         ) { 
+        
+        // compatible, but not the same type? need to convert it!
+        if ( io[i]->getIOType() != ioType ) changeIOType( i, ioType );
+        
+        // all good now...
+        return io[i]; 
+
+      }
+
     }
+
   }
 
   return NULL;   
