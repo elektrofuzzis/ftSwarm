@@ -1,55 +1,52 @@
-import { createSignal, type Accessor } from "solid-js";
-import type { ApiController, ApiGetSwarmResponse } from "../apiTypes";
+import {createSignal, type Accessor} from "solid-js";
+import type {ApiController, ApiGetSwarmResponse} from "../apiTypes";
 import logger from "../../util/logger";
+import {createStore, reconcile, type SetStoreFunction, type Store} from "solid-js/store";
 
 export class RootObjectModel {
-  public readonly localName: Accessor<String>;
-  public readonly isKelda: Accessor<boolean>;
-  public readonly controllers: Accessor<ApiController[]>;
+    public readonly localName: Accessor<String>;
+    public readonly isKelda: Accessor<boolean>;
 
-  private _update: (toProcess: ApiGetSwarmResponse) => void;
+    // Stored by serial number
+    public readonly controllers: Store<Record<number, ApiController>>;
 
-  constructor() {
-    logger.info("RootObjectModel created");
-    const [controllers, setControllers] = createSignal<ApiController[]>([]);
-    this.controllers = controllers;
+    private readonly _update: (toProcess: ApiGetSwarmResponse) => void;
 
-    const [localName, setLocalName] = createSignal<string>("");
-    this.localName = localName;
+    constructor() {
+        logger.info("RootObjectModel created");
+        const [controllers, setControllers] = createStore<Record<number, ApiController>>({});
+        this.controllers = controllers;
 
-    const [isKelda, setIsKelda] = createSignal<boolean>(false);
-    this.isKelda = isKelda;
+        const [localName, setLocalName] = createSignal<string>("");
+        this.localName = localName;
 
-    this._update = (toProcess: ApiGetSwarmResponse) => {
-      setLocalName(toProcess.name);
-      setIsKelda(toProcess.kelda == 1);
-      this.mergeControllers(toProcess.controllers, setControllers);
-    };
-  }
+        const [isKelda, setIsKelda] = createSignal<boolean>(false);
+        this.isKelda = isKelda;
 
-  public update(toProcess: ApiGetSwarmResponse) {
-    this._update(toProcess);
-  }
+        this._update = (toProcess: ApiGetSwarmResponse) => {
+            setLocalName(toProcess.name);
+            setIsKelda(toProcess.kelda == 1);
+            this.mergeControllers(toProcess.controllers, setControllers);
+        };
+    }
 
-  private mergeControllers(
-    newControllers: ApiController[],
-    setControllers: (controllers: ApiController[]) => void,
-  ) {
-    const currentControllers = this.controllers();
-    const toAdd = newControllers.filter(
-      (controller) =>
-        !currentControllers.some(
-          (c) => c.serialNumber === controller.serialNumber,
-        ),
-    );
-    const toRemove = currentControllers.filter(
-      (controller) =>
-        !newControllers.some((c) => c.serialNumber === controller.serialNumber),
-    );
-    const controllers = [...currentControllers, ...toAdd].filter(
-      (controller) =>
-        !toRemove.some((c) => c.serialNumber === controller.serialNumber),
-    );
-    setControllers(controllers);
-  }
+    public update(toProcess: ApiGetSwarmResponse) {
+        this._update(toProcess);
+    }
+
+    private mergeControllers(
+        newControllers: ApiController[],
+        setControllers: SetStoreFunction<Record<number, ApiController>>
+    ) {
+        const newControllersRecord = newControllers.reduce((acc, controller) => {
+            acc[parseInt(controller.serialNumber)] = controller;
+            return acc;
+        }, {} as Record<number, ApiController>);
+
+        setControllers(reconcile(newControllersRecord));
+    }
+
+    useController(serial: number) {
+        return () => this.controllers[serial];
+    }
 }
