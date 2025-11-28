@@ -233,14 +233,20 @@ void SwOSHC165::setupLocal() {
   // initialize local HW
 
   switch ( ctrl->getCPU() ) {
-    case FTSWARMCONTROL_1V3:  CS   = GPIO_NUM_14;
-                              LD   = GPIO_NUM_15;
-                              CLK  = GPIO_NUM_12;
-                              MISO = GPIO_NUM_35;
-                              break;
+    case FTSWARMCONTROL_1V3UC: CS   = GPIO_NUM_10;
+                               LD   = GPIO_NUM_47;
+                               CLK  = GPIO_NUM_48;
+                               MISO = GPIO_NUM_15;
+                               break;
 
-    default:                  CS = LD = CLK = MISO = GPIO_NUM_NC;
-                              return;
+    case FTSWARMCONTROL_1V3:   CS   = GPIO_NUM_14;
+                               LD   = GPIO_NUM_15;
+                               CLK  = GPIO_NUM_12;
+                               MISO = GPIO_NUM_35;
+                               break;
+
+    default:                   CS = LD = CLK = MISO = GPIO_NUM_NC;
+                               return;
   }
 
   // initialize ports

@@ -143,7 +143,7 @@ uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
     poti->operate();
     if ( poti->getValueI32() < 4095 ) {
       sprintf( name, "RC%d", i+1 );
-      SwOSDCMotor *motor = (SwOSDCMotor *) getIO( SWOSIO_SMOTOR, i );  // TODO RCMOTOR
+      SwOSDCMotor *motor = (SwOSDCMotor *) getIO( SWOSIO_RCMOTOR, i );
       io[ getIndex( motor ) ] = new SwOSRCServo( name, i, this, poti, motor );
 
     } else {
@@ -169,7 +169,8 @@ uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
 uint8_t SwOSCtrl::setupLocalButtons( uint8_t maxIO ) {
 
   // create an outstanding HC165 object, if needed
-  if ( ( CPU == FTSWARMCONTROL_1V3 ) && (!hc165)  ) hc165 = new SwOSHC165( "HC165", this );
+
+  if ( ( MAXIOS[CPU].HC165 ) && (!hc165) ) hc165 = new SwOSHC165( "HC165", this );
 
   // create buttons
   for ( uint8_t i=0; i<MAXIOS[ CPU ].buttons; i++) {
@@ -258,7 +259,7 @@ uint8_t SwOSCtrl::setupLocalGyro( uint8_t maxIO ) {
 uint8_t SwOSCtrl::setupLocalOLED( uint8_t maxIO ) {
 
   // initialize oled if available
-  if ( CPU == FTSWARMCONTROL_1V3 ) {
+  if ( MAXIOS[CPU].OLED ) {
     oled = new SwOSOLED( "OLED", this );
     io[ maxIO++ ] = oled;
   }
@@ -316,7 +317,7 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSC
     if ( MAXIOS[ CPU ].buttons > 0 ) IOs = IOs + MAXIOS[ CPU ].buttons + 1;
 
     // OLED?
-    if ( CPU == FTSWARMCONTROL_1V3 ) IOs++;
+    if ( MAXIOS[CPU].OLED ) IOs++;
 
     motors = MAXIOS[ CPU ].motors;
     servos = MAXIOS[ CPU ].servos;
@@ -355,7 +356,7 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSC
     maxIO = setupLocalButtons( maxIO );
     maxIO = setupLocalJoysticks( maxIO, ctrlConfig );
     if ( ctrlConfig.gyro ) maxIO = setupLocalGyro( maxIO );
-    if ( CPU == FTSWARMCONTROL_1V3 ) maxIO = setupLocalOLED( maxIO );
+    if ( MAXIOS[CPU].OLED ) maxIO = setupLocalOLED( maxIO );
 
   }
 
@@ -465,6 +466,7 @@ FtSwarmController_t SwOSCtrl::getType() {
     case FTSWARMDUINO_1V141:    return FTSWARMDUINO;
     case FTSWARMPWRDRIVE_1V141: return FTSWARMPWRDRIVE;
     case FTSWARMCAM_3V12:       return FTSWARMCAM;
+    case FTSWARMCONTROL_1V3UC:
     case FTSWARMCONTROL_1V3:    return FTSWARMCONTROL;
     case FTSWARM_NOVERSION:     return FTSWARM_NOCTRL;
     default:                    return FTSWARM;
@@ -524,6 +526,7 @@ const char *SwOSCtrl::version( FtSwarmVersion_t v) {
   case FTSWARMJST_1V0:        return "1.0";
   case FTSWARMXL_1V00:        return "1.0.0";
   case FTSWARMJST_1V15:       return "1.15";
+  case FTSWARMCONTROL_1V3UC:
   case FTSWARMCONTROL_1V3:    return "1.3";
   case FTSWARMRC_1V140:       return "1.4.0";
   case FTSWARMDUINO_1V141:  

@@ -40,6 +40,8 @@ int16_t SwOSMotor::getMaxSpeed( void ) {
 
 void SwOSMotor::setSpeed( int16_t speed ) {
 
+  printf("- setSpeed %d %d\n", port, speed);
+
   // if no change is needed, return
   if ( speed == this->speed ) return;
 
@@ -734,15 +736,15 @@ void SwOSDigitalServo::setLocal() {
 
  // min/max positions
 
-#define RCSERVO_LOW  1700.0
-#define RCSERVO_HIGH 3750.0
+#define RCSERVO_LOW  1600   // 1700.0
+#define RCSERVO_HIGH 3300   // 3750.0
 #define RCMAXDELTA   20
 
 SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSAnalogInput *poti, SwOSDCMotor *motor): SwOSServo( name, port, ctrl ) {
 
   this->poti  = poti;
   this->motor = motor;
-  this->pid   = new SwOSPID( 2.0, 1, 0, 0, 100, -motor->getMaxSpeed(), motor->getMaxSpeed() );
+  this->pid   = new SwOSPID( 1.0, 1, 0, 0, 100, -motor->getMaxSpeed(), motor->getMaxSpeed() );
 
   target   = poti->getValueI32();
   position = ( ( target - RCSERVO_LOW ) / ( RCSERVO_HIGH - RCSERVO_LOW ) * 256 ) - offset;
@@ -775,6 +777,14 @@ void SwOSRCServo::operate(void) {
   if ( abs( sensor - target ) < RCMAXDELTA ) { 
     speed  = 0; 
     target = FILTER_INVALID;
+
+/*
+  } else if ( ( sensor < RCSERVO_LOW ) || ( sensor > RCSERVO_HIGH ) ) {
+
+    printf("Endstop\n");
+    speed  = 0; 
+    target = FILTER_INVALID;
+*/
 
   } else {
 
