@@ -9,6 +9,7 @@ import {websocketTransportFactory} from "./api/transport/wsTransport";
 import {TransportContextProvider} from "./contexts/transport/TransportContextProvider";
 import {DebugContextProvider} from "./contexts/DebugContext";
 import {HomeRedirectorRoute} from "./routes/HomeRedirectorRoute";
+import {SwarmControllerDetailRoute} from "./routes/SwarmControllerDetailRoute.tsx";
 
 function getSourceIp() {
     if (import.meta.env.DEV && import.meta.env.VITE_SOURCE_IP) {
@@ -32,7 +33,7 @@ render(
                 <HashRouter root={App}>
                     <Route path="/" component={HomeRedirectorRoute}/>
                     <Route path="/controller/overview" component={SwarmOverviewRoute}/>
-                    <Route path="/controller/:id" component={SwarmOverviewRoute}/>
+                    <Route path="/controller/:id" component={SwarmControllerDetailRoute}/>
                 </HashRouter>
             </TransportContextProvider>
         </DebugContextProvider>

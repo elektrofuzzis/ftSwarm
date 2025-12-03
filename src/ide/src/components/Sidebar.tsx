@@ -1,7 +1,6 @@
-import { createEffect, type Component, type ParentComponent } from "solid-js";
+import { type Component, type ParentComponent } from "solid-js";
 import TitleImage from "../assets/ftswarm.svg";
 import Telescope from "lucide-solid/icons/telescope";
-import Cpu from "lucide-solid/icons/cpu";
 import FolderPen from "lucide-solid/icons/folder-pen";
 import Workflow from "lucide-solid/icons/workflow";
 import Box from "lucide-solid/icons/box";
@@ -16,6 +15,7 @@ import { useOMContext } from "../contexts/transport/context";
 import { For } from "solid-js/web";
 import { SwOSState } from "../api/generated/genApiEnums";
 import { useLocation } from "@solidjs/router";
+import {getControllerIcon} from "../api/icons.ts";
 
 export const Title = () => {
   const { toggleMenu } = useDebug();
@@ -105,9 +105,9 @@ const state2Bg: Record<SwOSState, string> = {
 
 export const Sidebar = () => {
   const swarm = useOMContext();
-  const controllers = swarm.controllers();
-  const totalControllers = controllers.length;
-  const onlineControllers = controllers.filter(
+  const controllers = () => Object.values(swarm.controllers);
+  const totalControllers = () => controllers().length;
+  const onlineControllers = () => controllers().filter(
     (it) => it.state === SwOSState.RUNNING,
   ).length;
 
@@ -121,7 +121,7 @@ export const Sidebar = () => {
 
         <Category icon={Telescope} title="Monitor Swarm">
           <Surface1 class="px-1 py-px ml-4">
-            {onlineControllers}/{totalControllers}
+            {onlineControllers()}/{totalControllers()}
           </Surface1>
         </Category>
 
@@ -132,14 +132,14 @@ export const Sidebar = () => {
             active={route() === "/controller/overview"}
           />
         </a>
-        <For each={controllers}>
+        <For each={controllers()}>
           {(it, _) => (
             <a
               href={`/controller/${it.serialNumber}`}
               class="w-full flex flex-col"
             >
               <MenuEntry
-                icon={Cpu}
+                icon={getControllerIcon(it.type)}
                 text={it.name}
                 active={route() === `/controller/${it.serialNumber}`}
               >
