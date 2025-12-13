@@ -131,8 +131,8 @@ uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
 
     // need different filters
     poti->deleteFilter();
-    poti->addFilter(new SwOSSpike( 120, 30 ) );
     poti->addFilter(new SwOSMovingAverage(5) );
+    poti->addFilter(new SwOSSHR(2) );
 
     // need to read multiple times to get consistent values
     poti->operate();
@@ -141,7 +141,7 @@ uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
     }
 
     poti->operate();
-    if ( poti->getValueI32() < 4095 ) {
+    if ( poti->getValueI32() < 1023 ) {
       sprintf( name, "RC%d", i+1 );
       SwOSDCMotor *motor = (SwOSDCMotor *) getIO( SWOSIO_RCMOTOR, i );
       io[ getIndex( motor ) ] = new SwOSRCServo( name, i, this, poti, motor );

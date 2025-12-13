@@ -74,7 +74,7 @@ const SwOSMaxIO_t MAXIOS[FTSWARMMAXVERSION] = {
   /* FTSWARMPWRDRIVE_1V14 */ {  5,     4,     0,       0,     2,      0,       0,         NOPWRCTL, 0,          false, false },
   /* FTSWARMXL_1V00 */       {  8,     8,     0,       0,     2,      0,       0,         NOPWRCTL, 0,          false, false },
   /* FTSWARMRC_1V140 */      {  7,     4,     4,       0,     1,      0,       0,         6,        0,          false, false },
-                          // {  11,    4,     0,       0,     1,      0,       0,         6,        0,          false, false } 
+                          // {  11,    4,     0,       0,     1,      0,       0,         6,        0,          false, false }, 
   /* FTSWARMCONTROL_1V3UC */ {  6,     2,     0,       0,     0,      8,       2,         11,       6,          true,  true },
 };
 

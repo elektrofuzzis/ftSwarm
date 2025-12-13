@@ -154,6 +154,45 @@ int16_t SwOSMultiply::fx( int16_t newValue ) {
     
 }
 
+SwOSSHR::SwOSSHR( uint8_t a ):SwOSFilter(0){ 
+    
+    this->a = a;  
+
+};
+
+int16_t SwOSSHR::fx( int16_t newValue ) {
+
+    if ( newValue == FILTER_INVALID ) return FILTER_INVALID;
+
+    float   nvf = newValue >> a; 
+    int16_t nv  = nvf;
+
+    if (nextFilter) return nextFilter->fx( nv );
+    
+    return nv;
+    
+}
+
+SwOSSHL::SwOSSHL( uint8_t a ):SwOSFilter(0){ 
+    
+    this->a = a;  
+
+};
+
+int16_t SwOSSHL::fx( int16_t newValue ) {
+
+    if ( newValue == FILTER_INVALID ) return FILTER_INVALID;
+
+    float   nvf = newValue << a; 
+    int16_t nv  = nvf;
+
+    if (nextFilter) return nextFilter->fx( nv );
+    
+    return nv;
+    
+}
+
+
 SwOSAdd::SwOSAdd( int16_t a ):SwOSFilter(0){ 
     
     this->a = a;  

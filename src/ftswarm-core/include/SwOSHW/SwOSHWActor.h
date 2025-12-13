@@ -234,6 +234,7 @@ class SwOSDigitalServo : public SwOSServo {
     int16_t         target  = FILTER_INVALID; // FILTER_INVALID -> don't regulate
     
     virtual void setLocal() override;       // set position locally
+    virtual void poti2position();           // get position from poti
 
   public:
     // constructor

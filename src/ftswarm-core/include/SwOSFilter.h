@@ -20,6 +20,8 @@ typedef enum {
   SWOS_FILTER_SPIKE, 
   SWOS_FILTER_LINEAR, 
   SWOS_FILTER_MULTIPLY, 
+  SWOS_FILTER_SHL, 
+  SWOS_FILTER_SHR, 
   SWOS_FILTER_ADD, 
   SWOS_FILTER_MINMAX,
   SWOS_FILTER_JOYSTICK,
@@ -137,6 +139,48 @@ class SwOSMultiply:public SwOSFilter {
 
     // my type
     virtual SwOSFilter_t getType( void ) { return SWOS_FILTER_MULTIPLY; };
+
+    // function to run the filter
+    virtual int16_t fx( int16_t newValue );
+
+};
+
+// f(x) = x>>a
+
+class SwOSSHR:public SwOSFilter {
+
+  protected:
+
+    uint8_t a;
+
+  public:
+
+    // constructor
+    SwOSSHR( uint8_t a  );
+
+    // my type
+    virtual SwOSFilter_t getType( void ) { return SWOS_FILTER_SHR; };
+
+    // function to run the filter
+    virtual int16_t fx( int16_t newValue );
+
+};
+
+// f(x) = x<<a
+
+class SwOSSHL:public SwOSFilter {
+
+  protected:
+
+    uint8_t a;
+
+  public:
+
+    // constructor
+    SwOSSHL( uint8_t a  );
+
+    // my type
+    virtual SwOSFilter_t getType( void ) { return SWOS_FILTER_SHL; };
 
     // function to run the filter
     virtual int16_t fx( int16_t newValue );

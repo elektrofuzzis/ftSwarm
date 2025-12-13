@@ -40,8 +40,6 @@ int16_t SwOSMotor::getMaxSpeed( void ) {
 
 void SwOSMotor::setSpeed( int16_t speed ) {
 
-  printf("- setSpeed %d %d\n", port, speed);
-
   // if no change is needed, return
   if ( speed == this->speed ) return;
 
@@ -120,8 +118,6 @@ void SwOSDCMotor::setupLocal() {
   IN1 = GPIO_ACTOR[ctrl->getCPU()][port][0];
   IN2 = GPIO_ACTOR[ctrl->getCPU()][port][1];
 
-  // printf("SwOSDCMotor::setupLocal %s %d %d %d\n", getName(), port, IN1, IN2);
-
   // set digital ports IN1 & in2 to output
   gpio_config_t io_conf = {
     .pin_bit_mask = 0,
@@ -178,10 +174,10 @@ int16_t SwOSDCMotor::duty( void ) {
 
   // SWOSIO_MOTOR: Range 0..4095, no corrections
   if ( ioType == SWOSIO_MOTOR ) return abs(speed);
-
-  // DC Motors 100 % = 4095
+  
+    // DC Motors 100 % = 4095
   if ( ( speed <= -100 ) || ( speed >= 100 ) ) return 4095;
-
+  
   // set motor type specific parameters
   int32_t x45  = 2700;  // 4.5V power supply
   int32_t x90  = 1900;  // 9V power suppy
@@ -237,7 +233,9 @@ int16_t SwOSDCMotor::duty( void ) {
     xMin = x90;
   }
 
-  return xMin + int32_t( (xMax -xMin) ) * abs(speed) / 100;
+  int16_t duty = xMin + int32_t( (xMax -xMin) ) * abs(speed) / 100;
+
+  return duty;
 
 }
 
@@ -667,8 +665,6 @@ void SwOSServo::setRemote( ) {
 void SwOSDigitalServo::setupLocal() {
   // initialize local HW
 
-  // printf("SwOSDigitalServo::setupLocal\n");
-
   SERVO = GPIO_SERVO[ctrl->getCPU()][port];
 
   // set digital port  to output
@@ -736,19 +732,21 @@ void SwOSDigitalServo::setLocal() {
 
  // min/max positions
 
-#define RCSERVO_LOW  1600   // 1700.0
-#define RCSERVO_HIGH 3300   // 3750.0
-#define RCMAXDELTA   20
+#define RCSERVO_LOW  510 // 1600   // 1700.0
+#define RCSERVO_HIGH 870 // 3300   // 3750.0
+#define RCSERVO_RESOLUTION 90
+#define RCMAXDELTA   2
 
 SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSAnalogInput *poti, SwOSDCMotor *motor): SwOSServo( name, port, ctrl ) {
 
-  this->poti  = poti;
-  this->motor = motor;
-  this->pid   = new SwOSPID( 1.0, 1, 0, 0, 100, -motor->getMaxSpeed(), motor->getMaxSpeed() );
+  this->poti     = poti;
+  this->motor    = motor;
+  this->pid      = new SwOSPID( 0.25, 0.01, 0, -100, 100, -motor->getMaxSpeed(), motor->getMaxSpeed() );
+  this->target   = FILTER_INVALID;
+  this->offset   = RCSERVO_RESOLUTION / 2;
 
-  target   = poti->getValueI32();
-  position = ( ( target - RCSERVO_LOW ) / ( RCSERVO_HIGH - RCSERVO_LOW ) * 256 ) - offset;
- 
+  poti2position();
+
 }
 
 SwOSRCServo::~SwOSRCServo() {
@@ -759,6 +757,10 @@ SwOSRCServo::~SwOSRCServo() {
 
 }
 
+void SwOSRCServo::poti2position( ) {
+  position = ( ( (float) poti->getValueI32() - RCSERVO_LOW ) / ( RCSERVO_HIGH - RCSERVO_LOW ) * RCSERVO_RESOLUTION ) - offset;
+}
+
 void SwOSRCServo::operate(void) {
 
   // remote: no work
@@ -767,47 +769,32 @@ void SwOSRCServo::operate(void) {
   // read poti value to fill up the filters
   poti->operate();
 
+  // calc actual position
+  poti2position();
+
   // no target set - noting to do 
   if ( target == FILTER_INVALID ) return;
 
   int16_t speed;
   int16_t sensor = poti->getValueI32();
 
-  // target reached?
-  if ( abs( sensor - target ) < RCMAXDELTA ) { 
-    speed  = 0; 
-    target = FILTER_INVALID;
-
-/*
-  } else if ( ( sensor < RCSERVO_LOW ) || ( sensor > RCSERVO_HIGH ) ) {
-
-    printf("Endstop\n");
-    speed  = 0; 
-    target = FILTER_INVALID;
-*/
-
-  } else {
-
-    // calc next speed
-    speed = pid->solve( target, sensor );
+  speed = -pid->solve( target, sensor );
     
-  }
-
   if ( motor->getSpeed() != speed ) {
-    printf("setSpeed speed %d sensor %d\n", speed, sensor);
     motor->setSpeed( speed );
     motor->apply();
   }
+
+  if ( speed == 0 ) target = FILTER_INVALID;
 
 }
 
 void SwOSRCServo::setLocal( void ) {
 
   // calc poti's new target value
-  target = ( position + offset ) / 256.0 * ( RCSERVO_HIGH - RCSERVO_LOW ) + RCSERVO_LOW;
+  target = ( position + offset ) / (float) RCSERVO_RESOLUTION * ( RCSERVO_HIGH - RCSERVO_LOW ) + RCSERVO_LOW;
   if ( target > RCSERVO_HIGH ) target = RCSERVO_HIGH;
   if ( target < RCSERVO_LOW )  target = RCSERVO_LOW;
 
-  printf("RCServo::setLocal offset %d position %d target %d poti %d\n", offset, position, target, poti->getValueI32() );
-
 }
+
