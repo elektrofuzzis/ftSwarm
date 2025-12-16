@@ -80,9 +80,15 @@ public:
 
   // Get an IO in the swarm using controllers serial number, port and ioType. Returns the IO's alias name
   virtual void getAlias( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType, char *alias );
+ 
+  // Get an IO in the swarm using controllers serial number, port and ioType. Returns the IO's alias name
+  virtual void getAliasOrName( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType, char *alias );
 
   // Get an IO in the swarm using io's uid. Returns the IO's alias name
   virtual void getAlias( SwOSIOUID_t uio, char *alias ) { getAlias( uio.serialNumber, uio.port, uio.ioType, alias ); };
+
+  // Get an IO in the swarm using io's uid. Returns the IO's alias name
+  virtual void getAliasOrName( SwOSIOUID_t uio, char *alias ) { getAliasOrName( uio.serialNumber, uio.port, uio.ioType, alias ); };
 
   // Get an IO in the swarm using his name/alias and ioType. Returns the IO#s pointer or NULL if it doesn't exist.
   virtual SwOSIO* getIO( const char *name, SwOSIOType_t ioType = SWOSIO_UNDEF );

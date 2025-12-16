@@ -72,9 +72,17 @@ void SwOSMotor::serialize( Serialize *serialize ) {
   serialize->endObject();
 }
 
-void SwOSMotor::onTrigger( int32_t value ) {
+void SwOSMotor::onTrigger( FtSwarmTrigger_t event, int32_t value, int32_t parameter ) {
 
-  setSpeed( (int16_t) value );
+  int16_t p = parameter;
+  
+  if ( event == FTSWARM_TRIGGERADD )  p = getSpeed() + value;
+  if ( event == FTSWARM_TRIGGERVALUE) p = value;
+
+  if ( p >  getMaxSpeed() ) p = getMaxSpeed();
+  if ( p < -getMaxSpeed() ) p = -getMaxSpeed();
+
+  setSpeed( p );
   apply();
 
 }
@@ -635,9 +643,17 @@ void SwOSServo::setOffset( int16_t offset ) {
 
 }
 
-void SwOSServo::onTrigger( int32_t value ) {
+void SwOSServo::onTrigger( FtSwarmTrigger_t event, int32_t value, int32_t parameter ) {
 
-  setPosition( (int16_t) value );
+  int16_t p = parameter;
+  
+  if ( event == FTSWARM_TRIGGERADD )  p = getPosition() + value;
+  if ( event == FTSWARM_TRIGGERVALUE) p = value;
+
+  if ( p > getMaxPosition() ) p = getMaxPosition();
+  if ( p < getMinPosition() ) p = getMinPosition();
+
+  setPosition( p );
 
 }
 

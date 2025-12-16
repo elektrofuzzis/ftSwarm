@@ -408,6 +408,15 @@ void addController( void ) {
   }
 
   printf("Controller SN %d was added to the swarm.\n", serialNumber );
+
+  // wait max 1.5 minutes to get the controller connected
+  uint8_t i=0;
+  while ( !myOSSwarm.isOnline( serialNumber ) ) {
+    i++;
+    delay(100);
+    if (i > 15 ) break;
+  }
+  
   if ( !myOSSwarm.isOnline( serialNumber ) ) printf("\e[0;31mWARNING: Please switch controller #%d on.\e[0m\n", serialNumber);
 
   nvs.save( );
@@ -748,6 +757,7 @@ const char FTSWARMTRIGGER[FTSWARM_MAXTRIGGER][12] = {
   "TriggerDown",
   "TriggerUp",
   "ChangeValue",
+  "Add",
   "I2CRead",
   "I2CWrite"
 };
@@ -815,8 +825,8 @@ bool enterEvent( SwOSNVSEvent_t *event ) {
   if (! enterIO( prompt, &event->sensor, true  ) ) { return false; }
 
   // trigger
-  sprintf( prompt, "Enter trigger event (0) trigger down (1) trigger up (2) use sensor value [%d]: ", event->trigger );
-  event->trigger = (FtSwarmTrigger_t) enterNumber( prompt, event->trigger, 0, 2 );
+  sprintf( prompt, "Enter trigger event (0) trigger down (1) trigger up (2) use sensor value (3) add constant [%d]: ", event->trigger );
+  event->trigger = (FtSwarmTrigger_t) enterNumber( prompt, event->trigger, 0, 3 );
 
   // actor
   io = myOSSwarm.getIO( event->actor );
@@ -824,10 +834,18 @@ bool enterEvent( SwOSNVSEvent_t *event ) {
   else    sprintf( prompt, "Enter actor's name: " );
   if (! enterIO( prompt,  &event->actor,  false ) ) { return false; }
   
-  // constant value
-  if (event->trigger != FTSWARM_TRIGGERVALUE ) {
-    sprintf( prompt, "Enter value to apply to %s.%s() [%d]: ", myOSSwarm.getIO( event->actor )->getAlias(), getAction( event->actor ), event->parameter );
-    event->parameter = enterNumber( prompt, event->parameter, -4096, 0xFFFFFF );
+  // enter constant values
+  switch ( event->trigger ) {
+    case FTSWARM_TRIGGERADD:  sprintf( prompt, "Enter value to add to %s.%s() [%d]: ", myOSSwarm.getIO( event->actor )->getAlias(), getAction( event->actor ), event->parameter );
+                              event->parameter = enterNumber( prompt, event->parameter, -4096, 0xFFFFFF );
+                              break;
+
+    case FTSWARM_TRIGGERUP:
+    case FTSWARM_TRIGGERDOWN: sprintf( prompt, "Enter value to apply to %s.%s() [%d]: ", myOSSwarm.getIO( event->actor )->getAlias(), getAction( event->actor ), event->parameter );
+                              event->parameter = enterNumber( prompt, event->parameter, -4096, 0xFFFFFF );
+                              break;
+
+    default:                  break;
   }
 
   return true;
@@ -922,13 +940,19 @@ void remoteControl( void ) {
       events++;
         
       // add menu item
-      myOSSwarm.getAlias( nvs.events[nvs.activeEventConfig][i].sensor, sensor );
-      myOSSwarm.getAlias( nvs.events[nvs.activeEventConfig][i].actor,  actor  );
+      myOSSwarm.getAliasOrName( nvs.events[nvs.activeEventConfig][i].sensor, sensor );
+      myOSSwarm.getAliasOrName( nvs.events[nvs.activeEventConfig][i].actor,  actor  );
 
-      if ( nvs.events[nvs.activeEventConfig][i].trigger == FTSWARM_TRIGGERVALUE ) 
-        sprintf( value, "%s", sensor );
-      else
-        sprintf( value, "%d", nvs.events[nvs.activeEventConfig][i].parameter );
+      switch ( nvs.events[nvs.activeEventConfig][i].trigger ) {
+        case FTSWARM_TRIGGERVALUE:  sprintf( value, "%s", sensor ); 
+                                    break;
+
+        case FTSWARM_TRIGGERADD:    sprintf( value, "add %s", sensor ); 
+                                    break;
+
+        default:                    sprintf( value, "%d", nvs.events[nvs.activeEventConfig][i].parameter );
+                                    break;
+      }
 
       sprintf(line, "%s.%s -> %s.%s(%s)", sensor, FTSWARMTRIGGER[nvs.events[nvs.activeEventConfig][i].trigger], actor, getAction(nvs.events[nvs.activeEventConfig][i].actor), value );
       menu.add( line, "", i+1 );

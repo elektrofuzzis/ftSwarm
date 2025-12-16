@@ -468,6 +468,17 @@ void SwOSSwarm::getAlias( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port
 
 }
 
+void SwOSSwarm::getAliasOrName( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType, char *alias ) {
+
+  SwOSIO* io=getIO( serialNumber, port, ioType );
+  if (io) 
+    strcpy( alias, io->getAliasOrName() );
+  else
+    // offline?
+    strcpy( alias, "???" );
+
+}
+
 SwOSIO* SwOSSwarm::getIO( const char *name, SwOSIOType_t ioType ) {
 
   SwOSIO   *io   = NULL;

@@ -219,11 +219,21 @@ void SwOSPixel::serialize( Serialize *serialize ) {
   serialize->endObject();
 }
 
-void SwOSPixel::onTrigger( int32_t value ) {
+void SwOSPixel::onTrigger( FtSwarmTrigger_t event, int32_t value, int32_t parameter ) {
+
+  int32_t p = parameter;
+  
+  if ( event == FTSWARM_TRIGGERADD )  p = getColor() + value;
+  if ( event == FTSWARM_TRIGGERVALUE) p = value;
+
+  if ( p < 0 )         p = 0;
+  if ( p > 0xFFFFFFL ) p = 0xFFFFFFL;
 
   setColor( (uint32_t) value );
   
-}/***************************************************
+}
+
+/***************************************************
  *
  *   SwOSOLED
  *

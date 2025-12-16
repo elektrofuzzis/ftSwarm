@@ -48,7 +48,7 @@ class SwOSAnalogInput;
     virtual void            setMotionType( FtSwarmMotion_t motionType );
     virtual FtSwarmMotion_t getMotionType() { return motionType; }; 
     virtual void            serialize( Serialize *serialize ); // serialize object to JSON
-    virtual void            onTrigger( int32_t value );
+    virtual void            onTrigger( FtSwarmTrigger_t event, int32_t value, int32_t parameter );
     virtual void            operate( void );
     virtual bool            isMotor( void ) { return true; };
     virtual bool            isActor( void ) { return true; };
@@ -185,10 +185,12 @@ class SwOSDCMotor : public SwOSMotor {
     
     // administrative stuff
     virtual void serialize( Serialize *serialize );
-    virtual void onTrigger( int32_t value );
+    virtual void onTrigger( FtSwarmTrigger_t event, int32_t value, int32_t parameter );
     virtual void adjust( void ) {};
-    virtual bool isServo( void ) { return true; };
-    virtual bool isActor( void ) { return true; };
+    virtual bool isServo( void ) override { return true; };
+    virtual bool isActor( void ) override { return true; };
+    virtual int16_t getMaxPosition( void ) { return 256 - offset; };
+    virtual int16_t getMinPosition( void ) { return 0 - offset; };
 
     // commands
 	  virtual int16_t getOffset( )   { return offset; };

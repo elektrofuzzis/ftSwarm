@@ -59,7 +59,8 @@ const char IO_ICON[SWOSIO_MAXIOTYPE][10] =
     "B.svg",          // TODO SMotor
     "B.svg",          // TODO PowerMotor
     "B.svg",          // TODO MMotor
-    "B.svg"           // TODO RCMotor
+    "B.svg",          // TODO RCMotor
+    "O.svg"           // servo
   };
 
 SwOSUIClass_t UI_CLASS[SWOSIO_MAXIOTYPE] = 
@@ -103,7 +104,8 @@ SwOSUIClass_t UI_CLASS[SWOSIO_MAXIOTYPE] =
     UICLASS_MOTOR,
     UICLASS_MOTOR,
     UICLASS_MOTOR,
-    UICLASS_MOTOR
+    UICLASS_MOTOR,
+    UICLASS_SERVO,
   };
   
 
@@ -187,14 +189,22 @@ bool SwOSObj::equals( const char *name ) {
 
 }
 
-char * SwOSObj::getName( ) {
+char* SwOSObj::getName( ) {
   return _name;
 }
 
 
-char * SwOSObj::getAlias( ) {
+char* SwOSObj::getAlias( ) {
   if (!_alias) {
     return (char *) EMPTYSTRING;
+  } else {
+    return _alias;
+  }
+}
+
+char* SwOSObj::getAliasOrName( ) {
+  if (!_alias) {
+    return _name;
   } else {
     return _alias;
   }
@@ -300,7 +310,7 @@ void SwOSIO::serialize( Serialize *serialize ) {
   serialize->item( SERIALIZE_LITERAL_ACTIVE, ( _alias != NULL ) || isInUse() );
 }
 
-void SwOSIO::onTrigger( int32_t value ) {
+void SwOSIO::onTrigger( FtSwarmTrigger_t event, int32_t value, int32_t parameter ) {
   SWARM_LOG_ERROR( "IO is unable to handle trigger events." );
 }
 
@@ -447,8 +457,7 @@ void SwOSEventInput::trigger( FtSwarmTrigger_t triggerEvent, int32_t value ) {
     // same trigger type & actor?
     if ( ( e->actor ) && ( e->trigger == triggerEvent ) ) {
 
-      // send port value? or static parameter ?
-      e->actor->onTrigger( (e->trigger == FTSWARM_TRIGGERVALUE)?value:e->parameter );
+      e->actor->onTrigger( e->trigger, value, e->parameter );
 
     }
     

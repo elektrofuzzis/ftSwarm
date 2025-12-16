@@ -77,6 +77,7 @@ public:
   
 	void setAlias( const char *alias); // add an alias name
   char *getAlias();                  // get alias
+  char *getAliasOrName();            // get alias or name (if an alis isn't set)
 
 	bool equals(const char *name);     // check if hw name or alias is equal to name
 
@@ -149,7 +150,7 @@ public:
   virtual bool isStepper( void )      { return false; };
 
   virtual void operate( void ) { };
-  virtual void onTrigger( int32_t value );
+  virtual void onTrigger( FtSwarmTrigger_t event, int32_t value, int32_t parameter );
 
 };
 
