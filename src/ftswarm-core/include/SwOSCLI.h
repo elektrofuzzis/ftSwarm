@@ -60,7 +60,8 @@ typedef enum {
   ERROR_ALIASNOTNUNIQUE,
   ERROR_PARAMETEREXPECTED,
   ERROR_SSIDEXPECTED,
-  ERROR_PSKEXPECTED
+  ERROR_PSKEXPECTED,
+  ERROR_NOTIMPLEMENTEDYET
 } Error_t;
 
 class SwOSCLI {
@@ -111,6 +112,7 @@ class SwOSCLI {
     void executeIOCommand( void );
     void executeControllerCmd( void );
     void executeSwarmCmd( bool *loggedIn );
+    void executeNVSCmd( bool *loggedIn );
     void startCLI( bool noEcho );
     void halt( void );
 

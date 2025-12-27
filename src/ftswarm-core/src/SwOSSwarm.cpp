@@ -963,7 +963,7 @@ bool SwOSSwarm::deleteEvent( SwOSNVSEvent_t *event ) {
   // sensor or actor doesn't exist
   if ( (!sensor) || (!actor) ) return false;
 
-  return sensor->deleteEvent( event->trigger, actor );
+  return sensor->deleteEvent( event->triggerMath.bits.trigger, event->triggerMath.bits.op, actor );
 
 }
 
@@ -980,7 +980,7 @@ bool SwOSSwarm::addEvent( SwOSNVSEvent_t *event ) {
   // sensor or actor doesn't exist
   if ( (!sensor) || (!actor) ) return false;
 
-  return sensor->addEvent( event->trigger, actor, event->parameter );
+  return sensor->addEvent( event->triggerMath.bits.trigger, event->triggerMath.bits.op, event->triggerMath.bits.v1, event->triggerMath.bits.v2, actor, event->parameter );
 
 }
 

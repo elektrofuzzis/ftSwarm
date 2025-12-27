@@ -1445,11 +1445,14 @@ bool SwOSCtrl::hasGyro( void ) {
   // already initialized or HW with integrated gyro
   if ( ( CPU == FTSWARMRS_2V0 ) ||
        ( CPU == FTSWARMRS_2V1 ) ||
-       ( CPU == FTSWARMRC_1V140 )
+       ( CPU == FTSWARMRC_1V140 ) ||
+       ( CPU == FTSWARMCONTROL_1V3UC )
      ) return true;
 
   // check on MPU6050
-  return Wire.requestFrom( 0x68, 1 );
+  Wire.beginTransmission(0x68);
+  return Wire.endTransmission(true) == 0;
+  // return Wire.requestFrom( 0x68, 1 );
 
 }
 

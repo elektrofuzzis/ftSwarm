@@ -72,17 +72,9 @@ void SwOSMotor::serialize( Serialize *serialize ) {
   serialize->endObject();
 }
 
-void SwOSMotor::onTrigger( FtSwarmTrigger_t event, int32_t value, int32_t parameter ) {
+void SwOSMotor::onTrigger( SwOSTriggerMath_t triggerMath, int32_t sensor, int32_t parameter ) {
 
-  int16_t p = parameter;
-  
-  if ( event == FTSWARM_TRIGGERADD )  p = getSpeed() + value;
-  if ( event == FTSWARM_TRIGGERVALUE) p = value;
-
-  if ( p >  getMaxSpeed() ) p = getMaxSpeed();
-  if ( p < -getMaxSpeed() ) p = -getMaxSpeed();
-
-  setSpeed( p );
+  setSpeed( evalTriggerMath( triggerMath, sensor, getSpeed(), parameter, -getMaxSpeed(), getMaxSpeed() ) );
   apply();
 
 }
@@ -643,17 +635,9 @@ void SwOSServo::setOffset( int16_t offset ) {
 
 }
 
-void SwOSServo::onTrigger( FtSwarmTrigger_t event, int32_t value, int32_t parameter ) {
+void SwOSServo::onTrigger( SwOSTriggerMath_t triggerMath, int32_t sensor, int32_t parameter ) {
 
-  int16_t p = parameter;
-  
-  if ( event == FTSWARM_TRIGGERADD )  p = getPosition() + value;
-  if ( event == FTSWARM_TRIGGERVALUE) p = value;
-
-  if ( p > getMaxPosition() ) p = getMaxPosition();
-  if ( p < getMinPosition() ) p = getMinPosition();
-
-  setPosition( p );
+  setPosition( evalTriggerMath( triggerMath, sensor, getPosition(), parameter, getMinPosition(), getMaxPosition() ) );
 
 }
 

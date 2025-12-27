@@ -23,12 +23,14 @@ SwOSNVS nvs;
 bool cmpEvent( SwOSNVSEvent_t *a, SwOSNVSEvent_t *b ) {
 
   // 2 identical
-  // 1 only parameter different
+  // 1 only parameters different
   // 0 else
 
-  if ( memcmp( a, b, sizeof(SwOSNVSEvent_t) - sizeof( int32_t ) ) == 0 ) {
+  if ( ( memcmp( a, b, sizeof(SwOSIOUID_t) *2 ) == 0 ) && 
+       ( a->triggerMath.bits.trigger == b->triggerMath.bits.trigger ) &&
+       ( a->triggerMath.bits.op      == b->triggerMath.bits.op  ) ) {
 
-    if ( a->parameter == b->parameter ) return 2;
+    if ( (a->triggerMath.raw == b->triggerMath.raw) && ( a->parameter == b->parameter ) ) return 2;
     else return 1;
 
   } else return 0;
@@ -112,7 +114,7 @@ SwOSNVS::SwOSNVS() {
   swarmPIN           = 9999;
   swarmName[0]       = '\0';
   webUI              = true;
-  swarmCommunication = swarmComWifi;
+  swarmCommunication = SWARMCOM_WIFI;
   IAmKelda           = true;
   memset( &swarmMember, 0, sizeof( swarmMember ) );
   extensionPort      = FTSWARM_EXT_OFF;
@@ -217,12 +219,12 @@ bool SwOSNVS::load() {
   // ExtentionPort
   nvs_get_u32( my_handle, "extensionPort", (uint32_t *) &extensionPort);
   if ( ( controllerType == FTSWARMCONTROL ) && ( extensionPort == FTSWARM_EXT_OFF ) ) { extensionPort = FTSWARM_EXT_I2C_MASTER; }
-  nvs_get_u8 ( my_handle, "I2CAddr", &I2CAddr );
+  nvs_get_u8 ( my_handle, "I2CAddr",        &I2CAddr );
   nvs_get_u8 ( my_handle, "interruptLine", &interruptLine );
   nvs_get_i16( my_handle, "interruptLow",  &interruptOnOff[0] );
   nvs_get_i16( my_handle, "interruptHigh", &interruptOnOff[1] );
-  nvs_get_u8 ( my_handle, "I2CRegisters", &I2CRegisters );
-  nvs_get_u8 ( my_handle, "Gyro",    (uint8_t *) &gyro);
+  nvs_get_u8 ( my_handle, "I2CRegisters",  &I2CRegisters );
+  nvs_get_u8 ( my_handle, "Gyro",          (uint8_t *) &gyro);
 
   nvs_close( my_handle );
 
@@ -279,13 +281,13 @@ void SwOSNVS::save( bool writeAll ) {
   nvs_set_u8 ( my_handle,  "webUI",   (uint8_t) webUI );
 
   // extensionPort
-  nvs_set_u8 ( my_handle, "I2CAddr", I2CAddr );
+  nvs_set_u8 ( my_handle, "I2CAddr",       I2CAddr );
   nvs_set_u8 ( my_handle, "interruptLine", interruptLine );
-  nvs_set_i16( my_handle, "interruptLow", interruptOnOff[0] );
+  nvs_set_i16( my_handle, "interruptLow",  interruptOnOff[0] );
   nvs_set_i16( my_handle, "interruptHigh", interruptOnOff[1] );
-  nvs_set_u8 ( my_handle, "I2CRegisters", I2CRegisters );
+  nvs_set_u8 ( my_handle, "I2CRegisters",  I2CRegisters );
   nvs_set_u32( my_handle, "extensionPort", (uint32_t) extensionPort);
-  nvs_set_u8 ( my_handle, "Gyro",    (uint8_t)  gyro);
+  nvs_set_u8 ( my_handle, "Gyro",          (uint8_t)  gyro);
 
   // commit
   nvs_commit( my_handle );
@@ -369,7 +371,7 @@ void SwOSNVS::factorySettings( void ) {
   swarmSecret        = generateSecret( serialNumber ); 
   swarmPIN           = serialNumber;
   IAmKelda           = true;
-  swarmCommunication = swarmComWifi;
+  swarmCommunication = SWARMCOM_WIFI;
   swarmSpeed         = 4;
 
   for (uint8_t j=0;j<4;j++) {
@@ -472,13 +474,20 @@ void SwOSNVS::printNVS() {
   printf( "serialNumber: %d\n", serialNumber );
   printf( "wifiMode: %d\n", wifiMode );
   printf( "wifiSSID: >%s<\n", wifiSSID );
-  printf( "wifiPwd: >%s<\n", wifiPwd );
+  printf( "pixels: %d\n", pixels );
+  printf( "gyro: %d\n", gyro );
+  printf( "extensionPort: %d\n", extensionPort );
+  printf( "I2CAddr: %d\n", I2CAddr );
+  printf( "I2CRegisters: %d\n", I2CRegisters );
+  printf( "InterruptLine: %d\n", interruptLine );
+  printf( "interruptOnOff: %d %d\n", interruptOnOff[0], interruptOnOff[1] );
   printf( "swarmSecret: 0x%4X\n", swarmSecret );
   printf( "swarmPIN: %d\n", swarmPIN );
   printf( "swarmName: >%s<\n", swarmName );
   printf( "IAmKelda: %d\n", IAmKelda );
+  printf( "calibration: %d %d %d %d\n", calibration[0], calibration[1], calibration[2], calibration[3] );
   printf( "swarmCommunication %d\n", swarmCommunication );
-  printf( "pixels: %d\n", pixels );
+  printf( "swarmSpeed %d\n", swarmSpeed );
 
   printf( "swarm members:");
   for (uint8_t i=0; i<MAXCTRL; i++) { if (swarmMember[i]) printf(" %d", swarmMember[i]); }
@@ -503,7 +512,7 @@ void SwOSNVS::printNVS() {
                   events[c][i].sensor.serialNumber, events[c][i].sensor.ioType, events[c][i].sensor.port,
                   events[c][i].actor.serialNumber,  events[c][i].actor.ioType,  events[c][i].actor.port,
                   events[c][i].parameter,
-                  events[c][i].trigger
+                  events[c][i].triggerMath.raw
                 );
         }
       }

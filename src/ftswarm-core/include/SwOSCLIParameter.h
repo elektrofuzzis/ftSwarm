@@ -61,6 +61,7 @@ typedef enum {
   CLICMD_isHoming,
   CLICMD_setHomingOffset,
   CLICMD_testPixels,
+  CLICMD_print,
   CLICMD_MAX
 } CLICmd_t;
 

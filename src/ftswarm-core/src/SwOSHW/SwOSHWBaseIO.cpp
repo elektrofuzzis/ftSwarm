@@ -244,6 +244,44 @@ bool SwOSIO::isOnline( void ) {
   return ctrl->isOnline();
 };
 
+int32_t SwOSIO::evalOperand( FtSwarmOperand_t v, int32_t sensor, int32_t actor, int32_t parameter ) {
+
+  switch (v) {
+    case FTSWARM_CONSTANT:    return parameter;
+    case FTSWARM_SENSORVALUE: return sensor;
+    case FTSWARM_ACTORVALUE:  return actor;
+  }
+
+  // dead code to feed the compiler
+  return 0;
+
+}
+
+int32_t SwOSIO::evalTriggerMath( SwOSTriggerMath_t triggerMath, int32_t sensor, int32_t actor, int32_t parameter, int32_t minValue, int32_t maxValue ) {
+
+
+
+  // get operands
+  int32_t v1 = evalOperand( triggerMath.bits.v1, sensor, actor, parameter );
+  int32_t v2 = evalOperand( triggerMath.bits.v1, sensor, actor, parameter );
+
+  // calculate
+  int32_t r = 0;
+  switch (triggerMath.bits.op) {
+    case FTSWARM_ADD:      r = v1;    break;
+    case FTSWARM_ASSIGN:   r = v1+v2; break;
+    case FTSWARM_MULTIPLY: r = v1*v2; break;
+  }
+  
+  // check on bounderies
+  if ( r < minValue ) r = minValue;
+  if ( r > maxValue ) r = maxValue;
+
+  // done
+  return r;
+  
+}
+
 void SwOSIO::loadFromNVS( nvs_handle_t my_handle ) {
 
   uint8_t blob[MAXIDENTIFIER+2];
@@ -303,6 +341,16 @@ SwOSUIClass_t SwOSIO::getUIClass() {
 
 }
 
+void SwOSIO::getUID( SwOSIOUID_t *uid ) {
+
+  if (!uid) return;
+
+  uid->serialNumber = getCtrl()->serialNumber;
+  uid->ioType       = getIOType();
+  uid->port         = getPort();
+
+}
+
 void SwOSIO::serialize( Serialize *serialize ) {
   SwOSObj::serialize( serialize );
   serialize->item( SERIALIZE_LITERAL_TYPE, getUIClass() );
@@ -310,7 +358,7 @@ void SwOSIO::serialize( Serialize *serialize ) {
   serialize->item( SERIALIZE_LITERAL_ACTIVE, ( _alias != NULL ) || isInUse() );
 }
 
-void SwOSIO::onTrigger( FtSwarmTrigger_t event, int32_t value, int32_t parameter ) {
+void SwOSIO::onTrigger( SwOSTriggerMath_t triggerMath, int32_t sensor, int32_t parameter ) {
   SWARM_LOG_ERROR( "IO is unable to handle trigger events." );
 }
 
@@ -351,10 +399,10 @@ SwOSEventHandler::~SwOSEventHandler( ) {
   
 }
 
-SwOSEventHandler::SwOSEventHandler( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, int32_t parameter  ) {
-  this->trigger        = triggerEvent;
-  this->actor          = actor;
-  this->parameter      = parameter;
+SwOSEventHandler::SwOSEventHandler( SwOSTriggerMath_t triggerMath, SwOSIO *actor, int32_t parameter  ) {
+  this->triggerMath = triggerMath;
+  this->actor       = actor;
+  this->parameter   = parameter;
 
   actor->take();
 
@@ -372,11 +420,23 @@ SwOSEventInput::~SwOSEventInput() {
 
 }
 
-bool SwOSEventInput::addEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, int32_t parameter ) {
+SwOSTriggerMath_t genTriggerMath( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2) {
+
+  SwOSTriggerMath_t tm;
+  tm.bits.trigger = triggerEvent;
+  tm.bits.op      = op;
+  tm.bits.v1      = v1;
+  tm.bits.v2      = v2;
+
+  return tm;
+
+}
+
+bool SwOSEventInput::addEvent( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, SwOSIO *actor, int32_t parameter ) {
 
   // first event?
   if (!eventList) {
-    eventList = new SwOSEventHandler( triggerEvent, actor, parameter );
+    eventList = new SwOSEventHandler( genTriggerMath( triggerEvent, op, v1, v2 ), actor, parameter );
     return true;
   }
 
@@ -385,7 +445,9 @@ bool SwOSEventInput::addEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, int
   while (e) {
 
     // same event, replace parameter 
-    if ( ( e->trigger == triggerEvent ) && ( e->actor == actor ) ) {
+    if ( ( e->triggerMath.bits.trigger == triggerEvent ) && 
+         ( e->triggerMath.bits.op      == op ) && 
+         ( e->actor == actor ) ) {
       e->parameter = parameter;
       return true;
     }
@@ -393,7 +455,7 @@ bool SwOSEventInput::addEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, int
     // EOL?
     if (e->next) e = e->next;
     else {
-      e->next = new SwOSEventHandler( triggerEvent, actor, parameter );
+      e->next = new SwOSEventHandler( genTriggerMath( triggerEvent, op, v1, v2 ), actor, parameter );
       return true;
     }
 
@@ -412,7 +474,7 @@ void SwOSEventInput::deleteEvents( void ) {
 
 }
 
-bool SwOSEventInput::deleteEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor ) {
+bool SwOSEventInput::deleteEvent( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, SwOSIO *actor ) {
 
   SwOSEventHandler *e   = eventList;
   SwOSEventHandler *old = NULL;
@@ -421,7 +483,9 @@ bool SwOSEventInput::deleteEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor )
   if (!eventList) return false;
 
   // first element fits
-  if ( ( eventList->trigger == triggerEvent ) && ( eventList->actor == actor ) ) {
+  if ( ( eventList->triggerMath.bits.trigger == triggerEvent ) && 
+       ( eventList->triggerMath.bits.op      == op ) &&
+       ( eventList->actor == actor ) ) {
     old = eventList;
     eventList = eventList->next;
     old->next = NULL;
@@ -432,7 +496,9 @@ bool SwOSEventInput::deleteEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor )
   while (e->next) {
 
     // just check if the next element is the one to kill
-    if ( ( e->next->trigger == triggerEvent ) && ( e->next->actor == actor ) ) {
+    if ( ( e->next->triggerMath.bits.trigger == triggerEvent ) &&
+         ( e->next->triggerMath.bits.op      == op ) &&
+         ( e->next->actor == actor ) ) {
       old = e->next;
       e->next = e->next->next;
       old->next = NULL;
@@ -448,16 +514,16 @@ bool SwOSEventInput::deleteEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor )
   
 }
 
-void SwOSEventInput::trigger( FtSwarmTrigger_t triggerEvent, int32_t value ) {
+void SwOSEventInput::trigger( FtSwarmTrigger_t triggerEvent, int32_t sensor ) {
 
   SwOSEventHandler *e = eventList;
 
   while (e) {
 
     // same trigger type & actor?
-    if ( ( e->actor ) && ( e->trigger == triggerEvent ) ) {
+    if ( ( e->actor ) && ( e->triggerMath.bits.trigger == triggerEvent ) ) {
 
-      e->actor->onTrigger( e->trigger, value, e->parameter );
+      e->actor->onTrigger( e->triggerMath, sensor, e->parameter );
 
     }
     
@@ -583,7 +649,10 @@ void SwOSInput::serializeEvents( Serialize *serialize ) {
       serialize->startObject( );
       serialize->item( SERIALIZE_LITERAL_SENSOR, sensor );
       serialize->item( SERIALIZE_LITERAL_ACTOR,  actor );
-      serialize->item( SERIALIZE_LITERAL_TRIGGER, e->trigger );
+      serialize->item( SERIALIZE_LITERAL_TRIGGER, e->triggerMath.bits.trigger );
+      serialize->item( SERIALIZE_LITERAL_OPERATOR, e->triggerMath.bits.op );
+      serialize->item( SERIALIZE_LITERAL_OPERAND1, e->triggerMath.bits.v1 );
+      serialize->item( SERIALIZE_LITERAL_OPERAND2, e->triggerMath.bits.v2 );
       serialize->item( SERIALIZE_LITERAL_VALUE,   e->parameter );
       serialize->endObject( );
 

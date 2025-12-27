@@ -261,6 +261,19 @@ void enterString( const char *prompt, char *s, uint16_t size, bool hidden ) {
   
 }
 
+void enterString( const char *prompt, char *d, char *s, uint16_t size, bool hidden ) {
+
+  char *input = (char *) calloc( 1, size );
+  
+  enterString( prompt, input, size, hidden );
+  
+  if (input[0] != '\0') strcpy( s, input );
+  else                  strcpy( s, d );
+
+  free(input);
+  
+}
+
 void enterIdentifier( const char *prompt, char *s, uint16_t size ) {
 
   if (!enterSomething( prompt, s, size, false, isalnum, isValidIdentifier ) ) s[0] = '\0';
@@ -326,17 +339,88 @@ bool yesNo( const char *prompt, bool defaultValue ) {
 
 }
 
+char    validMenuChars[20];
+uint8_t minValidMenu;
+uint8_t maxValidMenu;
 
-void Menu::start( const char *prompt, uint8_t spacer, uint16_t maxMenuItems, char delimiter ) { 
+int isValidMenu( char *str ) {
 
-  if (id) free(id);
-  id = (uint8_t *) malloc( maxMenuItems );
+  // empty?
+  if ( str[0] == '\0' ) return 1;
+
+  // number?
+  if ( isdigit( str[0] ) ) {
+
+    if (!isValidInteger(str)) return 0;
+
+    // get value
+    int v = atoi(str);
+
+    // 0?
+    if ( ( v == 0) && ( maxValidMenu != 0 ) ) return 0;
+
+    // to big?
+    if ( v > maxValidMenu ) return 0;
+
+    // big enough?
+    if ( v >= minValidMenu ) return 1;
+
+    // already 2 digits?
+    if (  v >= 10  ) return 0;
+
+    // any chance?
+    if ( ( ( v * 10 + minValidMenu % 10 ) >= minValidMenu ) &&
+         ( ( v * 10 + maxValidMenu % 10 ) <= maxValidMenu ) ) return 1;
+
+    // wrong number
+    return 0;
+
+  }
+
+  // just one key!
+  if (str[1] != '\0' ) return 0;
+
+  // allowed?
+  if (strchr( validMenuChars, str[0] ) ) return 1;
+
+  // done
+  return 0;
+  
+
+}
+
+void Menu::enterString( const char *prompt, char *s, uint16_t size ) {
+
+  // setup vaildMenuChars, minValidMenu and maxValidMenu
+  minValidMenu = 255;
+  maxValidMenu = 0;
+  int maxChar = -1;
+
+  for (int8_t i=0; i<=maxItem; i++ ) {
+    
+    if ( key[i] ) validMenuChars[++maxChar] = key[i];
+
+    else {
+      
+      if ( id[i] < minValidMenu ) minValidMenu = id[i];
+      if ( id[i] > maxValidMenu ) maxValidMenu = id[i];
+
+    }
+
+  }
+
+  validMenuChars[++maxChar] = '\0';
+
+  // ask user
+  if (!enterSomething( prompt, s, size, false, isprint, isValidMenu ) ) s[0] = '\0';
+  
+}
+
+void Menu::start( const char *prompt, uint8_t spacer, char delimiter ) { 
 
   maxItem = 0; 
-  id[0]   = 0;
   this->delimiter = delimiter;
   this->spacer = spacer;
-  this->maxMenuItems = maxMenuItems;
   strcpy( this->prompt, (char *) prompt ); 
 
   // print Headline
@@ -344,32 +428,57 @@ void Menu::start( const char *prompt, uint8_t spacer, uint16_t maxMenuItems, cha
 
 };
 
-void Menu::add( const char *item, int value, uint8_t id ) {
+bool Menu::add( const char *item, int value, uint8_t id, char key ) {
 
   char dummy[40];
+  
   sprintf( dummy, "%d", value );
-  add( item, dummy, id );
+  return add( item, dummy, id, key );
+
 }
 
-void Menu::addF( const char *item, float value, uint8_t id ) {
+bool Menu::addF( const char *item, float value, uint8_t id, char key ) {
 
   char dummy[40];
   sprintf( dummy, "%f", value );
-  add( item, dummy, id );
+
+  return add( item, dummy, id, key );
+
 }
 
-void Menu::add( const char *value, uint8_t id ) {
-  add( "", value, id );
+bool Menu::add( const char *value, uint8_t id, char key ) {
+
+  return add( "", value, id, key );
+
 }
 
-void Menu::add( const char *item, const char *value, uint8_t id, bool staticDelimiter ){
+bool Menu::add( uint8_t id, char key ) {
 
-  if ( maxItem >= maxMenuItems-2 ) return;
+  if ( maxItem >= MAXMENUITEMS ) false;
 
   maxItem++;
-  if ( id==DEACTIVATED ) printf( "(--) %s", item );
-  else if (maxMenuItems < 100 ) printf( "(%2d) %s", maxItem, item );
-  else printf( "(%3d) %s", maxItem, item );
+  this->id[maxItem]  = id;
+  this->key[maxItem] = toupper( key );
+
+  return true;
+
+}
+
+bool Menu::addExit( void ) {
+
+  printf("\n");
+  return add( "Exit", "", MENU_EXIT, 'x' );
+
+}
+
+bool Menu::add( const char *item, const char *value, uint8_t id, char key, bool staticDelimiter ) {
+
+  if (!add( id, key)) return false;
+
+  if      ( ( key != '\0' ) && ( id!=MENU_DEACTIVATED ) ) printf( "(%c)  %s", key, item );
+  else if ( ( key != '\0' ) && ( id==MENU_DEACTIVATED ) ) printf( "     %s", item );
+  else if ( ( key == '\0' ) && ( id==MENU_DEACTIVATED ) ) printf( "(--) %s", item );
+  else                                                   printf( "(%2d) %s", maxItem, item );
   
   if ( ( value[0] != '\0' ) || ( staticDelimiter ) ) {
     printf("%c ", delimiter);
@@ -379,20 +488,50 @@ void Menu::add( const char *item, const char *value, uint8_t id, bool staticDeli
     printf("\n");
   }
 
-  this->id[maxItem] = id;
+  return true;
 
 }
 
 int8_t Menu::userChoice( void ) {
 
-  if (maxMenuItems < 100 ) printf("\n( 0) exit\n%s", prompt);
-  else printf("\n(  0) exit\n%s", prompt);
-  
-  // asking user
-  uint16_t choice = enterNumber( ">", maxItem+1, 0, maxItem );
-  if ( choice > maxItem ) 
-    return -1; 
-  else 
-    return id[ choice ];
+  char str[10];
+
+  printf("\n");
+
+  // ask user
+  while (1) {
+
+    printf(prompt);
+    // ask user
+    enterString( ">", str, 10 );
+
+    // try, if it's a number
+    int8_t choice = atoi( str );
+
+    // don't accept negative user inputs
+    if (choice < 0 ) continue;
+
+    // count non-key entries
+    uint8_t item = 0;
+
+    // test all items
+    for (uint8_t i=1; i<=maxItem; i++) {
+
+      // test on a key
+      if ( key[i] != '\0' ) {
+        if ( ( key[i] == toupper( str[0] ) ) && ( str[1] == '\0') ) return id[i];
+
+      // test on a number
+      } else {
+        item++;
+        if ( choice == item ) return id[i];
+      }
+
+    }
+
+  }
+
+  return -1;
 
 }
+

@@ -527,8 +527,8 @@ static void tx_Wifi( SwOSCom *com ) {
 static void tx_task( void *pvParameters) {
 
   SwOSCom com;
-  bool wifi  = ( myOSNetwork.communication & swarmComWifi );
-  bool rs485 = ( myOSNetwork.communication & swarmComRS485 );
+  bool wifi  = ( myOSNetwork.communication & SWARMCOM_WIFI );
+  bool rs485 = ( myOSNetwork.communication & SWARMCOM_RS485 );
 
   while(1) {
 
@@ -773,7 +773,7 @@ bool SwOSNetwork::_StartRS485( void ) {
     UART1.rs485_conf.rs485tx_rx_en = 1;   // loopback
     UART1.rs485_conf.rs485rxby_tx_en = 0; // don't send data if receiver is busy - reduce collitions
 
-    if ( myOSNetwork.communication & swarmComRS485 ) {
+    if ( myOSNetwork.communication & SWARMCOM_RS485 ) {
       xTaskCreatePinnedToCore( RS485_rx_task, "RS485_rx_task", 10240, NULL, 12, NULL, SWOSCORE );
     }
 
@@ -826,7 +826,7 @@ bool SwOSNetwork::begin( uint16_t swarmSecret, uint16_t swarmPIN, FtSwarmCommuni
     ok = ok && _StartWifi( );
   } 
 
-  if ( swarmCommunication & swarmComRS485 ) {
+  if ( swarmCommunication & SWARMCOM_RS485 ) {
     // initialize RS485
     ok = ok && _StartRS485( );
   }

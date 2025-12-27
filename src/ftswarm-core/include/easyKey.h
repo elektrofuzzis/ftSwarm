@@ -12,7 +12,9 @@
 #include <stdint.h>
 #include <climits>
 
-#define DEACTIVATED 255
+#define MENU_EXIT        100
+#define MENU_DEACTIVATED 101
+#define MENU_NOKEY       1
 
 int isValidFloat( char *str );
 // test, if str is a valid float number
@@ -44,24 +46,33 @@ float enterNumberF( const char *prompt, float defaultValue, float minValue, floa
 void enterString( const char *prompt, char *s, uint16_t size, bool hidden = false );
 // write a prompt and read a string from serial
 
+void enterString( const char *prompt, char *d, char *s, uint16_t size, bool hidden = false );
+
 void enterIdentifier( const char *prompt, char *s, uint16_t size );
 // write a prompt and read an identifier from serial
 
+#define MAXMENUITEMS 99
+
 class Menu {
   private:
-    uint8_t  maxItem = 0;
+    int8_t   maxItem = -1;
     uint8_t  spacer = 0;
-    uint16_t maxMenuItems = 40;
-    uint8_t  *id = NULL;
+    uint8_t  id[MAXMENUITEMS];
+    uint8_t  num[MAXMENUITEMS];
+    char     key[MAXMENUITEMS];
     char     delimiter = ' ';
     char     prompt[40];
 
+  private:
+    void   enterString( const char *prompt, char *s, uint16_t size );
+
   public:
-    ~Menu() { if (id) free(id); };
-    void   start( const char *prompt, uint8_t spacer, uint16_t maxMenuItems = 40, char delimiter = ':' );
-    void   add( const char *item, const char *value, uint8_t id, bool staticDelimiter = false );
-    void   add( const char *item, int value, uint8_t id );
-    void   add( const char *value, uint8_t id);
-    void   addF( const char *item, float value, uint8_t id );
+    void   start( const char *prompt, uint8_t spacer, char delimiter = ':' );
+    bool   add( const char *item, const char *value, uint8_t id, char key = '\0', bool staticDelimiter = false );
+    bool   add( const char *item, int value, uint8_t id, char key = '\0' );
+    bool   add( uint8_t id, char key = '\0' );
+    bool   add( const char *value, uint8_t id, char key = '\0' );
+    bool   addF( const char *item, float value, uint8_t id, char key = '\0' );
+    bool   addExit( void );
     int8_t userChoice( void );
 };

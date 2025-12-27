@@ -25,15 +25,6 @@ const char ONOFF[2][5]    = { "off", "on" };
 const char OFFM1M2[3][5]  = { "off", "M1", "M2" };
 const char WIFI[3][12]    = { "off", "AP-Mode", "Client-Mode"};
 
-#define MISCMENUMODE  1
-#define MISCMENUGYRO  2
-#define MISCMENUI2C   3
-#define MISCMENUINT   4
-#define MISCMENUINT0  5
-#define MISCMENUINT1  6
-#define MISCMENUREG   7
-#define MISCCALIBRATE 8
-
 void initCalibration( SwOSJoyCalibration_t *calibration ) {
   calibration->minValue = 500;
   calibration->maxValue = 3500;
@@ -171,598 +162,213 @@ bool calibrateJoysticks( SwOSJoyCalibration_t calibration[4] ) {
 
 }
 
-void miscSettingsMenu() {
+class MenuLocalSettings {
 
-  bool          anythingChanged = false;
-  char          prompt[255];
-  SwOSJoystick* joystick = NULL;
+  static const int8_t MENU_WIFI       = -1;
+  static const int8_t MENU_SSID       = -2;
+  static const int8_t MENU_PASSWORD   = -3;
+  static const int8_t MENU_CHANNEL    = -4;
+  static const int8_t MENU_WEBUI      = -5;
+  static const int8_t MENU_PIXELS     = -7;
+  static const int8_t MENU_EXT        = -8;
+  static const int8_t MENU_I2CADDR    = -9;
+  static const int8_t MENU_I2CINT     = -10;
+  static const int8_t MENU_I2CLOW     = -11;
+  static const int8_t MENU_I2CHIGH    = -12;
+  static const int8_t MENU_I2CREGS    = -13;
+  static const int8_t MENU_GYRO       = -14;
+  static const int8_t MENU_CALIBRATE  = -15;
 
-  Menu menu;
+  bool anythingChanged = false;
+  void wifiMode( void );
 
-  while (1) {
+  public:
 
-    /*
-    (1) Mode: Master/Slave/TXT
-    (2) Gyro: LM6/MCU/OFF
-    (3) Slave Address: x
-    (0) exit
-    */
+    void menu();
+};
 
-    /* Mode:
-        I2C Master
-        I2C Slave
-        MCU Gyro
-        Motor-IO 
-    */
+void MenuLocalSettings::wifiMode( void ) {
 
-    menu.start("Misc Settings", 20);
+  FtSwarmWifi_t wifiMode = (FtSwarmWifi_t) enterNumber( "enter wifi mode [ 0-off , 1-AP-Mode, 2-Client-Mode]: ", nvs.wifiMode, 0, 2 );
 
-    if ( myOSSwarm.Ctrl[0]->hasExtPort() ) menu.add("Mode", EXTMODE[ nvs.extensionPort] , MISCMENUMODE );
+  if ( nvs.wifiMode != wifiMode ) {
+    
+    if ( ( wifiMode == wifiOFF ) && ( nvs.swarmCommunication & 0x1 ) ) {
+      printf("\e[0;31mError: please deactivate wifi in swarm communication first.\e[0m\n");
 
-    // I2C Slave Mode. Options I2C Slave Address and Interrupt Line
-    if ( nvs.extensionPort == FTSWARM_EXT_I2C_SLAVE ) {
-      menu.add("I2C Slave Address", nvs.I2CAddr, MISCMENUI2C);
-      menu.add("Interrupt Line", OFFM1M2[nvs.interruptLine], MISCMENUINT);
-      menu.add("Interrupt Low Value",  nvs.interruptOnOff[0], MISCMENUINT0);
-      menu.add("Interrupt High Value", nvs.interruptOnOff[1], MISCMENUINT1);
-      menu.add("I2C Registers", nvs.I2CRegisters, MISCMENUREG);
-    }
+    } else {
 
-    // gyro if available
-    if ( myOSSwarm.Ctrl[0]->hasGyro() ) menu.add("Gyro", ONOFF[nvs.gyro], MISCMENUGYRO );
-
-    if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
-      menu.add("Calibrate Joysticks", "", MISCCALIBRATE, false );
-
-    }
-
-    switch( menu.userChoice() ) {
+      nvs.wifiMode = wifiMode;
       
-      case 0: // exit
-        if ( ( anythingChanged) && ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) ) {
-          // save config
-          nvs.saveAndRestart();
-        } else {
-          return;
-        }
-        
-      case MISCMENUMODE: // ExtMode
-        anythingChanged = true;
-        if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
-          FtSwarmExtMode_t newMode =  (FtSwarmExtMode_t) enterNumber( "(-) off (1) I2C-Master (-) I2C-Slave (-) Outputs (-) Servos (5) Lidar: ", nvs.extensionPort, 0, 5 );
-          if ( ( newMode == FTSWARM_EXT_I2C_MASTER ) ||
-               ( newMode == FTSWARM_EXT_LIDAR ) ) {
-               nvs.extensionPort = newMode;
-          }
-        } else {
-          nvs.extensionPort = (FtSwarmExtMode_t) enterNumber( "(0) off (1) I2C-Master (2) I2C-Slave (3) Outputs (4) Servos (5) Lidar: ", nvs.extensionPort, 0, 5 );
-        }
-        break;
+      if ( ( nvs.wifiMode == wifiAP ) && ( ( nvs.channel < 1 ) || ( nvs.channel > 13 ) ) ) nvs.channel = 1; // to avoid invalid channel settings
+      
+      anythingChanged = true;
 
-      case MISCMENUGYRO: // Gyro
-        anythingChanged = true;
-        nvs.gyro = (FtSwarmGyroMode_t) enterNumber( "(0) off (1) on: ", nvs.gyro, 0, 1 );
-        if ( ( nvs.gyro ) && ( nvs.CPU != FTSWARMRS_2V0 ) && ( nvs.CPU != FTSWARMRS_2V1 ) ) nvs.extensionPort = FTSWARM_EXT_I2C_MASTER;
-        break;
+    } 
 
-      case MISCMENUI2C: // I2C Addr
-        anythingChanged = true;
-        nvs.I2CAddr = (uint8_t) enterNumber( "[16..127]: ", nvs.I2CAddr, 16, 127 );
-        break;
-        
-      case MISCMENUINT: // Interrupt Line
-        anythingChanged = true;
-        nvs.interruptLine = (uint8_t) enterNumber( "motor (1 for M1, 2 for M2, ...) or 0 to skip: ", nvs.interruptLine, 0, MAXIOS[nvs.CPU].motors );
-        break;
-
-      case MISCMENUINT0: // Interrupt Line Low
-        anythingChanged = true;
-        nvs.interruptOnOff[0] = (int16_t) enterNumber( "Low value [-255..255]", nvs.interruptOnOff[0], -255, 255 );
-        break;
-
-      case MISCMENUINT1: // Interrupt Line High
-        anythingChanged = true;
-        nvs.interruptOnOff[1] = (int16_t) enterNumber( "High Value [-255..255]", nvs.interruptOnOff[1], -255, 255 );
-        break;
-
-      case MISCMENUREG: // Max I2CRegisters
-        anythingChanged = true;
-        nvs.I2CRegisters = (uint8_t) enterNumber( "I2C Registers [1..8]", nvs.I2CRegisters, 1, MAXI2CREGISTERS);
-        break;
-
-      case MISCCALIBRATE: // calibrate joysticks
-        if  ( yesNo( "\nStart calibration (Y/N)?" ) ) {
-          anythingChanged = true;
-          calibrateJoysticks( nvs.calibration );
-        }
-        break;
-
-    }
   }
 
 }
 
-void wifiMenu( void ) {
+void MenuLocalSettings::menu( void ) {
 
-  char          info[250];
-  bool          anythingChanged = false;
-  uint8_t       maxChoice;
-  FtSwarmWifi_t wifiMode;
-
+  char info[250];
   Menu menu;
   
   while(1) {
 
     switch ( nvs.wifiMode ) {
-    case wifiAP:      sprintf(info, "hostname:           %s\nip-address:         %d.%d.%d.%d\n\n", myOSSwarm.Ctrl[0]->getHostname(), WiFi.softAPIP()[0], WiFi.softAPIP()[1], WiFi.softAPIP()[2], WiFi.softAPIP()[3]);
+    case wifiAP:      sprintf(info, "hostname:            %s\nip-address:          %d.%d.%d.%d\n\n", myOSSwarm.Ctrl[0]->getHostname(), WiFi.softAPIP()[0], WiFi.softAPIP()[1], WiFi.softAPIP()[2], WiFi.softAPIP()[3]);
                       break;
-    case wifiClient:  sprintf(info, "hostname:           %s\nip-address:         %d.%d.%d.%d\n\n", myOSSwarm.Ctrl[0]->getHostname(), WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
+    case wifiClient:  sprintf(info, "hostname:            %s\nip-address:          %d.%d.%d.%d\n\n", myOSSwarm.Ctrl[0]->getHostname(), WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
                       break;
-    default:          sprintf(info, "hostname:           %s\nip-address:         none\n\n",myOSSwarm.Ctrl[0]->getHostname());
+    default:          sprintf(info, "hostname:            %s\nip-address:          none\n\n",myOSSwarm.Ctrl[0]->getHostname());
     }
 
     // build menu
-    menu.start( "Wifi & WebUI", 14 );
+    menu.start( "Wifi & Local Settings", 14 );
     printf(info);
-    menu.add( "wifi", WIFI[nvs.wifiMode], 1);
+    menu.add( "wifi mode", WIFI[nvs.wifiMode], MENU_WIFI, 'w');
 
     if (nvs.wifiMode != wifiOFF ) {
       
-      menu.add( "SSID", nvs.wifiSSID, 2);
+      menu.add( "SSID", nvs.wifiSSID, MENU_SSID, 's');
       
       if (nvs.wifiMode != wifiAP) {
-        menu.add( "Password", "*****", 3 );
+        menu.add( "Password", "*****", MENU_PASSWORD, 'p' );
       } else {
-        menu.add( "channel", nvs.channel, 4 );
+        menu.add( "channel", nvs.channel, MENU_CHANNEL, 'c' );
       } 
       
-      menu.add( "Web UI", ONOFF[nvs.webUI], 5);
+      menu.add( "Web UI", ONOFF[nvs.webUI], MENU_WEBUI, 'u' );
       
-      if ( nvs.webUI ) menu.add( "ftPixels in UI", nvs.pixels, 6);
-    
+      if ( ( nvs.webUI ) && ( myOSSwarm.Ctrl[0]->getType() != FTSWARMCONTROL ) ) menu.add( "ftPixels in UI", nvs.pixels, MENU_PIXELS, 'f' );
+
     }
+     
+    if ( myOSSwarm.Ctrl[0]->hasExtPort() ) { 
+      menu.add("Extension Port", EXTMODE[ nvs.extensionPort] , MENU_EXT, 'e' ); 
+    }
+
+    // I2C Slave Mode. Options I2C Slave Address and Interrupt Line
+    if ( nvs.extensionPort == FTSWARM_EXT_I2C_SLAVE ) {
+      menu.add("I2C Slave Address", nvs.I2CAddr, MENU_I2CADDR, 'a');
+      menu.add("Interrupt Line", OFFM1M2[nvs.interruptLine], MENU_I2CINT, 'i' );
+      menu.add("Interrupt Low Value",  nvs.interruptOnOff[0], MENU_I2CLOW, 'l' );
+      menu.add("Interrupt High Value", nvs.interruptOnOff[1], MENU_I2CHIGH, 'h' );
+      menu.add("I2C Registers", nvs.I2CRegisters, MENU_I2CREGS, 'r' );
+    }
+
+    // gyro if available
+    if ( myOSSwarm.Ctrl[0]->hasGyro() ) { 
+      menu.add("Gyro", ONOFF[nvs.gyro], MENU_GYRO, 'g' ); 
+    }
+
+    if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
+      menu.add("Calibrate Joysticks", "", MENU_CALIBRATE, 'j', false );
+    }
+
+    menu.addExit();
+
+    char prompt[100];
 
     switch ( menu.userChoice(  ) ) {
 
-      case 0: // exit
-        if ( ( anythingChanged) && ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) ) {
-          // save config
-          nvs.saveAndRestart();
-        } else {
-          return;
-        }
+      case MENU_EXIT:       if ( ( anythingChanged) && ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) ) {
+                              // save config
+                              nvs.saveAndRestart();
+                            } else {
+                              return;
+                            }
         
-      case 1: // AP-Mode/Client-Mode
-        wifiMode = (FtSwarmWifi_t) enterNumber( "enter wifi mode [ 0-off , 1-AP-Mode, 2-Client-Mode]: ", nvs.wifiMode, 0, 2 );
-        if ( nvs.wifiMode != wifiMode ) {
-          if ( ( wifiMode == wifiOFF ) && ( nvs.swarmCommunication & 0x1 ) ) {
-            printf("\e[0;31mError: please deactivate wifi in swarm communication first.\e[0m\n");
-          } else {
-            nvs.wifiMode = wifiMode;
-            if ( ( nvs.wifiMode == wifiAP ) && ( ( nvs.channel < 1 ) || ( nvs.channel > 13 ) ) ) nvs.channel = 1; // to avoid invalid channel settings
-            anythingChanged = true;
-          } 
-        }
-        break;
+      case MENU_WIFI:       wifiMode( );
+                            break;
         
-      case 2: // SSID
-        anythingChanged = true;
-        enterString("Please enter new SSID: ", nvs.wifiSSID, 64);
-        break;
+      case MENU_SSID:       anythingChanged = true;
+                            sprintf( prompt, "Please enter new SSID [%s]: ", nvs.wifiSSID );
+                            enterString( prompt, nvs.wifiSSID, nvs.wifiSSID, 64);
+                            break;
         
-      case 3: // Password
-        anythingChanged = true;
-        enterString("Please enter new Password: ", nvs.wifiPwd, 64, true);
-        break;
+      case MENU_PASSWORD:   anythingChanged = true;
+                            enterString("Please enter new Password: ", nvs.wifiPwd, 64, true);
+                            break;
 
-      case 4: // Channel
-        anythingChanged = true;
-        nvs.channel = enterNumber( "enter channel [1..13] - use 1,6 or 11 if possible: ", nvs.channel, 1, 13 );
-        break;
+      case MENU_CHANNEL:    anythingChanged = true;
+                            nvs.channel = enterNumber( "enter channel [1..13] - use 1,6 or 11 if possible: ", nvs.channel, 1, 13 );
+                            break;
 
-      case 5: // WebServer on/off
-        anythingChanged = true;
-        nvs.webUI = !nvs.webUI;
-        break;
+      case MENU_WEBUI:      anythingChanged = true;
+                            nvs.webUI = !nvs.webUI;
+                            break;
         
-      case 6: // # of ftPixel
-        anythingChanged = true;
-        nvs.pixels = enterNumber( "enter number of ftPixel in WebUI [2..18]: ", nvs.pixels, 2, MAXLEDS );
-        break;
-    }
-  }
-}
+      case MENU_PIXELS:     anythingChanged = true;
+                            nvs.pixels = enterNumber( "enter number of ftPixel in WebUI [2..18]: ", nvs.pixels, 2, MAXLEDS );
+                            break;
 
-void newSwarm( void ) {
+      case MENU_CALIBRATE:  if  ( yesNo( "\nStart calibration (Y/N)?" ) ) {
+                              anythingChanged = true;
+                              calibrateJoysticks( nvs.calibration );
+                            }
+                            break;
 
-  char name[MAXIDENTIFIER];
-  name[0] = '\0';
-  while (strlen(name) < 5) enterString("New Swarm Name [min. 5 chars]: ", name, MAXIDENTIFIER );
-  uint16_t pin = enterNumber("New Swarm Pin [1..9999]: ", -1, 1, 9999 );
+      case MENU_GYRO:       anythingChanged = true;
+                            nvs.gyro = (FtSwarmGyroMode_t) enterNumber( "(0) off (1) on: ", nvs.gyro, 0, 1 );
+                            if ( ( nvs.gyro ) && ( nvs.CPU != FTSWARMRS_2V0 ) && ( nvs.CPU != FTSWARMRS_2V1 ) ) nvs.extensionPort = FTSWARM_EXT_I2C_MASTER;
+                            break;
 
-  if ( myOSSwarm.Ctrl[0]->IAmKelda ) {
-    if (!yesNo( "Destroy the existing swarm and create a new one? [Y/N] " ) ) return;
-  } else {
-    if (!yesNo( "Leave the existing swarm and create a new one? [Y/N] " ) ) return;
-  }
+      case MENU_I2CADDR:    anythingChanged = true;
+                            nvs.I2CAddr = (uint8_t) enterNumber( "[16..127]: ", nvs.I2CAddr, 16, 127 );
+                            break;
 
-  strcpy( nvs.swarmName, name );
-  nvs.swarmPIN = pin;
+      case MENU_I2CHIGH:    anythingChanged = true;
+                            nvs.interruptOnOff[1] = (int16_t) enterNumber( "High Value [-255..255]", nvs.interruptOnOff[1], -255, 255 );
+                            break;
 
-  myOSSwarm.newSwarm(  );
+      case MENU_I2CLOW:     anythingChanged = true;
+                            nvs.interruptOnOff[1] = (int16_t) enterNumber( "High Value [-255..255]", nvs.interruptOnOff[1], -255, 255 );
+                            break;
 
-  nvs.save( );
+      case MENU_I2CINT:     anythingChanged = true;
+                            nvs.interruptLine = (uint8_t) enterNumber( "motor (1 for M1, 2 for M2, ...) or 0 to skip: ", nvs.interruptLine, 0, MAXIOS[nvs.CPU].motors );
+                            break;
 
-}
-
-void addController( void ) {
-
-  FtSwarmSerialNumber_t serialNumber = (FtSwarmSerialNumber_t) enterNumber("Enter new swarm members serial number [1..9999]: ", -1, 1, 9999 );
-
-  if ( myOSSwarm.isMember( serialNumber ) ) { printf("\e[0;31mERROR: This controller is already part of this swarm.\e[0m\n"); return; }
-  
-  if ( !myOSSwarm.addController( serialNumber ) ) {
-    // no space left
-    printf("\e[0;31mERROR: No space left in swarm. Controller #%d was declined.\e[0m\n", serialNumber );
-    return;
-  }
-
-  printf("Controller SN %d was added to the swarm.\n", serialNumber );
-
-  // wait max 1.5 minutes to get the controller connected
-  uint8_t i=0;
-  while ( !myOSSwarm.isOnline( serialNumber ) ) {
-    i++;
-    delay(100);
-    if (i > 15 ) break;
-  }
-  
-  if ( !myOSSwarm.isOnline( serialNumber ) ) printf("\e[0;31mWARNING: Please switch controller #%d on.\e[0m\n", serialNumber);
-
-  nvs.save( );
-
-}
-
-void deleteController( void ) {
-
-  FtSwarmSerialNumber_t serialNumber = (FtSwarmSerialNumber_t) enterNumber("Enter serial number to be revoked [1..9999]: ", -1, 1, 9999 );
-
-  if ( !myOSSwarm.isMember( serialNumber ) ) { printf("\e[0;31mERROR: This controller isn't part of this swarm.\e[0m\n"); return; }
-  
-  if ( !myOSSwarm.deleteController( serialNumber ) ) {
-    // not found
-    printf("\e[0;31mERROR: This controller isn't part of this swarm.\e[0m\n");
-    return;
-  }
-
-  printf("Controller SN %d was revoked from the swarm.\n", serialNumber );
-
-  nvs.save( );
-
-}
-
-const char SWARMCOMMUNICATION[4][13] = { "none", "wifi", "RS485", "wifi & RS485" };
-const char COMSTATE[5][30] = { "\e[1;31mOFFLINE!\e[0m", "\e[1;31mOFFLINE\e[0m", "\e[1;33mCONNECTING\e[0m", "\e[1;32mONLINE\e[0m", "\e[1;31mERROR\e[0m\e[0m" };
-
-// swam menu identifiers
-
-#define MENUSWARMCREATE        1
-#define MENUSWARMADD           2
-#define MENUSWARMDELETE        3
-#define MENUSWARMCOMMUNICATION 4
-#define MENUSWARMSPEED         5
-
-void swarmMenu( void ) {
-
-  char kelda[MAXIDENTIFIER];
-  FtSwarmCommunication_t swarmCommunication;
-  Menu menu;
-
-  while (1) {
-
-    menu.start("swarm configuration", 19 );
-
-    if (myOSSwarm.Ctrl[0]->IAmKelda) 
-      printf("%s is Kelda running swarm \"%s\" using Pin %d:\n\nSN  NW Age State  Hostname \n", myOSSwarm.Ctrl[0]->getHostname(), nvs.swarmName, nvs.swarmPIN );
-    else
-      printf( "%s is connected to swarm \"%s\" uising Swarm PIN %d.\n", myOSSwarm.Ctrl[0]->getHostname(), nvs.swarmName, nvs.swarmPIN );
-
-    for ( int8_t i=0; i<=myOSSwarm.maxCtrl; i++ ) {
-      if ( myOSSwarm.Ctrl[i] ) {
-        printf("%3d %.6lu %-11s %s\n", myOSSwarm.Ctrl[i]->serialNumber, myOSSwarm.Ctrl[i]->networkAge(), COMSTATE[myOSSwarm.Ctrl[i]->getComState()], myOSSwarm.Ctrl[i]->getHostname() );
-      }
-    }
-
-    printf("\n");
-
-    if ( nvs.RS485Available() ) {
-      menu.add( "swarm communication", SWARMCOMMUNICATION[nvs.swarmCommunication], MENUSWARMCOMMUNICATION );
-      if ( nvs.swarmCommunication != swarmComWifi ) menu.add( "swarm speed", nvs.swarmSpeed, MENUSWARMSPEED);
-    }
-    
-    menu.add( "create a new swarm", "", MENUSWARMCREATE );
-
-    if (nvs.IAmKelda) {
-      menu.add( "add a controller", "", MENUSWARMADD );
-      menu.add( "revoke a controller", "", MENUSWARMDELETE );
-    }
-
-    switch( menu.userChoice() ) {
-      case 0: // main
-        return;
-
-      case MENUSWARMCOMMUNICATION: 
-        if ( !nvs.RS485Available() ) {
-          printf("This controller just supports wifi.\n");
-        } else {
-          if ( nvs.IAmKelda ) swarmCommunication = (FtSwarmCommunication_t) enterNumber( "enter swarm communication [1-wifi, 2-RS485, 3-both]:", nvs.swarmCommunication, 1, 3 );
-          else                swarmCommunication = (FtSwarmCommunication_t) enterNumber( "enter swarm communication [1-wifi, 2-RS485]:", nvs.swarmCommunication, 1, 2 );
-          if (nvs.swarmCommunication != swarmCommunication) {
-            // test if wifiMode is OFF and swarm should use wifi
-            if ( ( nvs.wifiMode == wifiOFF ) && ( swarmCommunication & 0x1 ) ) {
-              printf("\e[0;31mError: please activate wifi first.\e[0m\n");
-            } else {
-              // let's save data
-              nvs.swarmCommunication = swarmCommunication;
-              if ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) nvs.saveAndRestart();
-            }
-          }
-        }
-        break;
-
-      case MENUSWARMSPEED:
-        nvs.swarmSpeed = enterNumber( "(0) low ... (4) highspeed (max. 50m)>", nvs.swarmSpeed, 0, 4 );
-        if ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) nvs.saveAndRestart();
-        break;
-
-      case MENUSWARMCREATE:
-        newSwarm();
-        break;
-        
-      case MENUSWARMADD:
-        addController();
-        break;
-
-      case MENUSWARMDELETE:
-        deleteController();
-        break;
-
-      }
-
-  }
-
-}
-
-uint8_t selectController( uint8_t controller ) {
-
-  Menu menu;
-
-  menu.start("Please select a controller", 10);
-
-  for (uint8_t i=0; i<=myOSSwarm.maxCtrl; i++) {
-    if ( myOSSwarm.Ctrl[i] ) menu.add( myOSSwarm.Ctrl[i]->getName(), "", i );
-  }
-
-  uint8_t choice = menu.userChoice( );
-
-  printf( "choice: %d\n", choice);
-
-  // nothing selected -> default controller
-  if ( choice == 255 ) return controller;
-
-  // index number of controller
-  return choice;
-
-}
-
-bool setAliasAndType( SwOSObj *selected, SwOSCtrl *ctrl ) {
-  
-  char         alias[MAXIDENTIFIER];
-  char         prompt[250];
-
-  // null -> done!
-  if (!selected) return false;
-  
-  // ask user for new alias
-  sprintf( prompt, "%s - please enter new alias: ", selected->getName() );
-  enterIdentifier( prompt, alias, MAXIDENTIFIER );
-                
-  // test on duplicates
-  SwOSIO *testIO = myOSSwarm.getIO( alias );
-  if ( (testIO) && ( testIO != selected ) ) {
-    printf("\e[0;31mERROR: This alias is already used in the swarm.\n\e[0m");
-    return false;
-  }
-
-  // change name
-  bool anythingChanged = strcmp( alias, selected->getAlias() );
-  if (anythingChanged ) selected->setAlias( alias );
-
-  // if it's the controller, we're done
-  if (selected == ctrl) return anythingChanged;
-
-  // change type?
-  SwOSIO*      io     = (SwOSIO*)selected;
-  SwOSIOType_t ioType = io->getIOType();
-
-  // singular class -> done
-  if ( SWOSIOCLASS[ioType] == SWOSIOCLASS_SINGULAR ) return anythingChanged;
-
-  // ftPwrDrive -> done
-  if ( io->getCtrl()->getCPU() == FTSWARMPWRDRIVE_1V141 ) return anythingChanged;
-
-  // list compatible types and ask user
-  int8_t       maxType = -1;
-  SwOSIOType_t defaultValue, type[99];
-
-  for (uint8_t i=0; i<SWOSIO_MAXIOTYPE; i++) {
-
-    // compatible type?
-    if ( SWOSIOCLASS[ioType] == SWOSIOCLASS[i] ) {
-
-      maxType++;
-
-      // default?
-      if ( ioType == (SwOSIOType_t) i ) defaultValue = (SwOSIOType_t)i;
-
-      // menu entry
-      type[maxType] = (SwOSIOType_t) i;
-      printf( "(%2d) %s\n", maxType, SWOSIOTYPE[i] );
+      case MENU_I2CREGS:    anythingChanged = true;
+                            nvs.I2CRegisters = (uint8_t) enterNumber( "I2C Registers [1..8]", nvs.I2CRegisters, 1, MAXI2CREGISTERS);
+                            break;
 
     }
 
   }
 
-  sprintf( prompt, "Choose new IO Type - default %s:", SWOSIOTYPE[defaultValue]);
-  SwOSIOType_t newIOType = type[enterNumber( prompt, defaultValue, 0, maxType )];
-
-  if ( ioType != newIOType ) { 
-    if ( ctrl->changeIOType( ctrl->getIndex( io ), newIOType ) ) anythingChanged = true;
-  }
-
-  return anythingChanged;
-               
 }
 
-void ioTypesMenu( void ) {
+class MenuEvent {
 
-  SwOSObj      *OSObj[99];
-  bool         anythingChanged[MAXCTRL];
-  uint8_t      controller = 0;
-  Menu         menu;
-  char         data[80];
-  bool         showPixel = false;
+  private:
 
-  // initialize anythingChanged
-  for (uint8_t i=0; i<MAXCTRL; i++) anythingChanged[i] = false;
+    static const int8_t MENU_ADD = -1;
+    static const int8_t MENU_DEL = -2;
+    static const int8_t MENU_CFG = -3;
 
-  while (1) {
+    SwOSIO *io;
 
-    uint8_t item = 0;
-    menu.start( "io types menu:", 10, 255, ' ' );
+    static void printEventParameter( FtSwarmOperand_t op, SwOSIO *sensor, SwOSIO *actor, char *doing, int32_t parameter );
+    static void printEvent( SwOSNVSEvent_t event, uint8_t details = 0 );
 
-    printf("      Name        Type            Alias\n");
+    void enterIO( const char* prompt, SwOSIOUID_t *uio, bool input );
+    bool enterEvent( SwOSNVSEvent_t *event );
+    bool changeEvent( uint8_t config, SwOSNVSEvent_t *event );
+    bool deleteEvent( uint8_t config, uint8_t events );
 
-    // show existing alias
-    OSObj[item++] = myOSSwarm.Ctrl[controller]; 
-    sprintf( data, "Controller      %s", myOSSwarm.Ctrl[controller]->getAlias() );
-    menu.add( myOSSwarm.Ctrl[controller]->getName(), data, item, true );
-  
-    // list IOs
-    for (uint8_t i=0; i<myOSSwarm.Ctrl[controller]->IOs; i++ ) {
+  public:
 
-      if ( myOSSwarm.Ctrl[controller]->io[i] ) { 
+    MenuEvent( SwOSIO *io = NULL ) { this->io = io; };
 
-        SwOSIOType_t ioType = myOSSwarm.Ctrl[controller]->io[i]->getIOType();
+    void menu( void );
 
-        if ( ( showPixel && ( ioType == SWOSIO_PIXEL ) ) || ( !showPixel && ( ioType != SWOSIO_PIXEL ) ) ) {
-
-          OSObj[item++] = myOSSwarm.Ctrl[controller]->io[i];
-          sprintf( data, "%-15s %s", SWOSIOTYPE[ioType], myOSSwarm.Ctrl[controller]->io[i]->getAlias() );
-          menu.add( myOSSwarm.Ctrl[controller]->io[i]->getName(), data, item, true );
-        }
-
-      }
-
-    }
-
-    printf("\n");
-    if ( showPixel ) menu.add( "Standard IO", "", 98 );
-    else             menu.add( "ftPixel",     "", 98 );
-  
-    // Kelda only: option to select another controller in the swarm
-    if ( myOSSwarm.Ctrl[0]->IAmKelda ) {
-      printf("\n");
-      menu.add( "Controller", myOSSwarm.Ctrl[controller]->getName(), 99 );
-    }
-
-    // User's choice
-    uint8_t choice = menu.userChoice( );
-    
-    uint8_t i;
-    bool changes = false;
-
-    switch (choice) {
-
-      case  0:  // exit: save nvs?
-
-                // any changes?
-                for ( i=0; i<MAXCTRL; i++ ) { if (anythingChanged[i]) changes = true; }
-
-                if ( ( changes )  &&  yesNo( "Save changes? (Y/N)?" ) ) {
-
-                  // local changes
-                  if ( anythingChanged[0] ) {
-
-                    // save in local nvs
-                    myOSSwarm.Ctrl[0]->save(2);
-
-                    // send new config to Kelda
-                    if ( ( myOSSwarm.Kelda ) && ( myOSSwarm.Kelda != myOSSwarm.Ctrl[0] ) ) myOSSwarm.Ctrl[0]->sendIOConfig( myOSSwarm.Kelda->macAddr );
-
-                  }
-
-                  // remote changes
-                  for ( i=1; i<MAXCTRL; i++ ) {
-                    if ( anythingChanged[i] ) {
-                      myOSSwarm.Ctrl[i]->sendIOConfig( myOSSwarm.Ctrl[i]->macAddr );
-                      myOSSwarm.Ctrl[i]->save( 2 );
-                    }
-                  }
-          
-                }
-                return;
-
-      case 98:  showPixel = !showPixel;
-                break;
-      
-      case 99:  controller = selectController( controller );
-                printf("controller: %d\n", controller);
-                break;
-
-      case 255: break;
-
-      default:  // set alias & type
-                anythingChanged[controller] = setAliasAndType( OSObj[choice-1], myOSSwarm.Ctrl[controller] );
-                break;
-      }
-    
-  }
-  
-}
-
-void factorySettings( void ) {
-  // reset controller to factory settings
-
-  if (yesNo("Do you want to reset this device to it's factory settings (Y/N)?" ) ) {
-
-    nvs.factorySettings();
-
-    myOSSwarm.Ctrl[0]->factorySettings();
-
-    printf("device will restart now.\n");
-
-    delay(2000);
-
-    // Alias names
-    myOSSwarm.Ctrl[0]->saveToNVS( );
-
-    nvs.saveAndRestart();
-
-  }
-
-}
-
-const char FTSWARMTRIGGER[FTSWARM_MAXTRIGGER][12] = {
-  "TriggerDown",
-  "TriggerUp",
-  "ChangeValue",
-  "Add",
-  "I2CRead",
-  "I2CWrite"
 };
 
-bool enterIO( const char* prompt, SwOSIOUID_t *uio, bool input ) {
+void MenuEvent::enterIO( const char* prompt, SwOSIOUID_t *uio, bool input ) {
 
   char   alias[MAXIDENTIFIER];
   SwOSIO *io;
@@ -776,9 +382,6 @@ bool enterIO( const char* prompt, SwOSIOUID_t *uio, bool input ) {
       io = myOSSwarm.getIO( *uio );
       if (io) strcpy( alias, io->getAlias() );
     }
-
-    // user abort
-    if ( alias[0] == '\0' ) return false;
 
     // get IO
     io = myOSSwarm.getIO( alias );
@@ -796,63 +399,107 @@ bool enterIO( const char* prompt, SwOSIOUID_t *uio, bool input ) {
   uio->ioType       = io->getIOType();
   uio->port         = io->getPort();
 
-  return true;
-
 }
 
-const char* getAction( SwOSIOUID_t uio ) {
-
-  SwOSIO *io = myOSSwarm.getIO( uio );
-
-  if (!io) return "";
-  if (io->isMotor()) return "setSpeed";
-  if (io->isPixel()) return "setColor";
-  if (io->isServo()) return "setPosition";
-
-  return "";
-
-}
-
-bool enterEvent( SwOSNVSEvent_t *event ) {
+bool MenuEvent::enterEvent( SwOSNVSEvent_t *event ) {
 
   char           prompt[128];
-  SwOSIO         *io;
+  SwOSIO         *eventIO;
 
   // sensor
-  io = myOSSwarm.getIO( event->sensor );
-  if (io) sprintf( prompt, "Enter sensor's name [%s]: ", io->getAlias() );
-  else    sprintf( prompt, "Enter sensor's name: " );
-  if (! enterIO( prompt, &event->sensor, true  ) ) { return false; }
+  if ( (io) && ( io->isInput() ) ) {
+
+    printf("sensor's name: %s\n", io->getAliasOrName() );
+    io->getUID( &event->sensor );
+
+  } else {
+
+    eventIO = myOSSwarm.getIO( event->sensor );
+    
+    if (eventIO) sprintf( prompt, "Enter sensor's name [%s]: ", eventIO->getAliasOrName() );
+    else         sprintf( prompt, "Enter sensor's name: " );
+    
+    enterIO( prompt, &event->sensor, true  );
+
+  }
 
   // trigger
-  sprintf( prompt, "Enter trigger event (0) trigger down (1) trigger up (2) use sensor value (3) add constant [%d]: ", event->trigger );
-  event->trigger = (FtSwarmTrigger_t) enterNumber( prompt, event->trigger, 0, 3 );
+  FtSwarmTrigger_t trigger = event->triggerMath.bits.trigger;
+  sprintf( prompt, "Enter trigger event - (0) trigger down  (1) trigger up  (2) change value [%d]: ", trigger );
+  event->triggerMath.bits.trigger = (FtSwarmTrigger_t) enterNumber( prompt, trigger, 0, 2 );
+
+  printEvent( *event, 1 );
 
   // actor
-  io = myOSSwarm.getIO( event->actor );
-  if (io) sprintf( prompt, "Enter actor's name [%s]: ", io->getAlias() );
-  else    sprintf( prompt, "Enter actor's name: " );
-  if (! enterIO( prompt,  &event->actor,  false ) ) { return false; }
+  if ( (io) && ( io->isActor() ) ) {
+
+    printf("actors's name: %s\n", io->getAliasOrName() );
+    io->getUID( &event->actor );
+
+  } else {
+
+    eventIO = myOSSwarm.getIO( event->actor );
+    
+    if (eventIO) sprintf( prompt, "Enter actor's name [%s]: ", eventIO->getAliasOrName() );
+    else         sprintf( prompt, "Enter actor's name: " );
   
-  // enter constant values
-  switch ( event->trigger ) {
-    case FTSWARM_TRIGGERADD:  sprintf( prompt, "Enter value to add to %s.%s() [%d]: ", myOSSwarm.getIO( event->actor )->getAlias(), getAction( event->actor ), event->parameter );
-                              event->parameter = enterNumber( prompt, event->parameter, -4096, 0xFFFFFF );
-                              break;
+    enterIO( prompt,  &event->actor,  false );
 
-    case FTSWARM_TRIGGERUP:
-    case FTSWARM_TRIGGERDOWN: sprintf( prompt, "Enter value to apply to %s.%s() [%d]: ", myOSSwarm.getIO( event->actor )->getAlias(), getAction( event->actor ), event->parameter );
-                              event->parameter = enterNumber( prompt, event->parameter, -4096, 0xFFFFFF );
-                              break;
-
-    default:                  break;
   }
+
+  printEvent( *event, 2 );
+
+  // V1
+  sprintf( prompt, "Use - (0) fixed value  (1) sensor's value  (2) actor's value [%d]: ", event->triggerMath.bits.v1 );
+  event->triggerMath.bits.v1 = (FtSwarmOperand_t) enterNumber( prompt, event->triggerMath.bits.v1, 0, 2 );
+
+  // constant?
+  if ( event->triggerMath.bits.v1 == FTSWARM_CONSTANT ) {
+    sprintf( prompt, "Enter fixed value [%d]: ", event->parameter );
+    event->parameter = enterNumber( prompt, event->parameter, -4096, 0xFFFFFF );
+  }
+
+  printEvent( *event, 3 );
+
+  // operator
+  sprintf( prompt, "(1) add or  (2) muliply another value - (0) done [%d]: ", event->triggerMath.bits.op );
+  event->triggerMath.bits.op = (FtSwarmOperator_t) enterNumber( prompt, event->triggerMath.bits.op, 0, 2 );
+  
+  printEvent( *event, 4 );
+
+  // V2
+  if ( event->triggerMath.bits.op != FTSWARM_ASSIGN ) {
+
+    if ( event->triggerMath.bits.v1==FTSWARM_CONSTANT ) {
+      
+      if ( event->triggerMath.bits.v2 == FTSWARM_CONSTANT ) event->triggerMath.bits.v2 = FTSWARM_SENSORVALUE;
+      
+      sprintf( prompt, "Use - (1) sensor's value  (2) actor's value [%d]: ", event->triggerMath.bits.v2 );
+      event->triggerMath.bits.v2 = (FtSwarmOperand_t) enterNumber( prompt, event->triggerMath.bits.v2, 1, 2 );
+
+    } else {
+      
+      sprintf( prompt, "Use - (0) fixed value  (1) sensor's value  (2) actor's value [%d]: ", event->triggerMath.bits.v2 );
+      event->triggerMath.bits.v2 = (FtSwarmOperand_t) enterNumber( prompt, event->triggerMath.bits.v2, 0, 2 );
+
+    }
+
+    // constant?
+    if ( event->triggerMath.bits.v2 == FTSWARM_CONSTANT ) {
+      sprintf( prompt, "Enter fixed value [%d]: ", event->parameter );
+      event->parameter = enterNumber( prompt, event->parameter, -4096, 0xFFFFFF );
+    
+    }
+
+  }
+
+  printEvent( *event );
 
   return true;
 
 }
 
-bool changeEvent( uint8_t config, SwOSNVSEvent_t *event ) {
+bool MenuEvent::changeEvent( uint8_t config, SwOSNVSEvent_t *event ) {
 
   // create a copy of the event
   SwOSNVSEvent_t newEvent;
@@ -887,7 +534,7 @@ bool changeEvent( uint8_t config, SwOSNVSEvent_t *event ) {
 
 }
 
-bool deleteEvent( uint8_t config, uint8_t events ) {
+bool MenuEvent::deleteEvent( uint8_t config, uint8_t events ) {
 
   char prompt[255];
   sprintf( prompt, "Which event should be deleted? [0 - abort, 1..%d]:", events );
@@ -909,11 +556,57 @@ bool deleteEvent( uint8_t config, uint8_t events ) {
 
 }
 
-#define REMOTECTRL_ADD MAXNVSEVENTS + 2
-#define REMOTECTRL_DEL MAXNVSEVENTS + 3
-#define REMOTECTRL_CFG MAXNVSEVENTS + 4
+void MenuEvent::printEventParameter( FtSwarmOperand_t op, SwOSIO *sensor, SwOSIO *actor, char *doing, int32_t parameter ) {
 
-void remoteControl( void ) {
+  switch ( op ) {
+    case FTSWARM_CONSTANT:    if ( actor->isPixel() ) printf( "#%06X", parameter );
+                              else                    printf( "%d", parameter ); 
+                              break;
+
+    case FTSWARM_SENSORVALUE: printf( "%s.getValue()", sensor->getAliasOrName() ); 
+                              break;
+
+    case FTSWARM_ACTORVALUE:  printf( "%s.get%s()", actor->getAliasOrName(), doing );
+                              break;
+  }
+
+}
+
+void MenuEvent::printEvent( SwOSNVSEvent_t event, uint8_t details ) {
+
+  SwOSIO *sensor = dynamic_cast<SwOSIO*>( myOSSwarm.getIO( event.sensor ) );
+  SwOSIO *actor  = dynamic_cast<SwOSIO*>( myOSSwarm.getIO( event.actor ) );
+
+  if (details) printf("\n");
+
+  printf("%s.%s", sensor->getAliasOrName(), FTSWARMTRIGGER[ event.triggerMath.bits.trigger ] );
+  if (details == 1 ) { printf("\n"); return; }
+
+  char doing[15];
+  if      ( actor->isMotor() ) strcpy( doing, "Speed");
+  else if ( actor->isServo() ) strcpy( doing, "Position");
+  else if ( actor->isPixel() ) strcpy( doing, "Color" );
+  else                         strcpy( doing, "???" );
+
+  printf(" -> %s.set%s( ", actor->getAliasOrName(), doing );
+  if (details == 2 ) { printf("\n"); return; }
+
+  printEventParameter( event.triggerMath.bits.v1, sensor, actor, doing, event.parameter );
+  if (details == 3 ) { printf("\n"); return; }
+
+  if ( event.triggerMath.bits.op != FTSWARM_ASSIGN ) {
+  
+    printf(" %s ", FTSWARMOPERATOR[event.triggerMath.bits.op] );
+    if (details == 4 ) { printf("\n"); return; }
+  
+    printEventParameter( event.triggerMath.bits.v2, sensor, actor, doing, event.parameter );
+  } 
+  
+  printf(" )\n");
+
+}
+
+void MenuEvent::menu( void ) {
 
   Menu    menu;
   char    line[128];
@@ -926,7 +619,8 @@ void remoteControl( void ) {
 
   while (1) {
 
-    sprintf( line, "Remote Control #%d", nvs.activeEventConfig +1 );
+    if (io) sprintf( line, "Remote Control %s #%d", io->getAliasOrName(), nvs.activeEventConfig+1 );
+    else    sprintf( line, "Remote Control #%d", nvs.activeEventConfig +1 );
     menu.start( line, 0 );
 
     events = 0;
@@ -936,63 +630,58 @@ void remoteControl( void ) {
       // end of list?
       if ( nvs.events[nvs.activeEventConfig][i].sensor.serialNumber == 0) break;
 
-      // increase events counter
-      events++;
-        
-      // add menu item
-      myOSSwarm.getAliasOrName( nvs.events[nvs.activeEventConfig][i].sensor, sensor );
-      myOSSwarm.getAliasOrName( nvs.events[nvs.activeEventConfig][i].actor,  actor  );
+      if ( (!io) || 
+           ( io == myOSSwarm.getIO( nvs.events[nvs.activeEventConfig][i].sensor ) ) ||
+           ( io == myOSSwarm.getIO( nvs.events[nvs.activeEventConfig][i].actor  ) ) 
+         ) {
 
-      switch ( nvs.events[nvs.activeEventConfig][i].trigger ) {
-        case FTSWARM_TRIGGERVALUE:  sprintf( value, "%s", sensor ); 
-                                    break;
+        // increase events counter
+        events++;
 
-        case FTSWARM_TRIGGERADD:    sprintf( value, "add %s", sensor ); 
-                                    break;
+        printf("(%2d) ", i+1 );
+        printEvent( nvs.events[nvs.activeEventConfig][i] );
 
-        default:                    sprintf( value, "%d", nvs.events[nvs.activeEventConfig][i].parameter );
-                                    break;
+        menu.add( i+1 );
+
       }
-
-      sprintf(line, "%s.%s -> %s.%s(%s)", sensor, FTSWARMTRIGGER[nvs.events[nvs.activeEventConfig][i].trigger], actor, getAction(nvs.events[nvs.activeEventConfig][i].actor), value );
-      menu.add( line, "", i+1 );
 
     }
 
     printf("\n");
 
-    if ( events < MAXNVSEVENTS ) menu.add( "add event", "", REMOTECTRL_ADD );
-    menu.add( "delete event", "", REMOTECTRL_DEL );
-    menu.add( "switch configuration", "", REMOTECTRL_CFG );
+    if ( events < MAXNVSEVENTS ) menu.add( "add event", "", MENU_ADD, '+' );
+    menu.add( "delete event", "", MENU_DEL, '-' );
+    menu.add( "switch configuration", "", MENU_CFG, 's' );
+    menu.addExit();
 
-    uint8_t choice = menu.userChoice( );
+    int8_t choice = menu.userChoice( );
     
     switch (choice) {
 
-      case 0:               if ( ( anythingChanged ) && ( yesNo("Save configuration [Y/N]?") ) ) nvs.saveEvents();
-                            return;
+      case MENU_EXIT: if ( ( anythingChanged ) && ( yesNo("Save configuration [Y/N]?") ) ) nvs.saveEvents();
+                      return;
 
-      case REMOTECTRL_ADD:  printf("\n" ); 
-                            if ( changeEvent( nvs.activeEventConfig, &nvs.events[nvs.activeEventConfig][events] ) ) anythingChanged = true;
-                            break;
+      case MENU_ADD:  printf("\n" ); 
+                      if ( changeEvent( nvs.activeEventConfig, &nvs.events[nvs.activeEventConfig][events] ) ) anythingChanged = true;
+                      break;
 
-      case REMOTECTRL_DEL:  printf("\n");
-                            if ( deleteEvent( nvs.activeEventConfig, events ) ) anythingChanged = true;
-                            break;
+      case MENU_DEL:  printf("\n");
+                      if ( deleteEvent( nvs.activeEventConfig, events ) ) anythingChanged = true;
+                      break;
 
-      case REMOTECTRL_CFG:  sprintf( line, "Switch to configuration [1..%d]", MAXEVENTCONFIGS );
-                            newConfig = enterNumber( line, nvs.activeEventConfig+1, 1, MAXEVENTCONFIGS ) -1;
-                            if ( newConfig != nvs.activeEventConfig ) {
-                              anythingChanged = true;
-                              nvs.activeEventConfig = newConfig;
-                              myOSSwarm.deleteEvents();
-                              myOSSwarm.addEvents( newConfig );
-                            }
-                            break;
+      case MENU_CFG:  sprintf( line, "Switch to configuration [1..%d]", MAXEVENTCONFIGS );
+                      newConfig = enterNumber( line, nvs.activeEventConfig+1, 1, MAXEVENTCONFIGS ) -1;
+                        if ( newConfig != nvs.activeEventConfig ) {
+                          anythingChanged = true;
+                          nvs.activeEventConfig = newConfig;
+                          myOSSwarm.deleteEvents();
+                          myOSSwarm.addEvents( newConfig );
+                        }
+                      break;
 
-      default:              printf("\n"); 
-                            if ( changeEvent( nvs.activeEventConfig, &nvs.events[nvs.activeEventConfig][choice -1] ) ) anythingChanged = true;
-                            break;
+      default:        printf("\n"); 
+                      if ( changeEvent( nvs.activeEventConfig, &nvs.events[nvs.activeEventConfig][choice -1] ) ) anythingChanged = true;
+                      break;
 
     }
 
@@ -1000,12 +689,584 @@ void remoteControl( void ) {
 
 }
 
+class MenuIOConfig {
+
+  private:
+
+    // Menu constansts
+    static const int8_t MENU_PIXEL    = -1;
+    static const int8_t MENU_INPUT    = -2;
+    static const int8_t MENU_ACTOR    = -3;
+    static const int8_t MENU_ALIAS    = -4;
+    static const int8_t MENU_TYPE     = -5;
+    static const int8_t MENU_NEXT     = -6;
+    static const int8_t MENU_PREVIOUS = -7;
+    
+    // Page size
+    static const int8_t IOSPERPAGE = 20;
+
+    // controller
+    SwOSCtrl *controller = NULL;
+
+    // IOs shown in the menu
+    SwOSIO *io[99];
+    int8_t maxItem    = -1;
+    int8_t selected   = -1;
+    int    pageOffset = 0;
+    bool   morePages  = false;
+
+    // which controller has changes?
+    bool anythingChanged [MAXCTRL];
+
+    // types of IOs to show
+    bool listInputs = true;
+    bool listActors = false;
+    bool listPixels = false;
+
+    void fillIOList( void );
+    bool selectIO( void );
+    void changeAlias( void );
+    void changeType( void );
+    void save( void );
+
+  public:
+
+    MenuIOConfig( SwOSCtrl *controller = NULL );
+    void menu( void );
+
+};
+
+MenuIOConfig::MenuIOConfig( SwOSCtrl *controller ) {
+
+  // if <0 show all controllers, if >=0 show this one only
+  this->controller = controller;
+
+  // initialize anythingChanged
+  for (uint8_t i=0; i<MAXCTRL; i++) anythingChanged[i] = false;
+
+}
+
+void MenuIOConfig::fillIOList( void ) {
+
+  int item  = -1;
+  maxItem   = -1;
+  morePages = false;
+
+  // all controllers
+  for ( int8_t c=0; c<=myOSSwarm.maxCtrl; c++ ) {
+    
+    // check, if the controller needs to be listed
+    if ( ( myOSSwarm.Ctrl[c] ) && ( ( !controller ) || ( myOSSwarm.Ctrl[c] == controller ) ) ) {
+
+      // all IOs
+      for (uint8_t i=0; i<myOSSwarm.Ctrl[c]->IOs; i++ ) {
+
+        if ( ( myOSSwarm.Ctrl[c]->io[i] ) && 
+             ( ( listInputs && myOSSwarm.Ctrl[c]->io[i]->isInput() ) ||
+               ( listActors && myOSSwarm.Ctrl[c]->io[i]->isActor() && !myOSSwarm.Ctrl[c]->io[i]->isPixel() ) ||
+               ( listPixels && myOSSwarm.Ctrl[c]->io[i]->isPixel() ) ) ) {
+
+                item++;
+                if (item>=pageOffset) io[++maxItem] = myOSSwarm.Ctrl[c]->io[i];
+                if ( maxItem >= IOSPERPAGE ) {
+                  morePages = true;
+                  maxItem--;
+                  return;
+                }
+        }
+
+      }
+
+    }
+
+  }
+
+}
+
+bool MenuIOConfig::selectIO( void ) {
+  
+  char prompt[250];
+
+  // Which one to change?
+  sprintf( prompt, "Please select the IO to be changed [1..%d]:", maxItem+1 );
+  selected = enterNumber( prompt, 0, 1, maxItem+1 ) -1;
+
+  return selected>=0;
+
+}
+
+void MenuIOConfig::changeAlias( void ) {
+  
+  char prompt[250];
+  char alias[MAXIDENTIFIER];
+
+  if ( !selectIO() ) return;
+  
+  // ask user for new alias
+  sprintf( prompt, "%s - please enter new alias: ", io[selected]->getAliasOrName() );
+  enterIdentifier( prompt, alias, MAXIDENTIFIER );
+
+  // nothing changed
+  if ( strcmp( alias, io[selected]->getAlias() ) == 0 ) return;
+                
+  // test on duplicates
+  SwOSIO *testIO = myOSSwarm.getIO( alias );
+  if ( (testIO) && ( testIO != io[selected] ) ) {
+    printf("\e[0;31mERROR: This alias is already used in the swarm.\n\e[0m");
+    return;
+  }
+
+  // change name
+  io[selected]->setAlias( alias );
+  anythingChanged[ myOSSwarm.getIndex( io[selected]->getCtrl()->serialNumber ) ] = true;
+
+}
+
+void MenuIOConfig::changeType( void ) {
+  
+  char alias[MAXIDENTIFIER];
+  char prompt[250];
+
+  if ( !selectIO() ) return;
+
+  // change type?
+  SwOSIOType_t ioType = io[selected]->getIOType();
+
+  // singular class -> done
+  if ( SWOSIOCLASS[ioType] == SWOSIOCLASS_SINGULAR ) {
+    printf( "\e[0;31mERROR: IO type %s could not be changed to another IO type.\n\e[0m\n", SWOSIOTYPE[ioType] );
+    return;
+  }
+  
+  // list compatible types and ask user
+  int8_t       maxType = -1;
+  SwOSIOType_t defaultValue, type[99];
+
+  for (uint8_t i=0; i<SWOSIO_MAXIOTYPE; i++) {
+
+    // compatible type?
+    if ( SWOSIOCLASS[ioType] == SWOSIOCLASS[i] ) {
+
+      maxType++;
+
+      // default?
+      if ( ioType == (SwOSIOType_t) i ) defaultValue = (SwOSIOType_t)i;
+
+      // menu entry
+      type[maxType] = (SwOSIOType_t) i;
+      printf( "(%2d) %s\n", maxType, SWOSIOTYPE[i] );
+
+    }
+
+  }
+
+  sprintf( prompt, "Choose new IO Type - default %s:", SWOSIOTYPE[defaultValue]);
+  SwOSIOType_t newIOType = type[enterNumber( prompt, defaultValue, 0, maxType )];
+
+  if ( ioType != newIOType ) { 
+    anythingChanged[ myOSSwarm.getIndex( io[selected]->getCtrl()->serialNumber ) ] = io[selected]->getCtrl()->changeIOType( io[selected]->getCtrl()->getIndex( io[selected] ), newIOType );
+  }
+
+}
+
+void MenuIOConfig::save( void ) {
+
+  uint8_t i;
+  bool    changes = false;
+
+  // any changes?
+  for ( i=0; i<MAXCTRL; i++ ) { if (anythingChanged[i]) changes = true; }
+
+  if ( ( changes ) && yesNo( "Save changes? (Y/N)?" ) ) {
+
+    // local changes
+    if ( anythingChanged[0] ) {
+
+       // save in local nvs
+       myOSSwarm.Ctrl[0]->save(2);
+
+       // send new config to Kelda
+       if ( ( myOSSwarm.Kelda ) && ( myOSSwarm.Kelda != myOSSwarm.Ctrl[0] ) ) myOSSwarm.Ctrl[0]->sendIOConfig( myOSSwarm.Kelda->macAddr );
+
+    }
+
+    // remote changes
+    for ( i=1; i<MAXCTRL; i++ ) {
+      if ( anythingChanged[i] ) {
+        myOSSwarm.Ctrl[i]->sendIOConfig( myOSSwarm.Ctrl[i]->macAddr );
+        myOSSwarm.Ctrl[i]->save( 2 );
+      }
+    }
+          
+  }
+
+}
+
+void changeEvents( SwOSIO * io ) {
+
+  MenuEvent menuEvent( io );
+  menuEvent.menu();
+
+}
+
+void MenuIOConfig::menu( void ) {
+
+  Menu   menu;
+
+  while (1) {
+
+    fillIOList();
+  
+    if ( controller )  menu.start( controller->getName(), 10, ' ' );
+    else               menu.start( "IO configuration", MAXIDENTIFIER+10, ' ' );
+
+    printf("     Name               Type            Alias\n");
+
+    // list IOs
+    char data[80];
+    char name[MAXIDENTIFIER+10];
+
+    // list IOs
+    for (int8_t i=0; i<=maxItem; i++ ) {
+         
+      // different ways to print the IO name
+      if ( controller >= 0 ) sprintf( name, "%s",    io[i]->getName() );
+      else                   sprintf( name, "%s.%s", io[i]->getCtrl()->getName(), io[i]->getName() );
+
+      sprintf( data, "%-18s %-15s %s", name, SWOSIOTYPE[ io[i]->getIOType() ], io[i]->getAlias() );
+
+      menu.add( data, "", i+1, '\0', true );
+
+    }
+
+    printf("\n");
+
+    if (morePages)      menu.add( "next page", "", MENU_NEXT, '>' );
+    if (pageOffset > 0) menu.add( "previous page", "", MENU_PREVIOUS, '<' );
+    if ( ( morePages ) || (pageOffset > 0) ) printf("\n");
+
+    if (!listInputs) menu.add( "show inputs", "", MENU_INPUT, 'i' );
+    if (!listActors) menu.add( "show actors", "", MENU_ACTOR, 'c' );
+    if (!listPixels) menu.add( "show pixels", "", MENU_PIXEL, 'p' );
+
+    printf("\n");
+
+    menu.add( "change IO type", "", MENU_TYPE,  't' );
+    menu.add( "change alias",   "", MENU_ALIAS, 'a' );
+
+    menu.addExit();
+  
+    // User's choice
+    int8_t choice = menu.userChoice( );
+
+    switch (choice) {
+
+      case  MENU_EXIT:    save();
+                          return;
+
+      case MENU_PIXEL:    listInputs = false;
+                          listActors = false;
+                          listPixels = true;
+                          break;
+
+      case MENU_ACTOR:    listInputs = false;
+                          listActors = true;
+                          listPixels = false;
+                          break;
+
+      case MENU_INPUT:    listInputs = true;
+                          listActors = false;
+                          listPixels = false;
+                          break;
+
+      case MENU_ALIAS:    changeAlias( );
+                          break;
+
+      case MENU_TYPE:     changeType( );
+                          break;
+
+      case MENU_NEXT:     pageOffset += IOSPERPAGE;
+                          break;
+
+      case MENU_PREVIOUS: pageOffset -= IOSPERPAGE;
+                          if ( pageOffset < 0 ) pageOffset = 0;
+                          break;
+
+      default:            changeEvents( io[choice-1] );
+                          break;
+
+    }
+
+  }
+
+}
+
+// ---------------------- menuSwarmConfig stuff ----------------------
+
+class MenuSwarmConfig {
+
+  private:
+    static const int8_t MENU_NEW           = -1;
+    static const int8_t MENU_ADD           = -2;
+    static const int8_t MENU_DELETE        = -3;
+    static const int8_t MENU_COMMUNICATION = -4;
+    static const int8_t MENU_SPEED         = -5;
+    static const int8_t MENU_PIN           = -6;
+    static const int8_t MENU_ALIAS         = -7;
+
+    SwOSCtrl *ctrl[MAXCTRL];
+    int8_t   maxCtrl = -1;
+
+    void fillCtrlList( void );
+    void changeAlias( void );
+    void newSwarm( void );
+    void addController( void );
+    void deleteController( void );
+
+  public:
+    void menu( void );
+};
+
+void MenuSwarmConfig::fillCtrlList( void ) {
+
+  maxCtrl = -1;
+  for (int8_t i=0; i<=myOSSwarm.maxCtrl; i++) {
+    if (myOSSwarm.Ctrl[i]) ctrl[++maxCtrl] = myOSSwarm.Ctrl[i];
+  }
+
+}
+
+void MenuSwarmConfig::changeAlias(void ) {
+  
+  char prompt[250];
+  char alias[MAXIDENTIFIER];
+
+  // Which one to change?
+  sprintf( prompt, "Please select the controller to be changed [1..%d]:", maxCtrl+1 );
+  int8_t selected = enterNumber( prompt, 0, 1, maxCtrl+1 ) -1;
+
+  // nothing selected
+  if (selected < 0 ) return;
+
+  // controlle isn't online
+  if (ctrl[selected]->getComState() != COMSTATE_ONLINE ) {
+    printf("\e[0;31mERROR: %s is not online.\n\e[0m\n", ctrl[selected]->getAliasOrName() );
+    return;
+  }
+  
+  // ask user for new alias
+  sprintf( prompt, "%s - please enter new alias: ", ctrl[selected]->getAliasOrName() );
+  enterIdentifier( prompt, alias, MAXIDENTIFIER );
+
+  // no changes
+  if ( strcmp( alias, ctrl[selected]->getAliasOrName() ) == 0 ) return;
+                
+  // test on duplicates
+  SwOSCtrl *testCtrl = (SwOSCtrl *)myOSSwarm.getController( alias );
+  if ( (testCtrl) && ( testCtrl != ctrl[selected] ) ) {
+    printf("\e[0;31mERROR: This alias is already used in the swarm.\n\e[0m");
+    return;
+  }
+
+  // change name
+  ctrl[selected]->setAlias( alias );
+  ctrl[selected]->save(2);
+
+}
+
+void MenuSwarmConfig::newSwarm( void ) {
+
+  char name[MAXIDENTIFIER];
+  name[0] = '\0';
+  while (strlen(name) < 5) enterString("New Swarm Name [min. 5 chars]: ", name, MAXIDENTIFIER );
+  uint16_t pin = enterNumber("New Swarm Pin [1..9999]: ", -1, 1, 9999 );
+
+  if ( myOSSwarm.Ctrl[0]->IAmKelda ) {
+    if (!yesNo( "Destroy the existing swarm and create a new one? [Y/N] " ) ) return;
+  } else {
+    if (!yesNo( "Leave the existing swarm and create a new one? [Y/N] " ) ) return;
+  }
+
+  strcpy( nvs.swarmName, name );
+  nvs.swarmPIN = pin;
+
+  myOSSwarm.newSwarm(  );
+
+  nvs.save( );
+
+}
+
+void MenuSwarmConfig::addController( void ) {
+
+  FtSwarmSerialNumber_t serialNumber = (FtSwarmSerialNumber_t) enterNumber("Enter new swarm members serial number [1..9999]: ", -1, 1, 9999 );
+
+  if ( myOSSwarm.isMember( serialNumber ) ) { printf("\e[0;31mERROR: This controller is already part of this swarm.\e[0m\n"); return; }
+  
+  if ( !myOSSwarm.addController( serialNumber ) ) {
+    // no space left
+    printf("\e[0;31mERROR: No space left in swarm. Controller #%d was declined.\e[0m\n", serialNumber );
+    return;
+  }
+
+  printf("Controller SN %d was added to the swarm.\n", serialNumber );
+
+  // wait max 1.5 minutes to get the controller connected
+  uint8_t i=0;
+  while ( !myOSSwarm.isOnline( serialNumber ) ) {
+    i++;
+    delay(100);
+    if (i > 15 ) break;
+  }
+  
+  if ( !myOSSwarm.isOnline( serialNumber ) ) printf("\e[0;31mWARNING: Please switch controller #%d on.\e[0m\n", serialNumber);
+
+  nvs.save( );
+
+}
+
+void MenuSwarmConfig::deleteController( void ) {
+
+  FtSwarmSerialNumber_t serialNumber = (FtSwarmSerialNumber_t) enterNumber("Enter serial number to be revoked [1..9999]: ", -1, 1, 9999 );
+
+  if ( !myOSSwarm.isMember( serialNumber ) ) { printf("\e[0;31mERROR: This controller isn't part of this swarm.\e[0m\n"); return; }
+  
+  if ( !myOSSwarm.deleteController( serialNumber ) ) {
+    // not found
+    printf("\e[0;31mERROR: This controller isn't part of this swarm.\e[0m\n");
+    return;
+  }
+
+  printf("Controller SN %d was revoked from the swarm.\n", serialNumber );
+
+  nvs.save( );
+
+}
+
+void MenuSwarmConfig::menu( void ) {
+
+  FtSwarmCommunication_t swarmCommunication;
+  Menu menu;
+
+  while (1) {
+    
+    fillCtrlList();
+
+    menu.start("IO configuration", 13 );
+
+    menu.add("Swarm Name", nvs.swarmName, MENU_DEACTIVATED, MENU_NOKEY );
+    if ( myOSSwarm.Kelda ) menu.add("Kelda", myOSSwarm.Kelda->getAliasOrName(), MENU_DEACTIVATED, MENU_NOKEY );
+
+    if ( nvs.RS485Available() ) {    
+      menu.add( "Communication", FTSWARMCOMMUNICATION[nvs.swarmCommunication], MENU_COMMUNICATION, 'c' );
+      if ( nvs.swarmCommunication != SWARMCOM_WIFI ) {
+        menu.add( "Swarm speed", nvs.swarmSpeed, MENU_SPEED, 's' );
+      }
+    }
+    else
+      menu.add( "Communication", FTSWARMCOMMUNICATION[nvs.swarmCommunication], MENU_DEACTIVATED, MENU_NOKEY );
+
+    menu.add("Pin", nvs.swarmPIN, MENU_DEACTIVATED, MENU_NOKEY );
+    
+    printf("\n");
+
+    printf("     Name        Status   NW-Age    Alias\n" );
+
+    for ( int8_t i=0; i<=maxCtrl; i++ ) {
+      printf( "(%2d) %10s  %-7s  [%.6lu]  %s\n", i+1, ctrl[i]->getName(), SWOSCOMSTATE[ctrl[i]->getComState()], ctrl[i]->networkAge(), ctrl[i]->getAlias() );
+      menu.add( i );
+    }
+
+    printf("\n\n");
+    menu.add( "create new swarm", "", MENU_NEW,    'n' );
+
+    if (myOSSwarm.Ctrl[0]->IAmKelda) {
+      menu.add( "add a controller to my swarm", "", MENU_ADD,    '+' );
+      if (myOSSwarm.maxCtrl > 0) menu.add( "revoke a controller from my swarm", "", MENU_DELETE, '-' );
+    }
+
+    menu.add( "set alias name", "", MENU_ALIAS,  'a' );
+    menu.addExit();
+  
+    int8_t choice = menu.userChoice();
+
+    switch( choice ) {
+      case MENU_EXIT: // main
+        return;
+
+      case MENU_COMMUNICATION: 
+        if ( nvs.IAmKelda ) swarmCommunication = (FtSwarmCommunication_t) enterNumber( "enter swarm communication [1-wifi, 2-RS485, 3-both]:", nvs.swarmCommunication, 1, 3 );
+        else                swarmCommunication = (FtSwarmCommunication_t) enterNumber( "enter swarm communication [1-wifi, 2-RS485]:", nvs.swarmCommunication, 1, 2 );
+        if (nvs.swarmCommunication != swarmCommunication) {
+          // test if wifiMode is OFF and swarm should use wifi
+          if ( ( nvs.wifiMode == wifiOFF ) && ( swarmCommunication & 0x1 ) ) {
+            printf("\e[0;31mError: please activate wifi first.\e[0m\n");
+          } else {
+            // let's save data
+            nvs.swarmCommunication = swarmCommunication;
+            if ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) nvs.saveAndRestart();
+          }
+        }
+        break;
+
+      case MENU_SPEED:  nvs.swarmSpeed = enterNumber( "(0) low ... (4) highspeed (max. 50m)>", nvs.swarmSpeed, 0, 4 );
+                        if ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) nvs.saveAndRestart();
+                        break;
+
+      case MENU_NEW:    newSwarm();
+                        break;
+        
+      case MENU_ADD:    addController();
+                        break;
+
+      case MENU_DELETE: deleteController();
+                        break;
+
+      case MENU_ALIAS:  changeAlias();
+                        break;
+
+      default:          if (ctrl[choice]->getComState() != COMSTATE_ONLINE ) {
+                          printf("\e[0;31mERROR: %s is not online.\n\e[0m\n", ctrl[choice]->getAliasOrName() );
+                        } else {
+                          MenuIOConfig menuIOConfig( ctrl[choice] );
+                          menuIOConfig.menu();
+                        }
+                        break;
+
+      }
+
+  }
+
+}
+
+
+
+void factorySettings( void ) {
+  // reset controller to factory settings
+
+  if (yesNo("Do you want to reset this device to it's factory settings (Y/N)?" ) ) {
+
+    nvs.factorySettings();
+
+    myOSSwarm.Ctrl[0]->factorySettings();
+
+    printf("device will restart now.\n");
+
+    delay(2000);
+
+    // Alias names
+    myOSSwarm.Ctrl[0]->saveToNVS( );
+
+    nvs.saveAndRestart();
+
+  }
+
+}
+
 #define MAINMENUWEB       1
 #define MAINMENUSWARM     2
-#define MAINMENUIOTYPES   3
+#define MAINMENUIOCONFIG  3
 #define MAINMENUFACTORY   4
 #define MAINMENUREMOTE    5
-#define MAINMENUMISC      6
 
 void mainMenu( void ) {
 
@@ -1014,35 +1275,31 @@ void mainMenu( void ) {
   while (1) {
 
     menu.start( "Main Menu", 14 );
-    menu.add("Wifi & Web UI", "", MAINMENUWEB );
+    menu.add("Wifi & Local Settings", "", MAINMENUWEB, 'w' );
     if ( ( WiFi.status() == WL_CONNECTED ) || ( nvs.wifiMode == wifiAP ) || ( nvs.RS485Available() ) ) {
-      menu.add("Swarm Configuration", "", MAINMENUSWARM );
+      menu.add("Swarm Configuration", "", MAINMENUSWARM, 's' );
     } else {
-      menu.add("Swarm Configuration - activate WiFi", "", DEACTIVATED );
-    }
-    menu.add("IO Types & Alias Names", "", MAINMENUIOTYPES );
-
-    if (myOSSwarm.Ctrl[0]->IAmKelda) menu.add("Remote Control", "", MAINMENUREMOTE );
-
-    // special HW
-    switch (myOSSwarm.Ctrl[0]->getType()) {
-
-      case FTSWARMCONTROL:
-      case FTSWARM:         menu.add("Misc Settings", "", MAINMENUMISC );
-                            break;
-
+      menu.add("Swarm Configuration - activate WiFi", "", MENU_DEACTIVATED );
     }
 
-    menu.add("Factory Reset", "", MAINMENUFACTORY );
+    menu.add("IO Configuration", "", MAINMENUIOCONFIG, 'i' );
+    menu.add("Remote/Event Configuration", "", MAINMENUREMOTE, 'r' );
+
+    menu.add("Factory Reset", "", MAINMENUFACTORY, 'f' );
+    menu.addExit();
+
+    MenuIOConfig      menuIOConfig;
+    MenuLocalSettings menuLocalSettings;
+    MenuSwarmConfig   menuSwarmConfig;
+    MenuEvent         menuEvent;
 
     switch( menu.userChoice(  )  ) {
-      case 0:                 return;
-      case MAINMENUWEB:       wifiMenu();         break;
-      case MAINMENUSWARM:     swarmMenu();        break;
-      case MAINMENUIOTYPES:   ioTypesMenu();      break;
-      case MAINMENUFACTORY:   factorySettings();  break;
-      case MAINMENUREMOTE:    remoteControl();    break;
-      case MAINMENUMISC:      miscSettingsMenu(); break;
+      case MENU_EXIT:         return;
+      case MAINMENUWEB:       menuLocalSettings.menu(); break;
+      case MAINMENUSWARM:     menuSwarmConfig.menu();   break;
+      case MAINMENUIOCONFIG:  menuIOConfig.menu();      break;
+      case MAINMENUREMOTE:    menuEvent.menu();         break;
+      case MAINMENUFACTORY:   factorySettings();        break;
     }
     
   }

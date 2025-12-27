@@ -40,7 +40,11 @@ typedef enum {
   COMSTATE_CONNECT_PHASE1, // try to connect the remote controller
   COMSTATE_CONNECT_PHASE2, // wait for IO settings & alias names
   COMSTATE_ONLINE, 
-  COMSTATE_ERROR } SwOSComState_t;
+  COMSTATE_ERROR,
+  COMSTATE_MAX } SwOSComState_t;
+
+  
+const char SWOSCOMSTATE[COMSTATE_MAX][11] = { "OFFLINE", "OFFLINE", "CONNECTING", "ONLINE", "ERROR" };
 
 typedef enum {
     UICLASS_NONE,
@@ -103,6 +107,8 @@ protected:
 
   // local HW 
   virtual void setupLocal() {};
+  static int32_t evalOperand( FtSwarmOperand_t v, int32_t sensor, int32_t actor, int32_t parameter );
+  static int32_t evalTriggerMath( SwOSTriggerMath_t triggerMath, int32_t sensor, int32_t actor, int32_t parameter, int32_t minValue, int32_t maxValue );
 
 public:
   // Constructors
@@ -121,6 +127,7 @@ public:
 	virtual SwOSIOType_t    getIOType() { return ioType; };
   virtual SwOSUIClass_t   getUIClass();
   virtual const char*     getIcon();
+  virtual void            getUID( SwOSIOUID_t *uid );
 	virtual void            serialize( Serialize *serialize );
   virtual void            take( void ) { useCounter++; };                      // register an instance using this IO
   virtual void            give( void ) { if (useCounter>0) useCounter--; };   // unregister an instance using this IO
@@ -150,7 +157,7 @@ public:
   virtual bool isStepper( void )      { return false; };
 
   virtual void operate( void ) { };
-  virtual void onTrigger( FtSwarmTrigger_t event, int32_t value, int32_t parameter );
+  virtual void onTrigger( SwOSTriggerMath_t triggerMath, int32_t sensor, int32_t parameter );
 
 };
 
@@ -162,13 +169,12 @@ public:
 
 class SwOSEventHandler {
   public:
-    FtSwarmTrigger_t trigger;
-    SwOSIO           *actor         = NULL;
-    bool             useSensorValue = NULL;
-    int32_t          parameter      = 0;
-    SwOSEventHandler *next          = NULL;
+    SwOSTriggerMath_t triggerMath;
+    SwOSIO            *actor         = NULL;
+    int32_t           parameter      = 0;
+    SwOSEventHandler  *next          = NULL;
 
-    SwOSEventHandler( FtSwarmTrigger_t trigger, SwOSIO *actor, int32_t parameter );
+    SwOSEventHandler( SwOSTriggerMath_t triggerMath, SwOSIO *actor, int32_t parameter );
     ~SwOSEventHandler( );
 };
 
@@ -177,10 +183,10 @@ class SwOSEventInput {
     SwOSEventHandler *eventList = NULL;
   public:
    ~SwOSEventInput();
-    bool deleteEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor );
+    bool deleteEvent( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, SwOSIO *actor );
     void deleteEvents( void );
-    bool addEvent( FtSwarmTrigger_t triggerEvent, SwOSIO *actor, int32_t parameter );
-    void trigger( FtSwarmTrigger_t triggerEvent, int32_t value );
+    bool addEvent( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, SwOSIO *actor, int32_t parameter );
+    void trigger( FtSwarmTrigger_t triggerEvent, int32_t sensor );
 };
 
 /***************************************************

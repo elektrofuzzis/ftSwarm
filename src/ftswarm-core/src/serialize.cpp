@@ -46,7 +46,10 @@ const char SLITERAL[ SERIALIZE_LITERAL_MAX ][24] = {
   "events",             // SERIALIZE_LITERAL_EVENTS
   "distance",           // SERIALIZE_LITERAL_DISTANCE
   "homing",             // SERIALIZE_LITERAL_HOMING
-  "running"             // SERIALIZE_LITERAL_RUNNING
+  "running",            // SERIALIZE_LITERAL_RUNNING
+  "operator",           // SERIALIZE_LITERAL_OPERATOR
+  "operand1",           // SERIALIZE_LITERAL_OPERAND1
+  "operand2"            // SERIALIZE_LITERAL_OPERAND2
 };
 
 Serialize::Serialize( char *buffer, size_t bufSize, SerialFormat_t format ) {

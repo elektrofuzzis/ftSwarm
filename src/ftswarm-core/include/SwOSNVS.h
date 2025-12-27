@@ -33,12 +33,22 @@ struct SwOSJoyCalibration_t {
 
 } __attribute__((packed));
 
+typedef union {
+    uint16_t raw;
+    struct {
+        FtSwarmTrigger_t  trigger : 4;  // trigger event like up, down, change_value
+        FtSwarmOperator_t op      : 4;  // operators like +, -, =
+        FtSwarmOperand_t  v1      : 4;  // 1st operand like constant, sensor's value, actor's value
+        FtSwarmOperand_t  v2      : 4;  // 2nd operand like constant, sensor's value, actor's value
+    } bits;
+} SwOSTriggerMath_t;
+
 struct SwOSNVSEvent_t {
 
-  SwOSIOUID_t      sensor;
-  SwOSIOUID_t      actor;
-  FtSwarmTrigger_t trigger;
-  int32_t          parameter;
+  SwOSIOUID_t       sensor;
+  SwOSIOUID_t       actor;
+  SwOSTriggerMath_t triggerMath;
+  int32_t           parameter;
 
 } __attribute__((packed));
 

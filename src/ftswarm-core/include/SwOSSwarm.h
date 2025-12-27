@@ -29,7 +29,6 @@ protected:
   bool     verbose = false;
   bool     initialized = false;
 
-  uint8_t  getIndex( FtSwarmSerialNumber_t serialNumber );               // return index of controller with this s/n or are free slot if not found
 	bool     splitID( char *id, uint8_t *index, char *io, size_t sizeIO);  // split identifier
   SwOSIO  *waitFor( char *alias );
   void     startWifi( void );
@@ -71,6 +70,9 @@ public:
 
   // Get a controller in the swarm using his serial number. Returns the controller's pointer or NULL if it doesn't exist.
   void *getController( FtSwarmSerialNumber_t SN );
+
+  // return index of controller with this s/n or are free slot if not found
+  uint8_t  getIndex( FtSwarmSerialNumber_t serialNumber );
 
   // Get an IO in the swarm using controllers serial number, port and ioType. Returns the IO's pointer or NULL if it doesn't exist.
   virtual SwOSIO* getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType );

@@ -61,7 +61,9 @@ typedef uint8_t  FtSwarmPort_t;
 typedef enum { SWOS_OK, SWOS_TIMEOUT, SWOS_DENY } SwOSError_t;
 
 // communication
-typedef enum { swarmComWifi = 1, swarmComRS485 = 2, swarmComBoth= 3 } FtSwarmCommunication_t; 
+typedef enum { SWARMCOM_WIFI = 1, SWARMCOM_RS485 = 2, SWARMCOM_BOTH = 3, SWARMCOM_MAX } FtSwarmCommunication_t; 
+
+const char FTSWARMCOMMUNICATION[ SWARMCOM_MAX ][13] = { "none", "wifi", "RS485", "wifi & RS485" };
 
 // state
 typedef enum { OFFLINE, BOOTING, STARTWIFI, RUNNING, ERROR, WAITING, IDENTIFY, FATAL, MAXSTATE } SwOSState_t;
@@ -301,8 +303,16 @@ typedef enum { FTSWARM_GYRO_OFF, FTSWARM_GYRO_LSM, FTSWARM_GYRO_MPU } FtSwarmGyr
 typedef enum { FTSWARM_EXT_OFF, FTSWARM_EXT_I2C_MASTER, FTSWARM_EXT_I2C_SLAVE, FTSWARM_EXT_OUTPUT, FTSWARM_EXT_SERVO, FTSWARM_EXT_LIDAR } FtSwarmExtMode_t;
 
 // trigger events
-typedef enum { FTSWARM_TRIGGERDOWN, FTSWARM_TRIGGERUP, FTSWARM_TRIGGERVALUE, FTSWARM_TRIGGERADD, FTSWARM_TRIGGERI2CREAD, FTSWARM_TRIGGERI2CWRITE, FTSWARM_MAXTRIGGER } FtSwarmTrigger_t;
+typedef enum { FTSWARM_TRIGGERDOWN, FTSWARM_TRIGGERUP, FTSWARM_TRIGGERVALUE, FTSWARM_TRIGGERI2CREAD, FTSWARM_TRIGGERI2CWRITE, FTSWARM_MAXTRIGGER } FtSwarmTrigger_t;
+const char FTSWARMTRIGGER[FTSWARM_MAXTRIGGER][12] = { "TriggerDown", "TriggerUp", "ChangeValue", "I2CRead", "I2CWrite" };
 
+// trigger operators
+typedef enum { FTSWARM_ASSIGN, FTSWARM_ADD, FTSWARM_MULTIPLY, FTSWARM_OPERATOR_MAX } FtSwarmOperator_t;
+const char FTSWARMOPERATOR[ FTSWARM_OPERATOR_MAX][2] = { "=", "+", "*" };
+
+// trigger operands
+typedef enum { FTSWARM_CONSTANT, FTSWARM_SENSORVALUE, FTSWARM_ACTORVALUE, FTSWARM_OPERAND_MAX } FtSwarmOperand_t;
+const char FTSWARMOPERAND[ FTSWARM_OPERAND_MAX][15] = { "constant", "sensor's value", "actor's value" };
 
 typedef enum {
     Red        = 0xFF0000,
@@ -495,8 +505,7 @@ class FtSwarmSensor : public FtSwarmIO {
     FtSwarmSensor( const char *name, SwOSIOType_t ioType );
 
   public:
-    void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 ); 
-    void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor ); 
+    void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, FtSwarmIO *actor, int32_t p1 = 0 ); 
 };
 
 // **** input / actor classes to use in your sketch ****
@@ -806,8 +815,8 @@ class FtSwarmJoystick : public FtSwarmIO {
     int16_t getLR();         // left/right position
     bool getButtonState();   // button pressed/released
     void getValue( int16_t *FB, int16_t *LR, bool *buttonState );
-    void onTriggerLR( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 = 0 ); 
-    void onTriggerFB( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 = 0 ); 
+    void onTriggerLR( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, FtSwarmIO *actor, int32_t p1 = 0 ); 
+    void onTriggerFB( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, FtSwarmIO *actor, int32_t p1 = 0 ); 
 
 };
 
@@ -836,7 +845,7 @@ class FtSwarmI2C : public FtSwarmIO {
     uint8_t getRegister(uint8_t reg);
     void    setRegister(uint8_t reg, uint8_t value);
 
-    void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmIO *actor, int32_t p1 = 0 ); 
+    void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, FtSwarmIO *actor, int32_t p1 = 0 ); 
 
 };
 

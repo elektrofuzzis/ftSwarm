@@ -74,7 +74,8 @@ const IOCmdList_t IOCmdList [CLICMD_MAX] = {
   { "homing", true, 1, 1},
   { "isHoming", true, 0, 0},
   { "setHomingOffset", true, 1, 1},
-  { "testPixels", true, 1, 1}
+  { "testPixels", true, 1, 1},
+  { "print", true, 0, 0 }
 };
 
 const char help[] = R"(help   - list all commands
@@ -84,6 +85,7 @@ whoami - my own hostname
 uptime - my own uptime
 exit   - end command line interface.
 
+nvs.print or
 swarm.<Command>(<parameter>, ...) or
 <Alias-Name>.<Command>(<parameter>, ...) or
 <Hostname>.<Controller-xcommand>(<parameter>, ...) or
@@ -203,6 +205,7 @@ void SwOSCLI::Error( Error_t error, int expected, int found ) {
     case ERROR_PARAMETEREXPECTED:       sprintf( response, "%*sparameter expected.", pos, err); break;
     case ERROR_SSIDEXPECTED:            sprintf( response, "%*sSSID expected.", pos, err); break;
     case ERROR_PSKEXPECTED:             sprintf( response, "%*sPSK expected.", pos, err); break;
+    case ERROR_NOTIMPLEMENTEDYET:       sprintf( response, "not implemnted yet." ); break;
     default:                            sprintf( response, "%*sSyntax error.", pos, err); break;
   }
   
@@ -646,7 +649,9 @@ void SwOSCLI::executeInputCmd( void ) {
                                 io->unlock();
                                 break;
 
-    case CLICMD_onTrigger:      // TODO better error handling
+    case CLICMD_onTrigger:      // TODO 
+                                Error( ERROR_NOTIMPLEMENTEDYET );
+                                /*
                                 if (( parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER-1, response ) ) &&
                                     ( parameter[1].isIO() ) &&
                                     ( parameter[2].isNumber() ) ) {
@@ -654,7 +659,7 @@ void SwOSCLI::executeInputCmd( void ) {
                                   io->lock();
                                   ((SwOSInput *)io)->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), parameter[1].getIO(), parameter[2].getNumber() );
                                   io->unlock();
-                                }
+                                }*/
                                 break;
 
     default:                    Error( ERROR_INVALIDCMD );
@@ -825,7 +830,10 @@ void SwOSCLI::executeJoystickCmd( void ) {
                               io->unlock();
                               break;
 
-    case CLICMD_onTriggerLR:  if (( parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER-1, response ) ) &&
+    case CLICMD_onTriggerLR:  // ToDo
+                              Error( ERROR_NOTIMPLEMENTEDYET );
+                              /*
+                              if (( parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER-1, response ) ) &&
                                   ( parameter[1].isIO() ) &&
                                   ( parameter[2].isNumber() ) ) {
                                 OK();
@@ -833,9 +841,13 @@ void SwOSCLI::executeJoystickCmd( void ) {
                                 ((SwOSJoystick*)io)->lr->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), parameter[1].getIO(), parameter[2].getNumber()  );
                                 io->unlock();
                               }
+                              */
                               break;
 
-    case CLICMD_onTriggerFB:  if (( parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER-1, response ) ) &&
+    case CLICMD_onTriggerFB:  // TODO
+                              Error( ERROR_NOTIMPLEMENTEDYET );
+                              /*
+                              if (( parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER-1, response ) ) &&
                                   ( parameter[1].isIO() ) &&
                                   ( parameter[2].isNumber() ) ) {
                                 OK();
@@ -843,6 +855,7 @@ void SwOSCLI::executeJoystickCmd( void ) {
                                 ((SwOSJoystick*)io)->fb->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), parameter[1].getIO(), parameter[2].getNumber() );
                                 io->unlock();
                               }
+                                */
                               break;
 
     default:                  Error( ERROR_INVALIDCMD );
@@ -938,7 +951,10 @@ void SwOSCLI::executeI2CCmd( void ) {
                                 }
                                 break;
 
-    case CLICMD_onTrigger:     if ( ( parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER-1, response ) ) &&
+    case CLICMD_onTrigger:      // TODO 
+                                Error( ERROR_NOTIMPLEMENTEDYET );
+                                /*
+                                if ( ( parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER-1, response ) ) &&
                                   ( parameter[1].isIO() ) &&
                                   ( parameter[2].isNumber() ) ) {
                                   OK();
@@ -946,10 +962,26 @@ void SwOSCLI::executeI2CCmd( void ) {
                                   ((SwOSI2C *)io)->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), parameter[1].getIO(), parameter[2].getNumber() );
                                   io->unlock();
                                 }
-
+                                */
+                                break;
 
     default:                    Error( ERROR_INVALIDCMD );
                                 break;
+  }
+
+}
+
+void SwOSCLI::executeNVSCmd( bool *loggedIn ) {
+
+  switch ( cmd ) {
+
+    case CLICMD_print:  if (!*loggedIn) Error( ERROR_WRONGPIN );
+                        else nvs.printNVS();
+                        break;
+
+    default:            Error( ERROR_INVALIDCMD );
+                        break;
+
   }
 
 }
@@ -1162,12 +1194,13 @@ void SwOSCLI::evalComplexCommand( char *token, bool *loggedIn ) {
   char     IOName[CLIMAXLINE];
   char     paramIOName[CLIMAXLINE];
   bool     swarm = ( strcmp( token, "swarm" ) == 0 );
+  bool     nvs   = ( strcmp( token, "nvs" ) == 0 );
 
   // check, if the token is a controller or an io or nvs or swarm
-  if ( (!swarm) && (!getIO( token, IOName, &ctrl, &io ) ) ) { Error( ERROR_IOEXPECTED ); return; }
+  if ( (!swarm) && (!nvs) && (!getIO( token, IOName, &ctrl, &io ) ) ) { Error( ERROR_IOEXPECTED ); return; }
 
   // unvalid io?
-  if ( ( !io ) && ( !ctrl ) && (!swarm) ) { Error( ERROR_IOEXPECTED ); return; }
+  if ( ( !io ) && ( !ctrl ) && (!swarm) && (!nvs) ) { Error( ERROR_IOEXPECTED ); return; }
 
   // now we need another "." and a method
   if ( getNextToken( token ) != EVAL_DOT ) { Error( ERROR_DOTEXPECTED ); return; }
@@ -1284,6 +1317,10 @@ void SwOSCLI::evalComplexCommand( char *token, bool *loggedIn ) {
 
     executeSwarmCmd( loggedIn );
 
+  } else if (nvs) {
+
+    executeNVSCmd( loggedIn );
+  
   } else {
 
     // standard cmd
