@@ -373,15 +373,13 @@ void MenuEvent::enterIO( const char* prompt, SwOSIOUID_t *uio, bool input ) {
   char   alias[MAXIDENTIFIER];
   SwOSIO *io;
 
+  // default
+  io = myOSSwarm.getIO( *uio );
+  if (io) strcpy( alias, io->getAliasOrName() );
+  
   while (1) {
 
-    enterString( prompt, alias, sizeof(alias) );
-
-    // default
-    if ( alias[0] == '\0' ) {
-      io = myOSSwarm.getIO( *uio );
-      if (io) strcpy( alias, io->getAlias() );
-    }
+    enterString( prompt, alias, alias, sizeof(alias) );
 
     // get IO
     io = myOSSwarm.getIO( alias );
