@@ -473,12 +473,12 @@ bool Menu::addExit( void ) {
 
 bool Menu::add( const char *item, const char *value, uint8_t id, char key, bool staticDelimiter ) {
 
-  if (!add( id, key)) return false;
+  if ( !add( id, key) ) return false;
 
   if      ( ( key != '\0' ) && ( id!=MENU_DEACTIVATED ) ) printf( "(%c)  %s", key, item );
   else if ( ( key != '\0' ) && ( id==MENU_DEACTIVATED ) ) printf( "     %s", item );
   else if ( ( key == '\0' ) && ( id==MENU_DEACTIVATED ) ) printf( "(--) %s", item );
-  else                                                   printf( "(%2d) %s", maxItem, item );
+  else                                                    printf( "(%2d) %s", maxItem, item );
   
   if ( ( value[0] != '\0' ) || ( staticDelimiter ) ) {
     printf("%c ", delimiter);

@@ -638,10 +638,10 @@ void MenuEvent::menu( void ) {
         // increase events counter
         events++;
 
-        printf("(%2d) ", i+1 );
+        printf("(%2d) ", events );
         printEvent( nvs.events[nvs.activeEventConfig][i] );
 
-        menu.add( i+1 );
+        menu.add( i );
 
       }
 
@@ -671,16 +671,16 @@ void MenuEvent::menu( void ) {
 
       case MENU_CFG:  sprintf( line, "Switch to configuration [1..%d]", MAXEVENTCONFIGS );
                       newConfig = enterNumber( line, nvs.activeEventConfig+1, 1, MAXEVENTCONFIGS ) -1;
-                        if ( newConfig != nvs.activeEventConfig ) {
-                          anythingChanged = true;
-                          nvs.activeEventConfig = newConfig;
-                          myOSSwarm.deleteEvents();
-                          myOSSwarm.addEvents( newConfig );
-                        }
+                      if ( newConfig != nvs.activeEventConfig ) {
+                        anythingChanged = true;
+                        nvs.activeEventConfig = newConfig;
+                        myOSSwarm.deleteEvents();
+                        myOSSwarm.addEvents( newConfig );
+                      }
                       break;
 
       default:        printf("\n"); 
-                      if ( changeEvent( nvs.activeEventConfig, &nvs.events[nvs.activeEventConfig][choice -1] ) ) anythingChanged = true;
+                      if ( changeEvent( nvs.activeEventConfig, &nvs.events[nvs.activeEventConfig][choice] ) ) anythingChanged = true;
                       break;
 
     }
