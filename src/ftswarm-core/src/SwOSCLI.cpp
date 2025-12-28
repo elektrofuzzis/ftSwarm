@@ -53,9 +53,9 @@ const IOCmdList_t IOCmdList [CLICMD_MAX] = {
   { "getSpeed", false, 0, 0},
   { "setMotionType", true, 0, 0},
   { "getMotionType", false, 0, 0},
-  { "onTrigger", true, 2, 3},
-  { "onTriggerLR", true, 2, 3},
-  { "onTriggerFB", true, 2, 3},
+  { "onTrigger", true, 2, 6},
+  { "onTriggerLR", true, 2, 6},
+  { "onTriggerFB", true, 2, 6},
   { "setPosition", true, 1, 1},
   { "getPosition", false, 0, 0},
   { "setOffset", true, 1, 1},
@@ -118,17 +118,17 @@ Input commands (A1..A6):
   getCelcius()
   getFahrenheit()
   getToggle()
-  onTrigger( triggerEvent, actor, p1)
-  onTrigger( triggerEvent, actor)
+  onTrigger( triggerEvent, operator, operand1, operand2, actor, p1)
+  onTrigger( triggerEvent, operator, operand1, operand2, actor)
     
 Joystick commands (JOY1..JOY2):
   subscribe( int hysteresis )
   unsubscribe()
   getValue()
-  onTriggerLR( triggerEvent, actor, p1)
-  onTriggerLR( triggerEvent, actor)
-  onTriggerFB( triggerEvent, actor, p1)
-  onTriggerFB( triggerEvent, actor)
+  onTriggerLR( triggerEvent, operator, operand1, operand2, actor, p1)
+  onTriggerLR( triggerEvent, operator, operand1, operand2, actor)
+  onTriggerFB( triggerEvent, operator, operand1, operand2, actor, p1)
+  onTriggerFB( triggerEvent, operator, operand1, operand2, actor)
 
 DC-Motor commands (M1..M8):
   getIOType()
@@ -172,7 +172,8 @@ ftPixel commands (LED1..LED18):
 I2C commands:
   setRegister( register, value )
   getRegister( register )
-  onTrigger( triggerEvent, actor, p1)
+  onTrigger( triggerEvent, operator, operand1, operand2, actor, p1)
+  onTrigger( triggerEvent, operator, operand1, operand2, actor)
 )";
 
 
@@ -649,17 +650,22 @@ void SwOSCLI::executeInputCmd( void ) {
                                 io->unlock();
                                 break;
 
-    case CLICMD_onTrigger:      // TODO 
-                                Error( ERROR_NOTIMPLEMENTEDYET );
-                                /*
-                                if (( parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER-1, response ) ) &&
-                                    ( parameter[1].isIO() ) &&
-                                    ( parameter[2].isNumber() ) ) {
+    case CLICMD_onTrigger:      if ( ( parameter[0].inRange( "triggerEvent", 0, FTSWARM_MAXTRIGGER-1, response ) ) &&
+                                     ( parameter[1].inRange( "operator", 0, FTSWARM_MAXOPERATOR-1, response ) ) &&
+                                     ( parameter[2].inRange( "operand1", 0, FTSWARM_MAXOPERAND-1, response ) ) &&
+                                     ( parameter[3].inRange( "operand2", 0, FTSWARM_MAXOPERAND-1, response ) ) &&
+                                     ( parameter[4].isIO() ) &&
+                                     ( parameter[5].isNumber() ) ) {
                                   OK();
                                   io->lock();
-                                  ((SwOSInput *)io)->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), parameter[1].getIO(), parameter[2].getNumber() );
+                                  ((SwOSInput *)io)->addEvent(  (FtSwarmTrigger_t)parameter[0].getNumber(), 
+                                                                (FtSwarmOperator_t)parameter[1].getNumber(), 
+                                                                (FtSwarmOperand_t)parameter[2].getNumber(), 
+                                                                (FtSwarmOperand_t)parameter[3].getNumber(), 
+                                                                parameter[4].getIO(), 
+                                                                parameter[5].getNumber() );
                                   io->unlock();
-                                }*/
+                                }
                                 break;
 
     default:                    Error( ERROR_INVALIDCMD );
@@ -830,32 +836,40 @@ void SwOSCLI::executeJoystickCmd( void ) {
                               io->unlock();
                               break;
 
-    case CLICMD_onTriggerLR:  // ToDo
-                              Error( ERROR_NOTIMPLEMENTEDYET );
-                              /*
-                              if (( parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER-1, response ) ) &&
-                                  ( parameter[1].isIO() ) &&
-                                  ( parameter[2].isNumber() ) ) {
+    case CLICMD_onTriggerLR:  if ( ( parameter[0].inRange( "triggerEvent", 0, FTSWARM_MAXTRIGGER-1, response ) ) &&
+                                   ( parameter[1].inRange( "operator", 0, FTSWARM_MAXOPERATOR-1, response ) ) &&
+                                   ( parameter[2].inRange( "operand1", 0, FTSWARM_MAXOPERAND-1, response ) ) &&
+                                   ( parameter[3].inRange( "operand2", 0, FTSWARM_MAXOPERAND-1, response ) ) &&
+                                   ( parameter[4].isIO() ) &&
+                                   ( parameter[5].isNumber() ) ) {
                                 OK();
                                 io->lock();
-                                ((SwOSJoystick*)io)->lr->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), parameter[1].getIO(), parameter[2].getNumber()  );
+                                ((SwOSJoystick *)io)->lr->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), 
+                                                                    (FtSwarmOperator_t)parameter[1].getNumber(), 
+                                                                    (FtSwarmOperand_t)parameter[2].getNumber(), 
+                                                                    (FtSwarmOperand_t)parameter[3].getNumber(), 
+                                                                    parameter[4].getIO(), 
+                                                                    parameter[5].getNumber() );
                                 io->unlock();
                               }
-                              */
                               break;
 
-    case CLICMD_onTriggerFB:  // TODO
-                              Error( ERROR_NOTIMPLEMENTEDYET );
-                              /*
-                              if (( parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER-1, response ) ) &&
-                                  ( parameter[1].isIO() ) &&
-                                  ( parameter[2].isNumber() ) ) {
+    case CLICMD_onTriggerFB:  if ( ( parameter[0].inRange( "triggerEvent", 0, FTSWARM_MAXTRIGGER-1, response ) ) &&
+                                   ( parameter[1].inRange( "operator", 0, FTSWARM_MAXOPERATOR-1, response ) ) &&
+                                   ( parameter[2].inRange( "operand1", 0, FTSWARM_MAXOPERAND-1, response ) ) &&
+                                   ( parameter[3].inRange( "operand2", 0, FTSWARM_MAXOPERAND-1, response ) ) &&
+                                   ( parameter[4].isIO() ) &&
+                                   ( parameter[5].isNumber() ) ) {
                                 OK();
                                 io->lock();
-                                ((SwOSJoystick*)io)->fb->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), parameter[1].getIO(), parameter[2].getNumber() );
+                                ((SwOSJoystick *)io)->fb->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), 
+                                                                    (FtSwarmOperator_t)parameter[1].getNumber(), 
+                                                                    (FtSwarmOperand_t)parameter[2].getNumber(), 
+                                                                    (FtSwarmOperand_t)parameter[3].getNumber(), 
+                                                                    parameter[4].getIO(), 
+                                                                    parameter[5].getNumber() );
                                 io->unlock();
                               }
-                                */
                               break;
 
     default:                  Error( ERROR_INVALIDCMD );
@@ -950,19 +964,22 @@ void SwOSCLI::executeI2CCmd( void ) {
                                   io->unlock();
                                 }
                                 break;
-
-    case CLICMD_onTrigger:      // TODO 
-                                Error( ERROR_NOTIMPLEMENTEDYET );
-                                /*
-                                if ( ( parameter[0].inRange( "actor", 0, FTSWARM_MAXTRIGGER-1, response ) ) &&
-                                  ( parameter[1].isIO() ) &&
-                                  ( parameter[2].isNumber() ) ) {
+    case CLICMD_onTrigger:      if ( ( parameter[0].inRange( "triggerEvent", 0, FTSWARM_MAXTRIGGER-1, response ) ) &&
+                                     ( parameter[1].inRange( "operator", 0, FTSWARM_MAXOPERATOR-1, response ) ) &&
+                                     ( parameter[2].inRange( "operand1", 0, FTSWARM_MAXOPERAND-1, response ) ) &&
+                                     ( parameter[3].inRange( "operand2", 0, FTSWARM_MAXOPERAND-1, response ) ) &&
+                                     ( parameter[4].isIO() ) &&
+                                     ( parameter[5].isNumber() ) ) {
                                   OK();
                                   io->lock();
-                                  ((SwOSI2C *)io)->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), parameter[1].getIO(), parameter[2].getNumber() );
+                                  ((SwOSI2C *)io)->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), 
+                                                             (FtSwarmOperator_t)parameter[1].getNumber(), 
+                                                             (FtSwarmOperand_t)parameter[2].getNumber(), 
+                                                             (FtSwarmOperand_t)parameter[3].getNumber(), 
+                                                             parameter[4].getIO(), 
+                                                             parameter[5].getNumber() );
                                   io->unlock();
                                 }
-                                */
                                 break;
 
     default:                    Error( ERROR_INVALIDCMD );

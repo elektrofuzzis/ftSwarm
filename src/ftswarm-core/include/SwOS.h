@@ -307,12 +307,12 @@ typedef enum { FTSWARM_TRIGGERDOWN, FTSWARM_TRIGGERUP, FTSWARM_TRIGGERVALUE, FTS
 const char FTSWARMTRIGGER[FTSWARM_MAXTRIGGER][12] = { "TriggerDown", "TriggerUp", "ChangeValue", "I2CRead", "I2CWrite" };
 
 // trigger operators
-typedef enum { FTSWARM_ASSIGN, FTSWARM_ADD, FTSWARM_MULTIPLY, FTSWARM_OPERATOR_MAX } FtSwarmOperator_t;
-const char FTSWARMOPERATOR[ FTSWARM_OPERATOR_MAX][2] = { "=", "+", "*" };
+typedef enum { FTSWARM_ASSIGN, FTSWARM_ADD, FTSWARM_MULTIPLY, FTSWARM_MAXOPERATOR } FtSwarmOperator_t;
+const char FTSWARMOPERATOR[ FTSWARM_MAXOPERATOR][2] = { "=", "+", "*" };
 
 // trigger operands
-typedef enum { FTSWARM_CONSTANT, FTSWARM_SENSORVALUE, FTSWARM_ACTORVALUE, FTSWARM_OPERAND_MAX } FtSwarmOperand_t;
-const char FTSWARMOPERAND[ FTSWARM_OPERAND_MAX][15] = { "constant", "sensor's value", "actor's value" };
+typedef enum { FTSWARM_CONSTANT, FTSWARM_SENSORVALUE, FTSWARM_ACTORVALUE, FTSWARM_MAXOPERAND } FtSwarmOperand_t;
+const char FTSWARMOPERAND[ FTSWARM_MAXOPERAND][15] = { "constant", "sensor's value", "actor's value" };
 
 typedef enum {
     Red        = 0xFF0000,
