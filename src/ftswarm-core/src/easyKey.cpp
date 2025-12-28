@@ -55,11 +55,14 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
       ch = Serial.read();
       
       switch (ch) {
+
         case '\n':  break;
+
         case '\r':  strcpy( s, str );
                     free(str);
                     if ( easyKeyEcho ) printf("\n");
                     return true;
+
         case '\b': 
         case 127:   if (i>0) { 
                       str[--i] = '\0';
@@ -67,30 +70,30 @@ bool enterSomething( const char *prompt, char *s, uint16_t size, bool hidden, in
                     }
                     break;
       
-        case '\e': free(str);
-                   if ( easyKeyEcho ) printf("\n");
-                   return false;
+        case '\e':  free(str);
+                    if ( easyKeyEcho ) printf("\n");
+                    return false;
       
-        default:   if ( ( ch < 255 ) && ( validChar( ch ) ) && ( i<size-1) ) {
+        default:    if ( ( ch < 255 ) && ( validChar( ch ) ) && ( i<size-1) ) {
 
-  	                // add new char
-                     str[i++] = ch;
+  	                  // add new char
+                      str[i++] = ch;
 
-                     // is the whole string ok?
-                     if ( ( validString ) && ( !validString(str) ) ) {
-                      // not ok: revoke char
-                      str[i--] = '\0';
+                      // is the whole string ok?
+                      if ( ( validString ) && ( !validString(str) ) ) {
+                        // not ok: revoke char
+                        str[--i] = '\0';
 
-                    } else {
-                      // ok: print char
-                      if ( easyKeyEcho ) {
-                        (hidden)?printf( "*" ):printf( "%c", ch );
+                      } else {
+                        // ok: print char
+                        if ( easyKeyEcho ) {
+                          (hidden)?printf( "*" ):printf( "%c", ch );
+                        }
+
                       }
-
-                    }
                      
-                   }
-                   break;
+                    }
+                    break;
       }
 
       flushStdIO();
@@ -346,45 +349,45 @@ uint8_t maxValidMenu;
 int isValidMenu( char *str ) {
 
   // empty?
-  if ( str[0] == '\0' ) return 1;
+  if ( str[0] == '\0' ) return true;
 
   // number?
   if ( isdigit( str[0] ) ) {
 
-    if (!isValidInteger(str)) return 0;
+    if (!isValidInteger(str)) return false;
 
     // get value
     int v = atoi(str);
 
     // 0?
-    if ( ( v == 0) && ( maxValidMenu != 0 ) ) return 0;
+    if ( ( v == 0) && ( maxValidMenu != 0 ) ) return false;
 
     // to big?
-    if ( v > maxValidMenu ) return 0;
+    if ( v > maxValidMenu ) return false;
 
     // big enough?
-    if ( v >= minValidMenu ) return 1;
+    if ( v >= minValidMenu ) return true;
 
     // already 2 digits?
-    if (  v >= 10  ) return 0;
+    if (  v >= 10  ) return false;
 
     // any chance?
     if ( ( ( v * 10 + minValidMenu % 10 ) >= minValidMenu ) &&
-         ( ( v * 10 + maxValidMenu % 10 ) <= maxValidMenu ) ) return 1;
+         ( ( v * 10 + maxValidMenu % 10 ) <= maxValidMenu ) ) return true;
 
     // wrong number
-    return 0;
+    return false;
 
   }
 
   // just one key!
-  if (str[1] != '\0' ) return 0;
+  if (str[1] != '\0' ) return false;
 
   // allowed?
-  if (strchr( validMenuChars, str[0] ) ) return 1;
+  if (strchr( validMenuChars, toupper(str[0] ) ) ) return true;
 
   // done
-  return 0;
+  return false;
   
 
 }
