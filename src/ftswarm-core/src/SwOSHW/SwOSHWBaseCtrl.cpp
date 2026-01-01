@@ -247,7 +247,8 @@ uint8_t SwOSCtrl::setupLocalI2C( uint8_t maxIO, FtSwarmExtMode_t extensionPort )
 uint8_t SwOSCtrl::setupLocalGyro( uint8_t maxIO ) {
 
   // initialize gyro if available
-  if ( ( CPU == FTSWARMRS_2V0 ) || ( CPU == FTSWARMRS_2V1 ) || ( CPU == FTSWARMRC_1V140 ) ) 
+  if ( ( CPU == FTSWARMRS_2V0 ) || ( CPU == FTSWARMRS_2V1 ) || ( CPU == FTSWARMRC_1V140 ) || ( CPU == FTSWARMCONTROL_1V3UC ) )
+    // TODO FTSWARMRC_1V140+ FTSWARMCONTROL_1V3UC Gyro implementation
     io[ maxIO++ ] = new SwOSGyroLSM( "GYRO", this );
   else
     io[ maxIO++ ] = new SwOSGyroMPU( "GYRO", this );
@@ -1451,8 +1452,7 @@ bool SwOSCtrl::hasGyro( void ) {
 
   // check on MPU6050
   Wire.beginTransmission(0x68);
-  return Wire.endTransmission(true) == 0;
-  // return Wire.requestFrom( 0x68, 1 );
+  return (Wire.endTransmission(true) == 0);
 
 }
 

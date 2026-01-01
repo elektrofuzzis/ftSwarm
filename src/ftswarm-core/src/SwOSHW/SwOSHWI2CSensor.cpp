@@ -49,23 +49,36 @@ SwOSGyroLSM::~SwOSGyroLSM( ) {
 
 void SwOSGyroLSM::setupLocal() {
 
-  // need an internal I²C interface
-  TwoWire internalI2C = TwoWire(1);
-  internalI2C.begin( 4, 5 );
+  if (nvs.I2CGyro) {
+    
+    // need an internal I²C interface
+    TwoWire internalI2C = TwoWire(1);
+    internalI2C.begin( 4, 5 );
 
-  // create gyro object
-  lsm = new LSM6DSRSensor(&internalI2C, LSM6DSR_I2C_ADD_H);
+    // create gyro object
+    lsm = new LSM6DSRSensor(&internalI2C, LSM6DSR_I2C_ADD_H);
 
-  // pull INT1 to low to enable I2C
-  gpio_config_t io_conf = {};
-  io_conf.intr_type = GPIO_INTR_DISABLE;
-  io_conf.mode = GPIO_MODE_OUTPUT;
-  io_conf.pin_bit_mask = (1ULL << GPIO_NUM_16);
-  io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-  io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-  gpio_config(&io_conf);
-  gpio_set_level( GPIO_NUM_16, 0 );
-  delay(200);
+    // pull INT1 to low to enable I2C
+    gpio_config_t io_conf = {};
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    io_conf.pin_bit_mask = (1ULL << GPIO_NUM_16);
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+    gpio_config(&io_conf);
+    gpio_set_level( GPIO_NUM_16, 0 );
+    delay(200);
+
+  } else {
+
+    SPIClass *vspi = new SPIClass(2);
+    vspi->begin( GPIO_NUM_40, GPIO_NUM_39, GPIO_NUM_38, GPIO_NUM_3 );
+    lsm = new LSM6DSRSensor( vspi, vspi->pinSS(), 10000000 );
+
+    pinMode(vspi->pinSS(), OUTPUT);
+    digitalWrite(vspi->pinSS(), HIGH);
+
+  }
 
   // start gyro
   lsm->begin();

@@ -18,6 +18,8 @@
 #include "easyKey.h"
 #include "SwOSHW/SwOSHWHAL.h"
 #include "SwOSLog.h"
+#include "lsm6dsr_reg.h"
+
 
 SwOSNVS nvs;
 
@@ -85,6 +87,17 @@ void SwOSNVS::initialSetup( void ) {
   swarmSecret = generateSecret( serialNumber ); 
   swarmPIN    = serialNumber;
 
+  // check on i2c/spi LSMR
+  if ( ( CPU == FTSWARMRS_2V0 ) ||
+       ( CPU == FTSWARMRS_2V1 ) ||
+       ( CPU == FTSWARMRC_1V140 ) ||
+       ( CPU == FTSWARMCONTROL_1V3UC ) ) {
+    TwoWire internalI2C = TwoWire(1);
+    internalI2C.begin( 4, 5 );
+    internalI2C.beginTransmission( (uint8_t)LSM6DSR_I2C_ADD_H );
+    I2CGyro = (Wire.endTransmission(true) == 0);
+  }
+
   if ( yesNo("Save configuration (Y/N)?>") ) {
     save( true );
     printf( "saving");
@@ -125,6 +138,7 @@ SwOSNVS::SwOSNVS() {
   interruptOnOff[1]  = 255;
   I2CRegisters       = MAXI2CREGISTERS;
   gyro               = false;
+  I2CGyro            = false;
 
   // initialize zero positions
   for (uint8_t j=0;j<4;j++) {
@@ -226,6 +240,7 @@ bool SwOSNVS::load() {
   nvs_get_i16( my_handle, "interruptHigh", &interruptOnOff[1] );
   nvs_get_u8 ( my_handle, "I2CRegisters",  &I2CRegisters );
   nvs_get_u8 ( my_handle, "Gyro",          (uint8_t *) &gyro);
+  nvs_get_u8 ( my_handle, "I2CGyro",       (uint8_t *) &I2CGyro);
 
   nvs_close( my_handle );
 
@@ -289,6 +304,7 @@ void SwOSNVS::save( bool writeAll ) {
   nvs_set_u8 ( my_handle, "I2CRegisters",  I2CRegisters );
   nvs_set_u32( my_handle, "extensionPort", (uint32_t) extensionPort);
   nvs_set_u8 ( my_handle, "Gyro",          (uint8_t)  gyro);
+  nvs_set_u8 ( my_handle, "I2CGyro",       (uint8_t)  I2CGyro);
 
   // commit
   nvs_commit( my_handle );
@@ -394,6 +410,7 @@ void SwOSNVS::factorySettings( void ) {
   extensionPort      = FTSWARM_EXT_OFF;
   I2CAddr            = 0x66;
   gyro               = false;
+  // no factory settings for I2CGyro
 
   bzero(swarmMember, sizeof(swarmMember));
   activeEventConfig  = 0;
@@ -485,6 +502,7 @@ void SwOSNVS::printNVS() {
   printf( "wifiSSID: >%s<\n", wifiSSID );
   printf( "pixels: %d\n", pixels );
   printf( "gyro: %d\n", gyro );
+  printf( "I2CGyro: %d\n", I2CGyro );
   printf( "extensionPort: %d\n", extensionPort );
   printf( "I2CAddr: %d\n", I2CAddr );
   printf( "I2CRegisters: %d\n", I2CRegisters );
