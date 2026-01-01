@@ -18,9 +18,11 @@ SwOSCLIParameter::~SwOSCLIParameter(){
 
     if ( num ) free( num );
     if ( str ) free( str );
+    if ( io  ) free( io  );
     
     num = NULL;
     str = NULL;
+    io  = NULL;
 
 };
 

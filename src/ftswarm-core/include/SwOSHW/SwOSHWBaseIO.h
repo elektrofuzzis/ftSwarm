@@ -77,11 +77,11 @@ public:
   virtual void saveToNVS(  nvs_handle_t my_handle );   // dave my port & alias settings from NVS
   
 	void setName( const char *name);   // set new name
-  char *getName();                   // get name
+  const char *getName();             // get name
   
 	void setAlias( const char *alias); // add an alias name
-  char *getAlias();                  // get alias
-  char *getAliasOrName();            // get alias or name (if an alis isn't set)
+  const char *getAlias();            // get alias
+  const char *getAliasOrName();      // get alias or name (if an alis isn't set)
 
 	bool equals(const char *name);     // check if hw name or alias is equal to name
 
@@ -120,7 +120,7 @@ public:
   virtual void            saveToNVS( nvs_handle_t my_handle );   // dave my port & alias settings from NVS
   virtual void            lock(void);
   virtual void            unlock(void);
-  virtual char*           subscribe( char *IOName, uint32_t hysteresis ); // subscribe sensor to display value changes as console outputs 
+  virtual char*           subscribe( const char *IOName, uint32_t hysteresis ); // subscribe sensor to display value changes as console outputs 
 	virtual void            unsubscribe();                                  // clear subscription
   virtual uint8_t         getPort() { return port; };
   virtual SwOSCtrl*       getCtrl() { return ctrl; };

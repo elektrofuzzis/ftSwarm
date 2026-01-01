@@ -212,7 +212,7 @@ size_t SwOSCom::size( void ) {
 
 }
 
-void SwOSCom::pushIO( uint8_t index, SwOSIOType_t ioType, uint8_t port, char *name, char *alias ) {
+void SwOSCom::pushIO( uint8_t index, SwOSIOType_t ioType, uint8_t port, const char *name, const char *alias ) {
 
   uint8_t len_name  = strlen( name );
   uint8_t len_alias = strlen( alias );

@@ -268,8 +268,8 @@ public:
   size_t size( void );
 
   // send my alias names buffered
-  void pushHostname( char *name, char *alias ) { pushIO( 254, SWOSIO_MAXIOTYPE, SWOS_NOPORT, name, alias); };
-  void pushIO( uint8_t index, SwOSIOType_t ioType,  uint8_t port,  char *name,  char *alias );
+  void pushHostname( const char *name, const char *alias ) { pushIO( 254, SWOSIO_MAXIOTYPE, SWOS_NOPORT, name, alias); };
+  void pushIO( uint8_t index, SwOSIOType_t ioType,  uint8_t port,  const char *name, const char *alias );
   bool popIO( uint8_t *index, SwOSIOType_t *ioType, uint8_t *port, char **name, char **alias );
   void flushBuffer( void );
   

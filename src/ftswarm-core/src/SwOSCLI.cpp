@@ -359,7 +359,7 @@ Cmd_t SwOSCLI::evalSimpleCommand( char *token ) {
       return CMD_ERROR;
     }
 
-    float          uptime;
+    float uptime;
 
     // execute 
     switch (cmd) {
@@ -1229,6 +1229,7 @@ void SwOSCLI::evalComplexCommand( char *token, bool *loggedIn ) {
   if ( !tokenizeCmd( command ) ) { Error( ERROR_UNKOWNCMD ); return; }
 
   // optional parameters
+  int32_t x;
   maxParameter = -1;
   switch ( getNextToken( token ) ) {
     case EVAL_EOL: break;
@@ -1240,6 +1241,7 @@ void SwOSCLI::evalComplexCommand( char *token, bool *loggedIn ) {
         switch ( getNextToken( token ) ) {
 
           case EVAL_LITERAL:        if ( ( getIO( token, paramIOName, &paramCtrl, &paramIO ) ) && ( &paramIO ) ) {
+                                      printf("*2*\n");
                                       maxParameter++;
                                       parameter[maxParameter].setIO( paramIO );
                                     } else {

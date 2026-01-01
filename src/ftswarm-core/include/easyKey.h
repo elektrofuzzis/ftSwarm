@@ -61,13 +61,20 @@ class Menu {
     uint8_t  num[MAXMENUITEMS];
     char     key[MAXMENUITEMS];
     char     delimiter = ' ';
-    char     prompt[40];
+    char     *header = NULL;
+
+  protected:
+    char     *prompt = NULL;
 
   private:
-    void   enterString( const char *prompt, char *s, uint16_t size );
+    void   enter( const char *prompt, char *s, uint16_t size );
 
   public:
-    void   start( const char *prompt, uint8_t spacer, char delimiter = ':' );
+    Menu( );
+    Menu( const char *basePrompt, const char *newPrompt, const char *Header, uint8_t spacer, char delimiter = ':' );
+    ~Menu();
+    void begin( const char *basePrompt, const char *newPrompt, const char *Header, uint8_t spacer, char delimiter = ':' );
+    void   start( void );
     bool   add( const char *item, const char *value, uint8_t id, char key = '\0', bool staticDelimiter = false );
     bool   add( const char *item, int value, uint8_t id, char key = '\0' );
     bool   add( uint8_t id, char key = '\0' );

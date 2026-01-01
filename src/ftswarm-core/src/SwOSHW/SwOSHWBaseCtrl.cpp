@@ -685,7 +685,7 @@ void SwOSCtrl::serializeIO( Serialize *serialize ) {
 
 }
 
-SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, char *name, char *alias ) {
+SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, const char *name, const char *alias ) {
 
   // new io
   SwOSIO *io;

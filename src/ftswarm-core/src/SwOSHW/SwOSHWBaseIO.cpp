@@ -189,12 +189,12 @@ bool SwOSObj::equals( const char *name ) {
 
 }
 
-char* SwOSObj::getName( ) {
+const char* SwOSObj::getName( ) {
   return _name;
 }
 
 
-char* SwOSObj::getAlias( ) {
+const char* SwOSObj::getAlias( ) {
   if (!_alias) {
     return (char *) EMPTYSTRING;
   } else {
@@ -202,7 +202,7 @@ char* SwOSObj::getAlias( ) {
   }
 }
 
-char* SwOSObj::getAliasOrName( ) {
+const char* SwOSObj::getAliasOrName( ) {
   if (!_alias) {
     return _name;
   } else {
@@ -362,7 +362,7 @@ void SwOSIO::onTrigger( SwOSTriggerMath_t triggerMath, int32_t sensor, int32_t p
   SWARM_LOG_ERROR( "IO is unable to handle trigger events." );
 }
 
-char *SwOSIO::subscribe( char *IOName, uint32_t hysteresis ) {
+char *SwOSIO::subscribe( const char *IOName, uint32_t hysteresis ) {
 
   printf("subscribe %s\n", getName() );
 

@@ -392,7 +392,7 @@ int isValidMenu( char *str ) {
 
 }
 
-void Menu::enterString( const char *prompt, char *s, uint16_t size ) {
+void Menu::enter( const char *prompt, char *s, uint16_t size ) {
 
   // setup vaildMenuChars, minValidMenu and maxValidMenu
   minValidMenu = 255;
@@ -419,15 +419,64 @@ void Menu::enterString( const char *prompt, char *s, uint16_t size ) {
   
 }
 
-void Menu::start( const char *prompt, uint8_t spacer, char delimiter ) { 
+Menu::Menu( ) {
 
-  maxItem = 0; 
+  begin( NULL, NULL, NULL, 0 );
+
+}
+
+Menu::Menu( const char *basePrompt, const char *newPrompt, const char *header, uint8_t spacer, char delimiter )  {
+
+  begin( basePrompt, newPrompt, header, spacer, delimiter );
+
+}
+
+void Menu::begin( const char *basePrompt, const char *newPrompt, const char *header, uint8_t spacer, char delimiter ) { 
+
+  // free old stuff
+  if (this->prompt) free( this->prompt );
+  if (this->header) free( this->header );
+
+  // copy parameters
   this->delimiter = delimiter;
   this->spacer = spacer;
-  strcpy( this->prompt, (char *) prompt ); 
+
+  // allocate prompt
+  uint16_t len = 3;
+  if ( basePrompt ) len += strlen(basePrompt);
+  if ( newPrompt )  len += strlen(newPrompt);
+  this->prompt = (char *) calloc( len, sizeof( char ) );
+
+  // build prompt
+  if ( basePrompt ) {
+    strcpy( this->prompt, (char *) basePrompt ); 
+    strcat( this->prompt, "/" );
+  }
+  if ( newPrompt != NULL )strcat( this->prompt, newPrompt );
+
+  // allocate header
+  len = 2;
+  if (header) len += strlen( header );
+  this->header = (char *) calloc( len, sizeof( char ) );
+
+  // build header
+  if ( header ) strcpy( this->header, header );
+
+}
+
+Menu::~Menu() {
+
+  if (prompt) free( prompt );
+  if (header) free( header );
+
+}
+
+void Menu::start( void ) {
+
+  maxItem = 0; 
 
   // print Headline
-  printf( "\n\n***** %s *****\n\n", this->prompt );
+  printf( "\n\n***** %s *****\n\n", this->header );
 
 };
 
@@ -463,6 +512,8 @@ bool Menu::add( uint8_t id, char key ) {
   this->id[maxItem]  = id;
   this->key[maxItem] = toupper( key );
 
+  printf( "add %d %d\n", maxItem, id );
+
   return true;
 
 }
@@ -476,7 +527,7 @@ bool Menu::addExit( void ) {
 
 bool Menu::add( const char *item, const char *value, uint8_t id, char key, bool staticDelimiter ) {
 
-  if ( !add( id, key) ) return false;
+  if ( ( id != MENU_DEACTIVATED ) && ( !add( id, key ) ) ) return false;
 
   if      ( ( key != '\0' ) && ( id!=MENU_DEACTIVATED ) ) printf( "(%c)  %s", key, item );
   else if ( ( key != '\0' ) && ( id==MENU_DEACTIVATED ) ) printf( "     %s", item );
@@ -506,7 +557,7 @@ int8_t Menu::userChoice( void ) {
 
     printf(prompt);
     // ask user
-    enterString( ">", str, 10 );
+    enter( ">", str, 10 );
 
     // try, if it's a number
     int8_t choice = atoi( str );

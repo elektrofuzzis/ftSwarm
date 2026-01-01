@@ -70,7 +70,7 @@ protected:
 
   uint8_t          pixels = 0;
 
-  SwOSIO* createIO( SwOSIOType_t ioType, uint8_t port, char *name, char *alias ); // create an IO by type
+  SwOSIO* createIO( SwOSIOType_t ioType, uint8_t port, const char *name, const char *alias ); // create an IO by type
   
   // communications
   bool setPixel( SwOSCom *com );
