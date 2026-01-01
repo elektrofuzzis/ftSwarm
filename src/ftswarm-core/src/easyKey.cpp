@@ -61,7 +61,6 @@ bool enterSomething(  const char *prompt,
 
   printf(prompt); 
   flushStdIO();
-  // fflush(stdout); 
 
   while (1) {
 

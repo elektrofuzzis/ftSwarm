@@ -49,7 +49,18 @@ SwOSGyroLSM::~SwOSGyroLSM( ) {
 
 void SwOSGyroLSM::setupLocal() {
 
-  if (nvs.I2CGyro) {
+  if (nvs.spiGyro) {
+    // ftSwarm UC2.1.2 and above have SPI based gyros
+    // during initial setup, nvs.spiGyro is set by testing on i2c
+
+    SPIClass *vspi = new SPIClass(2);
+    vspi->begin( GPIO_NUM_40, GPIO_NUM_39, GPIO_NUM_38, GPIO_NUM_3 );
+    lsm = new LSM6DSRSensor( vspi, vspi->pinSS(), 10000000 );
+
+    pinMode(vspi->pinSS(), OUTPUT);
+    digitalWrite(vspi->pinSS(), HIGH);
+
+  } else {
     
     // need an internal I²C interface
     TwoWire internalI2C = TwoWire(1);
@@ -69,16 +80,7 @@ void SwOSGyroLSM::setupLocal() {
     gpio_set_level( GPIO_NUM_16, 0 );
     delay(200);
 
-  } else {
-
-    SPIClass *vspi = new SPIClass(2);
-    vspi->begin( GPIO_NUM_40, GPIO_NUM_39, GPIO_NUM_38, GPIO_NUM_3 );
-    lsm = new LSM6DSRSensor( vspi, vspi->pinSS(), 10000000 );
-
-    pinMode(vspi->pinSS(), OUTPUT);
-    digitalWrite(vspi->pinSS(), HIGH);
-
-  }
+  } 
 
   // start gyro
   lsm->begin();

@@ -86,7 +86,7 @@ class SwOSNVS {
     uint8_t                swarmSpeed = 4;
     FtSwarmExtMode_t       extensionPort;
     bool                   gyro;
-    bool                   I2CGyro;
+    bool                   spiGyro;
     uint8_t                I2CAddr;
     uint8_t                interruptLine; // 0 off, 1 M1, 2 M2
     int16_t                interruptOnOff[2];
