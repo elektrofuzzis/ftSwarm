@@ -11,6 +11,7 @@
 #include <nvs_flash.h>
 #include <esp_err.h>
 #include <WiFi.h>
+#include <esp_task_wdt.h>
 
 #include "SwOS.h"
 #include "SwOSNVS.h"
@@ -299,8 +300,16 @@ void SwOSNVS::save( bool writeAll ) {
 }
 
 void SwOSNVS::saveAndRestart( void ) {
+
+  // save settings
   save();
+
+  // Arduino + S3-Bug
+  esp_task_wdt_delete(NULL);
+
+  // reboot
   ESP.restart();
+
 }
 
 void SwOSNVS::saveEvents( void ) {

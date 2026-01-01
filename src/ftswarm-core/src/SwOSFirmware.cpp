@@ -15,6 +15,7 @@
 #include "SwOSSwarm.h"
 #include "SwOSNVS.h"
 #include "easyKey.h"
+#include "easyMenu.h"
 #include "SwOSCLI.h"
 #include "SwOSLog.h"
 #include "SwOSHW/SwOSHWHAL.h"
@@ -370,7 +371,7 @@ class MenuEvent : private Menu {
 
 };
 
-MenuEvent::MenuEvent( char *basePrompt, SwOSIO *io  ) { 
+MenuEvent::MenuEvent( char *basePrompt, SwOSIO *io ):Menu( MAXNVSEVENTS + 5 ) { 
   
   char line[128];
 
@@ -751,7 +752,7 @@ class MenuIOConfig : private Menu {
 
 };
 
-MenuIOConfig::MenuIOConfig( char *basePrompt, SwOSCtrl *controller ) {
+MenuIOConfig::MenuIOConfig( char *basePrompt, SwOSCtrl *controller ):Menu( IOSPERPAGE + 10 ) {
 
   const char ioconfig[] = "IO configuration";
 

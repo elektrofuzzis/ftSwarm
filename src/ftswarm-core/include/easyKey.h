@@ -47,39 +47,11 @@ void enterString( const char *prompt, char *s, uint16_t size, bool hidden = fals
 // write a prompt and read a string from serial
 
 void enterString( const char *prompt, char *d, char *s, uint16_t size, bool hidden = false );
+// enterString with default value d
+
+void enterString( const char *prompt, char *s, uint16_t size, int8_t maxItem, char *list[] );
+// enterString and compate with a list of allowed values
 
 void enterIdentifier( const char *prompt, char *s, uint16_t size );
 // write a prompt and read an identifier from serial
 
-#define MAXMENUITEMS 99
-
-class Menu {
-  private:
-    int8_t   maxItem = -1;
-    uint8_t  spacer = 0;
-    uint8_t  id[MAXMENUITEMS];
-    uint8_t  num[MAXMENUITEMS];
-    char     key[MAXMENUITEMS];
-    char     delimiter = ' ';
-    char     *header = NULL;
-
-  protected:
-    char     *prompt = NULL;
-
-  private:
-    void   enter( const char *prompt, char *s, uint16_t size );
-
-  public:
-    Menu( );
-    Menu( const char *basePrompt, const char *newPrompt, const char *Header, uint8_t spacer, char delimiter = ':' );
-    ~Menu();
-    void begin( const char *basePrompt, const char *newPrompt, const char *Header, uint8_t spacer, char delimiter = ':' );
-    void   start( void );
-    bool   add( const char *item, const char *value, uint8_t id, char key = '\0', bool staticDelimiter = false );
-    bool   add( const char *item, int value, uint8_t id, char key = '\0' );
-    bool   add( uint8_t id, char key = '\0' );
-    bool   add( const char *value, uint8_t id, char key = '\0' );
-    bool   addF( const char *item, float value, uint8_t id, char key = '\0' );
-    bool   addExit( void );
-    int8_t userChoice( void );
-};
