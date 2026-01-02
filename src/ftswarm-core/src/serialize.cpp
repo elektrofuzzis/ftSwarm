@@ -33,7 +33,7 @@ const char SLITERAL[ SERIALIZE_LITERAL_MAX ][24] = {
   "active",             // SERIALIZE_LITERAL_ACTIVE
   "brightness",         // SERIALIZE_LITERAL_BRIGHTNESS
   "color",              // SERIALIZE_LITERAL_COLOR
-  "quaternion"          // SERIALIZE_LITERAL_QUATERNION
+  "quaternion",         // SERIALIZE_LITERAL_QUATERNION
   "acceleration",       // SERIALIZE_LITERAL_ACCELERATION
   "url",                // SERIALIZE_LITERAL_URL
   "framesize",          // SERIALIZE_LITERAL_FRAMESIZE
@@ -49,7 +49,8 @@ const char SLITERAL[ SERIALIZE_LITERAL_MAX ][24] = {
   "running",            // SERIALIZE_LITERAL_RUNNING
   "operator",           // SERIALIZE_LITERAL_OPERATOR
   "operand1",           // SERIALIZE_LITERAL_OPERAND1
-  "operand2"            // SERIALIZE_LITERAL_OPERAND2
+  "operand2",           // SERIALIZE_LITERAL_OPERAND2
+  "YawPitchRoll"        // SERIALIZE_LITERAL_YAWPITCHROLL
 };
 
 Serialize::Serialize( char *buffer, size_t bufSize, SerialFormat_t format ) {

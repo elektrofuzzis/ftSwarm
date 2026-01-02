@@ -92,7 +92,7 @@ swarm.<Command>(<parameter>, ...) or
 <Hostname>.<IO-Name>.<Command>(<parameter>, ...)
 
 Swarm Commands:
-  get( format )                 - get swarm info aka getSwarm
+  getSwarm( format )            - get swarm info aka getSwarm
   save(scope)                   - save settings of all swarm members to nvs - 0 all, 1 config, 2 alias, 3 events
   useConfig(config)             - use event config
 
@@ -1215,7 +1215,6 @@ void SwOSCLI::evalComplexCommand( char *token, bool *loggedIn ) {
 
   // check, if the token is a controller or an io or nvs or swarm
   if ( (!swarm) && (!nvs) && (!getIO( token, IOName, &ctrl, &io ) ) ) { Error( ERROR_IOEXPECTED ); return; }
-
   // unvalid io?
   if ( ( !io ) && ( !ctrl ) && (!swarm) && (!nvs) ) { Error( ERROR_IOEXPECTED ); return; }
 
@@ -1224,7 +1223,6 @@ void SwOSCLI::evalComplexCommand( char *token, bool *loggedIn ) {
 
   // next token should be a command
   if ( getNextToken( command ) != EVAL_LITERAL ) { Error( ERROR_LITERALEXPECTED ); return; }
-
   // let's tokenize the command
   if ( !tokenizeCmd( command ) ) { Error( ERROR_UNKOWNCMD ); return; }
 
@@ -1241,7 +1239,6 @@ void SwOSCLI::evalComplexCommand( char *token, bool *loggedIn ) {
         switch ( getNextToken( token ) ) {
 
           case EVAL_LITERAL:        if ( ( getIO( token, paramIOName, &paramCtrl, &paramIO ) ) && ( &paramIO ) ) {
-                                      printf("*2*\n");
                                       maxParameter++;
                                       parameter[maxParameter].setIO( paramIO );
                                     } else {

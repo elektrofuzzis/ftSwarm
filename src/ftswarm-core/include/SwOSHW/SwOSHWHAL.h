@@ -302,5 +302,5 @@ const gpio_num_t GPIO_I2C[FTSWARMMAXVERSION][2][2] = {
   /* FTSWARMRC_1V140 */      { { GPIO_NUM_NC, GPIO_NUM_NC }, 
                                { GPIO_NUM_NC, GPIO_NUM_NC } },
   /* FTSWARMCONTROL_1V3UC */ { { GPIO_NUM_4,  GPIO_NUM_5  }, 
-                               { GPIO_NUM_8,  GPIO_NUM_9  } },
+                               { GPIO_NUM_NC, GPIO_NUM_NC } },
 };

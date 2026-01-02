@@ -207,7 +207,7 @@ const bool SHOWIOINAPI[SWOSIO_MAXIOTYPE ] = {
   true, // SWOSIO_PIXEL
   false, // SWOSIO_OLED
   false, // SWOSIO_I2C
-  false, // SWOSIO_GYRO
+  true, // SWOSIO_GYRO
   false, // SWOSIO_HC165
   true, // SWOSIO_POWER
   true, // SWOSIO_COLORSENSOR
@@ -855,10 +855,7 @@ class FtSwarmGyro : public FtSwarmIO {
     FtSwarmGyro( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
     FtSwarmGyro( const char *name );
 
-    void getAcceleration( float *x, float *y, float *z );
-    void getQuaternion( float *w, float *x, float *y, float *z );
     void getYawPitchRoll(float *yaw, float *pitch, float *roll, bool radiants = false );
-    void getEuler(float *alpha, float *beta, float *gamma, bool radiants = false );
 
 };
 

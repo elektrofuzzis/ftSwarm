@@ -28,6 +28,44 @@ SwOSGyro::SwOSGyro(const char *name, SwOSCtrl *ctrl ) : SwOSIO( name, ctrl, SWOS
 
 }
 
+void SwOSGyro::serialize( Serialize *serialize ) {
+
+  serialize->startObject( );
+  SwOSIO::serialize( serialize );
+  serialize->item( SERIALIZE_LITERAL_YAWPITCHROLL, ypr[0], ypr[1], ypr[2] ); 
+  serialize->endObject();
+  
+}
+
+void SwOSGyro::getYawPitchRoll(float *yaw, float *pitch, float *roll, bool radiants) {
+
+  *yaw   = ypr[0];
+  *pitch = ypr[1];
+  *roll  = ypr[2];
+
+  if ( !radiants ) {
+    *yaw   *= 180/M_PI;
+    *pitch *= 180/M_PI;
+    *roll  *= 180/M_PI;  
+  }
+
+}
+
+uint8_t SwOSGyro::pushState( uint8_t *buffer ) { 
+  
+  memcpy( buffer, ypr,  sizeof( ypr ) ); 
+
+  return sizeof( ypr );
+
+};
+
+uint8_t SwOSGyro::popState( uint8_t *buffer ) { 
+
+  memcpy( ypr, buffer, sizeof( ypr ) );  
+  
+  return sizeof( ypr );
+  
+};
 
 /***************************************************
  *
@@ -53,12 +91,9 @@ void SwOSGyroLSM::setupLocal() {
     // ftSwarm UC2.1.2 and above have SPI based gyros
     // during initial setup, nvs.spiGyro is set by testing on i2c
 
-    SPIClass *vspi = new SPIClass(2);
-    vspi->begin( GPIO_NUM_40, GPIO_NUM_39, GPIO_NUM_38, GPIO_NUM_3 );
-    lsm = new LSM6DSRSensor( vspi, vspi->pinSS(), 10000000 );
-
-    pinMode(vspi->pinSS(), OUTPUT);
-    digitalWrite(vspi->pinSS(), HIGH);
+    SPIClass *vspi = new SPIClass( HSPI );
+    vspi->begin( GPIO_NUM_40, GPIO_NUM_39, GPIO_NUM_38 );
+    lsm = new LSM6DSRSensor( vspi, GPIO_NUM_3 );
 
   } else {
     
@@ -86,13 +121,48 @@ void SwOSGyroLSM::setupLocal() {
   lsm->begin();
   lsm->Enable_X();
   lsm->Enable_G();
+  lsm->Set_X_FS(2);      // ±2g
+  lsm->Set_G_FS(250);    // ±250 dps
+  lsm->Set_X_ODR(104);
+  lsm->Set_G_ODR(104);
 
 }
 
 void SwOSGyroLSM::operate() {
 
-  // lsm->Get_X_Axes( _accelerometer );
-  // lsm->Get_G_Axes( _gyroscope );
+  int32_t accel[3];
+  int32_t gyro[3];
+
+  lsm->Get_X_Axes(accel);   // mg
+  lsm->Get_G_Axes(gyro);    // mdps
+
+  // Time delta
+  unsigned long now = micros();
+  float dt = (now - lastMicros) * 1e-6f;
+  lastMicros = now;
+
+  // Accelerometer: mg → g
+  float ax = accel[0] / 1000.0f;
+  float ay = accel[1] / 1000.0f;
+  float az = accel[2] / 1000.0f;
+
+  // Gyroscope: mdps → rad/s
+  float gx = gyro[0] * 0.001f * DEG_TO_RAD;
+  float gy = gyro[1] * 0.001f * DEG_TO_RAD;
+  float gz = gyro[2] * 0.001f * DEG_TO_RAD;
+
+  // Accelerometer angles
+  float rollAcc  = atan2(ay, az);
+  float pitchAcc = atan2(-ax, sqrt(ay * ay + az * az));
+
+  // Gyro integration
+  rollGyro  += gx * dt;
+  pitchGyro += gy * dt;
+  ypr[0]    += gz * dt;
+
+  // Complementary filter
+  ypr[2] = alpha * rollGyro  + (1.0f - alpha) * rollAcc;
+  ypr[1] = alpha * pitchGyro + (1.0f - alpha) * pitchAcc;
 
 }
 
@@ -160,41 +230,9 @@ void SwOSGyroMPU::setupLocal() {
       mpu = NULL;      
     } 
 
-    }
+  }
 
 }
-
-uint8_t SwOSGyroMPU::pushState( uint8_t *buffer ) { 
-  
-  uint8_t *ptr = buffer;
-  
-  memcpy( ptr, &q.w,  sizeof( q.w ) );  *ptr += sizeof( q.w );
-  memcpy( ptr, &q.x,  sizeof( q.x ) );  *ptr += sizeof( q.x );
-  memcpy( ptr, &q.y,  sizeof( q.y ) );  *ptr += sizeof( q.y );
-  memcpy( ptr, &q.z,  sizeof( q.z ) );  *ptr += sizeof( q.z );
-  memcpy( ptr, &aa.x, sizeof( aa.x ) ); *ptr += sizeof( aa.x );
-  memcpy( ptr, &aa.y, sizeof( aa.y ) ); *ptr += sizeof( aa.y );
-  memcpy( ptr, &aa.z, sizeof( aa.z ) ); *ptr += sizeof( aa.z );
-
-  return ptr - buffer;
-
-};
-
-uint8_t SwOSGyroMPU::popState( uint8_t *buffer ) { 
-
-  uint8_t *ptr = buffer;
-  
-  memcpy( &q.w,  ptr, sizeof( q.w ) );  *ptr += sizeof( q.w );
-  memcpy( &q.x,  ptr, sizeof( q.x ) );  *ptr += sizeof( q.x );
-  memcpy( &q.y,  ptr, sizeof( q.y ) );  *ptr += sizeof( q.y );
-  memcpy( &q.z,  ptr, sizeof( q.z ) );  *ptr += sizeof( q.z );
-  memcpy( &aa.x, ptr, sizeof( aa.x ) ); *ptr += sizeof( aa.x );
-  memcpy( &aa.y, ptr, sizeof( aa.y ) ); *ptr += sizeof( aa.y );
-  memcpy( &aa.z, ptr, sizeof( aa.z ) ); *ptr += sizeof( aa.z );
-  
-  return ptr - buffer;
-  
-};
 
 void SwOSGyroMPU::operate() {
 
@@ -207,11 +245,22 @@ void SwOSGyroMPU::operate() {
 
   // last packet in FIFO
   if (mpu->dmpGetCurrentFIFOPacket(FIFOBuffer)) {
+
+    Quaternion  q;
     mpu->dmpGetQuaternion(&q, FIFOBuffer);
+
+    VectorInt16 aa;
     mpu->dmpGetAccel(&aa, FIFOBuffer);
+
+    VectorFloat gravity; 
+    mpu->dmpGetGravity( &gravity, &q );
+    mpu->dmpGetYawPitchRoll( ypr, &q, &gravity );
+
   }
 
 }
+
+/* unused...
 
 void SwOSGyroMPU::getAcceleration( float *x, float *y, float *z ) {
 
@@ -278,18 +327,7 @@ void SwOSGyroMPU::getEuler(float *alpha, float *beta, float *gamma, bool radiant
     *gamma *= 180/M_PI;  
   }
 
-};
-
-void SwOSGyroMPU::serialize( Serialize *serialize ) {
-
-  serialize->startObject( );
-  SwOSIO::serialize( serialize );
-  
-  serialize->item( SERIALIZE_LITERAL_QUATERNION,   q.w,  q.x,  q.y, q.z);
-  serialize->item( SERIALIZE_LITERAL_ACCELERATION, aa.x, aa.y, aa.z );
-  
-  serialize->endObject();
-}
+}; */
 
 /***************************************************
  *  

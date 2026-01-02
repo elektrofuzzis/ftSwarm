@@ -24,6 +24,9 @@ class SwOSMotor;
  ***************************************************/
 
  class SwOSGyro : public SwOSIO {
+
+  protected:
+    float ypr[3];
    
   public:
     // constructor
@@ -32,12 +35,12 @@ class SwOSMotor;
     // administrative stuff
     virtual void recvState( SwOSCom *com ) {};
     virtual bool isGyro( void ) { return true; };
+    virtual void serialize( Serialize *serialize );
+    virtual uint8_t popState( uint8_t *buffer );
+    virtual uint8_t pushState( uint8_t *buffer );
 
     // interface
-    virtual void getAcceleration( float *x, float *y, float *z ) {};
-    virtual void getQuaternion( float *w, float *x, float *y, float *z ) {};
-    virtual void getYawPitchRoll(float *yaw, float *pitch, float *roll, bool radiants) {};
-    virtual void getEuler(float *alpha, float *beta, float *gamma, bool radiants ) {};
+    virtual void getYawPitchRoll(float *yaw, float *pitch, float *roll, bool radiants);
     
 };
 
@@ -48,11 +51,18 @@ class SwOSMotor;
  ***************************************************/
 
  class SwOSGyroLSM : public SwOSGyro {
+
   protected:
+
+    unsigned long lastMicros = micros();  
+    float         rollGyro   = 0;
+    float         pitchGyro  = 0;
+    const float   alpha      = 0.98f;
 
     virtual void setupLocal(); 
 
   public:
+
     // constructor
 	  SwOSGyroLSM(const char *name, SwOSCtrl *ctrl);
     ~SwOSGyroLSM();
@@ -69,8 +79,7 @@ class SwOSMotor;
 
  class SwOSGyroMPU : public SwOSGyro {
   protected:
-    Quaternion  q;
-    VectorInt16 aa;
+
     uint16_t packetSize;    // Expected MPU 6050 DMP packet size (default is 42 bytes)
 
     virtual void setupLocal(); 
@@ -79,18 +88,10 @@ class SwOSMotor;
     // constructor
 	  SwOSGyroMPU(const char *name, SwOSCtrl *ctrl );
     ~SwOSGyroMPU();
-    uint8_t popState( uint8_t *buffer );
-    uint8_t pushState( uint8_t *buffer );
-    virtual void serialize( Serialize *serialize );
 
     // read sensor
     virtual void operate();
 
-    // interface
-    virtual void getAcceleration( float *x, float *y, float *z );
-    virtual void getQuaternion( float *w, float *x, float *y, float *z );
-    virtual void getYawPitchRoll(float *yaw, float *pitch, float *roll, bool radiants = false );
-    virtual void getEuler(float *alpha, float *beta, float *gamma, bool radiants = false );
 };
 
 /***************************************************
