@@ -421,8 +421,8 @@ void MenuEvent::enterIO( const char* prompt, SwOSIOUID_t *uio, bool input ) {
 
 bool MenuEvent::enterEvent( SwOSNVSEvent_t *event ) {
 
-  char           prompt[128];
-  SwOSIO         *eventIO;
+  char   prompt[128];
+  SwOSIO *eventIO;
 
   // sensor
   if ( (io) && ( io->isInput() ) ) {
@@ -939,7 +939,7 @@ void MenuIOConfig::run( void ) {
 
     fillIOList();
   
-    printf("     Name               Type            Alias\n");
+    printf("     Name               Type            Events Alias\n");
 
     // list IOs
     char data[80];
@@ -952,7 +952,22 @@ void MenuIOConfig::run( void ) {
       if ( controller >= 0 ) sprintf( name, "%s",    io[i]->getName() );
       else                   sprintf( name, "%s.%s", io[i]->getCtrl()->getName(), io[i]->getName() );
 
-      sprintf( data, "%-18s %-15s %s", name, SWOSIOTYPE[ io[i]->getIOType() ], io[i]->getAlias() );
+      // count events
+      uint8_t events=0;
+      for (uint8_t e=0; i<MAXNVSEVENTS; e++) {
+
+        // end of list?
+        if ( nvs.events[nvs.activeEventConfig][e].sensor.serialNumber == 0) break;
+
+        // my event?
+        if ( ( io[i] == myOSSwarm.getIO( nvs.events[nvs.activeEventConfig][e].sensor ) ) ||
+             ( io[i] == myOSSwarm.getIO( nvs.events[nvs.activeEventConfig][e].actor  ) ) 
+           ) 
+          events++;
+
+      }
+
+      sprintf( data, "%-18s %-15s %-3d    %s", name, SWOSIOTYPE[ io[i]->getIOType() ], events, io[i]->getAlias() );
 
       add( data, "", i+1, '\0', true );
 

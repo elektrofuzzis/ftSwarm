@@ -219,7 +219,7 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
     virtual bool isInput( void ) { return true; };
 
     // input to be used with triggers
-    virtual bool isEventInput( void )   { return true; }; 
+    virtual bool isEventInput( void ) { return true; }; 
 
     // read sensor
 	  virtual void operate() {};

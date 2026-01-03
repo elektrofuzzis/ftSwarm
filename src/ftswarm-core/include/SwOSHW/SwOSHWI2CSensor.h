@@ -23,7 +23,7 @@ class SwOSMotor;
  *
  ***************************************************/
 
- class SwOSGyro : public SwOSIO {
+ class SwOSGyro : public SwOSInput {
 
   protected:
     float ypr[3];

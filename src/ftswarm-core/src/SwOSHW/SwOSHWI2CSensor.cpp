@@ -24,7 +24,7 @@
 LSM6DSRSensor *lsm = NULL;
 MPU6050       *mpu = NULL;
 
-SwOSGyro::SwOSGyro(const char *name, SwOSCtrl *ctrl ) : SwOSIO( name, ctrl, SWOSIO_GYRO ) {
+SwOSGyro::SwOSGyro(const char *name, SwOSCtrl *ctrl ) : SwOSInput( name, SWOS_NOPORT, ctrl, SWOSIO_GYRO ) {
 
 }
 
