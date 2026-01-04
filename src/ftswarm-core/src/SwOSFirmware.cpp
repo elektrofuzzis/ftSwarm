@@ -442,11 +442,17 @@ bool MenuEvent::enterEvent( SwOSNVSEvent_t *event ) {
   }
 
   // trigger
-  FtSwarmTrigger_t trigger = event->triggerMath.bits.trigger;
-  sprintf( prompt, "Enter trigger event - (0) trigger down  (1) trigger up  (2) change value [%d]: ", trigger );
-  event->triggerMath.bits.trigger = (FtSwarmTrigger_t) enterNumber( prompt, trigger, 0, 2 );
+  if ( !myOSSwarm.getIO( event->sensor )->isDigitalInput() ) {
+    printf( "Enter trigger event: change value.\n");
+    event->triggerMath.bits.trigger = FTSWARM_TRIGGERVALUE;
+  
+  } else {
+    FtSwarmTrigger_t trigger = event->triggerMath.bits.trigger;
+    sprintf( prompt, "Enter trigger event - (0) trigger down  (1) trigger up  (2) change value [%d]: ", trigger );
+    event->triggerMath.bits.trigger = (FtSwarmTrigger_t) enterNumber( prompt, trigger, 0, 2 );
+    printEvent( *event, 1 );
+  }
 
-  printEvent( *event, 1 );
 
   // actor
   if ( (io) && ( io->isActor() ) ) {

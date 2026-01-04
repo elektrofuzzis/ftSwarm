@@ -1084,10 +1084,7 @@ void SwOSCtrl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
   // restore values
   oled->setCursor( cx, cy );
   oled->setTextSize( sx, sy );
-
-  // show on display
-  oled->display();
-   
+  
 }
 
 void SwOSCtrl::identify( void ) {

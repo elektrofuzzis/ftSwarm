@@ -57,10 +57,8 @@
  *
  ***************************************************/
 
- class SwOSOLED : public SwOSIO {
+class SwOSOLED : public SwOSIO {
   protected:
-
-    Adafruit_SSD1306 *_display = NULL;
     
     uint8_t textSizeX = 0;
     uint8_t textSizeY = 0;
@@ -75,7 +73,6 @@
     // administrative stuff
     virtual bool isOLED( void ) { return true; };
 
-    void display(void);
     void invertDisplay(bool i);
     void fillScreen( bool white);    
     void dim(bool dim);
@@ -90,8 +87,10 @@
     void drawCircle(int16_t x0, int16_t y0, int16_t r, bool fill, bool white);
     void drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool fill, bool white);
     void drawChar(int16_t x, int16_t y, unsigned char c, bool color, bool bg, uint8_t size_x, uint8_t size_y);
-    void write( char *str, int16_t x, int16_t y, FtSwarmAlign_t align , bool fill );
-    void write( char *str );
+
+    // write some text
+    void write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align , bool fill );
+    void write( const char *str );
    
     void setCursor(int16_t x, int16_t y);
     void getCursor(int16_t *x, int16_t *y);

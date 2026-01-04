@@ -879,15 +879,6 @@ void FtSwarmServo::setOffset(int16_t offset) {
 FtSwarmOLED::FtSwarmOLED(FtSwarmSerialNumber_t serialNumber):FtSwarmIO( serialNumber, SWOSIO_OLED) {};
 FtSwarmOLED::FtSwarmOLED( const char *name ):FtSwarmIO( name, SWOSIO_OLED ) {};
 
-void FtSwarmOLED::display(void) {
-
-  if (!me) return;
-  
-  static_cast<SwOSOLED*>(me)->lock();
-  static_cast<SwOSOLED*>(me)->display();
-  static_cast<SwOSOLED*>(me)->unlock();
-}
-
 void FtSwarmOLED::invertDisplay(bool i) {
 
   if (!me) return;
@@ -923,6 +914,13 @@ void FtSwarmOLED::setRotation(uint8_t r) {
   static_cast<SwOSOLED*>(me)->setRotation( r );
   static_cast<SwOSOLED*>(me)->unlock();
 }
+
+void FtSwarmOLED::clearScreen() {
+
+  fillScreen(0);
+
+}
+
 
 void FtSwarmOLED::fillScreen(bool white) {
 
@@ -1032,7 +1030,7 @@ void FtSwarmOLED::setTextWrap(bool w) {
   static_cast<SwOSOLED*>(me)->unlock();
 }
 
-void FtSwarmOLED::write( char *str, int16_t x, int16_t y, FtSwarmAlign_t align, bool fill ) {
+void FtSwarmOLED::write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align, bool fill ) {
 
   if (!me) return;
   
@@ -1041,7 +1039,7 @@ void FtSwarmOLED::write( char *str, int16_t x, int16_t y, FtSwarmAlign_t align, 
   static_cast<SwOSOLED*>(me)->unlock();
 }
 
-void FtSwarmOLED::write( char *str ) {
+void FtSwarmOLED::write( const char *str ) {
 
   if (!me) return;
   

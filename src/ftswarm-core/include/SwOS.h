@@ -883,8 +883,10 @@ class FtSwarmOLED : public FtSwarmIO {
 
     FtSwarmOLED(FtSwarmSerialNumber_t serialNumber);
     FtSwarmOLED( const char *name );
-    
-    void display(void);
+
+    // clear blue area
+    void clearScreen( void );
+
     void invertDisplay(bool i);
     void fillScreen( bool white=true);    
     void dim(bool dim);
@@ -898,8 +900,12 @@ class FtSwarmOLED : public FtSwarmIO {
     void drawCircle(int16_t x0, int16_t y0, int16_t r, bool fill=false, bool white=true);
     void drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool fill, bool white=true);
     void drawChar(int16_t x, int16_t y, unsigned char c, bool color=true, bool bg=false, uint8_t size_x=1, uint8_t size_y=1);
-    void write( char *str, int16_t x, int16_t y, FtSwarmAlign_t align = FTSWARM_ALIGNCENTER, bool fill = true );
-    void write( char *str );
+
+    // print a text str
+    void write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align = FTSWARM_ALIGNCENTER, bool fill = true );
+
+    // print a text str
+    void write( const char *str );
    
     void setCursor(int16_t x, int16_t y);
     void getCursor(int16_t *x, int16_t *y);
@@ -910,7 +916,10 @@ class FtSwarmOLED : public FtSwarmIO {
     void setRotation(uint8_t r);
     uint8_t getRotation(void);
 
+    // set Font Size
     void setTextSize(uint8_t sx, uint8_t sy=1);
+
+    // get Font Size
     void getTextSize( uint8_t *sx, uint8_t *sy );
     
     void getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h);
