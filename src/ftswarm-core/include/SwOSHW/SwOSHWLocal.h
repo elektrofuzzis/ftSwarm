@@ -1,53 +1,45 @@
 /*
- * SwOSHWDisplay.h
+ * SwOSHWLocal.h
  *
- * Display hardware implementation
+ * Local Hardware
  * 
- * (C) 2021-25 Christian Bergschneider & Stefan Fuss
+ * (C) 2025 Christian Bergschneider & Stefan Fuss
  * 
  */
- 
+
 #pragma once
 
-#include "SwOSHWBaseIO.h"
+#include "SwOS.h"
+#include "SwOSHW/SwOSHWBaseCtrl.h"
+ 
 
- /***************************************************
+/**************************************************
  *
- *   SwOSPixel
+ *   HC165
  *
- ***************************************************/
+ **************************************************/
 
- class SwOSPixel : public SwOSIO {
+class HC165 {
   protected:
-    uint32_t color = 0;
-    uint8_t  brightness = BRIGHTNESSDEFAULT;
-    bool     dynamic = false;
+    gpio_num_t LD, CS, CLK, MISO;
+    uint8_t    lastValue;
   
-    // local HW procedures
-    virtual void setupLocal(); 
-    virtual void setColorLocal();
-    virtual void setBrightnessLocal();
-  
-    // remote HW procedures
-    virtual void setRemote();
-    
   public:
+  
     // constructor
-    SwOSPixel(const char *name, uint8_t port, SwOSCtrl *ctrl);
+    HC165( FtSwarmVersion_t CPU  );
   
     // administrative stuff
-    virtual void serialize( Serialize *serialize );
-    virtual void onTrigger( SwOSTriggerMath_t triggerMath, int32_t sensor, int32_t parameter );
-    virtual bool isPixel( void ) { return true; };
-    virtual bool isActor( void ) { return true; };
+    virtual void operate();
   
     // commands
-    virtual uint32_t getColor()      { return color; };
-    virtual uint8_t  getBrightness() { return this->brightness; };
-    virtual void     setColor(uint32_t color);
-    virtual void     setBrightness(uint8_t brightness);
-    virtual void     setValue( uint8_t brightness, uint32_t color ) { this->brightness = brightness; this->color = color; };
+    virtual void    setValue( uint8_t value ) { this->lastValue = value; };
+    virtual uint8_t getValue( uint8_t bit )   { return lastValue && 1<<bit; };
+    virtual uint8_t getValue()                { return lastValue; };
+  
   };
+
+extern HC165 *hc165;
 
 /***************************************************
  *
@@ -55,22 +47,26 @@
  *
  ***************************************************/
 
-class SwOSOLED : public SwOSIO {
+#define YELLOWPIXELS 16
+
+class OLED {
+
   protected:
+
+    Adafruit_SSD1306 *display  = NULL;
+    bool displayDirty          = false;
     
     uint8_t textSizeX = 0;
     uint8_t textSizeY = 0;
-    
-    // local HW procedures
-    virtual void setupLocal(); // initializes local HW
+
+    bool color      = true;
+    bool background = false;
     
   public:
-    // constructor
-    SwOSOLED(const char *name, SwOSCtrl *ctrl);
 
-    // administrative stuff
-    virtual bool isOLED( void ) { return true; };
-    virtual void operate() {};
+    OLED( void );
+
+    void flush( void );
 
     void invertDisplay(bool i);
     void fillScreen( bool white);    
@@ -94,7 +90,7 @@ class SwOSOLED : public SwOSIO {
     void setCursor(int16_t x, int16_t y);
     void getCursor(int16_t *x, int16_t *y);
 
-    void setTextColor(bool c, bool bg);
+    void setTextColor( bool c,  bool bg);
     void setTextWrap(bool w);
 
     void setRotation(uint8_t r);
@@ -104,6 +100,7 @@ class SwOSOLED : public SwOSIO {
     void getTextSize( uint8_t *sx, uint8_t *sy );
     
     void getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h);
-
     
 };
+
+extern OLED *oled;

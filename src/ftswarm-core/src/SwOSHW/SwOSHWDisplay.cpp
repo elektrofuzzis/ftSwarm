@@ -12,6 +12,7 @@
 #include "SwOSHW/SwOSHWDisplay.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWHAL.h"
+#include "SwOSHW/SwOSHWLocal.h"
 #include "SwOSLog.h"
 
 /***************************************************
@@ -231,24 +232,6 @@ void SwOSPixel::onTrigger( SwOSTriggerMath_t triggerMath, int32_t sensor, int32_
  *
  ***************************************************/
 
-Adafruit_SSD1306 *display     = NULL;
-bool             displayDirty = false;
-
-static void displayTask( void *parameter ) {
-
-  while (1) {
-
-    if ( displayDirty ) {
-      displayDirty = false;
-      display->display();
-    }
-
-    delay(100);
-
-  }
-
-}
-
 SwOSOLED::SwOSOLED(const char *name, SwOSCtrl *ctrl) : SwOSIO( name, ctrl, SWOSIO_OLED ) {
  
   if ( ctrl->isLocal() ) { 
@@ -259,266 +242,156 @@ SwOSOLED::SwOSOLED(const char *name, SwOSCtrl *ctrl) : SwOSIO( name, ctrl, SWOSI
  
 void SwOSOLED::setupLocal() {
  
-  // startup hardwar
-  display = new Adafruit_SSD1306 (128, 64, &Wire, -1);
-
-  if ( !display->begin(SSD1306_SWITCHCAPVCC, 0x3C ) ) {
-    delete display;
-    display = NULL;
-    SWARM_LOG_ERROR( "Couldn't initialize OLED display." );
-    return;
-  }
-
-  // transfer task
-  xTaskCreatePinnedToCore( displayTask, "displayTask", 10000, NULL, 1, NULL, SWOSCORE );
-
-  display->clearDisplay();
-  // display->dim(true);
-      
-  // set useful default values
-  display->setTextColor(true, false);   // Draw white text
-  display->cp437(true);       // Use full 256 char 'Code Page 437' font
- 
-  display->setTextSize(3,3);            // Logo
-  write( (char *) "ftSwarm", getWidth()/2, 0, FTSWARM_ALIGNCENTER, true );
- 
-  display->setTextSize(1,1);            // hostname & version
-  char line[100];
-  sprintf( line, "%s %s", ctrl->getHostname(), SWOSVERSION );
-  write( line, getWidth()/2, 32, FTSWARM_ALIGNCENTER, true );
- 
-  // additional default values
-  display->setTextSize(1, 1);           // Normal 1:1 pixel scale
-  display->setCursor(0, 0);             // Start at top-left corner
- 
-  dim(true);
-  displayDirty = true;
+  // startup hardware
+  oled = new OLED( );
 
 }
- 
+
+
 void SwOSOLED::invertDisplay(bool i) {
  
-  if (display) {
-    display->invertDisplay( i );
-    displayDirty = true;
-  }
-   
+  if (oled) oled->invertDisplay( i );
+
 }
  
 void SwOSOLED::fillScreen(bool white) {
-   
-  drawRect( 0, 0, getWidth(), getHeight(), true, white );
-   
+
+  if (oled) oled->fillScreen( white );
+
 } 
  
 void SwOSOLED::dim(bool dim) {
- 
-  // origin adafruit code fails with some displays
-  // if (display) display->dim( dim );
-  setContrast( dim ? 1 : 0x8F );
+
+  if (oled) oled->dim( dim );
    
 }
  
 void SwOSOLED::setContrast(uint8_t contrast) {
  
-  // send set contrast
-  Wire.beginTransmission( 0x3C );
-  Wire.write( (uint8_t) 0 );
-  Wire.write( 0x81 );
-  Wire.endTransmission();
- 
-  // send contast value
-  Wire.beginTransmission( 0x3C );
-  Wire.write( (uint8_t) 0 );
-  Wire.write( contrast );
-  Wire.endTransmission();
+  if (oled) oled->setContrast( contrast );
    
 }
  
 void SwOSOLED::drawPixel(int16_t x, int16_t y, bool white ) {
-   
-  if (display) {
-    display->drawPixel( x, y + YELLOWPIXELS, (white)?(SSD1306_WHITE):(0) );
-    displayDirty = true;
-  }
+
+  if (oled) oled->drawPixel( x, y, white );
 
 }
  
 void SwOSOLED::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool white) {
    
-  if (display) {
-    if      (x0==x1) display->drawFastVLine( x0, y0 + YELLOWPIXELS, y1 - y0,               (white)?(SSD1306_WHITE):(0) ); 
-    else if (y0==y1) display->drawFastHLine( x0, y0 + YELLOWPIXELS, x1 - x0,               (white)?(SSD1306_WHITE):(0) ); 
-    else             display->drawLine(      x0, y0 + YELLOWPIXELS, x1, y1 + YELLOWPIXELS, (white)?(SSD1306_WHITE):(0) );
-    displayDirty = true;
-  }
+  if (oled) oled->drawLine( x0, y0, x1, y1, white );
 
 } 
  
 void SwOSOLED::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, bool fill, bool white) {
  
-  if (display) {
-    if (fill) display->fillRect( x, y + YELLOWPIXELS, w, h, (white)?(SSD1306_WHITE):(0) );
-    else      display->drawRect( x, y + YELLOWPIXELS, w, h, (white)?(SSD1306_WHITE):(0) );
-    displayDirty = true;
-  }
+  if (oled) oled->drawRect( x, y, w, h, fill, white );
    
 }
  
 void SwOSOLED::drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, bool fill, bool white) {
    
-  if (display) {
-    if (fill) display->fillRoundRect( x0, y0 + YELLOWPIXELS, w, h, radius, (white)?(SSD1306_WHITE):(0)); 
-    else      display->drawRoundRect( x0, y0 + YELLOWPIXELS, w, h, radius, (white)?(SSD1306_WHITE):(0)); 
-    displayDirty = true;
-  }
+  if (oled) oled->drawRoundRect( x0, y0, w, h, radius, fill, white );
    
 } 
  
  
 void SwOSOLED::drawCircle(int16_t x0, int16_t y0, int16_t r, bool fill, bool white) {
-   
-  if (display) {
-    if (fill) display->fillCircle( x0, y0 + YELLOWPIXELS, r, (white)?(SSD1306_WHITE):(0)); 
-    else      display->drawCircle( x0, y0 + YELLOWPIXELS, r, (white)?(SSD1306_WHITE):(0)); 
-    displayDirty = true;
-  }
+
+  if (oled) oled->drawCircle( x0, y0, r, fill, white );
    
 } 
  
 void SwOSOLED::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool fill, bool white) {
    
-  if (display) {
-    if (fill) display->fillTriangle( x0, y0 + YELLOWPIXELS, x1, y1 + YELLOWPIXELS, x2, y2 + YELLOWPIXELS, (white)?(SSD1306_WHITE):(0)); 
-    else      display->drawTriangle( x0, y0 + YELLOWPIXELS, x1, y1 + YELLOWPIXELS, x2, y2 + YELLOWPIXELS, (white)?(SSD1306_WHITE):(0)); 
-    displayDirty = true;
-  }
+  if (oled) oled->drawTriangle( x0, y0, x1, y1, x2, y2, fill, white );
  
 } 
  
 void SwOSOLED::setCursor(int16_t x, int16_t y) {
-   
-  if (display) {
-    display->setCursor( x, y  + YELLOWPIXELS);
-    displayDirty = true;
-  }
+
+  if (oled) oled->setCursor( x, y );
    
 }
  
 void SwOSOLED::getCursor(int16_t *x, int16_t *y) {
    
-  if (display) {
-    *x = display->getCursorX( );
-    *y = display->getCursorY( );
-  }
+  if (oled) oled->getCursor( x, y );
    
 }
  
 void SwOSOLED::setTextColor(bool c, bool bg) {
    
-  if (display) {
-    display->setTextColor( (c)?(SSD1306_WHITE):(0), (bg)?(SSD1306_WHITE):(0) );
-    displayDirty = true;
-  }
+  if (oled) oled->setTextColor( c, bg );
 
 }
  
 void SwOSOLED::setTextWrap(bool w) {
    
-  if (display) display->setTextWrap( w );
-   
+  if (oled) oled->setTextWrap(w);
+
 }
  
 void SwOSOLED::setRotation(uint8_t r) {
    
-  if (display) {
-    display->setRotation( r );
-    displayDirty = true;
-  }
+  if (oled) oled->setRotation(r);
    
 }
  
 uint8_t SwOSOLED::getRotation(void)  {
-   
-  if (display) return display->getRotation( ); 
-  else         return 0;
+
+  if (oled) return oled->getRotation();
+  return 0;
    
 }
  
 void SwOSOLED::setTextSize(uint8_t sx, uint8_t sy) {
    
-  textSizeX = sx;
-  textSizeY = sy;
-   
-  if (display) display->setTextSize( sx, sy );
+  if (oled) oled->setTextSize( sx, sy );
    
 } 
  
 void SwOSOLED::getTextSize( uint8_t *sx, uint8_t *sy ) {
 
-  *sx = textSizeX;
-  *sy = textSizeY;
+  if (oled) oled->getTextSize( sx, sy );
 
 }
  
 void SwOSOLED::drawChar(int16_t x, int16_t y, unsigned char c, bool color, bool bg, uint8_t size_x, uint8_t size_y) {
    
-  if (display) {
-    display->drawChar( x, y + YELLOWPIXELS, c, (color)?(SSD1306_WHITE):(0), (bg)?(SSD1306_WHITE):(0), size_x, size_y );
-    displayDirty = true;
-  }
+  if (oled) oled->drawChar( x, y,c, color, bg, size_x, size_y );
  
 } 
  
 void SwOSOLED::write( const char *str ) {
-   
-  if (display) {
-    display->write(str);
-    displayDirty = true;
-  }
+
+  if (oled) oled->write( str );
    
 }
  
-void SwOSOLED::write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align, bool fill ) { 
- 
-  // no display...
-  if (!display) return;
- 
-  int16_t x1, y1, x2, y2;
-  uint16_t w, h;
-  getTextBounds( str, 0, 0, &x1, &y1, &w, &h );
- 
-  switch (align) {
+void SwOSOLED::write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align, bool fill, bool invert ) { 
 
-    case FTSWARM_ALIGNLEFT:   x2 = x;       y2 = y; break;
-    case FTSWARM_ALIGNCENTER: x2 = x - w/2; y2 = y; break;
-    case FTSWARM_ALIGNRIGHT:  x2 = x - w;   y2 = y; break;
-    default:                  x2 = x;       y2 = y; break;
-  }
- 
-  if (fill) display->fillRect( x2, y2 + YELLOWPIXELS, w, h, 0 );
-  setCursor( x2, y2 );
-  write( str );
+  if (oled) oled->write( str, x, y, align, fill, invert );
    
 }
  
 void SwOSOLED::getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h) {
  
-  if (display) {
-    display->getTextBounds( string, x, y + YELLOWPIXELS, x1, y1, w, h );
-    *y1 -=  + YELLOWPIXELS;
-  }
+  if (oled) oled->getTextBounds( string, x, y, x1, y1, w, h );
    
 } 
  
 int16_t SwOSOLED::getWidth(void)  {
-   
-  if (display) return display->width( ); else return 0;
+
+  if (oled) return oled->getWidth();
+  return 0;
    
 }
  
 int16_t SwOSOLED::getHeight(void) {
  
-  if (display) return display->height( ) - YELLOWPIXELS; else return 0;
+  if (oled) return oled->getHeight();
+  return 0;
    
 }

@@ -338,9 +338,15 @@ void SwOSNVS::saveEvents( void ) {
   // active config
   nvs_set_u8( my_handle, "activeConfig", activeEventConfig );
 
+  // save events & labels
   for ( uint8_t i=0; i<MAXEVENTCONFIGS; i++ ) {
-    sprintf( config, "config#%d", i );
+
+    sprintf( config, "events#%d", i );
     nvs_set_blob( my_handle, config, (void *)events[i], sizeof( events[i] ) );
+
+    sprintf( config, "labels#%d", i );
+    nvs_set_blob( my_handle, config, (void *)oledLabel[i], sizeof( oledLabel[i] ) );
+
   }
 
   // commit
@@ -364,9 +370,15 @@ void SwOSNVS::loadEvents( void ) {
 
   // get configs
   for ( uint8_t i=0; i<MAXEVENTCONFIGS; i++ ) {
-    sprintf( config, "config#%d", i );
-    dummy = sizeof( events );
+    
+    sprintf( config, "events#%d", i );
+    dummy = sizeof( events[i] );
     nvs_get_blob( my_handle, config, events[i], &dummy );
+
+    sprintf( config, "labels#%d", i );
+    dummy = sizeof( oledLabel[i] );
+    nvs_get_blob( my_handle, config, oledLabel[i], &dummy );
+
   }
 
   nvs_close( my_handle );

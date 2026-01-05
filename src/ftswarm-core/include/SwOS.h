@@ -112,7 +112,6 @@ typedef enum { SWOSIO_UNDEF = -1,
                SWOSIO_OLED,
                SWOSIO_I2C,
                SWOSIO_GYRO,
-               SWOSIO_HC165,
                SWOSIO_POWER,
                SWOSIO_COLORSENSOR, 
                SWOSIO_TRAILSENSOR, 
@@ -160,7 +159,6 @@ const SwOSIOClass_t SWOSIOCLASS[SWOSIO_MAXIOTYPE ] = {
   SWOSIOCLASS_SINGULAR, // SWOSIO_OLED
   SWOSIOCLASS_SINGULAR, // SWOSIO_I2C
   SWOSIOCLASS_SINGULAR, // SWOSIO_GYRO
-  SWOSIOCLASS_SINGULAR, // SWOSIO_HC165
   SWOSIOCLASS_SINGULAR, // SWOSIO_POWER
   SWOSIOCLASS_INPUT, // SWOSIO_COLORSENSOR
   SWOSIOCLASS_INPUT, // SWOSIO_TRAILSENSOR
@@ -208,7 +206,6 @@ const bool SHOWIOINAPI[SWOSIO_MAXIOTYPE ] = {
   false, // SWOSIO_OLED
   false, // SWOSIO_I2C
   true, // SWOSIO_GYRO
-  false, // SWOSIO_HC165
   true, // SWOSIO_POWER
   true, // SWOSIO_COLORSENSOR
   true, // SWOSIO_TRAILSENSOR
@@ -256,7 +253,6 @@ const char SWOSIOTYPE[SWOSIO_MAXIOTYPE][20] = {
   "OLED",
   "I2C",
   "Gyro",
-  "HC165",
   "Powersensor",
   "Colorsensor",
   "Trailsensor",
@@ -902,7 +898,7 @@ class FtSwarmOLED : public FtSwarmIO {
     void drawChar(int16_t x, int16_t y, unsigned char c, bool color=true, bool bg=false, uint8_t size_x=1, uint8_t size_y=1);
 
     // print a text str
-    void write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align = FTSWARM_ALIGNCENTER, bool fill = true );
+    void write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align = FTSWARM_ALIGNCENTER, bool fill = true, bool invert = false );
 
     // print a text str
     void write( const char *str );

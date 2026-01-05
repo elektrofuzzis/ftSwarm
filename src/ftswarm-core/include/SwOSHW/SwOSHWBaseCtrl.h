@@ -187,6 +187,7 @@ public:
   void identify( void );                                         // set LEDs to aquamarine / OLED to "it's me" to identify HW 
   
   bool hasGyro( void );                                          // test if HW has a gyro
+  bool hasOLED( void );                                          // test if HW has OLED
   bool hasExtPort( void );                                       // test if HW has an ExtentionPort
 
   void deleteEvents( void );                                     // delete all events

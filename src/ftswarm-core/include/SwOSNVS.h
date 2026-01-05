@@ -79,6 +79,7 @@ class SwOSNVS {
     uint8_t                pixels;
     uint8_t                activeEventConfig;
     SwOSNVSEvent_t         events[MAXEVENTCONFIGS][MAXNVSEVENTS];
+    char                   oledLabel[MAXEVENTCONFIGS][12][4];
     bool                   webUI;
     bool                   IAmKelda;
     FtSwarmCommunication_t swarmCommunication;

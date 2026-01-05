@@ -12,6 +12,7 @@
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWHAL.h"
 #include "SwOSHW/SwOSHWDuino.h"
+#include "SwOSHW/SwOSHWLocal.h"
 #include "SwOSLog.h"
 
 const char EMPTYSTRING[] = "";
@@ -48,7 +49,6 @@ const char IO_ICON[SWOSIO_MAXIOTYPE][10] =
     "0.svg",          // no oled icon
     "0.svg",          // no i2c icon
     "0.svg",          // todo gyro icon
-    "0.svg",          // no hc165 icon
     "Q.svg",          // power
     "R.svg",          // colorsensor 
     "S.svg",          // trailsensor

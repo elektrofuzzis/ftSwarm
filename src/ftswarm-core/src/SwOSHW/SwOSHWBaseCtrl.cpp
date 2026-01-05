@@ -15,13 +15,13 @@
 #include "SwOSHW/SwOSHWCounter.h"
 #include "SwOSHW/SWOSHWCam.h"
 #include "SwOSHW/SwOSHWHAL.h"
+#include "SwOSHW/SwOSHWLocal.h"
 #include "SwOSCom.h"
 #include "SwOSLog.h"
 
 // local pixels & oled
 SwOSPixel *pixel0 = NULL;
 SwOSPixel *pixel1 = NULL;
-SwOSOLED  *oled   = NULL;
 
 /***************************************************
  *
@@ -170,7 +170,7 @@ uint8_t SwOSCtrl::setupLocalButtons( uint8_t maxIO ) {
 
   // create an outstanding HC165 object, if needed
 
-  if ( ( MAXIOS[CPU].HC165 ) && (!hc165) ) hc165 = new SwOSHC165( "HC165", this );
+  if ( ( MAXIOS[CPU].HC165 ) && (!hc165) ) hc165 = new HC165( CPU );
 
   // create buttons
   for ( uint8_t i=0; i<MAXIOS[ CPU ].buttons; i++) {
@@ -261,7 +261,7 @@ uint8_t SwOSCtrl::setupLocalOLED( uint8_t maxIO ) {
 
   // initialize oled if available
   if ( MAXIOS[CPU].OLED ) {
-    oled = new SwOSOLED( "OLED", this );
+    SwOSOLED *oled = new SwOSOLED( "OLED", this );
     io[ maxIO++ ] = oled;
   }
 
@@ -500,9 +500,18 @@ void SwOSCtrl::operate() {
 
   }
 
-  if (hc165) hc165->operate();
+  if (hc165) {
 
-  for (uint8_t i=0; i<IOs; i++) { if ( io[i] ) io[i]->operate(); }
+    hc165->operate();
+
+  }
+
+  // operate all IOs
+  for (uint8_t i=0; i<IOs; i++) { 
+
+    if ( io[i] ) io[i]->operate(); 
+
+  }
 
 }
 
@@ -766,9 +775,6 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, const char *name,
                                   break; 
 
     case SWOSIO_CAM:              io = new SwOSCAM( name, this );                        
-                                  break; 
-
-    case SWOSIO_HC165:            io = new SwOSHC165( name, this );                      
                                   break; 
 
     case SWOSIO_LIDAR:            io = new SwOSLidarInput( name, this );                 
@@ -1063,20 +1069,20 @@ void SwOSCtrl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
   if ( ( state == RUNNING ) && (SSID) ) {
     char _SSID[15];
     strncpy( _SSID, SSID, 14 );
-    oled->write( _SSID, w/2, -YELLOWPIXELS, FTSWARM_ALIGNCENTER, false );
+    oled->write( _SSID, w/2, -YELLOWPIXELS, FTSWARM_ALIGNCENTER, false, false );
   } else {
-    oled->write( (char *) OLEDMSG[state], w/2, -YELLOWPIXELS, FTSWARM_ALIGNCENTER, false );
+    oled->write( (char *) OLEDMSG[state], w/2, -YELLOWPIXELS, FTSWARM_ALIGNCENTER, false, false );
   }
 
   // members
   if ( members > 0) {
     char m[10];
     sprintf( m, "%d", members );
-    oled->write( m, w, -YELLOWPIXELS, FTSWARM_ALIGNRIGHT, false );
+    oled->write( m, w, -YELLOWPIXELS, FTSWARM_ALIGNRIGHT, false, false );
   }
 
   // Kelda
-  if (IAmKelda) oled->write( (char *) "K", 0, -YELLOWPIXELS, FTSWARM_ALIGNLEFT, false );
+  if (IAmKelda) oled->write( (char *) "K", 0, -YELLOWPIXELS, FTSWARM_ALIGNLEFT, false, false );
 
   // cool line
   oled->drawLine( 0, -5, w, -5, true );
@@ -1450,6 +1456,12 @@ bool SwOSCtrl::hasGyro( void ) {
   // check on MPU6050
   Wire.beginTransmission(0x68);
   return (Wire.endTransmission(true) == 0);
+
+}
+
+bool SwOSCtrl::hasOLED( void ) {
+
+  return ( ( CPU == FTSWARMCONTROL_1V3UC ) || ( CPU == FTSWARMCONTROL_1V3 ) );
 
 }
 

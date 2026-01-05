@@ -10,9 +10,8 @@
 #include "SwOSHW/SwOSHWDigital.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWHAL.h"
+#include "SwOSHW/SwOSHWLocal.h"
 
-// local HC165
-SwOSHC165 *hc165 = NULL;
 
 /***************************************************
  *
@@ -215,89 +214,3 @@ void SwOSDigitalInput::setParameter( int32_t parameter ) {
   }
 
 }
-
-/***************************************************
- *
- *   SwOSHC165
- *
- ***************************************************/
-
-SwOSHC165::SwOSHC165(const char *name, SwOSCtrl *ctrl) : SwOSIO(name, ctrl, SWOSIO_HC165 ) {
-
-  // initialize local HW
-  if (ctrl->isLocal()) setupLocal();
-
-}
-
-void SwOSHC165::setupLocal() {
-  // initialize local HW
-
-  switch ( ctrl->getCPU() ) {
-    case FTSWARMCONTROL_1V3UC: CS   = GPIO_NUM_10;
-                               LD   = GPIO_NUM_47;
-                               CLK  = GPIO_NUM_48;
-                               MISO = GPIO_NUM_15;
-                               break;
-
-    case FTSWARMCONTROL_1V3:   CS   = GPIO_NUM_14;
-                               LD   = GPIO_NUM_15;
-                               CLK  = GPIO_NUM_12;
-                               MISO = GPIO_NUM_35;
-                               break;
-
-    default:                   CS = LD = CLK = MISO = GPIO_NUM_NC;
-                               return;
-  }
-
-  // initialize ports
-  gpio_config_t io_conf = {};
-  io_conf.intr_type = GPIO_INTR_DISABLE;
-  io_conf.mode = GPIO_MODE_OUTPUT;
-  io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-  io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-  io_conf.pin_bit_mask = (1ULL<<CS) | (1ULL<<LD) | (1ULL<<CLK) ;
-  gpio_config(&io_conf);
-
-  io_conf.mode = GPIO_MODE_INPUT;
-  io_conf.pin_bit_mask = 1ULL<<MISO ;
-  gpio_config(&io_conf);
-
-  // set levels
-  gpio_set_level( CS, 1 );
-  gpio_set_level( LD, 1 );
-  gpio_set_level( CLK, 1 );
-
-}
-
-void SwOSHC165::operate( ) {
-
-  // no work on remote HW
-  if (!ctrl->isLocal()) return;
-
-  // invalid configuration?
-  if (LD == GPIO_NUM_NC ) {
-    return;
-  }
-
-  // parallel load
-  gpio_set_level( LD, 0 );
-  gpio_set_level( LD, 1 );
-
-  // enable
-  gpio_set_level( CS, 0 );
-
-  // load
-  lastValue = 0;
-  for ( uint8_t i=0; i<8; i++ ) {
-
-    // get value
-    lastValue = ( lastValue << 1 ) | (!gpio_get_level( MISO ));
-
-    // one tick
-    gpio_set_level( CLK, 0 );
-    gpio_set_level( CLK, 1 );
-
-  }
-
-}
-

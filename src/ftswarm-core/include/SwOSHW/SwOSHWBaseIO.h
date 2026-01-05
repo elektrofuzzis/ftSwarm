@@ -79,7 +79,7 @@ public:
 	void setName( const char *name);   // set new name
   const char *getName();             // get name
   
-	void setAlias( const char *alias); // add an alias name
+	virtual void setAlias( const char *alias); // add an alias name
   const char *getAlias();            // get alias
   const char *getAliasOrName();      // get alias or name (if an alis isn't set)
 

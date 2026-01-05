@@ -46,36 +46,3 @@
     virtual FtSwarmToggle_t getToggle( void );                                  
 
 };
-
-/***************************************************
- *
- *   SwOSHC165
- *
- ***************************************************/
-
- class SwOSHC165 : public SwOSIO {
-  protected:
-    gpio_num_t LD, CS, CLK, MISO;
-    uint8_t    lastValue;
-  
-    // local HW procedures
-    virtual void setupLocal();
-  
-  public:
-  
-    // constructor
-    SwOSHC165(const char *name, SwOSCtrl *ctrl);
-  
-    // administrative stuff
-    virtual void operate();
-  
-    // commands
-    virtual void    setValue( uint8_t value ) { this->lastValue = value; };
-    virtual uint8_t getValue( uint8_t bit )   { return lastValue && 1<<bit; };
-    virtual uint8_t getValue()                { return lastValue; };
-  
-  };
-
-extern SwOSHC165 *hc165;
-  
-

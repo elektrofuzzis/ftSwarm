@@ -1030,12 +1030,12 @@ void FtSwarmOLED::setTextWrap(bool w) {
   static_cast<SwOSOLED*>(me)->unlock();
 }
 
-void FtSwarmOLED::write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align, bool fill ) {
+void FtSwarmOLED::write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align, bool fill, bool invert ) {
 
   if (!me) return;
   
   static_cast<SwOSOLED*>(me)->lock();
-  static_cast<SwOSOLED*>(me)->write( str, x, y, align, fill );
+  static_cast<SwOSOLED*>(me)->write( str, x, y, align, fill, invert );
   static_cast<SwOSOLED*>(me)->unlock();
 }
 
