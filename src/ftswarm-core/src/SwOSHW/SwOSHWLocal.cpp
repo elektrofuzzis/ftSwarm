@@ -129,11 +129,9 @@ static void displayTask( void *parameter ) {
 OLED::OLED( void ) {
   
   // startup hardware
-  display = new Adafruit_SSD1306 (128, 64, &Wire, -1);
+  // display = new Adafruit_SSD1306 (128, 64, &Wire, -1);
 
-  if ( !display->begin(SSD1306_SWITCHCAPVCC, 0x3C ) ) {
-    delete display;
-    display = NULL;
+  if ( !display.begin(SSD1306_SWITCHCAPVCC, 0x3C ) ) {
     SWARM_LOG_ERROR( "Couldn't initialize OLED display." );
     return;
   }
@@ -145,9 +143,9 @@ OLED::OLED( void ) {
 
 void OLED::flush( void ) { 
   
-  if ( (display) && (displayDirty) ) { 
+  if ( displayDirty ) { 
     
-    display->display(); 
+    display.display(); 
     displayDirty = false; 
   
   }
@@ -156,10 +154,8 @@ void OLED::flush( void ) {
 
 void OLED::invertDisplay(bool i) {
  
-  if (display) {
-    display->invertDisplay( i );
-    displayDirty = true;
-  }
+  display.invertDisplay( i );
+  displayDirty = true;
    
 }
  
@@ -172,7 +168,7 @@ void OLED::fillScreen(bool white) {
 void OLED::dim(bool dim) {
  
   // origin adafruit code fails with some displays
-  // if (display) display->dim( dim );
+  // if (display) display.dim( dim );
   setContrast( dim ? 1 : 0x8F );
    
 }
@@ -192,83 +188,79 @@ void OLED::setContrast(uint8_t contrast) {
   Wire.endTransmission();
    
 }
+
+void OLED::clearDisplay( void ) {
+
+  display.clearDisplay();
+
+}
+
+void OLED::cp437( bool x ) { 
+  
+  display.cp437( x ); 
+
+}
  
 void OLED::drawPixel(int16_t x, int16_t y, bool white ) {
    
-  if (display) {
-    display->drawPixel( x, y + YELLOWPIXELS, (white)?(SSD1306_WHITE):(0) );
-    displayDirty = true;
-  }
+  display.drawPixel( x, y + YELLOWPIXELS, (white)?(SSD1306_WHITE):(0) );
+  displayDirty = true;
 
 }
  
 void OLED::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool white) {
    
-  if (display) {
-    if      (x0==x1) display->drawFastVLine( x0, y0 + YELLOWPIXELS, y1 - y0,               (white)?(SSD1306_WHITE):(0) ); 
-    else if (y0==y1) display->drawFastHLine( x0, y0 + YELLOWPIXELS, x1 - x0,               (white)?(SSD1306_WHITE):(0) ); 
-    else             display->drawLine(      x0, y0 + YELLOWPIXELS, x1, y1 + YELLOWPIXELS, (white)?(SSD1306_WHITE):(0) );
-    displayDirty = true;
-  }
+  if      (x0==x1) display.drawFastVLine( x0, y0 + YELLOWPIXELS, y1 - y0,               (white)?(SSD1306_WHITE):(0) ); 
+  else if (y0==y1) display.drawFastHLine( x0, y0 + YELLOWPIXELS, x1 - x0,               (white)?(SSD1306_WHITE):(0) ); 
+  else             display.drawLine(      x0, y0 + YELLOWPIXELS, x1, y1 + YELLOWPIXELS, (white)?(SSD1306_WHITE):(0) );
+  displayDirty = true;
 
 } 
  
 void OLED::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, bool fill, bool white) {
  
-  if (display) {
-    if (fill) display->fillRect( x, y + YELLOWPIXELS, w, h, (white)?(SSD1306_WHITE):(0) );
-    else      display->drawRect( x, y + YELLOWPIXELS, w, h, (white)?(SSD1306_WHITE):(0) );
-    displayDirty = true;
-  }
+  if (fill) display.fillRect( x, y + YELLOWPIXELS, w, h, (white)?(SSD1306_WHITE):(0) );
+  else      display.drawRect( x, y + YELLOWPIXELS, w, h, (white)?(SSD1306_WHITE):(0) );
+  displayDirty = true;
    
 }
  
 void OLED::drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, bool fill, bool white) {
    
-  if (display) {
-    if (fill) display->fillRoundRect( x0, y0 + YELLOWPIXELS, w, h, radius, (white)?(SSD1306_WHITE):(0)); 
-    else      display->drawRoundRect( x0, y0 + YELLOWPIXELS, w, h, radius, (white)?(SSD1306_WHITE):(0)); 
-    displayDirty = true;
-  }
+  if (fill) display.fillRoundRect( x0, y0 + YELLOWPIXELS, w, h, radius, (white)?(SSD1306_WHITE):(0)); 
+  else      display.drawRoundRect( x0, y0 + YELLOWPIXELS, w, h, radius, (white)?(SSD1306_WHITE):(0)); 
+  displayDirty = true;
    
 } 
  
  
 void OLED::drawCircle(int16_t x0, int16_t y0, int16_t r, bool fill, bool white) {
    
-  if (display) {
-    if (fill) display->fillCircle( x0, y0 + YELLOWPIXELS, r, (white)?(SSD1306_WHITE):(0)); 
-    else      display->drawCircle( x0, y0 + YELLOWPIXELS, r, (white)?(SSD1306_WHITE):(0)); 
-    displayDirty = true;
-  }
+  if (fill) display.fillCircle( x0, y0 + YELLOWPIXELS, r, (white)?(SSD1306_WHITE):(0)); 
+  else      display.drawCircle( x0, y0 + YELLOWPIXELS, r, (white)?(SSD1306_WHITE):(0)); 
+  displayDirty = true;
    
 } 
  
 void OLED::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool fill, bool white) {
    
-  if (display) {
-    if (fill) display->fillTriangle( x0, y0 + YELLOWPIXELS, x1, y1 + YELLOWPIXELS, x2, y2 + YELLOWPIXELS, (white)?(SSD1306_WHITE):(0)); 
-    else      display->drawTriangle( x0, y0 + YELLOWPIXELS, x1, y1 + YELLOWPIXELS, x2, y2 + YELLOWPIXELS, (white)?(SSD1306_WHITE):(0)); 
-    displayDirty = true;
-  }
+  if (fill) display.fillTriangle( x0, y0 + YELLOWPIXELS, x1, y1 + YELLOWPIXELS, x2, y2 + YELLOWPIXELS, (white)?(SSD1306_WHITE):(0)); 
+  else      display.drawTriangle( x0, y0 + YELLOWPIXELS, x1, y1 + YELLOWPIXELS, x2, y2 + YELLOWPIXELS, (white)?(SSD1306_WHITE):(0)); 
+  displayDirty = true;
  
 } 
  
 void OLED::setCursor(int16_t x, int16_t y) {
    
-  if (display) {
-    display->setCursor( x, y  + YELLOWPIXELS);
-    displayDirty = true;
-  }
+  display.setCursor( x, y  + YELLOWPIXELS);
+  displayDirty = true;
    
 }
  
 void OLED::getCursor(int16_t *x, int16_t *y) {
    
-  if (display) {
-    *x = display->getCursorX( );
-    *y = display->getCursorY( );
-  }
+  *x = display.getCursorX( );
+  *y = display.getCursorY( );
    
 }
  
@@ -277,32 +269,27 @@ void OLED::setTextColor(bool c, bool bg) {
   color      = c;
   background = bg;
    
-  if (display) {
-    display->setTextColor( (c)?(SSD1306_WHITE):(0), (bg)?(SSD1306_WHITE):(0) );
-    displayDirty = true;
-  }
+  display.setTextColor( (c)?(SSD1306_WHITE):(0), (bg)?(SSD1306_WHITE):(0) );
+  displayDirty = true;
 
 }
 
 void OLED::setTextWrap( bool w ) {
    
-  if (display) display->setTextWrap( w );
+  display.setTextWrap( w );
    
 }
  
 void OLED::setRotation(uint8_t r) {
    
-  if (display) {
-    display->setRotation( r );
-    displayDirty = true;
-  }
+  display.setRotation( r );
+  displayDirty = true;
    
 }
  
 uint8_t OLED::getRotation(void)  {
    
-  if (display) return display->getRotation( ); 
-  else         return 0;
+  return display.getRotation( ); 
    
 }
  
@@ -311,7 +298,7 @@ void OLED::setTextSize(uint8_t sx, uint8_t sy) {
   textSizeX = sx;
   textSizeY = sy;
    
-  if (display) display->setTextSize( sx, sy );
+  display.setTextSize( sx, sy );
    
 } 
  
@@ -324,28 +311,19 @@ void OLED::getTextSize( uint8_t *sx, uint8_t *sy ) {
  
 void OLED::drawChar(int16_t x, int16_t y, unsigned char c, bool color, bool bg, uint8_t size_x, uint8_t size_y) {
    
-  if (display) {
-    display->drawChar( x, y + YELLOWPIXELS, c, (color)?(SSD1306_WHITE):(0), (bg)?(SSD1306_WHITE):(0), size_x, size_y );
-    displayDirty = true;
-  }
+  display.drawChar( x, y + YELLOWPIXELS, c, (color)?(SSD1306_WHITE):(0), (bg)?(SSD1306_WHITE):(0), size_x, size_y );
+  displayDirty = true;
  
 } 
  
 void OLED::write( const char *str ) {
    
-  if (display) {
-
-    display->write(str);
-    displayDirty = true;
-
-  }
+  display.write(str);
+  displayDirty = true;
    
 }
  
 void OLED::write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align, bool fill, bool invert ) { 
- 
-  // no display...
-  if (!display) return;
  
   int16_t x1, y1, x2, y2;
   uint16_t w, h;
@@ -364,7 +342,7 @@ void OLED::write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align, b
  
   if (invert) setTextColor( !c, !bg );
 
-  if (fill) display->fillRect( x2-1, y2-1 + YELLOWPIXELS, w+2, h+1, invert );
+  if (fill) display.fillRect( x2-1, y2-1 + YELLOWPIXELS, w+2, h+1, invert );
   setCursor( x2+1, y2 );
   write( str );
 
@@ -374,22 +352,20 @@ void OLED::write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align, b
  
 void OLED::getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h) {
  
-  if (display) {
-    display->getTextBounds( string, x, y + YELLOWPIXELS, x1, y1, w, h );
-    *y1 -=  + YELLOWPIXELS;
-  }
+  display.getTextBounds( string, x, y + YELLOWPIXELS, x1, y1, w, h );
+  *y1 -=  + YELLOWPIXELS;
    
 } 
  
 int16_t OLED::getWidth(void)  {
    
-  if (display) return display->width( ); else return 0;
+  return display.width( ); 
    
 }
  
 int16_t OLED::getHeight(void) {
  
-  if (display) return display->height( ) - YELLOWPIXELS; else return 0;
+  return display.height( ) - YELLOWPIXELS; 
    
 }
 

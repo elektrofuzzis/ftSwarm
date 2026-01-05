@@ -19,7 +19,7 @@ const char SLITERAL[ SERIALIZE_LITERAL_MAX ][24] = {
   "trigger",            // SERIALIZE_LITERAL_TRIGGER
   "state",              // SERIALIZE_LITERAL_STATE
   "speed",              // SERIALIZE_LITERAL_SPEED
-  "UNUSED",             // SERIALIZE_LITERAL_UNUSED
+  "UIClass",            // SERIALIZE_LITERAL_UICLASS
   "offset",             // SERIALIZE_LITERAL_OFFSET
   "position",           // SERIALIZE_LITERAL_POSITION
   "value",              // SERIALIZE_LITERAL_VALUE
@@ -28,8 +28,8 @@ const char SLITERAL[ SERIALIZE_LITERAL_MAX ][24] = {
   "name",               // SERIALIZE_LITERAL_NAME
   "id",                 // SERIALIZE_LITERAL_ID,
   "serialNumber",       // SERIALIZE_LITERAL_SERIALNUMBER
-  "type",               // SERIALIZE_LITERAL_TYPE
-  "icon",               // SERIALIZE_LITERAL_ICON
+  "CtrlType",           // SERIALIZE_LITERAL_CTRLTYPE
+  "IOType",             // SERIALIZE_LITERAL_IOTYPE
   "active",             // SERIALIZE_LITERAL_ACTIVE
   "brightness",         // SERIALIZE_LITERAL_BRIGHTNESS
   "color",              // SERIALIZE_LITERAL_COLOR

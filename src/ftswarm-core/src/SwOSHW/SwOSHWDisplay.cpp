@@ -13,6 +13,7 @@
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWHAL.h"
 #include "SwOSHW/SwOSHWLocal.h"
+#include "SwOSOLEDMenu.h"
 #include "SwOSLog.h"
 
 /***************************************************
@@ -243,7 +244,8 @@ SwOSOLED::SwOSOLED(const char *name, SwOSCtrl *ctrl) : SwOSIO( name, ctrl, SWOSI
 void SwOSOLED::setupLocal() {
  
   // startup hardware
-  oled = new OLED( );
+  if (!oled) oled = new OLED( );
+  if (!oledMenu) oledMenu = new OLEDMenu( ctrl );
 
 }
 

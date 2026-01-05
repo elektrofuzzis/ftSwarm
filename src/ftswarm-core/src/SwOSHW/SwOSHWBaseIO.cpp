@@ -353,8 +353,8 @@ void SwOSIO::getUID( SwOSIOUID_t *uid ) {
 
 void SwOSIO::serialize( Serialize *serialize ) {
   SwOSObj::serialize( serialize );
-  serialize->item( SERIALIZE_LITERAL_TYPE, getUIClass() );
-  serialize->item( SERIALIZE_LITERAL_ICON, getIcon() );
+  serialize->item( SERIALIZE_LITERAL_UICLASS, getUIClass() );
+  serialize->item( SERIALIZE_LITERAL_IOTYPE, getIOType() );
   serialize->item( SERIALIZE_LITERAL_ACTIVE, ( _alias != NULL ) || isInUse() );
 }
 

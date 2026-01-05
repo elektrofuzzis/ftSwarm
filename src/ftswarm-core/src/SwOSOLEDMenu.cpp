@@ -70,7 +70,6 @@ OLEDMenu::OLEDMenu( SwOSCtrl *localCtrl ) {
     }
   }
 
-  /*
   // cls
   oled->clearDisplay();
       
@@ -79,7 +78,7 @@ OLEDMenu::OLEDMenu( SwOSCtrl *localCtrl ) {
   oled->cp437(true);                 // Use full 256 char 'Code Page 437' font
 
   statusScreen( 0, true );
-*/
+
 }
 
 void OLEDMenu::joystick( int8_t x, int8_t y, bool left ) {  

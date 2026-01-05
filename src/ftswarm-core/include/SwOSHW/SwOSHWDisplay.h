@@ -10,8 +10,12 @@
 #pragma once
 
 #include "SwOSHWBaseIO.h"
+#include "SwOSOLEDMenu.h"
 
- /***************************************************
+// only to feed that silly compiler
+class OLEDMenu;
+
+/***************************************************
  *
  *   SwOSPixel
  *
@@ -57,9 +61,8 @@
 
 class SwOSOLED : public SwOSIO {
   protected:
-    
-    uint8_t textSizeX = 0;
-    uint8_t textSizeY = 0;
+
+    OLEDMenu *oledMenu = NULL;
     
     // local HW procedures
     virtual void setupLocal(); // initializes local HW

@@ -53,8 +53,8 @@ class OLED {
 
   protected:
 
-    Adafruit_SSD1306 *display  = NULL;
-    bool displayDirty          = false;
+    Adafruit_SSD1306 display = Adafruit_SSD1306 (128, 64, &Wire, -1);
+    bool displayDirty = false;
     
     uint8_t textSizeX = 0;
     uint8_t textSizeY = 0;
@@ -74,6 +74,8 @@ class OLED {
     void setContrast(uint8_t contrast = 0x8F );
     int16_t getWidth(void);
     int16_t getHeight(void);
+    void clearDisplay(void);
+    void cp437( bool x );
     
     void drawPixel(int16_t x, int16_t y, bool white);  
     void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool white);

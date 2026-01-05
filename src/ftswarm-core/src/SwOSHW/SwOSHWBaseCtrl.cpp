@@ -658,7 +658,7 @@ void SwOSCtrl::serialize( Serialize *serialize ) {
   serialize->startObject( );
   serialize->item( SERIALIZE_LITERAL_NAME, getHostname());
   serialize->item( SERIALIZE_LITERAL_SERIALNUMBER, serialNumber);
-  serialize->item( SERIALIZE_LITERAL_TYPE, getType() );
+  serialize->item( SERIALIZE_LITERAL_CTRLTYPE, getType() );
   serialize->item( SERIALIZE_LITERAL_STATE, getState() );
   
   serialize->startArray( SERIALIZE_LITERAL_IO );
@@ -1078,7 +1078,7 @@ void SwOSCtrl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
   if ( members > 0) {
     char m[10];
     sprintf( m, "%d", members );
-    oled->write( m, w, -YELLOWPIXELS, FTSWARM_ALIGNRIGHT, false, false );
+    oled->write( m, w-1, -YELLOWPIXELS, FTSWARM_ALIGNRIGHT, false, false );
   }
 
   // Kelda
