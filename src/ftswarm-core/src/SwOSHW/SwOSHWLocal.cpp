@@ -7,6 +7,7 @@
  * 
  */
 
+#include "SwOSHW/SwOSHWHAL.h"
 #include "SwOSHW/SwOSHWLocal.h"
 #include "SwOSLog.h"
 
@@ -25,8 +26,8 @@ HC165::HC165( FtSwarmVersion_t CPU ) {
 
   switch ( CPU ) {
     case FTSWARMCONTROL_1V3UC: CS   = GPIO_NUM_10;
-                               LD   = GPIO_NUM_47;
-                               CLK  = GPIO_NUM_48;
+                               LD   = xGPIO_NUM_47;
+                               CLK  = xGPIO_NUM_48;
                                MISO = GPIO_NUM_15;
                                break;
 

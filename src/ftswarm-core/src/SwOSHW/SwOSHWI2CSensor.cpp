@@ -10,6 +10,7 @@
 #include "SwOSHW/SwOSHWI2CSensor.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWActor.h"
+#include "SwOSHW/SwOSHWHAL.h"
 #include "SwOSLog.h"
 
 #include <MPU6050_6Axis_MotionApps20.h>
@@ -92,7 +93,7 @@ void SwOSGyroLSM::setupLocal() {
     // during initial setup, nvs.spiGyro is set by testing on i2c
 
     SPIClass *vspi = new SPIClass( HSPI );
-    vspi->begin( GPIO_NUM_40, GPIO_NUM_39, GPIO_NUM_38 );
+    vspi->begin( xGPIO_NUM_40, GPIO_NUM_39, GPIO_NUM_38 );
     lsm = new LSM6DSRSensor( vspi, GPIO_NUM_3 );
 
   } else {

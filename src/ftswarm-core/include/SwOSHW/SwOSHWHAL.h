@@ -12,6 +12,8 @@
 #include <driver/gpio.h>
 #include <driver/adc.h>
 
+#include "SwOS.h"
+
 // handle different plattforms
 #if CONFIG_IDF_TARGET_ESP32S3
   #define xGPIO_NUM_22    GPIO_NUM_NC
