@@ -1,8 +1,12 @@
-import type { FtSwarmVersion, SwOSState } from "./generated/genApiEnums";
+import type {
+  FtSwarmVersion,
+  SwOSIOType,
+  SwOSState,
+} from "./generated/genApiEnums";
 
 export interface ApiGeneralIoType {
   name: string;
-  type: number;
+  type: SwOSIOType;
   icon: string;
   active: boolean;
 }
@@ -55,11 +59,27 @@ export interface ApiGyroInputType extends ApiGeneralIoType {
   acceleration: number[];
 }
 
+export type FtSwarmInput =
+  | ApiDigitalInputType
+  | ApiAnalogInputType
+  | ApiFormattedValueInputType
+  | ApiJoystickInputType
+  | ApiCamInputType
+  | ApiGyroInputType;
+
+export type FtSwarmOutput =
+  | ApiOutputIoType
+  | ApiServoOutputType
+  | ApiPixelOutputType;
+
+export type FtSwarmIo = FtSwarmInput | FtSwarmOutput;
+
 export type ApiController = {
   name: string;
   serialNumber: string;
   type: FtSwarmVersion;
   state: SwOSState;
+  io: FtSwarmIo[];
 };
 
 export type ApiGetSwarmResponse = {
