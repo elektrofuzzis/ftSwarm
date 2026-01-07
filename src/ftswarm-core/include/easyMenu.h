@@ -16,6 +16,7 @@ class Menu {
     uint8_t  spacer = 0;
     int8_t   *id = NULL;
     int8_t   maxOption = -1;
+    int8_t   maxNumber = 0;
     char     **option = NULL;
     char     delimiter = ' ';
     char     *header = NULL;

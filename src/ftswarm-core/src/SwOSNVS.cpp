@@ -337,17 +337,18 @@ void SwOSNVS::saveEvents( void ) {
 
   // active config
   nvs_set_u8( my_handle, "activeConfig", activeEventConfig );
+  
+  // save events
+  nvs_set_blob( my_handle, "event0", (void *)events[0], sizeof( events[0] ) );
+  nvs_set_blob( my_handle, "event1", (void *)events[1], sizeof( events[1] ) );
+  nvs_set_blob( my_handle, "event2", (void *)events[2], sizeof( events[2] ) );
+  nvs_set_blob( my_handle, "event3", (void *)events[3], sizeof( events[3] ) );
 
-  // save events & labels
-  for ( uint8_t i=0; i<MAXEVENTCONFIGS; i++ ) {
-
-    sprintf( config, "events#%d", i );
-    nvs_set_blob( my_handle, config, (void *)events[i], sizeof( events[i] ) );
-
-    sprintf( config, "labels#%d", i );
-    nvs_set_blob( my_handle, config, (void *)oledLabel[i], sizeof( oledLabel[i] ) );
-
-  }
+  // save labels
+  nvs_set_blob( my_handle, "label0", (void *)oledLabel[0], sizeof( oledLabel[0] ) );
+  nvs_set_blob( my_handle, "label1", (void *)oledLabel[1], sizeof( oledLabel[1] ) );
+  nvs_set_blob( my_handle, "label2", (void *)oledLabel[2], sizeof( oledLabel[2] ) );
+  nvs_set_blob( my_handle, "label3", (void *)oledLabel[3], sizeof( oledLabel[3] ) );
 
   // commit
   nvs_commit( my_handle );
@@ -368,18 +369,17 @@ void SwOSNVS::loadEvents( void ) {
   // active config
   nvs_get_u8( my_handle, "activeConfig", &activeEventConfig );
 
-  // get configs
-  for ( uint8_t i=0; i<MAXEVENTCONFIGS; i++ ) {
-    
-    sprintf( config, "events#%d", i );
-    dummy = sizeof( events[i] );
-    nvs_get_blob( my_handle, config, events[i], &dummy );
+  // load events
+  dummy = sizeof( events[0] ); nvs_get_blob( my_handle, "event0", events[0], &dummy );
+  dummy = sizeof( events[1] ); nvs_get_blob( my_handle, "event1", events[1], &dummy );
+  dummy = sizeof( events[2] ); nvs_get_blob( my_handle, "event2", events[2], &dummy );
+  dummy = sizeof( events[3] ); nvs_get_blob( my_handle, "event3", events[3], &dummy );
 
-    sprintf( config, "labels#%d", i );
-    dummy = sizeof( oledLabel[i] );
-    nvs_get_blob( my_handle, config, oledLabel[i], &dummy );
-
-  }
+  // load labels
+  dummy = sizeof( oledLabel[0] ); nvs_get_blob( my_handle, "label0", oledLabel[0], &dummy );
+  dummy = sizeof( oledLabel[1] ); nvs_get_blob( my_handle, "label1", oledLabel[1], &dummy );
+  dummy = sizeof( oledLabel[2] ); nvs_get_blob( my_handle, "label2", oledLabel[2], &dummy );
+  dummy = sizeof( oledLabel[3] ); nvs_get_blob( my_handle, "label3", oledLabel[3], &dummy );
 
   nvs_close( my_handle );
 

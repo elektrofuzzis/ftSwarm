@@ -100,6 +100,7 @@ void Menu::resetOption( void ) {
   }
 
   maxOption = -1;
+  maxNumber = 0;
 
 }
 
@@ -138,7 +139,7 @@ bool Menu::add( const char *value, int8_t id, char key ) {
 
 bool Menu::add( int8_t id, char key ) {
 
-  if ( maxOption >= MAXMENUITEMS ) false;
+  if ( maxOption >= maxMenuItems ) false;
 
   maxOption++;
   this->id[maxOption] = id;
@@ -151,7 +152,7 @@ bool Menu::add( int8_t id, char key ) {
 
   // number
   } else {
-    sprintf( line, "%d", maxOption+1 );
+    sprintf( line, "%d", ++maxNumber );
   }
 
   option[maxOption] = (char *) calloc( strlen(line) + 1, sizeof(char) );

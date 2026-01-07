@@ -163,6 +163,56 @@ bool calibrateJoysticks( SwOSJoyCalibration_t calibration[4] ) {
 
 }
 
+#define MENUITEMSPERPAGE 20
+
+class FirmwareIOMenu : protected Menu {
+
+  protected:
+
+    bool *anythingChanged = NULL;
+
+    virtual void save( void );
+
+  public:
+
+    FirmwareIOMenu( uint8_t maxMenuItems ) : Menu( maxMenuItems ) {};
+
+};
+
+void FirmwareIOMenu::save( void ) {
+
+  uint8_t i;
+  bool    changes = false;
+
+  // any changes?
+  for ( i=0; i<MAXCTRL; i++ ) { if (anythingChanged[i]) changes = true; }
+
+  if ( ( changes ) && yesNo( "Save changes? (Y/N)?" ) ) {
+
+    // local changes
+    if ( anythingChanged[0] ) {
+
+       // save in local nvs
+       myOSSwarm.Ctrl[0]->save(2);
+       nvs.saveEvents();
+
+       // send new config to Kelda
+       if ( ( myOSSwarm.Kelda ) && ( myOSSwarm.Kelda != myOSSwarm.Ctrl[0] ) ) myOSSwarm.Ctrl[0]->sendIOConfig( myOSSwarm.Kelda->macAddr );
+
+    }
+
+    // remote changes
+    for ( i=1; i<MAXCTRL; i++ ) {
+      if ( anythingChanged[i] ) {
+        myOSSwarm.Ctrl[i]->sendIOConfig( myOSSwarm.Ctrl[i]->macAddr );
+        myOSSwarm.Ctrl[i]->save( 2 );
+      }
+    }
+          
+  }
+
+}
+
 class MenuLocalSettings : private Menu {
 
   static const int8_t MENU_WIFI       = -1;
@@ -185,8 +235,7 @@ class MenuLocalSettings : private Menu {
 
   public:
 
-    MenuLocalSettings( char *basePrompt ) : Menu(  basePrompt, "wifi", "Wifi & Local Settings", 14 ) {};
-    MenuLocalSettings( ):MenuLocalSettings( NULL ) {};
+    MenuLocalSettings( char *basePrompt = NULL ) : Menu(  basePrompt, "wifi", "Wifi & Local Settings", 14 ) {};
     void run( void );
 
 };
@@ -345,52 +394,190 @@ void MenuLocalSettings::run( void ) {
 
 }
 
-class MenuEvent : private Menu {
+class MenuIOConfig : protected FirmwareIOMenu {
 
-  private:
+  protected:
 
-    static const int8_t MENU_ADD = -1;
-    static const int8_t MENU_DEL = -2;
-    static const int8_t MENU_CFG = -3;
+    static const int8_t MENU_ALIAS    = -1;
+    static const int8_t MENU_TYPE     = -2;
+    static const int8_t MENU_LABEL    = -3;
+    static const int8_t MENU_ADD      = -4;
+    static const int8_t MENU_DEL      = -5;
+    static const int8_t MENU_CFG      = -6;
+    static const int8_t MENU_PREVIOUS = -7;
+    static const int8_t MENU_NEXT     = -8;
 
-    SwOSIO *io;
+    SwOSIO* io;
+    bool    selfSave = false;
+    uint8_t event[MENUITEMSPERPAGE + 1];
+    int8_t  maxEvent = -1;
 
-    static void printEventParameter( FtSwarmOperand_t op, SwOSIO *sensor, SwOSIO *actor, char *doing, int32_t parameter );
-    static void printEvent( SwOSNVSEvent_t event, uint8_t details = 0 );
+    int     pageOffset = 0;
+    bool    morePages  = false;
 
+    void changeType( void );
+    void changeAlias( void );
+
+    void fillEventList( void );
     void enterIO( const char* prompt, SwOSIOUID_t *uio, bool input );
     bool enterEvent( SwOSNVSEvent_t *event );
-    bool changeEvent( uint8_t config, SwOSNVSEvent_t *event );
-    bool deleteEvent( uint8_t config, uint8_t events );
+
+    bool changeEvent( SwOSNVSEvent_t *event );
+
+    void addEvent( void );
+    void deleteEvent( void );
+
+    void printEventParameter( FtSwarmOperand_t op, SwOSIO *sensor, SwOSIO *actor, char *doing, int32_t parameter );
+    void printEvent( SwOSNVSEvent_t event, uint8_t details = 0 );
+
+    void changeConfig( void );
 
   public:
 
-    MenuEvent( char *basePrompt = NULL , SwOSIO *io = NULL );
-
-    virtual void run( void );
+    MenuIOConfig( char *basePrompt = NULL, bool *anythingChanged = NULL, SwOSIO* io = NULL );
+    ~MenuIOConfig() { if ( selfSave ) free( anythingChanged ); };
+    void run( void );
 
 };
 
-MenuEvent::MenuEvent( char *basePrompt, SwOSIO *io ):Menu( MAXNVSEVENTS + 5 ) { 
-  
-  char line[128];
+MenuIOConfig::MenuIOConfig( char *basePrompt, bool *anythingChanged, SwOSIO* io ):FirmwareIOMenu( MENUITEMSPERPAGE + 10 ) {
 
   this->io = io;
 
-  if (io) {
-    sprintf( line, "Remote Control %s #%d", io->getAliasOrName(), nvs.activeEventConfig+1 );
-    begin( basePrompt, io->getAliasOrName(), line, 0 );
+  if (anythingChanged) 
+    this->anythingChanged = anythingChanged;
+  else {
+    this->anythingChanged = (bool *) calloc( sizeof(bool), MAXCTRL );
+    selfSave = true;
+  }
 
-  } else {
-    sprintf( line, "Remote Control #%d", nvs.activeEventConfig +1 );
-    begin( basePrompt, "remote", line, 0 );
-  } 
+  if (io) begin( basePrompt, io->getAliasOrName(),    io->getAliasOrName(),  10, ':' );
+  else    begin( basePrompt, "Remote Configuration", "Remote Configuration", 10, ':' );
 
-};
+}
 
-void MenuEvent::enterIO( const char* prompt, SwOSIOUID_t *uio, bool input ) {
+void MenuIOConfig::fillEventList( void ) {
 
-  char   alias[MAXIDENTIFIER];
+  uint8_t item = 0;
+  maxEvent = -1;
+
+  for (uint8_t i=0; i<MAXNVSEVENTS; i++) {
+
+    // end of list?
+    if ( nvs.events[nvs.activeEventConfig][i].sensor.serialNumber == 0) break;
+
+    // io not specified OR event is about my io
+    if ( (!io) || 
+         ( io == myOSSwarm.getIO( nvs.events[nvs.activeEventConfig][i].sensor ) ) ||
+         ( io == myOSSwarm.getIO( nvs.events[nvs.activeEventConfig][i].actor  ) ) 
+       ) {
+
+      // end of list?
+      if ( maxEvent >= MENUITEMSPERPAGE-1 ) {
+        morePages = true;
+        return;
+      }
+
+      // store?
+      if ( ++item >= pageOffset ) event[++maxEvent] = i;
+
+    }
+
+  }
+
+}
+
+void MenuIOConfig::changeAlias( void ) {
+  
+  char prompt[250];
+  char alias[MAXIDENTIFIER];
+  
+  // ask user for new alias
+  sprintf( prompt, "%s - please enter new alias: ", io->getAliasOrName() );
+  enterIdentifier( prompt, alias, MAXIDENTIFIER );
+
+  // nothing changed
+  if ( strcmp( alias, io->getAlias() ) == 0 ) return;
+                
+  // test on duplicates
+  SwOSIO *testIO = myOSSwarm.getIO( alias );
+  if ( (testIO) && ( testIO != io ) ) {
+    printf("\e[0;31mERROR: This alias is already used in the swarm.\n\e[0m");
+    return;
+  }
+
+  // change name
+  io->setAlias( alias );
+  anythingChanged[ myOSSwarm.getIndex( io->getCtrl()->serialNumber ) ] = true;
+
+}
+
+void MenuIOConfig::changeType( void ) {
+  
+  char alias[MAXIDENTIFIER];
+  char prompt[250];
+
+  // change type?
+  SwOSIOType_t ioType = io->getIOType();
+
+  // singular class -> done
+  if ( SWOSIOCLASS[ioType] == SWOSIOCLASS_SINGULAR ) {
+    printf( "\e[0;31mERROR: IO type %s could not be changed to another IO type.\n\e[0m\n", SWOSIOTYPE[ioType] );
+    return;
+  }
+  
+  // list compatible types and ask user
+  int8_t       maxType = -1;
+  SwOSIOType_t defaultValue, type[SWOSIO_MAXIOTYPE];
+
+  for (uint8_t i=0; i<SWOSIO_MAXIOTYPE; i++) {
+
+    // compatible type?
+    if ( SWOSIOCLASS[ioType] == SWOSIOCLASS[i] ) {
+
+      maxType++;
+
+      // default?
+      if ( ioType == (SwOSIOType_t) i ) defaultValue = (SwOSIOType_t)i;
+
+      // menu entry
+      type[maxType] = (SwOSIOType_t) i;
+      printf( "(%2d) %s\n", maxType, SWOSIOTYPE[i] );
+
+    }
+
+  }
+
+  sprintf( prompt, "Choose new IO Type [%s]:", SWOSIOTYPE[defaultValue]);
+  SwOSIOType_t newIOType = type[enterNumber( prompt, defaultValue, 0, maxType )];
+
+  // change type?
+  if ( ioType != newIOType ) { 
+
+    // need my controller
+    SwOSCtrl *ctrl = io->getCtrl();
+
+    // my index within the io list
+    uint8_t index = ctrl->getIndex(io);
+
+    // change it
+    if ( ctrl->changeIOType( ctrl->getIndex(io), newIOType ) ) {
+
+      // since I changed my type, io was deleted. Need to refresh io.
+      io = ctrl->io[index];
+
+      // yes I did it
+      anythingChanged[ myOSSwarm.getIndex( io->getCtrl()->serialNumber ) ] = true;
+
+    }
+
+  }
+
+}
+
+void MenuIOConfig::enterIO( const char* prompt, SwOSIOUID_t *uio, bool input ) {
+
+  char   alias[MAXIDENTIFIER] = "";
   SwOSIO *io;
 
   // default
@@ -419,7 +606,7 @@ void MenuEvent::enterIO( const char* prompt, SwOSIOUID_t *uio, bool input ) {
 
 }
 
-bool MenuEvent::enterEvent( SwOSNVSEvent_t *event ) {
+bool MenuIOConfig::enterEvent( SwOSNVSEvent_t *event ) {
 
   char   prompt[128];
   SwOSIO *eventIO;
@@ -523,7 +710,7 @@ bool MenuEvent::enterEvent( SwOSNVSEvent_t *event ) {
 
 }
 
-bool MenuEvent::changeEvent( uint8_t config, SwOSNVSEvent_t *event ) {
+bool MenuIOConfig::changeEvent(SwOSNVSEvent_t *event ) {
 
   // create a copy of the event
   SwOSNVSEvent_t newEvent;
@@ -538,8 +725,8 @@ bool MenuEvent::changeEvent( uint8_t config, SwOSNVSEvent_t *event ) {
   // duplicates?
   for (uint8_t i=0; i< MAXNVSEVENTS; i++ ) {
 
-    if ( ( cmpEvent( &newEvent, &nvs.events[config][i] ) >0 ) &&
-         ( event != &nvs.events[config][i])
+    if ( ( cmpEvent( &newEvent, &nvs.events[nvs.activeEventConfig][i] ) >0 ) &&
+         ( event != &nvs.events[nvs.activeEventConfig][i])
        ) {
 
       printf("ERROR: This event already exists.");
@@ -554,33 +741,58 @@ bool MenuEvent::changeEvent( uint8_t config, SwOSNVSEvent_t *event ) {
   memcpy( event, &newEvent, sizeof( SwOSNVSEvent_t ) );
   myOSSwarm.addEvent( event );
 
+  // events are stored locally only
+  anythingChanged[0] = true;
+
   return true;
 
 }
 
-bool MenuEvent::deleteEvent( uint8_t config, uint8_t events ) {
+void MenuIOConfig::addEvent( void ) {
+
+  for ( uint8_t i=0; i<MAXNVSEVENTS; i++ ) {
+
+    // free space found?
+    if ( nvs.events[nvs.activeEventConfig][i].sensor.serialNumber == 0) {
+
+      changeEvent( &nvs.events[nvs.activeEventConfig][i] );
+
+      return;
+
+    }
+
+  }
+
+}
+
+void MenuIOConfig::deleteEvent( void ) {
 
   char prompt[255];
-  sprintf( prompt, "Which event should be deleted? [0 - abort, 1..%d]:", events );
-  uint8_t event = enterNumber( prompt, 0, 0, events );
+  sprintf( prompt, "Which event should be deleted? [0 - abort, 1..%d]:", maxEvent+1 );
+  uint8_t selected = enterNumber( prompt, 0, 0, maxEvent+1 );
 
   // abort
-  if ( event==0 ) return false;
+  if ( selected==0 ) return;
+
+  // adjust selected to event list index
+  selected = selected -1;
 
   // delete event
-  myOSSwarm.deleteEvent( &nvs.events[config][event-1] );
+  myOSSwarm.deleteEvent( &nvs.events[nvs.activeEventConfig][event[selected]] );
 
   // move all successors
-  if ( event < MAXNVSEVENTS ) memcpy( &nvs.events[config][event-1], &nvs.events[config][event], ( MAXNVSEVENTS - event ) * sizeof( SwOSNVSEvent_t ) );
+  if ( selected+1 < MAXNVSEVENTS ) memcpy( &nvs.events[nvs.activeEventConfig][event[selected]], &nvs.events[nvs.activeEventConfig][event[selected]+1], ( MAXNVSEVENTS - selected -1 ) * sizeof( SwOSNVSEvent_t ) );
 
   // cleanup last event
-  bzero( &nvs.events[config][MAXNVSEVENTS-1], sizeof( SwOSNVSEvent_t) );
+  bzero( &nvs.events[nvs.activeEventConfig][MAXNVSEVENTS-1], sizeof( SwOSNVSEvent_t) );
 
-  return true;
+  // events are stored locally only
+  anythingChanged[0] = true;
 
 }
 
-void MenuEvent::printEventParameter( FtSwarmOperand_t op, SwOSIO *sensor, SwOSIO *actor, char *doing, int32_t parameter ) {
+
+void MenuIOConfig::printEventParameter( FtSwarmOperand_t op, SwOSIO *sensor, SwOSIO *actor, char *doing, int32_t parameter ) {
 
   switch ( op ) {
     case FTSWARM_CONSTANT:    if ( actor->isPixel() ) printf( "#%06X", parameter );
@@ -596,7 +808,7 @@ void MenuEvent::printEventParameter( FtSwarmOperand_t op, SwOSIO *sensor, SwOSIO
 
 }
 
-void MenuEvent::printEvent( SwOSNVSEvent_t event, uint8_t details ) {
+void MenuIOConfig::printEvent( SwOSNVSEvent_t event, uint8_t details ) {
 
   SwOSIO *sensor = dynamic_cast<SwOSIO*>( myOSSwarm.getIO( event.sensor ) );
   SwOSIO *actor  = dynamic_cast<SwOSIO*>( myOSSwarm.getIO( event.actor ) );
@@ -630,79 +842,97 @@ void MenuEvent::printEvent( SwOSNVSEvent_t event, uint8_t details ) {
 
 }
 
-void MenuEvent::run( void ) {
+void MenuIOConfig::changeConfig( void ) {
 
-  char    line[80];
-  char    value[MAXIDENTIFIER];
-  char    sensor[MAXIDENTIFIER];
-  char    actor[MAXIDENTIFIER];
-  uint8_t events = 0;
-  bool    anythingChanged = false;
+  char line[80];
   uint8_t newConfig;
+
+  sprintf( line, "Switch to configuration [1..%d]", MAXEVENTCONFIGS );
+  newConfig = enterNumber( line, nvs.activeEventConfig+1, 1, MAXEVENTCONFIGS ) -1;
+  
+  if ( newConfig != nvs.activeEventConfig ) {
+      anythingChanged[0] = true;
+      nvs.activeEventConfig = newConfig;
+      myOSSwarm.deleteEvents();
+      myOSSwarm.addEvents( newConfig );
+  }
+
+}
+
+void MenuIOConfig::run( void ) {
 
   while (1) {
 
-    start( );
+    start();
+    fillEventList();
 
-    events = 0;
-  
-    for (uint8_t i=0; i<MAXNVSEVENTS; i++) {
+    if (io) {
+    
+      add( "name", io->getName(), MENU_DEACTIVATED, MENU_NOKEY );
+      add( "IO type", SWOSIOTYPE[ io->getIOType() ], MENU_TYPE, 't' );
+      add( "alias",   io->getAlias(), MENU_ALIAS, 'a' );
+      add( "label",  "", MENU_LABEL, 'l' );
 
-      // end of list?
-      if ( nvs.events[nvs.activeEventConfig][i].sensor.serialNumber == 0) break;
+      if ( maxEvent >= 0 ) printf("\n     Events:\n");
 
-      if ( (!io) || 
-           ( io == myOSSwarm.getIO( nvs.events[nvs.activeEventConfig][i].sensor ) ) ||
-           ( io == myOSSwarm.getIO( nvs.events[nvs.activeEventConfig][i].actor  ) ) 
-         ) {
+    }
 
-        // increase events counter
-        events++;
+    for (uint8_t i=0; i<=maxEvent; i++) {
 
-        printf("(%2d) ", events );
-        printEvent( nvs.events[nvs.activeEventConfig][i] );
+      printf("(%2d) ", i+1 );
+      printEvent( nvs.events[nvs.activeEventConfig][event[i]] );
 
-        add( i );
-
-      }
+      add( i );
 
     }
 
     printf("\n");
 
-    if ( events < MAXNVSEVENTS ) add( "add event", "", MENU_ADD, '+' );
-    add( "delete event", "", MENU_DEL, '-' );
+    if (morePages)      add( "next page", "", MENU_NEXT, '>' );
+    if (pageOffset > 0) add( "previous page", "", MENU_PREVIOUS, '<' );
+    if ( ( morePages ) || (pageOffset > 0) ) printf("\n");
+
+    if ( maxEvent < MAXNVSEVENTS ) add( "add event", "", MENU_ADD, '+' );
+    if ( maxEvent >= 0           ) add( "delete event", "", MENU_DEL, '-' );
     add( "switch configuration", "", MENU_CFG, 's' );
+    
     addExit();
 
-    int8_t choice = userChoice( );
-    
-    switch (choice) {
+    int8_t choice = userChoice();
 
-      case MENU_EXIT: if ( ( anythingChanged ) && ( yesNo("Save configuration [Y/N]?") ) ) nvs.saveEvents();
-                      return;
+    switch ( choice ) {
 
-      case MENU_ADD:  printf("\n" ); 
-                      if ( changeEvent( nvs.activeEventConfig, &nvs.events[nvs.activeEventConfig][events] ) ) anythingChanged = true;
-                      break;
+      case MENU_EXIT:     if ( selfSave ) save();
+                          return;
 
-      case MENU_DEL:  printf("\n");
-                      if ( deleteEvent( nvs.activeEventConfig, events ) ) anythingChanged = true;
-                      break;
+      case MENU_ALIAS:    changeAlias( );
+                          break;
 
-      case MENU_CFG:  sprintf( line, "Switch to configuration [1..%d]", MAXEVENTCONFIGS );
-                      newConfig = enterNumber( line, nvs.activeEventConfig+1, 1, MAXEVENTCONFIGS ) -1;
-                      if ( newConfig != nvs.activeEventConfig ) {
-                        anythingChanged = true;
-                        nvs.activeEventConfig = newConfig;
-                        myOSSwarm.deleteEvents();
-                        myOSSwarm.addEvents( newConfig );
-                      }
-                      break;
+      case MENU_TYPE:     changeType( );
+                          break;
 
-      default:        printf("\n"); 
-                      if ( changeEvent( nvs.activeEventConfig, &nvs.events[nvs.activeEventConfig][choice] ) ) anythingChanged = true;
-                      break;
+      case MENU_ADD:      printf("\n" ); 
+                          addEvent( );
+                          break;
+
+      case MENU_DEL:      printf("\n");
+                          deleteEvent( );
+                          break;
+
+      case MENU_CFG:      printf("\n");
+                          changeConfig();
+                          break;
+
+      case MENU_NEXT:     pageOffset += MENUITEMSPERPAGE;
+                          break;
+
+      case MENU_PREVIOUS: pageOffset -= MENUITEMSPERPAGE;
+                          if ( pageOffset < 0 ) pageOffset = 0;
+                          break;
+
+      default:            printf("\n"); 
+                          changeEvent( &nvs.events[nvs.activeEventConfig][event[choice-1]] );
+                          break;
 
     }
 
@@ -710,7 +940,7 @@ void MenuEvent::run( void ) {
 
 }
 
-class MenuIOConfig : private Menu {
+class MenuIOList : private FirmwareIOMenu {
 
   private:
 
@@ -718,26 +948,18 @@ class MenuIOConfig : private Menu {
     static const int8_t MENU_PIXEL    = -1;
     static const int8_t MENU_INPUT    = -2;
     static const int8_t MENU_ACTOR    = -3;
-    static const int8_t MENU_ALIAS    = -4;
-    static const int8_t MENU_TYPE     = -5;
-    static const int8_t MENU_NEXT     = -6;
-    static const int8_t MENU_PREVIOUS = -7;
-    
-    // Page size
-    static const int8_t IOSPERPAGE = 20;
+    static const int8_t MENU_NEXT     = -4;
+    static const int8_t MENU_PREVIOUS = -5;
 
     // controller
     SwOSCtrl *controller = NULL;
 
     // IOs shown in the menu
-    SwOSIO *io[99];
+    SwOSIO *io[MENUITEMSPERPAGE+1];
     int8_t maxItem    = -1;
     int8_t selected   = -1;
     int    pageOffset = 0;
     bool   morePages  = false;
-
-    // which controller has changes?
-    bool anythingChanged [MAXCTRL];
 
     // types of IOs to show
     bool listInputs = true;
@@ -745,20 +967,18 @@ class MenuIOConfig : private Menu {
     bool listPixels = false;
 
     void fillIOList( void );
-    bool selectIO( void );
-    void changeAlias( void );
-    void changeType( void );
-    void changeEvents( SwOSIO * io );
-    void save( void );
 
   public:
 
-    MenuIOConfig( char *basePrompt = NULL, SwOSCtrl *controller = NULL );
+    MenuIOList( char *basePrompt = NULL, SwOSCtrl *controller = NULL );
+    ~MenuIOList() { if ( anythingChanged ) free( anythingChanged ); };
     void run( void );
 
 };
 
-MenuIOConfig::MenuIOConfig( char *basePrompt, SwOSCtrl *controller ):Menu( IOSPERPAGE + 10 ) {
+MenuIOList::MenuIOList( char *basePrompt, SwOSCtrl *controller ):FirmwareIOMenu( MENUITEMSPERPAGE + 10 ) {
+
+  anythingChanged = (bool*) calloc( sizeof( bool ), MAXCTRL );
 
   const char ioconfig[] = "IO configuration";
 
@@ -769,12 +989,11 @@ MenuIOConfig::MenuIOConfig( char *basePrompt, SwOSCtrl *controller ):Menu( IOSPE
   for (uint8_t i=0; i<MAXCTRL; i++) anythingChanged[i] = false;
 
   if ( controller )  begin( basePrompt, controller->getName(), controller->getName(), 10, ' ' );
-  else               begin( basePrompt, ioconfig, ioconfig, MAXIDENTIFIER+10, ' ' );
-
+  else               begin( basePrompt, ioconfig, ioconfig, MENUITEMSPERPAGE+10, ' ' );
 
 }
 
-void MenuIOConfig::fillIOList( void ) {
+void MenuIOList::fillIOList( void ) {
 
   int item  = -1;
   maxItem   = -1;
@@ -794,14 +1013,14 @@ void MenuIOConfig::fillIOList( void ) {
                ( listActors && myOSSwarm.Ctrl[c]->io[i]->isActor() && !myOSSwarm.Ctrl[c]->io[i]->isPixel() ) ||
                ( listPixels && myOSSwarm.Ctrl[c]->io[i]->isPixel() ) ) ) {
 
-                item++;
-                if (item>=pageOffset) io[++maxItem] = myOSSwarm.Ctrl[c]->io[i];
-                if ( maxItem >= IOSPERPAGE ) {
+                if ( maxItem >= MENUITEMSPERPAGE-1 ) {
                   morePages = true;
-                  maxItem--;
                   return;
                 }
-        }
+
+                if ( ++item >= pageOffset ) io[++maxItem] = myOSSwarm.Ctrl[c]->io[i];
+
+         }
 
       }
 
@@ -811,133 +1030,7 @@ void MenuIOConfig::fillIOList( void ) {
 
 }
 
-bool MenuIOConfig::selectIO( void ) {
-  
-  char prompt[250];
-
-  // Which one to change?
-  sprintf( prompt, "Please select the IO to be changed [1..%d]:", maxItem+1 );
-  selected = enterNumber( prompt, 0, 1, maxItem+1 ) -1;
-
-  return selected>=0;
-
-}
-
-void MenuIOConfig::changeAlias( void ) {
-  
-  char prompt[250];
-  char alias[MAXIDENTIFIER];
-
-  if ( !selectIO() ) return;
-  
-  // ask user for new alias
-  sprintf( prompt, "%s - please enter new alias: ", io[selected]->getAliasOrName() );
-  enterIdentifier( prompt, alias, MAXIDENTIFIER );
-
-  // nothing changed
-  if ( strcmp( alias, io[selected]->getAlias() ) == 0 ) return;
-                
-  // test on duplicates
-  SwOSIO *testIO = myOSSwarm.getIO( alias );
-  if ( (testIO) && ( testIO != io[selected] ) ) {
-    printf("\e[0;31mERROR: This alias is already used in the swarm.\n\e[0m");
-    return;
-  }
-
-  // change name
-  io[selected]->setAlias( alias );
-  anythingChanged[ myOSSwarm.getIndex( io[selected]->getCtrl()->serialNumber ) ] = true;
-
-}
-
-void MenuIOConfig::changeType( void ) {
-  
-  char alias[MAXIDENTIFIER];
-  char prompt[250];
-
-  if ( !selectIO() ) return;
-
-  // change type?
-  SwOSIOType_t ioType = io[selected]->getIOType();
-
-  // singular class -> done
-  if ( SWOSIOCLASS[ioType] == SWOSIOCLASS_SINGULAR ) {
-    printf( "\e[0;31mERROR: IO type %s could not be changed to another IO type.\n\e[0m\n", SWOSIOTYPE[ioType] );
-    return;
-  }
-  
-  // list compatible types and ask user
-  int8_t       maxType = -1;
-  SwOSIOType_t defaultValue, type[99];
-
-  for (uint8_t i=0; i<SWOSIO_MAXIOTYPE; i++) {
-
-    // compatible type?
-    if ( SWOSIOCLASS[ioType] == SWOSIOCLASS[i] ) {
-
-      maxType++;
-
-      // default?
-      if ( ioType == (SwOSIOType_t) i ) defaultValue = (SwOSIOType_t)i;
-
-      // menu entry
-      type[maxType] = (SwOSIOType_t) i;
-      printf( "(%2d) %s\n", maxType, SWOSIOTYPE[i] );
-
-    }
-
-  }
-
-  sprintf( prompt, "Choose new IO Type - default %s:", SWOSIOTYPE[defaultValue]);
-  SwOSIOType_t newIOType = type[enterNumber( prompt, defaultValue, 0, maxType )];
-
-  if ( ioType != newIOType ) { 
-    anythingChanged[ myOSSwarm.getIndex( io[selected]->getCtrl()->serialNumber ) ] = io[selected]->getCtrl()->changeIOType( io[selected]->getCtrl()->getIndex( io[selected] ), newIOType );
-  }
-
-}
-
-void MenuIOConfig::save( void ) {
-
-  uint8_t i;
-  bool    changes = false;
-
-  // any changes?
-  for ( i=0; i<MAXCTRL; i++ ) { if (anythingChanged[i]) changes = true; }
-
-  if ( ( changes ) && yesNo( "Save changes? (Y/N)?" ) ) {
-
-    // local changes
-    if ( anythingChanged[0] ) {
-
-       // save in local nvs
-       myOSSwarm.Ctrl[0]->save(2);
-
-       // send new config to Kelda
-       if ( ( myOSSwarm.Kelda ) && ( myOSSwarm.Kelda != myOSSwarm.Ctrl[0] ) ) myOSSwarm.Ctrl[0]->sendIOConfig( myOSSwarm.Kelda->macAddr );
-
-    }
-
-    // remote changes
-    for ( i=1; i<MAXCTRL; i++ ) {
-      if ( anythingChanged[i] ) {
-        myOSSwarm.Ctrl[i]->sendIOConfig( myOSSwarm.Ctrl[i]->macAddr );
-        myOSSwarm.Ctrl[i]->save( 2 );
-      }
-    }
-          
-  }
-
-}
-
-void MenuIOConfig::changeEvents( SwOSIO * io ) {
-
-  MenuEvent menuEvent( this->prompt, io );
-  menuEvent.run( );
-
-}
-
-void MenuIOConfig::run( void ) {
+void MenuIOList::run( void ) {
 
   while (1) {
 
@@ -986,18 +1079,14 @@ void MenuIOConfig::run( void ) {
     if ( ( morePages ) || (pageOffset > 0) ) printf("\n");
 
     if (!listInputs) add( "show inputs", "", MENU_INPUT, 'i' );
-    if (!listActors) add( "show actors", "", MENU_ACTOR, 'c' );
+    if (!listActors) add( "show actors", "", MENU_ACTOR, 'a' );
     if (!listPixels) add( "show pixels", "", MENU_PIXEL, 'p' );
-
-    printf("\n");
-
-    add( "change IO type", "", MENU_TYPE,  't' );
-    add( "change alias",   "", MENU_ALIAS, 'a' );
 
     addExit();
   
     // User's choice
     int8_t choice = userChoice( );
+    MenuIOConfig *menuIOConfig;
 
     switch (choice) {
 
@@ -1019,20 +1108,17 @@ void MenuIOConfig::run( void ) {
                           listPixels = false;
                           break;
 
-      case MENU_ALIAS:    changeAlias( );
+      case MENU_NEXT:     pageOffset += MENUITEMSPERPAGE;
                           break;
 
-      case MENU_TYPE:     changeType( );
-                          break;
-
-      case MENU_NEXT:     pageOffset += IOSPERPAGE;
-                          break;
-
-      case MENU_PREVIOUS: pageOffset -= IOSPERPAGE;
+      case MENU_PREVIOUS: pageOffset -= MENUITEMSPERPAGE;
                           if ( pageOffset < 0 ) pageOffset = 0;
                           break;
 
-      default:            changeEvents( io[choice-1] );
+      default:            // changeEvents( io[choice-1] );
+                          menuIOConfig = new MenuIOConfig( this->prompt, anythingChanged, io[choice-1] );
+                          menuIOConfig->run();
+                          delete( menuIOConfig );
                           break;
 
     }
@@ -1068,7 +1154,7 @@ class MenuSwarmConfig : Menu {
     void run( void );
 };
 
-MenuSwarmConfig::MenuSwarmConfig( char *basePrompt ):Menu( basePrompt, "Swarm Configuration", "Swarm Configuration", 13 ) {
+MenuSwarmConfig::MenuSwarmConfig( char *basePrompt ):Menu( basePrompt, "Swarm Configuration", "Swarm Configuration", MAXCTRL + 10 ) {
 };
 
 
@@ -1278,8 +1364,8 @@ void MenuSwarmConfig::run( void ) {
       default:          if (ctrl[choice]->getComState() != COMSTATE_ONLINE ) {
                           printf("\e[0;31mERROR: %s is not online.\n\e[0m\n", ctrl[choice]->getAliasOrName() );
                         } else {
-                          MenuIOConfig menuIOConfig( prompt, ctrl[choice] );
-                          menuIOConfig.run();
+                          MenuIOList MenuIOList( prompt, ctrl[choice] );
+                          MenuIOList.run();
                         }
                         break;
 
@@ -1347,8 +1433,8 @@ void MainMenu::run( void ) {
 
     MenuLocalSettings *menuLocalSettings;
     MenuSwarmConfig   *menuSwarmConfig;
-    MenuIOConfig      *menuIOConfig;
-    MenuEvent         *menuEvent;
+    MenuIOList        *menuIOList;
+    MenuIOConfig      *menuEvent;
 
     switch( userChoice(  )  ) {
       case MENU_EXIT:         return;
@@ -1363,12 +1449,18 @@ void MainMenu::run( void ) {
                             delete menuSwarmConfig;
                             break;
 
-      case MENU_IOCONFIG:   menuIOConfig = new MenuIOConfig();;
-                            menuIOConfig->run();
-                            delete menuIOConfig;
+      case MENU_IOCONFIG:   menuIOList = new MenuIOList();
+                            menuIOList->run();
+                            delete menuIOList;
                             break;
 
+/*
       case MENU_REMOTE:     menuEvent = new MenuEvent();
+                            menuEvent->run();
+                            delete menuEvent;
+                            break;
+*/
+      case MENU_REMOTE:     menuEvent = new MenuIOConfig();
                             menuEvent->run();
                             delete menuEvent;
                             break;
