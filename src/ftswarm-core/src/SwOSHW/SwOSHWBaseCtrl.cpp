@@ -16,6 +16,7 @@
 #include "SwOSHW/SWOSHWCam.h"
 #include "SwOSHW/SwOSHWHAL.h"
 #include "SwOSHW/SwOSHWLocal.h"
+#include "SwOSOLEDMenu.h"
 #include "SwOSCom.h"
 #include "SwOSLog.h"
 
@@ -263,6 +264,7 @@ uint8_t SwOSCtrl::setupLocalOLED( uint8_t maxIO ) {
   if ( MAXIOS[CPU].OLED ) {
     SwOSOLED *oled = new SwOSOLED( "OLED", this );
     io[ maxIO++ ] = oled;
+    if (!oledMenu) oledMenu = new OLEDMenu( this );
   }
 
   return maxIO;
@@ -500,11 +502,7 @@ void SwOSCtrl::operate() {
 
   }
 
-  if (hc165) {
-
-    hc165->operate();
-
-  }
+  if (hc165) hc165->operate();
 
   // operate all IOs
   for (uint8_t i=0; i<IOs; i++) { 

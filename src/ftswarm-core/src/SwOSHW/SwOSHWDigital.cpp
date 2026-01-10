@@ -143,9 +143,29 @@ void SwOSDigitalInput::setReading( int32_t newValue ) {
 
   // check if it's toggled?
   if ( changes ) { 
-    if (newValue) { toggle = FTSWARM_TOGGLEUP;   trigger( FTSWARM_TRIGGERUP, newValue ); }
-    else          { toggle = FTSWARM_TOGGLEDOWN; trigger( FTSWARM_TRIGGERDOWN, newValue ); }
-    trigger( FTSWARM_TRIGGERVALUE, newValue );
+
+    FtSwarmToggle_t  newToggle;
+    FtSwarmTrigger_t trigger;
+    bool             oledTriggered = false;
+
+    if (newValue) { newToggle = FTSWARM_TOGGLEUP;   trigger = FTSWARM_TRIGGERUP; }
+    else          { newToggle = FTSWARM_TOGGLEDOWN; trigger = FTSWARM_TRIGGERDOWN; }
+
+    // trigger OLED?
+    if ( (oledMenu) && ( ioType == SWOSIO_BUTTON ) ) oledTriggered = oledMenu->trigger( newToggle, ioType, port, false );
+
+    // if oledMenu didn't process the trigger, send it to the event list
+    if (!oledTriggered) {
+      
+      // set toggle
+      toggle = newToggle;
+      
+      // trigger Actors
+      this->trigger( trigger, newValue );
+      this->trigger( FTSWARM_TRIGGERVALUE, newValue );
+
+    }
+
   }
 
   // store new data

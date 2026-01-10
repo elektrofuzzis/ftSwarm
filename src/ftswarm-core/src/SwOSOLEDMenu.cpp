@@ -9,38 +9,9 @@
 
 #include "SwOSOLEDMenu.h"
 #include "SwOSHW/SwOSHWLocal.h"
+#include "SwOSSwarm.h"
 
-/***************************************************
- *
- *   OLEDLabel
- *
- ***************************************************/
-
-void OLEDLabel::set( const char *text, uint8_t maxChar, int8_t x, int8_t y, FtSwarmAlign_t align ) {
-
-  set( text, maxChar );
-  this->x = x;
-  this->y = y;
-  this->align = align;
-
-}
-
-void OLEDLabel::set( const char *text, uint8_t maxChar ) {
-
-  bzero( this->text, 4 );
-  strncpy( this->text, text, (maxChar>3)?3:maxChar );
-
-}
-
-void OLEDLabel::print( bool clicked ) {
-  
-  // inactive?
-  if ( text[0] == '\0' ) return;
-
-  oled->write( text, x, y, align, true, clicked );
-  
-}
-
+OLEDMenu *oledMenu = NULL;
 
 /***************************************************
  *
@@ -50,132 +21,178 @@ void OLEDLabel::print( bool clicked ) {
 
 OLEDMenu::OLEDMenu( SwOSCtrl *localCtrl ) {
 
-  // Hen & Egg-Problem, can't access on oled yet
-  int16_t lowerLine = 64-16-10;
-  int16_t width     = 127;
-
-  for ( uint8_t i=0; i<=7; i++ ) {
-    SwOSIO *io = localCtrl->getIO( SWOSIO_BUTTON, i );
-    if (io) {
-      switch ( i ) {
-        case FTSWARM_S1: label[i].set( io->getAlias(), 3, 0,        lowerLine, FTSWARM_ALIGNLEFT);   break;
-        case FTSWARM_S2: label[i].set( io->getAlias(), 3, 41,       lowerLine, FTSWARM_ALIGNCENTER); break;
-        case FTSWARM_S3: label[i].set( io->getAlias(), 3, width-41, lowerLine, FTSWARM_ALIGNCENTER); break;
-        case FTSWARM_S4: label[i].set( io->getAlias(), 3, width,    lowerLine, FTSWARM_ALIGNRIGHT);  break;
-        case FTSWARM_J1: label[i].set( io->getAlias(), 2, 48,       20,        FTSWARM_ALIGNCENTER); break;
-        case FTSWARM_J2: label[i].set( io->getAlias(), 2, width-48, 20,        FTSWARM_ALIGNCENTER); break;
-        case FTSWARM_F1: label[i].set( io->getAlias(), 3, 0,        0,         FTSWARM_ALIGNLEFT );  break;
-        case FTSWARM_F2: label[i].set( io->getAlias(), 3, width,    0,         FTSWARM_ALIGNRIGHT);  break;
-      }
-    }
-  }
-
   // cls
-  oled->clearDisplay();
+  oled->clearDisplay( true );
       
   // set useful default values
   oled->setTextColor(true, false);   // Draw white text
   oled->cp437(true);                 // Use full 256 char 'Code Page 437' font
 
-  statusScreen( 0, true );
+  trigger( FTSWARM_NOTOGGLE, SWOSIO_BUTTON, SWOS_NOPORT, true );
 
 }
 
-void OLEDMenu::joystick( int8_t x, int8_t y, bool left ) {  
+void OLEDMenu::printButton( const char *text, int16_t x, int16_t y, FtSwarmAlign_t align,  FtSwarmToggle_t toggle ) {
+
+  if ( ( text ) && ( text[0] != '\0' ) ) 
+    oled->write( text, x, y, align, true, (toggle == FTSWARM_TOGGLEUP) );
+  
+}
+
+void OLEDMenu::joystick( char *lr, char*fb, int8_t x, int8_t y, bool left ) {  
 
   const int8_t size = 11;
   int8_t b;
+
+  if ( ( fb ) && ( fb[0] != '\0' ) ) {
   
-  // ^
-  b = y - size;
-  oled->drawLine( x, b, x-3, b+3, true );
-  oled->drawLine( x, b, x+3, b+3, true );
+    // ^
+    b = y - size;
+    oled->drawLine( x, b, x-3, b+3, true );
+    oled->drawLine( x, b, x+3, b+3, true );
 
-  // v
-  b = y + size;
-  oled->drawLine( x, b, x-3, b-3, true );
-  oled->drawLine( x, b, x+3, b-3, true );
+    oled->write( fb, x, b-9, FTSWARM_ALIGNCENTER, true, false );
 
-  // <
-  b = x - size;
-  oled->drawLine( b, y, b+3, y-3, true );
-  oled->drawLine( b, y, b+3, y+3, true );
+    // v
+    b = y + size;
+    oled->drawLine( x, b, x-3, b-3, true );
+    oled->drawLine( x, b, x+3, b-3, true );
 
-  // >
-  b = x + size;
-  oled->drawLine( b, y, b-3, y-3, true );
-  oled->drawLine( b, y, b-3, y+3, true );
-
-  /*
-  // J1
-  oled->write( j, x+1, y-3 );
-
-  if (left) oled->write( fb, x+1, y-size-9, FTSWARM_ALIGNCENTER );
-  else      oled->write( fb, x+1, y-size-9, FTSWARM_ALIGNCENTER );
-
-  // LR
-  if ( left ) oled->write( lr, x-size-1, y-3,FTSWARM_ALIGNRIGHT );
-  else        oled->write( lr, x+size+3, y-3,FTSWARM_ALIGNLEFT );
-
-  */
-
-}
-
-void OLEDMenu::splashScreen( void ) {
-
-}
-
-void OLEDMenu::statusScreen( uint8_t hc165, bool completeRefresh ) {
-
-  uint8_t delta = oldHC165 ^ hc165;
-
-  for (uint8_t i=0; i<8; i++ ) {
-
-    uint8_t bitmask = 1 << i;
-    if ( ( delta & bitmask ) || ( completeRefresh ) ) label[i].print( hc165 & bitmask );
     
   }
 
-  oldHC165 = hc165;
+  if ( ( lr ) && ( lr[0] != '\0' ) ) {
 
-  if ( completeRefresh ) {
+    // <
+    b = x - size;
+    oled->drawLine( b, y, b+3, y-3, true );
+    oled->drawLine( b, y, b+3, y+3, true );
 
-    joystick( 48,     24, true );
-    joystick( 128-48, 24, false );
+    if (left) oled->write( lr, b-2, y-3, FTSWARM_ALIGNRIGHT, true, false );
+
+      // >
+    b = x + size;
+    oled->drawLine( b, y, b-3, y-3, true );
+    oled->drawLine( b, y, b-3, y+3, true );
+
+    if (!left) oled->write( lr, b+2, y-3, FTSWARM_ALIGNLEFT, true, false );
 
   }
 
-  
+}
+
+bool OLEDMenu::splashScreen( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port, bool completeRefresh ) {
+
+  return false;
 
 }
 
-void OLEDMenu::setLabel( const char *text, uint8_t i, int8_t x, int8_t y, FtSwarmAlign_t align ) { 
+bool OLEDMenu::setupScreen( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port, bool completeRefresh ) {
   
-  uint8_t chars = 3;
-  if ( ( i == FTSWARM_J1 ) || ( i == FTSWARM_J2 ) ) chars = 2;
-  
-  label[i].set( text, chars, x, y, align ); 
+  static const int16_t lowerLine = 64-16-10;
+  static const int16_t width     = 127;
 
-};
+  bool triggered = false;
 
-void OLEDMenu::set( uint8_t i, const char *text ) {
+  // cls
+  if ( completeRefresh ) {
+    oled->clearDisplay();
+    oled->write( "Configuration?", 64, 20, FTSWARM_ALIGNCENTER, true, false );
+  }
 
-  uint8_t chars = 3;
-  if ( ( i == FTSWARM_J1 ) || ( i == FTSWARM_J2 ) ) chars = 2;
+  for (uint8_t i=0; i<4; i++ ) {
 
-  label[i].set( text, chars );
+    triggered = triggered || ( i == port );
 
-  statusScreen( 1<<i, false );
+    if ( ( port == i ) || ( completeRefresh ) ) {
+
+      switch ( i ) {
+        case FTSWARM_S1:  printButton( "#1", 0,        lowerLine, FTSWARM_ALIGNLEFT,   toggle ); break;
+        case FTSWARM_S2:  printButton( "#2", 41,       lowerLine, FTSWARM_ALIGNCENTER, toggle ); break;
+        case FTSWARM_S3:  printButton( "#3", width-41, lowerLine, FTSWARM_ALIGNCENTER, toggle ); break;
+        case FTSWARM_S4:  printButton( "#4", width,    lowerLine, FTSWARM_ALIGNRIGHT,  toggle ); break;
+      }
+
+      // released?
+      if ( toggle == FTSWARM_TOGGLEDOWN ) {
+
+        // set status screen
+        menu = OLEDMenuStatus;
+
+        // change config asynchronous
+        SwOSCom setConfig( myOSSwarm.Ctrl[0]->macAddr, myOSSwarm.Ctrl[0]->serialNumber, CMD_SETACTIVECONFIG );
+        setConfig.data.configCmd.config = i;
+        xQueueSend( myOSNetwork.recvNotification, &setConfig, ESPNOW_MAXDELAY );
+
+      }
+      
+    }
+  }
+
+  return triggered;
 
 }
 
-void OLEDMenu::operate( uint8_t newHC165 ) {
+bool OLEDMenu::statusScreen( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port, bool completeRefresh ) {
 
-  // test on changed buttons
-  uint8_t trigger = oldHC165 ^ newHC165;
-  if (!trigger) return;
+  static const int16_t lowerLine = 64-16-10;
+  static const int16_t width     = 127;
 
-  oldHC165 = newHC165;
-  statusScreen( newHC165, false );
+  bool triggered = false;
+
+  if ( completeRefresh ) {
+    oled->clearDisplay();
+    joystick( nvs.oledLabel[nvs.activeEventConfig][SWOSLABEL_JOY1LR], nvs.oledLabel[nvs.activeEventConfig][SWOSLABEL_JOY1FB], 48,     20, true );
+    joystick( nvs.oledLabel[nvs.activeEventConfig][SWOSLABEL_JOY2LR], nvs.oledLabel[nvs.activeEventConfig][SWOSLABEL_JOY2FB], 128-48, 20, false );
+
+    char cfg[5];
+    sprintf( cfg, "#%d", nvs.activeEventConfig+1 );
+    oled->write( cfg, width/2, lowerLine, FTSWARM_ALIGNCENTER, true, false );
+
+  }
+
+  for (uint8_t i=0; i<8; i++ ) {
+
+    if ( ( i == port ) || ( completeRefresh ) ) {
+
+      switch ( i ) {
+        case FTSWARM_S1:  printButton( nvs.oledLabel[nvs.activeEventConfig][i], 0,        lowerLine, FTSWARM_ALIGNLEFT,   toggle ); break;
+        case FTSWARM_S2:  printButton( nvs.oledLabel[nvs.activeEventConfig][i], 41,       lowerLine, FTSWARM_ALIGNCENTER, toggle ); break;
+        case FTSWARM_S3:  printButton( nvs.oledLabel[nvs.activeEventConfig][i], width-41, lowerLine, FTSWARM_ALIGNCENTER, toggle ); break;
+        case FTSWARM_J1:  printButton( nvs.oledLabel[nvs.activeEventConfig][i], 48,       16,        FTSWARM_ALIGNCENTER, toggle ); break;
+        case FTSWARM_J2:  printButton( nvs.oledLabel[nvs.activeEventConfig][i], width-48, 16,        FTSWARM_ALIGNCENTER, toggle ); break;
+        case FTSWARM_F1:  printButton( nvs.oledLabel[nvs.activeEventConfig][i], 0,        1,         FTSWARM_ALIGNLEFT,   toggle ); break;
+        case FTSWARM_F2:  printButton( nvs.oledLabel[nvs.activeEventConfig][i], width,    1,         FTSWARM_ALIGNRIGHT,  toggle ); break;
+
+        case FTSWARM_S4:  printButton( "SET",                                   width,    lowerLine, FTSWARM_ALIGNRIGHT,  toggle ); 
+                          
+                          triggered = true;
+
+                          // released?
+                          if ( toggle == FTSWARM_TOGGLEDOWN ) {
+                            menu = OLEDMenuSetup;
+                            setupScreen( FTSWARM_NOTOGGLE, ioType, SWOS_NOPORT, true );
+                          }
+                          break;
+
+      }
+      
+    }
+    
+  }
+
+  return triggered;
+
+}
+
+bool OLEDMenu::trigger( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port, bool completeRefresh ) {
+
+  switch (menu) {
+    case OLEDMenuSplash: return splashScreen( toggle, ioType, port, completeRefresh ); break;
+    case OLEDMenuStatus: return statusScreen( toggle, ioType, port, completeRefresh ); break;
+    case OLEDMenuSetup:  return setupScreen ( toggle, ioType, port, completeRefresh ); break;
+  }
+
+  return false;
 
 }

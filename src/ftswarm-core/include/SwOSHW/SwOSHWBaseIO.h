@@ -126,7 +126,6 @@ public:
   virtual SwOSCtrl*       getCtrl() { return ctrl; };
 	virtual SwOSIOType_t    getIOType() { return ioType; };
   virtual SwOSUIClass_t   getUIClass();
-  virtual const char*     getIcon();
   virtual void            getUID( SwOSIOUID_t *uid );
 	virtual void            serialize( Serialize *serialize );
   virtual void            take( void ) { useCounter++; };                      // register an instance using this IO
@@ -138,6 +137,7 @@ public:
   virtual uint8_t         popState( uint8_t *buffer )  { return 0; };
   virtual void            setParameter( int32_t parameter ) {};
   virtual bool            isOnline( void );
+  virtual SwOSLabel_t     getLabel( void );
   
   // Test, if I'm an ...
   virtual bool isMotor( void )        { return false; };  

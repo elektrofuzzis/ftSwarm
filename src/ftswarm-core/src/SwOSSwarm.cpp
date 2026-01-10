@@ -808,6 +808,15 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
                               }
                               break;
 
+    case CMD_SETACTIVECONFIG: // change event list, local only
+                              if ( affected == 0 ) {
+                                deleteEvents( );
+                                nvs.activeEventConfig = com->data.configCmd.config;
+                                addEvents( nvs.activeEventConfig, Ctrl[affected]->serialNumber );
+                                if (oledMenu) oledMenu->trigger( FTSWARM_NOTOGGLE, SWOSIO_BUTTON, SWOS_NOPORT, true );
+                              }
+                              break;
+
     default:                  if ( Ctrl[affected] ) {
                                 // any other type of msg will be processed on controller level
                                 Ctrl[affected]->lock();

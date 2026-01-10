@@ -19,6 +19,7 @@
 #include "SwOSCLI.h"
 #include "SwOSLog.h"
 #include "SwOSHW/SwOSHWHAL.h"
+#include "SwOSHW/SwOSHWLocal.h"
 
 const char EXTMODE[7][14] = { "off", "I2C-Master", "I2C-Slave", "Outputs", "Servos", "Lidar", "" }; // "" just to avoid seg faults
 const char GYRO[3][8]     = { "off", "LSM6", "MPU6050"};
@@ -417,6 +418,7 @@ class MenuIOConfig : protected FirmwareIOMenu {
 
     void changeType( void );
     void changeAlias( void );
+    void changeLabel( void );
 
     void fillEventList( void );
     void enterIO( const char* prompt, SwOSIOUID_t *uio, bool input );
@@ -484,6 +486,29 @@ void MenuIOConfig::fillEventList( void ) {
     }
 
   }
+
+}
+
+void MenuIOConfig::changeLabel( void ) {
+
+  char prompt[250];
+  char text[4];
+
+  SwOSLabel_t label = io->getLabel();
+  
+  // ask user for new label
+  sprintf( prompt, "Please enter new label [%s]: ", nvs.oledLabel[nvs.activeEventConfig][label] );
+  if ( ( label == SWOSLABEL_J1 ) || ( label == SWOSLABEL_J2 ) ) enterString( prompt, text, 3 );
+  else enterString( prompt, text, 4 );
+
+  // nothing changed
+  if ( strcmp( text, nvs.oledLabel[nvs.activeEventConfig][label] ) == 0 ) return;
+
+  strcpy( nvs.oledLabel[nvs.activeEventConfig][label], text );
+
+  if (oledMenu) oledMenu->trigger( FTSWARM_NOTOGGLE, io->getIOType(), io->getPort(), true );
+
+  anythingChanged[ myOSSwarm.getIndex( io->getCtrl()->serialNumber ) ] = true;
 
 }
 
@@ -871,7 +896,10 @@ void MenuIOConfig::run( void ) {
       add( "name", io->getName(), MENU_DEACTIVATED, MENU_NOKEY );
       add( "IO type", SWOSIOTYPE[ io->getIOType() ], MENU_TYPE, 't' );
       add( "alias",   io->getAlias(), MENU_ALIAS, 'a' );
-      add( "label",  "", MENU_LABEL, 'l' );
+
+      // test on label
+      SwOSLabel_t label = io->getLabel();
+      if ( (label != SWOSLABEL_UNDEF ) && ( label < SWOSLABEL_MAX ) ) add( "label", nvs.oledLabel[nvs.activeEventConfig][label], MENU_LABEL, 'l' );
 
       if ( maxEvent >= 0 ) printf("\n     Events:\n");
 
@@ -909,6 +937,9 @@ void MenuIOConfig::run( void ) {
                           break;
 
       case MENU_TYPE:     changeType( );
+                          break;
+
+      case MENU_LABEL:    changeLabel( );
                           break;
 
       case MENU_ADD:      printf("\n" ); 

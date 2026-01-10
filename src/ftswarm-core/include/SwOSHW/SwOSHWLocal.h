@@ -74,7 +74,7 @@ class OLED {
     void setContrast(uint8_t contrast = 0x8F );
     int16_t getWidth(void);
     int16_t getHeight(void);
-    void clearDisplay(void);
+    void clearDisplay( bool fullscreen = false );
     void cp437( bool x );
     
     void drawPixel(int16_t x, int16_t y, bool white);  

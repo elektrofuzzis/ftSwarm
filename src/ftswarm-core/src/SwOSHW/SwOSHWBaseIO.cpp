@@ -17,52 +17,6 @@
 
 const char EMPTYSTRING[] = "";
 
-const char IO_ICON[SWOSIO_MAXIOTYPE][10] = 
-  { "0.svg",          // digital 
-    "1.svg",          // switch
-    "2.svg",          // reedswitch 
-    "3.svg",          // lightbarrier 
-    "4.svg",          // button
-    "5.svg",          // analog 
-    "6.svg",          // voltage 
-    "7.svg",          // resistor
-    "8.svg",          // ntc
-    "9.svg",          // ldr
-    "A.svg",          // joystick
-    "B.svg",          // motor
-    "C.svg",          // xsmotor
-    "D.svg",          // xmmotor - todo better icon xmmotor
-    "E.svg",          // tractor
-    "F.svg",          // encoder
-    "G.svg",          // lamp
-    "H.svg",          // valve
-    "I.svg",          // compressor
-    "J.svg",          // buzzer
-    "B.svg",          // stepper - todo Icon Stepper
-    "K.svg",          // counter 
-    "L.svg",          // rotaryencoder 
-    "M.svg",          // frequency
-    "0.svg",          // todo lidar icon
-    "N.svg",          // cam
-    "O.svg",          // servo
-    "P.svg",          // pixel
-    "0.svg",          // no oled icon
-    "0.svg",          // no i2c icon
-    "0.svg",          // todo gyro icon
-    "Q.svg",          // power
-    "R.svg",          // colorsensor 
-    "S.svg",          // trailsensor
-    "T.svg",          // ultrasonic
-    "0.svg",          // no joystick icon
-    "B.svg",          // TODO wheelDrive
-    "B.svg",          // TODO MiniMotor
-    "B.svg",          // TODO SMotor
-    "B.svg",          // TODO PowerMotor
-    "B.svg",          // TODO MMotor
-    "B.svg",          // TODO RCMotor
-    "O.svg"           // servo
-  };
-
 SwOSUIClass_t UI_CLASS[SWOSIO_MAXIOTYPE] = 
   { UICLASS_SENSOR, 
     UICLASS_SENSOR,
@@ -244,6 +198,17 @@ bool SwOSIO::isOnline( void ) {
   return ctrl->isOnline();
 };
 
+SwOSLabel_t SwOSIO::getLabel( void ) {
+
+  if ( ( !ctrl->isLocal() ) || ( !ctrl->hasOLED() ) ) return SWOSLABEL_UNDEF;
+
+  if ( ioType == SWOSIO_BUTTON )        return ( SwOSLabel_t )   port;
+  if ( ioType == SWOSIO_JOYSTICK_POTI ) return ( SwOSLabel_t ) ( port - MAXIOS[ctrl->getCPU()].firstJPoti  + 8);
+
+  return SWOSLABEL_UNDEF;
+
+}
+
 int32_t SwOSIO::evalOperand( FtSwarmOperand_t v, int32_t sensor, int32_t actor, int32_t parameter ) {
 
   switch (v) {
@@ -325,13 +290,6 @@ void SwOSIO::lock( void ) {
 
 void SwOSIO::unlock( void ) {
   if (ctrl) ctrl->unlock();
-}
-
-const char *SwOSIO::getIcon() {
-
-  if ( ioType == SWOSIO_UNDEF ) return IO_ICON[0];
-  return IO_ICON[ioType];
-
 }
 
 SwOSUIClass_t SwOSIO::getUIClass() {

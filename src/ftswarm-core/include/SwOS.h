@@ -385,6 +385,24 @@ const char BUTTON[8][3] = { "S1", "S2", "S3", "S4", "F1", "F2", "J1", "J2" };
 #define FTSWARM_SERVO3 2
 #define FTSWARM_SERVO4 3
 
+// Labels
+typedef enum { 
+  SWOSLABEL_UNDEF  = -1,
+  SWOSLABEL_S1     =   FTSWARM_S1,
+  SWOSLABEL_S2     =   FTSWARM_S2,
+  SWOSLABEL_S3     =   FTSWARM_S3,
+  SWOSLABEL_S4     =   FTSWARM_S4,
+  SWOSLABEL_F1     =   FTSWARM_F1,
+  SWOSLABEL_F2     =   FTSWARM_F2,
+  SWOSLABEL_J1     =   FTSWARM_J1,
+  SWOSLABEL_J2     =   FTSWARM_J2,
+  SWOSLABEL_JOY1LR =   FTSWARM_JOY1+8,
+  SWOSLABEL_JOY1FB =   FTSWARM_JOY1+9,
+  SWOSLABEL_JOY2LR = 2*FTSWARM_JOY2+8,
+  SWOSLABEL_JOY2FB = 2*FTSWARM_JOY2+9,
+  SWOSLABEL_MAX
+} SwOSLabel_t;
+
 // **** some internal types & classes, don't use them at all ****
 
 class SwOSQuaternion {

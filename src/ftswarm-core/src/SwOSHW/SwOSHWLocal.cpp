@@ -189,10 +189,11 @@ void OLED::setContrast(uint8_t contrast) {
    
 }
 
-void OLED::clearDisplay( void ) {
+void OLED::clearDisplay( bool fullscreen ) {
 
-  display.clearDisplay();
-
+  if ( fullscreen ) display.clearDisplay();
+  else drawRect( 0, 0, getWidth()-1, getHeight()-1, true, SSD1306_BLACK );
+  
 }
 
 void OLED::cp437( bool x ) { 
