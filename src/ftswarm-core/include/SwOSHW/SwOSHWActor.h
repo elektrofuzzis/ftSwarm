@@ -171,7 +171,7 @@ class SwOSDCMotor : public SwOSMotor {
  class SwOSServo : public SwOSIO {
   protected:
     int16_t position = 0;
-    int16_t offset   = 128;
+    int16_t offset   = 45;
 
     // local HW procedures
     virtual void setLocal() {};   // set position locally
@@ -189,7 +189,7 @@ class SwOSDCMotor : public SwOSMotor {
     virtual void adjust( void ) {};
     virtual bool isServo( void ) override { return true; };
     virtual bool isActor( void ) override { return true; };
-    virtual int16_t getMaxPosition( void ) { return 256 - offset; };
+    virtual int16_t getMaxPosition( void ) { return 90 - offset; };
     virtual int16_t getMinPosition( void ) { return 0 - offset; };
 
     // commands
@@ -242,6 +242,8 @@ class SwOSDigitalServo : public SwOSServo {
     // constructor
 	  SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSAnalogInput *poti, SwOSDCMotor *motor );
     ~SwOSRCServo();
+
+    virtual int16_t getMaxPosition( void );
 
     virtual void operate( void ) override;
 

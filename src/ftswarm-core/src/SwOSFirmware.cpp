@@ -506,7 +506,7 @@ void MenuIOConfig::changeLabel( void ) {
 
   strcpy( nvs.oledLabel[nvs.activeEventConfig][label], text );
 
-  if (oledMenu) oledMenu->trigger( FTSWARM_NOTOGGLE, io->getIOType(), io->getPort(), true );
+  screenManager.setLabel( io->getIOType(), io->getPort(), text );
 
   anythingChanged[ myOSSwarm.getIndex( io->getCtrl()->serialNumber ) ] = true;
 

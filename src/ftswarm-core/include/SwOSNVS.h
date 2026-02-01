@@ -59,7 +59,6 @@ struct SwOSNVSEvent_t {
 */
 extern "C" bool cmpEvent( SwOSNVSEvent_t *a, SwOSNVSEvent_t *b );
 
-
 // wifi types
 typedef enum { wifiOFF, wifiAP, wifiClient } FtSwarmWifi_t;
 

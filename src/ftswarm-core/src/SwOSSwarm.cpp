@@ -84,6 +84,7 @@ static void readTask( void *parameter ) {
     
     // read sensors
     myOSSwarm.Ctrl[0]->operate();
+    screenManager.operate();
 
     // Do I know a Kelda and I am not the Kelda, so I need to send my state
     if ( ( myOSSwarm.Kelda ) && ( myOSSwarm.Kelda != myOSSwarm.Ctrl[0] ) ) {
@@ -813,7 +814,7 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
                                 deleteEvents( );
                                 nvs.activeEventConfig = com->data.configCmd.config;
                                 addEvents( nvs.activeEventConfig, Ctrl[affected]->serialNumber );
-                                if (oledMenu) oledMenu->trigger( FTSWARM_NOTOGGLE, SWOSIO_BUTTON, SWOS_NOPORT, true );
+                                screenManager.draw();
                               }
                               break;
 

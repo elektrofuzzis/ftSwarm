@@ -213,7 +213,8 @@ int16_t SwOSDCMotor::duty( void ) {
     case SWOSIO_LAMP:       x45 = x90 = 0;
                             break;
 
-    case SWOSIO_RCMOTOR:    x45 = x90 = 2700;
+    case SWOSIO_RCMOTOR:    x45 = 2700;
+                            x90 = 2700;
                             break;
   }
 
@@ -737,11 +738,22 @@ void SwOSDigitalServo::setLocal() {
 #define RCSERVO_RESOLUTION 90
 #define RCMAXDELTA   2
 
+int16_t SwOSRCServo::getMaxPosition( void ) { return RCSERVO_RESOLUTION - offset; };
+
 SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSAnalogInput *poti, SwOSDCMotor *motor): SwOSServo( name, port, ctrl ) {
+
+  printf("RCServo %s %d\n", name, port);
+
+  // adapt kp based on VM
+  float kp = 0.55;
+  if ( ( ctrl->pwrctl ) && ( ctrl->pwrctl->getVoltage() > 5.5 ) ) kp = 0.25;
+
 
   this->poti     = poti;
   this->motor    = motor;
-  this->pid      = new SwOSPID( 0.25, 0.01, 0, -100, 100, -motor->getMaxSpeed(), motor->getMaxSpeed() );
+  this->pid      = new SwOSPID( kp, 0.01, 0, -100, 100, -motor->getMaxSpeed(), motor->getMaxSpeed() );
+// this->pid      = new SwOSPID( 0.25, 0.01, 0, -100, 100, -motor->getMaxSpeed(), motor->getMaxSpeed() );  // > 5.5V
+// this->pid      = new SwOSPID( 0.35, 0.01, 0, -100, 100, -motor->getMaxSpeed(), motor->getMaxSpeed() );  // <= 5.5V
   this->target   = FILTER_INVALID;
   this->offset   = RCSERVO_RESOLUTION / 2;
 

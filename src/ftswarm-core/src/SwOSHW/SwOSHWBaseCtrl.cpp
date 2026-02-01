@@ -262,9 +262,12 @@ uint8_t SwOSCtrl::setupLocalOLED( uint8_t maxIO ) {
 
   // initialize oled if available
   if ( MAXIOS[CPU].OLED ) {
+
     SwOSOLED *oled = new SwOSOLED( "OLED", this );
     io[ maxIO++ ] = oled;
-    if (!oledMenu) oledMenu = new OLEDMenu( this );
+
+    // set splash screen
+    screenManager.newScreen( new SwOSSplashScreen( NULL ), true );
   }
 
   return maxIO;
@@ -750,6 +753,9 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, const char *name,
 
     case SWOSIO_PIXEL:            io = new SwOSPixel( name, port, this );  
                                   break; 
+
+    // case SWOSIO_RCSERVO:          io = new SwOSRCServo( name, port, this ); 
+    //                              break; 
 
     case SWOSIO_SERVO:            io = new SwOSServo( name, port, this ); 
                                   break; 

@@ -289,7 +289,7 @@ void SwOSNVS::save( bool writeAll ) {
   // Kelda & swarmMembers
   nvs_set_u8  ( my_handle, "IAmKelda",     (uint8_t) IAmKelda );
   nvs_set_u32 ( my_handle, "swarmCom",     swarmCommunication );
-  nvs_set_blob( my_handle, "swarmMember",  (void *)&swarmMember, sizeof( swarmMember ) );
+  nvs_set_blob( my_handle, "swarmMember",  (void *)swarmMember, sizeof( swarmMember ) );
   nvs_set_u8  ( my_handle, "swarmSpeed",   swarmSpeed );
 
   // webUI

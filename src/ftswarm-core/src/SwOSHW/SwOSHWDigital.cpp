@@ -151,8 +151,8 @@ void SwOSDigitalInput::setReading( int32_t newValue ) {
     if (newValue) { newToggle = FTSWARM_TOGGLEUP;   trigger = FTSWARM_TRIGGERUP; }
     else          { newToggle = FTSWARM_TOGGLEDOWN; trigger = FTSWARM_TRIGGERDOWN; }
 
-    // trigger OLED?
-    if ( (oledMenu) && ( ioType == SWOSIO_BUTTON ) ) oledTriggered = oledMenu->trigger( newToggle, ioType, port, false );
+    // trigger Screen?
+    if ( ioType == SWOSIO_BUTTON ) oledTriggered = screenManager.eventHandler( newToggle, ioType, port );
 
     // if oledMenu didn't process the trigger, send it to the event list
     if (!oledTriggered) {
