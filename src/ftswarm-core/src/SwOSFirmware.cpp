@@ -232,6 +232,7 @@ class MenuLocalSettings : private Menu {
   static const int8_t MENU_CALIBRATE  = -15;
 
   bool anythingChanged = false;
+  bool setPassword( void );
   void wifiMode( void );
 
   public:
@@ -264,6 +265,32 @@ void MenuLocalSettings::wifiMode( void ) {
 
 }
 
+bool MenuLocalSettings::setPassword( void ) {
+
+  char pwd[64];
+
+  while (1) {
+
+    enterString("Please enter new Password - 8-64 chars: ", pwd, 64, true);
+
+    if ( strlen( pwd ) == 0) {
+      printf("Keep old password.\n");
+      return false;
+
+    } else if ( strlen( pwd ) < 8 ) {
+      printf("Please use at minimum 8 chars.\n");
+
+    } else {
+      strcpy( nvs.wifiPwd, pwd );
+      return true;
+    }
+
+  }
+
+  return false;
+
+}
+
 void MenuLocalSettings::run( void ) {
 
   char info[250];
@@ -286,10 +313,9 @@ void MenuLocalSettings::run( void ) {
     if (nvs.wifiMode != wifiOFF ) {
       
       add( "SSID", nvs.wifiSSID, MENU_SSID, 's');
+      add( "Password", "*****", MENU_PASSWORD, 'p' );
       
-      if (nvs.wifiMode != wifiAP) {
-        add( "Password", "*****", MENU_PASSWORD, 'p' );
-      } else {
+      if (nvs.wifiMode == wifiAP) {
         add( "channel", nvs.channel, MENU_CHANNEL, 'c' );
       } 
       
@@ -342,8 +368,7 @@ void MenuLocalSettings::run( void ) {
                             enterString( line, nvs.wifiSSID, nvs.wifiSSID, 64);
                             break;
         
-      case MENU_PASSWORD:   anythingChanged = true;
-                            enterString("Please enter new Password: ", nvs.wifiPwd, 64, true);
+      case MENU_PASSWORD:   if ( setPassword() ) anythingChanged = true;
                             break;
 
       case MENU_CHANNEL:    anythingChanged = true;

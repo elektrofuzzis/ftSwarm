@@ -211,26 +211,28 @@ void SwOSSwarm::startWifi( void ) {
   setState( STARTWIFI  );
 
   // best practise to throw away anything during a soft reboot
-  WiFi.disconnect();
+  WiFi.disconnect( true );
+  delay(100);
 
   // some common stuff  
-  WiFi.useStaticBuffers(true); 
+  // WiFi.useStaticBuffers(true); 
   WiFi.mode(WIFI_AP_STA);
+  delay(100);
 
   if ( nvs.wifiMode == wifiAP ) {
     // work as AP in standard 
     if (verbose) printf("Create own SSID: %s\n", Ctrl[0]->getHostname());
 
-    esp_wifi_set_ps(WIFI_PS_NONE);
-    WiFi.softAPsetHostname(Ctrl[0]->getHostname());
-    WiFi.softAP( nvs.wifiSSID, "", nvs.channel); // passphrase not allowed on ESP32WROOM
+    // esp_wifi_set_ps(WIFI_PS_NONE);
+    WiFi.softAPsetHostname( Ctrl[0]->getHostname() );
+    WiFi.softAP( nvs.wifiSSID, nvs.wifiPwd, nvs.channel ); // passphrase not allowed on ESP32WROOM
     
   } else {
     // normal operation
     if (verbose) printf("Attempting to connect to SSID: %s", nvs.wifiSSID);
 
     WiFi.setHostname(Ctrl[0]->getHostname() );
-    WiFi.begin(nvs.wifiSSID, nvs.wifiPwd);
+    WiFi.begin( nvs.wifiSSID, nvs.wifiPwd );
 
     bool keyBreak = false;
     
