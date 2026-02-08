@@ -58,9 +58,9 @@ void SwOSCounter::setupLocal() {
   // setup _CONTROL Input if needed.
   // counter: portControl = SWOS_NOPORT -> no _CONTROL
   // encode:  if counter post is the highest input port, portControl = ctrl->inputs  -> no _CONTROL
-  if ( portControl < MAXIOS[ctrl->getCPU()].inputs ) { 
+  if ( portControl < MAXIOS.inputs ) { 
 
-    CONTROL = (gpio_num_t) GPIO_INPUT[ctrl->getCPU()][portControl].io;
+    CONTROL = (gpio_num_t) HAL_INPUT[portControl].io;
 
     gpio_config_t io_conf = {};
 

@@ -407,7 +407,7 @@ void MenuLocalSettings::run( void ) {
                             break;
 
       case MENU_I2CINT:     anythingChanged = true;
-                            nvs.interruptLine = (uint8_t) enterNumber( "motor (1 for M1, 2 for M2, ...) or 0 to skip: ", nvs.interruptLine, 0, MAXIOS[nvs.CPU].motors );
+                            nvs.interruptLine = (uint8_t) enterNumber( "motor (1 for M1, 2 for M2, ...) or 0 to skip: ", nvs.interruptLine, 0, MAXIOS.motors );
                             break;
 
       case MENU_I2CREGS:    anythingChanged = true;

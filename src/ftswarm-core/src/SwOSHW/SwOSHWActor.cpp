@@ -115,8 +115,8 @@ void SwOSDCMotor::setupLocal() {
   }
 
   // set HW Pins
-  IN1 = GPIO_ACTOR[ctrl->getCPU()][port][0];
-  IN2 = GPIO_ACTOR[ctrl->getCPU()][port][1];
+  IN1 = HAL_ACTOR[port].io1;
+  IN2 = HAL_ACTOR[port].io2;
 
   // set digital ports IN1 & in2 to output
   gpio_config_t io_conf = {
@@ -213,8 +213,8 @@ int16_t SwOSDCMotor::duty( void ) {
     case SWOSIO_LAMP:       x45 = x90 = 0;
                             break;
 
-    case SWOSIO_RCMOTOR:    x45 = 2700;
-                            x90 = 2700;
+    case SWOSIO_RCMOTOR:    x45 = 2800;  // beide 2700
+                            x90 = 2800;
                             break;
   }
 
@@ -242,6 +242,7 @@ int16_t SwOSDCMotor::duty( void ) {
 
 void SwOSDCMotor::setPWM( int16_t xin1, int16_t xin2, gpio_num_t pwm, uint32_t duty ) {
 
+  printf("setPWM %d\n", duty);
 
   // check if it's needed to stop running pwm
   if ( ( ( duty == 0 ) || ( pwm != ledc_channel->gpio_num ) ) && ( ledc_channel->gpio_num != GPIO_NUM_NC ) ) {
@@ -666,7 +667,7 @@ void SwOSServo::setRemote( ) {
 void SwOSDigitalServo::setupLocal() {
   // initialize local HW
 
-  SERVO = GPIO_SERVO[ctrl->getCPU()][port];
+  SERVO = GPIO_SERVO[port];
 
   // set digital port  to output
   gpio_config_t io_conf = {};
@@ -733,8 +734,8 @@ void SwOSDigitalServo::setLocal() {
 
  // min/max positions
 
-#define RCSERVO_LOW  510 // 1600   // 1700.0
-#define RCSERVO_HIGH 870 // 3300   // 3750.0
+#define RCSERVO_LOW  390 // 510 // 1600   // 1700.0
+#define RCSERVO_HIGH 890 // 870 // 3300   // 3750.0
 #define RCSERVO_RESOLUTION 90
 #define RCMAXDELTA   2
 

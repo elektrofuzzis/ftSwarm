@@ -52,8 +52,8 @@ void SwOSDigitalInput::setupLocal() {
   PUA2         = GPIO_NUM_NC;
   USTX         = GPIO_NUM_NC;
 
-  if ( port == 0 ) USTX = USTCPUA[ctrl->getCPU()][0];
-  if ( ( ctrl->getType() == FTSWARM ) && ( port == 1 ) ) { PUA2 = USTCPUA[ctrl->getCPU()][1]; }      
+  if ( port == 0 ) USTX = USTCPUA[0];
+  if ( ( ctrl->getType() == FTSWARM ) && ( port == 1 ) ) { PUA2 = USTCPUA[1]; }      
 
   gpio_config_t io_conf = {};
   

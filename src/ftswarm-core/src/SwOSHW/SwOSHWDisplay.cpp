@@ -105,7 +105,7 @@ SwOSPixel::SwOSPixel(const char *name, uint8_t port, SwOSCtrl *ctrl) : SwOSIO( n
   if (ctrl->isLocal()) 
     setupLocal();
   
-  else if ( port<MAXIOS[ctrl->getCPU()].pixels) 
+  else if ( port<MAXIOS.pixels) 
     // in case of buildin remote pixels assume green
     color = CRGB::Green;
 
@@ -129,7 +129,7 @@ void SwOSPixel::setupLocal() {
         case FTSWARMRS_2V0:         FastLED.addLeds<WS2812, xGPIO_NUM_48, GRB>(led, MAXLEDS).setCorrection( TypicalLEDStrip ); 
                                     break;
 
-        case FTSWARMRC_1V140:       FastLED.addLeds<WS2812, xGPIO_NUM_48, GRB>(led, MAXLEDS).setCorrection( TypicalLEDStrip ); 
+        case FTSWARMRC_1V141:       FastLED.addLeds<WS2812, xGPIO_NUM_48, GRB>(led, MAXLEDS).setCorrection( TypicalLEDStrip ); 
                                     rgbLed = new RGBLed();
                                     break;
       #endif

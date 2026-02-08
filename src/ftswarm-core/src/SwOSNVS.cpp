@@ -68,13 +68,13 @@ void SwOSNVS::initialSetup( void ) {
     case 5:  controllerType = FTSWARMPWRDRIVE; CPU = FTSWARMPWRDRIVE_1V141; break;
     case 6:  controllerType = FTSWARMDUINO;    CPU = FTSWARMDUINO_1V141;    break;
     case 7:  controllerType = FTSWARM;         CPU = FTSWARMXL_1V00;        break;
-    case 8:  controllerType = FTSWARM;         CPU = FTSWARMRC_1V140;       break;
+    case 8:  controllerType = FTSWARM;         CPU = FTSWARMRC_1V141;       break;
     default: // manual configuration
              controllerType = (FtSwarmController_t) (enterNumber(("controller Type\n (1) ftSwarm\n (2) ftSwarmControl\n (3) ftSwarmCAM\n (4) ftSwarmPwrDrive\n (5) ftSwarmDuino\n\n>"), 0, 1, 5 ) - 1 );
-             CPU = ( FtSwarmVersion_t ) ( enterNumber(("CPU Version\n (1) FTSWARMJST_1V0\n (2) FTSWARMCONTROL_1V3\n (3) FTSWARMJST_1V15\n (4) FTSWARMRS_2V0\n (5) FTSWARMRS_2V1\n (6) FTSWARMCAM_3V12\n (7) FTSWARMDUINO_1V141\n (8) FTSWARMPWRDRIVE_1V141\n (9) FTSWARMXL_1V00\n (10) FTSWARMRC_1V140\n (11) FTSWARMCONTROL_1V3UC\n"), 0, 1, 11 ) -1 );
+             CPU = ( FtSwarmVersion_t ) ( enterNumber(("CPU Version\n (1) FTSWARMJST_1V0\n (2) FTSWARMCONTROL_1V3\n (3) FTSWARMJST_1V15\n (4) FTSWARMRS_2V0\n (5) FTSWARMRS_2V1\n (6) FTSWARMCAM_3V12\n (7) FTSWARMDUINO_1V141\n (8) FTSWARMPWRDRIVE_1V141\n (9) FTSWARMXL_1V00\n (10) FTSWARMRC_1V141\n (11) FTSWARMCONTROL_1V3UC\n"), 0, 1, 11 ) -1 );
   }
 
-  pixels = MAXIOS[CPU].pixels;
+  pixels = MAXIOS.pixels;
   extensionPort = ( controllerType == FTSWARMCONTROL ) ? FTSWARM_EXT_I2C_MASTER : FTSWARM_EXT_OFF; 
 
   serialNumber = enterNumber("Serial number [1..65535]>", 0, 1, 65535 );
@@ -90,7 +90,7 @@ void SwOSNVS::initialSetup( void ) {
   // check on i2c/spi LSMR
   if ( ( CPU == FTSWARMRS_2V0 ) ||
        ( CPU == FTSWARMRS_2V1 ) ||
-       ( CPU == FTSWARMRC_1V140 ) ||
+       ( CPU == FTSWARMRC_1V141 ) ||
        ( CPU == FTSWARMCONTROL_1V3UC ) ) {
     Wire.begin( 4, 5 );
     Wire.beginTransmission( 0xD7 );
@@ -416,7 +416,7 @@ void SwOSNVS::factorySettings( void ) {
     calibration[j].maxValue = 3700;
   }
 
-  pixels             = MAXIOS[CPU].pixels;
+  pixels             = MAXIOS.pixels;
 
   extensionPort      = FTSWARM_EXT_OFF;
   I2CAddr            = 0x66;

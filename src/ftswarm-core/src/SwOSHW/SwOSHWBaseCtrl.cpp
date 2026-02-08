@@ -34,31 +34,13 @@ uint8_t SwOSCtrl::setupLocalInputs( uint8_t maxIO ) {
 
   char name[10];
 
-  for ( uint8_t i=0; i<MAXIOS[ CPU ].inputs; i++ ) {
+  for ( uint8_t i=0; i<MAXIOS.inputs; i++ ) {
 
-    // PwrCtl
-    if ( ( MAXIOS[ CPU ].pwrctl != NOPWRCTL ) && ( MAXIOS[ CPU ].pwrctl == i ) ) {
-
-      io[ maxIO++ ] = pwrctl = new SwOSAnalogInput("PWRCTL", i, this, SWOSIO_POWER );
-
-    // ftPwrDrive
-    } else if (CPU == FTSWARMPWRDRIVE_1V141 ) {
-
-      if ( i==4 ) {
-
-        io[ maxIO++ ] = new SwOSDigitalInput( "EM", SWOS_NOPORT, this, SWOSIO_DIGITAL );
-
-      } else {
-
-        sprintf( name, "ES%d", i+1 );
-        io[ maxIO++ ] = new SwOSDigitalInput( name, i, this, SWOSIO_DIGITAL );
-
-      }
-
-    // normal input
-    } else { 
-      sprintf( name, "A%d", i+1 );
-      io[ maxIO++ ] = new SwOSDigitalInput( name, i, this, SWOSIO_DIGITAL );
+    switch ( HAL_INPUT[i].ioType ) {
+    case SWOSIO_DIGITAL: io[ maxIO++ ] =          new SwOSDigitalInput( HAL_INPUT[i].name, i, this, SWOSIO_DIGITAL ); break;
+    case SWOSIO_ANALOG:  io[ maxIO++ ] =          new SwOSAnalogInput(  HAL_INPUT[i].name, i, this, SWOSIO_ANALOG  ); break;
+    case SWOSIO_POWER:   io[ maxIO++ ] = pwrctl = new SwOSAnalogInput(  HAL_INPUT[i].name, i, this, SWOSIO_POWER   ); break;
+    default:             SWARM_LOG_FATAL( "SwOSCtrl::setupLocalInputs: unkown IO Type" );                            break;
     }
 
   }
@@ -97,7 +79,7 @@ uint8_t SwOSCtrl::setupLocalPixels( uint8_t maxIO ) {
     io[ maxIO ] = new SwOSPixel( name, i, this );
     
     // store local pixels for setState
-    if ( i < MAXIOS[CPU].pixels ) {
+    if ( i < MAXIOS.pixels ) {
       if ( i == 0 ) pixel0 = (SwOSPixel*) io[ maxIO ];
       if ( i == 1 ) pixel1 = (SwOSPixel*) io[ maxIO ];
     }
@@ -124,7 +106,7 @@ uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
 
   char name[10];
 
-  for (uint8_t i=0; i<MAXIOS[ CPU ].rcservos; i++) {
+  for (uint8_t i=0; i<MAXIOS.rcservos; i++) {
 
     // test on sensor cable
     sprintf( name, "RCP%d", i+1 );
@@ -156,7 +138,7 @@ uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
   }
 
   // just digital servos
-  for ( uint8_t i=0; i<MAXIOS[ CPU ].servos; i++ ) {
+  for ( uint8_t i=0; i<MAXIOS.servos; i++ ) {
 
     sprintf( name, "SERVO%d", i+1 );
     io[ maxIO++ ] = new SwOSDigitalServo( name, i, this);
@@ -171,10 +153,10 @@ uint8_t SwOSCtrl::setupLocalButtons( uint8_t maxIO ) {
 
   // create an outstanding HC165 object, if needed
 
-  if ( ( MAXIOS[CPU].HC165 ) && (!hc165) ) hc165 = new HC165( CPU );
+  if ( ( MAXIOS.HC165 ) && (!hc165) ) hc165 = new HC165( CPU );
 
   // create buttons
-  for ( uint8_t i=0; i<MAXIOS[ CPU ].buttons; i++) {
+  for ( uint8_t i=0; i<MAXIOS.buttons; i++) {
     io[ maxIO++ ] = new SwOSDigitalInput( BUTTON[i], i, this, SWOSIO_BUTTON );
   }
 
@@ -191,7 +173,7 @@ uint8_t SwOSCtrl::setupLocalJoysticks( uint8_t maxIO, SwOSCtrlConfig_t ctrlConfi
   SwOSAnalogInput*  lr;
   SwOSAnalogInput*  fb;
   
-  for ( uint8_t i=0; i<MAXIOS[ CPU ].joysticks; i++) {
+  for ( uint8_t i=0; i<MAXIOS.joysticks; i++) {
     
     // joystick name
     sprintf( joy, "JOY%d", i+1 );
@@ -201,12 +183,12 @@ uint8_t SwOSCtrl::setupLocalJoysticks( uint8_t maxIO, SwOSCtrlConfig_t ctrlConfi
     
     // lr poti
     sprintf( subio, "%sLR", joy);
-    lr = new SwOSAnalogInput( subio, MAXIOS[ getCPU() ].firstJPoti + 2*i,     this, SWOSIO_JOYSTICK_POTI );
+    lr = new SwOSAnalogInput( subio, MAXIOS.firstJPoti + 2*i,     this, SWOSIO_JOYSTICK_POTI );
     io[ maxIO++] = (SwOSIO*) lr;
     
     // fb poti
     sprintf( subio, "%sFB", joy);
-    fb = new SwOSAnalogInput( subio, MAXIOS[ getCPU() ].firstJPoti + 2*i + 1, this, SWOSIO_JOYSTICK_POTI );
+    fb = new SwOSAnalogInput( subio, MAXIOS.firstJPoti + 2*i + 1, this, SWOSIO_JOYSTICK_POTI );
     io[ maxIO++] = (SwOSIO*) fb;
 
     // create joystick
@@ -223,13 +205,13 @@ uint8_t SwOSCtrl::setupLocalI2C( uint8_t maxIO, FtSwarmExtMode_t extensionPort )
   if (!local) return maxIO;
 
   // external I2C
-  if ( ( GPIO_I2C[CPU][0][0] != GPIO_NUM_NC ) && ( ( nvs.extensionPort == FTSWARM_EXT_I2C_MASTER ) || ( nvs.extensionPort == FTSWARM_EXT_LIDAR ) ) ) {
-    Wire.begin( GPIO_I2C[CPU][0][0], GPIO_I2C[CPU][0][1], 400000 );
+  if ( ( GPIO_I2C[0][0] != GPIO_NUM_NC ) && ( ( nvs.extensionPort == FTSWARM_EXT_I2C_MASTER ) || ( nvs.extensionPort == FTSWARM_EXT_LIDAR ) ) ) {
+    Wire.begin( GPIO_I2C[0][0], GPIO_I2C[0][1], 400000 );
   }
 
   // internal I2C
-  if ( GPIO_I2C[CPU][1][0] != GPIO_NUM_NC ) {
-    Wire1.begin( GPIO_I2C[CPU][1][0], GPIO_I2C[CPU][1][1], 400000 );
+  if ( GPIO_I2C[1][0] != GPIO_NUM_NC ) {
+    Wire1.begin( GPIO_I2C[1][0], GPIO_I2C[1][1], 400000 );
   }
 
   // use parameter to handle remote devices correctly
@@ -248,7 +230,7 @@ uint8_t SwOSCtrl::setupLocalI2C( uint8_t maxIO, FtSwarmExtMode_t extensionPort )
 uint8_t SwOSCtrl::setupLocalGyro( uint8_t maxIO ) {
 
   // initialize gyro if available
-  if ( ( CPU == FTSWARMRS_2V0 ) || ( CPU == FTSWARMRS_2V1 ) || ( CPU == FTSWARMRC_1V140 ) || ( CPU == FTSWARMCONTROL_1V3UC ) )
+  if ( ( CPU == FTSWARMRS_2V0 ) || ( CPU == FTSWARMRS_2V1 ) || ( CPU == FTSWARMRC_1V141 ) || ( CPU == FTSWARMCONTROL_1V3UC ) )
     // TODO FTSWARMRC_1V140+ FTSWARMCONTROL_1V3UC Gyro implementation
     io[ maxIO++ ] = new SwOSGyroLSM( "GYRO", this );
   else
@@ -261,7 +243,7 @@ uint8_t SwOSCtrl::setupLocalGyro( uint8_t maxIO ) {
 uint8_t SwOSCtrl::setupLocalOLED( uint8_t maxIO ) {
 
   // initialize oled if available
-  if ( MAXIOS[CPU].OLED ) {
+  if ( MAXIOS.OLED ) {
 
     SwOSOLED *oled = new SwOSOLED( "OLED", this );
     io[ maxIO++ ] = oled;
@@ -317,16 +299,16 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSC
   if (local) {
 
     // calculate needed IOs
-    IOs = MAXIOS[ CPU ].inputs + MAXIOS[ CPU ].motors + MAXIOS[ CPU ].servos + MAXIOS[ CPU ].joysticks * 3 + MAXLEDS;
+    IOs = MAXIOS.inputs + MAXIOS.motors + MAXIOS.servos + MAXIOS.joysticks * 3 + MAXLEDS;
 
     // Buttons + HC165?
-    if ( MAXIOS[ CPU ].buttons > 0 ) IOs = IOs + MAXIOS[ CPU ].buttons + 1;
+    if ( MAXIOS.buttons > 0 ) IOs = IOs + MAXIOS.buttons + 1;
 
     // OLED?
-    if ( MAXIOS[CPU].OLED ) IOs++;
+    if ( MAXIOS.OLED ) IOs++;
 
-    motors = MAXIOS[ CPU ].motors;
-    servos = MAXIOS[ CPU ].servos;
+    motors = MAXIOS.motors;
+    servos = MAXIOS.servos;
 
     switch ( extensionPort ) {
 
@@ -358,11 +340,11 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSC
     maxIO = setupLocalInputs( maxIO );
     maxIO = setupLocalMotors( maxIO, motors );
     maxIO = setupLocalServos( maxIO, servos );
-    if ( MAXIOS[ CPU ].pixels ) maxIO = setupLocalPixels( maxIO );
+    if ( MAXIOS.pixels ) maxIO = setupLocalPixels( maxIO );
     maxIO = setupLocalButtons( maxIO );
     maxIO = setupLocalJoysticks( maxIO, ctrlConfig );
     if ( ctrlConfig.gyro ) maxIO = setupLocalGyro( maxIO );
-    if ( MAXIOS[CPU].OLED ) maxIO = setupLocalOLED( maxIO );
+    if ( MAXIOS.OLED ) maxIO = setupLocalOLED( maxIO );
 
   }
 
@@ -539,7 +521,7 @@ const char *SwOSCtrl::version( FtSwarmVersion_t v) {
   case FTSWARMJST_1V15:       return "1.15";
   case FTSWARMCONTROL_1V3UC:
   case FTSWARMCONTROL_1V3:    return "1.3";
-  case FTSWARMRC_1V140:       return "1.4.0";
+  case FTSWARMRC_1V141:       return "1.4.1";
   case FTSWARMDUINO_1V141:  
   case FTSWARMPWRDRIVE_1V141: return "1.4.1";
   case FTSWARMRS_2V0:         return "2.0";
@@ -746,8 +728,8 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, const char *name,
                                   break;
 
     case SWOSIO_JOYSTICK:         button = (SwOSDigitalInput*) getIO( SWOSIO_BUTTON, FTSWARM_J1 + port );
-                                  lr     = (SwOSAnalogInput*)  getIO( SWOSIO_JOYSTICK_POTI, MAXIOS[ getCPU() ].firstJPoti + 2* port );
-                                  fb     = (SwOSAnalogInput*)  getIO( SWOSIO_JOYSTICK_POTI, MAXIOS[ getCPU() ].firstJPoti + 2* port +1 );
+                                  lr     = (SwOSAnalogInput*)  getIO( SWOSIO_JOYSTICK_POTI, MAXIOS.firstJPoti + 2* port );
+                                  fb     = (SwOSAnalogInput*)  getIO( SWOSIO_JOYSTICK_POTI, MAXIOS.firstJPoti + 2* port +1 );
                                   io     = new SwOSJoystick( name, port, this, button, lr, fb );
                                   break; 
 
@@ -1453,7 +1435,7 @@ bool SwOSCtrl::hasGyro( void ) {
   // already initialized or HW with integrated gyro
   if ( ( CPU == FTSWARMRS_2V0 ) ||
        ( CPU == FTSWARMRS_2V1 ) ||
-       ( CPU == FTSWARMRC_1V140 ) ||
+       ( CPU == FTSWARMRC_1V141 ) ||
        ( CPU == FTSWARMCONTROL_1V3UC )
      ) return true;
 
@@ -1471,7 +1453,7 @@ bool SwOSCtrl::hasOLED( void ) {
 
 bool SwOSCtrl::hasExtPort( void ) {
 
-  return HASEXTPORT[CPU];
+  return HASEXTPORT;
 
 }
 
