@@ -40,10 +40,6 @@
 #define min(a,b) ((a)<(b)?(a):(b))
 #define max(a,b) ((a)>(b)?(a):(b))
 
-#define RS485_TXD       GPIO_NUM_18
-#define RS485_RXD       GPIO_NUM_6
-#define RS485_REB       GPIO_NUM_7
-#define RS485_DE        GPIO_NUM_17
 #define RS485_UART      UART_NUM_2
 #define RS485_BUF_SIZE  4096
 #define PATTERN_CHR_NUM (3) 
@@ -425,6 +421,8 @@ static void logBuffer( uint8_t *buffer, int bufPtr ) {
 
 static void tx_RS485( SwOSCom *com ) {
 
+  #if FTSWARM_HAL_HAS_RS458 > 0
+
   RS485Frame_t frame;
   bool         collision;
   
@@ -470,6 +468,8 @@ static void tx_RS485( SwOSCom *com ) {
   if (!datasent) {
     SWARM_LOG_INFO("[not sent]\n"); com->print();
   }
+  #endif
+
   #endif
     
 }
@@ -743,17 +743,13 @@ bool SwOSNetwork::_StartRS485( void ) {
   
   // Initialize RS485 communication stack
 
-  # if !defined(CONFIG_IDF_TARGET_ESP32S3)
-    // ftSwarmJST, ftSwarmControl: no RS485
-    return true; 
-
-  #else
+  # if FTSWARM_HAL_HAS_RS485 > 0
     // ftSwarmRS, XL, PwrDrive, Duino
     RS485_rx_queue = xQueueCreate(10, sizeof( SwOSDatagram_t ) );
 
     // REB & DE
     pinMode( RS485_REB, OUTPUT );
-    digitalWrite( 7, 0 ); // enable
+    digitalWrite( RS485_REB, 0 ); // enable
     pinMode( RS485_DE, OUTPUT );
     digitalWrite( RS485_DE, 0 );  // set to receiver
 
@@ -767,7 +763,7 @@ bool SwOSNetwork::_StartRS485( void ) {
         .rx_flow_ctrl_thresh = 122,
     };
     ESP_ERROR_CHECK(uart_param_config(RS485_UART, &uart_config));
-    ESP_ERROR_CHECK(uart_set_pin(RS485_UART, RS485_TXD, RS485_RXD, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+    ESP_ERROR_CHECK(uart_set_pin(RS485_UART, RS485_D, RS485_R, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
     ESP_ERROR_CHECK(uart_driver_install(RS485_UART, RS485_BUF_SIZE,  0, 20, &RS485_rx_queue, 0));
     ESP_ERROR_CHECK(uart_set_mode(RS485_UART, UART_MODE_RS485_COLLISION_DETECT));
     UART1.rs485_conf.rs485tx_rx_en = 1;   // loopback

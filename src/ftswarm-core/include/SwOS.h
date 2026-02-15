@@ -15,6 +15,32 @@
 // #define DEBUG_COMMUNICATION_SWARM
 // #define DEBUG_READTASK
 
+// some defines to complete definitions
+
+#include <Arduino.h>
+
+#ifndef FTSWARM_HAL_HAS_OLED
+  #define FTSWARM_HAL_HAS_OLED 0
+#endif
+
+#ifndef FTSWARM_HAL_HAS_HC165
+  #define FTSWARM_HAL_HAS_HC165 0
+#endif
+
+#ifndef FTSWARM_HAL_HAS_EXT_PORT
+  #define FTSWARM_HAL_HAS_EXT_PORT 0
+#endif
+
+#ifndef FTSWARM_HAL_HAS_CAM
+  #define FTSWARM_HAL_HAS_CAM 0
+#endif
+
+#ifndef FTSWARM_HAL_HAS_RS485
+  #define FTSWARM_HAL_HAS_RS485 0
+#endif
+
+// ***********************
+
 #define MAXIDENTIFIER 32
 #define MAXACTORS 8
 #define MAXINPUTS 12
@@ -22,6 +48,7 @@
 
 #define SWOS_NOPORT 255
 #define SWOS_PWRCTL SWOS_NOPORT
+
 
 #include <stdint.h>
 #include <cstddef>

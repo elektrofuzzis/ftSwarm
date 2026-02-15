@@ -67,19 +67,8 @@ static const uint8_t FTSWARM_HAL_BUTTONS      = 0;
 static const uint8_t FTSWARM_HAL_JOYSTICKS    = 0;
 static const uint8_t FTSWARM_HAL_PWRCTL       = 6;
 static const uint8_t FTSWARM_HAL_FIRSTJPOTI   = 0;
-static const bool    FTSWARM_HAL_HAS_OLED     = false;
-static const bool    FTSWARM_HAL_HAS_HC165    = false;
-static const bool    FTSWARM_HAL_HAS_EXT_PORT = false;
-static const bool    FTSWARM_HAL_HAS_CAM      = false;
-static const bool    FTSWARM_HAL_HAS_RS485    = false;
 static const int8_t  FTSWARM_HAL_GYRO         = GYRO_LSM6;
 static const int8_t  FTSWARM_HAL_GYRO_PORT    = GYRO_SPI;
-
-// RS485
-static const gpio_num_t RS485_R   = GPIO_NUM_NC;
-static const gpio_num_t RS485_REB = GPIO_NUM_NC;
-static const gpio_num_t RS485_DE  = GPIO_NUM_NC;
-static const gpio_num_t RS485_D   = GPIO_NUM_NC;
 
 // Inputs
 static const gpio_num_t A1      = GPIO_NUM_1;

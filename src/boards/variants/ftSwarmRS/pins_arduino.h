@@ -13,6 +13,10 @@
 #include <driver/gpio.h> 
 #include <driver/adc.h>
 
+// my hardware features
+#define FTSWARM_HAL_HAS_RS485    1
+#define FTSWARM_HAL_HAS_EXT_PORT 1
+
 // to solve some hen & egg problems
 static const int8_t DIGITALIO          = 1;
 static const int8_t ANALOGIO           = 2;
@@ -67,11 +71,6 @@ static const uint8_t FTSWARM_HAL_BUTTONS      = 0;
 static const uint8_t FTSWARM_HAL_JOYSTICKS    = 0;
 static const uint8_t FTSWARM_HAL_PWRCTL       = 6;
 static const uint8_t FTSWARM_HAL_FIRSTJPOTI   = 0;
-static const bool    FTSWARM_HAL_HAS_OLED     = false;
-static const bool    FTSWARM_HAL_HAS_HC165    = false;
-static const bool    FTSWARM_HAL_HAS_EXT_PORT = true;
-static const bool    FTSWARM_HAL_HAS_CAM      = false;
-static const bool    FTSWARM_HAL_HAS_RS485    = true;
 static const int8_t  FTSWARM_HAL_GYRO         = GYRO_LSM6;
 static const int8_t  FTSWARM_HAL_GYRO_PORT    = GYRO_SPI;
 
