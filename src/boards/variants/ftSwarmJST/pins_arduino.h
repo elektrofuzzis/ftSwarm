@@ -49,6 +49,12 @@ static const gpio_num_t MOSI  = GPIO_NUM_23;
 static const gpio_num_t MISO  = GPIO_NUM_19;
 static const gpio_num_t SCK   = GPIO_NUM_18;
 
+// HC165
+static const gpio_num_t HC165_CS   = GPIO_NUM_NC;
+static const gpio_num_t HC165_LD   = GPIO_NUM_NC;
+static const gpio_num_t HC165_CLK  = GPIO_NUM_NC;
+static const gpio_num_t HC165_MISO = GPIO_NUM_NC;
+
 // Serial (UART0)
 static const gpio_num_t TX = GPIO_NUM_1;
 static const gpio_num_t RX = GPIO_NUM_3;

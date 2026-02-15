@@ -327,7 +327,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
     printf("PSRAM: %u Bytes (%.2f MB)\n", totalPsram, totalPsram / 1024.0 / 1024.0);
 
     // cores
-    printf("User space is running on core #%d, firmware is running on core #%d\n", ARDUINO_RUNNING_CORE, ARDUINO_EVENT_RUNNING_CORE);
+    printf("User space is running on core #%d.\nFirmware is running on core #%d.\n", ARDUINO_RUNNING_CORE, ARDUINO_EVENT_RUNNING_CORE);
   }
 
   SwOSCtrlConfig_t localCtrlConfig = {

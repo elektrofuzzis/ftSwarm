@@ -1,7 +1,7 @@
 /*
  * Pins_Arduino.h
  *
- * ftSwarmCOntrol USB Micro hardware definitions
+ * ftSwarmControl USB Micro hardware definitions
  * 
  * (C) 2021-26 Christian Bergschneider & Stefan Fuss
  * 
@@ -51,6 +51,12 @@ static const gpio_num_t SS    = GPIO_NUM_5;
 static const gpio_num_t MOSI  = GPIO_NUM_23;
 static const gpio_num_t MISO  = GPIO_NUM_19;
 static const gpio_num_t SCK   = GPIO_NUM_18;
+
+// HC165
+static const gpio_num_t HC165_CS   = GPIO_NUM_14;
+static const gpio_num_t HC165_LD   = GPIO_NUM_15;
+static const gpio_num_t HC165_CLK  = GPIO_NUM_35;
+static const gpio_num_t HC165_MISO = GPIO_NUM_12;
 
 // Serial (UART0)
 static const gpio_num_t TX = GPIO_NUM_1;

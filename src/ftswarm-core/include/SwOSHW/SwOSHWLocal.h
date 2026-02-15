@@ -21,7 +21,7 @@
 
 class HC165 {
   protected:
-    gpio_num_t LD, CS, CLK, MISO;
+    // gpio_num_t LD, CS, CLK, MISO;
     uint8_t    lastValue;
   
   public:

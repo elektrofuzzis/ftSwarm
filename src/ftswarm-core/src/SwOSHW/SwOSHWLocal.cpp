@@ -24,67 +24,50 @@ HC165::HC165( FtSwarmVersion_t CPU ) {
 
   // initialize local HW
 
-  switch ( CPU ) {
-    case FTSWARMCONTROL_1V3UC: CS   = GPIO_NUM_10;
-                               LD   = xGPIO_NUM_47;
-                               CLK  = xGPIO_NUM_48;
-                               MISO = GPIO_NUM_15;
-                               break;
-
-    case FTSWARMCONTROL_1V3:   CS   = GPIO_NUM_14;
-                               LD   = GPIO_NUM_15;
-                               CLK  = GPIO_NUM_12;
-                               MISO = GPIO_NUM_35;
-                               break;
-
-    default:                   CS = LD = CLK = MISO = GPIO_NUM_NC;
-                               return;
-  }
-
   // initialize ports
   gpio_config_t io_conf = {};
   io_conf.intr_type = GPIO_INTR_DISABLE;
   io_conf.mode = GPIO_MODE_OUTPUT;
   io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
   io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-  io_conf.pin_bit_mask = (1ULL<<CS) | (1ULL<<LD) | (1ULL<<CLK) ;
+  io_conf.pin_bit_mask = (1ULL<<HC165_CS) | (1ULL<<HC165_LD) | (1ULL<<HC165_CLK) ;
   gpio_config(&io_conf);
 
   io_conf.mode = GPIO_MODE_INPUT;
-  io_conf.pin_bit_mask = 1ULL<<MISO ;
+  io_conf.pin_bit_mask = 1ULL<<HC165_MISO ;
   gpio_config(&io_conf);
 
   // set levels
-  gpio_set_level( CS, 1 );
-  gpio_set_level( LD, 1 );
-  gpio_set_level( CLK, 1 );
+  gpio_set_level( HC165_CS, 1 );
+  gpio_set_level( HC165_LD, 1 );
+  gpio_set_level( HC165_CLK, 1 );
 
 }
 
 void HC165::operate( ) {
 
   // invalid configuration?
-  if (LD == GPIO_NUM_NC ) {
+  if (HC165_LD == GPIO_NUM_NC ) {
     return;
   }
 
   // parallel load
-  gpio_set_level( LD, 0 );
-  gpio_set_level( LD, 1 );
+  gpio_set_level( HC165_LD, 0 );
+  gpio_set_level( HC165_LD, 1 );
 
   // enable
-  gpio_set_level( CS, 0 );
+  gpio_set_level( HC165_CS, 0 );
 
   // load
   lastValue = 0;
   for ( uint8_t i=0; i<8; i++ ) {
 
     // get value
-    lastValue = ( lastValue << 1 ) | (!gpio_get_level( MISO ));
+    lastValue = ( lastValue << 1 ) | (!gpio_get_level( HC165_MISO ));
 
     // one tick
-    gpio_set_level( CLK, 0 );
-    gpio_set_level( CLK, 1 );
+    gpio_set_level( HC165_CLK, 0 );
+    gpio_set_level( HC165_CLK, 1 );
 
   }
 
