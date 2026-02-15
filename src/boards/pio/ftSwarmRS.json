@@ -1,26 +1,28 @@
 {
-  "name": "ftSwarmJST",
+  "name": "ftSwarmRS",
   "vendor": "Elektrofuzzis",
   "url": "https://elektrofuzzis.github.io",
   "platform": "espressif32",
   "frameworks": ["arduino"],
 
-  "board": "esp32dev",
+  "board": "esp32-s3-devkitc-1",
 
   "build": {
-    "mcu": "esp32",
+    "mcu": "esp32s3",
     "core": "esp32",
-    "variant": "esp32",
+    "variant": "ftSwarmRS",
+    "f_flash": "80000000L",
     "f_cpu": "240000000L",
     "flash_mode": "qio",
     "flash_size": "4MB",
     "partitions": "ftSwarm_4MB.csv",
+    "psram_type": "opi",
     "extra_flags": [
       "-DBOARD_HAS_PSRAM",
       "-mfix-esp32-psram-cache-issue",
       "-DARDUINO_EVENT_RUNNING_CORE=0",
       "-DARDUINO_RUNNING_CORE=1",
-      "-DBOARD_FTSWARM_JST"
+      "-DBOARD_FTSWARM_RS"
     ]
   },
 

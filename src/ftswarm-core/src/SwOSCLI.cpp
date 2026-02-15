@@ -513,20 +513,16 @@ void SwOSCLI::executeControllerCmd(void ) {
 
     case CLICMD_setMicrostepMode:   if (parameter[0].inRange( "MicroStepMode", 0, 7, response ) ) {
                                       OK();
-                                      if ( ctrl->getType() == FTSWARMPWRDRIVE ) {
-                                        ctrl->lock();
-                                        ctrl->setMicrostepMode( (uint8_t) parameter[0].getNumber() );
-                                        ctrl->unlock();
-                                      }
+                                      ctrl->lock();
+                                      ctrl->setMicrostepMode( (uint8_t) parameter[0].getNumber() );
+                                      ctrl->unlock();
                                     }
                                     break;
 
-    case CLICMD_getMicrostepMode:   if ( ctrl->getType() == FTSWARMPWRDRIVE ) {
-                                      ctrl->lock();
-                                      microStepMode = ctrl->getMicrostepMode();
-                                      ctrl->unlock();
-                                      sprintf( response, "R: %d", microStepMode );
-                                    } else { sprintf( response, "kein PwrDrive"); }
+    case CLICMD_getMicrostepMode:   ctrl->lock();
+                                    microStepMode = ctrl->getMicrostepMode();
+                                    ctrl->unlock();
+                                    sprintf( response, "R: %d", microStepMode );
                                     break;
 
     case CLICMD_save:               if ( parameter[0].inRange( "scope", 0, 3, response ) ) {

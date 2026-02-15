@@ -55,27 +55,26 @@ void SwOSNVS::initialSetup( void ) {
   version = NVSVERSION;
 
   switch ( enterNumber(("Controller Type\n (1) ftSwarm\n (2) ftSwarmRS\n (3) ftSwarmControl\n (4) ftSwarmCAM\n (5) ftSwarmPwrDrive\n (6) ftSwarmDuino\n (7) ftSwarmXL\n (8) ftSwarmRC\n (9) special config\n>"), 0, 1, 8 ) ) {
-    case 1:  controllerType = FTSWARM;         CPU = FTSWARMJST_1V15;       break;
-    case 2:  controllerType = FTSWARM;         CPU = FTSWARMRS_2V1;         break;
-    case 3:  controllerType = FTSWARMCONTROL;  
-             #if CONFIG_IDF_TARGET_ESP32S3 
+    case 1:  CPU = FTSWARMJST_1V15;       break;
+    case 2:  CPU = FTSWARMRS_2V1;         break;
+    case 3:  
+             #ifdef CONFIG_IDF_TARGET_ESP32S3 
               CPU = FTSWARMCONTROL_1V3UC; 
              #else
               CPU = FTSWARMCONTROL_1V3; 
              #endif
              break;
-    case 4:  controllerType = FTSWARMCAM;      CPU = FTSWARMCAM_3V12;       break;
-    case 5:  controllerType = FTSWARMPWRDRIVE; CPU = FTSWARMPWRDRIVE_1V141; break;
-    case 6:  controllerType = FTSWARMDUINO;    CPU = FTSWARMDUINO_1V141;    break;
-    case 7:  controllerType = FTSWARM;         CPU = FTSWARMXL_1V00;        break;
-    case 8:  controllerType = FTSWARM;         CPU = FTSWARMRC_1V141;       break;
+    case 4:  CPU = FTSWARMCAM_3V12;       break;
+    case 5:  CPU = FTSWARMPWRDRIVE_1V141; break;
+    case 6:  CPU = FTSWARMDUINO_1V141;    break;
+    case 7:  CPU = FTSWARMXL_1V00;        break;
+    case 8:  CPU = FTSWARMRC_1V141;       break;
     default: // manual configuration
-             controllerType = (FtSwarmController_t) (enterNumber(("controller Type\n (1) ftSwarm\n (2) ftSwarmControl\n (3) ftSwarmCAM\n (4) ftSwarmPwrDrive\n (5) ftSwarmDuino\n\n>"), 0, 1, 5 ) - 1 );
              CPU = ( FtSwarmVersion_t ) ( enterNumber(("CPU Version\n (1) FTSWARMJST_1V0\n (2) FTSWARMCONTROL_1V3\n (3) FTSWARMJST_1V15\n (4) FTSWARMRS_2V0\n (5) FTSWARMRS_2V1\n (6) FTSWARMCAM_3V12\n (7) FTSWARMDUINO_1V141\n (8) FTSWARMPWRDRIVE_1V141\n (9) FTSWARMXL_1V00\n (10) FTSWARMRC_1V141\n (11) FTSWARMCONTROL_1V3UC\n"), 0, 1, 11 ) -1 );
   }
 
-  pixels = MAXIOS.pixels;
-  extensionPort = ( controllerType == FTSWARMCONTROL ) ? FTSWARM_EXT_I2C_MASTER : FTSWARM_EXT_OFF; 
+  pixels = FTSWARM_HAL_PIXELS;
+  extensionPort = ( FTSWARM_HAL_HAS_EXT_PORT ) ? FTSWARM_EXT_OFF : FTSWARM_EXT_I2C_MASTER; 
 
   serialNumber = enterNumber("Serial number [1..65535]>", 0, 1, 65535 );
 
@@ -117,7 +116,6 @@ SwOSNVS::SwOSNVS() {
 
 	// initialize to undefined
 	version            = NVSVERSION;
-	controllerType     = FTSWARM_NOCTRL;
 	serialNumber       = 0;
 	CPU                = FTSWARM_NOVERSION;
 	wifiSSID[0]        = '\0';
@@ -187,15 +185,12 @@ bool SwOSNVS::load() {
   }
 
   // start with HW configuration
-  nvs_get_u32( my_handle, "controlerType", (uint32_t *) &controllerType );
-
   uint32_t ui32;
   nvs_get_u16( my_handle, "serialNumber",  (uint16_t *) &serialNumber );
   nvs_get_u32( my_handle, "CPU",           (uint32_t *) &CPU );
 
   // check on valid hw data
-  if ( ( controllerType == FTSWARM_NOCTRL ) ||
-       ( serialNumber == 0 ) ||
+  if ( ( serialNumber == 0 ) ||
        ( CPU == FTSWARM_NOVERSION ) ) {
     nvs_close( my_handle );
     return false;
@@ -232,7 +227,7 @@ bool SwOSNVS::load() {
 
   // ExtentionPort
   nvs_get_u32( my_handle, "extensionPort", (uint32_t *) &extensionPort);
-  if ( ( controllerType == FTSWARMCONTROL ) && ( extensionPort == FTSWARM_EXT_OFF ) ) { extensionPort = FTSWARM_EXT_I2C_MASTER; }
+  if ( ( CPU == FTSWARMCONTROL_1V3 ) && ( extensionPort == FTSWARM_EXT_OFF ) ) { extensionPort = FTSWARM_EXT_I2C_MASTER; } // backward compatibility
   nvs_get_u8 ( my_handle, "I2CAddr",        &I2CAddr );
   nvs_get_u8 ( my_handle, "interruptLine", &interruptLine );
   nvs_get_i16( my_handle, "interruptLow",  &interruptOnOff[0] );
@@ -264,7 +259,6 @@ void SwOSNVS::save( bool writeAll ) {
   // Write
   if (writeAll) {
     nvs_set_i32( my_handle, "NVSVersion", NVSVERSION ) ;
-    nvs_set_u32( my_handle, "controlerType", (uint32_t) controllerType ) ;
     nvs_set_u16( my_handle, "serialNumber", (FtSwarmSerialNumber_t) serialNumber ) ;
     nvs_set_u32( my_handle, "CPU", (uint32_t) CPU ) ;
   }
@@ -416,7 +410,7 @@ void SwOSNVS::factorySettings( void ) {
     calibration[j].maxValue = 3700;
   }
 
-  pixels             = MAXIOS.pixels;
+  pixels             = FTSWARM_HAL_PIXELS;
 
   extensionPort      = FTSWARM_EXT_OFF;
   I2CAddr            = 0x66;
@@ -507,7 +501,6 @@ void SwOSNVS::printNVS() {
 
   printf( "NVSVersion: %d\n", version );
   printf( "CPU: %d\n", CPU );
-  printf( "controllerType: %d\n", controllerType );
   printf( "serialNumber: %d\n", serialNumber );
   printf( "wifiMode: %d\n", wifiMode );
   printf( "wifiSSID: >%s<\n", wifiSSID );

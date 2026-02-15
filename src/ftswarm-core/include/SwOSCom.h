@@ -77,7 +77,7 @@ struct Joystick_t { int16_t LR; int16_t FB; } __attribute__((packed));
 struct IOConfig_t { SwOSIOType_t ioType; uint8_t port; char name[10]; char alias[MAXIDENTIFIER]; } __attribute__((packed));
 
 struct SwOSCtrlConfig_t { 
-  FtSwarmController_t   ctrlType; 
+  // FtSwarmController_t   ctrlType; 
   FtSwarmVersion_t      CPU; 
   bool                  IAmKelda;
   FtSwarmExtMode_t      extensionPort;

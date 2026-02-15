@@ -321,11 +321,11 @@ void MenuLocalSettings::run( void ) {
       
       add( "Web UI", ONOFF[nvs.webUI], MENU_WEBUI, 'u' );
       
-      if ( ( nvs.webUI ) && ( myOSSwarm.Ctrl[0]->getType() != FTSWARMCONTROL ) ) add( "ftPixels in UI", nvs.pixels, MENU_PIXELS, 'f' );
+      if ( ( nvs.webUI ) && ( FTSWARM_HAL_PIXELS ) ) add( "ftPixels in UI", nvs.pixels, MENU_PIXELS, 'f' );
 
     }
      
-    if ( myOSSwarm.Ctrl[0]->hasExtPort() ) { 
+    if ( FTSWARM_HAL_HAS_EXT_PORT ) { 
       add("Extension Port", EXTMODE[ nvs.extensionPort] , MENU_EXT, 'e' ); 
     }
 
@@ -343,7 +343,7 @@ void MenuLocalSettings::run( void ) {
       add("Gyro", ONOFF[nvs.gyro], MENU_GYRO, 'g' ); 
     }
 
-    if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCONTROL ) {
+    if ( FTSWARM_HAL_JOYSTICKS ) {
       add("Calibrate Joysticks", "", MENU_CALIBRATE, 'j', false );
     }
 
@@ -407,7 +407,7 @@ void MenuLocalSettings::run( void ) {
                             break;
 
       case MENU_I2CINT:     anythingChanged = true;
-                            nvs.interruptLine = (uint8_t) enterNumber( "motor (1 for M1, 2 for M2, ...) or 0 to skip: ", nvs.interruptLine, 0, MAXIOS.motors );
+                            nvs.interruptLine = (uint8_t) enterNumber( "motor (1 for M1, 2 for M2, ...) or 0 to skip: ", nvs.interruptLine, 0, FTSWARM_HAL_MOTORS );
                             break;
 
       case MENU_I2CREGS:    anythingChanged = true;

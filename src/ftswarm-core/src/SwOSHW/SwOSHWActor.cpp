@@ -115,8 +115,8 @@ void SwOSDCMotor::setupLocal() {
   }
 
   // set HW Pins
-  IN1 = HAL_ACTOR[port].io1;
-  IN2 = HAL_ACTOR[port].io2;
+  IN1 = MOTOR_GPIO[port][0];
+  IN2 = MOTOR_GPIO[port][1];
 
   // set digital ports IN1 & in2 to output
   gpio_config_t io_conf = {
@@ -667,7 +667,7 @@ void SwOSServo::setRemote( ) {
 void SwOSDigitalServo::setupLocal() {
   // initialize local HW
 
-  SERVO = GPIO_SERVO[port];
+  SERVO = SERVO_GPIO[port];
 
   // set digital port  to output
   gpio_config_t io_conf = {};

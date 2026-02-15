@@ -324,7 +324,6 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   }
 
   SwOSCtrlConfig_t localCtrlConfig = {
-    .ctrlType      = nvs.controllerType,
     .CPU           = nvs.CPU,
     .IAmKelda      = nvs.IAmKelda,
     .extensionPort = nvs.extensionPort,
@@ -334,7 +333,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   };
 
   // initial setup?
-  if (nvs.controllerType >= FTSWARM_MAXCONTROLLERTYPE ) nvs.initialSetup();
+  if (nvs.CPU >= FTSWARMMAXVERSION ) nvs.initialSetup();
 
   maxCtrl = 0;
   Ctrl[0] = new SwOSCtrl( nvs.serialNumber, noMac, true, localCtrlConfig );
@@ -342,7 +341,6 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
   SwOSCtrlConfig_t noCtrlConfig;
   bzero( &noCtrlConfig, sizeof(noCtrlConfig) );
-  noCtrlConfig.ctrlType = FTSWARM_NOCTRL;
   noCtrlConfig.CPU      = FTSWARM_NOVERSION;
 
   // initialize all swarm members from nvs list
@@ -671,7 +669,7 @@ void SwOSSwarm::replaceCtrl( SwOSCom *com, uint8_t source, uint8_t affected ) {
   SwOSCtrl *newCtrl = NULL;
   SwOSCtrl *oldCtrl = Ctrl[source];
   
-  if ( com->data.registerCmd.ctrlConfig.ctrlType >= FTSWARM_MAXCONTROLLERTYPE ) {
+  if ( com->data.registerCmd.ctrlConfig.CPU >= FTSWARMMAXVERSION ) {
     SWARM_LOG_ERROR( "Unknown controller type while adding a new controller to my swarm." ); return;
 
   } else {
@@ -753,7 +751,7 @@ void SwOSSwarm::cmdJoinAck( SwOSCom *com, uint8_t source, uint8_t affected ) {
   if ( Ctrl[source] )  {
 
     // if it's an unkown controller, update controller data
-    if ( Ctrl[source]->getType() == FTSWARM_NOCTRL ) replaceCtrl( com, source, affected );
+    if ( Ctrl[source]->getCPU() == FTSWARM_NOVERSION ) replaceCtrl( com, source, affected );
     // ToDo else - send the controller his state
 
     // wait for alias settings
@@ -923,7 +921,6 @@ bool SwOSSwarm::addController( FtSwarmSerialNumber_t serialNumber ) {
 
   SwOSCtrlConfig_t noCtrlConfig;
   bzero( &noCtrlConfig, sizeof(noCtrlConfig) );
-  noCtrlConfig.ctrlType = FTSWARM_NOCTRL;
   noCtrlConfig.CPU      = FTSWARM_NOVERSION;
 
   Ctrl[i] = new SwOSCtrl( serialNumber,  MacAddr( broadcast ), false, noCtrlConfig );

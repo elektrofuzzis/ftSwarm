@@ -157,7 +157,7 @@ public:
   SwOSServo*    getServo( uint8_t index );                               // get a pointer to a servo by index
   SwOSStepper*  getStepper( uint8_t index );                             // get a pointer to a stepper by index
 
-  FtSwarmController_t getType();                                  // what I am?
+  // FtSwarmController_t getType();                                  // what I am?
   FtSwarmVersion_t   getCPU() { return CPU; };                    // my CPU type
 	const char *       getVersionCPU();                             // my CPU type as string
   bool               isLocal() { return local; };                 // local or remote?
@@ -188,7 +188,6 @@ public:
   
   bool hasGyro( void );                                          // test if HW has a gyro
   bool hasOLED( void );                                          // test if HW has OLED
-  bool hasExtPort( void );                                       // test if HW has an ExtentionPort
 
   void deleteEvents( void );                                     // delete all events
 

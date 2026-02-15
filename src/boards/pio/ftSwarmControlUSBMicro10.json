@@ -2,20 +2,17 @@
   "name": "ftSwarmControlUSBMicro",
   "vendor": "Elektrofuzzis",
   "url": "https://elektrofuzzis.github.io",
-  "platform": "espressif32",
-  "frameworks": ["arduino"],
-
-  "board": "esp32dev",
-
+  "platforms": ["espressif32"],
+  "frameworks": ["arduino", "espidf"],
   "build": {
-    "mcu": "esp32",
     "core": "esp32",
-    "variant": "esp32",
+    "mcu": "esp32",
+    "variant": "ftSwarmControlUSBMicro",
     "f_cpu": "240000000L",
-    "flash_mode": "qio",
-    "flash_size": "4MB",
-    "partitions": "ftSwarm_4MB.csv",
+    "f_flash": "40000000L",
+    "flash_mode": "dio",
     "extra_flags": [
+      "-DARDUINO_ESP32_DEV",
       "-DBOARD_HAS_PSRAM",
       "-mfix-esp32-psram-cache-issue",
       "-DARDUINO_EVENT_RUNNING_CORE=0",
@@ -23,15 +20,11 @@
       "-DBOARD_FTSWARM_CONTROL_USBMICRO"
     ]
   },
-
   "upload": {
+    "flash_size": "4MB",
     "maximum_size": 4194304,
     "maximum_ram_size": 327680,
-    "speed": 921600
-  },
-
-  "debug": {
-    "tool": "esp-builtin",
-    "openocd_target": "esp32s3.cfg"
+    "speed": 921600,
+    "protocol": "esptool"
   }
 }

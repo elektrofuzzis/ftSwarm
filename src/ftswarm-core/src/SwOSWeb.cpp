@@ -383,7 +383,7 @@ bool SwOSStartWebServer( void ) {
       return false;
   }
 
-  if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCAM ) {
+  if ( FTSWARM_HAL_HAS_CAM ) {
   
     config.server_port += 1;
     config.ctrl_port += 1;

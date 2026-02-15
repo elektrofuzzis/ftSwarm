@@ -20,8 +20,6 @@
  class SwOSDigitalInput : public SwOSInput {
 
   protected:
-    gpio_num_t      PUA2   = GPIO_NUM_NC;
-    gpio_num_t      USTX   = GPIO_NUM_NC;
     FtSwarmToggle_t toggle = FTSWARM_NOTOGGLE;
     bool            normallyOpen = true;
 

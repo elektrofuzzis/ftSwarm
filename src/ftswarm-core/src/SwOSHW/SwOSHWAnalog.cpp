@@ -38,9 +38,9 @@ void SwOSAnalogInput::setupLocal() {
   SwOSInput::setupLocal( );
 
   // local init
-  ADCUnit     = HAL_INPUT[port].adc_unit;
-  ADCChannel  = HAL_INPUT[port].adc_channel;
-  attenuation = HAL_INPUT[port].attenuation;
+  ADCUnit     = INPUT_ADC_UNIT[port];
+  ADCChannel  = INPUT_ADC_CHANNEL[port];
+  attenuation = (adc_atten_t) INPUT_ATTENUATION[port];
 
   if ( ( ADCUnit ==  ADC_UNIT_1) && ( ADCChannel != ADC1_CHANNEL_MAX ) ) {
     // set ADC to 12 bits, scale 3.9V

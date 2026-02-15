@@ -203,7 +203,7 @@ SwOSLabel_t SwOSIO::getLabel( void ) {
   if ( ( !ctrl->isLocal() ) || ( !ctrl->hasOLED() ) ) return SWOSLABEL_UNDEF;
 
   if ( ioType == SWOSIO_BUTTON )        return ( SwOSLabel_t )   port;
-  if ( ioType == SWOSIO_JOYSTICK_POTI ) return ( SwOSLabel_t ) ( port - MAXIOS.firstJPoti  + 8);
+  if ( ioType == SWOSIO_JOYSTICK_POTI ) return ( SwOSLabel_t ) ( port - FTSWARM_HAL_FIRSTJPOTI + 8);
 
   return SWOSLABEL_UNDEF;
 
@@ -513,7 +513,7 @@ void SwOSInput::setupLocal() {
   }
 
   if ( ioType == SWOSIO_BUTTON ) GPIO = GPIO_NUM_NC;
-  else                           GPIO = HAL_INPUT[port].io;
+  else                           GPIO = INPUT_GPIO[port];
 
   gpio_config_t io_conf = {};
 
