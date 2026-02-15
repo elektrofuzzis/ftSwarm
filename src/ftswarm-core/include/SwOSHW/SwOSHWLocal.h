@@ -11,7 +11,11 @@
 
 #include "SwOS.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
- 
+
+#if FTSWARM_HAL_HAS_OLED > 0
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#endif
 
 /**************************************************
  *
@@ -53,7 +57,10 @@ class OLED {
 
   protected:
 
+    #if FTSWARM_HAL_HAS_OLED > 0 
     Adafruit_SSD1306 display = Adafruit_SSD1306 (128, 64, &Wire, -1);
+    #endif
+
     bool displayDirty = false;
     
     uint8_t textSizeX = 0;

@@ -79,6 +79,8 @@ void HC165::operate( ) {
  *
  ***************************************************/
 
+#if FTSWARM_HAL_HAS_OLED > 0
+
 static void displayTask( void *parameter ) {
 
   while (1) {
@@ -90,24 +92,6 @@ static void displayTask( void *parameter ) {
   }
 
 }
-
-/*
-  display->setTextSize(3,3);            // Logo
-  write( (char *) "ftSwarm", getWidth()/2, 0, FTSWARM_ALIGNCENTER, true );
- 
-  display->setTextSize(1,1);            // hostname & version
-  char line[100];
-  sprintf( line, "%s %s", ctrl->getHostname(), SWOSVERSION );
-  write( line, getWidth()/2, 32, FTSWARM_ALIGNCENTER, true );
- 
-  // additional default values
-  display->setTextSize(1, 1);           // Normal 1:1 pixel scale
-  display->setCursor(0, 0);             // Start at top-left corner
- 
-  dim(true);
-  displayDirty = true;
-
-*/
 
 OLED::OLED( void ) {
   
@@ -352,5 +336,40 @@ int16_t OLED::getHeight(void) {
   return display.height( ) - YELLOWPIXELS; 
    
 }
+
+#else
+
+// no local hardware - just define stubs
+
+OLED::OLED( void ) {};
+void OLED::flush( void ) {};
+void OLED::invertDisplay(bool i) {};
+void OLED::fillScreen( bool white) {};
+void OLED::dim(bool dim) {};
+void OLED::setContrast(uint8_t contrast ) {};
+int16_t OLED::getWidth(void) { return 0; };
+int16_t OLED::getHeight(void) { return 0; };
+void OLED::clearDisplay( bool fullscreen) {};
+void OLED::cp437( bool x ) {};
+void OLED::drawPixel(int16_t x, int16_t y, bool white) {}; 
+void OLED::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool white) {};
+void OLED::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, bool fill, bool white) {};
+void OLED::drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, bool fill, bool white) {};
+void OLED::drawCircle(int16_t x0, int16_t y0, int16_t r, bool fill, bool white) {};
+void OLED::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool fill, bool white) {};
+void OLED::drawChar(int16_t x, int16_t y, unsigned char c, bool color, bool bg, uint8_t size_x, uint8_t size_y) {};
+void OLED::write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align, bool fill, bool invert ) {};
+void OLED::write( const char *str ) {};
+void OLED::setCursor(int16_t x, int16_t y) {};
+void OLED::getCursor(int16_t *x, int16_t *y) {};
+void OLED::setTextColor( bool c,  bool bg) {};
+void OLED::setTextWrap(bool w) {};
+void OLED::setRotation(uint8_t r) {};
+uint8_t OLED::getRotation(void) { return 0; };
+void OLED::setTextSize(uint8_t sx, uint8_t sy) {};
+void OLED::getTextSize( uint8_t *sx, uint8_t *sy ) {};
+void OLED::getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h) {};
+
+#endif
 
 OLED *oled  = NULL;

@@ -56,8 +56,6 @@
 #include <FastLED.h>
 #include "ftPwrDrive/ftPwrDrive.h"
 #include "esp_camera.h"
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
 
 #include "SwOSFirmware.h"
 
