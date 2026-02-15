@@ -321,6 +321,13 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   if (this->verbose) {
     printf("Boot %s (SN:%d).\n", nvs.swarmName, nvs.serialNumber );
     if ( nvs.IAmKelda )  { printf( "I am KELDA!\n"); }
+
+    // PSRAM
+    uint32_t totalPsram = ESP.getPsramSize();
+    printf("PSRAM: %u Bytes (%.2f MB)\n", totalPsram, totalPsram / 1024.0 / 1024.0);
+
+    // cores
+    printf("User space is running on core #%d, firmware is running on core #%d\n", ARDUINO_RUNNING_CORE, ARDUINO_EVENT_RUNNING_CORE);
   }
 
   SwOSCtrlConfig_t localCtrlConfig = {
@@ -372,9 +379,9 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   if (!myOSNetwork.begin( nvs.swarmSecret, nvs.swarmPIN, nvs.swarmCommunication )) SWARM_LOG_FATAL("Error initializing swarm communication.");
 
   // start the tasks
-  xTaskCreatePinnedToCore( recvTask,    "RecvTask",    10000, NULL, 1, NULL, SWOSCORE );
-  xTaskCreatePinnedToCore( readTask,    "ReadTask",    20000, NULL, 1, NULL, SWOSCORE );
-  xTaskCreatePinnedToCore( connectTask, "connectTask", 10000, NULL, 1, NULL, SWOSCORE );
+  xTaskCreatePinnedToCore( recvTask,    "RecvTask",    10000, NULL, 1, NULL, ARDUINO_EVENT_RUNNING_CORE );
+  xTaskCreatePinnedToCore( readTask,    "ReadTask",    20000, NULL, 1, NULL, ARDUINO_EVENT_RUNNING_CORE );
+  xTaskCreatePinnedToCore( connectTask, "connectTask", 10000, NULL, 1, NULL, ARDUINO_EVENT_RUNNING_CORE );
 
   // start web server
   if ( ( nvs.webUI ) && ( nvs.wifiMode != wifiOFF ) ) SwOSStartWebServer();

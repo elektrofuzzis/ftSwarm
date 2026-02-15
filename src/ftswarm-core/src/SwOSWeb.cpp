@@ -423,7 +423,7 @@ bool SwOSStartWebServer( void ) {
   httpd_uri_t ws = { .uri = "/ws", .method = HTTP_GET, .handler = &wsHandler, .user_ctx = NULL, .is_websocket  = true };
   httpd_register_uri_handler(UIServer, &ws);
 
-  xTaskCreatePinnedToCore( wsTask, "wsTask", 10000, NULL, 1, NULL, SWOSCORE );
+  xTaskCreatePinnedToCore( wsTask, "wsTask", 10000, NULL, 1, NULL, ARDUINO_EVENT_RUNNING_CORE );
 
   return true;
 

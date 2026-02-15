@@ -19,6 +19,7 @@ static const int8_t ANALOGIO           = 2;
 static const int8_t PWRCTLIO           = 3;
 static const int8_t MOTORIO            = 4;
 
+static const int8_t GYRO_NONE          = 0;
 static const int8_t GYRO_6050          = 1;
 static const int8_t GYRO_LSM6          = 2;
 
@@ -64,8 +65,15 @@ static const bool    FTSWARM_HAL_HAS_OLED     = false;
 static const bool    FTSWARM_HAL_HAS_HC165    = false;
 static const bool    FTSWARM_HAL_HAS_EXT_PORT = false;
 static const bool    FTSWARM_HAL_HAS_CAM      = false;
+static const bool    FTSWARM_HAL_HAS_RS485    = false;
 static const int8_t  FTSWARM_HAL_GYRO         = GYRO_LSM6;
 static const int8_t  FTSWARM_HAL_GYRO_PORT    = GYRO_SPI;
+
+// RS485
+static const gpio_num_t RS485_R   = GPIO_NUM_NC;
+static const gpio_num_t RS485_REB = GPIO_NUM_NC;
+static const gpio_num_t RS485_DE  = GPIO_NUM_NC;
+static const gpio_num_t RS485_D   = GPIO_NUM_NC;
 
 // Inputs
 static const gpio_num_t A1      = GPIO_NUM_1;
@@ -95,7 +103,7 @@ static const int8_t       INPUT_ADC_CHANNEL[] = { ADC1_CHANNEL_0,  ADC1_CHANNEL_
 static const adc_atten_t  INPUT_ATTENUATION[] = { ADC_ATTEN_DB_12, ADC_ATTEN_DB_12, ADC_ATTEN_DB_12, ADC_ATTEN_DB_12, ADC_ATTEN_DB_12, ADC_ATTEN_DB_12, ADC_ATTEN_DB_12, ADC_ATTEN_DB_12, ADC_ATTEN_DB_2_5, ADC_ATTEN_DB_2_5, ADC_ATTEN_DB_2_5, ADC_ATTEN_DB_2_5 };
 static const int8_t       INPUT_IOTYPE[]      = { DIGITALIO,       DIGITALIO,       DIGITALIO,       DIGITALIO,       DIGITALIO,       DIGITALIO,       DIGITALIO,       PWRCTLIO,        ANALOGIO,         ANALOGIO,         ANALOGIO,         ANALOGIO };
 
-// Actors
+// Motor
 static const gpio_num_t M1A = GPIO_NUM_14;
 static const gpio_num_t M1B = GPIO_NUM_21;
 static const gpio_num_t M2A = GPIO_NUM_45;
@@ -105,13 +113,14 @@ static const gpio_num_t M3B = GPIO_NUM_17;
 static const gpio_num_t M4A = GPIO_NUM_18;
 static const gpio_num_t M4B = GPIO_NUM_47;
 
-// MOTOR
-static const char         MOTOR_NAME[][3] = { "M1",      "M2",      "M3",      "M4"};
+static const char         MOTOR_NAME[][6] = { "M1",      "M2",      "M3",      "M4"};
 static const gpio_num_t   MOTOR_GPIO[][2] = { {M1A,M1B}, {M2A,M2B}, {M3A,M3B}, {M4A,M4B} };
 static const int8_t       MOTOR_IOTYPE[]  = { MOTORIO,   MOTORIO,   MOTORIO,   MOTORIO };
 
-// SERVO -- since there are no DC servos, need to define an empty array
-static const gpio_num_t   SERVO_GPIO[] = { GPIO_NUM_NC };
+// Servo -- since there are no DC servos, need to define an empty array
+static const gpio_num_t SERVO1 = GPIO_NUM_NC;
 
+static const char         SERVO_NAME[][7] = { "" };
+static const gpio_num_t   SERVO_GPIO[] = { SERVO1 };
 
 #endif /* Pins_Arduino_h */

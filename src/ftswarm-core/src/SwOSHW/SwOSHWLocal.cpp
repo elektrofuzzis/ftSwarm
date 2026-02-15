@@ -137,7 +137,7 @@ OLED::OLED( void ) {
   }
 
   // transfer task
-  xTaskCreatePinnedToCore( displayTask, "displayTask", 10000, NULL, 1, NULL, SWOSCORE );
+  xTaskCreatePinnedToCore( displayTask, "displayTask", 10000, NULL, 1, NULL, ARDUINO_EVENT_RUNNING_CORE );
 
 }
 
