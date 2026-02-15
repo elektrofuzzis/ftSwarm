@@ -1,40 +1,48 @@
 {
-  "name": "ftSwarmPwrDrive",
-  "vendor": "Elektrofuzzis",
-  "url": "https://elektrofuzzis.github.io",
-  "platform": "espressif32",
-  "frameworks": ["arduino"],
-
-  "board": "esp32-s3-devkitc-1",
-
   "build": {
-    "mcu": "esp32s3",
+    "arduino":{
+      "ldscript": "esp32s3_out.ld",
+      "partitions": "ftSwarm_4MB.csv",
+      "memory_type": "qio_qio"
+    },
     "core": "esp32",
-    "variant": "esp32s3",
-    "f_cpu": "240000000L",
-    "flash_mode": "qio",
-    "flash_size": "4MB",
-    "arduino": {"memory_type": "qio_opi"},
-    "partitions": "ftSwarm_4MB.csv",
-    "f_flash": "80000000L",
-    "psram_type": "opi",
     "extra_flags": [
-      "-DBOARD_HAS_PSRAM",
-      "-mfix-esp32-psram-cache-issue",
-      "-DARDUINO_EVENT_RUNNING_CORE=0",
+      "-DARDUINO_FTSWARMPWRDRIVE",
+      "-DARDUINO_USB_MODE=1",
       "-DARDUINO_RUNNING_CORE=1",
-      "--DBOARD_FTSWARM_PWRDRIVE"
-    ]
+      "-DARDUINO_EVENT_RUNNING_CORE=0",
+      "-DBOARD_HAS_PSRAM"
+    ],
+    "f_cpu": "240000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "qio",
+    "hwids": [ ["0x1A86", "0x7523"] ],
+    "mcu": "esp32s3",
+    "variant": "ftSwarmPwrDrive"
   },
-
-  "upload": {
-    "maximum_size": 4194304,
-    "maximum_ram_size": 327680,
-    "speed": 921600
-  },
-
+  "connectivity": [
+    "bluetooth",
+    "wifi"
+  ],
   "debug": {
-    "tool": "esp-builtin",
+    "default_tool": "esp-builtin",
+    "onboard_tools": [
+      "esp-builtin"
+    ],
     "openocd_target": "esp32s3.cfg"
-  }
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "ftSwarmPwrDrive",
+  "upload": {
+    "flash_size": "4MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "https://elektrofuzzis.github.io",
+  "vendor": "Elektrofuzzis"
 }

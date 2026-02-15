@@ -1,38 +1,37 @@
 {
-  "name": "ftSwarmJST",
-  "vendor": "Elektrofuzzis",
-  "url": "https://elektrofuzzis.github.io",
-  "platform": "espressif32",
-  "frameworks": ["arduino"],
-
-  "board": "esp32dev",
-
   "build": {
-    "mcu": "esp32",
+    "arduino":{
+      "ldscript": "esp32_out.ld"
+    },
     "core": "esp32",
-    "variant": "ftSwarmJST",
+    "extra_flags": "-DFTSWARMJST -DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue -DARDUINO_EVENT_RUNNING_CORE=0 -DARDUINO_RUNNING_CORE=1",
     "f_cpu": "240000000L",
-    "f_flash": "40000000L",
+    "f_flash": "80000000L",
     "flash_mode": "dio",
-    "flash_size": "4MB",
-    "partitions": "ftSwarm_4MB.csv",
-    "extra_flags": [
-      "-DBOARD_HAS_PSRAM",
-      "-mfix-esp32-psram-cache-issue",
-      "-DARDUINO_EVENT_RUNNING_CORE=0",
-      "-DARDUINO_RUNNING_CORE=1",
-      "-DBOARD_FTSWARM_JST"
-    ]
+    "hwids": [ ["0x10C4", "0xEA60"] ],
+    "mcu": "esp32",
+    "variant": "ftSwarmJST"
   },
-
-  "upload": {
-    "maximum_size": 4194304,
-    "maximum_ram_size": 327680,
-    "speed": 921600
-  },
-
+  "connectivity": [
+    "wifi",
+    "bluetooth"
+  ],
   "debug": {
-    "tool": "esp-builtin",
-    "openocd_target": "esp32.cfg"
-  }
+    "openocd_board": "esp-wroom-32.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "default_framework": "arduino",
+  "name": "ftSwarmJST",
+  "upload": {
+    "flash_size": "4MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "https://elektrofuzzis.github.io",
+  "vendor": "Elektrofuzzis"
 }
