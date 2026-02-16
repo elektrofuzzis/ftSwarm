@@ -60,7 +60,7 @@ void SwOSAnalogInput::setupLocal() {
   }
 
   filter = new SwOSSpike( 10, 60 );
-  if (ioType==SWOS_PWRCTL)  filter->addFilter( new SwOSMovingAverage( 10 ) );
+  if ( ioType==SWOSIO_POWER ) filter->addFilter( new SwOSMovingAverage( 10 ) );
   else filter->addFilter( new SwOSMovingAverage( 3 ) );
 
 }

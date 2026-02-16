@@ -61,7 +61,6 @@ static const gpio_num_t RX = GPIO_NUM_44;
 #define RGB_BUILTIN GPIO_NUM_48
 
 // ftSwarm definitions
-#define NOPWRCTL -1
 static const uint8_t FTSWARM_HAL_INPUTS       = 11;
 static const uint8_t FTSWARM_HAL_AX_INPUTS    = 6;
 static const uint8_t FTSWARM_HAL_MOTORS       = 2;
@@ -107,17 +106,17 @@ static const char         JOYSTICK_LR[][7]     = { "JOY1LR", "JOY1FB" };
 static const char         JOYSTICK_FB[][7]     = { "JOY2LR", "JOY2FB" };
 
 // Motor
-static const gpio_num_t M1A = GPIO_NUM_45;
-static const gpio_num_t M1B = GPIO_NUM_46;
-static const gpio_num_t M2A = GPIO_NUM_14;
-static const gpio_num_t M2B = GPIO_NUM_21;
+static const gpio_num_t   M1A = GPIO_NUM_45;
+static const gpio_num_t   M1B = GPIO_NUM_46;
+static const gpio_num_t   M2A = GPIO_NUM_14;
+static const gpio_num_t   M2B = GPIO_NUM_21;
 
 static const char         MOTOR_NAME[][6] = { "M1",      "M2" };
 static const gpio_num_t   MOTOR_GPIO[][6] = { {M1A,M1B}, {M2A,M2B} };
 static const int8_t       MOTOR_IOTYPE[]  = { MOTORIO,   MOTORIO };
 
 // Servo -- since there are no DC servos, need to define an empty array
-static const gpio_num_t SERVO1 = GPIO_NUM_NC;
+static const gpio_num_t   SERVO1 = GPIO_NUM_NC;
 
 static const char         SERVO_NAME[][7] = { "" };
 static const gpio_num_t   SERVO_GPIO[] = { SERVO1 };
