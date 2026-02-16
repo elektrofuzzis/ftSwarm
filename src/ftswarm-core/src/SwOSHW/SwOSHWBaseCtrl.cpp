@@ -36,10 +36,11 @@ uint8_t SwOSCtrl::setupLocalInputs( uint8_t maxIO ) {
   for ( uint8_t i=0; i<FTSWARM_HAL_INPUTS; i++ ) {
 
     switch ( INPUT_IOTYPE[i] ) {
-    case DIGITALIO: io[ maxIO++ ] =          new SwOSDigitalInput( INPUT_NAME[i], i, this, SWOSIO_DIGITAL ); break;
-    case ANALOGIO:  io[ maxIO++ ] =          new SwOSAnalogInput(  INPUT_NAME[i], i, this, SWOSIO_ANALOG  ); break;
-    case PWRCTLIO:  io[ maxIO++ ] = pwrctl = new SwOSAnalogInput(  INPUT_NAME[i], i, this, SWOSIO_POWER   ); break;
-    default:        SWARM_LOG_FATAL( "SwOSCtrl::setupLocalInputs: unkown IO Type" );                         break;
+    case DIGITALIO:    io[ maxIO++ ] =          new SwOSDigitalInput( INPUT_NAME[i], i, this, SWOSIO_DIGITAL );         break;
+    case ANALOGIO:     io[ maxIO++ ] =          new SwOSAnalogInput(  INPUT_NAME[i], i, this, SWOSIO_ANALOG  );         break;
+    case JOYSTICKPOTI: io[ maxIO++ ] =          new SwOSAnalogInput(  INPUT_NAME[i], i, this, SWOSIO_JOYSTICK_POTI   ); break;
+    case PWRCTLIO:     io[ maxIO++ ] = pwrctl = new SwOSAnalogInput(  INPUT_NAME[i], i, this, SWOSIO_POWER   );         break;
+    default:           SWARM_LOG_FATAL( "SwOSCtrl::setupLocalInputs: unkown IO Type" );                                 break;
     }
 
   }
@@ -165,7 +166,6 @@ uint8_t SwOSCtrl::setupLocalButtons( uint8_t maxIO ) {
 
 uint8_t SwOSCtrl::setupLocalJoysticks( uint8_t maxIO, SwOSCtrlConfig_t ctrlConfig  ) {
 
-  char joy[10];
   char subio[10];
 
   SwOSDigitalInput* button;
@@ -174,24 +174,17 @@ uint8_t SwOSCtrl::setupLocalJoysticks( uint8_t maxIO, SwOSCtrlConfig_t ctrlConfi
   
   for ( uint8_t i=0; i<FTSWARM_HAL_JOYSTICKS; i++) {
     
-    // joystick name
-    sprintf( joy, "JOY%d", i+1 );
+    button = (SwOSDigitalInput *) getIO( JOYSTICK_BUTTON[i] );
+    if (!button) SWARM_LOG_FATAL( "%s not found.", JOYSTICK_BUTTON[i] );
 
-    // button is already created, just lookup
-    button = (SwOSDigitalInput*) getIO( SWOSIO_BUTTON, FTSWARM_J1 + i );
-    
-    // lr poti
-    sprintf( subio, "%sLR", joy);
-    lr = new SwOSAnalogInput( subio, FTSWARM_HAL_FIRSTJPOTI + 2*i,     this, SWOSIO_JOYSTICK_POTI );
-    io[ maxIO++] = (SwOSIO*) lr;
-    
-    // fb poti
-    sprintf( subio, "%sFB", joy);
-    fb = new SwOSAnalogInput( subio, FTSWARM_HAL_FIRSTJPOTI + 2*i + 1, this, SWOSIO_JOYSTICK_POTI );
-    io[ maxIO++] = (SwOSIO*) fb;
+    lr     = (SwOSAnalogInput *) getIO( JOYSTICK_LR[i] );
+    if (!lr) SWARM_LOG_FATAL( "%s not found.", JOYSTICK_LR[i] );
+
+    fb     = (SwOSAnalogInput *) getIO( JOYSTICK_FB[i] );
+    if (!fb) SWARM_LOG_FATAL( "%s not found.", JOYSTICK_FB[i] );
 
     // create joystick
-    io[ maxIO++ ] = new SwOSJoystick( joy, i, this, button, lr, fb );
+    io[ maxIO++ ] = new SwOSJoystick( JOYSTICK_NAME[i], i, this, button, lr, fb );
 
   }
 

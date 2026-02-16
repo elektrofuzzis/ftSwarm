@@ -33,6 +33,8 @@ static const int8_t DIGITALIO          = 1;
 static const int8_t ANALOGIO           = 2;
 static const int8_t PWRCTLIO           = 3;
 static const int8_t MOTORIO            = 4;
+static const int8_t STEPPERIO          = 5;
+static const int8_t JOYSTICKPOTI       = 6;
 
 static const int8_t GYRO_NONE          = 0;
 static const int8_t GYRO_6050          = 1;
@@ -68,7 +70,6 @@ static const gpio_num_t RX = GPIO_NUM_3;
 
 // RGB LED 
 #define RGB_BUILTIN GPIO_NUM_26
-#define RGB_BRIGHTNESS 64
 
 // ftSwarm definitions
 #define NOPWRCTL -1
@@ -80,8 +81,7 @@ static const uint8_t FTSWARM_HAL_SERVOS       = 0;
 static const uint8_t FTSWARM_HAL_PIXELS       = 0;
 static const uint8_t FTSWARM_HAL_BUTTONS      = 8;
 static const uint8_t FTSWARM_HAL_JOYSTICKS    = 2;
-static const uint8_t FTSWARM_HAL_PWRCTL       = NOPWRCTL;
-static const uint8_t FTSWARM_HAL_FIRSTJPOTI   = 4;
+#define FTSWARM_HAL_FIRSTJPOTI 4
 static const int8_t  FTSWARM_HAL_GYRO         = GYRO_6050;
 static const int8_t  FTSWARM_HAL_GYRO_PORT    = GYRO_EXTERNAL_I2C;
 
@@ -108,6 +108,11 @@ static const int8_t       INPUT_ADC_UNIT[]    = { xADC_UNIT_1,      xADC_UNIT_1,
 static const int8_t       INPUT_ADC_CHANNEL[] = { xADC1_CHANNEL_3,  xADC1_CHANNEL_MAX, xADC1_CHANNEL_MAX, xADC1_CHANNEL_MAX, xADC1_CHANNEL_5,  xADC1_CHANNEL_0,  xADC1_CHANNEL_4,  xADC1_CHANNEL_6 };
 static const int8_t       INPUT_ATTENUATION[] = { xADC_ATTEN_DB_12, xADC_ATTEN_DB_12,  xADC_ATTEN_DB_12,  xADC_ATTEN_DB_12,  xADC_ATTEN_DB_12, xADC_ATTEN_DB_12, xADC_ATTEN_DB_12, xADC_ATTEN_DB_12 };
 static const int8_t       INPUT_IOTYPE[]      = { DIGITALIO,        DIGITALIO,         DIGITALIO,         DIGITALIO,         ANALOGIO,         ANALOGIO,         ANALOGIO,         ANALOGIO };
+
+static const char         JOYSTICK_NAME[][5]   = { "JOY1", "JOY2"};
+static const char         JOYSTICK_BUTTON[][3] = { "J1", "J2" };
+static const char         JOYSTICK_LR[][7]     = { "JOY1LR", "JOY1FB" };
+static const char         JOYSTICK_FB[][7]     = { "JOY2LR", "JOY2FB" };
 
 // Motor
 static const gpio_num_t M1A = GPIO_NUM_13;

@@ -10,11 +10,11 @@
 #ifndef Pins_Arduino_h
 #define Pins_Arduino_h
 
-#include <driver/gpio.h> 
-#include <driver/adc.h>
-
 // my hardware features
 #define FTSWARM_HAL_HAS_RS485  1
+
+#include <driver/gpio.h> 
+#include <driver/adc.h>
 
 // to solve some hen & egg problems
 static const int8_t DIGITALIO          = 1;
@@ -22,6 +22,8 @@ static const int8_t ANALOGIO           = 2;
 static const int8_t PWRCTLIO           = 3;
 static const int8_t MOTORIO            = 4;
 static const int8_t STEPPERIO          = 5;
+
+static const int8_t JOYSTICKPOTI       = 5;
 
 static const int8_t GYRO_NONE          = 0;
 static const int8_t GYRO_6050          = 1;
@@ -57,7 +59,6 @@ static const gpio_num_t RX = GPIO_NUM_44;
 
 // RGB LED 
 #define RGB_BUILTIN GPIO_NUM_48
-#define RGB_BRIGHTNESS 64
 
 // ftSwarm definitions
 #define NOPWRCTL -1
@@ -69,8 +70,6 @@ static const uint8_t FTSWARM_HAL_SERVOS       = 0;
 static const uint8_t FTSWARM_HAL_PIXELS       = 2;
 static const uint8_t FTSWARM_HAL_BUTTONS      = 0;
 static const uint8_t FTSWARM_HAL_JOYSTICKS    = 0;
-static const uint8_t FTSWARM_HAL_PWRCTL       = 0;
-static const uint8_t FTSWARM_HAL_FIRSTJPOTI   = 0;
 static const int8_t  FTSWARM_HAL_GYRO         = GYRO_NONE;
 static const int8_t  FTSWARM_HAL_GYRO_PORT    = GYRO_NONE;
 

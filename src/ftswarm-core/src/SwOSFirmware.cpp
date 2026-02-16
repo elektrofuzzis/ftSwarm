@@ -1064,7 +1064,7 @@ void MenuIOList::fillIOList( void ) {
       for (uint8_t i=0; i<myOSSwarm.Ctrl[c]->IOs; i++ ) {
 
         if ( ( myOSSwarm.Ctrl[c]->io[i] ) && 
-             ( ( listInputs && myOSSwarm.Ctrl[c]->io[i]->isInput() ) ||
+             ( ( listInputs && myOSSwarm.Ctrl[c]->io[i]->isInput() || ( myOSSwarm.Ctrl[c]->io[i]->getIOType() == SWOSIO_JOYSTICK ) ) ||
                ( listActors && myOSSwarm.Ctrl[c]->io[i]->isActor() && !myOSSwarm.Ctrl[c]->io[i]->isPixel() ) ||
                ( listPixels && myOSSwarm.Ctrl[c]->io[i]->isPixel() ) ) ) {
 

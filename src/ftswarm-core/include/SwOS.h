@@ -43,6 +43,10 @@
   #define FTSWARM_HAL_HAS_DISCRETE_RGB 0
 #endif
 
+#ifndef FTSWARM_HAL_FIRSTJPOTI
+  #define FTSWARM_HAL_FIRSTJPOTI 0
+#endif
+
 // ***********************
 
 #define MAXIDENTIFIER 32
