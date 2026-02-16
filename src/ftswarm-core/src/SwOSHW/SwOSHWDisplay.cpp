@@ -6,12 +6,11 @@
  * (C) 2021-25 Christian Bergschneider & Stefan Fuss
  * 
  */
- 
+
 #include <FastLED.h>
  
 #include "SwOSHW/SwOSHWDisplay.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
-#include "SwOSHW/SwOSHWHAL.h"
 #include "SwOSHW/SwOSHWLocal.h"
 #include "SwOSOLEDMenu.h"
 #include "SwOSLog.h"
@@ -24,82 +23,9 @@
  ***************************************************/
 
 // LED Representation in FastLED library
-  CRGB led[MAXLEDS];
-  uint8_t usedPixels = 0;
-  bool ledsInitialized = false;
-
-// classic RGB LED
-#define GPIO_RED         GPIO_NUM_4
-#define GPIO_GREEN       GPIO_NUM_5
-#define GPIO_BLUE        GPIO_NUM_10
-#define LED_BASE_CHANNEL LEDC_CHANNEL_4
-
-class RGBLed {
-
-  protected:
-
-    uint8_t  brightness  = 16;
-    uint32_t color = 0;
-    void setPWM( uint8_t c, uint32_t duty );
-
-  public:
-
-    RGBLed();
-    void setColor( uint32_t color );
-    void setBrightness( uint8_t brightness );
-
-};
-
-RGBLed::RGBLed() {
-
-  // initialize local HW
-  ledc_channel_config_t ledc;
-  ledc.speed_mode     = LEDC_LOW_SPEED_MODE;
-  ledc.intr_type      = LEDC_INTR_DISABLE;
-  ledc.timer_sel      = LEDC_TIMER_0;
-  ledc.duty           = 0; 
-  ledc.hpoint         = 0;
-  ledc.flags.output_invert = 1;
-
-  ledc.gpio_num       = GPIO_RED;
-  ledc.channel        = (ledc_channel_t) LED_BASE_CHANNEL;
-  ESP_ERROR_CHECK( ledc_channel_config( &ledc ) );
-
-  ledc.gpio_num       = GPIO_GREEN;
-  ledc.channel        = (ledc_channel_t) (LED_BASE_CHANNEL+1);
-  ESP_ERROR_CHECK( ledc_channel_config( &ledc ) );
-
-  ledc.gpio_num       = GPIO_BLUE;
-  ledc.channel        = (ledc_channel_t) (LED_BASE_CHANNEL+2);
-  ESP_ERROR_CHECK( ledc_channel_config( &ledc ) );
-
-}
-
-void RGBLed::setPWM( uint8_t c, uint32_t duty ) {
-
-  ledc_channel_t channel = (ledc_channel_t) (LED_BASE_CHANNEL+c);
-
-  ESP_ERROR_CHECK( ledc_set_duty( LEDC_LOW_SPEED_MODE, channel, duty ) );
-  ESP_ERROR_CHECK( ledc_update_duty( LEDC_LOW_SPEED_MODE, channel ) );
-
-}
-
-void RGBLed::setColor( uint32_t color ) {
-
-  this->color = color;
-
-  setPWM( 0, ( ( color >> 16 ) & 0xFF ) * brightness);
-  setPWM( 1, ( ( color >> 8  ) & 0xFF ) * brightness );
-  setPWM( 2, (   color         & 0xFF ) * brightness );
-
-}
-
-void RGBLed::setBrightness( uint8_t brightness ) {
-
-  this->brightness = brightness / 16;
-  setColor( color );
-
-}
+CRGB led[MAXLEDS];
+uint8_t usedPixels = 0;
+bool ledsInitialized = false;
 
 SwOSPixel::SwOSPixel(const char *name, uint8_t port, SwOSCtrl *ctrl) : SwOSIO( name, port, ctrl, SWOSIO_PIXEL ) {
 
@@ -108,37 +34,22 @@ SwOSPixel::SwOSPixel(const char *name, uint8_t port, SwOSCtrl *ctrl) : SwOSIO( n
 
 }
 
-RGBLed *rgbLed = NULL;
-
 void SwOSPixel::setupLocal() {
 
   // leds[] need to be initialized only once.
   if (!ledsInitialized) {
+    
+    #if FTSWARM_HAL_HAS_DISCRETE_RGB > 0
+    rgbLed = new RGBLed();
+    #endif
 
-    // assign port to GPIO.
-    switch ( ctrl->getCPU() ) {
-      #if CONFIG_IDF_TARGET_ESP32S3
-        case FTSWARMPWRDRIVE_1V141:
-        case FTSWARMDUINO_1V141:
-        case FTSWARMXL_1V00:
-        case FTSWARMCAM_3V12:
-        case FTSWARMRS_2V1:
-        case FTSWARMRS_2V0:         FastLED.addLeds<WS2812, xGPIO_NUM_48, GRB>(led, MAXLEDS).setCorrection( TypicalLEDStrip ); 
-                                    break;
-
-        case FTSWARMRC_1V141:       FastLED.addLeds<WS2812, xGPIO_NUM_48, GRB>(led, MAXLEDS).setCorrection( TypicalLEDStrip ); 
-                                    rgbLed = new RGBLed();
-                                    break;
-      #endif
-      case FTSWARMJST_1V15:         FastLED.addLeds<WS2812, GPIO_NUM_26, GRB>(led, MAXLEDS).setCorrection( TypicalLEDStrip ); 
-                                    break;
-
-      default:                      FastLED.addLeds<WS2812, GPIO_NUM_33, GRB>(led, MAXLEDS).setCorrection( TypicalLEDStrip ); 
-                                    break;
-    }
+    #ifdef RGB_BUILTIN
+    FastLED.addLeds<WS2812, RGB_BUILTIN, GRB>(led, MAXLEDS).setCorrection( TypicalLEDStrip ); 
+    #endif
 
     setBrightness( BRIGHTNESSDEFAULT );
     ledsInitialized = true;
+
   }
 
   // initialize pixel
@@ -173,12 +84,14 @@ void SwOSPixel::setColorLocal() {
 
   if ( port>=MAXLEDS ) return;
 
-  if ( (rgbLed) && ( port == 0 ) ) {
+  #if FTSWARM_HAL_HAS_DISCRETE_RGB > 0
+  if ( port == 0 ) {
       rgbLed->setColor( color );
       return;
   }
+  #endif
 
-  led[(rgbLed)?port-1:port] = color;
+  led[(FTSWARM_HAL_HAS_DISCRETE_RGB)?port-1:port] = color;
   FastLED.show();
 
 }
@@ -200,10 +113,12 @@ void SwOSPixel::setBrightnessLocal() {
 
   if ( port>=MAXLEDS ) return;
 
-  if ( (rgbLed) && ( port == 0 ) ) {
+  #if FTSWARM_HAL_HAS_DISCRETE_RGB > 0
+  if ( port == 0 ) {
       rgbLed->setBrightness( brightness );
       return;
   }
+  #endif
 
   FastLED.setBrightness( brightness );
   FastLED.show();

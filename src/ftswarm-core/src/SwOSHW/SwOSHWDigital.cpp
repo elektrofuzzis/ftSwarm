@@ -9,7 +9,6 @@
  
 #include "SwOSHW/SwOSHWDigital.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
-#include "SwOSHW/SwOSHWHAL.h"
 #include "SwOSHW/SwOSHWLocal.h"
 
 

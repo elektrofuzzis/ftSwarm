@@ -10,7 +10,6 @@
 #include "SwOS.h"
 
 #include "SwOSHW/SwOSHWBaseCtrl.h"
-#include "SwOSHW/SwOSHWHAL.h"
 #include "SwOSHW/SwOSHWDuino.h"
 #include "SwOSHW/SwOSHWLocal.h"
 #include "SwOSLog.h"

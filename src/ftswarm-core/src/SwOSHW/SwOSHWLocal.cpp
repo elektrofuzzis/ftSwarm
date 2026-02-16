@@ -7,7 +7,6 @@
  * 
  */
 
-#include "SwOSHW/SwOSHWHAL.h"
 #include "SwOSHW/SwOSHWLocal.h"
 #include "SwOSLog.h"
 
@@ -373,3 +372,66 @@ void OLED::getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, 
 #endif
 
 OLED *oled  = NULL;
+
+/***************************************************
+ *
+ *   RGBLed
+ *
+ ***************************************************/
+
+#if FTSWARM_HAL_HAS_DISCRETE_RGB > 0
+
+RGBLed::RGBLed() {
+  
+  // initialize local HW
+  ledc_channel_config_t ledc;
+  ledc.speed_mode     = LEDC_LOW_SPEED_MODE;
+  ledc.intr_type      = LEDC_INTR_DISABLE;
+  ledc.timer_sel      = LEDC_TIMER_0;
+  ledc.duty           = 0; 
+  ledc.hpoint         = 0;
+  ledc.flags.output_invert = 1;
+
+  ledc.gpio_num       = DISCRETE_RGB_RED;
+  ledc.channel        = (ledc_channel_t) LED_BASE_CHANNEL;
+  ESP_ERROR_CHECK( ledc_channel_config( &ledc ) );
+
+  ledc.gpio_num       = DISCRETE_RGB_GREEN;
+  ledc.channel        = (ledc_channel_t) (LED_BASE_CHANNEL+1);
+  ESP_ERROR_CHECK( ledc_channel_config( &ledc ) );
+
+  ledc.gpio_num       = DISCRETE_RGB_BLUE;
+  ledc.channel        = (ledc_channel_t) (LED_BASE_CHANNEL+2);
+  ESP_ERROR_CHECK( ledc_channel_config( &ledc ) );
+
+}
+
+void RGBLed::setPWM( uint8_t c, uint32_t duty ) {
+
+  ledc_channel_t channel = (ledc_channel_t) (LED_BASE_CHANNEL+c);
+
+  ESP_ERROR_CHECK( ledc_set_duty( LEDC_LOW_SPEED_MODE, channel, duty ) );
+  ESP_ERROR_CHECK( ledc_update_duty( LEDC_LOW_SPEED_MODE, channel ) );
+
+}
+
+void RGBLed::setColor( uint32_t color ) {
+
+  this->color = color;
+
+  setPWM( 0, ( ( color >> 16 ) & 0xFF ) * brightness);
+  setPWM( 1, ( ( color >> 8  ) & 0xFF ) * brightness );
+  setPWM( 2, (   color         & 0xFF ) * brightness );
+
+}
+
+void RGBLed::setBrightness( uint8_t brightness ) {
+
+  this->brightness = brightness / 16;
+  setColor( color );
+
+}
+
+RGBLed *rgbLed = NULL;
+
+#endif

@@ -16,7 +16,6 @@
 #include "SwOS.h"
 #include "SwOSNVS.h"
 #include "easyKey.h"
-#include "SwOSHW/SwOSHWHAL.h"
 #include "SwOSLog.h"
 #include "lsm6dsr_reg.h"
 

@@ -52,8 +52,13 @@ static const gpio_num_t TX = GPIO_NUM_43;
 static const gpio_num_t RX = GPIO_NUM_44;
 
 // RGB LED 
-#define RGB_BUILTIN GPIO_NUM_48
-#define RGB_BRIGHTNESS 64
+#define RGB_BUILTIN               GPIO_NUM_48
+#define RGB_BRIGHTNESS            64
+
+#define DISCRETE_RGB_RED          GPIO_NUM_4
+#define DISCRETE_RGB_GREEN        GPIO_NUM_5
+#define DISCRETE_RGB_BLUE         GPIO_NUM_10
+#define DISCRETE_RGB_BASE_CHANNEL LEDC_CHANNEL_4
 
 // ftSwarm definitions
 #define NOPWRCTL -1

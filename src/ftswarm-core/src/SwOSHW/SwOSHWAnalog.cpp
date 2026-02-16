@@ -8,7 +8,6 @@
  */
 
 #include "SwOSHW/SwOSHWAnalog.h"
-#include "SwOSHW/SwOSHWHAL.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSFilter.h"
 #include "SwOSHW/SwOSHWDigital.h"

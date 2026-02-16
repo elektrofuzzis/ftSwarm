@@ -113,3 +113,25 @@ class OLED {
 };
 
 extern OLED *oled;
+
+#if FTSWARM_HAL_HAS_DISCRETE_RGB > 0
+
+class RGBLed {
+
+  protected:
+
+    uint8_t  brightness  = 16;
+    uint32_t color = 0;
+    void setPWM( uint8_t c, uint32_t duty );
+
+  public:
+
+    RGBLed();
+    void setColor( uint32_t color );
+    void setBrightness( uint8_t brightness );
+
+};
+
+extern RGBLed *rgbLed
+
+#endif

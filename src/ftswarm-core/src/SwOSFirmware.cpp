@@ -18,7 +18,6 @@
 #include "easyMenu.h"
 #include "SwOSCLI.h"
 #include "SwOSLog.h"
-#include "SwOSHW/SwOSHWHAL.h"
 #include "SwOSHW/SwOSHWLocal.h"
 
 const char EXTMODE[7][14] = { "off", "I2C-Master", "I2C-Slave", "Outputs", "Servos", "Lidar", "" }; // "" just to avoid seg faults

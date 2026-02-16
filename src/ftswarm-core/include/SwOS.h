@@ -39,6 +39,10 @@
   #define FTSWARM_HAL_HAS_RS485 0
 #endif
 
+#ifndef FTSWARM_HAL_HAS_DISCRETE_RGB
+  #define FTSWARM_HAL_HAS_DISCRETE_RGB 0
+#endif
+
 // ***********************
 
 #define MAXIDENTIFIER 32

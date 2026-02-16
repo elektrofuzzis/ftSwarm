@@ -14,7 +14,6 @@
 #include "SwOSHW/SwOSHWDisplay.h"
 #include "SwOSHW/SwOSHWCounter.h"
 #include "SwOSHW/SWOSHWCam.h"
-#include "SwOSHW/SwOSHWHAL.h"
 #include "SwOSHW/SwOSHWLocal.h"
 #include "SwOSOLEDMenu.h"
 #include "SwOSCom.h"

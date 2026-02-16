@@ -9,7 +9,6 @@
 
 #include "SwOSHW/SwOSHWCounter.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
-#include "SwOSHW/SwOSHWHAL.h"
 
 // ISR to handle counter events
 

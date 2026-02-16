@@ -8,7 +8,6 @@
  */
 
 #include "SwOSHW/SwOSHWActor.h"
-#include "SwOSHW/SwOSHWHAL.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 
 #include "SwOSCom.h"
