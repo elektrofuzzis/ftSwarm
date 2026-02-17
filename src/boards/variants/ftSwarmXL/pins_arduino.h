@@ -22,6 +22,8 @@ static const int8_t DIGITALIO          = 1;
 static const int8_t ANALOGIO           = 2;
 static const int8_t PWRCTLIO           = 3;
 static const int8_t MOTORIO            = 4;
+static const int8_t STEPPERIO          = 5;
+static const int8_t JOYSTICKPOTI       = 6;
 
 static const int8_t GYRO_NONE          = 0;
 static const int8_t GYRO_6050          = 1;
@@ -69,8 +71,6 @@ static const uint8_t FTSWARM_HAL_SERVOS       = 2;
 static const uint8_t FTSWARM_HAL_PIXELS       = 2;
 static const uint8_t FTSWARM_HAL_BUTTONS      = 0;
 static const uint8_t FTSWARM_HAL_JOYSTICKS    = 0;
-static const uint8_t FTSWARM_HAL_PWRCTL       = 0;
-static const uint8_t FTSWARM_HAL_FIRSTJPOTI   = 0;
 static const int8_t  FTSWARM_HAL_GYRO         = GYRO_6050;
 static const int8_t  FTSWARM_HAL_GYRO_PORT    = GYRO_EXTERNAL_I2C;
 

@@ -22,6 +22,7 @@ static const int8_t ANALOGIO           = 2;
 static const int8_t PWRCTLIO           = 3;
 static const int8_t MOTORIO            = 4;
 static const int8_t STEPPERIO          = 5;
+static const int8_t JOYSTICKPOTI       = 6;
 
 static const int8_t JOYSTICKPOTI       = 5;
 

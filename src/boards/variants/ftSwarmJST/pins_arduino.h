@@ -12,6 +12,8 @@
 
 #include <driver/gpio.h> 
 
+// my hardware features
+
 // due to some hen&egg problemns with including adc_types.h using esp32 cpu
 //#include <hal/adc_hal.h>
 #define xADC_UNIT_1      1
@@ -26,6 +28,8 @@ static const int8_t DIGITALIO          = 1;
 static const int8_t ANALOGIO           = 2;
 static const int8_t PWRCTLIO           = 3;
 static const int8_t MOTORIO            = 4;
+static const int8_t STEPPERIO          = 5;
+static const int8_t JOYSTICKPOTI       = 6;
 
 static const int8_t GYRO_NONE          = 0;
 static const int8_t GYRO_6050          = 1;
@@ -61,8 +65,6 @@ static const gpio_num_t RX = GPIO_NUM_3;
 
 // RGB LED 
 #define RGB_BUILTIN GPIO_NUM_26
-#define RGB_BRIGHTNESS 64
-
 // ftSwarm definitions
 #define NOPWRCTL -1
 static const uint8_t FTSWARM_HAL_INPUTS       = 4;
@@ -73,8 +75,6 @@ static const uint8_t FTSWARM_HAL_SERVOS       = 1;
 static const uint8_t FTSWARM_HAL_PIXELS       = 2;
 static const uint8_t FTSWARM_HAL_BUTTONS      = 0;
 static const uint8_t FTSWARM_HAL_JOYSTICKS    = 0;
-static const uint8_t FTSWARM_HAL_PWRCTL       = NOPWRCTL;
-static const uint8_t FTSWARM_HAL_FIRSTJPOTI   = 0;
 static const bool    FTSWARM_HAL_HAS_OLED     = false;
 static const bool    FTSWARM_HAL_HAS_HC165    = false;
 static const bool    FTSWARM_HAL_HAS_EXT_PORT = true;

@@ -40,6 +40,38 @@
   #define FTSWARM_HAL_HAS_DISCRETE_RGB 0
 #endif
 
+#ifndef FTSWARM_HAL_INPUTS
+  #define FTSWARM_HAL_INPUTS 0
+#endif
+
+#ifndef FTSWARM_HAL_AX_INPUTS
+  #define FTSWARM_HAL_AX_INPUTS 0
+#endif
+
+#ifndef FTSWARM_HAL_MOTORS
+  #define FTSWARM_HAL_MOTORS 0
+#endif
+
+#ifndef FTSWARM_HAL_RCSERVOS
+  #define FTSWARM_HAL_RCSERVOS 0
+#endif
+
+#ifndef FTSWARM_HAL_SERVOS
+  #define FTSWARM_HAL_SERVOS 0
+#endif
+
+#ifndef FTSWARM_HAL_PIXELS
+  #define FTSWARM_HAL_PIXELS 0
+#endif
+
+#ifndef FTSWARM_HAL_BUTTONS
+  #define FTSWARM_HAL_BUTTONS 0
+#endif
+
+#ifndef FTSWARM_HAL_JOYSTICKS
+  #define FTSWARM_HAL_JOYSTICKS 0
+#endif
+
 #ifndef FTSWARM_HAL_FIRSTJPOTI
   #define FTSWARM_HAL_FIRSTJPOTI 0
 #endif

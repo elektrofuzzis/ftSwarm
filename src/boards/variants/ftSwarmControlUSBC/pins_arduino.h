@@ -14,8 +14,8 @@
 #include <driver/adc.h>
 
 // my hardware features
-#define FTSWARM_HAL_HAS_OLED  1
-#define FTSWARM_HAL_HAS_HC165 1
+#define FTSWARM_HAL_HAS_OLED     1
+#define FTSWARM_HAL_HAS_HC165    1
 
 // to solve some hen & egg problems
 static const int8_t DIGITALIO          = 1;
@@ -61,15 +61,13 @@ static const gpio_num_t RX = GPIO_NUM_44;
 #define RGB_BUILTIN GPIO_NUM_48
 
 // ftSwarm definitions
-static const uint8_t FTSWARM_HAL_INPUTS       = 11;
-static const uint8_t FTSWARM_HAL_AX_INPUTS    = 6;
-static const uint8_t FTSWARM_HAL_MOTORS       = 2;
-static const uint8_t FTSWARM_HAL_RCSERVOS     = 0;
-static const uint8_t FTSWARM_HAL_SERVOS       = 0;
-static const uint8_t FTSWARM_HAL_PIXELS       = 0;
-static const uint8_t FTSWARM_HAL_BUTTONS      = 8;
-static const uint8_t FTSWARM_HAL_JOYSTICKS    = 2;
-#define FTSWARM_HAL_FIRSTJPOTI 6
+#define FTSWARM_HAL_INPUTS     11
+#define FTSWARM_HAL_AX_INPUTS  6
+#define FTSWARM_HAL_MOTORS     2
+#define FTSWARM_HAL_BUTTONS    8
+#define FTSWARM_HAL_JOYSTICKS  2
+#define FTSWARM_HAL_FIRSTJPOTI 7
+
 static const int8_t  FTSWARM_HAL_GYRO         = GYRO_LSM6;
 static const int8_t  FTSWARM_HAL_GYRO_PORT    = GYRO_SPI;
 

@@ -13,11 +13,16 @@
 #include <driver/gpio.h> 
 #include <driver/adc.h>
 
+// my hardware features
+#define FTSWARM_HAL_HAS_DISCRETE_RGB 1
+
 // to solve some hen & egg problems
 static const int8_t DIGITALIO          = 1;
 static const int8_t ANALOGIO           = 2;
 static const int8_t PWRCTLIO           = 3;
 static const int8_t MOTORIO            = 4;
+static const int8_t STEPPERIO          = 5;
+static const int8_t JOYSTICKPOTI       = 6;
 
 static const int8_t GYRO_NONE          = 0;
 static const int8_t GYRO_6050          = 1;
@@ -53,7 +58,6 @@ static const gpio_num_t RX = GPIO_NUM_44;
 
 // RGB LED 
 #define RGB_BUILTIN               GPIO_NUM_48
-#define RGB_BRIGHTNESS            64
 
 #define DISCRETE_RGB_RED          GPIO_NUM_4
 #define DISCRETE_RGB_GREEN        GPIO_NUM_5
@@ -61,17 +65,12 @@ static const gpio_num_t RX = GPIO_NUM_44;
 #define DISCRETE_RGB_BASE_CHANNEL LEDC_CHANNEL_4
 
 // ftSwarm definitions
-#define NOPWRCTL -1
-static const uint8_t FTSWARM_HAL_INPUTS       = 8;
-static const uint8_t FTSWARM_HAL_AX_INPUTS    = 6;
-static const uint8_t FTSWARM_HAL_MOTORS       = 4;
-static const uint8_t FTSWARM_HAL_RCSERVOS     = 4;
-static const uint8_t FTSWARM_HAL_SERVOS       = 0;
-static const uint8_t FTSWARM_HAL_PIXELS       = 1;
-static const uint8_t FTSWARM_HAL_BUTTONS      = 0;
-static const uint8_t FTSWARM_HAL_JOYSTICKS    = 0;
-static const uint8_t FTSWARM_HAL_PWRCTL       = 6;
-static const uint8_t FTSWARM_HAL_FIRSTJPOTI   = 0;
+#define FTSWARM_HAL_INPUTS    8
+#define FTSWARM_HAL_AX_INPUTS 6
+#define FTSWARM_HAL_MOTORS    4
+#define FTSWARM_HAL_RCSERVOS  4
+#define FTSWARM_HAL_PIXELS    1
+
 static const int8_t  FTSWARM_HAL_GYRO         = GYRO_LSM6;
 static const int8_t  FTSWARM_HAL_GYRO_PORT    = GYRO_SPI;
 

@@ -13,8 +13,8 @@
 #include <driver/gpio.h> 
 
 // my hardware features
-#define FTSWARM_HAL_HAS_OLED  1
-#define FTSWARM_HAL_HAS_HC165 1
+#define FTSWARM_HAL_HAS_OLED     1
+#define FTSWARM_HAL_HAS_HC165    1
 
 // due to some hen&egg problemns with including adc_types.h using esp32 cpu
 // #include <hal/adc_hal.h>
@@ -72,15 +72,13 @@ static const gpio_num_t RX = GPIO_NUM_3;
 #define RGB_BUILTIN GPIO_NUM_26
 
 // ftSwarm definitions
-static const uint8_t FTSWARM_HAL_INPUTS       = 8;
-static const uint8_t FTSWARM_HAL_AX_INPUTS    = 4;
-static const uint8_t FTSWARM_HAL_MOTORS       = 2;
-static const uint8_t FTSWARM_HAL_RCSERVOS     = 0;
-static const uint8_t FTSWARM_HAL_SERVOS       = 0;
-static const uint8_t FTSWARM_HAL_PIXELS       = 0;
-static const uint8_t FTSWARM_HAL_BUTTONS      = 8;
-static const uint8_t FTSWARM_HAL_JOYSTICKS    = 2;
+#define FTSWARM_HAL_INPUTS     8
+#define FTSWARM_HAL_AX_INPUTS  4
+#define FTSWARM_HAL_MOTORS     2
+#define FTSWARM_HAL_BUTTONS    8
+#define  FTSWARM_HAL_JOYSTICKS 2
 #define FTSWARM_HAL_FIRSTJPOTI 4
+
 static const int8_t  FTSWARM_HAL_GYRO         = GYRO_6050;
 static const int8_t  FTSWARM_HAL_GYRO_PORT    = GYRO_EXTERNAL_I2C;
 

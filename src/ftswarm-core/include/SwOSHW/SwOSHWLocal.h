@@ -114,6 +114,12 @@ class OLED {
 
 extern OLED *oled;
 
+/***************************************************
+ *
+ *   RGBLed
+ *
+ ***************************************************/
+
 #if FTSWARM_HAL_HAS_DISCRETE_RGB > 0
 
 class RGBLed {
@@ -132,6 +138,6 @@ class RGBLed {
 
 };
 
-extern RGBLed *rgbLed
+extern RGBLed *rgbLed;
 
 #endif

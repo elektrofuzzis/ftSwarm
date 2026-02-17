@@ -166,13 +166,15 @@ uint8_t SwOSCtrl::setupLocalButtons( uint8_t maxIO ) {
 
 uint8_t SwOSCtrl::setupLocalJoysticks( uint8_t maxIO, SwOSCtrlConfig_t ctrlConfig  ) {
 
+  #if FTSWARM_HAL_JOYSTICKS > 0
+
   char subio[10];
 
   SwOSDigitalInput* button;
   SwOSAnalogInput*  lr;
   SwOSAnalogInput*  fb;
   
-  for ( uint8_t i=0; i<FTSWARM_HAL_JOYSTICKS; i++) {
+  for ( uint8_t i=0; i < FTSWARM_HAL_JOYSTICKS; i++) {
     
     button = (SwOSDigitalInput *) getIO( JOYSTICK_BUTTON[i] );
     if (!button) SWARM_LOG_FATAL( "%s not found.", JOYSTICK_BUTTON[i] );
@@ -187,6 +189,8 @@ uint8_t SwOSCtrl::setupLocalJoysticks( uint8_t maxIO, SwOSCtrlConfig_t ctrlConfi
     io[ maxIO++ ] = new SwOSJoystick( JOYSTICK_NAME[i], i, this, button, lr, fb );
 
   }
+
+  #endif
 
   return maxIO;
 
@@ -334,7 +338,7 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSC
     maxIO = setupLocalJoysticks( maxIO, ctrlConfig );
     if ( ctrlConfig.gyro ) maxIO = setupLocalGyro( maxIO );
     if ( FTSWARM_HAL_HAS_OLED ) maxIO = setupLocalOLED( maxIO );
-//
+    
   }
 
 }

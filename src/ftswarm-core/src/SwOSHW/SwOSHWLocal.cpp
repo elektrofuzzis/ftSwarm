@@ -393,22 +393,22 @@ RGBLed::RGBLed() {
   ledc.flags.output_invert = 1;
 
   ledc.gpio_num       = DISCRETE_RGB_RED;
-  ledc.channel        = (ledc_channel_t) LED_BASE_CHANNEL;
+  ledc.channel        = (ledc_channel_t) DISCRETE_RGB_BASE_CHANNEL;
   ESP_ERROR_CHECK( ledc_channel_config( &ledc ) );
 
   ledc.gpio_num       = DISCRETE_RGB_GREEN;
-  ledc.channel        = (ledc_channel_t) (LED_BASE_CHANNEL+1);
+  ledc.channel        = (ledc_channel_t) (DISCRETE_RGB_BASE_CHANNEL+1);
   ESP_ERROR_CHECK( ledc_channel_config( &ledc ) );
 
   ledc.gpio_num       = DISCRETE_RGB_BLUE;
-  ledc.channel        = (ledc_channel_t) (LED_BASE_CHANNEL+2);
+  ledc.channel        = (ledc_channel_t) (DISCRETE_RGB_BASE_CHANNEL+2);
   ESP_ERROR_CHECK( ledc_channel_config( &ledc ) );
 
 }
 
 void RGBLed::setPWM( uint8_t c, uint32_t duty ) {
 
-  ledc_channel_t channel = (ledc_channel_t) (LED_BASE_CHANNEL+c);
+  ledc_channel_t channel = (ledc_channel_t) (DISCRETE_RGB_BASE_CHANNEL+c);
 
   ESP_ERROR_CHECK( ledc_set_duty( LEDC_LOW_SPEED_MODE, channel, duty ) );
   ESP_ERROR_CHECK( ledc_update_duty( LEDC_LOW_SPEED_MODE, channel ) );
