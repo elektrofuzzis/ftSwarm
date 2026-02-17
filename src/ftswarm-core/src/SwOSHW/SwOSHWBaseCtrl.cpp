@@ -334,7 +334,7 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSC
     maxIO = setupLocalJoysticks( maxIO, ctrlConfig );
     if ( ctrlConfig.gyro ) maxIO = setupLocalGyro( maxIO );
     if ( FTSWARM_HAL_HAS_OLED ) maxIO = setupLocalOLED( maxIO );
-
+//
   }
 
 }
