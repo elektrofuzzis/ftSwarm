@@ -187,7 +187,7 @@ struct setIOTypeCmd_t{
   uint8_t      index; 
   SwOSIOType_t newIOType;
   int32_t      payload;
-  bool         hidden;
+  bool         flags;
 } __attribute__((packed));
 
 struct counterCmd_t{ 
@@ -275,9 +275,9 @@ public:
   size_t size( void );
 
   // send my alias names buffered
-  void pushHostname( const char *name, const char *alias, bool hidden ) { pushIO( 254, SWOSIO_MAXIOTYPE, SWOS_NOPORT, name, alias, hidden ); };
-  void pushIO( uint8_t index, SwOSIOType_t ioType,  uint8_t port,  const char *name, const char *alias, bool hidden );
-  bool popIO( uint8_t *index, SwOSIOType_t *ioType, uint8_t *port, char **name, char **alias, bool *hidden );
+  void pushHostname( const char *name, const char *alias, uint8_t flags ) { pushIO( 254, SWOSIO_MAXIOTYPE, SWOS_NOPORT, name, alias, flags ); };
+  void pushIO( uint8_t index, SwOSIOType_t ioType,  uint8_t port,  const char *name, const char *alias, uint8_t flags );
+  bool popIO( uint8_t *index, SwOSIOType_t *ioType, uint8_t *port, char **name, char **alias, uint8_t *flags);
   void flushBuffer( void );
   
   void send( void );

@@ -24,7 +24,7 @@
 LSM6DSRSensor *lsm = NULL;
 MPU6050       *mpu = NULL;
 
-SwOSGyro::SwOSGyro(const char *name, SwOSCtrl *ctrl, bool hidden ) : SwOSInput( name, SWOS_NOPORT, ctrl, SWOSIO_GYRO, hidden ) {
+SwOSGyro::SwOSGyro(const char *name, SwOSCtrl *ctrl, uint8_t flags ) : SwOSInput( name, SWOS_NOPORT, ctrl, SWOSIO_GYRO, flags ) {
 
 }
 
@@ -73,7 +73,7 @@ uint8_t SwOSGyro::popState( uint8_t *buffer ) {
  *
  ***************************************************/
 
-SwOSGyroLSM::SwOSGyroLSM(const char *name, SwOSCtrl *ctrl, bool hidden ) : SwOSGyro( name, ctrl, hidden ) {
+SwOSGyroLSM::SwOSGyroLSM(const char *name, SwOSCtrl *ctrl, uint8_t flags ) : SwOSGyro( name, ctrl, flags ) {
 
   if (ctrl->isLocal() ) setupLocal();
 
@@ -173,7 +173,7 @@ void SwOSGyroLSM::operate() {
  *
  ***************************************************/
 
-SwOSGyroMPU::SwOSGyroMPU(const char *name, SwOSCtrl *ctrl, bool hidden ) : SwOSGyro( name, ctrl, hidden ) {
+SwOSGyroMPU::SwOSGyroMPU(const char *name, SwOSCtrl *ctrl, uint8_t flags ) : SwOSGyro( name, ctrl, flags ) {
 
   if (ctrl->isLocal() ) setupLocal();
 
@@ -337,7 +337,7 @@ void SwOSGyroMPU::getEuler(float *alpha, float *beta, float *gamma, bool radiant
 
 VL53L0X Lidar;
 
-SwOSLidarInput::SwOSLidarInput(const char *name, SwOSCtrl *ctrl, bool hidden ) : SwOSInput( name, SWOS_NOPORT, ctrl, SWOSIO_LIDAR, hidden ) {
+SwOSLidarInput::SwOSLidarInput(const char *name, SwOSCtrl *ctrl, uint8_t flags ) : SwOSInput( name, SWOS_NOPORT, ctrl, SWOSIO_LIDAR, flags ) {
    
   // initialize local HW
   if (ctrl->isLocal()) {
@@ -471,7 +471,7 @@ void SwOSI2C::setupLocal(uint8_t I2CAddress) {
 
 }
 
-SwOSI2C::SwOSI2C( const char *name, SwOSCtrl *ctrl, bool hidden, uint8_t I2CAddress):SwOSIO( name, ctrl, SWOSIO_I2C, hidden ) {
+SwOSI2C::SwOSI2C( const char *name, SwOSCtrl *ctrl, uint8_t flags, uint8_t I2CAddress):SwOSIO( name, ctrl, SWOSIO_I2C, flags ) {
 
   memset(myRegister, 0, sizeof(myRegister));
   

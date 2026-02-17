@@ -27,7 +27,7 @@
 
   public:
  
-	  SwOSDigitalInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, bool hidden );
+	  SwOSDigitalInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, uint8_t flags );
   
     // administrative stuff
 	  virtual void serialize( Serialize *serialize );

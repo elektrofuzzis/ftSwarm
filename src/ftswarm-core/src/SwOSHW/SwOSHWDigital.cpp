@@ -18,7 +18,7 @@
  *
  ***************************************************/
 
- SwOSDigitalInput::SwOSDigitalInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, bool hidden ) : SwOSInput( name, port, ctrl, ioType, hidden ) {
+ SwOSDigitalInput::SwOSDigitalInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, uint8_t flags ) : SwOSInput( name, port, ctrl, ioType, flags ) {
   
   if ( ioType == SWOSIO_BUTTON ) normallyOpen = false;
 

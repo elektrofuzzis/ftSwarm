@@ -38,7 +38,7 @@
 
   public:
  
-	  SwOSAnalogInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, bool hidden );
+	  SwOSAnalogInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, uint8_t flags );
     ~SwOSAnalogInput();
   
     // administrative stuff
@@ -87,7 +87,7 @@
     SwOSAnalogInput*  fb     = NULL;
               
     // constructors
-    SwOSJoystick(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSDigitalInput* button, SwOSAnalogInput* lr, SwOSAnalogInput* fb, bool hidden );
+    SwOSJoystick(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSDigitalInput* button, SwOSAnalogInput* lr, SwOSAnalogInput* fb, uint8_t flags );
   
     // administrative stuff
     virtual void serialize( Serialize *serialize );

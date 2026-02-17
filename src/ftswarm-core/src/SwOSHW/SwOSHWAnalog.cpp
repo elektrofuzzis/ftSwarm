@@ -18,7 +18,7 @@
  *
  ***************************************************/
 
-SwOSAnalogInput::SwOSAnalogInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, bool hidden ) : SwOSInput( name, port, ctrl, ioType, hidden ) {
+SwOSAnalogInput::SwOSAnalogInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, uint8_t flags ) : SwOSInput( name, port, ctrl, ioType, flags ) {
 
   // initialize local HW
   if ( ctrl->isLocal() ) setupLocal( );
@@ -260,7 +260,7 @@ void SwOSAnalogInput::serialize( Serialize *serialize ) {
 
 // SwOSJoystick
 
-SwOSJoystick::SwOSJoystick(const char *name, uint8_t port,SwOSCtrl *ctrl, SwOSDigitalInput* button, SwOSAnalogInput* lr, SwOSAnalogInput* fb, bool hidden ) : SwOSIO( name, port, ctrl, SWOSIO_JOYSTICK, hidden ) {
+SwOSJoystick::SwOSJoystick(const char *name, uint8_t port,SwOSCtrl *ctrl, SwOSDigitalInput* button, SwOSAnalogInput* lr, SwOSAnalogInput* fb, uint8_t flags ) : SwOSIO( name, port, ctrl, SWOSIO_JOYSTICK, flags ) {
 
   this->button = button;
   this->lr     = lr;

@@ -37,7 +37,7 @@ class OLEDMenu;
     
   public:
     // constructor
-    SwOSPixel(const char *name, uint8_t port, SwOSCtrl *ctrl, bool hidden );
+    SwOSPixel(const char *name, uint8_t port, SwOSCtrl *ctrl, uint8_t flags );
   
     // administrative stuff
     virtual void serialize( Serialize *serialize );
@@ -69,7 +69,7 @@ class SwOSOLED : public SwOSIO {
     
   public:
     // constructor
-    SwOSOLED(const char *name, SwOSCtrl *ctrl, bool hidden );
+    SwOSOLED(const char *name, SwOSCtrl *ctrl, uint8_t flags );
 
     // administrative stuff
     virtual bool isOLED( void ) { return true; };

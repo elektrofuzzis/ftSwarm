@@ -9,6 +9,7 @@
 
 #include "SwOSHW/SwOSHWCounter.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
+#include "SwOSLog.h"
 
 // ISR to handle counter events
 
@@ -36,20 +37,53 @@ static void IRAM_ATTR pcnt_example_intr_handler(void *arg) {
  *
  ***************************************************/
 
-SwOSCounter::SwOSCounter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl, bool hidden ) : SwOSInput( name, port1, ctrl, SWOSIO_COUNTER, hidden ) {
+// ESP32-S3 has only 4 pct_units.
+// Using a rotary encoder, the 4 slots need to be assigned to these units
+// ftSwarmXL has in maximum 8 inputs, so 3 units are fine
+// cpt_unit_allocated just shows, if an pct_unit is already allocated or free
+// not very strict, but functional
+bool cpt_unit_allocated[4] = { false, false, false, false };
+
+// to suppress error messages during install of isr-Handler a second time
+bool isr_installed = false;
+
+SwOSCounter::SwOSCounter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl, uint8_t flags ) : SwOSInput( name, port1, ctrl, SWOSIO_COUNTER, flags ) {
 
   portControl = port2;
 
   // rotary?
-  if ( port2 < SWOS_NOPORT ) ioType = SWOSIO_ROTARYENCODER;
+  if ( port2 < SWOS_NOPORT ) {
+    ioType = SWOSIO_ROTARYENCODER;
+  }
   
   // initialize local HW
   if ( ctrl->isLocal() ) setupLocal();
 
 }
 
+SwOSCounter::~SwOSCounter( ) {
+
+  // release pct_unit
+  if ( unit != PCNT_UNIT_MAX ) {
+
+    // release HW
+    pcnt_counter_pause(unit);
+    pcnt_counter_clear(unit);
+    gpio_reset_pin(GPIO);
+    gpio_reset_pin(CONTROL);
+
+    // release unit in array
+    cpt_unit_allocated[ (uint8_t) unit ] = false;
+
+  }
+
+}
+
+
 void SwOSCounter::setupLocal() {
   // initialize local HW
+
+  printf("setupLocal %d %d\n", getPort(), portControl);
 
   // setup _GPIO / Counter Input
   SwOSInput::setupLocal( );
@@ -78,7 +112,19 @@ void SwOSCounter::setupLocal() {
   }
 
   // Calculate used unit
-  unit = pcnt_unit_t( port );
+  for (uint8_t i=0; i<4; i++ ) {
+
+    // free slot found?
+    if (!cpt_unit_allocated[i]) {
+      cpt_unit_allocated[i] = true;
+      unit = (pcnt_unit_t) i;
+      break;
+    }
+
+  }
+
+  // if no unit could be assigned, stop it.
+  if ( unit == PCNT_UNIT_MAX ) SWARM_LOG_FATAL( "Counter/Rotaryencoder: all pct_unit are in use.\n");
 
   // configure Channel 0
   pcnt_config_t pcnt_config = {
@@ -126,7 +172,7 @@ void SwOSCounter::setupLocal() {
   pcnt_counter_clear(unit);
 
   /* Install interrupt service and add isr callback handler */
-  pcnt_isr_service_install(0);
+  if (!isr_installed) { pcnt_isr_service_install(0); isr_installed = true; }
   pcnt_isr_handler_add( unit, pcnt_example_intr_handler, (void *)unit) ;
 
   /* Everything is set up, now go to counting */
@@ -233,7 +279,7 @@ static void IRAM_ATTR freq_isr_handler(void* arg) {
 
 }
 
-SwOSFrequencymeter::SwOSFrequencymeter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl, bool hidden ) : SwOSInput( name, port1, ctrl, SWOSIO_FREQUENCYMETER, hidden ) {
+SwOSFrequencymeter::SwOSFrequencymeter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl, uint8_t flags ) : SwOSInput( name, port1, ctrl, SWOSIO_FREQUENCYMETER, flags ) {
 
   portControl = port2;
   

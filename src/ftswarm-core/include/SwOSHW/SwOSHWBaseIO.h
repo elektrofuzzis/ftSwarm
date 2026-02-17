@@ -63,21 +63,21 @@ typedef enum {
  *   SwOSObj - Base class for all SwOS objects.
  *
  ***************************************************/
- 
+
 class SwOSObj {
 
   protected:
   	char *_name  = NULL;
 	  char *_alias = NULL;
-    bool hidden  = false;
+    uint8_t flags  = 0;
 
   public:
 
     // Constructor
-    SwOSObj( bool hidden ) { this->hidden = hidden; };                     
+    SwOSObj( uint8_t flags ) { this->flags = flags; };                     
 
     // constructor, sets the objects HW name
-	  SwOSObj( const char *name, bool hidden);		    
+	  SwOSObj( const char *name, uint8_t flags);		    
 
 	  virtual ~SwOSObj();                       // destructor
 
@@ -90,11 +90,20 @@ class SwOSObj {
     // print my nvs settings
     virtual void printNVS( nvs_handle_t my_handle );
 
-    // set hidden flag
-    void setHidden( bool hidden ) { this->hidden = hidden; };
+    // set flags
+    void setFlags( uint8_t flags ) { this->flags = flags;};
 
-    // get hiddem flag
-    bool getHidden( void ) { return hidden; };
+    // set flag
+    void setFlag( uint8_t flag ) { this->flags |= flag; };
+
+    // reset flag
+    void resetFlag( uint8_t flag ) { this->flags &= ~( flag ); };
+    
+    // get flags
+    uint8_t getFlags( void ) { return flags; };
+
+    // test flags
+    bool testFlag( uint8_t flag ) { return ( ( flags & flag) > 0 ); };
   
     // set new name
 	  void setName( const char *name);
@@ -143,8 +152,8 @@ protected:
 
 public:
   // Constructors
-	SwOSIO(const char *name, SwOSCtrl *ctrl, SwOSIOType_t ioType, bool hidden ) : SwOSIO( name, SWOS_NOPORT, ctrl, ioType, hidden ) {};
-	SwOSIO(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, bool hidden );   
+	SwOSIO(const char *name, SwOSCtrl *ctrl, SwOSIOType_t ioType, uint8_t flags ) : SwOSIO( name, SWOS_NOPORT, ctrl, ioType, flags ) {};
+	SwOSIO(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, uint8_t flags );   
 
   // Administrative stuff
 
@@ -197,7 +206,7 @@ public:
   virtual bool isInUse( void ) { return useCounter > 0; };
 
   // test, if IO shall be shown in the API
-  virtual bool showInApi( void ) { return ( (!hidden) && ( SHOWIOINAPI[ ioType ]) );  };
+  virtual bool showInApi( void ) { return ( (!testFlag( FTSWARM_HAL_FLAG_HIDDEN ) ) && ( SHOWIOINAPI[ ioType ]) );  };
 
   // halt all motors
   virtual void halt( void ) {};
@@ -285,7 +294,7 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
 
   public:
  
-	  SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, bool hidden ) : SwOSIO( name, port, ctrl, ioType, hidden ), SwOSEventInput( ) { };
+	  SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, uint8_t flags ) : SwOSIO( name, port, ctrl, ioType, flags ), SwOSEventInput( ) { };
   
     // administrative stuff
 	  virtual void serialize( Serialize *serialize ) {};

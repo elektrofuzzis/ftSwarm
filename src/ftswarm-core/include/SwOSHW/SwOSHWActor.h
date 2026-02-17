@@ -42,7 +42,7 @@ class SwOSAnalogInput;
 
   public:
 
-    SwOSMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, bool hidden );
+    SwOSMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, uint8_t flags);
 
     // administrative stuff
     virtual void            setMotionType( FtSwarmMotion_t motionType );
@@ -95,7 +95,7 @@ class SwOSDCMotor : public SwOSMotor {
   public:
     
     // Constructors
-    SwOSDCMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, bool hidden );
+    SwOSDCMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, uint8_t flags );
     virtual ~SwOSDCMotor( );
   
     // commands
@@ -129,7 +129,7 @@ class SwOSDCMotor : public SwOSMotor {
   public:
   
     // Constructors
-    SwOSStepper(const char *name, uint8_t port, SwOSCtrl *ctrl, bool hidden);
+    SwOSStepper(const char *name, uint8_t port, SwOSCtrl *ctrl, uint8_t flags);
     virtual ~SwOSStepper( );
     virtual bool isStepper( void ) { return true; };
     virtual void operate();
@@ -181,7 +181,7 @@ class SwOSDCMotor : public SwOSMotor {
 
   public:
     // constructor
-	  SwOSServo(const char *name, uint8_t port, SwOSCtrl *ctrl, bool hidden ) : SwOSIO( name, port, ctrl, SWOSIO_SERVO, hidden ) {};
+	  SwOSServo(const char *name, uint8_t port, SwOSCtrl *ctrl, uint8_t flags ) : SwOSIO( name, port, ctrl, SWOSIO_SERVO, flags ) {};
     
     // administrative stuff
     virtual void serialize( Serialize *serialize );
@@ -217,7 +217,7 @@ class SwOSDigitalServo : public SwOSServo {
   
   public:
     // constructor
-	  SwOSDigitalServo(const char *name, uint8_t port, SwOSCtrl *ctrl, bool hidden);
+	  SwOSDigitalServo(const char *name, uint8_t port, SwOSCtrl *ctrl, uint8_t flags);
 
 };
 
@@ -248,7 +248,7 @@ class SwOSDigitalServo : public SwOSServo {
 
   public:
     // constructor
-	  SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, bool hidden );
+	  SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, uint8_t flags );
     ~SwOSRCServo();
 
     virtual int16_t getMaxPosition( void );

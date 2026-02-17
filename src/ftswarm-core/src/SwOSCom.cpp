@@ -208,7 +208,7 @@ size_t SwOSCom::size( void ) {
 
 }
 
-void SwOSCom::pushIO( uint8_t index, SwOSIOType_t ioType, uint8_t port, const char *name, const char *alias, bool hidden ) {
+void SwOSCom::pushIO( uint8_t index, SwOSIOType_t ioType, uint8_t port, const char *name, const char *alias, uint8_t flags ) {
 
   uint8_t len_name  = strlen( name );
   uint8_t len_alias = strlen( alias );
@@ -223,7 +223,7 @@ void SwOSCom::pushIO( uint8_t index, SwOSIOType_t ioType, uint8_t port, const ch
   bufferIndex += len_name + 1;
   strcpy( (char*) &(data.ioConfigCmd.payload[bufferIndex]), alias );
   bufferIndex += len_alias + 1;
-  data.ioConfigCmd.payload[bufferIndex++] = (uint8_t) hidden;
+  data.ioConfigCmd.payload[bufferIndex++] = (uint8_t) flags;
   
 }
 
@@ -241,7 +241,7 @@ void SwOSCom::flushBuffer( ) {
   
 }
 
-bool SwOSCom::popIO( uint8_t *index, SwOSIOType_t *ioType, uint8_t *port, char **name, char **alias, bool *hidden ) {
+bool SwOSCom::popIO( uint8_t *index, SwOSIOType_t *ioType, uint8_t *port, char **name, char **alias, uint8_t *flags ) {
 
   // end of data?
   if ( data.ioConfigCmd.payload[bufferIndex] == 255 ) return false;
@@ -259,7 +259,7 @@ bool SwOSCom::popIO( uint8_t *index, SwOSIOType_t *ioType, uint8_t *port, char *
   *port       = data.ioConfigCmd.payload[bufferIndex++];
   *name       = ( char * ) &(data.ioConfigCmd.payload[bufferIndex]); bufferIndex += len_name+1;
   *alias      = ( char * ) &(data.ioConfigCmd.payload[bufferIndex]); bufferIndex += len_alias+1;
-  *hidden     = ( bool ) data.ioConfigCmd.payload[bufferIndex++];
+  *flags      = ( uint8_t ) data.ioConfigCmd.payload[bufferIndex++];
   
   return true;
 

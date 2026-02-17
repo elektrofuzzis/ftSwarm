@@ -70,7 +70,7 @@ protected:
 
   uint8_t          pixels = 0;
 
-  SwOSIO* createIO( SwOSIOType_t ioType, uint8_t port, const char *name, const char *alias, bool hidden ); // create an IO by type
+  SwOSIO* createIO( SwOSIOType_t ioType, uint8_t port, const char *name, const char *alias, uint8_t flags ); // create an IO by type
   
   // communications
   bool setPixel( SwOSCom *com );
@@ -182,7 +182,7 @@ public:
   SwOSState_t getState( void ) { return isOnline()?state:OFFLINE; };
 
   // change port's IO Type if possible
-  bool changeIOType( uint8_t index, SwOSIOType_t newIOType, bool hidden );
+  bool changeIOType( uint8_t index, SwOSIOType_t newIOType, uint8_t flags );
 
   void factorySettings( void );                                  // reset factory settings
 

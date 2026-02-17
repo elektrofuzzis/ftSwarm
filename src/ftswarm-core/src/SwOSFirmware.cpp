@@ -571,7 +571,7 @@ void MenuIOConfig::changeType( void ) {
 
   // singular class -> done
   if ( SWOSIOCLASS[ioType] == SWOSIOCLASS_SINGULAR ) {
-    printf( "\e[0;31mERROR: IO type %s could not be changed to another IO type.\n\e[0m\n", SWOSIOTYPE[ioType] );
+    printf( "ERROR: IO type %s could not be changed to another IO type.\n\n", SWOSIOTYPE[ioType] );
     return;
   }
   
@@ -610,7 +610,7 @@ void MenuIOConfig::changeType( void ) {
     uint8_t index = ctrl->getIndex(io);
 
     // change it
-    if ( ctrl->changeIOType( ctrl->getIndex(io), newIOType, io->getHidden() ) ) {
+    if ( ctrl->changeIOType( ctrl->getIndex(io), newIOType, io->getFlags() ) ) {
 
       // since I changed my type, io was deleted. Need to refresh io.
       io = ctrl->io[index];
@@ -1064,6 +1064,7 @@ void MenuIOList::fillIOList( void ) {
       for (uint8_t i=0; i<myOSSwarm.Ctrl[c]->IOs; i++ ) {
 
         if ( ( myOSSwarm.Ctrl[c]->io[i] ) && 
+             ( !myOSSwarm.Ctrl[c]->io[i]->testFlag( FTSWARM_HAL_FLAG_HIDDEN ) ) &&
              ( ( listInputs && myOSSwarm.Ctrl[c]->io[i]->isInput() || ( myOSSwarm.Ctrl[c]->io[i]->getIOType() == SWOSIO_JOYSTICK ) ) ||
                ( listActors && myOSSwarm.Ctrl[c]->io[i]->isActor() && !myOSSwarm.Ctrl[c]->io[i]->isPixel() ) ||
                ( listPixels && myOSSwarm.Ctrl[c]->io[i]->isPixel() ) ) ) {

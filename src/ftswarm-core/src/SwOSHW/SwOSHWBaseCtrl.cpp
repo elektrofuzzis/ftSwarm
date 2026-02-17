@@ -34,11 +34,11 @@ uint8_t SwOSCtrl::setupLocalInputs( uint8_t maxIO ) {
   for ( uint8_t i=0; i<FTSWARM_HAL_INPUTS; i++ ) {
 
     switch ( INPUT_IOTYPE[i] ) {
-    case FTSWARM_HAL_IO_DIGITAL:      io[ maxIO++ ] =          new SwOSDigitalInput( INPUT_NAME[i], i, this, SWOSIO_DIGITAL, i<FTSWARM_HAL_AX_INPUTS );       break;
-    case FTSWARM_HAL_IO_ANALOG:       io[ maxIO++ ] =          new SwOSAnalogInput(  INPUT_NAME[i], i, this, SWOSIO_ANALOG, i<FTSWARM_HAL_AX_INPUTS  );       break;
-    case FTSWARM_HAL_IO_JOYSTICKPOTI: io[ maxIO++ ] =          new SwOSAnalogInput(  INPUT_NAME[i], i, this, SWOSIO_JOYSTICK_POTI, i<FTSWARM_HAL_AX_INPUTS ); break;
-    case FTSWARM_HAL_IO_PWRCTL:       io[ maxIO++ ] = pwrctl = new SwOSAnalogInput(  INPUT_NAME[i], i, this, SWOSIO_POWER, i<FTSWARM_HAL_AX_INPUTS   );       break;
-    default:                          SWARM_LOG_FATAL( "SwOSCtrl::setupLocalInputs: unkown IO Type" );                               break;
+    case FTSWARM_HAL_IO_DIGITAL:      io[ maxIO++ ] =          new SwOSDigitalInput( INPUT_NAME[i], i, this, SWOSIO_DIGITAL,       INPUT_FLAGS[i] ); break;
+    case FTSWARM_HAL_IO_ANALOG:       io[ maxIO++ ] =          new SwOSAnalogInput(  INPUT_NAME[i], i, this, SWOSIO_ANALOG,        INPUT_FLAGS[i] ); break;
+    case FTSWARM_HAL_IO_JOYSTICKPOTI: io[ maxIO++ ] =          new SwOSAnalogInput(  INPUT_NAME[i], i, this, SWOSIO_JOYSTICK_POTI, INPUT_FLAGS[i] ); break;
+    case FTSWARM_HAL_IO_PWRCTL:       io[ maxIO++ ] = pwrctl = new SwOSAnalogInput(  INPUT_NAME[i], i, this, SWOSIO_POWER,         INPUT_FLAGS[i] ); break;
+    default:                          SWARM_LOG_FATAL( "SwOSCtrl::setupLocalInputs: unkown IO Type" ); break;
     }
 
   }
@@ -48,7 +48,7 @@ uint8_t SwOSCtrl::setupLocalInputs( uint8_t maxIO ) {
 
   // LIDAR
   if ( extensionPort == FTSWARM_EXT_LIDAR ) {
-    io[ maxIO++ ] = new SwOSLidarInput( "LIDAR", this, false );
+    io[ maxIO++ ] = new SwOSLidarInput( "LIDAR", this, FTSWARM_HAL_FLAG_NONE );
   }
 
   return maxIO;
@@ -78,11 +78,11 @@ uint8_t SwOSCtrl::setupLocalMotors( uint8_t maxIO, uint8_t motors ) {
   for ( uint8_t i=0; i<FTSWARM_HAL_MOTORS; i++ ) {
 
     switch ( MOTOR_IOTYPE[i] ) {
-    case FTSWARM_HAL_IO_MOTOR:      io[ maxIO++ ] = new SwOSDCMotor( MOTOR_NAME[i], i, this, SWOSIO_MOTOR, false );         break;
-    case FTSWARM_HAL_IO_STEPPER:    io[ maxIO++ ] = new SwOSStepper( MOTOR_NAME[i], i, this, false );                       break;
-    case FTSWARM_HAL_IO_RCSERVO:    io[ maxIO++ ] = new SwOSRCServo( MOTOR_NAME[i], i, this, false );                       break;
-    case FTSWARM_HAL_IO_WHEELDRIVE: io[ maxIO++ ] = new SwOSDCMotor( MOTOR_NAME[i], i, this, SWOSIO_WHEELDRIVE, false );    break;
-    default:                        SWARM_LOG_FATAL( "SwOSCtrl::setupLocalInputs: unkown IO Type" );                        break;
+    case FTSWARM_HAL_IO_MOTOR:      io[ maxIO++ ] = new SwOSDCMotor( MOTOR_NAME[i], i, this, SWOSIO_MOTOR,      FTSWARM_HAL_FLAG_NONE ); break;
+    case FTSWARM_HAL_IO_STEPPER:    io[ maxIO++ ] = new SwOSStepper( MOTOR_NAME[i], i, this,                    FTSWARM_HAL_FLAG_NONE ); break;
+    case FTSWARM_HAL_IO_RCSERVO:    io[ maxIO++ ] = new SwOSRCServo( MOTOR_NAME[i], i, this,                    FTSWARM_HAL_FLAG_NONE ); break;
+    case FTSWARM_HAL_IO_WHEELDRIVE: io[ maxIO++ ] = new SwOSDCMotor( MOTOR_NAME[i], i, this, SWOSIO_WHEELDRIVE, FTSWARM_HAL_FLAG_NONE ); break;
+    default:                        SWARM_LOG_FATAL( "SwOSCtrl::setupLocalInputs: unkown IO Type" ); break;
     }
 
   }
@@ -97,7 +97,7 @@ uint8_t SwOSCtrl::setupLocalPixels( uint8_t maxIO ) {
   for (uint8_t i=0; i<MAXLEDS; i++) { 
 
     sprintf( name, "LED%d", i+1 );
-    io[ maxIO ] = new SwOSPixel( name, i, this, true );
+    io[ maxIO ] = new SwOSPixel( name, i, this, FTSWARM_HAL_FLAG_NONE );
     
     // store local pixels for setState
     if ( i < FTSWARM_HAL_PIXELS ) {
@@ -148,7 +148,7 @@ uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
     if ( poti->getValueI32() < 1023 ) {
       sprintf( name, "RC%d", i+1 );
       SwOSDCMotor *motor = (SwOSDCMotor *) getIO( SWOSIO_RCMOTOR, i );
-      io[ getIndex( motor ) ] = new SwOSRCServo( name, i, this, false );
+      io[ getIndex( motor ) ] = new SwOSRCServo( name, i, this, FTSWARM_HAL_FLAG_NONE );
 
     } else {
 
@@ -162,7 +162,7 @@ uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
   for ( uint8_t i=0; i<FTSWARM_HAL_SERVOS; i++ ) {
 
     sprintf( name, "SERVO%d", i+1 );
-    io[ maxIO++ ] = new SwOSDigitalServo( name, i, this, false );
+    io[ maxIO++ ] = new SwOSDigitalServo( name, i, this, FTSWARM_HAL_FLAG_NONE );
 
   }
 
@@ -180,7 +180,7 @@ uint8_t SwOSCtrl::setupLocalButtons( uint8_t maxIO ) {
 
   // create buttons
   for ( uint8_t i=0; i<FTSWARM_HAL_BUTTONS; i++) {
-    io[ maxIO++ ] = new SwOSDigitalInput( BUTTON[i], i, this, SWOSIO_BUTTON, false );
+    io[ maxIO++ ] = new SwOSDigitalInput( BUTTON[i], i, this, SWOSIO_BUTTON, FTSWARM_HAL_FLAG_NONE );
   }
 
   return maxIO;
@@ -251,9 +251,9 @@ uint8_t SwOSCtrl::setupLocalGyro( uint8_t maxIO ) {
   // initialize gyro if available
   if ( ( CPU == FTSWARMRS_2V0 ) || ( CPU == FTSWARMRS_2V1 ) || ( CPU == FTSWARMRC_1V141 ) || ( CPU == FTSWARMCONTROL_1V3UC ) )
     // TODO FTSWARMRC_1V140+ FTSWARMCONTROL_1V3UC Gyro implementation
-    io[ maxIO++ ] = new SwOSGyroLSM( "GYRO", this, false );
+    io[ maxIO++ ] = new SwOSGyroLSM( "GYRO", this, FTSWARM_HAL_FLAG_NONE );
   else
-    io[ maxIO++ ] = new SwOSGyroMPU( "GYRO", this, false );
+    io[ maxIO++ ] = new SwOSGyroMPU( "GYRO", this, FTSWARM_HAL_FLAG_NONE );
 
   return maxIO;
 
@@ -264,7 +264,7 @@ uint8_t SwOSCtrl::setupLocalOLED( uint8_t maxIO ) {
   // initialize oled if available
   if ( FTSWARM_HAL_HAS_OLED ) {
 
-    SwOSOLED *oled = new SwOSOLED( "OLED", this, true );
+    SwOSOLED *oled = new SwOSOLED( "OLED", this, FTSWARM_HAL_FLAG_HIDDEN );
     io[ maxIO++ ] = oled;
 
     // set splash screen
@@ -449,7 +449,7 @@ SwOSIO *SwOSCtrl::getIO( SwOSIOType_t ioType, FtSwarmPort_t port) {
          ) { 
         
         // compatible, but not the same type? need to convert it!
-        if ( io[i]->getIOType() != ioType ) changeIOType( i, ioType, io[i]->getHidden() );
+        if ( io[i]->getIOType() != ioType ) changeIOType( i, ioType, io[i]->getFlags() );
         
         // all good now...
         return io[i]; 
@@ -584,7 +584,7 @@ bool able2ChangeIOType( SwOSIOType_t ioType ) {
 }
 
 
-bool SwOSCtrl::changeIOType( uint8_t index, SwOSIOType_t newIOType, bool hidden ) {
+bool SwOSCtrl::changeIOType( uint8_t index, SwOSIOType_t newIOType, uint8_t flags ) {
 
   // do I exist?
   if ( index >= IOs )                        return false;
@@ -617,28 +617,39 @@ bool SwOSCtrl::changeIOType( uint8_t index, SwOSIOType_t newIOType, bool hidden 
   }
 
   // now we're changing the type
-  SwOSIO *oldIO;
+
+  uint8_t nextIOIndex = index + 1;
+
+  // if we delete an SWOSIO_ROTARYENCODER, we need to release the CONTROL port
+  if ( oldIOType == SWOSIO_ROTARYENCODER ) {
+    
+    if ( nextIOIndex >= IOs ) return false;  // index in range?
+    if ( !io[nextIOIndex] )   return false;  // io exists?
+    
+    // release my partner
+    io[nextIOIndex]->resetFlag( FTSWARM_HAL_FLAG_HIDDEN );
+    io[nextIOIndex]->give();
+
+  }
 
   // RotaryEncoder needs a second port
   if ( newIOType == SWOSIO_ROTARYENCODER ) {
 
     // check if the next io is the secondary port
-    if ( index+1 >= IOs )                                   return false;  // index in range?
-    if ( !io[index+1] )                                     return false;  // io exists?
-    if ( io[index+1]->isInUse() )                           return false;  // free to use?
-    if ( !io[index+1]->isGPIOInput() )                      return false;  // is an input
-    if ( io[index+1]->getPort() != io[index]->getPort()+1 ) return false;  // is the next port?
-    
-    // unregister secondary port
-    oldIO = io[index+1];
-    io[index+1] = NULL; 
-    delete oldIO;
+    if ( nextIOIndex >= IOs )                                   return false;  // index in range?
+    if ( !io[nextIOIndex] )                                     return false;  // io exists?
+    if ( io[nextIOIndex]->isInUse() )                           return false;  // free to use?
+    if ( !io[nextIOIndex]->isGPIOInput() )                      return false;  // is an input
+    if ( io[nextIOIndex]->getPort() != io[index]->getPort()+1 ) return false;  // is the next port?
 
+    // set 2nd port to hidden
+    io[nextIOIndex]->take();
+    io[nextIOIndex]->setFlag( FTSWARM_HAL_FLAG_HIDDEN );
+   
   }
-
-  // register the new one
-  oldIO = io[index];
-  io[index] = createIO( newIOType, io[index]->getPort(), io[index]->getName(), io[index]->getAlias(), hidden );
+  // register the new one and delete the old one
+  SwOSIO *oldIO = io[index];
+  io[index] = createIO( newIOType, io[index]->getPort(), io[index]->getName(), io[index]->getAlias(), flags );
   delete oldIO;
 
   // if it's an remote port, change remote site as well
@@ -646,7 +657,7 @@ bool SwOSCtrl::changeIOType( uint8_t index, SwOSIOType_t newIOType, bool hidden 
     SwOSCom IOType( macAddr, serialNumber, CMD_SETIOTYPE );
     IOType.data.setIOTypeCmd.index     = index;
     IOType.data.setIOTypeCmd.newIOType = newIOType;
-    IOType.data.setIOTypeCmd.hidden    = hidden;
+    IOType.data.setIOTypeCmd.flags     = flags;
     IOType.send();
   }
 
@@ -706,7 +717,7 @@ void SwOSCtrl::serializeIO( Serialize *serialize ) {
 
 }
 
-SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, const char *name, const char *alias, bool hidden ) {
+SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, const char *name, const char *alias, uint8_t flags ) {
 
   // new io
   SwOSIO *io;
@@ -721,7 +732,7 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, const char *name,
     case SWOSIO_REEDSWITCH:
     case SWOSIO_LIGHTBARRIER:
     case SWOSIO_ULTRASONIC:
-    case SWOSIO_DIGITAL:          io = new SwOSDigitalInput( name, port, this, ioType, hidden ); 
+    case SWOSIO_DIGITAL:          io = new SwOSDigitalInput( name, port, this, ioType, flags ); 
                                   break; 
 
     case SWOSIO_OHMMETER:
@@ -729,7 +740,7 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, const char *name,
     case SWOSIO_VOLTMETER:
     case SWOSIO_LDR:
     case SWOSIO_POWER:
-    case SWOSIO_ANALOG:           io = new SwOSAnalogInput( name, port, this, ioType, hidden );  
+    case SWOSIO_ANALOG:           io = new SwOSAnalogInput( name, port, this, ioType, flags );  
                                   break;
 
     case SWOSIO_LAMP:
@@ -746,56 +757,56 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, const char *name,
     case SWOSIO_POWERMOTOR:
     case SWOSIO_MMOTOR:
     case SWOSIO_RCMOTOR:
-    case SWOSIO_MOTOR:            io = new SwOSDCMotor( name, port, this, ioType, hidden );
+    case SWOSIO_MOTOR:            io = new SwOSDCMotor( name, port, this, ioType, flags );
                                   break; 
 
-    case SWOSIO_STEPPER:          io = new SwOSStepper( name, port, this, hidden );
+    case SWOSIO_STEPPER:          io = new SwOSStepper( name, port, this, flags );
                                   break; 
 
-    case SWOSIO_BUTTON:           io = new SwOSDigitalInput( name, port, this, SWOSIO_BUTTON, hidden );
+    case SWOSIO_BUTTON:           io = new SwOSDigitalInput( name, port, this, SWOSIO_BUTTON, flags );
                                   break;
 
     case SWOSIO_JOYSTICK:         button = (SwOSDigitalInput*) getIO( SWOSIO_BUTTON, FTSWARM_J1 + port );
                                   // ToDO: in case of Remote Joystick, FTSWARM_HAL_FIRSTJPOTI don't fit.
                                   lr     = (SwOSAnalogInput*)  getIO( SWOSIO_JOYSTICK_POTI, FTSWARM_HAL_FIRSTJPOTI + 2* port );
                                   fb     = (SwOSAnalogInput*)  getIO( SWOSIO_JOYSTICK_POTI, FTSWARM_HAL_FIRSTJPOTI + 2* port +1 );
-                                  io     = new SwOSJoystick( name, port, this, button, lr, fb, hidden );
+                                  io     = new SwOSJoystick( name, port, this, button, lr, fb, flags );
                                   break; 
 
-    case SWOSIO_PIXEL:            io = new SwOSPixel( name, port, this, hidden );  
+    case SWOSIO_PIXEL:            io = new SwOSPixel( name, port, this, flags );  
                                   break; 
 
-    case SWOSIO_RCSERVO:          io = new SwOSRCServo( name, port, this, hidden ); 
+    case SWOSIO_RCSERVO:          io = new SwOSRCServo( name, port, this, flags ); 
                                   break; 
 
-    case SWOSIO_SERVO:            io = new SwOSServo( name, port, this, hidden ); 
+    case SWOSIO_SERVO:            io = new SwOSServo( name, port, this, flags ); 
                                   break; 
 
-    case SWOSIO_OLED:             io = new SwOSOLED( name, this, hidden ); 
+    case SWOSIO_OLED:             io = new SwOSOLED( name, this, flags ); 
                                   break; 
 
-    case SWOSIO_GYRO:             io = new SwOSGyro( name, this, hidden ); 
+    case SWOSIO_GYRO:             io = new SwOSGyro( name, this, flags ); 
                                   break; 
 
-    case SWOSIO_I2C:              io = new SwOSI2C( name, this, hidden, 0 );
+    case SWOSIO_I2C:              io = new SwOSI2C( name, this, flags, 0 );
                                   break; 
 
-    case SWOSIO_COUNTER:          io = new SwOSCounter( name, port, SWOS_NOPORT, this, hidden );       
+    case SWOSIO_COUNTER:          io = new SwOSCounter( name, port, SWOS_NOPORT, this, flags );       
                                   break; 
 
-    case SWOSIO_FREQUENCYMETER:   io = new SwOSFrequencymeter( name, port, port + 1, this, hidden );
+    case SWOSIO_FREQUENCYMETER:   io = new SwOSFrequencymeter( name, port, port + 1, this, flags );
                                   break; 
 
-    case SWOSIO_ROTARYENCODER:    io = new SwOSCounter( name, port, port + 1, this, hidden );    
+    case SWOSIO_ROTARYENCODER:    io = new SwOSCounter( name, port, port + 1, this, flags );    
                                   break; 
 
-    case SWOSIO_CAM:              io = new SwOSCAM( name, this, hidden );                        
+    case SWOSIO_CAM:              io = new SwOSCAM( name, this, flags );                        
                                   break; 
 
-    case SWOSIO_LIDAR:            io = new SwOSLidarInput( name, this, hidden );                 
+    case SWOSIO_LIDAR:            io = new SwOSLidarInput( name, this, flags );                 
                                   break; 
 
-    case SWOSIO_JOYSTICK_POTI:    // io = new SwOSJoystick( name, this, hidden );
+    case SWOSIO_JOYSTICK_POTI:    // io = new SwOSJoystick( name, this, flags );
                                   break;
 
     default:                      // This should newer happen
@@ -1281,9 +1292,9 @@ bool SwOSCtrl::ioConfig( SwOSCom *com ) {
   uint8_t      port;
   char         *name;
   char         *alias;
-  bool         hidden;
+  uint8_t      flags;
 
-  while ( com->popIO( &index, &ioType,  &port, &name, &alias, &hidden ) ) {
+  while ( com->popIO( &index, &ioType,  &port, &name, &alias, &flags ) ) {
 
     if ( index == 254 ) {
       // hostname
@@ -1296,12 +1307,12 @@ bool SwOSCtrl::ioConfig( SwOSCom *com ) {
 
     } else if ( io[index] ) {
       // set IOType + alias name as transmitted
-      changeIOType( index, ioType, hidden );
+      changeIOType( index, ioType, flags );
       io[index]->setAlias( alias );
 
     } else {
       // any type of io
-      io[index] = createIO( ioType, port, name, alias, hidden );
+      io[index] = createIO( ioType, port, name, alias, flags );
 
     }
 
@@ -1338,7 +1349,7 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
     case CMD_IDENTIFY:                identify(); return true;
     case CMD_USEREVENT:               return userEvent( com );
     case CMD_IOCONFIG:                return ioConfig( com );
-    case CMD_SETIOTYPE:               return changeIOType( com->data.setIOTypeCmd.index, com->data.setIOTypeCmd.newIOType, com->data.setIOTypeCmd.hidden );
+    case CMD_SETIOTYPE:               return changeIOType( com->data.setIOTypeCmd.index, com->data.setIOTypeCmd.newIOType, com->data.setIOTypeCmd.flags );
     case CMD_SETSERVO:                return setServo( com );
     case CMD_I2CREGISTER:             return I2CRegister( com );
     case CMD_SETPARAMETER:            return setParameter( com );
@@ -1462,10 +1473,10 @@ void SwOSCtrl::sendIOConfig( MacAddr destination ) {
   SwOSCom ioConfig( destination, serialNumber, CMD_IOCONFIG );
 
   // IOs
-  for (uint8_t i=0; i<IOs;i++) if (io[i]) ioConfig.pushIO( i, io[i]->getIOType(), io[i]->getPort(), io[i]->getName(), io[i]->getAlias(), io[i]->getHidden() ); 
+  for (uint8_t i=0; i<IOs;i++) if (io[i]) ioConfig.pushIO( i, io[i]->getIOType(), io[i]->getPort(), io[i]->getName(), io[i]->getAlias(), io[i]->getFlags() ); 
 
   // hostname - identifies last data
-  ioConfig.pushHostname( getName(), getAlias(), getHidden() ); 
+  ioConfig.pushHostname( getName(), getAlias(), getFlags() ); 
 
   // send
   ioConfig.flushBuffer();

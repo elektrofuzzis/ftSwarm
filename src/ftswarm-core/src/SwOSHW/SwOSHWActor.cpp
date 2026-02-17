@@ -18,7 +18,7 @@
  *
  ***************************************************/
 
- SwOSMotor::SwOSMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, bool hidden ):SwOSIO(name, port, ctrl, ioType, hidden ){
+ SwOSMotor::SwOSMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, uint8_t flags ):SwOSIO(name, port, ctrl, ioType, flags ){
 }
 
 void SwOSMotor::setMotionType( FtSwarmMotion_t motionType ) {
@@ -88,7 +88,7 @@ void SwOSMotor::operate( void ) {
  *
  ***************************************************/
 
-SwOSDCMotor::SwOSDCMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, bool hidden ):SwOSMotor(name, port, ctrl, ioType, hidden ){
+SwOSDCMotor::SwOSDCMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, uint8_t flags ):SwOSMotor(name, port, ctrl, ioType, flags ){
 
   // initialize local HW
   if (ctrl->isLocal()) {
@@ -376,7 +376,7 @@ void SwOSDCMotor::setRemote() {
  *
  ***************************************************/
 
-SwOSStepper::SwOSStepper(const char *name, uint8_t port, SwOSCtrl *ctrl, bool hidden ):SwOSMotor(name, port, ctrl, SWOSIO_STEPPER, hidden ){
+SwOSStepper::SwOSStepper(const char *name, uint8_t port, SwOSCtrl *ctrl, uint8_t flags ):SwOSMotor(name, port, ctrl, SWOSIO_STEPPER, flags ){
 
   // ftPwrDrive has a bitmap motor representation, so precalc the Mx values
   pwrDriveMotor = 1 << port;
@@ -657,7 +657,7 @@ void SwOSServo::setRemote( ) {
  *
  ***************************************************/
 
- SwOSDigitalServo::SwOSDigitalServo(const char *name, uint8_t port, SwOSCtrl *ctrl, bool hidden ) : SwOSServo( name, port, ctrl, hidden ) {
+ SwOSDigitalServo::SwOSDigitalServo(const char *name, uint8_t port, SwOSCtrl *ctrl, uint8_t flags ) : SwOSServo( name, port, ctrl, flags ) {
 
   // initialize local HW
   if (ctrl->isLocal()) setupLocal();
@@ -741,7 +741,7 @@ void SwOSDigitalServo::setLocal() {
 
 int16_t SwOSRCServo::getMaxPosition( void ) { return RCSERVO_RESOLUTION - offset; };
 
-SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, bool hidden ): SwOSServo( name, port, ctrl, hidden ) {
+SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, uint8_t flags ): SwOSServo( name, port, ctrl, flags ) {
   
   // initialize local HW
   if (ctrl->isLocal()) setupLocal();
@@ -749,6 +749,8 @@ SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, bool hi
 }
 
 void SwOSRCServo::setupLocal( void ) {
+
+  return;
 
   // adapt kp based on VM
   float kp = 0.55;
@@ -779,6 +781,8 @@ void SwOSRCServo::poti2position( ) {
 }
 
 void SwOSRCServo::operate(void) {
+
+  return;
 
   // remote: no work
   if (!ctrl->isLocal()) return;

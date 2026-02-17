@@ -61,6 +61,9 @@ FtSwarmIO::FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, Sw
     if (!me) vTaskDelay( 25 / portTICK_PERIOD_MS );
   }
 
+  // block, if port is not available
+  if ( static_cast<SwOSIO *>(me)->testFlag( FTSWARM_HAL_FLAG_HIDDEN ) ) SWARM_LOG_FATAL( "ftSwarm%d ioType %d port %d is blocked by another IO\n", serialNumber, ioType, port );
+
   // register myself
   static_cast<SwOSIO *>(me)->lock();
   static_cast<SwOSIO *>(me)->take();
@@ -90,6 +93,9 @@ FtSwarmIO::FtSwarmIO( const char *name, SwOSIOType_t ioType ) {
     if (!me) vTaskDelay( 25 / portTICK_PERIOD_MS );
  
   }
+
+  // block, if port is not available
+  if ( static_cast<SwOSIO *>(me)->testFlag( FTSWARM_HAL_FLAG_HIDDEN ) ) SWARM_LOG_FATAL( "IO %s ioType %s is blocked by another IO\n", name );
 
   // register myself
   static_cast<SwOSIO *>(me)->lock(); 
