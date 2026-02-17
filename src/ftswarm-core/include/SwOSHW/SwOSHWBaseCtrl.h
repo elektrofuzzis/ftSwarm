@@ -70,7 +70,7 @@ protected:
 
   uint8_t          pixels = 0;
 
-  SwOSIO* createIO( SwOSIOType_t ioType, uint8_t port, const char *name, const char *alias ); // create an IO by type
+  SwOSIO* createIO( SwOSIOType_t ioType, uint8_t port, const char *name, const char *alias, bool hidden ); // create an IO by type
   
   // communications
   bool setPixel( SwOSCom *com );
@@ -181,7 +181,8 @@ public:
   void setState( SwOSState_t state, uint8_t members = 0, char *SSID = NULL ); // visualizes controller's state like booting, error,...
   SwOSState_t getState( void ) { return isOnline()?state:OFFLINE; };
 
-  bool changeIOType( uint8_t index, SwOSIOType_t newIOType );    // change port's IO Type if possible
+  // change port's IO Type if possible
+  bool changeIOType( uint8_t index, SwOSIOType_t newIOType, bool hidden );
 
   void factorySettings( void );                                  // reset factory settings
 

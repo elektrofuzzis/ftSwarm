@@ -27,7 +27,7 @@ CRGB led[MAXLEDS];
 uint8_t usedPixels = 0;
 bool ledsInitialized = false;
 
-SwOSPixel::SwOSPixel(const char *name, uint8_t port, SwOSCtrl *ctrl) : SwOSIO( name, port, ctrl, SWOSIO_PIXEL ) {
+SwOSPixel::SwOSPixel(const char *name, uint8_t port, SwOSCtrl *ctrl, bool hidden) : SwOSIO( name, port, ctrl, SWOSIO_PIXEL, hidden ) {
 
   if (ctrl->isLocal()) 
     setupLocal();
@@ -145,7 +145,7 @@ void SwOSPixel::onTrigger( SwOSTriggerMath_t triggerMath, int32_t sensor, int32_
  *
  ***************************************************/
 
-SwOSOLED::SwOSOLED(const char *name, SwOSCtrl *ctrl) : SwOSIO( name, ctrl, SWOSIO_OLED ) {
+SwOSOLED::SwOSOLED(const char *name, SwOSCtrl *ctrl, bool hidden ) : SwOSIO( name, ctrl, SWOSIO_OLED, hidden ) {
  
   if ( ctrl->isLocal() ) { 
     setupLocal(); 

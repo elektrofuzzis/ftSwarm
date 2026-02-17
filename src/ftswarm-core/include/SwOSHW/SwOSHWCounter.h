@@ -31,7 +31,7 @@
 
   public:
  
-	  SwOSCounter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl );
+	  SwOSCounter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl, bool hidden );
   
     // administrative stuff
     virtual void serialize( Serialize *serialize );
@@ -67,7 +67,7 @@ class SwOSFrequencymeter : public SwOSInput {
 
   public:
  
-	  SwOSFrequencymeter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl );
+	  SwOSFrequencymeter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl, bool hidden );
     ~SwOSFrequencymeter();
   
     // administrative stuff

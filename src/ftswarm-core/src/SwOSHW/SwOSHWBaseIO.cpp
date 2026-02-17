@@ -79,10 +79,11 @@ SwOSDuino *ftDuino = NULL;
  *
  ***************************************************/
 
-SwOSObj::SwOSObj( const char *name) {
+SwOSObj::SwOSObj( const char *name, bool hidden) {
   _alias = NULL;
   _name = (char *) malloc( strlen(name)+1 );
   strcpy( _name, name );
+  this->hidden = hidden;
 }
 
 SwOSObj::~SwOSObj() {
@@ -193,7 +194,7 @@ void SwOSObj::serialize( Serialize *serialize) {
  *
  ***************************************************/
 
-SwOSIO::SwOSIO( const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType ) : SwOSObj( name ) {
+SwOSIO::SwOSIO( const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, bool hidden ) : SwOSObj( name, hidden ) {
 
   // store local port and controller 
   this->port   = port;
@@ -264,8 +265,9 @@ void SwOSIO::loadFromNVS( nvs_handle_t my_handle ) {
 
   if (nvs.version == 2) {
     // compatibility to old version
-    if ( ESP_OK != nvs_get_str( my_handle, getName(), (char *)&blob[1], &len ) ) return;
+    if ( ESP_OK != nvs_get_str( my_handle, getName(), (char *)&blob[2], &len ) ) return;
     blob[0] = ioType;
+    blob[1] = false;
 
   } else {
     // read ioType & alias in a blob
@@ -273,8 +275,8 @@ void SwOSIO::loadFromNVS( nvs_handle_t my_handle ) {
 
   }
 
-  setAlias( (char *) &blob[1] );
-  ctrl->changeIOType( ctrl->getIndex(this), (SwOSIOType_t) blob[0] );
+  setAlias( (char *) &blob[2] );
+  ctrl->changeIOType( ctrl->getIndex(this), (SwOSIOType_t) blob[0], (bool) blob[1] );
     
 }
 
@@ -286,7 +288,7 @@ void SwOSIO::printNVS( nvs_handle_t my_handle ) {
   // read ioType & alias in a blob
   if ( ESP_OK != nvs_get_blob( my_handle, getName(), blob, &len ) ) return;
 
-  printf("%s alias: %s iotype: %d\n", getName(), (char *) &blob[1], (SwOSIOType_t) blob[0] );
+  printf("%s alias: %s iotype: %d hidden: %d\n", getName(), (char *) &blob[2], (SwOSIOType_t) blob[0], (bool) blob[1] );
 
     
 }
@@ -300,7 +302,8 @@ void SwOSIO::saveToNVS( nvs_handle_t my_handle ) {
   uint8_t len = strlen( getAlias() );
 
   blob[0] = ioType;
-  memcpy( &blob[1], getAlias(), len );
+  blob[1] = getHidden();
+  memcpy( &blob[2], getAlias(), len );
 
   nvs_set_blob( my_handle, getName(), blob, len+2 );
   

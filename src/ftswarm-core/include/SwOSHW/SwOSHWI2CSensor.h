@@ -30,7 +30,7 @@ class SwOSMotor;
    
   public:
     // constructor
-	  SwOSGyro(const char *name, SwOSCtrl *ctrl);
+	  SwOSGyro(const char *name, SwOSCtrl *ctrl, bool hidden);
 
     // administrative stuff
     virtual void recvState( SwOSCom *com ) {};
@@ -64,7 +64,7 @@ class SwOSMotor;
   public:
 
     // constructor
-	  SwOSGyroLSM(const char *name, SwOSCtrl *ctrl);
+	  SwOSGyroLSM(const char *name, SwOSCtrl *ctrl, bool hidden );
     ~SwOSGyroLSM();
 
     // read sensor
@@ -86,7 +86,7 @@ class SwOSMotor;
 
   public:
     // constructor
-	  SwOSGyroMPU(const char *name, SwOSCtrl *ctrl );
+	  SwOSGyroMPU(const char *name, SwOSCtrl *ctrl, bool hidden );
     ~SwOSGyroMPU();
 
     // read sensor
@@ -108,7 +108,7 @@ class SwOSMotor;
 
   public:
  
-	  SwOSLidarInput(const char *name, SwOSCtrl *ctrl );
+	  SwOSLidarInput(const char *name, SwOSCtrl *ctrl, bool hidden );
   
     // administrative stuff
     virtual void serialize( Serialize *serialize );
@@ -139,7 +139,7 @@ class SwOSMotor;
   public:
 
     uint8_t myRegister[MAXI2CREGISTERS];
-    SwOSI2C( const char *name, SwOSCtrl *ctrl, uint8_t I2CAddress);
+    SwOSI2C( const char *name, SwOSCtrl *ctrl, bool hidden, uint8_t I2CAddress);
     virtual bool isI2C( void ) { return true; };
     virtual uint8_t pushState( uint8_t *buffer );
     virtual uint8_t popState( uint8_t *buffer );

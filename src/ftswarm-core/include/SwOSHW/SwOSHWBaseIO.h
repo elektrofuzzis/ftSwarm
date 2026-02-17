@@ -65,33 +65,58 @@ typedef enum {
  ***************************************************/
  
 class SwOSObj {
-protected:
-	char *_name  = NULL;
-	char *_alias = NULL;
-public:
-  SwOSObj() {};                     // std constructor
-	SwOSObj( const char *name);		    // constructor, sets the objects HW name
-	virtual ~SwOSObj();                       // destructor
 
-  // load my port & alias settings from NVS
-  virtual void loadFromNVS( nvs_handle_t my_handle );
+  protected:
+  	char *_name  = NULL;
+	  char *_alias = NULL;
+    bool hidden  = false;
 
-  // save my port & alias settings from NVS
-  virtual void saveToNVS( nvs_handle_t my_handle );
+  public:
 
-  // print my nvs settings
-  virtual void printNVS( nvs_handle_t my_handle );
+    // Constructor
+    SwOSObj( bool hidden ) { this->hidden = hidden; };                     
+
+    // constructor, sets the objects HW name
+	  SwOSObj( const char *name, bool hidden);		    
+
+	  virtual ~SwOSObj();                       // destructor
+
+    // load my port & alias settings from NVS
+    virtual void loadFromNVS( nvs_handle_t my_handle );
+
+    // save my port & alias settings from NVS
+    virtual void saveToNVS( nvs_handle_t my_handle );
+
+    // print my nvs settings
+    virtual void printNVS( nvs_handle_t my_handle );
+
+    // set hidden flag
+    void setHidden( bool hidden ) { this->hidden = hidden; };
+
+    // get hiddem flag
+    bool getHidden( void ) { return hidden; };
   
-	void setName( const char *name);   // set new name
-  const char *getName();             // get name
+    // set new name
+	  void setName( const char *name);
+
+    // get name
+    const char *getName();             
   
-	virtual void setAlias( const char *alias); // add an alias name
-  const char *getAlias();            // get alias
-  const char *getAliasOrName();      // get alias or name (if an alis isn't set)
+    // add an alias name
+	  virtual void setAlias( const char *alias); 
 
-	bool equals(const char *name);     // check if hw name or alias is equal to name
+    // get alias
+    const char *getAlias();            
 
-	virtual void serialize( Serialize *serialize );
+    // get alias or name (if an alis isn't set)
+    const char *getAliasOrName();      
+
+    // check if hw name or alias is equal to name
+	  bool equals(const char *name);     
+
+    // show my settings
+	  virtual void serialize( Serialize *serialize );
+
 };
 
 /***************************************************
@@ -118,8 +143,8 @@ protected:
 
 public:
   // Constructors
-	SwOSIO(const char *name, SwOSCtrl *ctrl, SwOSIOType_t ioType ) : SwOSIO( name, SWOS_NOPORT, ctrl,ioType ) {};
-	SwOSIO(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType );   
+	SwOSIO(const char *name, SwOSCtrl *ctrl, SwOSIOType_t ioType, bool hidden ) : SwOSIO( name, SWOS_NOPORT, ctrl, ioType, hidden ) {};
+	SwOSIO(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, bool hidden );   
 
   // Administrative stuff
 
@@ -132,26 +157,65 @@ public:
   // print my nvs settings
   virtual void printNVS( nvs_handle_t my_handle );
 
-  virtual void            lock(void);
-  virtual void            unlock(void);
-  virtual char*           subscribe( const char *IOName, uint32_t hysteresis ); // subscribe sensor to display value changes as console outputs 
-	virtual void            unsubscribe();                                  // clear subscription
-  virtual uint8_t         getPort() { return port; };
-  virtual SwOSCtrl*       getCtrl() { return ctrl; };
-	virtual SwOSIOType_t    getIOType() { return ioType; };
-  virtual SwOSUIClass_t   getUIClass();
-  virtual void            getUID( SwOSIOUID_t *uid );
-	virtual void            serialize( Serialize *serialize );
-  virtual void            take( void ) { useCounter++; };                      // register an instance using this IO
-  virtual void            give( void ) { if (useCounter>0) useCounter--; };   // unregister an instance using this IO
-  virtual bool            isInUse( void ) { return useCounter > 0; };          // test, if an IO is used by some user elements
-  virtual bool            showInApi( void ) { return SHOWIOINAPI[ ioType ]; };
-  virtual void            halt( void ) {};
-  virtual uint8_t         pushState( uint8_t *buffer ) { return 0; };
-  virtual uint8_t         popState( uint8_t *buffer )  { return 0; };
-  virtual void            setParameter( int32_t parameter ) {};
-  virtual bool            isOnline( void );
-  virtual SwOSLabel_t     getLabel( void );
+  // lock io
+  virtual void lock(void);
+
+  // unlock io
+  virtual void unlock(void);
+
+  // subscribe sensor to display value changes as console outputs 
+  virtual char* subscribe( const char *IOName, uint32_t hysteresis ); 
+
+  // clear subscription
+	virtual void unsubscribe();                                  
+
+  // get my port
+  virtual uint8_t getPort() { return port; };
+
+  // get my controller
+  virtual SwOSCtrl* getCtrl() { return ctrl; };
+
+  // get my ioType
+	virtual SwOSIOType_t getIOType() { return ioType; };
+
+  // get my UIClass
+  virtual SwOSUIClass_t getUIClass();
+
+  // get my unique ID UID
+  virtual void getUID( SwOSIOUID_t *uid );
+
+  // show my settings
+	virtual void serialize( Serialize *serialize ) override;
+
+  // register an instance using this IO
+  virtual void take( void ) { useCounter++; };
+
+  // unregister an instance using this IO
+  virtual void give( void ) { if (useCounter>0) useCounter--; };   
+
+  // test, if an IO is used by some user elements
+  virtual bool isInUse( void ) { return useCounter > 0; };
+
+  // test, if IO shall be shown in the API
+  virtual bool showInApi( void ) { return ( (!hidden) && ( SHOWIOINAPI[ ioType ]) );  };
+
+  // halt all motors
+  virtual void halt( void ) {};
+
+  // push my state to a buffer
+  virtual uint8_t pushState( uint8_t *buffer ) { return 0; };
+
+  // pop my state from a buffer
+  virtual uint8_t popState( uint8_t *buffer )  { return 0; };
+
+  // set parameter from remote - depricated?
+  virtual void setParameter( int32_t parameter ) {};
+
+  // is the io online?
+  virtual bool isOnline( void );
+
+  // get my OLED label type
+  virtual SwOSLabel_t  getLabel( void );
   
   // Test, if I'm an ...
   virtual bool isMotor( void )        { return false; };  
@@ -221,7 +285,7 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
 
   public:
  
-	  SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType ) : SwOSIO( name, port, ctrl, ioType ), SwOSEventInput( ) { };
+	  SwOSInput(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, bool hidden ) : SwOSIO( name, port, ctrl, ioType, hidden ), SwOSEventInput( ) { };
   
     // administrative stuff
 	  virtual void serialize( Serialize *serialize ) {};

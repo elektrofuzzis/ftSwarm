@@ -56,7 +56,7 @@
     
   public:
     // constructor
-    SwOSCAM(const char *name, SwOSCtrl *ctrl );
+    SwOSCAM(const char *name, SwOSCtrl *ctrl, bool hidden );
 
     // administrative stuff
     virtual void serialize( Serialize *serialize );

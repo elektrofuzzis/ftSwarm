@@ -610,7 +610,7 @@ void MenuIOConfig::changeType( void ) {
     uint8_t index = ctrl->getIndex(io);
 
     // change it
-    if ( ctrl->changeIOType( ctrl->getIndex(io), newIOType ) ) {
+    if ( ctrl->changeIOType( ctrl->getIndex(io), newIOType, io->getHidden() ) ) {
 
       // since I changed my type, io was deleted. Need to refresh io.
       io = ctrl->io[index];

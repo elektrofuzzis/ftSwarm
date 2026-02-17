@@ -17,12 +17,14 @@
 #define FTSWARM_HAL_HAS_DISCRETE_RGB 1
 
 // to solve some hen & egg problems
-static const int8_t DIGITALIO          = 1;
-static const int8_t ANALOGIO           = 2;
-static const int8_t PWRCTLIO           = 3;
-static const int8_t MOTORIO            = 4;
-static const int8_t STEPPERIO          = 5;
-static const int8_t JOYSTICKPOTI       = 6;
+static const int8_t FTSWARM_HAL_IO_DIGITAL          = 1;
+static const int8_t FTSWARM_HAL_IO_ANALOG           = 2;
+static const int8_t FTSWARM_HAL_IO_PWRCTL           = 3;
+static const int8_t FTSWARM_HAL_IO_MOTOR            = 4;
+static const int8_t FTSWARM_HAL_IO_STEPPER          = 5;
+static const int8_t FTSWARM_HAL_IO_JOYSTICKPOTI     = 6;
+static const int8_t FTSWARM_HAL_IO_RCSERVO          = 7;
+static const int8_t FTSWARM_HAL_IO_WHEELDRIVE       = 8;
 
 static const int8_t GYRO_NONE          = 0;
 static const int8_t GYRO_6050          = 1;
@@ -95,12 +97,12 @@ static const gpio_num_t PUA2    = GPIO_NUM_41;
 #define FACTORYSETTINGS "S1"
 
 // array based
-static const char         INPUT_NAME[][7]     = { "A1",            "A2",            "A3",            "A4",            "A5",            "A6",            "S1",            "PWRCTL",        "RCP1",           "RCP2",           "RCP3",           "RCP4" };
-static const gpio_num_t   INPUT_GPIO[]        = { A1,              A2,              A3,              A4,              A5,              A6,              T1,              PWRCTL,          RCP1,             RCP2,             RCP3,             RCP4 };
-static const int8_t       INPUT_ADC_UNIT[]    = { ADC_UNIT_1,      ADC_UNIT_1,      ADC_UNIT_2,      ADC_UNIT_2,      ADC_UNIT_2,      ADC_UNIT_2,      ADC_UNIT_2,      ADC_UNIT_2,      ADC_UNIT_1,       ADC_UNIT_1,       ADC_UNIT_1,       ADC_UNIT_1 };
-static const int8_t       INPUT_ADC_CHANNEL[] = { ADC1_CHANNEL_0,  ADC1_CHANNEL_1,  ADC2_CHANNEL_8,  ADC2_CHANNEL_9,  ADC2_CHANNEL_0,  ADC2_CHANNEL_2,  ADC2_CHANNEL_1,  ADC2_CHANNEL_1,  ADC1_CHANNEL_5,   ADC1_CHANNEL_6,   ADC1_CHANNEL_7,   ADC1_CHANNEL_8 };
-static const adc_atten_t  INPUT_ATTENUATION[] = { ADC_ATTEN_DB_12, ADC_ATTEN_DB_12, ADC_ATTEN_DB_12, ADC_ATTEN_DB_12, ADC_ATTEN_DB_12, ADC_ATTEN_DB_12, ADC_ATTEN_DB_12, ADC_ATTEN_DB_12, ADC_ATTEN_DB_2_5, ADC_ATTEN_DB_2_5, ADC_ATTEN_DB_2_5, ADC_ATTEN_DB_2_5 };
-static const int8_t       INPUT_IOTYPE[]      = { DIGITALIO,       DIGITALIO,       DIGITALIO,       DIGITALIO,       DIGITALIO,       DIGITALIO,       DIGITALIO,       PWRCTLIO,        ANALOGIO,         ANALOGIO,         ANALOGIO,         ANALOGIO };
+static const char         INPUT_NAME[][7]     = { "A1",                   "A2",                   "A3",                   "A4",                   "A5",                   "A6",                   "S1",                   "PWRCTL",              "RCP1",                "RCP2",                "RCP3",                "RCP4" };
+static const gpio_num_t   INPUT_GPIO[]        = { A1,                     A2,                     A3,                     A4,                     A5,                     A6,                     T1,                     PWRCTL,                RCP1,                  RCP2,                  RCP3,                  RCP4 };
+static const int8_t       INPUT_ADC_UNIT[]    = { ADC_UNIT_1,             ADC_UNIT_1,             ADC_UNIT_2,             ADC_UNIT_2,             ADC_UNIT_2,             ADC_UNIT_2,             ADC_UNIT_2,             ADC_UNIT_2,            ADC_UNIT_1,            ADC_UNIT_1,            ADC_UNIT_1,            ADC_UNIT_1 };
+static const int8_t       INPUT_ADC_CHANNEL[] = { ADC1_CHANNEL_0,         ADC1_CHANNEL_1,         ADC2_CHANNEL_8,         ADC2_CHANNEL_9,         ADC2_CHANNEL_0,         ADC2_CHANNEL_2,         ADC2_CHANNEL_1,         ADC2_CHANNEL_1,        ADC1_CHANNEL_5,        ADC1_CHANNEL_6,        ADC1_CHANNEL_7,        ADC1_CHANNEL_8 };
+static const adc_atten_t  INPUT_ATTENUATION[] = { ADC_ATTEN_DB_12,        ADC_ATTEN_DB_12,        ADC_ATTEN_DB_12,        ADC_ATTEN_DB_12,        ADC_ATTEN_DB_12,        ADC_ATTEN_DB_12,        ADC_ATTEN_DB_12,        ADC_ATTEN_DB_12,       ADC_ATTEN_DB_2_5,      ADC_ATTEN_DB_2_5,      ADC_ATTEN_DB_2_5,      ADC_ATTEN_DB_2_5 };
+static const int8_t       INPUT_IOTYPE[]      = { FTSWARM_HAL_IO_DIGITAL, FTSWARM_HAL_IO_DIGITAL, FTSWARM_HAL_IO_DIGITAL, FTSWARM_HAL_IO_DIGITAL, FTSWARM_HAL_IO_DIGITAL, FTSWARM_HAL_IO_DIGITAL, FTSWARM_HAL_IO_DIGITAL, FTSWARM_HAL_IO_PWRCTL, FTSWARM_HAL_IO_ANALOG, FTSWARM_HAL_IO_ANALOG, FTSWARM_HAL_IO_ANALOG, FTSWARM_HAL_IO_ANALOG  };
 
 // Motor
 static const gpio_num_t M1A = GPIO_NUM_14;
@@ -112,9 +114,9 @@ static const gpio_num_t M3B = GPIO_NUM_17;
 static const gpio_num_t M4A = GPIO_NUM_18;
 static const gpio_num_t M4B = GPIO_NUM_47;
 
-static const char         MOTOR_NAME[][6] = { "M1",      "M2",      "M3",      "M4"};
-static const gpio_num_t   MOTOR_GPIO[][2] = { {M1A,M1B}, {M2A,M2B}, {M3A,M3B}, {M4A,M4B} };
-static const int8_t       MOTOR_IOTYPE[]  = { MOTORIO,   MOTORIO,   MOTORIO,   MOTORIO };
+static const char         MOTOR_NAME[][6] = { "M1",                   "M2",                   "M3",                      "M4"};
+static const gpio_num_t   MOTOR_GPIO[][2] = { {M1A,M1B},              {M2A,M2B},              {M3A,M3B},                 {M4A,M4B} };
+static const int8_t       MOTOR_IOTYPE[]  = { FTSWARM_HAL_IO_RCSERVO, FTSWARM_HAL_IO_RCSERVO, FTSWARM_HAL_IO_WHEELDRIVE, FTSWARM_HAL_IO_MOTOR };
 
 // Servo -- since there are no DC servos, need to define an empty array
 static const gpio_num_t SERVO1 = GPIO_NUM_NC;

@@ -36,7 +36,7 @@ static void IRAM_ATTR pcnt_example_intr_handler(void *arg) {
  *
  ***************************************************/
 
-SwOSCounter::SwOSCounter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl ) : SwOSInput( name, port1, ctrl, SWOSIO_COUNTER ) {
+SwOSCounter::SwOSCounter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl, bool hidden ) : SwOSInput( name, port1, ctrl, SWOSIO_COUNTER, hidden ) {
 
   portControl = port2;
 
@@ -132,7 +132,6 @@ void SwOSCounter::setupLocal() {
   /* Everything is set up, now go to counting */
   pcnt_counter_resume(unit);
   
-
 }
 
 /*
@@ -234,7 +233,7 @@ static void IRAM_ATTR freq_isr_handler(void* arg) {
 
 }
 
-SwOSFrequencymeter::SwOSFrequencymeter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl ) : SwOSInput( name, port1, ctrl, SWOSIO_FREQUENCYMETER ) {
+SwOSFrequencymeter::SwOSFrequencymeter(const char *name, uint8_t port1, uint8_t port2, SwOSCtrl *ctrl, bool hidden ) : SwOSInput( name, port1, ctrl, SWOSIO_FREQUENCYMETER, hidden ) {
 
   portControl = port2;
   

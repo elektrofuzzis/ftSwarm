@@ -577,7 +577,7 @@ void SwOSCLI::executeInputCmd( void ) {
                                   // which sensor type?
                                   newIOType =  (SwOSIOType_t) parameter[0].getNumber();
 
-                                  if ( ctrl->changeIOType( index, newIOType ) ) {
+                                  if ( ctrl->changeIOType( index, newIOType, false ) ) {
                                     io = ctrl->io[ index ];
                                     if (io) io->setParameter( parameter[1].getNumber() );
                                     OK();
@@ -687,7 +687,7 @@ void SwOSCLI::executeActorCmd( void ) {
                                   // which sensor type?
                                   newIOType =  (SwOSIOType_t) parameter[0].getNumber();
 
-                                  if ( ctrl->changeIOType( index, newIOType ) ) {
+                                  if ( ctrl->changeIOType( index, newIOType, false ) ) {
                                   
                                     motor = (SwOSMotor *)ctrl->io[ index ];
                                   

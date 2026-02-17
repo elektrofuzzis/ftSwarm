@@ -42,7 +42,7 @@ class SwOSAnalogInput;
 
   public:
 
-    SwOSMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType );
+    SwOSMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, bool hidden );
 
     // administrative stuff
     virtual void            setMotionType( FtSwarmMotion_t motionType );
@@ -95,7 +95,7 @@ class SwOSDCMotor : public SwOSMotor {
   public:
     
     // Constructors
-    SwOSDCMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType );
+    SwOSDCMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, bool hidden );
     virtual ~SwOSDCMotor( );
   
     // commands
@@ -129,7 +129,7 @@ class SwOSDCMotor : public SwOSMotor {
   public:
   
     // Constructors
-    SwOSStepper(const char *name, uint8_t port, SwOSCtrl *ctrl);
+    SwOSStepper(const char *name, uint8_t port, SwOSCtrl *ctrl, bool hidden);
     virtual ~SwOSStepper( );
     virtual bool isStepper( void ) { return true; };
     virtual void operate();
@@ -181,7 +181,7 @@ class SwOSDCMotor : public SwOSMotor {
 
   public:
     // constructor
-	  SwOSServo(const char *name, uint8_t port, SwOSCtrl *ctrl ) : SwOSIO( name, port, ctrl, SWOSIO_SERVO ) {};
+	  SwOSServo(const char *name, uint8_t port, SwOSCtrl *ctrl, bool hidden ) : SwOSIO( name, port, ctrl, SWOSIO_SERVO, hidden ) {};
     
     // administrative stuff
     virtual void serialize( Serialize *serialize );
@@ -217,7 +217,7 @@ class SwOSDigitalServo : public SwOSServo {
   
   public:
     // constructor
-	  SwOSDigitalServo(const char *name, uint8_t port, SwOSCtrl *ctrl);
+	  SwOSDigitalServo(const char *name, uint8_t port, SwOSCtrl *ctrl, bool hidden);
 
 };
 
@@ -235,12 +235,20 @@ class SwOSDigitalServo : public SwOSServo {
     SwOSPID         *pid    = NULL;
     int16_t         target  = FILTER_INVALID; // FILTER_INVALID -> don't regulate
     
-    virtual void setLocal() override;       // set position locally
-    virtual void poti2position();           // get position from poti
+    // local HW procedures
+
+    // initialize local HW
+    virtual void setupLocal() override; 
+
+    // set position locally
+    virtual void setLocal() override;       
+
+    // get position from poti
+    virtual void poti2position();           
 
   public:
     // constructor
-	  SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSAnalogInput *poti, SwOSDCMotor *motor );
+	  SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, bool hidden );
     ~SwOSRCServo();
 
     virtual int16_t getMaxPosition( void );

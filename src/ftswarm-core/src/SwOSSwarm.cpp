@@ -458,7 +458,7 @@ SwOSIO* SwOSSwarm::getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port
 
   // compatible ioType?
   uint8_t index = ctrl->getIndex( io );
-  if (!ctrl->changeIOType( index, ioType ) ) return NULL;
+  if (!ctrl->changeIOType( index, ioType, io->getHidden() ) ) return NULL;
 
   // return corrected io
   return ctrl->io[index];
@@ -515,7 +515,7 @@ SwOSIO* SwOSSwarm::getIO( const char *name, SwOSIOType_t ioType ) {
 
   // compatible ioType?
   uint8_t index = ctrl->getIndex( io );
-  if (!ctrl->changeIOType( index, ioType ) ) return NULL;
+  if (!ctrl->changeIOType( index, ioType, io->getHidden() ) ) return NULL;
 
   // return corrected io
   return ctrl->io[index];
