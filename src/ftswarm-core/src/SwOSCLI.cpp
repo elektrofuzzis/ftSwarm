@@ -989,7 +989,10 @@ void SwOSCLI::executeNVSCmd( bool *loggedIn ) {
   switch ( cmd ) {
 
     case CLICMD_print:  if (!*loggedIn) Error( ERROR_WRONGPIN );
-                        else nvs.printNVS();
+                        else {
+                          nvs.printNVS();
+                          myOSSwarm.Ctrl[0]->printNVS( );
+                        }
                         break;
 
     default:            Error( ERROR_INVALIDCMD );

@@ -10,14 +10,16 @@
 #include "SwOSHW/SwOSHWLocal.h"
 #include "SwOSLog.h"
 
-// local HC165
-HC165 *hc165 = NULL;
-
 /***************************************************
  *
  *   HC165
  *
  ***************************************************/
+
+#if FTSWARM_HAL_HAS_HC165 > 0
+
+// local HC165
+HC165 *hc165 = NULL;
 
 HC165::HC165( FtSwarmVersion_t CPU ) {
 
@@ -71,6 +73,8 @@ void HC165::operate( ) {
   }
 
 }
+
+#endif
 
 /***************************************************
  *

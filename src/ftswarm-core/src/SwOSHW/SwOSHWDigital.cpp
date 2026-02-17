@@ -108,7 +108,9 @@ void SwOSDigitalInput::operate() {
   }
 
   if ( ioType == SWOSIO_BUTTON ) {
+    #if FTSWARM_HAL_HAS_HC165 > 0
     if (hc165) setReading( ( ( hc165->getValue( ) & (1<<port) ) >0 ) );
+    #endif
     return;
   }
 

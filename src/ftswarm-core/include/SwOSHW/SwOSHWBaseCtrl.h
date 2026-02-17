@@ -172,6 +172,9 @@ public:
   // write my port & alias settings to NVS
   void saveToNVS( void );                  
   
+  // print my local settings
+  void printNVS( void ); 
+
   // save settings to nvs: scope 0 - all, 1 - controller, 2 - alias, 3 - events
   void save( uint8_t scope );
 

@@ -100,6 +100,17 @@ void SwOSObj::loadFromNVS( nvs_handle_t my_handle ) {
   }
 }
 
+void SwOSObj::printNVS( nvs_handle_t my_handle ) {
+
+  size_t size = MAXIDENTIFIER;
+  char alias[MAXIDENTIFIER];
+
+  if ( ESP_OK == nvs_get_str( my_handle, getName(), alias, &size ) ) {
+    printf( "%s alias: %s\n", getName(), alias );
+  }
+
+}
+
 void SwOSObj::saveToNVS( nvs_handle_t my_handle ) {
 
   nvs_set_str( my_handle, getName(), getAlias() );
@@ -264,6 +275,19 @@ void SwOSIO::loadFromNVS( nvs_handle_t my_handle ) {
 
   setAlias( (char *) &blob[1] );
   ctrl->changeIOType( ctrl->getIndex(this), (SwOSIOType_t) blob[0] );
+    
+}
+
+void SwOSIO::printNVS( nvs_handle_t my_handle ) {
+
+  uint8_t blob[MAXIDENTIFIER+2];
+  size_t  len = MAXIDENTIFIER+2;
+
+  // read ioType & alias in a blob
+  if ( ESP_OK != nvs_get_blob( my_handle, getName(), blob, &len ) ) return;
+
+  printf("%s alias: %s iotype: %d\n", getName(), (char *) &blob[1], (SwOSIOType_t) blob[0] );
+
     
 }
 

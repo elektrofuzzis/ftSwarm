@@ -153,7 +153,9 @@ uint8_t SwOSCtrl::setupLocalButtons( uint8_t maxIO ) {
 
   // create an outstanding HC165 object, if needed
 
-  if ( ( FTSWARM_HAL_HAS_HC165 ) && (!hc165) ) hc165 = new HC165( CPU );
+  #if FTSWARM_HAL_HAS_HC165 > 0
+  if (!hc165) hc165 = new HC165( CPU );
+  #endif
 
   // create buttons
   for ( uint8_t i=0; i<FTSWARM_HAL_BUTTONS; i++) {
@@ -483,7 +485,9 @@ void SwOSCtrl::operate() {
 
   }
 
+  #if FTSWARM_HAL_HAS_HC165 > 0
   if (hc165) hc165->operate();
+  #endif
 
   // operate all IOs
   for (uint8_t i=0; i<IOs; i++) { 
@@ -1408,6 +1412,19 @@ void SwOSCtrl::loadFromNVS( void ) {
 
   SwOSObj::loadFromNVS( my_handle );
   for ( uint8_t i=0; i<IOs; i++) if (io[i]) io[i]->loadFromNVS( my_handle );
+  nvs_close( my_handle );
+
+}
+
+void SwOSCtrl::printNVS( void ) {
+
+  nvs_handle_t my_handle;
+  ESP_ERROR_CHECK( nvs_open( NVSNAMESPACE, NVS_READONLY, &my_handle) );
+
+  SwOSObj::printNVS( my_handle );
+  for ( uint8_t i=0; i<IOs; i++) if (io[i]) io[i]->printNVS( my_handle );
+  nvs_close( my_handle );
+
 
 }
 

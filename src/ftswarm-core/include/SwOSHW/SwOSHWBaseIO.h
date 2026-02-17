@@ -73,8 +73,14 @@ public:
 	SwOSObj( const char *name);		    // constructor, sets the objects HW name
 	virtual ~SwOSObj();                       // destructor
 
-  virtual void loadFromNVS(  nvs_handle_t my_handle ); // load my port & alias settings from NVS
-  virtual void saveToNVS(  nvs_handle_t my_handle );   // dave my port & alias settings from NVS
+  // load my port & alias settings from NVS
+  virtual void loadFromNVS( nvs_handle_t my_handle );
+
+  // save my port & alias settings from NVS
+  virtual void saveToNVS( nvs_handle_t my_handle );
+
+  // print my nvs settings
+  virtual void printNVS( nvs_handle_t my_handle );
   
 	void setName( const char *name);   // set new name
   const char *getName();             // get name
@@ -116,8 +122,16 @@ public:
 	SwOSIO(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType );   
 
   // Administrative stuff
-  virtual void            loadFromNVS( nvs_handle_t my_handle ); // load my port & alias settings from NVS
-  virtual void            saveToNVS( nvs_handle_t my_handle );   // dave my port & alias settings from NVS
+
+  // load my port & alias settings from NVS
+  virtual void loadFromNVS( nvs_handle_t my_handle );
+
+  // save my port & alias settings from NVS
+  virtual void saveToNVS( nvs_handle_t my_handle );
+  
+  // print my nvs settings
+  virtual void printNVS( nvs_handle_t my_handle );
+
   virtual void            lock(void);
   virtual void            unlock(void);
   virtual char*           subscribe( const char *IOName, uint32_t hysteresis ); // subscribe sensor to display value changes as console outputs 
