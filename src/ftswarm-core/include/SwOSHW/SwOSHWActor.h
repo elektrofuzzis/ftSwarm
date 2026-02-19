@@ -162,7 +162,7 @@ class SwOSDCMotor : public SwOSMotor {
   
   };
 
-  /***************************************************
+/***************************************************
  *
  *   SwOSServo - virtual servo class
  *
@@ -181,7 +181,7 @@ class SwOSDCMotor : public SwOSMotor {
 
   public:
     // constructor
-	  SwOSServo(const char *name, uint8_t port, SwOSCtrl *ctrl, uint8_t flags ) : SwOSIO( name, port, ctrl, SWOSIO_SERVO, flags ) {};
+	  SwOSServo(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, uint8_t flags ) : SwOSIO( name, port, ctrl, ioType, flags ) {};
     
     // administrative stuff
     virtual void serialize( Serialize *serialize );
@@ -231,7 +231,7 @@ class SwOSDigitalServo : public SwOSServo {
   protected:
 
     SwOSAnalogInput *poti   = NULL;
-    SwOSDCMotor     *motor  = NULL;
+    SwOSMotor       *motor  = NULL;
     SwOSPID         *pid    = NULL;
     int16_t         target  = FILTER_INVALID; // FILTER_INVALID -> don't regulate
     

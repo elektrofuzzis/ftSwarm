@@ -36,6 +36,7 @@ uint8_t SwOSCtrl::setupLocalInputs( uint8_t maxIO ) {
     switch ( INPUT_IOTYPE[i] ) {
     case FTSWARM_HAL_IO_DIGITAL:      io[ maxIO++ ] =          new SwOSDigitalInput( INPUT_NAME[i], i, this, SWOSIO_DIGITAL,       INPUT_FLAGS[i] ); break;
     case FTSWARM_HAL_IO_ANALOG:       io[ maxIO++ ] =          new SwOSAnalogInput(  INPUT_NAME[i], i, this, SWOSIO_ANALOG,        INPUT_FLAGS[i] ); break;
+    case FTSWARM_HAL_IO_RCP:          io[ maxIO++ ] =          new SwOSAnalogInput(  INPUT_NAME[i], i, this, SWOSIO_RCPOTI,        INPUT_FLAGS[i] ); break;
     case FTSWARM_HAL_IO_JOYSTICKPOTI: io[ maxIO++ ] =          new SwOSAnalogInput(  INPUT_NAME[i], i, this, SWOSIO_JOYSTICK_POTI, INPUT_FLAGS[i] ); break;
     case FTSWARM_HAL_IO_PWRCTL:       io[ maxIO++ ] = pwrctl = new SwOSAnalogInput(  INPUT_NAME[i], i, this, SWOSIO_POWER,         INPUT_FLAGS[i] ); break;
     default:                          SWARM_LOG_FATAL( "SwOSCtrl::setupLocalInputs: unkown IO Type" ); break;
@@ -127,6 +128,8 @@ uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
 
   char name[10];
 
+  /* depricated
+
   for (uint8_t i=0; i<FTSWARM_HAL_RCSERVOS; i++) {
 
     // test on sensor cable
@@ -157,6 +160,7 @@ uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
     }
 
   }
+    */
 
   // just digital servos
   for ( uint8_t i=0; i<FTSWARM_HAL_SERVOS; i++ ) {
@@ -779,7 +783,7 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, const char *name,
     case SWOSIO_RCSERVO:          io = new SwOSRCServo( name, port, this, flags ); 
                                   break; 
 
-    case SWOSIO_SERVO:            io = new SwOSServo( name, port, this, flags ); 
+    case SWOSIO_SERVO:            io = new SwOSDigitalServo( name, port, this, flags ); 
                                   break; 
 
     case SWOSIO_OLED:             io = new SwOSOLED( name, this, flags ); 

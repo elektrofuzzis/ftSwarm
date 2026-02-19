@@ -59,9 +59,21 @@ void SwOSAnalogInput::setupLocal() {
     esp_adc_cal_characterize((adc_unit_t) ADCUnit, attenuation, ADC_WIDTH_BIT_12, 0, adc_chars);
   }
 
-  filter = new SwOSSpike( 10, 60 );
-  if ( ioType==SWOSIO_POWER ) filter->addFilter( new SwOSMovingAverage( 10 ) );
-  else filter->addFilter( new SwOSMovingAverage( 3 ) );
+  switch (ioType) {
+
+    case SWOSIO_POWER:  filter = new SwOSSpike( 10, 60 );
+                        filter->addFilter( new SwOSMovingAverage( 10 ) );
+                        break;
+
+    case SWOSIO_RCPOTI: filter = new SwOSMovingAverage(5);
+                        filter->addFilter(new SwOSSHR(2) );
+                        break;
+  
+    default:            filter = new SwOSSpike( 10, 60 );
+                        filter->addFilter( new SwOSMovingAverage( 3 ) );
+                        break;
+
+  }
 
 }
 

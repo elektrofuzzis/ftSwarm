@@ -582,7 +582,9 @@ void MenuIOConfig::changeType( void ) {
   for (uint8_t i=0; i<SWOSIO_MAXIOTYPE; i++) {
 
     // compatible type?
-    if ( SWOSIOCLASS[ioType] == SWOSIOCLASS[i] ) {
+    if ( ( SWOSIOCLASS[ioType] == SWOSIOCLASS[i] ) &&
+         ( ! ( ( FTSWARM_HAL_RCSERVOS == 0 ) && ( SWOSIOCLASS[i] == SWOSIO_RCSERVO ) ) )
+       ) {
 
       maxType++;
 

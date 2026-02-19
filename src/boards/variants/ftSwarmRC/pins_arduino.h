@@ -14,6 +14,7 @@
 #include <driver/adc.h>
 
 // my hardware features
+#define FTSWARM_HAL_RCSERVOS         4
 #define FTSWARM_HAL_HAS_DISCRETE_RGB 1
 
 // to solve some hen & egg problems
@@ -25,6 +26,7 @@ static const int8_t FTSWARM_HAL_IO_STEPPER          = 5;
 static const int8_t FTSWARM_HAL_IO_JOYSTICKPOTI     = 6;
 static const int8_t FTSWARM_HAL_IO_RCSERVO          = 7;
 static const int8_t FTSWARM_HAL_IO_WHEELDRIVE       = 8;
+static const int8_t FTSWARM_HAL_IO_RCP              = 9;
 
 static const int8_t FTSWARM_HAL_FLAG_NONE           = 0x00;
 static const int8_t FTSWARM_HAL_FLAG_HIDDEN         = 0x01;
@@ -38,8 +40,10 @@ static const int8_t GYRO_INTERNAL_I2C  = 2;
 static const int8_t GYRO_EXTERNAL_I2C  = 3;
 
 // I2C (Standard-Bus)
-static const gpio_num_t SDA = GPIO_NUM_NC;
-static const gpio_num_t SCL = GPIO_NUM_NC;
+#define PIN_SDA GPIO_NUM_NC
+#define PIN_SDC GPIO_NUM_NC
+static const gpio_num_t SDA = PIN_SDA;
+static const gpio_num_t SCL = PIN_SDC;
 
 // I2C (internal)
 static const gpio_num_t SDA_INTERNAL = GPIO_NUM_NC;
@@ -73,13 +77,12 @@ static const gpio_num_t RX = GPIO_NUM_44;
 #define FTSWARM_HAL_INPUTS    8
 #define FTSWARM_HAL_AX_INPUTS 6
 #define FTSWARM_HAL_MOTORS    4
-#define FTSWARM_HAL_RCSERVOS  4
 #define FTSWARM_HAL_PIXELS    1
 
 static const int8_t  FTSWARM_HAL_GYRO         = GYRO_LSM6;
 static const int8_t  FTSWARM_HAL_GYRO_PORT    = GYRO_SPI;
 
-// Inputs
+// input port definitions
 static const gpio_num_t A1      = GPIO_NUM_1;
 static const gpio_num_t A2      = GPIO_NUM_2;
 static const gpio_num_t A3      = GPIO_NUM_19;
@@ -96,19 +99,19 @@ static const gpio_num_t RCP4    = GPIO_NUM_9;
 static const gpio_num_t USTX    = GPIO_NUM_42;
 static const gpio_num_t PUA2    = GPIO_NUM_41;
 
-// Named ports
+// special input ports
 #define FACTORYSETTINGS "S1"
 
-// array based
+// definition of all input properties
 static const char         INPUT_NAME[][7]     = { "A1",                   "A2",                   "A3",                   "A4",                   "A5",                   "A6",                   "S1",                   "PWRCTL",              "RCP1",                  "RCP2",                  "RCP3",                  "RCP4" };
 static const gpio_num_t   INPUT_GPIO[]        = { A1,                     A2,                     A3,                     A4,                     A5,                     A6,                     T1,                     PWRCTL,                RCP1,                    RCP2,                    RCP3,                    RCP4 };
 static const uint8_t      INPUT_FLAGS[]       = { FTSWARM_HAL_FLAG_NONE,  FTSWARM_HAL_FLAG_NONE,  FTSWARM_HAL_FLAG_NONE,  FTSWARM_HAL_FLAG_NONE,  FTSWARM_HAL_FLAG_NONE,  FTSWARM_HAL_FLAG_NONE,  FTSWARM_HAL_FLAG_NONE,  FTSWARM_HAL_FLAG_NONE, FTSWARM_HAL_FLAG_HIDDEN, FTSWARM_HAL_FLAG_HIDDEN, FTSWARM_HAL_FLAG_HIDDEN, FTSWARM_HAL_FLAG_HIDDEN };
 static const int8_t       INPUT_ADC_UNIT[]    = { ADC_UNIT_1,             ADC_UNIT_1,             ADC_UNIT_2,             ADC_UNIT_2,             ADC_UNIT_2,             ADC_UNIT_2,             ADC_UNIT_2,             ADC_UNIT_2,            ADC_UNIT_1,              ADC_UNIT_1,              ADC_UNIT_1,              ADC_UNIT_1 };
 static const int8_t       INPUT_ADC_CHANNEL[] = { ADC1_CHANNEL_0,         ADC1_CHANNEL_1,         ADC2_CHANNEL_8,         ADC2_CHANNEL_9,         ADC2_CHANNEL_0,         ADC2_CHANNEL_2,         ADC2_CHANNEL_1,         ADC2_CHANNEL_1,        ADC1_CHANNEL_5,          ADC1_CHANNEL_6,          ADC1_CHANNEL_7,          ADC1_CHANNEL_8 };
 static const adc_atten_t  INPUT_ATTENUATION[] = { ADC_ATTEN_DB_12,        ADC_ATTEN_DB_12,        ADC_ATTEN_DB_12,        ADC_ATTEN_DB_12,        ADC_ATTEN_DB_12,        ADC_ATTEN_DB_12,        ADC_ATTEN_DB_12,        ADC_ATTEN_DB_12,       ADC_ATTEN_DB_2_5,        ADC_ATTEN_DB_2_5,        ADC_ATTEN_DB_2_5,        ADC_ATTEN_DB_2_5 };
-static const int8_t       INPUT_IOTYPE[]      = { FTSWARM_HAL_IO_DIGITAL, FTSWARM_HAL_IO_DIGITAL, FTSWARM_HAL_IO_DIGITAL, FTSWARM_HAL_IO_DIGITAL, FTSWARM_HAL_IO_DIGITAL, FTSWARM_HAL_IO_DIGITAL, FTSWARM_HAL_IO_DIGITAL, FTSWARM_HAL_IO_PWRCTL, FTSWARM_HAL_IO_ANALOG,   FTSWARM_HAL_IO_ANALOG,   FTSWARM_HAL_IO_ANALOG,   FTSWARM_HAL_IO_ANALOG  };
+static const int8_t       INPUT_IOTYPE[]      = { FTSWARM_HAL_IO_DIGITAL, FTSWARM_HAL_IO_DIGITAL, FTSWARM_HAL_IO_DIGITAL, FTSWARM_HAL_IO_DIGITAL, FTSWARM_HAL_IO_DIGITAL, FTSWARM_HAL_IO_DIGITAL, FTSWARM_HAL_IO_DIGITAL, FTSWARM_HAL_IO_PWRCTL, FTSWARM_HAL_IO_RCP,      FTSWARM_HAL_IO_RCP,      FTSWARM_HAL_IO_RCP,      FTSWARM_HAL_IO_RCP };
 
-// Motor
+// motor port definitions
 static const gpio_num_t M1A = GPIO_NUM_14;
 static const gpio_num_t M1B = GPIO_NUM_21;
 static const gpio_num_t M2A = GPIO_NUM_45;
@@ -118,14 +121,18 @@ static const gpio_num_t M3B = GPIO_NUM_17;
 static const gpio_num_t M4A = GPIO_NUM_18;
 static const gpio_num_t M4B = GPIO_NUM_47;
 
-static const char         MOTOR_NAME[][6] = { "M1",                   "M2",                   "M3",                 "M4"};
+// definition of all motor properties
+static const char         MOTOR_NAME[][3] = { "M1",                   "M2",                   "M3",                 "M4"};
 static const gpio_num_t   MOTOR_GPIO[][2] = { {M1A,M1B},              {M2A,M2B},              {M3A,M3B},            {M4A,M4B} };
 static const int8_t       MOTOR_IOTYPE[]  = { FTSWARM_HAL_IO_RCSERVO, FTSWARM_HAL_IO_RCSERVO, FTSWARM_HAL_IO_MOTOR, FTSWARM_HAL_IO_WHEELDRIVE };
 
-// Servo -- since there are no DC servos, need to define an empty array
-static const gpio_num_t SERVO1 = GPIO_NUM_NC;
+// dc-servo -- since there are no DC servos, need to define an empty array
+static const gpio_num_t   SERVO1 = GPIO_NUM_NC;
 
 static const char         SERVO_NAME[][7] = { "" };
 static const gpio_num_t   SERVO_GPIO[] = { SERVO1 };
+
+static const char         RCSERVO_MOTOR[][4] = { "RC1", "RC2", "RC3", "RC4" };
+static const int8_t       RCSERVO_BASE_PORT  = 8;
 
 #endif /* Pins_Arduino_h */

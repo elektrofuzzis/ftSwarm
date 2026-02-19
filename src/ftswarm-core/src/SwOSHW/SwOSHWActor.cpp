@@ -18,7 +18,7 @@
  *
  ***************************************************/
 
- SwOSMotor::SwOSMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, uint8_t flags ):SwOSIO(name, port, ctrl, ioType, flags ){
+SwOSMotor::SwOSMotor(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, uint8_t flags ):SwOSIO(name, port, ctrl, ioType, flags ){
 }
 
 void SwOSMotor::setMotionType( FtSwarmMotion_t motionType ) {
@@ -212,6 +212,7 @@ int16_t SwOSDCMotor::duty( void ) {
     case SWOSIO_LAMP:       x45 = x90 = 0;
                             break;
 
+    case SWOSIO_RCSERVO:
     case SWOSIO_RCMOTOR:    x45 = 2800;  // beide 2700
                             x90 = 2800;
                             break;
@@ -657,7 +658,7 @@ void SwOSServo::setRemote( ) {
  *
  ***************************************************/
 
- SwOSDigitalServo::SwOSDigitalServo(const char *name, uint8_t port, SwOSCtrl *ctrl, uint8_t flags ) : SwOSServo( name, port, ctrl, flags ) {
+ SwOSDigitalServo::SwOSDigitalServo(const char *name, uint8_t port, SwOSCtrl *ctrl, uint8_t flags ) : SwOSServo( name, port, ctrl, SWOSIO_SERVO, flags ) {
 
   // initialize local HW
   if (ctrl->isLocal()) setupLocal();
@@ -741,7 +742,7 @@ void SwOSDigitalServo::setLocal() {
 
 int16_t SwOSRCServo::getMaxPosition( void ) { return RCSERVO_RESOLUTION - offset; };
 
-SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, uint8_t flags ): SwOSServo( name, port, ctrl, flags ) {
+SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, uint8_t flags ): SwOSServo( name, port, ctrl, SWOSIO_RCSERVO, flags ) {
   
   // initialize local HW
   if (ctrl->isLocal()) setupLocal();
@@ -750,14 +751,18 @@ SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, uint8_t
 
 void SwOSRCServo::setupLocal( void ) {
 
-  return;
+  #if FTSWARM_HAL_RCSERVOS > 0
+
+  // create a motor instance with my own port parameters but with a different name
+  motor = new SwOSDCMotor( RCSERVO_MOTOR[port], port, ctrl, SWOSIO_RCMOTOR, FTSWARM_HAL_FLAG_HIDDEN );
+
+  // get a pointer to my poti
+  poti = new SwOSAnalogInput( INPUT_NAME[ RCSERVO_BASE_PORT + port ], RCSERVO_BASE_PORT + port, ctrl, SWOSIO_RCPOTI, INPUT_FLAGS[ RCSERVO_BASE_PORT + port ] );
 
   // adapt kp based on VM
   float kp = 0.55;
   if ( ( ctrl->pwrctl ) && ( ctrl->pwrctl->getVoltage() > 5.5 ) ) kp = 0.25;
 
-  // this->poti     = getIO();
-  this->motor    = motor;
   this->pid      = new SwOSPID( kp, 0.01, 0, -100, 100, -motor->getMaxSpeed(), motor->getMaxSpeed() );
 // this->pid      = new SwOSPID( 0.25, 0.01, 0, -100, 100, -motor->getMaxSpeed(), motor->getMaxSpeed() );  // > 5.5V
 // this->pid      = new SwOSPID( 0.35, 0.01, 0, -100, 100, -motor->getMaxSpeed(), motor->getMaxSpeed() );  // <= 5.5V
@@ -765,6 +770,8 @@ void SwOSRCServo::setupLocal( void ) {
   this->offset   = RCSERVO_RESOLUTION / 2;
 
   poti2position();
+
+  #endif
 
 }
 
@@ -782,7 +789,7 @@ void SwOSRCServo::poti2position( ) {
 
 void SwOSRCServo::operate(void) {
 
-  return;
+  #if FTSWARM_HAL_RCSERVOS > 0
 
   // remote: no work
   if (!ctrl->isLocal()) return;
@@ -808,6 +815,8 @@ void SwOSRCServo::operate(void) {
 
   if ( speed == 0 ) target = FILTER_INVALID;
 
+  #endif
+
 }
 
 void SwOSRCServo::setLocal( void ) {
@@ -818,4 +827,3 @@ void SwOSRCServo::setLocal( void ) {
   if ( target < RCSERVO_LOW )  target = RCSERVO_LOW;
 
 }
-
