@@ -39,7 +39,7 @@ void SwOSPixel::setupLocal() {
   // leds[] need to be initialized only once.
   if (!ledsInitialized) {
     
-    #if FTSWARM_HAL_HAS_DISCRETE_RGB > 0
+    #if FTSWARM_HAL_DISCRETE_RGBS > 0
     rgbLed = new RGBLed();
     #endif
 
@@ -84,14 +84,14 @@ void SwOSPixel::setColorLocal() {
 
   if ( port>=MAXLEDS ) return;
 
-  #if FTSWARM_HAL_HAS_DISCRETE_RGB > 0
+  #if FTSWARM_HAL_DISCRETE_RGBS > 0
   if ( port == 0 ) {
       rgbLed->setColor( color );
       return;
   }
   #endif
 
-  led[(FTSWARM_HAL_HAS_DISCRETE_RGB)?port-1:port] = color;
+  led[(FTSWARM_HAL_DISCRETE_RGBS)?port-1:port] = color;
   FastLED.show();
 
 }
@@ -113,7 +113,7 @@ void SwOSPixel::setBrightnessLocal() {
 
   if ( port>=MAXLEDS ) return;
 
-  #if FTSWARM_HAL_HAS_DISCRETE_RGB > 0
+  #if FTSWARM_HAL_DISCRETE_RGBS > 0
   if ( port == 0 ) {
       rgbLed->setBrightness( brightness );
       return;

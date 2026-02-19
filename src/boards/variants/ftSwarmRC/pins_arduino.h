@@ -102,7 +102,7 @@ static const gpio_num_t PUA2    = GPIO_NUM_41;
 // special input ports
 #define FACTORYSETTINGS "S1"
 
-// definition of all input properties
+// input port properties
 static const char         INPUT_NAME[][7]     = { "A1",                   "A2",                   "A3",                   "A4",                   "A5",                   "A6",                   "S1",                   "PWRCTL",              "RCP1",                  "RCP2",                  "RCP3",                  "RCP4" };
 static const gpio_num_t   INPUT_GPIO[]        = { A1,                     A2,                     A3,                     A4,                     A5,                     A6,                     T1,                     PWRCTL,                RCP1,                    RCP2,                    RCP3,                    RCP4 };
 static const uint8_t      INPUT_FLAGS[]       = { FTSWARM_HAL_FLAG_NONE,  FTSWARM_HAL_FLAG_NONE,  FTSWARM_HAL_FLAG_NONE,  FTSWARM_HAL_FLAG_NONE,  FTSWARM_HAL_FLAG_NONE,  FTSWARM_HAL_FLAG_NONE,  FTSWARM_HAL_FLAG_NONE,  FTSWARM_HAL_FLAG_NONE, FTSWARM_HAL_FLAG_HIDDEN, FTSWARM_HAL_FLAG_HIDDEN, FTSWARM_HAL_FLAG_HIDDEN, FTSWARM_HAL_FLAG_HIDDEN };
@@ -121,17 +121,12 @@ static const gpio_num_t M3B = GPIO_NUM_17;
 static const gpio_num_t M4A = GPIO_NUM_18;
 static const gpio_num_t M4B = GPIO_NUM_47;
 
-// definition of all motor properties
+// motor port properties
 static const char         MOTOR_NAME[][3] = { "M1",                   "M2",                   "M3",                 "M4"};
 static const gpio_num_t   MOTOR_GPIO[][2] = { {M1A,M1B},              {M2A,M2B},              {M3A,M3B},            {M4A,M4B} };
 static const int8_t       MOTOR_IOTYPE[]  = { FTSWARM_HAL_IO_RCSERVO, FTSWARM_HAL_IO_RCSERVO, FTSWARM_HAL_IO_MOTOR, FTSWARM_HAL_IO_WHEELDRIVE };
 
-// dc-servo -- since there are no DC servos, need to define an empty array
-static const gpio_num_t   SERVO1 = GPIO_NUM_NC;
-
-static const char         SERVO_NAME[][7] = { "" };
-static const gpio_num_t   SERVO_GPIO[] = { SERVO1 };
-
+// rc servo port properties
 static const char         RCSERVO_MOTOR[][4] = { "RC1", "RC2", "RC3", "RC4" };
 static const int8_t       RCSERVO_BASE_PORT  = 8;
 

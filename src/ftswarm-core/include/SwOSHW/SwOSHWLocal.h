@@ -12,7 +12,7 @@
 #include "SwOS.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 
-#if FTSWARM_HAL_HAS_OLED > 0
+#if FTSWARM_HAL_OLEDS > 0
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #endif
@@ -23,7 +23,7 @@
  *
  **************************************************/
 
-#if FTSWARM_HAL_HAS_HC165 > 0
+#if FTSWARM_HAL_HC165 > 0
 
 class HC165 {
   protected:
@@ -61,7 +61,7 @@ class OLED {
 
   protected:
 
-    #if FTSWARM_HAL_HAS_OLED > 0 
+    #if FTSWARM_HAL_OLEDS > 0 
     Adafruit_SSD1306 display = Adafruit_SSD1306 (128, 64, &Wire, -1);
     #endif
 
@@ -124,7 +124,7 @@ extern OLED *oled;
  *
  ***************************************************/
 
-#if FTSWARM_HAL_HAS_DISCRETE_RGB > 0
+#if FTSWARM_HAL_DISCRETE_RGBS > 0
 
 class RGBLed {
 

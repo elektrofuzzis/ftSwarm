@@ -178,7 +178,7 @@ uint8_t SwOSCtrl::setupLocalButtons( uint8_t maxIO ) {
 
   // create an outstanding HC165 object, if needed
 
-  #if FTSWARM_HAL_HAS_HC165 > 0
+  #if FTSWARM_HAL_HC165 > 0
   if (!hc165) hc165 = new HC165( CPU );
   #endif
 
@@ -266,7 +266,7 @@ uint8_t SwOSCtrl::setupLocalGyro( uint8_t maxIO ) {
 uint8_t SwOSCtrl::setupLocalOLED( uint8_t maxIO ) {
 
   // initialize oled if available
-  if ( FTSWARM_HAL_HAS_OLED ) {
+  if ( FTSWARM_HAL_OLEDS ) {
 
     SwOSOLED *oled = new SwOSOLED( "OLED", this, FTSWARM_HAL_FLAG_HIDDEN );
     io[ maxIO++ ] = oled;
@@ -325,7 +325,7 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSC
     IOs = FTSWARM_HAL_INPUTS + FTSWARM_HAL_MOTORS + FTSWARM_HAL_SERVOS + FTSWARM_HAL_BUTTONS + FTSWARM_HAL_JOYSTICKS + MAXLEDS;
 
     // OLED?
-    if ( FTSWARM_HAL_HAS_OLED ) IOs++;
+    if ( FTSWARM_HAL_OLEDS ) IOs++;
 
     motors = FTSWARM_HAL_MOTORS;
     servos = FTSWARM_HAL_SERVOS;
@@ -364,7 +364,7 @@ SwOSCtrl::SwOSCtrl( FtSwarmSerialNumber_t SN, MacAddr macAddr, bool local, SwOSC
     maxIO = setupLocalButtons( maxIO );
     maxIO = setupLocalJoysticks( maxIO, ctrlConfig );
     if ( ctrlConfig.gyro ) maxIO = setupLocalGyro( maxIO );
-    if ( FTSWARM_HAL_HAS_OLED ) maxIO = setupLocalOLED( maxIO );
+    if ( FTSWARM_HAL_OLEDS ) maxIO = setupLocalOLED( maxIO );
     
   }
 
@@ -510,7 +510,7 @@ void SwOSCtrl::operate() {
 
   }
 
-  #if FTSWARM_HAL_HAS_HC165 > 0
+  #if FTSWARM_HAL_HC165 > 0
   if (hc165) hc165->operate();
   #endif
 

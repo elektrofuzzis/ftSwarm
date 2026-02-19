@@ -383,7 +383,7 @@ bool SwOSStartWebServer( void ) {
       return false;
   }
 
-  if ( FTSWARM_HAL_HAS_CAM ) {
+  if ( FTSWARM_HAL_CAMS ) {
   
     config.server_port += 1;
     config.ctrl_port += 1;

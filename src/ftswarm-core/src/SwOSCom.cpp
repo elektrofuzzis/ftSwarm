@@ -423,7 +423,7 @@ static void logBuffer( uint8_t *buffer, int bufPtr ) {
 
 static void tx_RS485( SwOSCom *com ) {
 
-  #if FTSWARM_HAL_HAS_RS458 > 0
+  #if FTSWARM_HAL_RS458 > 0
 
   RS485Frame_t frame;
   bool         collision;
@@ -745,7 +745,7 @@ bool SwOSNetwork::_StartRS485( void ) {
   
   // Initialize RS485 communication stack
 
-  # if FTSWARM_HAL_HAS_RS485 > 0
+  # if FTSWARM_HAL_RS485 > 0
     // ftSwarmRS, XL, PwrDrive, Duino
     RS485_rx_queue = xQueueCreate(10, sizeof( SwOSDatagram_t ) );
 

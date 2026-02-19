@@ -668,6 +668,8 @@ void SwOSServo::setRemote( ) {
 void SwOSDigitalServo::setupLocal() {
   // initialize local HW
 
+  #if FTSWARM_HAL_SERVOS > 0
+
   SERVO = SERVO_GPIO[port];
 
   // set digital port  to output
@@ -706,6 +708,8 @@ void SwOSDigitalServo::setupLocal() {
 
     // set coast
     setLocal();
+
+    #endif
 
 }
 

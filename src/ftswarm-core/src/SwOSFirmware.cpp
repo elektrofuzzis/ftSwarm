@@ -324,7 +324,7 @@ void MenuLocalSettings::run( void ) {
 
     }
      
-    if ( FTSWARM_HAL_HAS_EXT_PORT ) { 
+    if ( FTSWARM_HAL_EXT_PORT ) { 
       add("Extension Port", EXTMODE[ nvs.extensionPort] , MENU_EXT, 'e' ); 
     }
 

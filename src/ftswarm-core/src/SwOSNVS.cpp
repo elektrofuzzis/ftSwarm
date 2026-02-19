@@ -73,7 +73,7 @@ void SwOSNVS::initialSetup( void ) {
   }
 
   pixels = FTSWARM_HAL_PIXELS;
-  extensionPort = ( FTSWARM_HAL_HAS_EXT_PORT ) ? FTSWARM_EXT_OFF : FTSWARM_EXT_I2C_MASTER; 
+  extensionPort = ( FTSWARM_HAL_EXT_PORT ) ? FTSWARM_EXT_OFF : FTSWARM_EXT_I2C_MASTER; 
 
   serialNumber = enterNumber("Serial number [1..65535]>", 0, 1, 65535 );
 

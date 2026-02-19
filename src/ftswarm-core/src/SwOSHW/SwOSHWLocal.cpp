@@ -16,7 +16,7 @@
  *
  ***************************************************/
 
-#if FTSWARM_HAL_HAS_HC165 > 0
+#if FTSWARM_HAL_HC165 > 0
 
 // local HC165
 HC165 *hc165 = NULL;
@@ -82,7 +82,7 @@ void HC165::operate( ) {
  *
  ***************************************************/
 
-#if FTSWARM_HAL_HAS_OLED > 0
+#if FTSWARM_HAL_OLEDS > 0
 
 static void displayTask( void *parameter ) {
 
@@ -383,7 +383,7 @@ OLED *oled  = NULL;
  *
  ***************************************************/
 
-#if FTSWARM_HAL_HAS_DISCRETE_RGB > 0
+#if FTSWARM_HAL_DISCRETE_RGBS > 0
 
 RGBLed::RGBLed() {
   
