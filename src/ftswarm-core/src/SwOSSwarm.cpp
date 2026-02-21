@@ -363,11 +363,25 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   // set Kelda link if i'm the Kelda
   if ( nvs.IAmKelda ) Kelda = Ctrl[0];
 
-  // Open NVS again & load alias names
-  myOSSwarm.Ctrl[0]->loadFromNVS(  );
-
   // check on nvs version upgrades
   if ( nvs.upgrade() ) myOSSwarm.Ctrl[0]->saveToNVS( );
+
+  // factory reset cycle?
+  if ( nvs.factoryReset ) {
+
+    if (verbose) printf("finalizing factoryReset\n");
+
+    // reset flag, don't load IO settings and save
+    nvs.factoryReset = false;
+    myOSSwarm.Ctrl[0]->saveToNVS( );
+    nvs.save();
+
+  } else {
+
+    // Open NVS again & load alias names
+    myOSSwarm.Ctrl[0]->loadFromNVS( );
+
+  }
 
   // now I can visualize my state
   setState( BOOTING );
@@ -400,6 +414,19 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
   initialized = true;
   return Ctrl[0]->serialNumber;
+
+}
+
+void SwOSSwarm::factorySettings( void ) {
+    
+  // halt all motors
+  halt();
+
+  // NVS - local controller & swarm settings
+  nvs.factorySettings();
+
+  // restart
+  nvs.saveAndRestart();
 
 }
 

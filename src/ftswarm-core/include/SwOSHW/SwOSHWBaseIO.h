@@ -82,13 +82,13 @@ class SwOSObj {
 	  virtual ~SwOSObj();                       // destructor
 
     // load my port & alias settings from NVS
-    virtual void loadFromNVS( nvs_handle_t my_handle );
+    virtual void loadFromNVS( nvs_handle_t myHandle );
 
     // save my port & alias settings from NVS
-    virtual void saveToNVS( nvs_handle_t my_handle );
+    virtual void saveToNVS( nvs_handle_t myHandle );
 
     // print my nvs settings
-    virtual void printNVS( nvs_handle_t my_handle );
+    virtual void printNVS( nvs_handle_t myHandle );
 
     // set flags
     void setFlags( uint8_t flags ) { this->flags = flags;};

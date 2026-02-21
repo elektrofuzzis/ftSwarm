@@ -184,8 +184,6 @@ public:
   // change port's IO Type if possible
   bool changeIOType( uint8_t index, SwOSIOType_t newIOType, uint8_t flags );
 
-  void factorySettings( void );                                  // reset factory settings
-
   void halt( void );                                             // stop all actors
   bool isI2CSwarmCtrl( void );                                   // is a ftSwarmI2C-Board 
   void identify( void );                                         // set LEDs to aquamarine / OLED to "it's me" to identify HW 

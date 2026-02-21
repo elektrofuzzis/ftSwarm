@@ -183,6 +183,9 @@ bool SwOSNVS::load() {
     return false;
   }
 
+  // factoryReset
+  nvs_get_u8( my_handle, "factoryReset", (uint8_t *) &factoryReset );
+
   // start with HW configuration
   uint32_t ui32;
   nvs_get_u16( my_handle, "serialNumber",  (uint16_t *) &serialNumber );
@@ -262,6 +265,9 @@ void SwOSNVS::save( bool writeAll ) {
     nvs_set_u32( my_handle, "CPU", (uint32_t) CPU ) ;
   }
 
+  // factoryReset
+  nvs_set_u8( my_handle, "factoryReset", factoryReset );
+  
   // ftSwarmControl: set joystick calibration
   nvs_set_blob( my_handle, "calibration",  (void *)&calibration, sizeof( calibration ) );
 
@@ -386,6 +392,8 @@ bool SwOSNVS::RS485Available( void ) {
 }
 
 void SwOSNVS::factorySettings( void ) {
+
+  factoryReset = true;
 
   channel = 1;
   

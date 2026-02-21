@@ -92,30 +92,30 @@ SwOSObj::~SwOSObj() {
   if (_alias) free( _alias );
 }
 
-void SwOSObj::loadFromNVS( nvs_handle_t my_handle ) {
+void SwOSObj::loadFromNVS( nvs_handle_t myHandle ) {
 
   size_t size = MAXIDENTIFIER;
   char alias[MAXIDENTIFIER];
 
-  if ( ESP_OK == nvs_get_str( my_handle, getName(), alias, &size ) ) {
+  if ( ESP_OK == nvs_get_str( myHandle, getName(), alias, &size ) ) {
     setAlias( alias );
   }
 }
 
-void SwOSObj::printNVS( nvs_handle_t my_handle ) {
+void SwOSObj::printNVS( nvs_handle_t myHandle ) {
 
   size_t size = MAXIDENTIFIER;
   char alias[MAXIDENTIFIER];
 
-  if ( ESP_OK == nvs_get_str( my_handle, getName(), alias, &size ) ) {
+  if ( ESP_OK == nvs_get_str( myHandle, getName(), alias, &size ) ) {
     printf( "%s alias: %s\n", getName(), alias );
   }
 
 }
 
-void SwOSObj::saveToNVS( nvs_handle_t my_handle ) {
+void SwOSObj::saveToNVS( nvs_handle_t myHandle ) {
 
-  nvs_set_str( my_handle, getName(), getAlias() );
+  nvs_set_str( myHandle, getName(), getAlias() );
   
 }
 
@@ -259,46 +259,46 @@ int32_t SwOSIO::evalTriggerMath( SwOSTriggerMath_t triggerMath, int32_t sensor, 
   
 }
 
-void SwOSIO::loadFromNVS( nvs_handle_t my_handle ) {
+void SwOSIO::loadFromNVS( nvs_handle_t myHandle ) {
 
-  uint8_t blob[MAXIDENTIFIER+2];
-  size_t  len = MAXIDENTIFIER+2;
+  uint8_t blob[MAXIDENTIFIER+3];
+  size_t  len = MAXIDENTIFIER+3;
 
   if (nvs.version == 2) {
     // compatibility to old version
-    if ( ESP_OK != nvs_get_str( my_handle, getName(), (char *)&blob[2], &len ) ) return;
+    if ( ESP_OK != nvs_get_str( myHandle, getName(), (char *)&blob[2], &len ) ) return;
     blob[0] = ioType;
     blob[1] = false;
 
   } else {
     // read ioType & alias in a blob
-    if ( ESP_OK != nvs_get_blob( my_handle, getName(), blob, &len ) ) return;
+    if ( ESP_OK != nvs_get_blob( myHandle, getName(), blob, &len ) ) return;
 
   }
 
   setAlias( (char *) &blob[2] );
-  ctrl->changeIOType( ctrl->getIndex(this), (SwOSIOType_t) blob[0], (bool) blob[1] );
+  ctrl->changeIOType( ctrl->getIndex(this), (SwOSIOType_t) blob[0], blob[1] );
     
 }
 
-void SwOSIO::printNVS( nvs_handle_t my_handle ) {
+void SwOSIO::printNVS( nvs_handle_t myHandle ) {
 
-  uint8_t blob[MAXIDENTIFIER+2];
-  size_t  len = MAXIDENTIFIER+2;
+  uint8_t blob[MAXIDENTIFIER+3];
+  size_t  len = MAXIDENTIFIER+3;
 
   // read ioType & alias in a blob
-  if ( ESP_OK != nvs_get_blob( my_handle, getName(), blob, &len ) ) return;
+  if ( ESP_OK != nvs_get_blob( myHandle, getName(), blob, &len ) ) return;
 
-  printf("%s alias: %s iotype: %d flags: %X\n", getName(), (char *) &blob[2], (SwOSIOType_t) blob[0], (bool) blob[1] );
+  printf("%s alias: %s iotype: %d flags: %X\n", getName(), (char *) &blob[2], (SwOSIOType_t) blob[0], blob[1] );
 
     
 }
 
-void SwOSIO::saveToNVS( nvs_handle_t my_handle ) {
+void SwOSIO::saveToNVS( nvs_handle_t myHandle ) {
 
-  uint8_t blob[MAXIDENTIFIER+2];
+  uint8_t blob[MAXIDENTIFIER+3];
 
-  bzero( blob, MAXIDENTIFIER+2 );
+  bzero( blob, MAXIDENTIFIER+3 );
   
   uint8_t len = strlen( getAlias() );
 
@@ -306,10 +306,9 @@ void SwOSIO::saveToNVS( nvs_handle_t my_handle ) {
   blob[1] = getFlags();
   memcpy( &blob[2], getAlias(), len );
 
-  nvs_set_blob( my_handle, getName(), blob, len+2 );
+  nvs_set_blob( myHandle, getName(), blob, len+3 );
   
 }
-
 
 void SwOSIO::lock( void ) {
   if (ctrl) ctrl->lock();

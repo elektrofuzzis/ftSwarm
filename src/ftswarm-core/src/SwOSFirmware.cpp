@@ -583,7 +583,7 @@ void MenuIOConfig::changeType( void ) {
 
     // compatible type?
     if ( ( SWOSIOCLASS[ioType] == SWOSIOCLASS[i] ) &&
-         ( ! ( ( FTSWARM_HAL_RCSERVOS == 0 ) && ( SWOSIOCLASS[i] == SWOSIO_RCSERVO ) ) )
+         ( ! ( ( FTSWARM_HAL_RCSERVOS == 0 ) && ( (SwOSIOType_t)i == SWOSIO_RCSERVO ) ) )
        ) {
 
       maxType++;
@@ -1452,20 +1452,11 @@ class MainMenu : private Menu {
 void MainMenu::factorySettings( void ) {
   // reset controller to factory settings
 
-  if (yesNo("Do you want to reset this device to it's factory settings (Y/N)?" ) ) {
-
-    nvs.factorySettings();
-
-    myOSSwarm.Ctrl[0]->factorySettings();
-
-    printf("device will restart now.\n");
+  if (yesNo("Do you want to reset this device to it's factory settings and reboot (Y/N)?" ) ) {
 
     delay(2000);
 
-    // Alias names
-    myOSSwarm.Ctrl[0]->saveToNVS( );
-
-    nvs.saveAndRestart();
+    myOSSwarm.factorySettings();
 
   }
 

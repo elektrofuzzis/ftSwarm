@@ -66,7 +66,7 @@ class SwOSNVS {
   public:
     void initialSetup();   // ask user for HW details
 	  int32_t                version = NVSVERSION;
-	  // FtSwarmController_t    controllerType;
+    bool                   factoryReset = false; // flag to reset the IOs settings via reboot
 	  FtSwarmVersion_t       CPU;
 	  FtSwarmSerialNumber_t  serialNumber;
     uint8_t                channel;

@@ -126,49 +126,12 @@ uint8_t SwOSCtrl::getIndex( SwOSIO *x ) {
 
 uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
 
-  char name[10];
+  // RC Servos are setup in setupLocalMotors
 
-  /* depricated
-
-  for (uint8_t i=0; i<FTSWARM_HAL_RCSERVOS; i++) {
-
-    // test on sensor cable
-    sprintf( name, "RCP%d", i+1 );
-    SwOSAnalogInput *poti = new SwOSAnalogInput( name, i+7, this, SWOSIO_ANALOG, true );
-
-    // need different filters
-    poti->deleteFilter();
-    poti->addFilter(new SwOSMovingAverage(5) );
-    poti->addFilter(new SwOSSHR(2) );
-
-    // need to read multiple times to get consistent values
-    poti->operate();
-    while (poti->getValueI32() == FILTER_INVALID ) {
-      poti->operate();
-    }
-
-    poti->operate();
-    if ( poti->getValueI32() < 1023 ) {
-      sprintf( name, "RC%d", i+1 );
-      SwOSDCMotor *motor = (SwOSDCMotor *) getIO( SWOSIO_RCMOTOR, i );
-      io[ getIndex( motor ) ] = new SwOSRCServo( name, i, this, FTSWARM_HAL_FLAG_NONE );
-
-    } else {
-
-      delete poti;
-
-    }
-
-  }
-    */
-
-  // just digital servos
-  for ( uint8_t i=0; i<FTSWARM_HAL_SERVOS; i++ ) {
-
-    sprintf( name, "SERVO%d", i+1 );
-    io[ maxIO++ ] = new SwOSDigitalServo( name, i, this, FTSWARM_HAL_FLAG_NONE );
-
-  }
+  // DC Servos
+  #if FTSWARM_HAL_SERVOS > 0
+  for ( uint8_t i=0; i<FTSWARM_HAL_SERVOS; i++ ) io[ maxIO++ ] = new SwOSDigitalServo( SERVO_NAME[i], i, this, FTSWARM_HAL_FLAG_NONE );
+  #endif
 
   return maxIO;
 
@@ -425,13 +388,6 @@ void SwOSCtrl::unsubscribe( bool cascade ) {
 
 }
 
-void SwOSCtrl::factorySettings( void ) {
-
-  setAlias("");
-  for ( uint8_t i=0; i<IOs; i++) { if ( io[i] ) io[i]->setAlias( "" ); }
-
-}
-
 SwOSIO *SwOSCtrl::getIO( const char *name) {
 
   for ( uint8_t i=0; i<IOs;  i++) { if ( ( io[i] ) && ( io[i]->equals(name) ) ) { return io[i]; } }
@@ -467,23 +423,6 @@ SwOSIO *SwOSCtrl::getIO( SwOSIOType_t ioType, FtSwarmPort_t port) {
   return NULL;   
 
 }
-
-/*
-FtSwarmController_t SwOSCtrl::getType() {
-
-  switch ( CPU ) {
-    case FTSWARMDUINO_1V141:    return FTSWARMDUINO;
-    case FTSWARMPWRDRIVE_1V141: return FTSWARMPWRDRIVE;
-    case FTSWARMCAM_3V12:       return FTSWARMCAM;
-    case FTSWARMCONTROL_1V3UC:
-    case FTSWARMCONTROL_1V3:    return FTSWARMCONTROL;
-    case FTSWARM_NOVERSION:     return FTSWARM_NOCTRL;
-    default:                    return FTSWARM;
-  };
-
-}
-
-*/
 
 void SwOSCtrl::operate() {
 
@@ -570,24 +509,6 @@ char *SwOSCtrl::getHostname( void ) {
 
 }
 
-bool able2ChangeIOType( SwOSIOType_t ioType ) {
-
-  return ( ioType == SWOSIO_DIGITAL ) ||
-         ( ioType == SWOSIO_SWITCH ) ||
-         ( ioType == SWOSIO_REEDSWITCH ) ||
-         ( ioType == SWOSIO_LIGHTBARRIER ) ||
-         ( ioType == SWOSIO_ANALOG ) ||
-         ( ioType == SWOSIO_VOLTMETER ) ||
-         ( ioType == SWOSIO_OHMMETER ) ||
-         ( ioType == SWOSIO_THERMOMETER ) ||
-         ( ioType == SWOSIO_COUNTER )  ||
-         ( ioType == SWOSIO_COUNTER )  ||
-         ( ioType == SWOSIO_ROTARYENCODER )  ||
-         ( ioType == SWOSIO_FREQUENCYMETER ) 
-         ;
-}
-
-
 bool SwOSCtrl::changeIOType( uint8_t index, SwOSIOType_t newIOType, uint8_t flags ) {
 
   // do I exist?
@@ -596,8 +517,6 @@ bool SwOSCtrl::changeIOType( uint8_t index, SwOSIOType_t newIOType, uint8_t flag
 
   // get my type
   SwOSIOType_t oldIOType = io[index]->getIOType();
-
-  // printf("changeIOType %s %d %d\n", io[index]->getName(), oldIOType, newIOType);
 
   // nothing changed?
   if ( oldIOType == newIOType ) return true;
@@ -1438,25 +1357,28 @@ void SwOSCtrl::registerMe( SwOSCom *com ){
 
 void SwOSCtrl::saveToNVS( void ) {
 
-  nvs_handle_t my_handle;
-  ESP_ERROR_CHECK( nvs_open(NVSNAMESPACE, NVS_READWRITE, &my_handle) );
+  printf( "save %s\n", NVSNAMESPACE );
 
-  SwOSObj::saveToNVS( my_handle );
+  nvs_handle_t myHandle;
+  ESP_ERROR_CHECK( nvs_open(NVSNAMESPACE, NVS_READWRITE, &myHandle) );
 
-  for ( uint8_t i=0; i<IOs; i++) if (io[i]) io[i]->saveToNVS( my_handle );
+  SwOSObj::saveToNVS( myHandle );
 
-  ESP_ERROR_CHECK( nvs_commit( my_handle ) );
+  for ( uint8_t i=0; i<IOs; i++) if (io[i]) io[i]->saveToNVS( myHandle );
+
+  ESP_ERROR_CHECK( nvs_commit( myHandle ) );
+  nvs_close( myHandle );
 
 }
 
 void SwOSCtrl::loadFromNVS( void ) {
 
-  nvs_handle_t my_handle;
-  ESP_ERROR_CHECK( nvs_open( NVSNAMESPACE, NVS_READONLY, &my_handle) );
+  nvs_handle_t myHandle;
+  ESP_ERROR_CHECK( nvs_open( NVSNAMESPACE, NVS_READONLY, &myHandle) );
 
-  SwOSObj::loadFromNVS( my_handle );
-  for ( uint8_t i=0; i<IOs; i++) if (io[i]) io[i]->loadFromNVS( my_handle );
-  nvs_close( my_handle );
+  SwOSObj::loadFromNVS( myHandle );
+  for ( uint8_t i=0; i<IOs; i++) if (io[i]) io[i]->loadFromNVS( myHandle );
+  nvs_close( myHandle );
 
 }
 
@@ -1468,7 +1390,6 @@ void SwOSCtrl::printNVS( void ) {
   SwOSObj::printNVS( my_handle );
   for ( uint8_t i=0; i<IOs; i++) if (io[i]) io[i]->printNVS( my_handle );
   nvs_close( my_handle );
-
 
 }
 
