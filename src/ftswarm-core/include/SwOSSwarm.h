@@ -59,8 +59,11 @@ public:
   // Start the swarm. If verbose is set, do some inormational console output
   FtSwarmSerialNumber_t begin( bool verbose );
 
+  // test on factoryReset
+  void testFactoryReset( void );
+
   // factoryReset & reboot
-  void factorySettings( void );
+  void factoryReset( void );
 
   // Stop all motors within the swarm
   void halt( void );

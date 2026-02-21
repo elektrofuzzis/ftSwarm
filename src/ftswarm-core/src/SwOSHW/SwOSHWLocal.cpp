@@ -16,6 +16,7 @@
  *
  ***************************************************/
 
+ #define FTSWARM_HAL_HC165 1
 #if FTSWARM_HAL_HC165 > 0
 
 // local HC165
@@ -46,6 +47,8 @@ HC165::HC165( FtSwarmVersion_t CPU ) {
 }
 
 void HC165::operate( ) {
+
+  // if ( millis() < 1500 ) printf("operate\n");
 
   // invalid configuration?
   if (HC165_LD == GPIO_NUM_NC ) {
@@ -106,6 +109,10 @@ OLED::OLED( void ) {
     return;
   }
 
+  // clear it to kill adafruit logo
+  display.clearDisplay();
+  display.display();
+
   // transfer task
   xTaskCreatePinnedToCore( displayTask, "displayTask", 10000, NULL, 1, NULL, ARDUINO_EVENT_RUNNING_CORE );
 
@@ -162,7 +169,7 @@ void OLED::setContrast(uint8_t contrast) {
 void OLED::clearDisplay( bool fullscreen ) {
 
   if ( fullscreen ) display.clearDisplay();
-  else drawRect( 0, 0, getWidth()-1, getHeight()-1, true, SSD1306_BLACK );
+  else drawRect( 0, 0, getWidth(), getHeight(), true, SSD1306_BLACK );
   
 }
 

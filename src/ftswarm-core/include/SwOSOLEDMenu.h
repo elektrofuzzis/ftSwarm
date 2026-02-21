@@ -139,7 +139,7 @@ class SwOSMainScreen : public SwOSScreen {
 
 /***************************************************
  *
- * SwOSSpalshScreen 
+ * SwOSSplashScreen 
  * startup screen, switches after 5s to MainScreen
  *
  ***************************************************/
@@ -167,6 +167,28 @@ class SwOSSplashScreen : public SwOSScreen {
 
 /***************************************************
  *
+ * SwOSFactoryResetScreen 
+ * Ask user to reset controller to factory setting
+ *
+ ***************************************************/
+
+class SwOSFactoryResetScreen : public SwOSScreen {
+
+  public:
+
+    // constructor
+    SwOSFactoryResetScreen( SwOSScreen *parent );
+    
+    // cls and draw all elements
+    virtual void draw( void );
+
+    // eval external events like pressing buttons
+    virtual bool eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port );
+
+};
+
+/***************************************************
+ *
  *   SwOS404Screen - ScreenNotFound
  *
  ***************************************************/
@@ -185,37 +207,15 @@ class SwOS404Screen : public SwOSScreen {
 
 };
 
-typedef enum { OLEDMenuSplash, OLEDMenuStatus, OLEDMenuSetup } OLEDMenu_t;
-
-class OLEDMenu {
-
-  protected:
-
-    OLEDMenu_t menu = OLEDMenuStatus;
-
-    void joystick( char *lr, char *fb, int8_t x, int8_t y, bool left );
-    void printButton( const char *text, int16_t x, int16_t y, FtSwarmAlign_t align, FtSwarmToggle_t trigger );
-
-    bool splashScreen( FtSwarmToggle_t trigger, SwOSIOType_t ioType, uint8_t port, bool completeRefresh );
-    bool statusScreen( FtSwarmToggle_t trigger, SwOSIOType_t ioType, uint8_t port, bool completeRefresh );
-    bool setupScreen(  FtSwarmToggle_t trigger, SwOSIOType_t ioType, uint8_t port, bool completeRefresh );
-
-  public:
-
-    OLEDMenu( SwOSCtrl *localCtrl );
-
-    bool trigger( FtSwarmToggle_t trigger, SwOSIOType_t ioType, uint8_t port, bool completeRefresh );
-
-};
-
 class SwOSScreenManager {
 
   protected:
-    SwOSScreen *active     = NULL;
     SwOSScreen *next       = NULL;
     bool       autoCleanUp = false;
 
   public:
+
+    SwOSScreen *active     = NULL;
 
     // does all the stuff to replace and operate the screen
     void operate( void );

@@ -412,58 +412,62 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
   initialized = true;
 
-  // is a factory reset button defined?
-  // #ifdef FACTORYSETTINGS
-  SwOSDigitalInput *reset = (SwOSDigitalInput *) Ctrl[0]->getIO( FACTORYSETTINGS );
-  if (reset) {
-
-    // wait to operate my controller and get button values
-    delay(50);
-
-    // button pressed?
-    if ( reset->getValueI32() ) {
-
-      // reset toggle state
-      reset->getToggle();
-
-      // visualize potential factory reset
-      Ctrl[0]->setState( FACTORY1 );
-
-      // now wait max. 2s to release button
-      bool toggled = false;
-      for (uint8_t i=0; i<20; i++ ) {
-        if (reset->getToggle() == FTSWARM_TOGGLEDOWN ) { toggled = true; break; }
-        delay(100);
-      }
-
-      if (toggled) {
-
-        // visualize going to reset
-        for ( uint8_t i=0; i<4; i++ ) {
-          setState( FACTORY2 );
-          delay(250 );
-          setState( FACTORY1 );
-          delay(250 );
-        }          
-
-        // reset
-        factorySettings();
-
-      }
-
-    }
-
-  }
-  //#endif
-
+  testFactoryReset();
+ 
   setState( RUNNING );
-
 
   return Ctrl[0]->serialNumber;
 
 }
 
-void SwOSSwarm::factorySettings( void ) {
+void SwOSSwarm::testFactoryReset( void ) {
+
+ // is a factory reset button defined?
+  SwOSDigitalInput *reset = (SwOSDigitalInput *) Ctrl[0]->getIO( FACTORYSETTINGS );
+  if (!reset) return;
+
+  // wait to operate my controller and get button values
+  delay(50);
+
+  // button pressed?
+  if (!reset->getValueI32()) return;
+
+  // Controller has RGB-LEDs
+  #if FTSWARM_HAL_PIXELS > 0 
+  // reset toggle state
+  reset->getToggle();
+  
+  // visualize potential factory reset
+  Ctrl[0]->setState( FACTORY1 );
+
+  // now wait max. 2s to release button
+  bool toggled = false;
+  for (uint8_t i=0; i<20; i++ ) {
+    if (reset->getToggle() == FTSWARM_TOGGLEDOWN ) { toggled = true; break; }
+    delay(100);
+  }
+
+  if (toggled) {
+
+    // visualize going to reset
+    for ( uint8_t i=0; i<4; i++ ) {
+      setState( FACTORY2 );
+      delay(250 );
+      setState( FACTORY1 );
+      delay(250 );
+    }          
+
+  factoryReset();
+  #endif
+
+  #if FTSWARM_HAL_OLEDS
+    screenManager.newScreen( new SwOSFactoryResetScreen( screenManager.active ), true );
+  #endif
+  
+}
+
+
+void SwOSSwarm::factoryReset( void ) {
     
   // halt all motors
   halt();

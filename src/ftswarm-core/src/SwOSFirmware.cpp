@@ -1456,7 +1456,7 @@ void MainMenu::factorySettings( void ) {
 
     delay(2000);
 
-    myOSSwarm.factorySettings();
+    myOSSwarm.factoryReset();
 
   }
 

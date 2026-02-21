@@ -157,7 +157,7 @@ void SwOSOLED::setupLocal() {
  
   // startup hardware
   if (!oled) oled = new OLED( );
-  if (!oledMenu) oledMenu = new OLEDMenu( ctrl );
+  // if (!oledMenu) oledMenu = new OLEDMenu( ctrl );
 
 }
 
