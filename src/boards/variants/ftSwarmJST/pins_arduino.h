@@ -13,6 +13,7 @@
 #include <driver/gpio.h> 
 
 // my hardware features
+#define FTSWARM_BOARD_JST
 
 // due to some hen&egg problemns with including adc_types.h using esp32 cpu
 //#include <hal/adc_hal.h>

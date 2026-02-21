@@ -105,7 +105,6 @@ class SwOSNVS {
     void deleteAllControllers( void );
     uint8_t swarmMembers( void ) ;         // number of swarm members
     void factorySettings( void );          // reset to factory settings
-    bool RS485Available( void );           // true if board has RS485
     void printNVS();                       // print settings for debugging only  
     bool upgrade( void );                  // runs an nvs version upgrade, true if an upgrade took place
 };

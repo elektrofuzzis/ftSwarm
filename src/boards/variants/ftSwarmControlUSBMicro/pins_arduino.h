@@ -13,6 +13,7 @@
 #include <driver/gpio.h> 
 
 // my hardware features
+#define FTSWARM_BOARD_CONTROL_USBMICRO
 #define FTSWARM_HAL_HAS_OLED     1
 #define FTSWARM_HAL_HAS_HC165    1
 

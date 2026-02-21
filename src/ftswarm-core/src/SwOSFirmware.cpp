@@ -1343,7 +1343,7 @@ void MenuSwarmConfig::run( void ) {
     add("Swarm Name", nvs.swarmName, MENU_DEACTIVATED, MENU_NOKEY );
     if ( myOSSwarm.Kelda ) add("Kelda", myOSSwarm.Kelda->getAliasOrName(), MENU_DEACTIVATED, MENU_NOKEY );
 
-    if ( nvs.RS485Available() ) {    
+    if ( FTSWARM_HAL_RS485 ) {    
       add( "Communication", FTSWARMCOMMUNICATION[nvs.swarmCommunication], MENU_COMMUNICATION, 'c' );
       if ( nvs.swarmCommunication != SWARMCOM_WIFI ) {
         add( "Swarm speed", nvs.swarmSpeed, MENU_SPEED, 's' );
@@ -1468,7 +1468,7 @@ void MainMenu::run( void ) {
 
     start( );
     add("Wifi & Local Settings", "", MENU_WEB, 'w' );
-    if ( ( WiFi.status() == WL_CONNECTED ) || ( nvs.wifiMode == wifiAP ) || ( nvs.RS485Available() ) ) {
+    if ( ( WiFi.status() == WL_CONNECTED ) || ( nvs.wifiMode == wifiAP ) || ( FTSWARM_HAL_RS485 ) ) {
       add("Swarm Configuration", "", MENU_SWARM, 's' );
     } else {
       add("Swarm Configuration - activate WiFi", "", MENU_DEACTIVATED );

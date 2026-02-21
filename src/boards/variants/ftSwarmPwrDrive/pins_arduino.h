@@ -14,6 +14,7 @@
 #include <driver/adc.h>
 
 // my hardware features
+#define FTSWARM_BOARD_PWRDRIVE
 #define FTSWARM_HAL_HAS_RS485  1
 
 // to solve some hen & egg problems
@@ -60,7 +61,6 @@ static const gpio_num_t RX = GPIO_NUM_44;
 #define RGB_BUILTIN GPIO_NUM_48
 
 // ftSwarm definitions
-#define NOPWRCTL -1
 static const uint8_t FTSWARM_HAL_INPUTS       = 5;
 static const uint8_t FTSWARM_HAL_AX_INPUTS    = 5;
 static const uint8_t FTSWARM_HAL_MOTORS       = 4;

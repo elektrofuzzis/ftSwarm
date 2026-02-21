@@ -11,6 +11,7 @@
 #define Pins_Arduino_h
 
 // my hardware features
+#define FTSWARM_BOARD_DUINO
 #define FTSWARM_HAL_HAS_RS485  1
 
 #include <driver/gpio.h> 

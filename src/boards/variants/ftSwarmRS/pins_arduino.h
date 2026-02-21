@@ -14,6 +14,7 @@
 #include <driver/adc.h>
 
 // my hardware features
+#define FTSWARM_BOARD_RS
 #define FTSWARM_HAL_HAS_RS485    1
 #define FTSWARM_HAL_HAS_EXT_PORT 1
 

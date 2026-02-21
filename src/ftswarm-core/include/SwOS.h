@@ -279,6 +279,48 @@ typedef enum {
   FTSWARMCONTROL_1V3UC, 
   FTSWARMMAXVERSION } FtSwarmVersion_t;
 
+static char FTSWARMVERSION[FTSWARMMAXVERSION][22] = { 
+  "FTSWARMJST_1V0", 
+  "FTSWARMCONTROL_1V3", 
+  "FTSWARMJST_1V15", 
+  "FTSWARMRS_2V0", 
+  "FTSWARMRS_2V1", 
+  "FTSWARMCAM_3V12", 
+  "FTSWARMDUINO_1V141", 
+  "FTSWARMPWRDRIVE_1V141",
+  "FTSWARMXL_1V00",
+  "FTSWARMRC_1V141",
+  "FTSWARMCONTROL_1V3UC"};
+
+#ifdef FTSWARM_BOARD_JST
+static FtSwarmVersion_t CPUFirmware = FTSWARMJST_1V15;
+
+#elif defined( FTSWARM_BOARD_CONTROL_USBC )
+static FtSwarmVersion_t CPUFirmware = FTSWARMCONTROL_1V3UC;
+
+#elif defined( FTSWARM_BOARD_CONTROL_USBMICRO )
+static FtSwarmVersion_t CPUFirmware = FTSWARMCONTROL_1V3;
+
+#elif defined( FTSWARM_BOARD_RS )
+static FtSwarmVersion_t CPUFirmware = FTSWARMRS_2V1;
+
+#elif defined( FTSWARM_BOARD_DUINO )
+static FtSwarmVersion_t CPUFirmware = FTSWARMDUINO_1V141;
+
+#elif defined( FTSWARM_BOARD_PWRDRIVE )
+static FtSwarmVersion_t CPUFirmware = FTSWARMPWRDRIVE_1V141;
+
+#elif defined( FTSWARM_BOARD_XL )
+static FtSwarmVersion_t CPUFirmware = FTSWARMXL_1V00;
+
+#elif defined( FTSWARM_BOARD_RC )
+static FtSwarmVersion_t CPUFirmware = FTSWARMRC_1V141;
+
+#else
+  #error "No valid ftSwarm-board selected."
+#endif
+
+
 // how to move
 typedef enum { FTSWARM_COAST, FTSWARM_BRAKE, FTSWARM_ON, FTSWARM_MAXMOTION } FtSwarmMotion_t;
 

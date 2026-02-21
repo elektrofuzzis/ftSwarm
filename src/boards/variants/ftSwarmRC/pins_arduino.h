@@ -14,6 +14,7 @@
 #include <driver/adc.h>
 
 // my hardware features
+#define FTSWARM_BOARD_RC
 #define FTSWARM_HAL_INPUTS        8
 #define FTSWARM_HAL_AX_INPUTS     6
 #define FTSWARM_HAL_MOTORS        4

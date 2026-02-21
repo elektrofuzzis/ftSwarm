@@ -53,24 +53,7 @@ void SwOSNVS::initialSetup( void ) {
 
   version = NVSVERSION;
 
-  switch ( enterNumber(("Controller Type\n (1) ftSwarm\n (2) ftSwarmRS\n (3) ftSwarmControl\n (4) ftSwarmCAM\n (5) ftSwarmPwrDrive\n (6) ftSwarmDuino\n (7) ftSwarmXL\n (8) ftSwarmRC\n (9) special config\n>"), 0, 1, 8 ) ) {
-    case 1:  CPU = FTSWARMJST_1V15;       break;
-    case 2:  CPU = FTSWARMRS_2V1;         break;
-    case 3:  
-             #ifdef CONFIG_IDF_TARGET_ESP32S3 
-              CPU = FTSWARMCONTROL_1V3UC; 
-             #else
-              CPU = FTSWARMCONTROL_1V3; 
-             #endif
-             break;
-    case 4:  CPU = FTSWARMCAM_3V12;       break;
-    case 5:  CPU = FTSWARMPWRDRIVE_1V141; break;
-    case 6:  CPU = FTSWARMDUINO_1V141;    break;
-    case 7:  CPU = FTSWARMXL_1V00;        break;
-    case 8:  CPU = FTSWARMRC_1V141;       break;
-    default: // manual configuration
-             CPU = ( FtSwarmVersion_t ) ( enterNumber(("CPU Version\n (1) FTSWARMJST_1V0\n (2) FTSWARMCONTROL_1V3\n (3) FTSWARMJST_1V15\n (4) FTSWARMRS_2V0\n (5) FTSWARMRS_2V1\n (6) FTSWARMCAM_3V12\n (7) FTSWARMDUINO_1V141\n (8) FTSWARMPWRDRIVE_1V141\n (9) FTSWARMXL_1V00\n (10) FTSWARMRC_1V141\n (11) FTSWARMCONTROL_1V3UC\n"), 0, 1, 11 ) -1 );
-  }
+  CPU = CPUFirmware;
 
   pixels = FTSWARM_HAL_PIXELS;
   extensionPort = ( FTSWARM_HAL_EXT_PORT ) ? FTSWARM_EXT_OFF : FTSWARM_EXT_I2C_MASTER; 
@@ -164,9 +147,16 @@ void SwOSNVS::begin() {
       err = nvs_flash_init();
   }
 
-   if (!load() ) {
+  if (!load() ) {
     initialSetup();
-   }
+  }
+
+  if (nvs.CPU != CPUFirmware ) {
+    printf("\n\nFATAL: Incompatible firmware hardware settings.\n");
+    printf("       Firmware %s\n", FTSWARMVERSION[CPUFirmware] );
+    printf("       Board    %s\n", FTSWARMVERSION[CPU] );
+    while (1) delay(1000);
+  }
 
 }
 
@@ -385,13 +375,6 @@ void SwOSNVS::loadEvents( void ) {
 
   nvs_close( my_handle );
 
-}
-
-bool SwOSNVS::RS485Available( void ) {
-  return ( CPU == FTSWARMRS_2V0 ) || ( CPU == FTSWARMRS_2V1 ) || 
-         ( CPU == FTSWARMPWRDRIVE_1V141 ) || 
-         ( CPU == FTSWARMDUINO_1V141 ) || 
-         ( CPU == FTSWARMXL_1V00 );
 }
 
 void SwOSNVS::factorySettings( void ) {
