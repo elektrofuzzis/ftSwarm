@@ -69,8 +69,7 @@ void SwOSNVS::initialSetup( void ) {
   swarmPIN    = serialNumber;
 
   // check on i2c/spi LSMR
-  if ( ( CPU == FTSWARMRS_2V0 ) ||
-       ( CPU == FTSWARMRS_2V1 ) ||
+  if ( ( CPU == FTSWARMRS_2V1 ) ||
        ( CPU == FTSWARMRC_1V141 ) ||
        ( CPU == FTSWARMCONTROL_1V3UC ) ) {
     Wire.begin( 4, 5 );

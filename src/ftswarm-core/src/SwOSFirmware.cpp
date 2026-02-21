@@ -390,7 +390,7 @@ void MenuLocalSettings::run( void ) {
 
       case MENU_GYRO:       anythingChanged = true;
                             nvs.gyro = (FtSwarmGyroMode_t) enterNumber( "(0) off (1) on: ", nvs.gyro, 0, 1 );
-                            if ( ( nvs.gyro ) && ( nvs.CPU != FTSWARMRS_2V0 ) && ( nvs.CPU != FTSWARMRS_2V1 ) ) nvs.extensionPort = FTSWARM_EXT_I2C_MASTER;
+                            if ( ( nvs.gyro ) && ( nvs.CPU != FTSWARMRS_2V1 ) ) nvs.extensionPort = FTSWARM_EXT_I2C_MASTER;
                             break;
 
       case MENU_I2CADDR:    anythingChanged = true;

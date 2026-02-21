@@ -216,7 +216,7 @@ uint8_t SwOSCtrl::setupLocalI2C( uint8_t maxIO, FtSwarmExtMode_t extensionPort )
 uint8_t SwOSCtrl::setupLocalGyro( uint8_t maxIO ) {
 
   // initialize gyro if available
-  if ( ( CPU == FTSWARMRS_2V0 ) || ( CPU == FTSWARMRS_2V1 ) || ( CPU == FTSWARMRC_1V141 ) || ( CPU == FTSWARMCONTROL_1V3UC ) )
+  if ( ( CPU == FTSWARMRS_2V1 ) || ( CPU == FTSWARMRC_1V141 ) || ( CPU == FTSWARMCONTROL_1V3UC ) )
     // TODO FTSWARMRC_1V140+ FTSWARMCONTROL_1V3UC Gyro implementation
     io[ maxIO++ ] = new SwOSGyroLSM( "GYRO", this, FTSWARM_HAL_FLAG_NONE );
   else
@@ -480,7 +480,6 @@ bool SwOSCtrl::isI2CSwarmCtrl( void ) {
 const char *SwOSCtrl::version( FtSwarmVersion_t v) {
   switch (v) {
   case FTSWARM_NOVERSION:     return "??";
-  case FTSWARMJST_1V0:        return "1.0";
   case FTSWARMXL_1V00:        return "1.0.0";
   case FTSWARMJST_1V15:       return "1.15";
   case FTSWARMCONTROL_1V3UC:
@@ -488,7 +487,6 @@ const char *SwOSCtrl::version( FtSwarmVersion_t v) {
   case FTSWARMRC_1V141:       return "1.4.1";
   case FTSWARMDUINO_1V141:  
   case FTSWARMPWRDRIVE_1V141: return "1.4.1";
-  case FTSWARMRS_2V0:         return "2.0";
   case FTSWARMRS_2V1:         return "2.1.0";
   case FTSWARMCAM_3V12:       return "3.1.2";
   default:                    return  "??";
@@ -1411,8 +1409,7 @@ bool SwOSCtrl::hasGyro( void ) {
   // test if HW has a gyro
 
   // already initialized or HW with integrated gyro
-  if ( ( CPU == FTSWARMRS_2V0 ) ||
-       ( CPU == FTSWARMRS_2V1 ) ||
+  if ( ( CPU == FTSWARMRS_2V1 ) ||
        ( CPU == FTSWARMRC_1V141 ) ||
        ( CPU == FTSWARMCONTROL_1V3UC )
      ) return true;
