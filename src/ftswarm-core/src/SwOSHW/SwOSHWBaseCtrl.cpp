@@ -1000,8 +1000,7 @@ void SwOSCtrl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
   if (pixel0) pixel0->setColor( LEDCOLOR0[state] );
   if (pixel1) pixel1->setColor( LEDCOLOR1[state] );
   
-  // *** ftSwarmControl ***
-  if (!oled) return;
+  #if FTSWARM_HAL_OLEDS > 0
 
   // rember old values
   uint8_t sx, sy;
@@ -1039,6 +1038,8 @@ void SwOSCtrl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
   // restore values
   oled->setCursor( cx, cy );
   oled->setTextSize( sx, sy );
+
+  #endif
   
 }
 
@@ -1356,9 +1357,7 @@ void SwOSCtrl::registerMe( SwOSCom *com ){
 }
 
 void SwOSCtrl::saveToNVS( void ) {
-
-  printf( "save %s\n", NVSNAMESPACE );
-
+  
   nvs_handle_t myHandle;
   ESP_ERROR_CHECK( nvs_open(NVSNAMESPACE, NVS_READWRITE, &myHandle) );
 

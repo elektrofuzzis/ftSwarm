@@ -404,15 +404,61 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   if (verbose) printf("Starting events.\n");
   addEvents( nvs.activeEventConfig, myOSSwarm.Ctrl[0]->serialNumber );
 
-  setState( RUNNING );
 
   if (verbose) printf("Start normal operation.\n");
-
 
   if ( ( nvs.IAmKelda) && ( nvs.wifiMode == wifiAP ) ) 
     SWARM_LOG_WARN( "A swarm using wifi ap mode provided by the Kelda isn't stable. Best practice is to use your local wifi or to provide the AP via a swarm member.");
 
   initialized = true;
+
+  // is a factory reset button defined?
+  // #ifdef FACTORYSETTINGS
+  SwOSDigitalInput *reset = (SwOSDigitalInput *) Ctrl[0]->getIO( FACTORYSETTINGS );
+  if (reset) {
+
+    // wait to operate my controller and get button values
+    delay(50);
+
+    // button pressed?
+    if ( reset->getValueI32() ) {
+
+      // reset toggle state
+      reset->getToggle();
+
+      // visualize potential factory reset
+      Ctrl[0]->setState( FACTORY1 );
+
+      // now wait max. 2s to release button
+      bool toggled = false;
+      for (uint8_t i=0; i<20; i++ ) {
+        if (reset->getToggle() == FTSWARM_TOGGLEDOWN ) { toggled = true; break; }
+        delay(100);
+      }
+
+      if (toggled) {
+
+        // visualize going to reset
+        for ( uint8_t i=0; i<4; i++ ) {
+          setState( FACTORY2 );
+          delay(250 );
+          setState( FACTORY1 );
+          delay(250 );
+        }          
+
+        // reset
+        factorySettings();
+
+      }
+
+    }
+
+  }
+  //#endif
+
+  setState( RUNNING );
+
+
   return Ctrl[0]->serialNumber;
 
 }
