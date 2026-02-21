@@ -14,6 +14,10 @@
 #include <driver/adc.h>
 
 // my hardware features
+#define FTSWARM_HAL_INPUTS        8
+#define FTSWARM_HAL_AX_INPUTS     6
+#define FTSWARM_HAL_MOTORS        4
+#define FTSWARM_HAL_PIXELS        1
 #define FTSWARM_HAL_RCSERVOS      4
 #define FTSWARM_HAL_DISCRETE_RGBS 1
 
@@ -72,12 +76,6 @@ static const gpio_num_t RX = GPIO_NUM_44;
 #define DISCRETE_RGB_GREEN        GPIO_NUM_5
 #define DISCRETE_RGB_BLUE         GPIO_NUM_10
 #define DISCRETE_RGB_BASE_CHANNEL LEDC_CHANNEL_4
-
-// ftSwarm definitions
-#define FTSWARM_HAL_INPUTS    8
-#define FTSWARM_HAL_AX_INPUTS 6
-#define FTSWARM_HAL_MOTORS    4
-#define FTSWARM_HAL_PIXELS    1
 
 static const int8_t  FTSWARM_HAL_GYRO         = GYRO_LSM6;
 static const int8_t  FTSWARM_HAL_GYRO_PORT    = GYRO_SPI;

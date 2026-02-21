@@ -176,7 +176,7 @@ uint8_t SwOSCtrl::setupLocalJoysticks( uint8_t maxIO, SwOSCtrlConfig_t ctrlConfi
     if (!fb) SWARM_LOG_FATAL( "%s not found.", JOYSTICK_FB[i] );
 
     // create joystick
-    io[ maxIO++ ] = new SwOSJoystick( JOYSTICK_NAME[i], i, this, button, lr, fb );
+    io[ maxIO++ ] = new SwOSJoystick( JOYSTICK_NAME[i], i, this, button, lr, fb, FTSWARM_HAL_FLAG_NONE );
 
   }
 
