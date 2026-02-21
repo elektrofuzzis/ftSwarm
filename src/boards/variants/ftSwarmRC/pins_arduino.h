@@ -14,8 +14,8 @@
 #include <driver/adc.h>
 
 // my hardware features
-#define FTSWARM_HAL_RCSERVOS         4
-#define FTSWARM_HAL_HAS_DISCRETE_RGB 1
+#define FTSWARM_HAL_RCSERVOS      4
+#define FTSWARM_HAL_DISCRETE_RGBS 1
 
 // to solve some hen & egg problems
 static const int8_t FTSWARM_HAL_IO_DIGITAL          = 1;
