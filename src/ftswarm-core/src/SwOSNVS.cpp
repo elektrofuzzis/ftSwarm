@@ -147,6 +147,9 @@ SwOSNVS::SwOSNVS() {
   activeEventConfig = 0;
   bzero( events, sizeof( events ) );
 
+  // initialize lables
+  bzero( oledLabel, sizeof( oledLabel ) );
+
 }
 
 void SwOSNVS::begin() {
@@ -427,6 +430,9 @@ void SwOSNVS::factorySettings( void ) {
   bzero(swarmMember, sizeof(swarmMember));
   activeEventConfig  = 0;
   bzero(events,      sizeof(events));
+
+  // initialize lables
+  bzero( oledLabel, sizeof( oledLabel ) );
 
 }
 

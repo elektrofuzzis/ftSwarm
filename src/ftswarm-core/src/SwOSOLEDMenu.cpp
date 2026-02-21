@@ -212,8 +212,8 @@ SwOSFactoryResetScreen::SwOSFactoryResetScreen( SwOSScreen *parent ):SwOSScreen(
 void SwOSFactoryResetScreen::draw( void ) {
 
   SwOSScreen::draw();
-  oled->write( "Reset controller", oled->getWidth()/2, 8, FTSWARM_ALIGNCENTER, true, false );  
-  oled->write( "to factory settings?", oled->getWidth()/2, 16, FTSWARM_ALIGNCENTER, true, false );  
+  oled->write( "Reset controller to", oled->getWidth()/2, 7, FTSWARM_ALIGNCENTER, true, false );  
+  oled->write( "factory settings?", oled->getWidth()/2, 16, FTSWARM_ALIGNCENTER, true, false );  
 
 }
 
