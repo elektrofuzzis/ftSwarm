@@ -16,7 +16,6 @@
  *
  ***************************************************/
 
- #define FTSWARM_HAL_HC165 1
 #if FTSWARM_HAL_HC165 > 0
 
 // local HC165

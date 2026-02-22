@@ -457,15 +457,16 @@ void SwOSSwarm::testFactoryReset( void ) {
       delay(250 );
     }          
 
-  factoryReset();
+    factoryReset();
+
+  }
   #endif
 
-  #if FTSWARM_HAL_OLEDS
+  #if FTSWARM_HAL_OLEDS > 0
     screenManager.newScreen( new SwOSFactoryResetScreen( screenManager.active ), true );
   #endif
   
 }
-
 
 void SwOSSwarm::factoryReset( void ) {
     

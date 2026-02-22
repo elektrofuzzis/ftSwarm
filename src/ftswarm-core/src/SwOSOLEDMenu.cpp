@@ -117,6 +117,61 @@ void SwOSScreenSlider::drawVertical( void ) {
 
 /***************************************************
  *
+ * SwOSScreenSelector - a combo box
+ *
+ ***************************************************/
+
+SwOSSelectorItem::SwOSSelectorItem( int8_t id, const char *text, SwOSSelectorItem *prev ) {
+
+  this->id = id;
+  bzero( this->text, sizeof( text ) );
+  strncpy( this->text, text, sizeof( text ) - 1 );
+  next = NULL;
+  this->prev = prev;
+
+}
+
+SwOSSelectorItem::~SwOSSelectorItem( ) {
+  if ( next ) delete next;
+}
+
+void SwOSSelectorItem::add( int8_t id, const char *text ) {
+
+  if (next) next->add( id, text );
+  else      next = new SwOSSelectorItem( id, text, this );
+
+}
+
+SwOSScreenSelector::SwOSScreenSelector( uint8_t x, uint8_t y ) : SwOSScreenObj( "", x, y, FTSWARM_ALIGNLEFT ) {
+
+}
+
+SwOSScreenSelector::~SwOSScreenSelector( ) {
+
+  if ( items ) delete items;
+
+}
+
+void SwOSScreenSelector::add( int8_t id, const char *text ) {
+
+  if (items) items->add( id, text );
+  else       items = new SwOSSelectorItem( id, text, NULL );
+
+}
+
+void SwOSScreenSelector::draw( bool inverted ) {
+
+  if (!active) return;
+
+  SwOSScreenObj::draw( inverted );
+  if (active->prev) oled->write( active->prev->text, x, y-8, align, true, false );
+                    oled->write( active->text,       x, y,   align, true, true );
+  if (active->next) oled->write( active->next->text, x, y+8, align, true, false );
+
+}
+
+/***************************************************
+ *
  *   SwOSScreen
  *
  ***************************************************/
@@ -233,6 +288,24 @@ bool SwOSFactoryResetScreen::eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t 
 
   return false;
 
+}
+
+/***************************************************
+ *
+ * SwOSTestScreen
+ *
+ ***************************************************/
+
+SwOSTestScreen::SwOSTestScreen( SwOSScreen *parent ) : SwOSScreen( parent) {
+
+}
+
+void SwOSTestScreen::draw( void ) {
+
+}
+
+bool SwOSTestScreen::eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port ) {
+  
 }
 
 

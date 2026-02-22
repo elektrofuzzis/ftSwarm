@@ -34,7 +34,7 @@ class SwOSScreenObj{
 
 /***************************************************
  *
- * SwOSScreenObj - Any element on a screen
+ * SwOSScreenSlider - Any element on a screen
  *
  ***************************************************/
 
@@ -56,7 +56,42 @@ class SwOSScreenSlider : public SwOSScreenObj {
 
 /***************************************************
  *
- * SwOSScreen - Base calss for all screens
+ * SwOSScreenSelector - a combo box
+ *
+ ***************************************************/
+
+class SwOSSelectorItem {
+
+  public:
+    int8_t id;
+    char text[25];
+    SwOSSelectorItem *next;
+    SwOSSelectorItem *prev;
+
+    SwOSSelectorItem( int8_t id, const char *text, SwOSSelectorItem *prev );
+    ~SwOSSelectorItem();
+    void add( int8_t id, const char *text );
+
+};
+
+class SwOSScreenSelector : public SwOSScreenObj {
+
+  protected:
+    uint8_t x, y;
+    SwOSSelectorItem *items = NULL;
+    SwOSSelectorItem *active = NULL;
+
+  public:
+   
+    SwOSScreenSelector( uint8_t x, uint8_t y );
+    ~SwOSScreenSelector();
+    virtual void add( int8_t id, const char *text );
+    virtual void draw( bool inverted = false );
+};
+
+/***************************************************
+ *
+ * SwOSScreen - Base class for all screens
  *
  ***************************************************/
 
@@ -131,6 +166,29 @@ class SwOSMainScreen : public SwOSScreen {
 
     // set a new label text, if applicable
     virtual void setLabel( SwOSIOType_t ioType, uint8_t port, const char *label );
+
+    // eval external events like pressing buttons
+    virtual bool eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port );
+
+};
+
+/***************************************************
+ *
+ * SwOSTestScreen
+ *
+ ***************************************************/
+
+class SwOSTestScreen : public SwOSScreen {
+
+  protected:
+
+  public:
+
+    // Constructor
+    SwOSTestScreen( SwOSScreen *parent );
+
+    // cls and draw all elements
+    virtual void draw( void );
 
     // eval external events like pressing buttons
     virtual bool eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port );
