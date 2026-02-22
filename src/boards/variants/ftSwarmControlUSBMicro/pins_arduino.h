@@ -103,7 +103,7 @@ static const gpio_num_t USTX    = GPIO_NUM_15;
 static const gpio_num_t PUA2    = GPIO_NUM_14;
 
 // Named ports
-#define FACTORYSETTINGS "A4"
+#define FACTORYSETTINGS "S1"
 
 // array based
 static const char         INPUT_NAME[][7]     = { "A1",                   "A2",                   "A3",                   "A4",                   "JOY1LR",                    "JOY1FB",                    "JOY2LR",                    "JOY2FB" };

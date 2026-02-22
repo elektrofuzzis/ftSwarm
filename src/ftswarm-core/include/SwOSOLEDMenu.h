@@ -181,6 +181,7 @@ class SwOSMainScreen : public SwOSScreen {
 class SwOSTestScreen : public SwOSScreen {
 
   protected:
+    SwOSScreenSelector selector{ 25, 16 };
 
   public:
 

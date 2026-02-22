@@ -157,6 +157,8 @@ void SwOSScreenSelector::add( int8_t id, const char *text ) {
   if (items) items->add( id, text );
   else       items = new SwOSSelectorItem( id, text, NULL );
 
+  if (!active) active = items;
+
 }
 
 void SwOSScreenSelector::draw( bool inverted ) {
@@ -297,6 +299,12 @@ bool SwOSFactoryResetScreen::eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t 
  ***************************************************/
 
 SwOSTestScreen::SwOSTestScreen( SwOSScreen *parent ) : SwOSScreen( parent) {
+
+  selector.add( 1, "Config" );
+  selector.add( 2, "Factory Reset" );
+  selector.add( 3, "Nase" );
+  
+  // active = items;
 
 }
 
