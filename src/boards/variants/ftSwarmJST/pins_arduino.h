@@ -17,6 +17,7 @@
 #define FTSWARM_HAL_INPUTS        4
 #define FTSWARM_HAL_AX_INPUTS     4
 #define FTSWARM_HAL_MOTORS        2
+#define FTSWARM_HAL_SERVOS        1
 #define FTSWARM_HAL_PIXELS        2
 
 // due to some hen&egg problemns with including adc_types.h using esp32 cpu

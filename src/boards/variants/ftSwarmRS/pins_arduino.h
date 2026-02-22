@@ -15,14 +15,14 @@
 
 // my hardware features
 #define FTSWARM_BOARD_RS
-#define FTSWARM_HAL_HAS_RS485    1
-#define FTSWARM_HAL_HAS_EXT_PORT 1
-#define FTSWARM_HAL_INPUTS       7
-#define FTSWARM_HAL_AX_INPUTS    6
-#define FTSWARM_HAL_MOTORS       2
-#define FTSWARM_HAL_PIXELS       2
+#define FTSWARM_HAL_RS485     1
+#define FTSWARM_HAL_EXT_PORT  1
+#define FTSWARM_HAL_INPUTS    7
+#define FTSWARM_HAL_AX_INPUTS 6
+#define FTSWARM_HAL_MOTORS    2
+#define FTSWARM_HAL_SERVOS    2
+#define FTSWARM_HAL_PIXELS    2
 
-// to solve some hen & egg problems
 // to solve some hen & egg problems
 static const int8_t FTSWARM_HAL_IO_DIGITAL          = 1;
 static const int8_t FTSWARM_HAL_IO_ANALOG           = 2;
@@ -46,8 +46,10 @@ static const int8_t GYRO_INTERNAL_I2C  = 2;
 static const int8_t GYRO_EXTERNAL_I2C  = 3;
 
 // I2C (Standard-Bus)
-static const gpio_num_t SDA = GPIO_NUM_8;
-static const gpio_num_t SCL = GPIO_NUM_9;
+#define PIN_SDA GPIO_NUM_8
+#define PIN_SDC GPIO_NUM_9
+static const gpio_num_t SDA = PIN_SDA;
+static const gpio_num_t SCL = PIN_SDC;
 
 // I2C (internal)
 static const gpio_num_t SDA_INTERNAL = GPIO_NUM_NC;
@@ -73,7 +75,6 @@ static const gpio_num_t RX = GPIO_NUM_44;
 #define RGB_BUILTIN GPIO_NUM_48
 
 // ftSwarm definitions
-static const uint8_t FTSWARM_HAL_SERVOS       = 2;
 static const int8_t  FTSWARM_HAL_GYRO         = GYRO_LSM6;
 static const int8_t  FTSWARM_HAL_GYRO_PORT    = GYRO_SPI;
 
