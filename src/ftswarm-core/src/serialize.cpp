@@ -28,7 +28,7 @@ const char SLITERAL[ SERIALIZE_LITERAL_MAX ][24] = {
   "name",               // SERIALIZE_LITERAL_NAME
   "id",                 // SERIALIZE_LITERAL_ID,
   "serialNumber",       // SERIALIZE_LITERAL_SERIALNUMBER
-  "CtrlType",           // SERIALIZE_LITERAL_CTRLTYPE
+  "CtrlVersion",        // SERIALIZE_LITERAL_CTRLVERSION
   "IOType",             // SERIALIZE_LITERAL_IOTYPE
   "active",             // SERIALIZE_LITERAL_ACTIVE
   "brightness",         // SERIALIZE_LITERAL_BRIGHTNESS

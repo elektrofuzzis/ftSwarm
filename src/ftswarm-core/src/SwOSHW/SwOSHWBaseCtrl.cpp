@@ -601,7 +601,7 @@ void SwOSCtrl::serialize( Serialize *serialize ) {
   serialize->startObject( );
   serialize->item( SERIALIZE_LITERAL_NAME, getHostname());
   serialize->item( SERIALIZE_LITERAL_SERIALNUMBER, serialNumber);
-  // serialize->item( SERIALIZE_LITERAL_CTRLTYPE, getType() );
+  serialize->item( SERIALIZE_LITERAL_CTRLVERSION, getCPU() );
   serialize->item( SERIALIZE_LITERAL_STATE, getState() );
   
   serialize->startArray( SERIALIZE_LITERAL_IO );
