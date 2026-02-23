@@ -9,7 +9,7 @@ export const ftSwarmReplacements: Record<string, string> = {
   134: '"trigger":',
   135: '"state":',
   136: '"speed":',
-  137: '"UNUSED":',
+  137: '"UIClass":',
   138: '"offset":',
   139: '"position":',
   140: '"value":',
@@ -18,8 +18,8 @@ export const ftSwarmReplacements: Record<string, string> = {
   143: '"name":',
   144: '"id":',
   145: '"serialNumber":',
-  146: '"type":',
-  147: '"icon":',
+  146: '"CtrlType":',
+  147: '"IOType":',
   148: '"active":',
   149: '"brightness":',
   150: '"color":',
@@ -36,5 +36,9 @@ export const ftSwarmReplacements: Record<string, string> = {
   161: '"events":',
   162: '"distance":',
   163: '"homing":',
-  164: '"running":'
+  164: '"running":',
+  165: '"operator":',
+  166: '"operand1":',
+  167: '"operand2":',
+  168: '"YawPitchRoll":'
 };

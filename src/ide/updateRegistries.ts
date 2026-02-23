@@ -44,6 +44,7 @@ async function generateEnums() {
 
   for (const match of enumMatches) {
     const enumName = match[2];
+    if (enumName == "SwOSLabel" || enumName == "FtSwarmController") continue;
     const enumValueString = match[1];
     const constantMatches = enumValueString.matchAll(ENUM_CONSTANT_REGEX) || [];
 
