@@ -1,12 +1,67 @@
-import type {
-  FtSwarmVersion,
+import {
+  type SwOSIOClass,
   SwOSIOType,
-  SwOSState,
+  type FtSwarmVersion,
+  type SwOSState,
 } from "./generated/genApiEnums";
+
+type IOTypeMapping = {
+  [K in SwOSIOType]: 'input' | 'output' | 'special';
+};
+
+export const IOTypeClasses: IOTypeMapping = {
+  [SwOSIOType.SWOSIO_UNDEF]: "special",
+  [SwOSIOType.SWOSIO_DIGITAL]: "input",
+  [SwOSIOType.SWOSIO_SWITCH]: "input",
+  [SwOSIOType.SWOSIO_REEDSWITCH]: "input",
+  [SwOSIOType.SWOSIO_LIGHTBARRIER]: "input",
+  [SwOSIOType.SWOSIO_BUTTON]: "input",
+  [SwOSIOType.SWOSIO_ANALOG]: "input",
+  [SwOSIOType.SWOSIO_VOLTMETER]: "input",
+  [SwOSIOType.SWOSIO_OHMMETER]: "input",
+  [SwOSIOType.SWOSIO_THERMOMETER]: "input",
+  [SwOSIOType.SWOSIO_LDR]: "input",
+  [SwOSIOType.SWOSIO_JOYSTICK]: "input",
+  [SwOSIOType.SWOSIO_MOTOR]: "output",
+  [SwOSIOType.SWOSIO_XSMOTOR]: "output",
+  [SwOSIOType.SWOSIO_XMMOTOR]: "output",
+  [SwOSIOType.SWOSIO_TRACTOR]: "output",
+  [SwOSIOType.SWOSIO_ENCODER]: "output",
+  [SwOSIOType.SWOSIO_LAMP]: "output",
+  [SwOSIOType.SWOSIO_VALVE]: "output",
+  [SwOSIOType.SWOSIO_COMPRESSOR]: "output",
+  [SwOSIOType.SWOSIO_BUZZER]: "output",
+  [SwOSIOType.SWOSIO_STEPPER]: "output",
+  [SwOSIOType.SWOSIO_COUNTER]: "input",
+  [SwOSIOType.SWOSIO_ROTARYENCODER]: "input",
+  [SwOSIOType.SWOSIO_FREQUENCYMETER]: "input",
+  [SwOSIOType.SWOSIO_LIDAR]: "input",
+  [SwOSIOType.SWOSIO_CAM]: "special",
+  [SwOSIOType.SWOSIO_SERVO]: "input",
+  [SwOSIOType.SWOSIO_PIXEL]: "output",
+  [SwOSIOType.SWOSIO_OLED]: "special",
+  [SwOSIOType.SWOSIO_I2C]: "special",
+  [SwOSIOType.SWOSIO_GYRO]: "input",
+  [SwOSIOType.SWOSIO_POWER]: "input",
+  [SwOSIOType.SWOSIO_COLORSENSOR]: "input",
+  [SwOSIOType.SWOSIO_TRAILSENSOR]: "input",
+  [SwOSIOType.SWOSIO_ULTRASONIC]: "input",
+  [SwOSIOType.SWOSIO_JOYSTICK_POTI]: "input",
+  [SwOSIOType.SWOSIO_WHEELDRIVE]: "output",
+  [SwOSIOType.SWOSIO_MINIMOTOR]: "output",
+  [SwOSIOType.SWOSIO_SMOTOR]: "output",
+  [SwOSIOType.SWOSIO_POWERMOTOR]: "output",
+  [SwOSIOType.SWOSIO_MMOTOR]: "output",
+  [SwOSIOType.SWOSIO_RCMOTOR]: "output",
+  [SwOSIOType.SWOSIO_RCSERVO]: "output",
+  [SwOSIOType.SWOSIO_RCPOTI]: "input",
+  [SwOSIOType.SWOSIO_MAXIOTYPE]: "special"
+}
 
 export interface ApiGeneralIoType {
   name: string;
   IOType: SwOSIOType;
+  UIClass: SwOSIOClass;
   icon: string;
   active: boolean;
 }

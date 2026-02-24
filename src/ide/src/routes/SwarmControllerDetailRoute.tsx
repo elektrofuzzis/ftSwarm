@@ -1,13 +1,18 @@
-import { type Accessor, type Component, createMemo, For } from "solid-js";
+import { type Accessor, type Component, createMemo, For, Show } from "solid-js";
 import { useParams } from "@solidjs/router";
 import { useOMContext } from "../contexts/transport/context.ts";
 import { SwOSState } from "../api/generated/genApiEnums.ts";
-import type { ApiController } from "../api/apiTypes.ts";
+import {
+  IOTypeClasses,
+  type ApiController,
+  type FtSwarmIo,
+} from "../api/apiTypes.ts";
 import { Unplug } from "lucide-solid";
 import { getControllerIcon } from "../api/icons.ts";
 import { Dynamic } from "solid-js/web";
 import { EditableLabel } from "../components/EditableLabel.tsx";
 import { FtSwarmIoTypeNames } from "../api/names.ts";
+import { IoCard } from "../components/io/index.tsx";
 
 const INVALID_STATES: SwOSState[] = [
   SwOSState.OFFLINE,
@@ -63,30 +68,57 @@ const InvalidState: SwarmStatusRenderComponent = ({ controller }) => {
   );
 };
 
-const ControllerDetail: SwarmStatusRenderComponent = ({ controller }) => (
-  <div class="p-4 w-full">
-    <h2 class="text-thm-font-muted tracking-tight">Controller Detail</h2>
+const Divider: Component<{ name: string }> = ({ name }) => (
+  <div class="mb-2 mt-3 flex items-center gap-2">
+    <div class="h-px bg-thm-surface-border-2 flex-1"></div>
+    <span class="text-xs font-semibold text-thm-font-muted uppercase tracking-wider">
+      {name}
+    </span>
+    <div class="h-px bg-thm-surface-border-2 flex-1"></div>
+  </div>
+);
 
-    <h2 class="text-2xl font-bold text-thm-font tracking-tight">
-      <EditableLabel>{controller().name}</EditableLabel>
-    </h2>
+const ControllerDetail: SwarmStatusRenderComponent = ({ controller }) => {
+  const ios = () => controller().io;
+  const inputs = () =>
+    ios().filter((io) => IOTypeClasses[io.IOType] == "input");
+  const outputs = () =>
+    ios().filter((io) => IOTypeClasses[io.IOType] == "output");
+  const specials = () =>
+    ios().filter((io) => IOTypeClasses[io.IOType] == "special");
 
-    <div class="w-full grid grid-cols-4 gap-2">
-      <For each={controller().io}>
-        {(value) => (
-          <div class="p-4 border border-thm-surface-border-2 rounded-lg">
-            <h3 class="text-thm-font-muted text-sm">
-              {FtSwarmIoTypeNames[value.IOType]}
-            </h3>
-            <p class="text-thm-font text-lg font-medium">
-              {value.name}: {value.value}
-            </p>
-          </div>
+  const categories = () =>
+    (
+      [
+        ["Inputs", inputs],
+        ["Outputs", outputs],
+        ["Specials", specials],
+      ] satisfies [string, () => FtSwarmIo[]][]
+    ).filter(([_, fn]) => fn().length > 0);
+
+  return (
+    <div class="p-4 w-full">
+      <h2 class="text-thm-font-muted tracking-tight">Controller Detail</h2>
+
+      <h2 class="text-2xl font-bold text-thm-font tracking-tight">
+        <EditableLabel>{controller().name}</EditableLabel>
+      </h2>
+
+      <For each={categories()}>
+        {([name, iosFn]) => (
+          <>
+            <Divider name={name} />
+            <div class="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-4">
+              <For each={iosFn()}>
+                {(value) => <IoCard io={value} />}
+              </For>
+            </div>
+          </>
         )}
       </For>
     </div>
-  </div>
-);
+  );
+};
 
 export const SwarmControllerDetailRoute: Component = () => {
   const params = useParams<{ id: string }>();
