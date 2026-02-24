@@ -477,26 +477,6 @@ bool SwOSCtrl::isI2CSwarmCtrl( void ) {
 
 }
 
-const char *SwOSCtrl::version( FtSwarmVersion_t v) {
-  switch (v) {
-  case FTSWARM_NOVERSION:     return "??";
-  case FTSWARMXL_1V00:        return "1.0.0";
-  case FTSWARMJST_1V15:       return "1.15";
-  case FTSWARMCONTROL_1V3UC:
-  case FTSWARMCONTROL_1V3:    return "1.3";
-  case FTSWARMRC_1V141:       return "1.4.1";
-  case FTSWARMDUINO_1V141:  
-  case FTSWARMPWRDRIVE_1V141: return "1.4.1";
-  case FTSWARMRS_2V1:         return "2.1.0";
-  case FTSWARMCAM_3V12:       return "3.1.2";
-  default:                    return  "??";
-  }
-}
-
-const char *SwOSCtrl::getVersionCPU() {
-  return version(CPU);
-}
-
 char *SwOSCtrl::getHostname( void ) {
 
   if ( (_alias) && (_alias[0]!='\0') ) {

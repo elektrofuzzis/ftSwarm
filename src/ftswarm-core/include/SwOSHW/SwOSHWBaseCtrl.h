@@ -64,8 +64,6 @@ protected:
   bool              isSubscribed = false;
   char             *subscribedCtrlName = NULL;
 
-	const char *     version( FtSwarmVersion_t v);
-
   uint8_t          microstepMode = 0;  // FtSwarmPwrDrive only
 
   uint8_t          pixels = 0;
@@ -159,7 +157,6 @@ public:
 
   // FtSwarmController_t getType();                                  // what I am?
   FtSwarmVersion_t   getCPU() { return CPU; };                    // my CPU type
-	const char *       getVersionCPU();                             // my CPU type as string
   bool               isLocal() { return local; };                 // local or remote?
 	char *             getHostname( );                              // hostname
 	void               serialize( Serialize *serialize );           // send board & IO device information as a json string
