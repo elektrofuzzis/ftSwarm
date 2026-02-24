@@ -76,7 +76,7 @@ const ControllerDetail: SwarmStatusRenderComponent = ({ controller }) => (
         {(value) => (
           <div class="p-4 border border-thm-surface-border-2 rounded-lg">
             <h3 class="text-thm-font-muted text-sm">
-              {FtSwarmIoTypeNames[value.type]}
+              {FtSwarmIoTypeNames[value.IOType]}
             </h3>
             <p class="text-thm-font text-lg font-medium">
               {value.name}: {value.value}

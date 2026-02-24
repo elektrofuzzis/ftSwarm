@@ -139,7 +139,7 @@ export const Sidebar = () => {
               class="w-full flex flex-col"
             >
               <MenuEntry
-                icon={getControllerIcon(it.type)}
+                icon={getControllerIcon(it.CtrlVersion)}
                 text={it.name}
                 active={route() === `/controller/${it.serialNumber}`}
               >

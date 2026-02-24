@@ -33,7 +33,6 @@ export const FtSwarmIoTypeNames: Record<SwOSIOType, string> = {
   [SwOSIOType.SWOSIO_OLED]: "Display",
   [SwOSIOType.SWOSIO_I2C]: "I2C Device",
   [SwOSIOType.SWOSIO_GYRO]: "Gyroscope",
-  [SwOSIOType.SWOSIO_HC165]: "Shift Register (HC165)",
   [SwOSIOType.SWOSIO_POWER]: "Power Meter",
   [SwOSIOType.SWOSIO_COLORSENSOR]: "Color Sensor",
   [SwOSIOType.SWOSIO_TRAILSENSOR]: "Trail Sensor",
@@ -44,5 +43,8 @@ export const FtSwarmIoTypeNames: Record<SwOSIOType, string> = {
   [SwOSIOType.SWOSIO_SMOTOR]: "S Motor",
   [SwOSIOType.SWOSIO_POWERMOTOR]: "Power Motor",
   [SwOSIOType.SWOSIO_MMOTOR]: "M Motor",
+  [SwOSIOType.SWOSIO_RCMOTOR]: "RC Motor",
+  [SwOSIOType.SWOSIO_RCSERVO]: "RC Servo",
+  [SwOSIOType.SWOSIO_RCPOTI]: "RC Potentiometer",
   [SwOSIOType.SWOSIO_MAXIOTYPE]: "",
 };

@@ -18,7 +18,7 @@ export const ftSwarmReplacements: Record<string, string> = {
   143: '"name":',
   144: '"id":',
   145: '"serialNumber":',
-  146: '"CtrlType":',
+  146: '"CtrlVersion":',
   147: '"IOType":',
   148: '"active":',
   149: '"brightness":',

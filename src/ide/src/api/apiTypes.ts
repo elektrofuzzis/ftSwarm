@@ -6,7 +6,7 @@ import type {
 
 export interface ApiGeneralIoType {
   name: string;
-  type: SwOSIOType;
+  IOType: SwOSIOType;
   icon: string;
   active: boolean;
 }
@@ -77,7 +77,7 @@ export type FtSwarmIo = FtSwarmInput | FtSwarmOutput;
 export type ApiController = {
   name: string;
   serialNumber: string;
-  type: FtSwarmVersion;
+  CtrlVersion: FtSwarmVersion;
   state: SwOSState;
   io: FtSwarmIo[];
 };
