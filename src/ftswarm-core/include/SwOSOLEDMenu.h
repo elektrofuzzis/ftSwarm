@@ -99,12 +99,19 @@ class SwOSScreenSelector : public SwOSScreenObj {
 
   protected:
     SwOSScreen    *parent = NULL;
-    SwOSScreenObj *obj[8];
+    uint8_t       screenObjects = 0;
+    SwOSScreenObj **obj;
 
   public:
 
     // constructor
-    SwOSScreen( SwOSScreen *parent );
+    SwOSScreen( SwOSScreen *parent, int8_t screenObjects = 8 );
+
+    // destructor
+    ~SwOSScreen();
+
+    // add a screen object
+    virtual bool add( SwOSScreenObj * newObject );
 
     // cls and draw all elements
     virtual void draw( void ); 
@@ -181,15 +188,11 @@ class SwOSMainScreen : public SwOSScreen {
 class SwOSTestScreen : public SwOSScreen {
 
   protected:
-    SwOSScreenSelector selector{ 25, 16 };
 
   public:
 
     // Constructor
     SwOSTestScreen( SwOSScreen *parent );
-
-    // cls and draw all elements
-    virtual void draw( void );
 
     // eval external events like pressing buttons
     virtual bool eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port );

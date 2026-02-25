@@ -26,6 +26,7 @@ const char SLITERAL[ SERIALIZE_LITERAL_MAX ][24] = {
   "valueLR",            // SERIALIZE_LITERAL_VALUELR
   "valueFB",            // SERIALIZE_LITERAL_VALUEFB
   "name",               // SERIALIZE_LITERAL_NAME
+  "alias"               // SERIALIZE_LITERAL_ALIAS
   "id",                 // SERIALIZE_LITERAL_ID,
   "serialNumber",       // SERIALIZE_LITERAL_SERIALNUMBER
   "CtrlVersion",        // SERIALIZE_LITERAL_CTRLVERSION

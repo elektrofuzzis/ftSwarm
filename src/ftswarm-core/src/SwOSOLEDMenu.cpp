@@ -181,9 +181,12 @@ void SwOSScreenSelector::draw( bool inverted ) {
 #define OLEDLOWERLINE 38
 #define OLEDWIDTH     128
 
-SwOSScreen::SwOSScreen( SwOSScreen *parent ) {
+SwOSScreen::SwOSScreen( SwOSScreen *parent, int8_t screenObjects) {
   
-  this->parent = parent;
+  this->parent        = parent;
+  this->screenObjects = screenObjects>8?screenObjects:8;  // at least 8 objects
+
+  obj = (SwOSScreenObj **) calloc( screenObjects, sizeof(SwOSScreenObj *) );
   
   obj[0] = new SwOSScreenObj( NULL, 0,                OLEDLOWERLINE, FTSWARM_ALIGNLEFT   ); /* FTSWARM_S1 */ 
   obj[1] = new SwOSScreenObj( NULL, 41,               OLEDLOWERLINE, FTSWARM_ALIGNCENTER ); /* FTSWARM_S2 */ 
@@ -196,6 +199,25 @@ SwOSScreen::SwOSScreen( SwOSScreen *parent ) {
   
 }
 
+SwOSScreen::~SwOSScreen() {
+
+  for ( uint8_t i=0; i<screenObjects; i++ ) if (obj[i]) delete obj[i];
+  free(obj);
+
+}
+
+bool SwOSScreen::add( SwOSScreenObj *newObject ) {
+
+  for ( uint8_t i=0; i<screenObjects; i++ ) 
+    if (!obj[i]) {
+      obj[i] = newObject;
+      return true;
+    }
+
+  return false;
+
+}
+
 void SwOSScreen::draw( void ) {
 
   // cls
@@ -205,7 +227,7 @@ void SwOSScreen::draw( void ) {
   oled->setTextColor(true, false);   // Draw white text
   oled->cp437(true);                 // Use full 256 char 'Code Page 437' font
 
-  for (uint8_t i=0; i<8; i++ ) if (obj[i]) obj[i]->draw();
+  for (uint8_t i=0; i<screenObjects; i++ ) if (obj[i]) obj[i]->draw();
 
 }
 
@@ -232,7 +254,7 @@ void SwOSScreen::draw( void ) {
   // additional default values
   oled->setTextSize(1, 1);
 
-  for ( uint8_t i=0; i<8; i++ ) if (obj[i]) obj[i]->draw( );
+  for ( uint8_t i=0; i<screenObjects; i++ ) if (obj[i]) obj[i]->draw( );
 
 }
 
@@ -240,6 +262,7 @@ void SwOSSplashScreen::operate( void ) {
 
   // change to Main Screen after 5 seconds
   if ( millis()-startTime > 5000L ) screenManager.newScreen( new SwOSMainScreen( NULL ), true );
+  // if ( millis()-startTime > 1000L ) screenManager.newScreen( new SwOSTestScreen( NULL ), true );
 
 }
 
@@ -298,17 +321,14 @@ bool SwOSFactoryResetScreen::eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t 
  *
  ***************************************************/
 
-SwOSTestScreen::SwOSTestScreen( SwOSScreen *parent ) : SwOSScreen( parent) {
+SwOSTestScreen::SwOSTestScreen( SwOSScreen *parent ) : SwOSScreen( parent, 20 ) {
 
-  selector.add( 1, "Config" );
-  selector.add( 2, "Factory Reset" );
-  selector.add( 3, "Nase" );
-  
-  // active = items;
+  SwOSScreenSelector *selector = new SwOSScreenSelector( 25, 24 );
+  selector->add( 1, "Config" );
+  selector->add( 2, "Factory Reset" );
+  selector->add( 3, "Nase" );
 
-}
-
-void SwOSTestScreen::draw( void ) {
+  add( selector );
 
 }
 
@@ -325,7 +345,7 @@ bool SwOSTestScreen::eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t ioType, 
 
 SwOSMainScreen::SwOSMainScreen( SwOSScreen *parent ) : SwOSScreen( parent ) {
 
-  for ( uint8_t i=0; i<8; i++ ) if ( obj[i] ) obj[i]->setLabel( nvs.oledLabel[nvs.activeEventConfig][i] );
+  for ( uint8_t i=0; i<screenObjects; i++ ) if ( obj[i] ) obj[i]->setLabel( nvs.oledLabel[nvs.activeEventConfig][i] );
 
   obj[FTSWARM_S4]->setLabel( "SET" );
 
