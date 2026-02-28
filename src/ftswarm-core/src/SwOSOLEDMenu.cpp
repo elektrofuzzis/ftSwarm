@@ -20,11 +20,14 @@ SwOSScreenManager screenManager;
  *
  ***************************************************/
 
-SwOSScreenObj::SwOSScreenObj( const char *label, uint8_t x, uint8_t y, FtSwarmAlign_t align ) {
+SwOSScreenObj::SwOSScreenObj( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, uint8_t x, uint8_t y, FtSwarmAlign_t align ) {
   
-  this->x = x;
-  this->y = y;
-  this->align = align;
+  this->id     = id;
+  this->io     = io;
+  this->parent = parent;
+  this->x      = x;
+  this->y      = y;
+  this->align  = align;
 
   setLabel( label );
 
@@ -32,7 +35,24 @@ SwOSScreenObj::SwOSScreenObj( const char *label, uint8_t x, uint8_t y, FtSwarmAl
 
 SwOSScreenObj::~SwOSScreenObj() {
 
+  if (io) io->unsubscribe( this );
+
   if ( label ) free( label );
+
+}
+
+void SwOSScreenObj::activate( void ) {
+
+  if (!io) return;
+  
+  io->subscribe( this ); 
+  value = io->getValueI32();
+
+}
+
+void SwOSScreenObj::unregister( SwOSIO *io ) {
+
+  if ( this->io == io ) this->io = NULL;
 
 }
 
@@ -53,13 +73,53 @@ void SwOSScreenObj::setLabel( const char *label ) {
   
   }
 
-}
-
-void SwOSScreenObj::draw( bool inverted ) {
-
-  if ( ( label ) && ( label[0] != '\0' )  ) oled->write( label, x, y, align, true, inverted );
+  draw();
 
 }
+
+bool SwOSScreenObj::setValue( int32_t newValue ) {
+
+  value = newValue;
+
+  draw( );
+
+  FtSwarmToggle_t toggle;
+
+  if ( value > 0 ) toggle = FTSWARM_TOGGLEUP;
+  else             toggle = FTSWARM_TOGGLEDOWN;
+
+  if (parent) return parent->eventHandlerCallback( toggle, id );
+
+  return false;
+
+}
+
+/***************************************************
+ *
+ * SwOSScreenButton - button class
+ *
+ ***************************************************/
+
+void SwOSScreenButton::draw( void ) {
+
+  if ( ( label ) && ( label[0] != '\0' )  ) oled->write( label, x, y, align, true, value > 0 );
+
+} 
+
+/***************************************************
+ *
+ * SwOSScreenObjXX - local Buttons
+ *
+ ***************************************************/
+
+SwOSScreenS1::SwOSScreenS1( SwOSScreen *parent, const char *label ) : SwOSScreenButton( FTSWARM_S1, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_S1), parent, label, 0, OLEDLOWERLINE, FTSWARM_ALIGNLEFT ) {};
+SwOSScreenS2::SwOSScreenS2( SwOSScreen *parent, const char *label ) : SwOSScreenButton( FTSWARM_S2, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_S2), parent, label, 41, OLEDLOWERLINE, FTSWARM_ALIGNCENTER ) {};
+SwOSScreenS3::SwOSScreenS3( SwOSScreen *parent, const char *label ) : SwOSScreenButton( FTSWARM_S3, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_S3), parent, label, OLEDWIDTH -1 -41, OLEDLOWERLINE, FTSWARM_ALIGNCENTER ) {};
+SwOSScreenS4::SwOSScreenS4( SwOSScreen *parent, const char *label ) : SwOSScreenButton( FTSWARM_S4, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_S4), parent, label, OLEDWIDTH -1, OLEDLOWERLINE, FTSWARM_ALIGNRIGHT ) {};
+SwOSScreenF1::SwOSScreenF1( SwOSScreen *parent, const char *label ) : SwOSScreenButton( FTSWARM_F1, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_F1), parent, label, 0, 1, FTSWARM_ALIGNLEFT ) {};
+SwOSScreenF2::SwOSScreenF2( SwOSScreen *parent, const char *label ) : SwOSScreenButton( FTSWARM_F2, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_F2), parent, label, OLEDWIDTH -1, 1, FTSWARM_ALIGNRIGHT ) {};
+SwOSScreenJ1::SwOSScreenJ1( SwOSScreen *parent, const char *label ) : SwOSScreenButton( FTSWARM_J1, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_J1), parent, label, 48, 16, FTSWARM_ALIGNCENTER ) {};
+SwOSScreenJ2::SwOSScreenJ2( SwOSScreen *parent, const char *label ) : SwOSScreenButton( FTSWARM_J2, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_J2), parent, label, OLEDWIDTH -1 -48, 16, FTSWARM_ALIGNCENTER ) {};
 
 /***************************************************
  *
@@ -67,16 +127,16 @@ void SwOSScreenObj::draw( bool inverted ) {
  *
  ***************************************************/
 
-SwOSScreenSlider::SwOSScreenSlider( const char *label, uint8_t x, uint8_t y, uint8_t size, uint8_t direction ) : SwOSScreenObj( label, x, y, FTSWARM_ALIGNCENTER ) {
+SwOSScreenSlider::SwOSScreenSlider( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, uint8_t x, uint8_t y, uint8_t size, uint8_t direction ) : SwOSScreenObj( id, io, parent, label, x, y, FTSWARM_ALIGNCENTER ) {
 
   this->size      = size;
   this->direction = direction;
 
 }
 
-void SwOSScreenSlider::draw( bool inverted ) {
+void SwOSScreenSlider::draw( void ) {
   
-  SwOSScreenObj::draw( inverted );
+  SwOSScreenObj::draw( );
 
   if (direction==HORIZONTAL) drawHorizontal();
   else                       drawVertical();
@@ -124,8 +184,8 @@ void SwOSScreenSlider::drawVertical( void ) {
 SwOSSelectorItem::SwOSSelectorItem( int8_t id, const char *text, SwOSSelectorItem *prev ) {
 
   this->id = id;
-  bzero( this->text, sizeof( text ) );
-  strncpy( this->text, text, sizeof( text ) - 1 );
+  bzero( this->text, sizeof( this->text ) );
+  strncpy( this->text, text, sizeof( this->text ) - 1 );
   next = NULL;
   this->prev = prev;
 
@@ -142,7 +202,7 @@ void SwOSSelectorItem::add( int8_t id, const char *text ) {
 
 }
 
-SwOSScreenSelector::SwOSScreenSelector( uint8_t x, uint8_t y ) : SwOSScreenObj( "", x, y, FTSWARM_ALIGNLEFT ) {
+SwOSScreenSelector::SwOSScreenSelector( uint8_t id, SwOSIO* io, SwOSScreen *parent, uint8_t x, uint8_t y ) : SwOSScreenObj( id, io, parent, "", x, y, FTSWARM_ALIGNLEFT ) {
 
 }
 
@@ -161,11 +221,11 @@ void SwOSScreenSelector::add( int8_t id, const char *text ) {
 
 }
 
-void SwOSScreenSelector::draw( bool inverted ) {
-
+void SwOSScreenSelector::draw( void ) {
+  
   if (!active) return;
 
-  SwOSScreenObj::draw( inverted );
+  SwOSScreenObj::draw( );
   if (active->prev) oled->write( active->prev->text, x, y-8, align, true, false );
                     oled->write( active->text,       x, y,   align, true, true );
   if (active->next) oled->write( active->next->text, x, y+8, align, true, false );
@@ -178,38 +238,35 @@ void SwOSScreenSelector::draw( bool inverted ) {
  *
  ***************************************************/
 
-#define OLEDLOWERLINE 38
-#define OLEDWIDTH     128
-
-SwOSScreen::SwOSScreen( SwOSScreen *parent, int8_t screenObjects) {
+SwOSScreen::SwOSScreen( SwOSScreen *parent, int8_t screenObjects, const char *title ) {
   
   this->parent        = parent;
-  this->screenObjects = screenObjects>8?screenObjects:8;  // at least 8 objects
+  this->screenObjects = screenObjects;
 
-  obj = (SwOSScreenObj **) calloc( screenObjects, sizeof(SwOSScreenObj *) );
-  
-  obj[0] = new SwOSScreenObj( NULL, 0,                OLEDLOWERLINE, FTSWARM_ALIGNLEFT   ); /* FTSWARM_S1 */ 
-  obj[1] = new SwOSScreenObj( NULL, 41,               OLEDLOWERLINE, FTSWARM_ALIGNCENTER ); /* FTSWARM_S2 */ 
-  obj[2] = new SwOSScreenObj( NULL, OLEDWIDTH -1 -41, OLEDLOWERLINE, FTSWARM_ALIGNCENTER ); /* FTSWARM_S3 */ 
-  obj[3] = new SwOSScreenObj( NULL, OLEDWIDTH -1,     OLEDLOWERLINE, FTSWARM_ALIGNRIGHT  ); /* FTSWARM_S4 */ 
-  obj[4] = new SwOSScreenObj( NULL, 0,                1,             FTSWARM_ALIGNLEFT   ); /* FTSWARM_F1 */ 
-  obj[5] = new SwOSScreenObj( NULL, OLEDWIDTH -1,     1,             FTSWARM_ALIGNRIGHT  ); /* FTSWARM_F2 */ 
-  obj[6] = new SwOSScreenObj( NULL, 48,               16,            FTSWARM_ALIGNCENTER ); /* FTSWARM_J1 */ 
-  obj[7] = new SwOSScreenObj( NULL, OLEDWIDTH -1 -48, 16,            FTSWARM_ALIGNCENTER ); /* FTSWARM_J2 */ 
+  if ( title ) {
+
+    this->title = (char *) calloc( strlen( title)+1, sizeof( char ) );
+    strncpy( this->title, title, strlen( title ) );
+
+  }
+
+  if (screenObjects) obj = (SwOSScreenObj **) calloc( screenObjects, sizeof(SwOSScreenObj *) );
   
 }
 
 SwOSScreen::~SwOSScreen() {
 
-  for ( uint8_t i=0; i<screenObjects; i++ ) if (obj[i]) delete obj[i];
-  free(obj);
+  for ( uint8_t i=0; i<screenObjects; i++ ) if ( obj[i] ) delete obj[i];
+
+  if ( obj )   free( obj );
+  if ( title ) free( title );
 
 }
 
 bool SwOSScreen::add( SwOSScreenObj *newObject ) {
 
   for ( uint8_t i=0; i<screenObjects; i++ ) 
-    if (!obj[i]) {
+    if ( !obj[i] ) {
       obj[i] = newObject;
       return true;
     }
@@ -227,91 +284,22 @@ void SwOSScreen::draw( void ) {
   oled->setTextColor(true, false);   // Draw white text
   oled->cp437(true);                 // Use full 256 char 'Code Page 437' font
 
-  for (uint8_t i=0; i<screenObjects; i++ ) if (obj[i]) obj[i]->draw();
-
-}
-
-/***************************************************
- *
- *   SwOSSplashScreen
- *
- ***************************************************/
-
- void SwOSSplashScreen::draw( void ) {
-
-  SwOSScreen::draw();
-  
-  // Logo
-  oled->setTextSize( 3, 3 );
-  oled->write( "ftSwarm", oled->getWidth()/2, 0, FTSWARM_ALIGNCENTER, true, false );
-  
-  // hostname & version
-  oled->setTextSize(1,1);            
-  char line[100];
-  sprintf( line, "%s %s", nvs.swarmName, SWOSVERSION );
-  oled->write( line, oled->getWidth()/2, 32, FTSWARM_ALIGNCENTER, true, false );
- 
-  // additional default values
-  oled->setTextSize(1, 1);
-
-  for ( uint8_t i=0; i<screenObjects; i++ ) if (obj[i]) obj[i]->draw( );
-
-}
-
-void SwOSSplashScreen::operate( void ) {
-
-  // change to Main Screen after 5 seconds
-  if ( millis()-startTime > 5000L ) screenManager.newScreen( new SwOSMainScreen( NULL ), true );
-  // if ( millis()-startTime > 1000L ) screenManager.newScreen( new SwOSTestScreen( NULL ), true );
-
-}
-
-bool SwOSSplashScreen::eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port ) {
-  
-  // some pressed a key, so I change to the main screen
-  screenManager.newScreen( new SwOSMainScreen( NULL ), true );
-  return true;
-
-}
-
-/***************************************************
- *
- * SwOSFactoryResetScreen 
- * Ask user to reset controller to factory setting
- *
- ***************************************************/
-
-SwOSFactoryResetScreen::SwOSFactoryResetScreen( SwOSScreen *parent ):SwOSScreen( parent ) {
-
-  // set buttons
-  obj[FTSWARM_S2]->setLabel( "YES" );
-  obj[FTSWARM_S3]->setLabel( "NO" );
-
-}
-
-void SwOSFactoryResetScreen::draw( void ) {
-
-  SwOSScreen::draw();
-  oled->write( "Reset controller to", oled->getWidth()/2, 7, FTSWARM_ALIGNCENTER, true, false );  
-  oled->write( "factory settings?", oled->getWidth()/2, 16, FTSWARM_ALIGNCENTER, true, false );  
-
-}
-
-bool SwOSFactoryResetScreen::eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port ) {
-
-  if ( ioType == SWOSIO_BUTTON ) {
-
-    obj[port]->draw( toggle == FTSWARM_TOGGLEUP );
-
-    // YES
-    if ( ( port == FTSWARM_S2 ) && ( toggle == FTSWARM_TOGGLEDOWN ) ) myOSSwarm.factoryReset();
-
-    // NO
-    if ( ( port == FTSWARM_S3 ) && ( toggle == FTSWARM_TOGGLEDOWN ) ) screenManager.newScreen( new SwOSMainScreen( NULL ), true );
-
+  if ( title ) {
+    oled->drawRect( 16, 0, oled->getWidth() - 32, 8, true, false );
+    oled->write( title, OLEDWIDTH / 2, -16, FTSWARM_ALIGNCENTER, true, false );
   }
 
-  return false;
+  // register my objects and draw them
+  for (uint8_t i=0; i<screenObjects; i++ ) {
+
+    if ( obj[i] ) {
+
+      obj[i]->activate();
+      obj[i]->draw();
+
+    }
+
+  }
 
 }
 
@@ -321,8 +309,9 @@ bool SwOSFactoryResetScreen::eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t 
  *
  ***************************************************/
 
-SwOSTestScreen::SwOSTestScreen( SwOSScreen *parent ) : SwOSScreen( parent, 20 ) {
+SwOSTestScreen::SwOSTestScreen( SwOSScreen *parent ) : SwOSScreen( parent, 1, "Test" ) {
 
+  /*
   SwOSScreenSelector *selector = new SwOSScreenSelector( 25, 24 );
   selector->add( 1, "Config" );
   selector->add( 2, "Factory Reset" );
@@ -330,9 +319,14 @@ SwOSTestScreen::SwOSTestScreen( SwOSScreen *parent ) : SwOSScreen( parent, 20 ) 
 
   add( selector );
 
+  */
+
 }
 
-bool SwOSTestScreen::eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port ) {
+bool SwOSTestScreen::eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id ) {
+
+  printf( "eventHandle %d %d\n", toggle, id );
+  return true;
   
 }
 
@@ -343,11 +337,16 @@ bool SwOSTestScreen::eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t ioType, 
  *
  ***************************************************/
 
-SwOSMainScreen::SwOSMainScreen( SwOSScreen *parent ) : SwOSScreen( parent ) {
+SwOSMainScreen::SwOSMainScreen( SwOSScreen *parent, const char *title ) : SwOSScreen( parent, 8, title ) {
 
-  for ( uint8_t i=0; i<screenObjects; i++ ) if ( obj[i] ) obj[i]->setLabel( nvs.oledLabel[nvs.activeEventConfig][i] );
-
-  obj[FTSWARM_S4]->setLabel( "SET" );
+  add( new SwOSScreenS1( this, nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_S1 ] ) );
+  add( new SwOSScreenS2( this, nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_S2 ] ) );
+  add( new SwOSScreenS3( this, nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_S3 ] ) );
+  add( new SwOSScreenS4( this, "SET" ) );
+  add( new SwOSScreenJ1( this, nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_J1 ] ) );
+  add( new SwOSScreenJ2( this, nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_J2 ] ) );
+  add( new SwOSScreenF1( this, nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_F1 ] ) );
+  add( new SwOSScreenF2( this, nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_F2 ] ) );
 
 }
 
@@ -405,19 +404,15 @@ void SwOSMainScreen::draw( void ) {
 
 }
 
-bool SwOSMainScreen::eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port ) {
+bool SwOSMainScreen::eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id ) {
 
-  if ( ioType == SWOSIO_BUTTON ) {
+  printf( "SwOSMainScreen::eventHandlerCallback %d %d\n", toggle, id );
 
-    obj[port]->draw( toggle == FTSWARM_TOGGLEUP );
-
-    if ( port == FTSWARM_S4 ) {
+  if ( id == FTSWARM_S4 ) {
 
       // set new screen and all done
       if ( toggle == FTSWARM_TOGGLEDOWN ) screenManager.newScreen( new SwOSChooseConfigScreen( this ), false );
       return true;
-
-    }
 
   }
 
@@ -425,14 +420,60 @@ bool SwOSMainScreen::eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t ioType, 
 
 }
 
-void SwOSMainScreen::setLabel( SwOSIOType_t ioType, uint8_t port, const char *label ) {
+/***************************************************
+ *
+ *   SwOSSplashScreen
+ *
+ ***************************************************/
 
-  if ( ( ioType == SWOSIO_BUTTON ) && ( port < 8 ) && ( obj[port] ) ) {
-    
-    obj[port]->setLabel( label );
-    obj[port]->draw();
+ SwOSSplashScreen::SwOSSplashScreen( SwOSScreen *parent, const char *title ):SwOSScreen( parent, 8, title ) { 
+  
+  startTime = millis();
 
-  }
+  
+  add( new SwOSScreenS1( this, "" ) );
+  add( new SwOSScreenS2( this, "" ) );
+  add( new SwOSScreenS3( this, "" ) );
+  add( new SwOSScreenS4( this, "" ) );
+  add( new SwOSScreenJ1( this, "" ) );
+  add( new SwOSScreenJ2( this, "" ) );
+  add( new SwOSScreenF1( this, "" ) );
+  add( new SwOSScreenF2( this, "" ) );
+
+}
+
+ void SwOSSplashScreen::draw( void ) {
+
+  SwOSScreen::draw();
+  
+  // Logo
+  oled->setTextSize( 3, 3 );
+  oled->write( "ftSwarm", oled->getWidth()/2, 0, FTSWARM_ALIGNCENTER, true, false );
+  
+  // hostname & version
+  oled->setTextSize(1,1);            
+  char line[100];
+  sprintf( line, "%s %s", nvs.swarmName, SWOSVERSION );
+  oled->write( line, oled->getWidth()/2, 32, FTSWARM_ALIGNCENTER, true, false );
+ 
+  // additional default values
+  oled->setTextSize(1, 1);
+
+}
+
+void SwOSSplashScreen::operate( void ) {
+
+  // change to Main Screen after 5 seconds
+  if ( millis()-startTime > 5000L ) screenManager.newScreen( new SwOSMainScreen( NULL, title ), true );
+  // if ( millis()-startTime > 1000L ) screenManager.newScreen( new SwOSTestScreen( NULL ), true );
+
+}
+
+bool SwOSSplashScreen::eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id ) {
+  
+  // some pressed a key, so I change to the main screen
+  screenManager.newScreen( new SwOSMainScreen( NULL, title ), true );
+  return true;
 
 }
 
@@ -442,15 +483,12 @@ void SwOSMainScreen::setLabel( SwOSIOType_t ioType, uint8_t port, const char *la
  *
  ***************************************************/
 
-SwOSChooseConfigScreen::SwOSChooseConfigScreen( SwOSScreen *parent ) : SwOSScreen( parent ) {
+SwOSChooseConfigScreen::SwOSChooseConfigScreen( SwOSScreen *parent ) : SwOSScreen( parent, 4, "Configuration" ) {
 
-  char label[4];
-
-  // label S1..S4 with #1..#4
-  for ( uint8_t i=FTSWARM_S1; i<=FTSWARM_S4; i++) {
-    sprintf( label, "#%d", i-FTSWARM_S1+1 );
-    obj[i]->setLabel( label );
-  }
+  add( new SwOSScreenS1( this, "#1" ) );
+  add( new SwOSScreenS2( this, "#2" ) );
+  add( new SwOSScreenS3( this, "#3" ) );
+  add( new SwOSScreenS4( this, "#4" ) );
 
 }
 
@@ -461,30 +499,59 @@ SwOSChooseConfigScreen::SwOSChooseConfigScreen( SwOSScreen *parent ) : SwOSScree
   
 }
 
-bool SwOSChooseConfigScreen::eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port ) {
+bool SwOSChooseConfigScreen::eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id ) {
 
-  if ( ioType == SWOSIO_BUTTON ) {
+  if ( toggle == FTSWARM_TOGGLEDOWN ) {
 
-    obj[ port ]->draw( toggle == FTSWARM_TOGGLEUP );
+    // change config asynchronous
+    SwOSCom setConfig( myOSSwarm.Ctrl[0]->macAddr, myOSSwarm.Ctrl[0]->serialNumber, CMD_SETACTIVECONFIG );
+    setConfig.data.configCmd.config = id - FTSWARM_S1;
+    xQueueSend( myOSNetwork.recvNotification, &setConfig, ESPNOW_MAXDELAY );
 
-    if ( toggle == FTSWARM_TOGGLEDOWN ) {
+    // replace myself with the previous screen
+    screenManager.newScreen( parent, true );
 
-      // change config asynchronous
-      SwOSCom setConfig( myOSSwarm.Ctrl[0]->macAddr, myOSSwarm.Ctrl[0]->serialNumber, CMD_SETACTIVECONFIG );
-      setConfig.data.configCmd.config = port;
-      xQueueSend( myOSNetwork.recvNotification, &setConfig, ESPNOW_MAXDELAY );
-
-      // replace myself with the previous screen
-      screenManager.newScreen( parent, true );
-
-      return true;
-
-    }
+    return true;
 
   }
 
   return false;
   
+}
+
+/***************************************************
+ *
+ * SwOSFactoryResetScreen 
+ * Ask user to reset controller to factory setting
+ *
+ ***************************************************/
+
+SwOSFactoryResetScreen::SwOSFactoryResetScreen( SwOSScreen *parent ) : SwOSScreen( parent, 2, "Factory Reset" ) {
+
+  // set buttons
+  add( new SwOSScreenS2( this, "YES" ) );
+  add( new SwOSScreenS3( this, "NO" ) );
+  
+}
+
+void SwOSFactoryResetScreen::draw( void ) {
+
+  SwOSScreen::draw();
+  oled->write( "Reset controller to", oled->getWidth()/2, 7, FTSWARM_ALIGNCENTER, true, false );  
+  oled->write( "factory settings?", oled->getWidth()/2, 16, FTSWARM_ALIGNCENTER, true, false );  
+
+}
+
+bool SwOSFactoryResetScreen::eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id ) {
+
+  // YES
+  if ( ( id == FTSWARM_S2 ) && ( toggle == FTSWARM_TOGGLEDOWN ) ) { myOSSwarm.factoryReset(); return true; }
+
+  // NO
+  if ( ( id == FTSWARM_S3 ) && ( toggle == FTSWARM_TOGGLEDOWN ) ) {screenManager.newScreen( new SwOSMainScreen( NULL, "Main" ), true ); return true; }
+
+  return false;
+
 }
 
 /***************************************************
@@ -544,14 +611,6 @@ void SwOSScreenManager::draw( void ) {
 
 }
 
-bool SwOSScreenManager::eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port ) { 
-  
-  if (active) return active->eventHandler( toggle, ioType, port ); 
-
-  return false;
-
-}
-
 void SwOSScreenManager::newScreen( SwOSScreen *newScreen, bool autoCleanUp ) { 
 
   SwOSScreen *outdated = NULL;
@@ -576,11 +635,5 @@ void SwOSScreenManager::newScreen( SwOSScreen *newScreen, bool autoCleanUp ) {
   } else {
     this->autoCleanUp = autoCleanUp;
   }
-
-}
-
-void SwOSScreenManager::setLabel( SwOSIOType_t ioType, uint8_t port, const char *label ) {
-
-  if (active) active->setLabel( ioType, port, label );
 
 }

@@ -94,22 +94,22 @@ void SwOSDigitalInput::operate() {
   if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && ( ftPwrDrive ) ) { 
     
     if (port == SWOS_NOPORT) 
-      setReading( ( ftPwrDrive->lastState[0] & EMERCENCYSTOP ) > 0 ); 
+      setReading( ( ftPwrDrive->lastState[0] & EMERCENCYSTOP ) > 0, FTSWARM_NOTRIGGER ); 
     else                     
-      setReading( ( ftPwrDrive->lastState[port] & ENDSTOP ) > 0 ); 
+      setReading( ( ftPwrDrive->lastState[port] & ENDSTOP ) > 0, FTSWARM_NOTRIGGER ); 
 
     return;
   }
 
   // ftDuino
   if ( ( ctrl->getCPU() == FTSWARMDUINO_1V141 ) && ( ftDuino ) ) { 
-    setReading( ftDuino->input[port] ); 
+    setReading( ftDuino->input[port], FTSWARM_NOTRIGGER ); 
     return; 
   }
 
   if ( ioType == SWOSIO_BUTTON ) {
     #if FTSWARM_HAL_HC165 > 0
-    if (hc165) setReading( ( ( hc165->getValue( ) & (1<<port) ) >0 ) );
+    if (hc165) setReading( ( ( hc165->getValue( ) & (1<<port) ) >0 ), FTSWARM_NOTRIGGER );
     #endif
     return;
   }
@@ -127,68 +127,24 @@ void SwOSDigitalInput::operate() {
   // normally open: change logic
   if (normallyOpen) newValue = 1-newValue;
 
-  setReading( newValue );
+  setReading( newValue, FTSWARM_NOTRIGGER );
 
 }
 
-void SwOSDigitalInput::setReading( int32_t newValue ) {
+void SwOSDigitalInput::setReading( int32_t newValue, FtSwarmTrigger_t secondTriggerEvent ) {
 
   bool changes = (lastRawValue != newValue);
+  FtSwarmTrigger_t trigger = FTSWARM_NOTRIGGER;
 
   // check if it's toggled?
   if ( changes ) { 
-
-    FtSwarmToggle_t  newToggle;
-    FtSwarmTrigger_t trigger;
-    bool             oledTriggered = false;
-
-    if (newValue) { newToggle = FTSWARM_TOGGLEUP;   trigger = FTSWARM_TRIGGERUP; }
-    else          { newToggle = FTSWARM_TOGGLEDOWN; trigger = FTSWARM_TRIGGERDOWN; }
-
-    // trigger Screen?
-    if ( ioType == SWOSIO_BUTTON ) oledTriggered = screenManager.eventHandler( newToggle, ioType, port );
-
-    // if oledMenu didn't process the trigger, send it to the event list
-    if (!oledTriggered) {
-      
-      // set toggle
-      toggle = newToggle;
-      
-      // trigger Actors
-      this->trigger( trigger, newValue );
-      this->trigger( FTSWARM_TRIGGERVALUE, newValue );
-
-    }
-
-  }
-
-  // store new data
-  lastRawValue = newValue;  
-
-  // subscription only if needed
-  if ( changes ) subscription();
-
-}
-
-void SwOSDigitalInput::setValue( int32_t value ) {
-
-  // no work on real local HW
-  if ( ( ctrl->isLocal()) && (!ctrl->isI2CSwarmCtrl() ) ) return;
-
-  // check if it's toggled?
-  if ( lastRawValue != value) { 
-
-    if   (value) { toggle = FTSWARM_TOGGLEUP;   trigger( FTSWARM_TRIGGERUP, value ); }
-    else         { toggle = FTSWARM_TOGGLEDOWN; trigger( FTSWARM_TRIGGERDOWN, value ); }
-
-    // trigger value event
-    trigger( FTSWARM_TRIGGERVALUE, value );
-    
-  }
   
-  lastRawValue = value;
+    if (newValue) { toggle = FTSWARM_TOGGLEUP;   trigger = FTSWARM_TRIGGERUP;   }
+    else          { toggle = FTSWARM_TOGGLEDOWN; trigger = FTSWARM_TRIGGERDOWN; }
 
-  subscription();
+  }
+
+  SwOSInput::setReading( newValue, trigger );
 
 }
 

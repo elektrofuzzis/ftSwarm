@@ -36,11 +36,10 @@
 
     // read sensor
 	  virtual void operate();
-    virtual void setReading( int32_t newValue );
+    virtual void setReading( int32_t newValue, FtSwarmTrigger_t secondTriggerEvent );
 
     // external commands
-    virtual void            setParameter( int32_t parameter );
-    virtual void            setValue( int32_t value );                          
+    virtual void            setParameter( int32_t parameter );                        
     virtual FtSwarmToggle_t getToggle( void );                                  
 
 };

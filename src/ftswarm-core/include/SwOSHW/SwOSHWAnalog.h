@@ -62,7 +62,6 @@
 	  virtual void operate();
 
     // external commands
-    virtual void   setValue( int32_t value );                    // set value by an external call
     virtual float  getVoltage();
     virtual float  getResistance();
     virtual float  getKelvin();

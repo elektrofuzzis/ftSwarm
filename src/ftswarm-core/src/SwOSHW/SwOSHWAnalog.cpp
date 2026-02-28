@@ -205,7 +205,7 @@ void SwOSAnalogInput::operate() {
   if (!ctrl->isLocal()) return;
   
   // ftDuino?
-  if ( ( ctrl->getCPU() == FTSWARMDUINO_1V141 ) && ( ftDuino ) ) { setReading( ftDuino->input[port] ); return; }
+  if ( ( ctrl->getCPU() == FTSWARMDUINO_1V141 ) && ( ftDuino ) ) { setReading( ftDuino->input[port], FTSWARM_NOTRIGGER ); return; }
 
   // non existing port?
   if ( ( GPIO == GPIO_NUM_NC ) || ( ADCChannel == ADC1_CHANNEL_MAX) ) return;
@@ -229,26 +229,7 @@ void SwOSAnalogInput::operate() {
 
   if (filter) newValue = filter->fx(newValue); 
 
-  setReading( newValue );
-
-}
-
-void SwOSAnalogInput::setValue( int32_t value ) {
-
-  // stop, if it's not local HW
-  if ( ( ctrl->isLocal()) && (!ctrl->isI2CSwarmCtrl() ) ) return;
-
-  // check if it's toggled?
-  if ( lastRawValue != value) { 
-
-    // trigger value event
-    trigger( FTSWARM_TRIGGERVALUE, value );
-    
-  }
-  
-  lastRawValue = value;
-
-  subscription();
+  setReading( newValue, FTSWARM_NOTRIGGER );
 
 }
 

@@ -383,6 +383,11 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
   }
 
+  // set splash screen
+  #if FTSWARM_HAL_OLEDS > 0
+  screenManager.newScreen( new SwOSSplashScreen( NULL, myOSSwarm.Ctrl[0]->getAliasOrName() ), true );
+  #endif
+
   // now I can visualize my state
   setState( BOOTING );
   
@@ -403,8 +408,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   // firmware events?
   if (verbose) printf("Starting events.\n");
   addEvents( nvs.activeEventConfig, myOSSwarm.Ctrl[0]->serialNumber );
-
-
+  
   if (verbose) printf("Start normal operation.\n");
 
   if ( ( nvs.IAmKelda) && ( nvs.wifiMode == wifiAP ) ) 

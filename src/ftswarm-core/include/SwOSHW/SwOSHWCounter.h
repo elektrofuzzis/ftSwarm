@@ -47,7 +47,6 @@
 
     // external commands
     virtual void resetCounter( void );
-    virtual void setValue( int32_t value );                 // set value by an external call
 
 };
 
@@ -79,6 +78,5 @@ class SwOSFrequencymeter : public SwOSInput {
 
     // read sensor
 	  virtual void operate();
-    virtual void setValue( int32_t value );                 // set value by an external call
     
 };

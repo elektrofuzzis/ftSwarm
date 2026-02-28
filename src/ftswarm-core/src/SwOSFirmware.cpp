@@ -530,7 +530,7 @@ void MenuIOConfig::changeLabel( void ) {
 
   strcpy( nvs.oledLabel[nvs.activeEventConfig][label], text );
 
-  screenManager.setLabel( io->getIOType(), io->getPort(), text );
+  io->setLabelText( text );
 
   anythingChanged[ myOSSwarm.getIndex( io->getCtrl()->serialNumber ) ] = true;
 

@@ -47,6 +47,9 @@ typedef uint8_t  FtSwarmPort_t;
 #define shortDelay()  vTaskDelay( 25 / portTICK_PERIOD_MS )
 #define longDelay()   vTaskDelay( 1000 / portTICK_PERIOD_MS )
 
+// not a number
+#define FTSWARM_NANI32 INT32_MIN
+
 // **** enumerations ****
 
 // error types
@@ -334,7 +337,7 @@ typedef enum { FTSWARM_GYRO_OFF, FTSWARM_GYRO_LSM, FTSWARM_GYRO_MPU } FtSwarmGyr
 typedef enum { FTSWARM_EXT_OFF, FTSWARM_EXT_I2C_MASTER, FTSWARM_EXT_I2C_SLAVE, FTSWARM_EXT_OUTPUT, FTSWARM_EXT_SERVO, FTSWARM_EXT_LIDAR } FtSwarmExtMode_t;
 
 // trigger events
-typedef enum { FTSWARM_TRIGGERDOWN, FTSWARM_TRIGGERUP, FTSWARM_TRIGGERVALUE, FTSWARM_TRIGGERI2CREAD, FTSWARM_TRIGGERI2CWRITE, FTSWARM_MAXTRIGGER } FtSwarmTrigger_t;
+typedef enum { FTSWARM_NOTRIGGER = -1, FTSWARM_TRIGGERDOWN, FTSWARM_TRIGGERUP, FTSWARM_TRIGGERVALUE, FTSWARM_TRIGGERI2CREAD, FTSWARM_TRIGGERI2CWRITE, FTSWARM_MAXTRIGGER } FtSwarmTrigger_t;
 const char FTSWARMTRIGGER[FTSWARM_MAXTRIGGER][12] = { "TriggerDown", "TriggerUp", "ChangeValue", "I2CRead", "I2CWrite" };
 
 // trigger operators

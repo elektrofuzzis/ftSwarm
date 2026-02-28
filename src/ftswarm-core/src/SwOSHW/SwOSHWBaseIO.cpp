@@ -203,6 +203,12 @@ SwOSIO::SwOSIO( const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioT
  
 }
 
+SwOSIO::~SwOSIO() {
+
+  if ( subscribedScreenObj ) subscribedScreenObj->unregister( this );
+
+}
+
 bool SwOSIO::isOnline( void ) { 
   return ctrl->isOnline();
 };
@@ -361,11 +367,29 @@ char *SwOSIO::subscribe( const char *IOName, uint32_t hysteresis ) {
 
 } 
 
+void SwOSIO::subscribe( SwOSScreenObj *screenObj ) {
+  subscribedScreenObj = screenObj;
+}
+
 void SwOSIO::unsubscribe() {
   isSubscribed = false;
   if (subscribedIOName) free( subscribedIOName );
   subscribedIOName = NULL;
 }
+
+void SwOSIO::unsubscribe( SwOSScreenObj *screenObj ) {
+
+  // to avoid races, test on same object
+  if ( subscribedScreenObj == screenObj ) subscribedScreenObj = NULL;
+
+}
+
+void SwOSIO::setLabelText( char *text ) {
+
+  if ( subscribedScreenObj ) subscribedScreenObj->setLabel( text );
+
+}
+
 
 /***************************************************
  *
@@ -585,28 +609,38 @@ uint8_t SwOSInput::pushState( uint8_t *buffer ) {
 uint8_t SwOSInput::popState( uint8_t *buffer ) { 
 
   int32_t newValue;
-
   
   memcpy( &newValue, buffer, sizeof( newValue ) );
-  setReading( newValue );
+  setReading( newValue, FTSWARM_NOTRIGGER );
 
   return sizeof( newValue );
   
 };
 
-void SwOSInput::setReading( int32_t newValue ) {
+void SwOSInput::setReading( int32_t newValue, FtSwarmTrigger_t secondTriggerEvent ) {
 
   bool changes = (lastRawValue != newValue);
-    
-  // send changed value event?
-  if ( (eventList) && ( changes ) ) trigger( FTSWARM_TRIGGERVALUE, newValue );
 
   // store new data
   lastRawValue = newValue;  
 
-  if (changes) subscription();
+  if (changes) {
+    
+    if ( ( subscribedScreenObj ) && ( subscribedScreenObj->setValue( newValue ) ) ) {
+      // don't trigger any more, screen processed it already
+    } else {
+      // trigger the event
+      this->trigger( FTSWARM_TRIGGERVALUE, newValue ); 
+      if ( secondTriggerEvent != FTSWARM_NOTRIGGER ) this->trigger( secondTriggerEvent, newValue ); 
+    }
+  
+    // send data to subscriber?
+    subscription();
+
+  }
 
 }
+
 
 void SwOSInput::serializeEvents( Serialize *serialize ) {
 

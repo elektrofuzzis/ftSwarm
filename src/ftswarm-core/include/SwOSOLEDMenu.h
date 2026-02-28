@@ -18,19 +18,111 @@
  *
  ***************************************************/
 
-class SwOSScreenObj{
+class SwOSScreen;
+
+class SwOSScreenObj {
 
   protected:
-    uint8_t x, y;
+    uint8_t        id;
+    SwOSIO         *io     = NULL;
+    SwOSScreen     *parent = NULL;
+    int32_t        value   = FTSWARM_NANI32;
+    char           *label  = NULL;
     FtSwarmAlign_t align;
-    char *label = NULL;
+    uint8_t x, y;
+    
+  public:
+
+    // Constructor
+    SwOSScreenObj( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, uint8_t x, uint8_t y, FtSwarmAlign_t align );
+
+    // Destructor
+    ~SwOSScreenObj();
+
+    // activate myself, if my screen is getting active
+    virtual void activate( void );
+
+    // IO informs myself, it's going down
+    virtual void unregister( SwOSIO *io );
+
+    // change label text
+    virtual void setLabel( const char *label );
+
+    // draw myself
+    virtual void draw( void ) {};
+
+    // io sends new value, return true if it's processed by the screen
+    virtual bool setValue( int32_t value );
+
+};
+
+/***************************************************
+ *
+ * SwOSScreenButton - button class
+ *
+ ***************************************************/
+
+class SwOSScreenButton : public SwOSScreenObj {
 
   public:
-    SwOSScreenObj( const char *label, uint8_t x, uint8_t y, FtSwarmAlign_t align );
-    ~SwOSScreenObj();
-    void setLabel( const char *label );
-    virtual void draw( bool inverted = false );
+
+    // Constructor
+    SwOSScreenButton( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, uint8_t x, uint8_t y, FtSwarmAlign_t align ) : SwOSScreenObj( id, io, parent, label, x, y, align ) {};
+
+    // draw myself
+    virtual void draw( void );    
+
 };
+
+ /***************************************************
+ *
+ * SwOSScreenXX - local Buttons
+ *
+ ***************************************************/
+
+#define OLEDLOWERLINE 38
+#define OLEDWIDTH     128
+
+class SwOSScreenS1 : public SwOSScreenButton {
+  public:
+    SwOSScreenS1( SwOSScreen *parent, const char *label );
+};
+
+class SwOSScreenS2 : public SwOSScreenButton {
+  public:
+    SwOSScreenS2( SwOSScreen *parent, const char *label );
+};
+
+class SwOSScreenS3 : public SwOSScreenButton {
+  public:
+    SwOSScreenS3( SwOSScreen *parent, const char *label );
+};
+
+class SwOSScreenS4 : public SwOSScreenButton {
+  public:
+    SwOSScreenS4( SwOSScreen *parent, const char *label );
+};
+
+class SwOSScreenF1 : public SwOSScreenButton {
+  public:
+    SwOSScreenF1( SwOSScreen *parent, const char *label );
+};
+
+class SwOSScreenF2 : public SwOSScreenButton {
+  public:
+    SwOSScreenF2( SwOSScreen *parent, const char *label );
+};
+
+class SwOSScreenJ1 : public SwOSScreenButton {
+  public:
+    SwOSScreenJ1( SwOSScreen *parent, const char *label );
+};
+
+class SwOSScreenJ2 : public SwOSScreenButton {
+  public:
+    SwOSScreenJ2( SwOSScreen *parent, const char *label );
+};
+
 
 /***************************************************
  *
@@ -50,8 +142,8 @@ class SwOSScreenSlider : public SwOSScreenObj {
     static const uint8_t HORIZONTAL = 0;
     static const uint8_t VERTICAL   = 1;
     
-    SwOSScreenSlider( const char *label, uint8_t x, uint8_t y, uint8_t size, uint8_t direction );
-    virtual void draw( bool inverted = false );
+    SwOSScreenSlider( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, uint8_t x, uint8_t y, uint8_t size, uint8_t direction );
+    virtual void draw( void );
 };
 
 /***************************************************
@@ -77,16 +169,15 @@ class SwOSSelectorItem {
 class SwOSScreenSelector : public SwOSScreenObj {
 
   protected:
-    uint8_t x, y;
     SwOSSelectorItem *items = NULL;
     SwOSSelectorItem *active = NULL;
 
   public:
    
-    SwOSScreenSelector( uint8_t x, uint8_t y );
+    SwOSScreenSelector( uint8_t id, SwOSIO* io, SwOSScreen *parent, uint8_t x, uint8_t y );
     ~SwOSScreenSelector();
     virtual void add( int8_t id, const char *text );
-    virtual void draw( bool inverted = false );
+    virtual void draw( void );
 };
 
 /***************************************************
@@ -95,17 +186,18 @@ class SwOSScreenSelector : public SwOSScreenObj {
  *
  ***************************************************/
 
- class SwOSScreen {
+class SwOSScreen {
 
   protected:
     SwOSScreen    *parent = NULL;
     uint8_t       screenObjects = 0;
-    SwOSScreenObj **obj;
+    SwOSScreenObj **obj = NULL;
+    char          *title = NULL;
 
   public:
 
     // constructor
-    SwOSScreen( SwOSScreen *parent, int8_t screenObjects = 8 );
+    SwOSScreen( SwOSScreen *parent, int8_t screenObjects, const char *title );
 
     // destructor
     ~SwOSScreen();
@@ -116,16 +208,13 @@ class SwOSScreenSelector : public SwOSScreenObj {
     // cls and draw all elements
     virtual void draw( void ); 
 
-    // set a new label text, if applicable
-    virtual void setLabel( SwOSIOType_t ioType, uint8_t port, const char *label ) {};
-
     // called all 25ms, so be minimalistic
     virtual void operate( void ) {};
 
     // eval external events like pressing buttons
-    virtual bool eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port ) { return false; };
+    virtual bool eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id ) { return false; };
 
-};
+  };
 
 /***************************************************
  *
@@ -146,7 +235,7 @@ class SwOSScreenSelector : public SwOSScreenObj {
     virtual void draw( void );
 
     // eval external events like pressing buttons
-    virtual bool eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port );
+    virtual bool eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id );
 
 };
 
@@ -166,16 +255,13 @@ class SwOSMainScreen : public SwOSScreen {
   public:
 
     // Constructor
-    SwOSMainScreen( SwOSScreen *parent );
+    SwOSMainScreen( SwOSScreen *parent, const char *title );
 
     // cls and draw all elements
     virtual void draw( void );
 
-    // set a new label text, if applicable
-    virtual void setLabel( SwOSIOType_t ioType, uint8_t port, const char *label );
-
     // eval external events like pressing buttons
-    virtual bool eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port );
+    virtual bool eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id );
 
 };
 
@@ -195,7 +281,7 @@ class SwOSTestScreen : public SwOSScreen {
     SwOSTestScreen( SwOSScreen *parent );
 
     // eval external events like pressing buttons
-    virtual bool eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port );
+    virtual bool eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id );
 
 };
 
@@ -214,7 +300,7 @@ class SwOSSplashScreen : public SwOSScreen {
   public:
 
     // constructor
-    SwOSSplashScreen( SwOSScreen *parent ):SwOSScreen( parent ) { startTime = millis(); };
+    SwOSSplashScreen( SwOSScreen *parent, const char *title );
     
     // cls and draw all elements
     virtual void draw( void );
@@ -223,7 +309,7 @@ class SwOSSplashScreen : public SwOSScreen {
     virtual void operate( void );
 
     // eval external events like pressing buttons
-    virtual bool eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port );
+    virtual bool eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id );
 
 };
 
@@ -245,7 +331,7 @@ class SwOSFactoryResetScreen : public SwOSScreen {
     virtual void draw( void );
 
     // eval external events like pressing buttons
-    virtual bool eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port );
+    virtual bool eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id );
 
 };
 
@@ -262,12 +348,18 @@ class SwOS404Screen : public SwOSScreen {
   public:
 
     // constructor
-    SwOS404Screen( SwOSScreen *parent ):SwOSScreen( parent ) {  };
+    SwOS404Screen( SwOSScreen *parent ):SwOSScreen( parent, 0, "Page not found" ) {  };
     
     // cls and draw all elements
     virtual void draw( void );
 
 };
+
+/***************************************************
+ *
+ * SwOSScreenManager - class to handle the active screen
+ *
+ ***************************************************/
 
 class SwOSScreenManager {
 
@@ -284,17 +376,11 @@ class SwOSScreenManager {
 
     // draw active screen
     void draw( void );
-
-    // handle external events like pressing buttons
-    bool eventHandler( FtSwarmToggle_t toggle, SwOSIOType_t ioType, uint8_t port );
     
     // Replace the active screen by a new screen and in case of autoCleanUp delete the old one.
     // Replacement is done with next operate()-call to avoid stress
     // Be aware of potential race conditions by very fast screen replacements. 
     void newScreen( SwOSScreen *newScreen, bool autoCleanUp );
-
-    // replace a label text
-    void setLabel( SwOSIOType_t ioType, uint8_t port, const char *label );
 
 };
 

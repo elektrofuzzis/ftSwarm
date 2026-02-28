@@ -236,25 +236,6 @@ void SwOSCounter::resetCounter( void ) {
 
 }
 
-void SwOSCounter::setValue( int32_t value ) {
-
-  // no work on real local HW
-  if ( ( ctrl->isLocal()) && (!ctrl->isI2CSwarmCtrl() ) ) return;
-
-  // check if it's toggled?
-  if ( lastRawValue != value) { 
-
-    // trigger value event
-    trigger( FTSWARM_TRIGGERVALUE, value );
-    
-  }
-  
-  lastRawValue = value;
-
-  subscription();
-
-}
-
 void SwOSCounter::serialize( Serialize *serialize  ) {
 
   serialize->startObject( );
@@ -348,25 +329,6 @@ void SwOSFrequencymeter::operate( void ) {
     // no tick for more than a second
     lastRawValue = 0;
   }
-
-  subscription();
-
-}
-
-void SwOSFrequencymeter::setValue( int32_t value ) {
-
-  // no work on real local HW
-  if ( ( ctrl->isLocal()) && (!ctrl->isI2CSwarmCtrl() ) ) return;
-
-  // check if it's toggled?
-  if ( lastRawValue != value) { 
-
-    // trigger value event
-    trigger( FTSWARM_TRIGGERVALUE, value );
-    
-  }
-  
-  lastRawValue = value;
 
   subscription();
 

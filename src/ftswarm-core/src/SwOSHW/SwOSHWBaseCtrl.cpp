@@ -234,8 +234,6 @@ uint8_t SwOSCtrl::setupLocalOLED( uint8_t maxIO ) {
     SwOSOLED *oled = new SwOSOLED( "OLED", this, FTSWARM_HAL_FLAG_HIDDEN );
     io[ maxIO++ ] = oled;
 
-    // set splash screen
-    screenManager.newScreen( new SwOSSplashScreen( NULL ), true );
   }
 
   return maxIO;
@@ -401,7 +399,7 @@ SwOSIO *SwOSCtrl::getIO( SwOSIOType_t ioType, FtSwarmPort_t port) {
   for ( uint8_t i=0; i<IOs; i++ ) {
 
     // existing IO?
-    if ( io[i] ) {
+    if ( (io) && (io[i]) ) {
 
       if ( ( SWOSIOCLASS[ io[i]->getIOType() ] == SWOSIOCLASS[ ioType ] ) &&                             // IO has the same io class as requested
            ( ( SWOSIOCLASS[ ioType ] != SWOSIOCLASS_SINGULAR ) || ( io[i]->getIOType() == ioType ) ) &&  // if IO is class SWOSCLASS_SINGULAR, both io types need to be the same

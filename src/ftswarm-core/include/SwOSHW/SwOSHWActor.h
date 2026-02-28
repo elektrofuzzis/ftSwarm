@@ -53,6 +53,9 @@ class SwOSAnalogInput;
     virtual bool            isMotor( void ) { return true; };
     virtual bool            isActor( void ) { return true; };
     virtual int16_t         getMaxSpeed( void );
+    
+    // get my raw value
+    virtual int32_t getValueI32( void ) { return speed; };
 
     // commands
     virtual void    setSpeed( int16_t speed );
@@ -191,6 +194,9 @@ class SwOSDCMotor : public SwOSMotor {
     virtual bool isActor( void ) override { return true; };
     virtual int16_t getMaxPosition( void ) { return 90 - offset; };
     virtual int16_t getMinPosition( void ) { return 0 - offset; };
+
+    // get my raw value
+    virtual int32_t getValueI32( void ) { return position; };
 
     // commands
 	  virtual int16_t getOffset( )   { return offset; };

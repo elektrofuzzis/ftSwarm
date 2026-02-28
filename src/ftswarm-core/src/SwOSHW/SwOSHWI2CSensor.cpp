@@ -367,18 +367,7 @@ void SwOSLidarInput::operate() {
   // read new data
   newValue = Lidar.readRangeContinuousMillimeters();
  
-  setReading( newValue );
- 
-}
- 
-void SwOSLidarInput::setValue( int32_t value ) {
- 
-  // no work on real local HW
-  if ( ( ctrl->isLocal()) && (!ctrl->isI2CSwarmCtrl() ) ) return;
-   
-  lastRawValue = value;
- 
-  subscription();
+  setReading( newValue, FTSWARM_NOTRIGGER );
  
 }
  
