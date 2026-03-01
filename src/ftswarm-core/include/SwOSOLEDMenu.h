@@ -29,12 +29,14 @@ class SwOSScreenObj {
     int32_t        value   = FTSWARM_NANI32;
     char           *label  = NULL;
     FtSwarmAlign_t align;
-    uint8_t x, y;
+    int8_t         x, y;
     
   public:
 
+    SwOSScreenObj  *next   = NULL;
+
     // Constructor
-    SwOSScreenObj( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, uint8_t x, uint8_t y, FtSwarmAlign_t align );
+    SwOSScreenObj( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, int8_t x, int8_t y, FtSwarmAlign_t align );
 
     // Destructor
     ~SwOSScreenObj();
@@ -67,7 +69,7 @@ class SwOSScreenButton : public SwOSScreenObj {
   public:
 
     // Constructor
-    SwOSScreenButton( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, uint8_t x, uint8_t y, FtSwarmAlign_t align ) : SwOSScreenObj( id, io, parent, label, x, y, align ) {};
+    SwOSScreenButton( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, int8_t x, int8_t y, FtSwarmAlign_t align ) : SwOSScreenObj( id, io, parent, label, x, y, align ) {};
 
     // draw myself
     virtual void draw( void );    
@@ -123,14 +125,33 @@ class SwOSScreenJ2 : public SwOSScreenButton {
     SwOSScreenJ2( SwOSScreen *parent, const char *label );
 };
 
-
 /***************************************************
  *
- * SwOSScreenSlider - Any element on a screen
+ * SwOSScreenJoystickPoti - Helper class
  *
  ***************************************************/
 
-class SwOSScreenSlider : public SwOSScreenObj {
+class SwOSScreenJoystickPoti : public SwOSScreenObj {
+
+  protected:
+    int32_t maxValue = FTSWARM_NANI32;
+
+  public:
+
+    SwOSScreenJoystickPoti(uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, int8_t x, int8_t y, FtSwarmAlign_t align );
+
+    // io sends new value, return true if it's processed by the screen
+    virtual bool setValue( int32_t value );
+
+};
+
+/***************************************************
+ *
+ * SwOSScreenCombobox - ComboBox
+ *
+ ***************************************************/
+
+class SwOSScreenCombobox : public SwOSScreenObj {
 
   protected:
     uint8_t size, direction;
@@ -142,7 +163,7 @@ class SwOSScreenSlider : public SwOSScreenObj {
     static const uint8_t HORIZONTAL = 0;
     static const uint8_t VERTICAL   = 1;
     
-    SwOSScreenSlider( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, uint8_t x, uint8_t y, uint8_t size, uint8_t direction );
+    SwOSScreenCombobox( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, int8_t x, int8_t y, uint8_t size, uint8_t direction );
     virtual void draw( void );
 };
 
@@ -174,7 +195,7 @@ class SwOSScreenSelector : public SwOSScreenObj {
 
   public:
    
-    SwOSScreenSelector( uint8_t id, SwOSIO* io, SwOSScreen *parent, uint8_t x, uint8_t y );
+    SwOSScreenSelector( uint8_t id, SwOSIO* io, SwOSScreen *parent, int8_t x, int8_t y );
     ~SwOSScreenSelector();
     virtual void add( int8_t id, const char *text );
     virtual void draw( void );
@@ -189,21 +210,20 @@ class SwOSScreenSelector : public SwOSScreenObj {
 class SwOSScreen {
 
   protected:
-    SwOSScreen    *parent = NULL;
-    uint8_t       screenObjects = 0;
-    SwOSScreenObj **obj = NULL;
-    char          *title = NULL;
+    SwOSScreen    *parent  = NULL;
+    SwOSScreenObj *objects = NULL;
+    char          *title   = NULL;
 
   public:
 
     // constructor
-    SwOSScreen( SwOSScreen *parent, int8_t screenObjects, const char *title );
+    SwOSScreen( SwOSScreen *parent, const char *title );
 
     // destructor
     ~SwOSScreen();
 
     // add a screen object
-    virtual bool add( SwOSScreenObj * newObject );
+    virtual void add( SwOSScreenObj *newObject );
 
     // cls and draw all elements
     virtual void draw( void ); 
@@ -214,28 +234,83 @@ class SwOSScreen {
     // eval external events like pressing buttons
     virtual bool eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id ) { return false; };
 
+    // get my title
+    virtual const char *getTitle( void ) { return title; };
+
   };
 
 /***************************************************
  *
- * SwOSChooseConfigScreenObj - asks about the config S1..S4
+ * SwOSScreenSlider - Screen Slide show
  *
  ***************************************************/
 
- class SwOSChooseConfigScreen : public SwOSScreen {
+ class SwOSScreenSlider : public SwOSScreen {
+
+  protected:
+
+    SwOSScreenSlider *prev = NULL;
+    SwOSScreenSlider *next = NULL;
+
+  public:
+
+    // constructor
+    SwOSScreenSlider( SwOSScreen *parent, const char *title, SwOSScreenSlider *next );
+
+    // destructor
+    ~SwOSScreenSlider();
+
+    // eval external events like pressing buttons
+    virtual bool eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id );
+
+};
+
+/***************************************************
+ *
+ * SwOSScreenChooseConfig - asks about the config S1..S4
+ *
+ ***************************************************/
+
+ class SwOSScreenChooseConfig : public SwOSScreenSlider {
 
   protected:
 
   public:
 
     // constructor
-    SwOSChooseConfigScreen( SwOSScreen *parent );
+    SwOSScreenChooseConfig( SwOSScreen *parent, SwOSScreenSlider *next  );
 
     // cls and draw all elements
     virtual void draw( void );
 
     // eval external events like pressing buttons
     virtual bool eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id );
+
+};
+
+/***************************************************
+ *
+ *   SwOSScreenWifi
+ *
+ ***************************************************/
+
+class SwOSScreenWifi : public SwOSScreenSlider {
+
+  public:
+    SwOSScreenWifi( SwOSScreen *parent, SwOSScreenSlider *next  );
+
+};
+
+/***************************************************
+ *
+ *   SwOSScreenSwarm
+ *
+ ***************************************************/
+
+class SwOSScreenSwarm : public SwOSScreenSlider {
+
+  public:
+    SwOSScreenSwarm( SwOSScreen *parent, SwOSScreenSlider *next  );
 
 };
 
@@ -348,7 +423,7 @@ class SwOS404Screen : public SwOSScreen {
   public:
 
     // constructor
-    SwOS404Screen( SwOSScreen *parent ):SwOSScreen( parent, 0, "Page not found" ) {  };
+    SwOS404Screen( SwOSScreen *parent ):SwOSScreen( parent, "Page not found" ) {  };
     
     // cls and draw all elements
     virtual void draw( void );
