@@ -44,6 +44,9 @@ class SwOSScreenObj {
     // activate myself, if my screen is getting active
     virtual void activate( void );
 
+    // deactivate myself, if my screen is getting offline
+    virtual void deactivate( void );
+    
     // IO informs myself, it's going down
     virtual void unregister( SwOSIO *io );
 
@@ -228,6 +231,12 @@ class SwOSScreen {
     // cls and draw all elements
     virtual void draw( void ); 
 
+    // activate my objects, if my screen is getting active
+    virtual void activate( void );
+
+    // deactivate my objects, if my screen is getting offline
+    virtual void deactivate( void );
+
     // called all 25ms, so be minimalistic
     virtual void operate( void ) {};
 
@@ -252,6 +261,9 @@ class SwOSScreen {
     SwOSScreenSlider *prev = NULL;
     SwOSScreenSlider *next = NULL;
 
+    virtual uint8_t countPrev( void );
+    virtual uint8_t countNext( void );
+
   public:
 
     // constructor
@@ -260,6 +272,9 @@ class SwOSScreen {
     // destructor
     ~SwOSScreenSlider();
 
+    // cls and draw all elements
+    virtual void draw( void );
+    
     // eval external events like pressing buttons
     virtual bool eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id );
 
@@ -311,6 +326,28 @@ class SwOSScreenSwarm : public SwOSScreenSlider {
 
   public:
     SwOSScreenSwarm( SwOSScreen *parent, SwOSScreenSlider *next  );
+
+};
+
+/***************************************************
+ *
+ * SwOSScreenFactoryReset 
+ * Ask user to reset controller to factory setting
+ *
+ ***************************************************/
+
+class SwOSScreenFactoryReset : public SwOSScreenSlider {
+
+  public:
+
+    // constructor
+    SwOSScreenFactoryReset( SwOSScreen *parent, SwOSScreenSlider *next );
+    
+    // cls and draw all elements
+    virtual void draw( void );
+
+    // eval external events like pressing buttons
+    virtual bool eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id );
 
 };
 
@@ -382,28 +419,6 @@ class SwOSSplashScreen : public SwOSScreen {
     
     // called all 25ms, so be minimalistic
     virtual void operate( void );
-
-    // eval external events like pressing buttons
-    virtual bool eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id );
-
-};
-
-/***************************************************
- *
- * SwOSFactoryResetScreen 
- * Ask user to reset controller to factory setting
- *
- ***************************************************/
-
-class SwOSFactoryResetScreen : public SwOSScreen {
-
-  public:
-
-    // constructor
-    SwOSFactoryResetScreen( SwOSScreen *parent );
-    
-    // cls and draw all elements
-    virtual void draw( void );
 
     // eval external events like pressing buttons
     virtual bool eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id );

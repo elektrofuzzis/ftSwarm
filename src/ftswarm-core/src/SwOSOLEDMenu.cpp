@@ -52,6 +52,13 @@ void SwOSScreenObj::activate( void ) {
 
 }
 
+void SwOSScreenObj::deactivate( void ) {
+
+  if (!io) return;
+  
+  io->unsubscribe( this ); 
+
+}
 void SwOSScreenObj::unregister( SwOSIO *io ) {
 
   if ( this->io == io ) this->io = NULL;
@@ -319,7 +326,7 @@ void SwOSScreen::add( SwOSScreenObj *newObject ) {
 void SwOSScreen::draw( void ) {
 
   // cls
-  oled->clearDisplay( );
+  oled->clearDisplay( true );
       
   // set useful default values
   oled->setTextColor(true, false);   // Draw white text
@@ -330,11 +337,33 @@ void SwOSScreen::draw( void ) {
     oled->write( title, OLEDWIDTH / 2, -16, FTSWARM_ALIGNCENTER, true, false );
   }
 
+  // cool line
+  oled->drawLine( 0, -5, OLEDWIDTH, -5, true );
+
   // register my objects and draw them
   SwOSScreenObj *obj = objects;
   while (obj) {
-    obj->activate();
     obj->draw();
+    obj = obj->next;
+  }
+
+}
+
+void SwOSScreen::activate( void ) {
+  
+  SwOSScreenObj *obj = objects;
+  while (obj) {
+    obj->activate();
+    obj = obj->next;
+  }
+
+}
+
+void SwOSScreen::deactivate( void ) {
+  
+  SwOSScreenObj *obj = objects;
+  while (obj) {
+    obj->deactivate();
     obj = obj->next;
   }
 
@@ -368,26 +397,71 @@ SwOSScreenSlider::~SwOSScreenSlider() {
 
 }
 
-bool SwOSScreenSlider::eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id ) {
+void SwOSScreenSlider::draw( void ) {
 
-  // switch left?
-  if ( ( id == SWOSJOY1LR ) && ( toggle == FTSWARM_TOGGLEDOWN ) && ( prev ) ) { 
-    screenManager.newScreen( prev, false );
-    return true;
+  SwOSScreen::draw();
+
+  // top slider
+  uint8_t cp = countPrev();
+  uint8_t cn = countNext();
+  uint8_t c  = cp + cn + 1;
+
+  if ( c > 1 ) {
+    uint8_t size = OLEDWIDTH / c;
+    oled->drawLine( 0, -3, OLEDWIDTH, -3, false );
+    oled->drawLine( cp*size, -3, (cp+1)*size, -3, true );
   }
 
-  // switch right?
-  if ( ( id == SWOSJOY1LR ) && ( toggle == FTSWARM_TOGGLEUP ) && ( next ) ) { 
-    screenManager.newScreen( next, false );
+}
+
+bool SwOSScreenSlider::eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id ) {
+
+  // catch all joystick stuff
+  if ( id == SWOSJOY1LR ) {
+  
+    // switch left?
+    if ( ( toggle == FTSWARM_TOGGLEDOWN ) && ( prev ) ) screenManager.newScreen( prev, false );
+
+    // switch right?
+    if ( ( toggle == FTSWARM_TOGGLEUP ) && ( next ) )   screenManager.newScreen( next, false );
+
     return true;
+
   }
 
   // back
-  if ( ( id == FTSWARM_F2 ) && ( toggle == FTSWARM_TOGGLEDOWN ) && ( parent ) ) {
-    screenManager.newScreen( parent, true );
+  if ( id == FTSWARM_F2 )  {
+    
+    if ( ( toggle == FTSWARM_TOGGLEDOWN ) && ( parent ) ) screenManager.newScreen( parent, true );
+
+    return true;
+
   }
 
+  // other events
   return false;
+
+}
+
+uint8_t SwOSScreenSlider::countPrev( void ) {
+
+  uint8_t count = 0;
+  SwOSScreenSlider *screen = prev;
+
+  while( screen ) { count++; screen = screen->prev; }
+
+  return count;
+
+}
+
+uint8_t SwOSScreenSlider::countNext( void ) {
+
+  uint8_t count = 0;
+  SwOSScreenSlider *screen = next;
+
+  while( screen ) { count++; screen = screen->next; }
+
+  return count;
 
 }
 
@@ -408,8 +482,9 @@ SwOSScreenChooseConfig::SwOSScreenChooseConfig( SwOSScreen *parent, SwOSScreenSl
 
  void SwOSScreenChooseConfig::draw( void ) {
 
-  SwOSScreen::draw();
-  oled->write( "Configuration?", 64, 20, FTSWARM_ALIGNCENTER, true, false );
+  SwOSScreenSlider::draw();
+  oled->write( "Choose new", oled->getWidth()/2, 7, FTSWARM_ALIGNCENTER, true, false );  
+  oled->write( "configuration", oled->getWidth()/2, 16, FTSWARM_ALIGNCENTER, true, false );  
   
 }
 
@@ -460,7 +535,7 @@ SwOSScreenSwarm::SwOSScreenSwarm( SwOSScreen *parent, SwOSScreenSlider *next  ) 
  *
  ***************************************************/
 
-SwOSFactoryResetScreen::SwOSFactoryResetScreen( SwOSScreen *parent ) : SwOSScreen( parent, "Factory Reset" ) {
+SwOSScreenFactoryReset::SwOSScreenFactoryReset( SwOSScreen *parent, SwOSScreenSlider *next ) : SwOSScreenSlider( parent, "Factory Reset", next ) {
 
   // set buttons
   add( new SwOSScreenS2( this, "YES" ) );
@@ -468,21 +543,29 @@ SwOSFactoryResetScreen::SwOSFactoryResetScreen( SwOSScreen *parent ) : SwOSScree
   
 }
 
-void SwOSFactoryResetScreen::draw( void ) {
+void SwOSScreenFactoryReset::draw( void ) {
 
-  SwOSScreen::draw();
+  SwOSScreenSlider::draw();
   oled->write( "Reset controller to", oled->getWidth()/2, 7, FTSWARM_ALIGNCENTER, true, false );  
   oled->write( "factory settings?", oled->getWidth()/2, 16, FTSWARM_ALIGNCENTER, true, false );  
 
 }
 
-bool SwOSFactoryResetScreen::eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id ) {
+bool SwOSScreenFactoryReset::eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id ) {
+
+  if ( SwOSScreenSlider::eventHandlerCallback( toggle, id ) ) return true;
 
   // YES
-  if ( ( id == FTSWARM_S2 ) && ( toggle == FTSWARM_TOGGLEDOWN ) ) { myOSSwarm.factoryReset(); return true; }
+  if ( id == FTSWARM_S2 ) {
+    if ( toggle == FTSWARM_TOGGLEDOWN )  myOSSwarm.factoryReset();
+    return true;
+  }
 
   // NO
-  if ( ( id == FTSWARM_S3 ) && ( toggle == FTSWARM_TOGGLEDOWN ) ) {screenManager.newScreen( new SwOSMainScreen( NULL, "Main" ), true ); return true; }
+  if ( id == FTSWARM_S3 ) {
+    if ( toggle == FTSWARM_TOGGLEDOWN ) screenManager.newScreen( new SwOSMainScreen( NULL, "Main" ), true );
+    return true;
+  }
 
   return false;
 
@@ -580,6 +663,17 @@ void SwOSMainScreen::draw( void ) {
 
   SwOSScreen::draw();
 
+  // Members
+  uint8_t members = myOSSwarm.members();
+  if ( members > 0) {
+    char m[3];
+    sprintf( m, "%d", members );
+    oled->write( m, OLEDWIDTH-1, -YELLOWPIXELS, FTSWARM_ALIGNRIGHT, false, false );
+  }
+
+  // Kelda
+  if (myOSSwarm.Ctrl[0]->IAmKelda) oled->write( "K", 0, -YELLOWPIXELS, FTSWARM_ALIGNLEFT, false, false );
+
   joystick( nvs.oledLabel[nvs.activeEventConfig][SWOSLABEL_JOY1LR], nvs.oledLabel[nvs.activeEventConfig][SWOSLABEL_JOY1FB], 48,     20, true );
   joystick( nvs.oledLabel[nvs.activeEventConfig][SWOSLABEL_JOY2LR], nvs.oledLabel[nvs.activeEventConfig][SWOSLABEL_JOY2FB], 128-48, 20, false );
 
@@ -598,7 +692,8 @@ bool SwOSMainScreen::eventHandlerCallback( FtSwarmToggle_t toggle, uint8_t id ) 
 
         SwOSScreenSlider *config = ( SwOSScreenSlider * ) new SwOSScreenChooseConfig( this, 
                                                           new SwOSScreenWifi( this, 
-                                                          new SwOSScreenSwarm( this, NULL ) ) );
+                                                          new SwOSScreenSwarm( this, 
+                                                          new SwOSScreenFactoryReset( this, NULL ) ) ) );
 
         screenManager.newScreen( (SwOSScreen *) config, false );
 
@@ -698,12 +793,16 @@ void SwOSScreenManager::operate( void ) {
     // save old one
     SwOSScreen *outdated = active;
 
+    // deactivate old screen objects
+    if (active) active->deactivate();
+
     // replace by new one
     active = next;
     next   = NULL;
 
-    // draw new one
+    // draw and activate new one
     active->draw();
+    active->activate();
 
     // delete outdated
     if ( ( outdated ) && ( autoCleanUp ) ) {
