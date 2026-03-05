@@ -98,6 +98,11 @@ class OLED {
 
     // write some text
     void write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align, bool fill, bool invert );
+
+    // write text in a rectangle
+    void writeRectangle( const char *str, int16_t x, int16_t y, int16_t width, int16_t height, FtSwarmAlign_t align, bool fill, bool invert );
+
+    // write some text at thcursor
     void write( const char *str );
    
     void setCursor(int16_t x, int16_t y);

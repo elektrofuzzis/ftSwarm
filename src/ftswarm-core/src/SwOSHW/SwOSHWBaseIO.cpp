@@ -179,7 +179,7 @@ const char* SwOSObj::getAliasOrName( ) {
 void SwOSObj::serialize( Serialize *serialize) {
 
    // alias
-   if (_alias) serialize->item( SERIALIZE_LITERAL_NAME, _alias );
+   if (_alias) serialize->item( SERIALIZE_LITERAL_ALIAS, _alias );
 
    // name
    serialize->item( SERIALIZE_LITERAL_NAME, _name );

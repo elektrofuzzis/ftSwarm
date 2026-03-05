@@ -441,6 +441,12 @@ typedef enum {
   SWOSLABEL_MAX
 } SwOSLabel_t;
 
+const char EXTMODE[7][14] = { "off", "I2C-Master", "I2C-Slave", "Outputs", "Servos", "Lidar", "" }; // "" just to avoid seg faults
+const char GYRO[3][8]     = { "off", "LSM6", "MPU6050"};
+const char ONOFF[2][5]    = { "off", "on" };
+const char OFFM1M2[3][5]  = { "off", "M1", "M2" };
+const char WIFI[3][12]    = { "off", "AP-Mode", "Client-Mode"};
+
 // **** some internal types & classes, don't use them at all ****
 
 class SwOSQuaternion {

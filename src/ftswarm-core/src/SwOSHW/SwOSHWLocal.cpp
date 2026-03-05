@@ -84,6 +84,7 @@ void HC165::operate( ) {
  *
  ***************************************************/
 
+#define FTSWARM_HAL_OLEDS 1
 #if FTSWARM_HAL_OLEDS > 0
 
 static void displayTask( void *parameter ) {
@@ -326,7 +327,33 @@ void OLED::write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align, b
   if (invert) setTextColor( c, bg );
 
 }
- 
+
+void OLED::writeRectangle( const char *str, int16_t x, int16_t y, int16_t width, int16_t height, FtSwarmAlign_t align, bool fill, bool invert ) {
+
+  // calcluslate needed space to print all
+  int16_t x1, y1, x2, y2;
+  uint16_t w, h;
+  getTextBounds( str, 0, 0, &x1, &y1, &w, &h );
+
+  // calculate #of chars, which could be printed
+  uint8_t maxChars = strlen( str );
+  if ( w > width ) maxChars = ( (float) width / (float) (w+2) ) * maxChars;
+
+  // copy str->temp in right size
+  char *temp = (char*) calloc( maxChars + 1, sizeof( char) );
+  strncpy( temp, str, maxChars );
+
+  // draw rectangle?
+  if (fill) drawRect( x, y, width, height, true, false );
+
+  // write text
+  write( temp, x, y, align, fill, invert );
+
+  // cleanup
+  free( temp );
+
+}
+
 void OLED::getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h) {
  
   display.getTextBounds( string, x, y + YELLOWPIXELS, x1, y1, w, h );
