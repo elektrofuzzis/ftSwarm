@@ -1,4 +1,4 @@
-import { type Accessor, type Component, createMemo, For, Show } from "solid-js";
+import { type Accessor, type Component, createMemo, For } from "solid-js";
 import { useParams } from "@solidjs/router";
 import { useOMContext } from "../contexts/transport/context.ts";
 import { SwOSState } from "../api/generated/genApiEnums.ts";
@@ -11,7 +11,6 @@ import { Unplug } from "lucide-solid";
 import { getControllerIcon } from "../api/icons.ts";
 import { Dynamic } from "solid-js/web";
 import { EditableLabel } from "../components/EditableLabel.tsx";
-import { FtSwarmIoTypeNames } from "../api/names.ts";
 import { IoCard } from "../components/io/index.tsx";
 
 const INVALID_STATES: SwOSState[] = [
@@ -30,7 +29,7 @@ type SwarmStatusRenderComponent = Component<{
 }>;
 
 const InvalidState: SwarmStatusRenderComponent = ({ controller }) => {
-  const icon = () => getControllerIcon(controller().type);
+  const icon = () => getControllerIcon(controller().CtrlVersion);
 
   return (
     <div class="w-full h-full flex items-center justify-center">
@@ -110,7 +109,7 @@ const ControllerDetail: SwarmStatusRenderComponent = ({ controller }) => {
             <Divider name={name} />
             <div class="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-4">
               <For each={iosFn()}>
-                {(value) => <IoCard io={value} />}
+                {(value) => <IoCard io={value} controller={controller()} />}
               </For>
             </div>
           </>

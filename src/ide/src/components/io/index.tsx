@@ -1,14 +1,22 @@
 import type { Component } from "solid-js";
 import { SwOSIOType } from "../../api/generated/genApiEnums";
-import type { ApiGeneralIoType } from "../../api/apiTypes";
+import type {ApiController, ApiGeneralIoType} from "../../api/apiTypes";
 import { IoFrame } from "./IoFrame";
 import { Dynamic } from "solid-js/web";
+import {type RegistryKey, registryKeyOf} from "../../api/om/optimisticRegistry.ts";
 
-const Unimplemented: Component = () => {
+export type IoCardProps = { io: ApiGeneralIoType, controller: ApiController };
+export type IoCardRendererComponent = Component<IoCardProps>;
+
+export function registryKeyOfProps<T>(props: IoCardProps, id: T): RegistryKey {
+    return registryKeyOf(props.controller, props.io, id)
+}
+
+const Unimplemented: IoCardRendererComponent = (_props) => {
   return <span class="text-red-200 bg-red-600/10 rounded-full text-xs uppercase px-2 py-1 border border-red-600/75">Not yet implemented</span>
 }
 
-const componentMapper: Record<SwOSIOType, Component> = {
+const componentMapper: Record<SwOSIOType, IoCardRendererComponent> = {
   [SwOSIOType.SWOSIO_UNDEF]: Unimplemented,
   [SwOSIOType.SWOSIO_DIGITAL]: Unimplemented,
   [SwOSIOType.SWOSIO_SWITCH]: Unimplemented,
@@ -57,8 +65,8 @@ const componentMapper: Record<SwOSIOType, Component> = {
   [SwOSIOType.SWOSIO_MAXIOTYPE]: Unimplemented
 }
 
-export const IoCard: Component<{ io: ApiGeneralIoType }> = (props) => (
-  <IoFrame io={props.io}>
-    <Dynamic component={componentMapper[props.io.IOType]} />
+export const IoCard: Component<IoCardProps> = (props) => (
+  <IoFrame {...props}>
+    <Dynamic component={componentMapper[props.io.IOType]} {...props} />
   </IoFrame>
 )

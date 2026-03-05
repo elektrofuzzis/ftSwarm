@@ -132,6 +132,7 @@ export enum FtSwarmExtMode {
 };
 
 export enum FtSwarmTrigger {
+  FTSWARM_NOTRIGGER = -1,
   FTSWARM_TRIGGERDOWN = 0,
   FTSWARM_TRIGGERUP = 1,
   FTSWARM_TRIGGERVALUE = 2,

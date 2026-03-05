@@ -15,7 +15,7 @@ import { useOMContext } from "../contexts/transport/context";
 import { For } from "solid-js/web";
 import { SwOSState } from "../api/generated/genApiEnums";
 import { useLocation } from "@solidjs/router";
-import {getControllerIcon} from "../api/icons.ts";
+import { getControllerIcon } from "../api/icons.ts";
 
 export const Title = () => {
   const { toggleMenu } = useDebug();
@@ -101,15 +101,16 @@ const state2Bg: Record<SwOSState, string> = {
   [SwOSState.IDENTIFY]: "bg-thm-primary",
   [SwOSState.FATAL]: "bg-thm-error",
   [SwOSState.MAXSTATE]: "bg-thm-error",
+  [SwOSState.FACTORY1]: "bg-thm-error",
+  [SwOSState.FACTORY2]: "bg-thm-error",
 };
 
 export const Sidebar = () => {
   const swarm = useOMContext();
   const controllers = () => Object.values(swarm.controllers);
   const totalControllers = () => controllers().length;
-  const onlineControllers = () => controllers().filter(
-    (it) => it.state === SwOSState.RUNNING,
-  ).length;
+  const onlineControllers = () =>
+    controllers().filter((it) => it.state === SwOSState.RUNNING).length;
 
   const location = useLocation();
   const route = () => location.pathname;

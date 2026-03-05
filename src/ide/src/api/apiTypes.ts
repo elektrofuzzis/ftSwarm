@@ -60,6 +60,7 @@ export const IOTypeClasses: IOTypeMapping = {
 
 export interface ApiGeneralIoType {
   name: string;
+  alias?: string;
   IOType: SwOSIOType;
   UIClass: SwOSIOClass;
   icon: string;
