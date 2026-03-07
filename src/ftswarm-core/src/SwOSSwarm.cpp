@@ -221,7 +221,7 @@ void SwOSSwarm::startWifi( void ) {
 
   if ( nvs.wifiMode == wifiAP ) {
     // work as AP in standard 
-    if (verbose) printf("Create own SSID: %s\n", Ctrl[0]->getHostname());
+    if (verbose) printf("Create own SSID: %s\n", nvs.wifiSSID );
 
     // esp_wifi_set_ps(WIFI_PS_NONE);
     WiFi.softAPsetHostname( Ctrl[0]->getHostname() );

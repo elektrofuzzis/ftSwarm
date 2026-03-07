@@ -253,8 +253,15 @@ void OLED::setTextColor(bool c, bool bg) {
 }
 
 void OLED::setTextWrap( bool w ) {
-   
+
+  textWrap = w;   
   display.setTextWrap( w );
+   
+}
+
+bool OLED::getTextWrap( void ) {
+
+  return textWrap;
    
 }
  
@@ -330,12 +337,11 @@ void OLED::write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align, b
 
 void OLED::writeRectangle( const char *str, int16_t x, int16_t y, int16_t width, int16_t height, FtSwarmAlign_t align, bool fill, bool invert ) {
 
-  // calcluslate needed space to print all
-  int16_t x1, y1, x2, y2;
-  uint16_t w, h;
-  getTextBounds( str, 0, 0, &x1, &y1, &w, &h );
+  uint8_t sx, sy;
+  oled->getTextSize( &sx, &sy );
+  int16_t w = strlen( str ) * 6 * sx;
 
-  // calculate #of chars, which could be printed
+  // calculate number of chars, which could be printed
   uint8_t maxChars = strlen( str );
   if ( w > width ) maxChars = ( (float) width / (float) (w+2) ) * maxChars;
 

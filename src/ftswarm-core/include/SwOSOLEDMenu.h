@@ -31,13 +31,14 @@ class SwOSScreenObj {
     int32_t        value   = FTSWARM_NANI32;
     char           *label  = NULL;
     FtSwarmAlign_t align;
-    int8_t         x, y;
+    int16_t        x, y;
+    FtSwarmScreenEvent_t lastEvent = FTSWARM_SCREENEVENT_NONE;
     
   public:
     SwOSScreenObj  *next   = NULL;
 
     // Constructor
-    SwOSScreenObj( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, int8_t x, int8_t y, FtSwarmAlign_t align );
+    SwOSScreenObj( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, int16_t x, int16_t y, FtSwarmAlign_t align );
 
     // Destructor
     ~SwOSScreenObj();
@@ -80,17 +81,21 @@ class SwOSScreenObj {
 class SwOSScreenSelectable : public SwOSScreenObj {
 
   protected:
-    int8_t widthLabel;
-    int8_t widthText;
-    char *text = NULL;
+    int16_t widthLabel;
+    int16_t widthText;
+    char *text   = NULL;
+    bool visible = true;
 
   public:
 
     // Constructor
-    SwOSScreenSelectable( uint8_t id, SwOSScreen *parent, const char *label, const char *text, int8_t x, int8_t y, int8_t widthLabel, int8_t widthText );
+    SwOSScreenSelectable( uint8_t id, SwOSScreen *parent, const char *label, const char *text, int16_t x, int16_t y, int16_t widthLabel, int16_t widthText );
     
     // change text
     virtual void setText( const char *text, bool autoDraw = true );
+
+    // get text
+    virtual const char *getText( void ) { return text; };
     
     // draw myself
     virtual void draw( void );
@@ -99,10 +104,14 @@ class SwOSScreenSelectable : public SwOSScreenObj {
     virtual void select( void );
 
     // is io clickable?
-    virtual bool isSelectable( void ) { return true; };
+    virtual bool isSelectable( void ) { return visible; };
 
     // return my id
     virtual uint8_t getID( void ) { return id; };
+
+    // hide/show
+    virtual void setVisible( bool visible );
+
 };
 
 /***************************************************
@@ -116,7 +125,7 @@ class SwOSScreenButton : public SwOSScreenObj {
   public:
 
     // Constructor
-    SwOSScreenButton( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, int8_t x, int8_t y, FtSwarmAlign_t align ) : SwOSScreenObj( id, io, parent, label, x, y, align ) {};
+    SwOSScreenButton( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, int16_t x, int16_t y, FtSwarmAlign_t align ) : SwOSScreenObj( id, io, parent, label, x, y, align ) {};
 
     // draw myself
     virtual void draw( void );    
@@ -190,7 +199,7 @@ class SwOSScreenJoystickPoti : public SwOSScreenObj {
 
   public:
 
-    SwOSScreenJoystickPoti(uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, int8_t x, int8_t y, FtSwarmAlign_t align );
+    SwOSScreenJoystickPoti(uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, int16_t x, int16_t y, FtSwarmAlign_t align );
 
     // io sends new value, return true if it's processed by the screen
     virtual bool setValue( int32_t value );
@@ -215,7 +224,7 @@ class SwOSScreenCombobox : public SwOSScreenObj {
     static const uint8_t HORIZONTAL = 0;
     static const uint8_t VERTICAL   = 1;
     
-    SwOSScreenCombobox( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, int8_t x, int8_t y, uint8_t size, uint8_t direction );
+    SwOSScreenCombobox( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, int16_t x, int16_t y, uint8_t size, uint8_t direction );
     virtual void draw( void );
 };
 
@@ -247,7 +256,7 @@ class SwOSScreenSelector : public SwOSScreenObj {
 
   public:
    
-    SwOSScreenSelector( uint8_t id, SwOSIO* io, SwOSScreen *parent, int8_t x, int8_t y );
+    SwOSScreenSelector( uint8_t id, SwOSIO* io, SwOSScreen *parent, int16_t x, int16_t y );
     ~SwOSScreenSelector();
     virtual void add( int8_t id, const char *text );
     virtual void draw( void );
@@ -295,6 +304,9 @@ class SwOSScreen {
     // get my title
     virtual const char *getTitle( void ) { return title; };
 
+    // close myself; autoclean = true -> destroy myself
+    virtual void close( bool autoClean = true );
+
   };
 
 /***************************************************
@@ -334,7 +346,7 @@ class SwOSScreenInput : public SwOSScreen {
     uint8_t cursorR[5] = { 0, 0, 0, 0, 0 };
     uint8_t cursorC[5] = { 0, 0, 0, 0, 0 };
 
-    void init( uint8_t id, SwOSScreen *parent, const char *title, const char *param, uint8_t maxLength );
+    void init( SwOSScreen *parent, uint8_t id, const char *title, const char *param, uint8_t maxLength );
     uint8_t keymapIndex( void ) { return cursorR[keyboard]*cols[keyboard] + cursorC[keyboard]; };
     void setKeyboard( uint8_t keyboard );
     void drawCursor( bool invert );
@@ -343,10 +355,10 @@ class SwOSScreenInput : public SwOSScreen {
   public:
    
     // Constructor to enter strings
-    SwOSScreenInput( uint8_t id, SwOSScreen *parent, const char *title, const char *param, uint8_t maxLength );
+    SwOSScreenInput( SwOSScreen *parent, uint8_t id, const char *title, const char *param, uint8_t maxLength );
 
     // constructor to enter numbers
-    SwOSScreenInput( uint8_t id, SwOSScreen *parent, const char *title, const int32_t param, uint8_t maxLength );
+    SwOSScreenInput( SwOSScreen *parent, uint8_t id, const char *title, const int32_t param, uint8_t maxLength );
 
     // Destructor
     ~SwOSScreenInput( );
@@ -405,12 +417,17 @@ class SwOSScreenInput : public SwOSScreen {
 
   protected:
     uint8_t id;
+    uint8_t value[4];
     char text[2][21];
 
   public:
 
     // constructor
-    SwOSScreenChooseOption( SwOSScreen *parent, uint8_t id, const char *title, const char *text1, const char *text2, const char *option1, const char *option2=NULL, const char *option3=NULL, const char *option4=NULL );
+    SwOSScreenChooseOption( SwOSScreen *parent, uint8_t id, const char *title, const char *text1, const char *text2, 
+                            uint8_t value1,   const char *option1, 
+                            uint8_t value2=0, const char *option2=NULL, 
+                            uint8_t value3=0, const char *option3=NULL, 
+                            uint8_t value4=0, const char *option4=NULL );
 
     // cls and draw all elements
     virtual void draw( void );
@@ -419,6 +436,34 @@ class SwOSScreenInput : public SwOSScreen {
     virtual bool eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nparam = FTSWARM_NANI32, char *sparam = NULL );
 
 };
+
+/***************************************************
+ *
+ * SwOSScreenYesNo
+ *
+ ***************************************************/
+
+class SwOSScreenYesNo : public SwOSScreenChooseOption {
+
+  public: 
+    SwOSScreenYesNo( SwOSScreen *parent, uint8_t id, const char *title, const char *text1, const char *text2 ) : SwOSScreenChooseOption( parent, id, title, text1, text2, 0, NULL, 1, "YES", 0, "NO" ) {};
+
+};
+
+
+/***************************************************
+ *
+ * SwOSScreenError
+ *
+ ***************************************************/
+
+class SwOSScreenError : public SwOSScreenChooseOption {
+
+  public: 
+    SwOSScreenError( SwOSScreen *parent, const char *text1, const char *text2 ) : SwOSScreenChooseOption( parent, 0, "Error", text1, text2, 0, NULL, 0, NULL, 0, NULL, 1, "OK" ) {};
+
+};
+
 
 /***************************************************
  *
@@ -455,12 +500,46 @@ class SwOSScreenWifi : public SwOSScreenSlider {
     SwOSScreenSelectable *wifiMode = NULL;
     SwOSScreenSelectable *wifiSSID = NULL;
     SwOSScreenSelectable *wifiPwd  = NULL;
+    bool anythingChanged = false;
+    SwOSScreenS4 *S4 = NULL;;
 
   public:
     SwOSScreenWifi( SwOSScreen *parent, SwOSScreenSlider *next  );
 
   // eval external events like pressing buttons
   virtual bool eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nparam = FTSWARM_NANI32, char *sparam = NULL );
+
+};
+
+/***************************************************
+ *
+ *   SwOSScreenWifiSSID
+ *
+ ***************************************************/
+
+class SwOSScreenWifiSSID : public SwOSScreenSlider {
+
+  protected:
+
+    int16_t scanStatus;
+    uint8_t id = 0;
+
+  public:
+
+    // constructor
+    SwOSScreenWifiSSID( SwOSScreen *parent, uint8_t id );
+
+    // destructor
+    ~SwOSScreenWifiSSID();
+
+    // cls and draw all elements
+    virtual void draw( void );
+
+    // eval external events like pressing buttons
+    virtual bool eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nparam = FTSWARM_NANI32, char *sparam = NULL );
+
+    // called all 25ms, so be minimalistic
+    virtual void operate( void );
 
 };
 
@@ -510,7 +589,7 @@ class SwOSMainScreen : public SwOSScreen {
   protected:
 
     // ToDo: replace with own SwScreenObj derives class
-    void joystick( char *lr, char *fb, int8_t x, int8_t y, bool left );
+    void joystick( char *lr, char *fb, int16_t x, int16_t y, bool left );
 
   public:
 
@@ -522,7 +601,6 @@ class SwOSMainScreen : public SwOSScreen {
 
     // eval external events like pressing buttons
     virtual bool eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nparam = FTSWARM_NANI32, char *sparam = NULL );
-
 };
 
 /***************************************************

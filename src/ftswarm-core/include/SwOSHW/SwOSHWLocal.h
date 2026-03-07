@@ -70,6 +70,7 @@ class OLED {
     uint8_t textSizeX = 0;
     uint8_t textSizeY = 0;
 
+    bool textWrap   = true;
     bool color      = true;
     bool background = false;
     
@@ -99,7 +100,7 @@ class OLED {
     // write some text
     void write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align, bool fill, bool invert );
 
-    // write text in a rectangle
+    // write text in a rectangle, cuts the text to need one line only
     void writeRectangle( const char *str, int16_t x, int16_t y, int16_t width, int16_t height, FtSwarmAlign_t align, bool fill, bool invert );
 
     // write some text at thcursor
@@ -110,6 +111,7 @@ class OLED {
 
     void setTextColor( bool c,  bool bg);
     void setTextWrap(bool w);
+    bool getTextWrap( void );
 
     void setRotation(uint8_t r);
     uint8_t getRotation(void);
