@@ -293,6 +293,18 @@ void OLED::getTextSize( uint8_t *sx, uint8_t *sy ) {
   *sy = textSizeY;
 
 }
+
+uint8_t OLED::getTextHeight( void ) {
+
+  return textSizeY * 8;
+
+}
+
+uint8_t OLED::getTextWidth( void ) {
+
+  return textSizeX * 6;
+
+}
  
 void OLED::drawChar(int16_t x, int16_t y, unsigned char c, bool color, bool bg, uint8_t size_x, uint8_t size_y) {
    
@@ -337,9 +349,7 @@ void OLED::write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align, b
 
 void OLED::writeRectangle( const char *str, int16_t x, int16_t y, int16_t width, int16_t height, FtSwarmAlign_t align, bool fill, bool invert ) {
 
-  uint8_t sx, sy;
-  oled->getTextSize( &sx, &sy );
-  int16_t w = strlen( str ) * 6 * sx;
+  int16_t w = strlen( str ) * getTextWidth();
 
   // calculate number of chars, which could be printed
   uint8_t maxChars = strlen( str );

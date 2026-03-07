@@ -385,7 +385,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
   // set splash screen
   #if FTSWARM_HAL_OLEDS > 0
-  screenManager.newScreen( new SwOSSplashScreen( NULL, myOSSwarm.Ctrl[0]->getAliasOrName() ), true );
+  screenManager.activate( new SwOSSplashScreen( NULL, myOSSwarm.Ctrl[0]->getAliasOrName() ) );
   #endif
 
   // now I can visualize my state
@@ -467,7 +467,7 @@ void SwOSSwarm::testFactoryReset( void ) {
   #endif
 
   #if FTSWARM_HAL_OLEDS > 0
-    screenManager.newScreen( new SwOSScreenFactoryReset( screenManager.active, NULL ), true );
+    screenManager.activate( new SwOSScreenFactoryReset( screenManager.active, NULL ) );
   #endif
   
 }

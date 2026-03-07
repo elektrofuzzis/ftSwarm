@@ -118,6 +118,8 @@ class OLED {
 
     void setTextSize(uint8_t sx, uint8_t sy);
     void getTextSize( uint8_t *sx, uint8_t *sy );
+    uint8_t getTextHeight( void );
+    uint8_t getTextWidth( void );
     
     void getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h);
     

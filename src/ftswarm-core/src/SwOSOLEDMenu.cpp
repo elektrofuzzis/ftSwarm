@@ -76,9 +76,7 @@ void SwOSScreenObj::unregister( SwOSIO *io ) {
 
 void SwOSScreenObj::setLabel( const char *label, bool autoDraw ) {
 
-  if ( this->label) {
-    delete this->label;
-  }
+  if ( this->label) free( this->label );
 
   if ( label ) {
 
@@ -363,6 +361,8 @@ void SwOSScreenSelector::draw( void ) {
 
 SwOSScreen::SwOSScreen( SwOSScreen *parent, const char *title ) {
   
+  screenManager.registerMe( this );
+
   this->parent = parent;
   
   if ( title ) {
@@ -441,9 +441,10 @@ void SwOSScreen::deactivate( void ) {
 
 }
 
-void SwOSScreen::close( bool autoClean ) { 
+void SwOSScreen::close( void ) { 
   
-  screenManager.newScreen( parent, autoClean ); 
+  toBeDestroyed = true;
+  screenManager.activate( parent ); 
 
 };
 
@@ -470,13 +471,28 @@ SwOSScreenSlider::SwOSScreenSlider( SwOSScreen *parent, const char *title, SwOSS
 
 }
 
-SwOSScreenSlider::~SwOSScreenSlider() {
+void SwOSScreenSlider::close( void ) {
 
-  // cleanup chain in both directions
-  if ( prev ) { prev->next = NULL; delete prev; }
-  if ( next ) { next->prev = NULL; delete next; }
+  SwOSScreenSlider *o;
+  
+  // cleanup to the left
+  SwOSScreenSlider *p = prev;
+  while (p) {
+    p->toBeDestroyed = true;
+    p = p->prev;
+  }
+
+  // cleanup to the right
+  SwOSScreenSlider *n = next;
+  while (n) {
+    n->toBeDestroyed = true;
+    n = n->next;
+  }
+
+  SwOSScreen::close();
 
 }
+
 
 void SwOSScreenSlider::add( SwOSScreenObj *newObject) {
 
@@ -504,16 +520,18 @@ void SwOSScreenSlider::draw( void ) {
 
 }
 
-bool SwOSScreenSlider::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nparam, char *sparam ) {
+bool SwOSScreenSlider::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
+
+  if ( SwOSScreen::eventHandlerCallback( event, id, nParam, sParam ) ) return true;
 
   // catch all joystick stuff
   if ( id == SWOSJOY1LR ) {
   
     // switch left?
-    if ( ( event == FTSWARM_SCREENEVENT_DOWN ) && ( prev ) ) screenManager.newScreen( prev, false );
+    if ( ( event == FTSWARM_SCREENEVENT_DOWN ) && ( prev ) ) screenManager.activate( prev );
 
     // switch right?
-    if ( ( event == FTSWARM_SCREENEVENT_UP ) && ( next ) )   screenManager.newScreen( next, false );
+    if ( ( event == FTSWARM_SCREENEVENT_UP ) && ( next ) )   screenManager.activate( next );
 
     return true;
 
@@ -617,7 +635,7 @@ uint8_t SwOSScreenSlider::countNext( void ) {
  *
  ***************************************************/   
 
-SwOSScreenChooseOption::SwOSScreenChooseOption( SwOSScreen *parent, uint8_t id, const char *title, const char *text1, const char *text2, 
+SwOSScreenChooseOption::SwOSScreenChooseOption( SwOSScreen *parent, uint8_t id, const char *title, const char *text,
                                                 uint8_t value1, const char *option1, 
                                                 uint8_t value2, const char *option2, 
                                                 uint8_t value3, const char *option3, 
@@ -636,23 +654,79 @@ SwOSScreenChooseOption::SwOSScreenChooseOption( SwOSScreen *parent, uint8_t id, 
   if (option3) add( new SwOSScreenS3( this, option3) );
   if (option4) add( new SwOSScreenS4( this, option4) );
 
-  bzero( text, 2*21 );
-  if (text1) strncpy( text[0], text1, 20 );
-  if (text2) strncpy( text[1], text2, 20 );
+  // ** split text **
+  uint8_t len = strlen(text);
+  uint8_t maxCharsPerRow = OLEDWIDTH / oled->getTextWidth();
+  uint8_t neededRows = len / maxCharsPerRow + 1;
+  uint8_t optLength  = len / neededRows;
 
+  // add some chars to be more flexible
+  uint8_t diff = maxCharsPerRow - optLength;
+  if ( diff > 4 ) optLength += 4;
+  else            optLength += diff;
+  
+  // start splitting
+  uint16_t cut;
+  char *todo = (char *)text;
+  maxLine = -1;
+
+  while ( ( todo[0] != '\0' ) && ( maxLine < 4) ) {
+
+    if ( strlen( todo ) <= optLength )
+      // last line
+      cut = strlen( todo );
+
+    else {
+    
+      // search back from optLength to find a space
+      cut = optLength;
+      while ( ( todo[cut] != ' ' ) && ( cut > 0 ) ) cut--;
+
+      // no space found, need a hard cut
+      if (cut == 0) cut = optLength;
+
+    }
+
+    // copy
+    line[++maxLine] = (char *) calloc( cut+1, sizeof( char ) );
+    strncpy( line[maxLine], todo, cut );
+
+    // skip space?
+    if ( todo[cut] == ' ' ) cut++;
+
+    // move pointer
+    todo += cut;
+
+  }
+
+}
+
+SwOSScreenChooseOption::~SwOSScreenChooseOption() {
+
+  for ( uint8_t i=0; i<=maxLine; i++ ) free( line[i] );
 }
 
 void SwOSScreenChooseOption::draw( void ) {
 
   SwOSScreen::draw();
-  oled->write( text[0], oled->getWidth()/2, 7, FTSWARM_ALIGNCENTER, true, false );  
-  oled->write( text[1], oled->getWidth()/2, 16, FTSWARM_ALIGNCENTER, true, false );  
+
+  int8_t rowHeight = oled->getTextHeight()+1;
+  int8_t space     = 48 - rowHeight; 
+  int8_t y         = ( space - ( (maxLine+2) * oled->getTextHeight() ) ) / 2;
+
+  // just in case
+  if ( y<0 ) y = 0;
+
+  for ( uint8_t i=0; i<=maxLine; i++ ) {
+    oled->write( line[i], OLEDWIDTH/2, y, FTSWARM_ALIGNCENTER, true, false );    
+    y += rowHeight;
+  }
 
 }
 
-bool SwOSScreenChooseOption::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nparam, char *sparam ) {
+bool SwOSScreenChooseOption::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
 
-  // if ( SwOSScreen::eventHandlerCallback( event, id,nparam, sparam ) ) return true;
+  // if ( SwOSScreen::eventHandlerCallback( event, id,nParam, sParam ) ) return true;
 
   if ( event == FTSWARM_SCREENEVENT_DOWN ) {
   
@@ -691,9 +765,9 @@ SwOSScreenChooseConfig::SwOSScreenChooseConfig( SwOSScreen *parent, SwOSScreenSl
   
 }
 
-bool SwOSScreenChooseConfig::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nparam, char *sparam ) {
+bool SwOSScreenChooseConfig::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
 
-  if ( SwOSScreenSlider::eventHandlerCallback( event, id, nparam, sparam ) ) return true;
+  if ( SwOSScreenSlider::eventHandlerCallback( event, id, nParam, sParam ) ) return true;
 
   if ( event == FTSWARM_SCREENEVENT_DOWN ) {
 
@@ -719,68 +793,77 @@ bool SwOSScreenChooseConfig::eventHandlerCallback( FtSwarmScreenEvent_t event, u
  *
  ***************************************************/
 
-#define SWOSSCREENWIFI_MODE      30
-#define SWOSSCREENWIFI_SSID      31
-#define SWOSSCREENWIFI_PASSWD    32
-#define SWOSSCREENWIFI_CB_MODE   33
-#define SWOSSCREENWIFI_CB_SSID   34
-#define SWOSSCREENWIFI_CB_PASSWD 35
-#define SWOSSCREENWIFI_CB_SAVE   36
+#define SWOSSCREENWIFI_MODE      SWOSSCREENID_BASE + 0
+#define SWOSSCREENWIFI_SSID      SWOSSCREENID_BASE + 1
+#define SWOSSCREENWIFI_PASSWD    SWOSSCREENID_BASE + 2
+#define SWOSSCREENWIFI_CB_MODE   SWOSSCREENID_BASE + 3
+#define SWOSSCREENWIFI_CB_SSID   SWOSSCREENID_BASE + 4
+#define SWOSSCREENWIFI_CB_PASSWD SWOSSCREENID_BASE + 5
+#define SWOSSCREENWIFI_CB_SAVE   SWOSSCREENID_BASE + 6
 
 SwOSScreenWifi::SwOSScreenWifi( SwOSScreen *parent, SwOSScreenSlider *next  ) : SwOSScreenSlider( parent, "Wifi", next ) {
 
-  add( wifiMode = new SwOSScreenSelectable( SWOSSCREENWIFI_MODE,   this, "Mode", WIFI[nvs.wifiMode], 0,  1, 40, OLEDWIDTH-40 ) );
-  add( wifiSSID = new SwOSScreenSelectable( SWOSSCREENWIFI_SSID,   this, "SSID", nvs.wifiSSID,       0, 10, 40, OLEDWIDTH-40 ) );
-  add( wifiPwd  = new SwOSScreenSelectable( SWOSSCREENWIFI_PASSWD, this, "Passwd", "*****",          0, 19, 40, OLEDWIDTH-40 ) );
+  strcpy( wifiSSID, nvs.wifiSSID );
+  strcpy( wifiPwd,  nvs.wifiPwd );
+  wifiMode = nvs.wifiMode;
+
+  add( wifiModeSO = new SwOSScreenSelectable( SWOSSCREENWIFI_MODE,   this, "Mode",   WIFI[wifiMode], 0,  1, 40, OLEDWIDTH-40 ) );
+  add( wifiSSIDSO = new SwOSScreenSelectable( SWOSSCREENWIFI_SSID,   this, "SSID",   wifiSSID, 0, 10, 40, OLEDWIDTH-40 ) );
+  add( wifiPwdSO  = new SwOSScreenSelectable( SWOSSCREENWIFI_PASSWD, this, "Passwd", "*****",  0, 19, 40, OLEDWIDTH-40 ) );
   add( S4 = new SwOSScreenS4( this, "" ) );
 
-  wifiSSID->setVisible( ( nvs.wifiMode != wifiOFF ) );
-  wifiPwd->setVisible ( ( nvs.wifiMode != wifiOFF ) );
+  wifiSSIDSO->setVisible( ( wifiMode != wifiOFF ) );
+  wifiPwdSO->setVisible ( ( wifiMode != wifiOFF ) );
 
 }
 
-bool SwOSScreenWifi::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nparam , char *sparam ) {
+bool SwOSScreenWifi::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam , char *sParam ) {
 
-  if ( SwOSScreenSlider::eventHandlerCallback( event, id, nparam, sparam ) ) return true;
+  if ( SwOSScreenSlider::eventHandlerCallback( event, id, nParam, sParam ) ) return true;
 
   if ( event == FTSWARM_SCREENEVENT_OK ) {
 
     switch (id) {
 
-      case SWOSSCREENWIFI_MODE:       screenManager.newScreen( new SwOSScreenChooseOption( this, SWOSSCREENWIFI_CB_MODE, "wifi mode", "Choose wifi mode.", "", wifiOFF, "off", wifiAP, "AP", wifiClient, "Client" ), false );
+      case SWOSSCREENWIFI_MODE:       screenManager.activate( new SwOSScreenChooseOption( this, SWOSSCREENWIFI_CB_MODE, "wifi mode", "choose wifi mode", wifiOFF, "off", wifiAP, "AP", wifiClient, "client" ) );
                                       break;
 
-      case SWOSSCREENWIFI_CB_MODE:    nvs.wifiMode = (FtSwarmWifi_t) nparam;
-                                      wifiMode->setText( WIFI[nvs.wifiMode] );
-                                      wifiSSID->setVisible( ( nvs.wifiMode != wifiOFF ) );
-                                      wifiPwd->setVisible ( ( nvs.wifiMode != wifiOFF ) );
+      case SWOSSCREENWIFI_CB_MODE:    wifiMode = (FtSwarmWifi_t) nParam;
+                                      wifiModeSO->setText( WIFI[wifiMode] );
+                                      wifiSSIDSO->setVisible( ( wifiMode != wifiOFF ) );
+                                      wifiPwdSO->setVisible ( ( wifiMode != wifiOFF ) );
                                       anythingChanged = true;
                                       break;
 
-      case SWOSSCREENWIFI_SSID:       if ( nvs.wifiMode == wifiAP ) screenManager.newScreen( new SwOSScreenInput( this, SWOSSCREENWIFI_CB_SSID, "SSID", nvs.wifiSSID, 63 ), false );
-                                      else                          screenManager.newScreen( new SwOSScreenWifiSSID( this, SWOSSCREENWIFI_CB_SSID ), false );
+      case SWOSSCREENWIFI_SSID:       if ( wifiMode == wifiAP ) screenManager.activate( new SwOSScreenInput( this, SWOSSCREENWIFI_CB_SSID, "SSID", wifiSSID, 63 ) );
+                                      else                      screenManager.activate( new SwOSScreenWifiSSID( this, SWOSSCREENWIFI_CB_SSID ) );
                                       break;
 
-      case SWOSSCREENWIFI_CB_SSID:    if (sparam) { 
-                                        strcpy( nvs.wifiSSID, sparam); 
-                                        wifiSSID->setText( nvs.wifiSSID );
+      case SWOSSCREENWIFI_CB_SSID:    if (sParam) { 
+                                        strcpy( wifiSSID, sParam); 
+                                        wifiSSIDSO->setText( wifiSSID );
                                         anythingChanged = true;
                                       }
                                       break;
 
-      case SWOSSCREENWIFI_PASSWD:     screenManager.newScreen( new SwOSScreenInput( this, SWOSSCREENWIFI_CB_PASSWD, "Password", "", 63 ), false );
+      case SWOSSCREENWIFI_PASSWD:     screenManager.activate( new SwOSScreenInput( this, SWOSSCREENWIFI_CB_PASSWD, "Password", "", 63 ) );
                                       break;
 
-      case SWOSSCREENWIFI_CB_PASSWD:  if ( sparam) {
-                                        if ( ( strlen(sparam) > 0 ) && ( strlen(sparam) < 8 ) ) screenManager.newScreen( new SwOSScreenError( this, "Password needs at", "minimum 8 chars." ), false );
+      case SWOSSCREENWIFI_CB_PASSWD:  if ( sParam) {
+                                        if ( ( strlen(sParam) > 0 ) && ( strlen(sParam) < 8 ) ) screenManager.activate( new SwOSScreenError( this, "wifi passwords needs at minimum 8 chars" ) );
                                         else {
-                                          strcpy( nvs.wifiPwd, sparam);
+                                          strcpy( wifiPwd, sParam);
                                           anythingChanged = true;
                                         }
                                       }
                                       break;
 
-      case SWOSSCREENWIFI_CB_SAVE:    if (nparam) nvs.saveAndRestart();
+      case SWOSSCREENWIFI_CB_SAVE:    if (nParam) {
+                                        nvs.wifiMode = wifiMode;
+                                        strcpy( nvs.wifiSSID, wifiSSID );
+                                        strcpy( nvs.wifiPwd,  wifiPwd );
+                                        nvs.saveAndRestart();
+                                      }
                                       break;
 
     }
@@ -793,7 +876,7 @@ bool SwOSScreenWifi::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t i
   
   if ( event == FTSWARM_SCREENEVENT_DOWN ) {
 
-    if ( ( id == FTSWARM_S4 ) && ( anythingChanged ) )  screenManager.newScreen( new SwOSScreenYesNo( this, SWOSSCREENWIFI_CB_SAVE, "wifi", "Save new settings", "and reboot?" ), false );
+    if ( ( id == FTSWARM_S4 ) && ( anythingChanged ) )  screenManager.activate( new SwOSScreenYesNo( this, SWOSSCREENWIFI_CB_SAVE, "wifi", "Save new settings and reboot?" ) );
     return true;
 
   }
@@ -828,13 +911,13 @@ void SwOSScreenWifiSSID::draw( void ) {
 
 }
 
-bool SwOSScreenWifiSSID::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nparam, char *sparam ) {
+bool SwOSScreenWifiSSID::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
 
-  if ( SwOSScreenSlider::eventHandlerCallback( event, id, nparam, sparam ) ) return true;
+  if ( SwOSScreenSlider::eventHandlerCallback( event, id, nParam, sParam ) ) return true;
 
   // must be a J1 click to select and close
-  parent->eventHandlerCallback( FTSWARM_SCREENEVENT_OK, this->id, selected->getID(), (char *) selected->getText() );
-  close( this->id );
+  if (parent) parent->eventHandlerCallback( FTSWARM_SCREENEVENT_OK, this->id, selected->getID(), (char *) selected->getText() );
+  close( );
 
   return true;
 
@@ -1004,7 +1087,7 @@ void SwOSScreenInput::setKeyboard( uint8_t keyboard ) {
 
 }
 
-bool SwOSScreenInput::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nparam, char *sparam ) {
+bool SwOSScreenInput::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
 
   uint8_t len;
 
@@ -1072,7 +1155,99 @@ bool SwOSScreenInput::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t 
  *
  ***************************************************/
 
+ #define SWOSSCREENSWARM_CB_NAME SWOSSCREENID_BASE + 0
+ #define SWOSSCREENSWARM_CB_PIN  SWOSSCREENID_BASE + 1
+ #define SWOSSCREENSWARM_CB_NEW  SWOSSCREENID_BASE + 2
+
 SwOSScreenSwarm::SwOSScreenSwarm( SwOSScreen *parent, SwOSScreenSlider *next  ) : SwOSScreenSlider( parent, "Swarm", next ) {
+
+  strcpy( swarmName, nvs.swarmName );
+  swarmPIN = nvs.swarmPIN;
+
+  uint8_t members = myOSSwarm.members();
+  uint8_t item    = 0;
+
+  for (uint8_t i=0; i<members ; i++ ) {
+    
+    if ( myOSSwarm.Ctrl[i] ) 
+      add( new SwOSScreenSelectable( i, this, myOSSwarm.Ctrl[i]->isOnline()? " " : "X", myOSSwarm.Ctrl[i]->getAliasOrName(), 0, item++*9+1, 10, OLEDWIDTH-10 ) );
+
+  }
+
+  add( new SwOSScreenS1( this, "add" ) );
+  add( new SwOSScreenS2( this, "swarm" ) );
+  add( new SwOSScreenS3( this, "pin" ) );
+
+}
+
+void SwOSScreenSwarm::reload( void ) {};
+
+bool SwOSScreenSwarm::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
+
+  if ( SwOSScreenSlider::eventHandlerCallback( event, id, nParam, sParam ) ) return true;
+
+  if ( event == FTSWARM_SCREENEVENT_DOWN ) {
+
+    switch ( id ) {
+
+      case FTSWARM_S1: return true;
+
+      case FTSWARM_S2: screenManager.activate( new SwOSScreenInput( this, SWOSSCREENSWARM_CB_NAME, "New Swarm Name", "", MAXIDENTIFIER ) );
+                       return true;
+
+      case FTSWARM_S3: screenManager.activate( new SwOSScreenInput( this, SWOSSCREENSWARM_CB_PIN, "Swarm Pin", nvs.swarmPIN, 4 ) );
+                       return true;
+
+
+    }
+
+    return true;
+
+  }
+
+  if ( event == FTSWARM_SCREENEVENT_OK ) {
+
+    switch ( id )  {
+
+      case SWOSSCREENSWARM_CB_NAME: if ( (!sParam) || ( strlen(sParam) < 5 ) ) screenManager.activate( new SwOSScreenError( this, "The swarm name must contain at least 5 chars." ) );
+                                    else {
+                                      strcpy( swarmName, sParam );
+                                      screenManager.activate( new SwOSScreenInput( this, SWOSSCREENSWARM_CB_PIN, "Swarm Pin", myOSSwarm.Ctrl[0]->serialNumber, 4 ) );
+                                    }
+                                    return true;
+
+      case SWOSSCREENSWARM_CB_PIN:  swarmPIN = nParam;
+      
+                                    if ( strcmp( swarmName, nvs.swarmName ) != 0 ) {
+                                      // new Swarm?
+                                      screenManager.activate( new SwOSScreenYesNo( this, SWOSSCREENSWARM_CB_NEW, "New Swarm", "Delete existing swarm and create a new one?" ) );
+
+                                    } else {
+                                      // juist change PIN?
+                                      nvs.swarmPIN = swarmPIN;
+                                      nvs.save();
+
+                                    }
+                                    return true;
+
+      case SWOSSCREENSWARM_CB_NEW:  if (nParam) {
+
+                                        strcpy( nvs.swarmName, swarmName );
+                                        nvs.swarmPIN = swarmPIN;
+                                        myOSSwarm.newSwarm(  );
+                                        nvs.save( );
+
+                                    }
+                                    return true;
+
+    }
+
+    return true;
+
+  }
+
+  return false;
+
 }
 
 /***************************************************
@@ -1098,7 +1273,7 @@ void SwOSScreenFactoryReset::draw( void ) {
 
 }
 
-bool SwOSScreenFactoryReset::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nparam, char *sparam ) {
+bool SwOSScreenFactoryReset::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
 
   if ( SwOSScreenSlider::eventHandlerCallback( event, id ) ) return true;
 
@@ -1110,7 +1285,7 @@ bool SwOSScreenFactoryReset::eventHandlerCallback( FtSwarmScreenEvent_t event, u
 
   // NO
   if ( id == FTSWARM_S3 ) {
-    if ( event == FTSWARM_SCREENEVENT_DOWN ) screenManager.newScreen( new SwOSMainScreen( NULL, "Main" ), true );
+    if ( event == FTSWARM_SCREENEVENT_DOWN ) screenManager.activate( new SwOSMainScreen( NULL, "Main" ) );
     return true;
   }
 
@@ -1202,7 +1377,7 @@ void SwOSMainScreen::draw( void ) {
 
 }
 
-bool SwOSMainScreen::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nparam, char *sparam ) {
+bool SwOSMainScreen::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
 
   if ( id == FTSWARM_S4 ) {
 
@@ -1210,11 +1385,12 @@ bool SwOSMainScreen::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t i
       if ( event == FTSWARM_SCREENEVENT_DOWN ) {
 
         SwOSScreenSlider *config = ( SwOSScreenSlider * ) new SwOSScreenChooseConfig( this, 
-                                                          new SwOSScreenWifi( this, 
-                                                          new SwOSScreenSwarm( this, 
-                                                          new SwOSScreenFactoryReset( this, NULL ) ) ) );
+                                                            new SwOSScreenWifi( this, 
+                                                              new SwOSScreenSwarm( this, 
+                                                                new SwOSScreenFactoryReset( this, 
+                                                                  NULL ) ) ) );
 
-        screenManager.newScreen( (SwOSScreen *) config, false );
+        screenManager.activate( (SwOSScreen *) config );
 
         return true;
       }
@@ -1268,14 +1444,18 @@ bool SwOSMainScreen::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t i
 void SwOSSplashScreen::operate( void ) {
 
   // change to Main Screen after 5 seconds
-  if ( millis()-startTime > 5000L ) screenManager.newScreen( new SwOSMainScreen( NULL, title ), true );
+  if ( millis()-startTime > 5000L ) {
+    screenManager.activate( new SwOSMainScreen( NULL, title ) );
+    toBeDestroyed = true;
+  }
 
 }
 
-bool SwOSSplashScreen::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nparam, char *sparam ) {
+bool SwOSSplashScreen::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
   
   // some pressed a key, so I change to the main screen
-  screenManager.newScreen( new SwOSMainScreen( NULL, title ), true );
+  screenManager.activate( new SwOSMainScreen( NULL, title ) );
+  toBeDestroyed = true;
   return true;
 
 }
@@ -1302,37 +1482,34 @@ void SwOS404Screen::draw( void ) {
  *
  ***************************************************/
 
+SwOSScreenManager::SwOSScreenManager() {
+
+  for (uint8_t i=0; i<MAXSCREENS; i++ ) screen[i] = NULL;
+
+}
+
 void SwOSScreenManager::operate( void ) {
 
   if (next) {
-    // a new screen shall to be used
-    // based on the today's sequence on working on events, it's not needed to lock the device. Maybe in the future. 
-
-    // save old one
-    SwOSScreen *outdated = active;
-
-    // deactivate old screen objects
-    if (active) active->deactivate();
-
-    // replace by new one
     active = next;
-    next   = NULL;
-
-    // draw and activate new one
-    active->draw();
+    next = NULL;
     active->activate();
+    active->draw();
+  }
 
-    // delete outdated
-    if ( ( outdated ) && ( autoCleanUp ) ) {
-      delete( outdated );
-      autoCleanUp = false;
+  // operate active screen
+  if (active) active->operate();
+
+  // garbage collector
+  for ( uint8_t i=0; i<MAXSCREENS; i++ ) {
+    if ( ( screen[i] ) && ( screen[i]->toBeDestroyed )  && ( screen[i] != active ) ) {
+      SwOSScreen *obsolete = screen[i];
+      screen[i] = NULL;
+      delete obsolete;
     }
 
   }
-
-  // operate avtive screen
-  if (active) active->operate();
-
+  
 }
 
 void SwOSScreenManager::draw( void ) {
@@ -1341,29 +1518,47 @@ void SwOSScreenManager::draw( void ) {
 
 }
 
-void SwOSScreenManager::newScreen( SwOSScreen *newScreen, bool autoCleanUp ) { 
+uint8_t SwOSScreenManager::getIndex( SwOSScreen *screen ) {
 
-  SwOSScreen *outdated = NULL;
+  int8_t free = -1;
 
-  if ( next ) {
+  for (uint8_t i=0; i<MAXSCREENS; i++ ) {
 
-    // Ran in a race condition, last change did not take place yet.
-    SWARM_LOG_INFO( "SwOSScreenManager: New screen appears before displaying the last one");
+    // free space?
+    if ( !this->screen[i] ) free = i;
 
-    // mark to be deleted
-    SwOSScreen *outdated = next;
+    // myself?
+    if ( this->screen[i] == screen ) return i;
 
   }
 
-  if ( newScreen ) next = newScreen;
-  else next = new SwOS404Screen( NULL ); 
+  if ( free >= 0 ) return free;
 
-  // release old one
-  if ( ( outdated ) && ( autoCleanUp ) ) { 
-    delete( outdated ); 
-    this->autoCleanUp = false; 
+  SWARM_LOG_ERROR( "Screenmanager out of space. Garbage collection will not cleanup all screens any more." );
+  return 0;
+
+}
+
+void SwOSScreenManager::registerMe( SwOSScreen *screen ) { 
+
+  if ( screen ) {
+    this->screen[ getIndex( screen ) ] = screen;
+  }
+
+}
+
+void SwOSScreenManager::activate( SwOSScreen *screen ) { 
+
+  if ( screen ) {
+    
+    next   = screen;
+
   } else {
-    this->autoCleanUp = autoCleanUp;
+
+    SwOSScreen *vier0vier = new SwOS404Screen( NULL );
+    registerMe( vier0vier );
+    activate( vier0vier );
+
   }
 
 }
