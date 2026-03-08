@@ -1,4 +1,4 @@
-import { Edit } from "lucide-solid";
+import Edit from "lucide-solid/icons/edit";
 import { Show, type ParentComponent } from "solid-js";
 
 export const EditableLabel: ParentComponent<{

@@ -7,11 +7,11 @@ import {
   type ApiController,
   type FtSwarmIo,
 } from "../api/apiTypes.ts";
-import { Unplug } from "lucide-solid";
+import Unplug from "lucide-solid/icons/unplug";
 import { getControllerIcon } from "../api/icons.ts";
 import { Dynamic } from "solid-js/web";
 import { EditableLabel } from "../components/EditableLabel.tsx";
-import { IoCard } from "../components/io/index.tsx";
+import { IoCard } from "../components/io";
 
 const INVALID_STATES: SwOSState[] = [
   SwOSState.OFFLINE,

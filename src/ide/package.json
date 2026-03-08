@@ -21,6 +21,7 @@
     "@types/node": "^24.9.2",
     "typescript": "~5.8.3",
     "vite": "^7.0.4",
+    "vite-bundle-explorer": "^1.0.0",
     "vite-plugin-solid": "^2.11.7"
   }
 }

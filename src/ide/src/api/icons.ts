@@ -1,128 +1,132 @@
+import Car from "lucide-solid/icons/car";
 import ToggleLeft from "lucide-solid/icons/toggle-left";
-import SwitchCameraIcon from "lucide-solid/icons/switch-camera";
+import ToggleRight from "lucide-solid/icons/toggle-right";
 import Magnet from "lucide-solid/icons/magnet";
 import Gauge from "lucide-solid/icons/gauge";
-import MousePointerClick from "lucide-solid/icons/mouse-pointer-click";
-import LineChart from "lucide-solid/icons/line-chart";
-import Zap from "lucide-solid/icons/zap";
 import CircuitBoard from "lucide-solid/icons/circuit-board";
 import Thermometer from "lucide-solid/icons/thermometer";
-import Eye from "lucide-solid/icons/eye";
 import Gamepad from "lucide-solid/icons/gamepad";
 import Cog from "lucide-solid/icons/cog";
-import Tractor from "lucide-solid/icons/tractor";
-import Lightbulb from "lucide-solid/icons/lightbulb";
-import Droplet from "lucide-solid/icons/droplet";
-import AirVent from "lucide-solid/icons/air-vent";
-import Speaker from "lucide-solid/icons/speaker";
-import Clock from "lucide-solid/icons/clock";
 import RotateCw from "lucide-solid/icons/rotate-cw";
 import Activity from "lucide-solid/icons/activity";
-import Radar from "lucide-solid/icons/radar";
 import Camera from "lucide-solid/icons/camera";
-import Sparkles from "lucide-solid/icons/sparkles";
 import Monitor from "lucide-solid/icons/monitor";
-import Network from "lucide-solid/icons/network";
-import Orbit from "lucide-solid/icons/orbit";
+import LineSquiggle from "lucide-solid/icons/line-squiggle";
 import Power from "lucide-solid/icons/power";
+import Compass from "lucide-solid/icons/compass";
 import Palette from "lucide-solid/icons/palette";
-import Footprints from "lucide-solid/icons/footprints";
 import FileQuestionMark from "lucide-solid/icons/file-question-mark";
+import LampCeiling from "lucide-solid/icons/lamp-ceiling";
+import AudioWaveform from "lucide-solid/icons/audio-waveform";
+import WindArrowDown from "lucide-solid/icons/wind-arrow-down";
+import Bell from "lucide-solid/icons/bell";
 import Cpu from "lucide-solid/icons/cpu";
-import type { Component } from "solid-js";
-import { FtSwarmVersion, SwOSIOType } from "./generated/genApiEnums.ts";
-import { Car, Move3D } from "lucide-solid";
+import Move3D from "lucide-solid/icons/move-3d";
+import Joystick from "lucide-solid/icons/joystick";
+import RefreshCCWDot from "lucide-solid/icons/refresh-ccw-dot";
+import Sun from "lucide-solid/icons/sun";
+import Ruler from "lucide-solid/icons/ruler";
+import Settings2 from "lucide-solid/icons/settings-2";
+import type {Component} from "solid-js";
+import {FtSwarmVersion, SwOSIOType} from "./generated/genApiEnums.ts";
 
 export type IconComponent = Component<{ class?: string }>;
 
-const ioIconMap: Record<number, IconComponent> = {
-  0: ToggleLeft,
-  1: SwitchCameraIcon,
-  2: Magnet,
-  3: Gauge,
-  4: MousePointerClick,
-  5: LineChart,
-  6: Zap,
-  7: CircuitBoard,
-  8: Thermometer,
-  9: Eye,
-  10: Gamepad,
-  11: Cog,
-  12: Cog,
-  13: Cog,
-  14: Tractor,
-  15: Cog,
-  16: Lightbulb,
-  17: Droplet,
-  18: AirVent,
-  19: Speaker,
-  20: Cog,
-  21: Clock,
-  22: RotateCw,
-  23: Activity,
-  24: Radar,
-  25: Camera,
-  26: Gauge,
-  27: Sparkles,
-  28: Monitor,
-  29: Network,
-  30: Orbit,
-  31: CircuitBoard,
-  32: Power,
-  33: Palette,
-  34: Footprints,
-  35: Radar,
-  36: Gamepad,
+const ioTypeIconMap: Record<SwOSIOType, IconComponent> = {
+    [SwOSIOType.SWOSIO_UNDEF]: Cog,
+    [SwOSIOType.SWOSIO_DIGITAL]: ToggleLeft,
+    [SwOSIOType.SWOSIO_SWITCH]: ToggleRight,
+    [SwOSIOType.SWOSIO_REEDSWITCH]: Magnet,
+    [SwOSIOType.SWOSIO_LIGHTBARRIER]: Sun,
+    [SwOSIOType.SWOSIO_BUTTON]: ToggleRight,
+    [SwOSIOType.SWOSIO_ANALOG]: Gauge,
+    [SwOSIOType.SWOSIO_VOLTMETER]: Gauge,
+    [SwOSIOType.SWOSIO_OHMMETER]: Gauge,
+    [SwOSIOType.SWOSIO_THERMOMETER]: Thermometer,
+    [SwOSIOType.SWOSIO_LDR]: Gauge,
+    [SwOSIOType.SWOSIO_JOYSTICK]: Joystick,
+    [SwOSIOType.SWOSIO_MOTOR]: RotateCw,
+    [SwOSIOType.SWOSIO_XSMOTOR]: RotateCw,
+    [SwOSIOType.SWOSIO_XMMOTOR]: RotateCw,
+    [SwOSIOType.SWOSIO_TRACTOR]: RotateCw,
+    [SwOSIOType.SWOSIO_ENCODER]: RefreshCCWDot,
+    [SwOSIOType.SWOSIO_LAMP]: LampCeiling,
+    [SwOSIOType.SWOSIO_VALVE]: WindArrowDown,
+    [SwOSIOType.SWOSIO_COMPRESSOR]: WindArrowDown,
+    [SwOSIOType.SWOSIO_BUZZER]: Bell,
+    [SwOSIOType.SWOSIO_STEPPER]: Move3D,
+    [SwOSIOType.SWOSIO_COUNTER]: Activity,
+    [SwOSIOType.SWOSIO_ROTARYENCODER]: Activity,
+    [SwOSIOType.SWOSIO_FREQUENCYMETER]: AudioWaveform,
+    [SwOSIOType.SWOSIO_LIDAR]: Ruler,
+    [SwOSIOType.SWOSIO_CAM]: Camera,
+    [SwOSIOType.SWOSIO_SERVO]: Settings2,
+    [SwOSIOType.SWOSIO_PIXEL]: Palette,
+    [SwOSIOType.SWOSIO_OLED]: Monitor,
+    [SwOSIOType.SWOSIO_I2C]: Cpu,
+    [SwOSIOType.SWOSIO_GYRO]: Compass,
+    [SwOSIOType.SWOSIO_POWER]: Power,
+    [SwOSIOType.SWOSIO_COLORSENSOR]: Palette,
+    [SwOSIOType.SWOSIO_TRAILSENSOR]: LineSquiggle,
+    [SwOSIOType.SWOSIO_ULTRASONIC]: Ruler,
+    [SwOSIOType.SWOSIO_JOYSTICK_POTI]: Joystick,
+    [SwOSIOType.SWOSIO_WHEELDRIVE]: RotateCw,
+    [SwOSIOType.SWOSIO_MINIMOTOR]: RotateCw,
+    [SwOSIOType.SWOSIO_SMOTOR]: RotateCw,
+    [SwOSIOType.SWOSIO_POWERMOTOR]: RotateCw,
+    [SwOSIOType.SWOSIO_MMOTOR]: RotateCw,
+    [SwOSIOType.SWOSIO_RCMOTOR]: RotateCw,
+    [SwOSIOType.SWOSIO_RCSERVO]: Settings2,
+    [SwOSIOType.SWOSIO_RCPOTI]: RefreshCCWDot,
+    [SwOSIOType.SWOSIO_MAXIOTYPE]: Cog
 };
 
 enum FtSwarmController {
-  FTSWARM_NOCTRL,
-  FTSWARM,
-  FTSWARMCONTROL,
-  FTSWARMCAM,
-  FTSWARMPWRDRIVE,
-  FTSWARMDUINO,
-  FTSWARMRC,
-  FTSWARM_MAXCONTROLLERTYPE,
+    FTSWARM_NOCTRL,
+    FTSWARM,
+    FTSWARMCONTROL,
+    FTSWARMCAM,
+    FTSWARMPWRDRIVE,
+    FTSWARMDUINO,
+    FTSWARMRC,
+    FTSWARM_MAXCONTROLLERTYPE,
 }
 
 const controllerIconMap: Record<FtSwarmController, IconComponent> = {
-  [FtSwarmController.FTSWARM_NOCTRL]: Cpu,
-  [FtSwarmController.FTSWARM]: Cpu,
-  [FtSwarmController.FTSWARMCONTROL]: Gamepad,
-  [FtSwarmController.FTSWARMCAM]: Camera,
-  [FtSwarmController.FTSWARMPWRDRIVE]: Move3D,
-  [FtSwarmController.FTSWARMDUINO]: CircuitBoard,
-  [FtSwarmController.FTSWARMRC]: Car,
-  [FtSwarmController.FTSWARM_MAXCONTROLLERTYPE]: Cpu,
+    [FtSwarmController.FTSWARM_NOCTRL]: Cpu,
+    [FtSwarmController.FTSWARM]: Cpu,
+    [FtSwarmController.FTSWARMCONTROL]: Gamepad,
+    [FtSwarmController.FTSWARMCAM]: Camera,
+    [FtSwarmController.FTSWARMPWRDRIVE]: Move3D,
+    [FtSwarmController.FTSWARMDUINO]: CircuitBoard,
+    [FtSwarmController.FTSWARMRC]: Car,
+    [FtSwarmController.FTSWARM_MAXCONTROLLERTYPE]: Cpu,
 };
 
 const versionToControllerMap: Record<FtSwarmVersion, FtSwarmController> = {
-  [FtSwarmVersion.FTSWARM_NOVERSION]: FtSwarmController.FTSWARM_NOCTRL,
-  [FtSwarmVersion.FTSWARMCONTROL_1V3]: FtSwarmController.FTSWARMCONTROL,
-  [FtSwarmVersion.FTSWARMJST_1V15]: FtSwarmController.FTSWARM,
-  [FtSwarmVersion.FTSWARMRS_2V1]: FtSwarmController.FTSWARM,
-  [FtSwarmVersion.FTSWARMCAM_3V12]: FtSwarmController.FTSWARMCAM,
-  [FtSwarmVersion.FTSWARMDUINO_1V141]: FtSwarmController.FTSWARMDUINO,
-  [FtSwarmVersion.FTSWARMPWRDRIVE_1V141]: FtSwarmController.FTSWARMPWRDRIVE,
-  [FtSwarmVersion.FTSWARMXL_1V00]: FtSwarmController.FTSWARM,
-  [FtSwarmVersion.FTSWARMCONTROL_1V3UC]: FtSwarmController.FTSWARMCONTROL,
-  [FtSwarmVersion.FTSWARMRC_1V141]: FtSwarmController.FTSWARMRC,
-  [FtSwarmVersion.FTSWARMMAXVERSION]:
-    FtSwarmController.FTSWARM_MAXCONTROLLERTYPE,
+    [FtSwarmVersion.FTSWARM_NOVERSION]: FtSwarmController.FTSWARM_NOCTRL,
+    [FtSwarmVersion.FTSWARMCONTROL_1V3]: FtSwarmController.FTSWARMCONTROL,
+    [FtSwarmVersion.FTSWARMJST_1V15]: FtSwarmController.FTSWARM,
+    [FtSwarmVersion.FTSWARMRS_2V1]: FtSwarmController.FTSWARM,
+    [FtSwarmVersion.FTSWARMCAM_3V12]: FtSwarmController.FTSWARMCAM,
+    [FtSwarmVersion.FTSWARMDUINO_1V141]: FtSwarmController.FTSWARMDUINO,
+    [FtSwarmVersion.FTSWARMPWRDRIVE_1V141]: FtSwarmController.FTSWARMPWRDRIVE,
+    [FtSwarmVersion.FTSWARMXL_1V00]: FtSwarmController.FTSWARM,
+    [FtSwarmVersion.FTSWARMCONTROL_1V3UC]: FtSwarmController.FTSWARMCONTROL,
+    [FtSwarmVersion.FTSWARMRC_1V141]: FtSwarmController.FTSWARMRC,
+    [FtSwarmVersion.FTSWARMMAXVERSION]: FtSwarmController.FTSWARM_MAXCONTROLLERTYPE,
 };
 
-export function getIoIcon(iconName: string): IconComponent {
-  const iconId = parseInt(iconName.split(/[\._-]/)[0]) as SwOSIOType;
-  const icon = ioIconMap[iconId];
-  if (!icon) return FileQuestionMark;
-  return icon;
+export function getIoIcon(ioType: SwOSIOType): IconComponent {
+    const icon = ioTypeIconMap[ioType];
+    if (!icon) return FileQuestionMark;
+    return icon;
 }
 
 export function getControllerIcon(controller: FtSwarmVersion | null) {
-  if (!controller) return controllerIconMap[FtSwarmController.FTSWARM_NOCTRL];
-  if (Object.keys(versionToControllerMap).includes(controller.toString()))
-    return controllerIconMap[versionToControllerMap[controller]];
+    if (!controller) return controllerIconMap[FtSwarmController.FTSWARM_NOCTRL];
+    if (Object.keys(versionToControllerMap).includes(controller.toString()))
+        return controllerIconMap[versionToControllerMap[controller]];
 
-  return controllerIconMap[FtSwarmController.FTSWARM_NOCTRL];
+    return controllerIconMap[FtSwarmController.FTSWARM_NOCTRL];
 }

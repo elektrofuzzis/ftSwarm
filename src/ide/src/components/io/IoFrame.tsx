@@ -1,8 +1,11 @@
 import {Show, type ParentComponent} from "solid-js";
-import {ChevronDown, Link2} from "lucide-solid";
 import {type IoCardProps, registryKeyOfProps} from "./index.tsx";
 import {useOMContext} from "../../contexts/transport/context.ts";
 import logger from "../../util/logger.ts";
+import {Dynamic} from "solid-js/web";
+import {getIoIcon} from "../../api/icons.ts";
+import ChevronDown from "lucide-solid/icons/chevron-down";
+import Link2 from "lucide-solid/icons/link-2";
 
 enum IOFrameOptimisticStores {
     ALIAS
@@ -19,9 +22,10 @@ export const IoFrame: ParentComponent<IoCardProps> = (props) => {
 
     return (
         <div
-            class="border bg-thm-surface-2 border-thm-surface-border-2 rounded-lg p-3 flex flex-col transition-all h-fit">
+            class="border bg-thm-surface-2 border-thm-surface-border-2 rounded-lg p-3 flex flex-col transition-all">
             <div class="flex items-center justify-between mb-1">
                 <div class="relative flex items-center justify-between w-full">
+                    <span class="text-[10px] font-bold uppercase text-thm-primary tracking-wider pr-2">{props.io.name}</span>
                     <select
                         value={props.io.IOType}
                         class="appearance-none bg-transparent text-[10px] w-full font-bold uppercase tracking-wider text-thm-font-muted hover:text-thm-font pr-4 transition-colors outline-none cursor-pointer z-10"
@@ -54,8 +58,8 @@ export const IoFrame: ParentComponent<IoCardProps> = (props) => {
 
             <div class="flex items-center gap-2 mb-2">
         <span
-            class="text-xs font-mono font-bold text-thm-font-muted bg-thm-surface-1 border border-thm-surface-border-2 px-2 py-1 rounded">
-          {props.io.name}
+            class="text-xs font-mono font-bold text-thm-font-muted py-0.5">
+            <Dynamic component={getIoIcon(props.io.IOType)} class="w-5 h-5" />
         </span>
                 <input
                     type="text"

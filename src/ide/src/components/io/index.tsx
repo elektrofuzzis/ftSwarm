@@ -4,9 +4,12 @@ import type {ApiController, ApiGeneralIoType} from "../../api/apiTypes";
 import { IoFrame } from "./IoFrame";
 import { Dynamic } from "solid-js/web";
 import {type RegistryKey, registryKeyOf} from "../../api/om/optimisticRegistry.ts";
+import {DigitalInput} from "./DigitalInput.tsx";
+import {JoystickInput} from "./Joystick.tsx";
+import {MotorOutput} from "./MotorOutput.tsx";
 
-export type IoCardProps = { io: ApiGeneralIoType, controller: ApiController };
-export type IoCardRendererComponent = Component<IoCardProps>;
+export type IoCardProps<Io extends ApiGeneralIoType = ApiGeneralIoType> = { io: Io, controller: ApiController };
+export type IoCardRendererComponent<Io extends ApiGeneralIoType = ApiGeneralIoType> = Component<IoCardProps<Io>>;
 
 export function registryKeyOfProps<T>(props: IoCardProps, id: T): RegistryKey {
     return registryKeyOf(props.controller, props.io, id)
@@ -16,23 +19,23 @@ const Unimplemented: IoCardRendererComponent = (_props) => {
   return <span class="text-red-200 bg-red-600/10 rounded-full text-xs uppercase px-2 py-1 border border-red-600/75">Not yet implemented</span>
 }
 
-const componentMapper: Record<SwOSIOType, IoCardRendererComponent> = {
+const componentMapper: Record<SwOSIOType, IoCardRendererComponent<any>> = {
   [SwOSIOType.SWOSIO_UNDEF]: Unimplemented,
-  [SwOSIOType.SWOSIO_DIGITAL]: Unimplemented,
-  [SwOSIOType.SWOSIO_SWITCH]: Unimplemented,
-  [SwOSIOType.SWOSIO_REEDSWITCH]: Unimplemented,
-  [SwOSIOType.SWOSIO_LIGHTBARRIER]: Unimplemented,
-  [SwOSIOType.SWOSIO_BUTTON]: Unimplemented,
+  [SwOSIOType.SWOSIO_DIGITAL]: DigitalInput,
+  [SwOSIOType.SWOSIO_SWITCH]: DigitalInput,
+  [SwOSIOType.SWOSIO_REEDSWITCH]: DigitalInput,
+  [SwOSIOType.SWOSIO_LIGHTBARRIER]: DigitalInput,
+  [SwOSIOType.SWOSIO_BUTTON]: DigitalInput,
   [SwOSIOType.SWOSIO_ANALOG]: Unimplemented,
   [SwOSIOType.SWOSIO_VOLTMETER]: Unimplemented,
   [SwOSIOType.SWOSIO_OHMMETER]: Unimplemented,
   [SwOSIOType.SWOSIO_THERMOMETER]: Unimplemented,
   [SwOSIOType.SWOSIO_LDR]: Unimplemented,
-  [SwOSIOType.SWOSIO_JOYSTICK]: Unimplemented,
-  [SwOSIOType.SWOSIO_MOTOR]: Unimplemented,
-  [SwOSIOType.SWOSIO_XSMOTOR]: Unimplemented,
-  [SwOSIOType.SWOSIO_XMMOTOR]: Unimplemented,
-  [SwOSIOType.SWOSIO_TRACTOR]: Unimplemented,
+  [SwOSIOType.SWOSIO_JOYSTICK]: JoystickInput,
+  [SwOSIOType.SWOSIO_MOTOR]: MotorOutput,
+  [SwOSIOType.SWOSIO_XSMOTOR]: MotorOutput,
+  [SwOSIOType.SWOSIO_XMMOTOR]: MotorOutput,
+  [SwOSIOType.SWOSIO_TRACTOR]: MotorOutput,
   [SwOSIOType.SWOSIO_ENCODER]: Unimplemented,
   [SwOSIOType.SWOSIO_LAMP]: Unimplemented,
   [SwOSIOType.SWOSIO_VALVE]: Unimplemented,
