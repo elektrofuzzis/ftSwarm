@@ -84,7 +84,6 @@ void HC165::operate( ) {
  *
  ***************************************************/
 
-#define FTSWARM_HAL_OLEDS 1
 #if FTSWARM_HAL_OLEDS > 0
 
 static void displayTask( void *parameter ) {

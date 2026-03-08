@@ -12,6 +12,8 @@
 #include "SwOS.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 
+#if FTSWARM_HAL_OLEDS > 0
+
 typedef enum { FTSWARM_SCREENEVENT_NONE = -1, FTSWARM_SCREENEVENT_DOWN, FTSWARM_SCREENEVENT_UP, FTSWARM_SCREENEVENT_OK } FtSwarmScreenEvent_t;
 
 #define SWOSSCREENID_BASE 30
@@ -574,9 +576,6 @@ class SwOSScreenSwarm : public SwOSScreenSlider {
     // Constructor
     SwOSScreenSwarm( SwOSScreen *parent, SwOSScreenSlider *next  );
 
-    // reload swarm member list
-    virtual void reload( void );
-
     // eval external events like pressing buttons
     virtual bool eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, char *sParam = NULL ) override;
 
@@ -714,3 +713,5 @@ class SwOSScreenManager {
 };
 
 extern SwOSScreenManager screenManager;
+
+#endif

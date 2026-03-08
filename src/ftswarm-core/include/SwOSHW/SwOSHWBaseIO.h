@@ -207,6 +207,9 @@ public:
   // get my unique ID UID
   virtual void getUID( SwOSIOUID_t *uid );
 
+  // return controller.ioname or alias in name. Name needs to be 2*MAXIDENTIFIER+2
+  virtual void getUniqeName( char *name );
+
   // show my settings
 	virtual void serialize( Serialize *serialize ) override;
 

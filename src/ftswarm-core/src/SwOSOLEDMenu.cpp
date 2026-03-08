@@ -14,6 +14,8 @@
 #include "SwOSHW/SwOSHWLocal.h"
 #include "SwOSSwarm.h"
 
+#if FTSWARM_HAL_OLEDS > 0
+
 SwOSScreenManager screenManager;
 
 /***************************************************
@@ -1180,7 +1182,6 @@ SwOSScreenSwarm::SwOSScreenSwarm( SwOSScreen *parent, SwOSScreenSlider *next  ) 
 
 }
 
-void SwOSScreenSwarm::reload( void ) {};
 
 bool SwOSScreenSwarm::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
 
@@ -1192,7 +1193,7 @@ bool SwOSScreenSwarm::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t 
 
       case FTSWARM_S1: return true;
 
-      case FTSWARM_S2: screenManager.activate( new SwOSScreenInput( this, SWOSSCREENSWARM_CB_NAME, "New Swarm Name", "", MAXIDENTIFIER ) );
+      case FTSWARM_S2: screenManager.activate( new SwOSScreenInput( this, SWOSSCREENSWARM_CB_NAME, "New Swarm Name", swarmName, MAXIDENTIFIER ) );
                        return true;
 
       case FTSWARM_S3: screenManager.activate( new SwOSScreenInput( this, SWOSSCREENSWARM_CB_PIN, "Swarm Pin", nvs.swarmPIN, 4 ) );
@@ -1212,7 +1213,7 @@ bool SwOSScreenSwarm::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t 
       case SWOSSCREENSWARM_CB_NAME: if ( (!sParam) || ( strlen(sParam) < 5 ) ) screenManager.activate( new SwOSScreenError( this, "The swarm name must contain at least 5 chars." ) );
                                     else {
                                       strcpy( swarmName, sParam );
-                                      screenManager.activate( new SwOSScreenInput( this, SWOSSCREENSWARM_CB_PIN, "Swarm Pin", myOSSwarm.Ctrl[0]->serialNumber, 4 ) );
+                                      if ( strcmp( swarmName, nvs.swarmName ) != 0 ) screenManager.activate( new SwOSScreenInput( this, SWOSSCREENSWARM_CB_PIN, "Swarm Pin", myOSSwarm.Ctrl[0]->serialNumber, 4 ) );
                                     }
                                     return true;
 
@@ -1220,7 +1221,7 @@ bool SwOSScreenSwarm::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t 
       
                                     if ( strcmp( swarmName, nvs.swarmName ) != 0 ) {
                                       // new Swarm?
-                                      screenManager.activate( new SwOSScreenYesNo( this, SWOSSCREENSWARM_CB_NEW, "New Swarm", "Delete existing swarm and create a new one?" ) );
+                                      screenManager.activate( new SwOSScreenYesNo( this, SWOSSCREENSWARM_CB_NEW, "New Swarm", "Delete existing swarm, create a new one and reboot?" ) );
 
                                     } else {
                                       // juist change PIN?
@@ -1234,8 +1235,7 @@ bool SwOSScreenSwarm::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t 
 
                                         strcpy( nvs.swarmName, swarmName );
                                         nvs.swarmPIN = swarmPIN;
-                                        myOSSwarm.newSwarm(  );
-                                        nvs.save( );
+                                        nvs.saveAndRestart( );
 
                                     }
                                     return true;
@@ -1562,3 +1562,5 @@ void SwOSScreenManager::activate( SwOSScreen *screen ) {
   }
 
 }
+
+#endif

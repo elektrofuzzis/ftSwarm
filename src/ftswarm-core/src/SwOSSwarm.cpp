@@ -84,7 +84,9 @@ static void readTask( void *parameter ) {
     
     // read sensors
     myOSSwarm.Ctrl[0]->operate();
+    #if FTSWARM_HAL_OLEDS > 0
     screenManager.operate();
+    #endif
 
     // Do I know a Kelda and I am not the Kelda, so I need to send my state
     if ( ( myOSSwarm.Kelda ) && ( myOSSwarm.Kelda != myOSSwarm.Ctrl[0] ) ) {
@@ -574,15 +576,34 @@ SwOSIO* SwOSSwarm::getIO( const char *name, SwOSIOType_t ioType ) {
   SwOSIO   *io   = NULL;
   SwOSCtrl *ctrl = NULL;
 
-  // list all controllers and check for the name
-  for ( uint8_t i=0; i<=maxCtrl; i++ ) {
+  char ctrlName[MAXIDENTIFIER];
+  strcpy( ctrlName, name );
+  char *ioName = strchr( ctrlName, '.' );
 
-    // check next controller
-    ctrl = Ctrl[i];
-    if ( ctrl ) io = ctrl->getIO( name );
+  if ( ioName ) {
 
-    // io found
-    if (io) break;
+    // via controller.ioname
+    ioName[0] = '\0';
+    ioName++;
+
+    SwOSCtrl* ctrl = (SwOSCtrl *) myOSSwarm.getController( ctrlName );
+    if ( ctrl ) io = ctrl->getIO( ioName );
+
+  } else {
+
+    // via alias
+ 
+    // list all controllers and check for the name
+    for ( uint8_t i=0; i<=maxCtrl; i++ ) {
+
+      // check next controller
+      ctrl = Ctrl[i];
+      if ( ctrl ) io = ctrl->getIO( name );
+
+      // io found
+      if (io) break;
+
+    }
 
   }
 
@@ -903,7 +924,9 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
                                 deleteEvents( );
                                 nvs.activeEventConfig = com->data.configCmd.config;
                                 addEvents( nvs.activeEventConfig, Ctrl[affected]->serialNumber );
+                                #if FTSWARM_HAL_OLEDS > 0
                                 screenManager.draw();
+                                #endif
                               }
                               break;
 

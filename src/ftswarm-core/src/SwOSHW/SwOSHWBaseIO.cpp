@@ -205,7 +205,9 @@ SwOSIO::SwOSIO( const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioT
 
 SwOSIO::~SwOSIO() {
 
+  #if FTSWARM_HAL_OLEDS > 0
   if ( subscribedScreenObj ) subscribedScreenObj->unregister( this );
+  #endif
 
 }
 
@@ -238,8 +240,6 @@ int32_t SwOSIO::evalOperand( FtSwarmOperand_t v, int32_t sensor, int32_t actor, 
 }
 
 int32_t SwOSIO::evalTriggerMath( SwOSTriggerMath_t triggerMath, int32_t sensor, int32_t actor, int32_t parameter, int32_t minValue, int32_t maxValue ) {
-
-
 
   // get operands
   int32_t v1 = evalOperand( triggerMath.bits.v1, sensor, actor, parameter );
@@ -338,6 +338,13 @@ void SwOSIO::getUID( SwOSIOUID_t *uid ) {
 
 }
 
+void SwOSIO::getUniqeName( char *name ) {
+
+  if (_alias) strcpy( name, _alias );
+  else sprintf( name, "%s.%s", ctrl->getAliasOrName(), _name );
+
+}
+
 void SwOSIO::serialize( Serialize *serialize ) {
   SwOSObj::serialize( serialize );
   serialize->item( SERIALIZE_LITERAL_UICLASS, getUIClass() );
@@ -386,7 +393,9 @@ void SwOSIO::unsubscribe( SwOSScreenObj *screenObj ) {
 
 void SwOSIO::setLabelText( char *text ) {
 
+  #if FTSWARM_HAL_OLEDS > 0
   if ( subscribedScreenObj ) subscribedScreenObj->setLabel( text );
+  #endif
 
 }
 
@@ -625,14 +634,18 @@ void SwOSInput::setReading( int32_t newValue, FtSwarmTrigger_t secondTriggerEven
   lastRawValue = newValue;  
 
   if (changes) {
-    
+
+    #if FTSWARM_HAL_OLEDS > 0
     if ( ( subscribedScreenObj ) && ( subscribedScreenObj->setValue( newValue ) ) ) {
       // don't trigger any more, screen processed it already
     } else {
+    #endif
       // trigger the event
       this->trigger( FTSWARM_TRIGGERVALUE, newValue ); 
       if ( secondTriggerEvent != FTSWARM_NOTRIGGER ) this->trigger( secondTriggerEvent, newValue ); 
+    #if FTSWARM_HAL_OLEDS > 0
     }
+    #endif
   
     // send data to subscriber?
     subscription();

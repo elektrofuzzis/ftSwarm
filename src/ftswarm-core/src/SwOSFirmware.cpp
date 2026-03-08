@@ -633,7 +633,7 @@ void MenuIOConfig::enterIO( const char* prompt, SwOSIOUID_t *uio, bool input ) {
 
     enterString( prompt, alias, alias, sizeof(alias) );
 
-    // get IO
+    // get IO via alias or controller.ioname
     io = myOSSwarm.getIO( alias );
 
     // error handling;
@@ -839,15 +839,19 @@ void MenuIOConfig::deleteEvent( void ) {
 
 void MenuIOConfig::printEventParameter( FtSwarmOperand_t op, SwOSIO *sensor, SwOSIO *actor, char *doing, int32_t parameter ) {
 
+  char uniqueName[2*MAXIDENTIFIER+1];
+  
   switch ( op ) {
     case FTSWARM_CONSTANT:    if ( actor->isPixel() ) printf( "#%06X", parameter );
                               else                    printf( "%d", parameter ); 
                               break;
 
-    case FTSWARM_SENSORVALUE: printf( "%s.getValue()", sensor->getAliasOrName() ); 
+    case FTSWARM_SENSORVALUE: sensor->getUniqeName( uniqueName );
+                              printf( "%s.getValue()", uniqueName ); 
                               break;
 
-    case FTSWARM_ACTORVALUE:  printf( "%s.get%s()", actor->getAliasOrName(), doing );
+    case FTSWARM_ACTORVALUE:  actor->getUniqeName( uniqueName );
+                              printf( "%s.get%s()", uniqueName, doing );
                               break;
   }
 
@@ -860,7 +864,9 @@ void MenuIOConfig::printEvent( SwOSNVSEvent_t event, uint8_t details ) {
 
   if (details) printf("\n");
 
-  printf("%s.%s", sensor->getAliasOrName(), FTSWARMTRIGGER[ event.triggerMath.bits.trigger ] );
+  char uniqueName[2*MAXIDENTIFIER+1];
+  sensor->getUniqeName( uniqueName );
+  printf("%s.%s",  uniqueName, FTSWARMTRIGGER[ event.triggerMath.bits.trigger ] );
   if (details == 1 ) { printf("\n"); return; }
 
   char doing[15];
@@ -869,7 +875,8 @@ void MenuIOConfig::printEvent( SwOSNVSEvent_t event, uint8_t details ) {
   else if ( actor->isPixel() ) strcpy( doing, "Color" );
   else                         strcpy( doing, "???" );
 
-  printf(" -> %s.set%s( ", actor->getAliasOrName(), doing );
+  actor->getUniqeName( uniqueName );
+  printf(" -> %s.set%s( ", uniqueName, doing );
   if (details == 2 ) { printf("\n"); return; }
 
   printEventParameter( event.triggerMath.bits.v1, sensor, actor, doing, event.parameter );
@@ -1100,8 +1107,8 @@ void MenuIOList::run( void ) {
     for (int8_t i=0; i<=maxItem; i++ ) {
          
       // different ways to print the IO name
-      if ( controller >= 0 ) sprintf( name, "%s",    io[i]->getName() );
-      else                   sprintf( name, "%s.%s", io[i]->getCtrl()->getName(), io[i]->getName() );
+      if ( io[i]->getCtrl()->isLocal() ) sprintf( name, "%s",    io[i]->getName() );
+      else                               sprintf( name, "%s.%s", io[i]->getCtrl()->getName(), io[i]->getName() );
 
       // count events
       uint8_t events=0;
