@@ -635,17 +635,14 @@ void SwOSInput::setReading( int32_t newValue, FtSwarmTrigger_t secondTriggerEven
 
   if (changes) {
 
-    #if FTSWARM_HAL_OLEDS > 0
-    if ( ( subscribedScreenObj ) && ( subscribedScreenObj->setValue( newValue ) ) ) {
-      // don't trigger any more, screen processed it already
-    } else {
-    #endif
-      // trigger the event
+    if ( subscribedScreenObj ) subscribedScreenObj->setValue( newValue ) ;
+
+    // trigger event - if not blocked
+    if ( !screenManager.blockEvents ) {
+      printf("trigger %s\n", getName() );
       this->trigger( FTSWARM_TRIGGERVALUE, newValue ); 
       if ( secondTriggerEvent != FTSWARM_NOTRIGGER ) this->trigger( secondTriggerEvent, newValue ); 
-    #if FTSWARM_HAL_OLEDS > 0
     }
-    #endif
   
     // send data to subscriber?
     subscription();

@@ -95,7 +95,7 @@ void SwOSScreenObj::setLabel( const char *label, bool autoDraw ) {
 
 }
 
-bool SwOSScreenObj::setValue( int32_t newValue ) {
+void SwOSScreenObj::setValue( int32_t newValue ) {
 
   value = newValue;
 
@@ -106,11 +106,9 @@ bool SwOSScreenObj::setValue( int32_t newValue ) {
   if ( value > 0 ) event = FTSWARM_SCREENEVENT_UP;
   else             event = FTSWARM_SCREENEVENT_DOWN;
 
-  if ( (parent) && ( lastEvent != FTSWARM_SCREENEVENT_NONE ) ) return parent->eventHandlerCallback( event, id );
+  if ( (parent) && ( lastEvent != FTSWARM_SCREENEVENT_NONE ) ) parent->eventHandlerCallback( event, id );
 
   lastEvent = event;
-
-  return false;
 
 }
 
@@ -213,7 +211,7 @@ SwOSScreenJoystickPoti::SwOSScreenJoystickPoti(uint8_t id, SwOSIO *io, SwOSScree
 
 }
 
-bool SwOSScreenJoystickPoti::setValue( int32_t value ) {
+void SwOSScreenJoystickPoti::setValue( int32_t value ) {
 
   // new event
   FtSwarmScreenEvent_t event = FTSWARM_SCREENEVENT_NONE;
@@ -238,120 +236,6 @@ bool SwOSScreenJoystickPoti::setValue( int32_t value ) {
 
   // call eventhandler on a real event only
   if ( ( parent ) && ( event != FTSWARM_SCREENEVENT_NONE ) ) parent->eventHandlerCallback( event, id );
-
-  // always true to catch all joystick events
-  return true;
-
-}
-    
-/***************************************************
- *
- *   SwOSScreenCombobox
- *
- ***************************************************/
-
-SwOSScreenCombobox::SwOSScreenCombobox( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, int16_t x, int16_t y, uint8_t size, uint8_t direction ) : SwOSScreenObj( id, io, parent, label, x, y, FTSWARM_ALIGNCENTER ) {
-
-  this->size      = size;
-  this->direction = direction;
-
-}
-
-void SwOSScreenCombobox::draw( void ) {
-  
-  SwOSScreenObj::draw( );
-
-  if (direction==HORIZONTAL) drawHorizontal();
-  else                       drawVertical();
-
-}
-
-void SwOSScreenCombobox::drawHorizontal( void ) {
-
-  // ^
-  int8_t b = y - size;
-  oled->drawLine( x, b, x-3, b+3, true );
-  oled->drawLine( x, b, x+3, b+3, true );
-
-  // oled->write( label, x, b-9, FTSWARM_ALIGNCENTER, true, false );
-
-  // v
-  b = y + size;
-  oled->drawLine( x, b, x-3, b-3, true );
-  oled->drawLine( x, b, x+3, b-3, true );
-
-}
-
-void SwOSScreenCombobox::drawVertical( void ) {
-
-  // <
-  int8_t b = x - size;
-  oled->drawLine( b, y, b+3, y-3, true );
-  oled->drawLine( b, y, b+3, y+3, true );
-
-  // oled->write( label, b-2, y-3, FTSWARM_ALIGNRIGHT, true, false );
-
-  // >
-  b = x + size;
-  oled->drawLine( b, y, b-3, y-3, true );
-  oled->drawLine( b, y, b-3, y+3, true );
-
-}
-
-/***************************************************
- *
- * SwOSScreenSelector - a combo box
- *
- ***************************************************/
-
-SwOSSelectorItem::SwOSSelectorItem( int8_t id, const char *text, SwOSSelectorItem *prev ) {
-
-  this->id = id;
-  bzero( this->text, sizeof( this->text ) );
-  strncpy( this->text, text, sizeof( this->text ) - 1 );
-  next = NULL;
-  this->prev = prev;
-
-}
-
-SwOSSelectorItem::~SwOSSelectorItem( ) {
-  if ( next ) delete next;
-}
-
-void SwOSSelectorItem::add( int8_t id, const char *text ) {
-
-  if (next) next->add( id, text );
-  else      next = new SwOSSelectorItem( id, text, this );
-
-}
-
-SwOSScreenSelector::SwOSScreenSelector( uint8_t id, SwOSIO* io, SwOSScreen *parent, int16_t x, int16_t y ) : SwOSScreenObj( id, io, parent, "", x, y, FTSWARM_ALIGNLEFT ) {
-
-}
-
-SwOSScreenSelector::~SwOSScreenSelector( ) {
-
-  if ( items ) delete items;
-
-}
-
-void SwOSScreenSelector::add( int8_t id, const char *text ) {
-
-  if (items) items->add( id, text );
-  else       items = new SwOSSelectorItem( id, text, NULL );
-
-  if (!active) active = items;
-
-}
-
-void SwOSScreenSelector::draw( void ) {
-  
-  if (!active) return;
-
-  SwOSScreenObj::draw( );
-  if (active->prev) oled->write( active->prev->text, x, y-8, align, true, false );
-                    oled->write( active->text,       x, y,   align, true, true );
-  if (active->next) oled->write( active->next->text, x, y+8, align, true, false );
 
 }
 
@@ -424,6 +308,8 @@ void SwOSScreen::draw( void ) {
 }
 
 void SwOSScreen::activate( void ) {
+
+  screenManager.blockEvents = blockEvents;
   
   SwOSScreenObj *obj = objects;
   while (obj) {
@@ -443,10 +329,11 @@ void SwOSScreen::deactivate( void ) {
 
 }
 
-void SwOSScreen::close( void ) { 
+void SwOSScreen::close( FtSwarmScreenEvent_t event, uint8_t id, uint8_t nParam, char *sParam ) { 
   
   toBeDestroyed = true;
   screenManager.activate( parent ); 
+  if ( ( event != FTSWARM_SCREENEVENT_NONE ) && ( parent ) ) parent->eventHandlerCallback( event, id, nParam, sParam );
 
 };
 
@@ -473,7 +360,7 @@ SwOSScreenSlider::SwOSScreenSlider( SwOSScreen *parent, const char *title, SwOSS
 
 }
 
-void SwOSScreenSlider::close( void ) {
+void SwOSScreenSlider::close( FtSwarmScreenEvent_t event, uint8_t id, uint8_t nParam, char *sParam ) {
 
   SwOSScreenSlider *o;
   
@@ -491,7 +378,7 @@ void SwOSScreenSlider::close( void ) {
     n = n->next;
   }
 
-  SwOSScreen::close();
+  SwOSScreen::close( event, id, nParam, sParam );
 
 }
 
@@ -500,6 +387,43 @@ void SwOSScreenSlider::add( SwOSScreenObj *newObject) {
 
   SwOSScreen::add( newObject );
   if ( (!selected) && (newObject) && (newObject->isSelectable()) ) selected = (SwOSScreenSelectable*) newObject;
+
+}
+
+void SwOSScreenSlider::deleteSelectables( void ) {
+
+  SwOSScreenObj *outdated;
+
+  if ( !objects ) return;
+
+  // delete in list
+  SwOSScreenObj *list = objects;
+  while ( ( list ) && ( list->next ) ) {
+
+    if ( list->next->isSelectable() ) {
+
+      outdated = list->next;
+      list->next = list->next->next;
+
+      outdated->next = NULL;
+      delete outdated;
+
+    }
+
+  }
+
+  // first element?
+  if ( objects->isSelectable() ) {
+
+    outdated = objects;
+    objects = objects->next;
+
+    outdated->next = NULL;
+    delete outdated;
+
+  }
+
+  selected = NULL;
 
 }
 
@@ -1160,21 +1084,17 @@ bool SwOSScreenInput::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t 
  #define SWOSSCREENSWARM_CB_NAME SWOSSCREENID_BASE + 0
  #define SWOSSCREENSWARM_CB_PIN  SWOSSCREENID_BASE + 1
  #define SWOSSCREENSWARM_CB_NEW  SWOSSCREENID_BASE + 2
+ #define SWOSSCREENSWARM_CB_ADD  SWOSSCREENID_BASE + 3
+ #define SWOSSCREENSWARM_CB_DEL  SWOSSCREENID_BASE + 4
 
+ #define SWOSSCREENSWARM_CB_SEL  SWOSSCREENID_BASE + 5
+ 
 SwOSScreenSwarm::SwOSScreenSwarm( SwOSScreen *parent, SwOSScreenSlider *next  ) : SwOSScreenSlider( parent, "Swarm", next ) {
 
   strcpy( swarmName, nvs.swarmName );
   swarmPIN = nvs.swarmPIN;
 
-  uint8_t members = myOSSwarm.members();
-  uint8_t item    = 0;
-
-  for (uint8_t i=0; i<members ; i++ ) {
-    
-    if ( myOSSwarm.Ctrl[i] ) 
-      add( new SwOSScreenSelectable( i, this, myOSSwarm.Ctrl[i]->isOnline()? " " : "X", myOSSwarm.Ctrl[i]->getAliasOrName(), 0, item++*9+1, 10, OLEDWIDTH-10 ) );
-
-  }
+  addMembers();
 
   add( new SwOSScreenS1( this, "add" ) );
   add( new SwOSScreenS2( this, "swarm" ) );
@@ -1182,6 +1102,19 @@ SwOSScreenSwarm::SwOSScreenSwarm( SwOSScreen *parent, SwOSScreenSlider *next  ) 
 
 }
 
+void SwOSScreenSwarm::addMembers( void ) {
+
+  uint8_t members = myOSSwarm.members();
+  uint8_t item    = 0;
+
+  for (uint8_t i=0; i<members ; i++ ) {
+    
+    if ( myOSSwarm.Ctrl[i] ) 
+      add( new SwOSScreenSelectable( SWOSSCREENSWARM_CB_SEL + i, this, myOSSwarm.Ctrl[i]->isOnline()? " " : "X", myOSSwarm.Ctrl[i]->getAliasOrName(), 0, item++*9+1, 10, OLEDWIDTH-10 ) );
+
+  }
+
+}
 
 bool SwOSScreenSwarm::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
 
@@ -1191,22 +1124,22 @@ bool SwOSScreenSwarm::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t 
 
     switch ( id ) {
 
-      case FTSWARM_S1: return true;
+      case FTSWARM_S1:  screenManager.activate( new SwOSScreenInput( this, SWOSSCREENSWARM_CB_ADD, "SN to add", FTSWARM_NANI32, 4 ) );
+                        return true;
 
-      case FTSWARM_S2: screenManager.activate( new SwOSScreenInput( this, SWOSSCREENSWARM_CB_NAME, "New Swarm Name", swarmName, MAXIDENTIFIER ) );
-                       return true;
+      case FTSWARM_S2:  screenManager.activate( new SwOSScreenInput( this, SWOSSCREENSWARM_CB_NAME, "New Swarm Name", swarmName, MAXIDENTIFIER ) );
+                        return true;
 
-      case FTSWARM_S3: screenManager.activate( new SwOSScreenInput( this, SWOSSCREENSWARM_CB_PIN, "Swarm Pin", nvs.swarmPIN, 4 ) );
-                       return true;
-
+      case FTSWARM_S3:  screenManager.activate( new SwOSScreenInput( this, SWOSSCREENSWARM_CB_PIN, "Swarm Pin", nvs.swarmPIN, 4 ) );
+                        return true;
 
     }
-
-    return true;
 
   }
 
   if ( event == FTSWARM_SCREENEVENT_OK ) {
+
+    char    error[100];
 
     switch ( id )  {
 
@@ -1240,14 +1173,111 @@ bool SwOSScreenSwarm::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t 
                                     }
                                     return true;
 
-    }
+      case SWOSSCREENSWARM_CB_ADD:  if (nParam) {
 
-    return true;
+                                      if ( myOSSwarm.addController( nParam ) ) {
+
+                                        nvs.saveAndRestart();
+                                        deleteSelectables();
+                                        addMembers();
+                                        draw();
+                                        
+                                      } else {
+
+                                        sprintf( error, "Could not add ftSwarm%d to swarm.", nParam);
+                                        screenManager.activate( new SwOSScreenError( this, error) );
+
+                                      }
+
+                                    }
+
+                                    return true;
+
+      case SWOSSCREENSWARM_CB_DEL:  if (nParam) { 
+                                      deleteSelectables( ); 
+                                      addMembers();
+                                      draw(); 
+                                    }
+                                    return true;
+
+      default:                      if (id >= SWOSSCREENSWARM_CB_SEL) screenManager.activate( new SwOSScreenSwarmDetail( this, selected->getText(), selected->getID() ) );
+                                    return true;
+
+
+    }
 
   }
 
   return false;
 
+}
+
+/***************************************************
+ *
+ *   SwOSScreenSwarmDetail
+ *
+ ***************************************************/
+
+#define SWOSSCREENSWARMDETAIL_CB_DEL SWOSSCREENID_BASE + 0
+
+SwOSScreenSwarmDetail::SwOSScreenSwarmDetail( SwOSScreen *parent, const char *title, uint8_t selectedID  ) : SwOSScreenSlider( parent, title, NULL ) {
+
+  this->selectedID = selectedID;
+
+  add( new SwOSScreenS1( this, "del" ) );
+  add( new SwOSScreenS2( this, "smart" ) );
+
+}
+
+bool SwOSScreenSwarmDetail::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
+
+  if ( SwOSScreenSlider::eventHandlerCallback( event, id, nParam, sParam ) ) return true;
+
+  if ( event == FTSWARM_SCREENEVENT_DOWN ) {
+
+    switch ( id ) {
+
+      case FTSWARM_S1: screenManager.activate( new SwOSScreenYesNo( this, SWOSSCREENSWARMDETAIL_CB_DEL, title, "Revoke this controller from my swarm?" ) );
+                       return true;
+
+      case FTSWARM_S2: return true;
+
+    }
+  
+  }
+
+  if ( event == FTSWARM_SCREENEVENT_OK ) {
+
+    SwOSCtrl *ctrl;
+    char error[100];
+
+    switch ( id )  {
+
+      case SWOSSCREENSWARMDETAIL_CB_DEL:  if ( nParam ) {
+
+                                            ctrl = (SwOSCtrl *) myOSSwarm.getController( title );
+
+                                            if ( (ctrl) && ( myOSSwarm.deleteController( ctrl->serialNumber ) ) ) {
+
+                                              nvs.saveAndRestart( );
+                                              close( FTSWARM_SCREENEVENT_OK, SWOSSCREENSWARM_CB_DEL, selectedID );
+
+                                            } else {
+
+                                              sprintf( error, "Could not revoke % from swarm.", title );
+                                              screenManager.activate( new SwOSScreenError( this, error) );
+
+                                            }
+                                            
+                                          }
+                                          return true;
+
+    }
+
+  }
+
+  return false;
+  
 }
 
 /***************************************************
@@ -1300,6 +1330,8 @@ bool SwOSScreenFactoryReset::eventHandlerCallback( FtSwarmScreenEvent_t event, u
  ***************************************************/
 
 SwOSMainScreen::SwOSMainScreen( SwOSScreen *parent, const char *title ) : SwOSScreen( parent, title ) {
+
+  blockEvents = false;
 
   add( new SwOSScreenS1( this, nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_S1 ] ) );
   add( new SwOSScreenS2( this, nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_S2 ] ) );
@@ -1407,9 +1439,10 @@ bool SwOSMainScreen::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t i
  *
  ***************************************************/
 
- SwOSSplashScreen::SwOSSplashScreen( SwOSScreen *parent, const char *title ):SwOSScreen( parent, title ) { 
+ SwOSSplashScreen::SwOSSplashScreen( SwOSScreen *parent, const char *title ):SwOSScreen( parent, title ) {
   
   startTime = millis();
+  blockEvents = false;
 
   add( new SwOSScreenS1( this, "" ) );
   add( new SwOSScreenS2( this, "" ) );

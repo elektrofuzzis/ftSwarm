@@ -12,6 +12,7 @@
 #include "SwOS.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 
+#define FTSWARM_HAL_OLEDS 1
 #if FTSWARM_HAL_OLEDS > 0
 
 typedef enum { FTSWARM_SCREENEVENT_NONE = -1, FTSWARM_SCREENEVENT_DOWN, FTSWARM_SCREENEVENT_UP, FTSWARM_SCREENEVENT_OK } FtSwarmScreenEvent_t;
@@ -66,13 +67,16 @@ class SwOSScreenObj {
     virtual void draw( void ) {};
 
     // io sends new value, return true if it's processed by the screen
-    virtual bool setValue( int32_t value );
+    virtual void setValue( int32_t value );
 
     // is io clickable?
     virtual bool isSelectable( void ) { return false; };
 
     // get my label
     virtual char *getLabel( void ) { return label; };
+
+    // get my ID
+    virtual uint8_t getID( void ) { return id; };
 
 };
 
@@ -206,64 +210,8 @@ class SwOSScreenJoystickPoti : public SwOSScreenObj {
     SwOSScreenJoystickPoti(uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, int16_t x, int16_t y, FtSwarmAlign_t align );
 
     // io sends new value, return true if it's processed by the screen
-    virtual bool setValue( int32_t value );
+    virtual void setValue( int32_t value );
 
-};
-
-/***************************************************
- *
- * SwOSScreenCombobox - ComboBox
- *
- ***************************************************/
-
-class SwOSScreenCombobox : public SwOSScreenObj {
-
-  protected:
-    uint8_t size, direction;
-    void drawHorizontal( void );
-    void drawVertical( void );
-
-  public:
-
-    static const uint8_t HORIZONTAL = 0;
-    static const uint8_t VERTICAL   = 1;
-    
-    SwOSScreenCombobox( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, int16_t x, int16_t y, uint8_t size, uint8_t direction );
-    virtual void draw( void );
-};
-
-/***************************************************
- *
- * SwOSScreenSelector - a combo box
- *
- ***************************************************/
-
-class SwOSSelectorItem {
-
-  public:
-    int8_t id;
-    char text[25];
-    SwOSSelectorItem *next;
-    SwOSSelectorItem *prev;
-
-    SwOSSelectorItem( int8_t id, const char *text, SwOSSelectorItem *prev );
-    ~SwOSSelectorItem();
-    void add( int8_t id, const char *text );
-
-};
-
-class SwOSScreenSelector : public SwOSScreenObj {
-
-  protected:
-    SwOSSelectorItem *items = NULL;
-    SwOSSelectorItem *active = NULL;
-
-  public:
-   
-    SwOSScreenSelector( uint8_t id, SwOSIO* io, SwOSScreen *parent, int16_t x, int16_t y );
-    ~SwOSScreenSelector();
-    virtual void add( int8_t id, const char *text );
-    virtual void draw( void );
 };
 
 /***************************************************
@@ -278,6 +226,7 @@ class SwOSScreen {
     SwOSScreen    *parent  = NULL;
     SwOSScreenObj *objects = NULL;
     char          *title   = NULL;
+    bool          blockEvents = true;
 
   public:
 
@@ -311,7 +260,7 @@ class SwOSScreen {
     virtual const char *getTitle( void ) { return title; };
 
     // close myself
-    virtual void close(void );
+    virtual void close( FtSwarmScreenEvent_t event = FTSWARM_SCREENEVENT_NONE, uint8_t id=0, uint8_t nParam = 0, char *sParam = NULL );
 
   };
 
@@ -394,6 +343,7 @@ class SwOSScreenInput : public SwOSScreen {
 
     virtual uint8_t countPrev( void );
     virtual uint8_t countNext( void );
+    virtual void deleteSelectables( void );
 
   public:
 
@@ -410,7 +360,7 @@ class SwOSScreenInput : public SwOSScreen {
     virtual bool eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, char *sParam = NULL);
 
     // close myself
-    virtual void close(void );
+    virtual void close( FtSwarmScreenEvent_t event = FTSWARM_SCREENEVENT_NONE, uint8_t id=0, uint8_t nParam = 0, char *sParam = NULL );
 
 };
 
@@ -571,10 +521,33 @@ class SwOSScreenSwarm : public SwOSScreenSlider {
     char     swarmName[MAXIDENTIFIER];
     uint16_t swarmPIN;
 
+    void addMembers( void );
+
   public:
 
     // Constructor
     SwOSScreenSwarm( SwOSScreen *parent, SwOSScreenSlider *next  );
+
+    // eval external events like pressing buttons
+    virtual bool eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, char *sParam = NULL ) override;
+
+};
+
+/***************************************************
+ *
+ *   SwOSScreenSwarmDetail
+ *
+ ***************************************************/
+
+class SwOSScreenSwarmDetail : public SwOSScreenSlider {
+
+  protected:
+    uint8_t selectedID;
+
+  public:
+
+    // Constructor
+    SwOSScreenSwarmDetail( SwOSScreen *parent, const char *title, uint8_t selectedID  );
 
     // eval external events like pressing buttons
     virtual bool eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, char *sParam = NULL ) override;
@@ -695,6 +668,7 @@ class SwOSScreenManager {
   public:
     SwOSScreen *active = NULL;
     SwOSScreen *next   = NULL;
+    bool blockEvents   = false;
 
     SwOSScreenManager();
 
