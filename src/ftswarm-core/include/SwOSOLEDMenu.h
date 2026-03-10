@@ -230,7 +230,8 @@ class SwOSScreen {
 
   public:
 
-    bool toBeDestroyed = false;
+    uint32_t USID;
+    bool     toBeDestroyed = false;
 
     // constructor
     SwOSScreen( SwOSScreen *parent, const char *title );
@@ -254,13 +255,13 @@ class SwOSScreen {
     virtual void operate( void ) {};
 
     // eval external events like pressing buttons
-    virtual bool eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, char *sParam = NULL ) { return false; };
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL ) { return false; };
 
     // get my title
     virtual const char *getTitle( void ) { return title; };
 
     // close myself
-    virtual void close( FtSwarmScreenEvent_t event = FTSWARM_SCREENEVENT_NONE, uint8_t id=0, uint8_t nParam = 0, char *sParam = NULL );
+    virtual void close( FtSwarmScreenEvent_t event = FTSWARM_SCREENEVENT_NONE, uint8_t id=0, uint8_t nParam = 0, const char *sParam = NULL );
 
   };
 
@@ -270,7 +271,7 @@ class SwOSScreen {
  *
  ***************************************************/
 
- #define KEYMAPS 4
+#define KEYMAPS 4
 
 class SwOSScreenInput : public SwOSScreen {
 
@@ -322,7 +323,7 @@ class SwOSScreenInput : public SwOSScreen {
     virtual void draw( void );
 
     // eval external events like pressing buttons
-    virtual bool eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, char *sParam = NULL );
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
 
 }; 
 
@@ -357,10 +358,10 @@ class SwOSScreenInput : public SwOSScreen {
     virtual void draw( void );
     
     // eval external events like pressing buttons
-    virtual bool eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, char *sParam = NULL);
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL);
 
     // close myself
-    virtual void close( FtSwarmScreenEvent_t event = FTSWARM_SCREENEVENT_NONE, uint8_t id=0, uint8_t nParam = 0, char *sParam = NULL );
+    virtual void close( FtSwarmScreenEvent_t event = FTSWARM_SCREENEVENT_NONE, uint8_t id=0, uint8_t nParam = 0, const char *sParam = NULL );
 
 };
 
@@ -394,7 +395,7 @@ class SwOSScreenInput : public SwOSScreen {
     virtual void draw( void );
 
     // eval external events like pressing buttons
-    virtual bool eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, char *sParam = NULL );
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
 
 };
 
@@ -445,7 +446,7 @@ class SwOSScreenError : public SwOSScreenChooseOption {
     virtual void draw( void );
 
     // eval external events like pressing buttons
-    virtual bool eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, char *sParam = NULL );
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
 
 };
 
@@ -473,7 +474,7 @@ class SwOSScreenWifi : public SwOSScreenSlider {
     SwOSScreenWifi( SwOSScreen *parent, SwOSScreenSlider *next  );
 
   // eval external events like pressing buttons
-  virtual bool eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, char *sParam = NULL );
+  virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
 
 };
 
@@ -502,7 +503,7 @@ class SwOSScreenWifiSSID : public SwOSScreenSlider {
     virtual void draw( void );
 
     // eval external events like pressing buttons
-    virtual bool eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, char *sParam = NULL );
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
 
     // called all 25ms, so be minimalistic
     virtual void operate( void );
@@ -529,7 +530,7 @@ class SwOSScreenSwarm : public SwOSScreenSlider {
     SwOSScreenSwarm( SwOSScreen *parent, SwOSScreenSlider *next  );
 
     // eval external events like pressing buttons
-    virtual bool eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, char *sParam = NULL ) override;
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL ) override;
 
 };
 
@@ -550,7 +551,7 @@ class SwOSScreenSwarmDetail : public SwOSScreenSlider {
     SwOSScreenSwarmDetail( SwOSScreen *parent, const char *title, uint8_t selectedID  );
 
     // eval external events like pressing buttons
-    virtual bool eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, char *sParam = NULL ) override;
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL ) override;
 
 };
 
@@ -572,7 +573,7 @@ class SwOSScreenFactoryReset : public SwOSScreenSlider {
     virtual void draw( void );
 
     // eval external events like pressing buttons
-    virtual bool eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, char *sParam = NULL );
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
 
 };
 
@@ -598,7 +599,7 @@ class SwOSMainScreen : public SwOSScreen {
     virtual void draw( void );
 
     // eval external events like pressing buttons
-    virtual bool eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, char *sParam = NULL );
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
 };
 
 /***************************************************
@@ -625,7 +626,7 @@ class SwOSSplashScreen : public SwOSScreen {
     virtual void operate( void );
 
     // eval external events like pressing buttons
-    virtual bool eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, char *sParam = NULL );
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
 
 };
 
@@ -651,6 +652,20 @@ class SwOS404Screen : public SwOSScreen {
 
 /***************************************************
  *
+ * SwOSScreenEvent
+ *
+ ***************************************************/
+
+struct SwOSScreenEventQueueElement_t { 
+  uint32_t             USID; 
+  FtSwarmScreenEvent_t event;
+  uint8_t              id;
+  int32_t              nParam;
+  char                 *sParam;
+} __attribute__((packed));
+
+/***************************************************
+ *
  * SwOSScreenManager - class to handle the active screen
  *
  ***************************************************/
@@ -662,15 +677,20 @@ class SwOSScreenManager {
   protected:
     SwOSScreen *screen[MAXSCREENS];
 
-    // get a free index in creen[]
+    // get a free index in screen[]
     uint8_t getIndex( SwOSScreen *screen );
 
   public:
     SwOSScreen *active = NULL;
-    SwOSScreen *next   = NULL;
     bool blockEvents   = false;
 
     SwOSScreenManager();
+
+    // send an event to active screen
+    void eventHandler( SwOSScreen *screen, FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
+
+    // receive an event and forward it to the active screen
+    void eventHandler( SwOSScreenEventQueueElement_t *event );
 
     // does all the stuff to replace and operate the screen
     void operate( void );

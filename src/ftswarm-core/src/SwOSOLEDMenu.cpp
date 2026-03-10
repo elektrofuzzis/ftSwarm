@@ -18,11 +18,26 @@
 
 SwOSScreenManager screenManager;
 
+void debugEvent( const char *s1, const char *s2, FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
+
+  printf( "%s %s ", s1, s2 );
+
+  printf( "event=%d id=%d ", event, id );
+
+  if ( nParam == FTSWARM_NANI32 ) printf( "nParam=NAN ");
+  else printf( "nParam=%d ", nParam );
+
+  if ( sParam ) printf( "sParam=%s\n", sParam );
+  else printf( "sParam=NULL\n");
+
+}
+
 /***************************************************
  *
  *   SwOSScreenObj
  *
  ***************************************************/
+
 
 SwOSScreenObj::SwOSScreenObj( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, int16_t x, int16_t y, FtSwarmAlign_t align ) {
   
@@ -106,7 +121,7 @@ void SwOSScreenObj::setValue( int32_t newValue ) {
   if ( value > 0 ) event = FTSWARM_SCREENEVENT_UP;
   else             event = FTSWARM_SCREENEVENT_DOWN;
 
-  if ( (parent) && ( lastEvent != FTSWARM_SCREENEVENT_NONE ) ) parent->eventHandlerCallback( event, id );
+  if ( lastEvent != FTSWARM_SCREENEVENT_NONE ) screenManager.eventHandler( parent, event, id );
 
   lastEvent = event;
 
@@ -235,7 +250,7 @@ void SwOSScreenJoystickPoti::setValue( int32_t value ) {
   }
 
   // call eventhandler on a real event only
-  if ( ( parent ) && ( event != FTSWARM_SCREENEVENT_NONE ) ) parent->eventHandlerCallback( event, id );
+  if ( event != FTSWARM_SCREENEVENT_NONE ) screenManager.eventHandler( parent, event, id );
 
 }
 
@@ -245,12 +260,13 @@ void SwOSScreenJoystickPoti::setValue( int32_t value ) {
  *
  ***************************************************/
 
+uint32_t screenUSID = 0;
+
 SwOSScreen::SwOSScreen( SwOSScreen *parent, const char *title ) {
   
-  screenManager.registerMe( this );
-
+  this->USID   = screenUSID++;
   this->parent = parent;
-  
+
   if ( title ) {
 
     this->title = (char *) calloc( strlen( title)+1, sizeof( char ) );
@@ -258,6 +274,8 @@ SwOSScreen::SwOSScreen( SwOSScreen *parent, const char *title ) {
 
   }
   
+  screenManager.registerMe( this );
+
 }
 
 SwOSScreen::~SwOSScreen() {
@@ -329,11 +347,11 @@ void SwOSScreen::deactivate( void ) {
 
 }
 
-void SwOSScreen::close( FtSwarmScreenEvent_t event, uint8_t id, uint8_t nParam, char *sParam ) { 
+void SwOSScreen::close( FtSwarmScreenEvent_t event, uint8_t id, uint8_t nParam, const char *sParam ) { 
   
   toBeDestroyed = true;
   screenManager.activate( parent ); 
-  if ( ( event != FTSWARM_SCREENEVENT_NONE ) && ( parent ) ) parent->eventHandlerCallback( event, id, nParam, sParam );
+  if ( event != FTSWARM_SCREENEVENT_NONE ) screenManager.eventHandler( parent, event, id, nParam, sParam );
 
 };
 
@@ -360,7 +378,7 @@ SwOSScreenSlider::SwOSScreenSlider( SwOSScreen *parent, const char *title, SwOSS
 
 }
 
-void SwOSScreenSlider::close( FtSwarmScreenEvent_t event, uint8_t id, uint8_t nParam, char *sParam ) {
+void SwOSScreenSlider::close( FtSwarmScreenEvent_t event, uint8_t id, uint8_t nParam, const char *sParam ) {
 
   SwOSScreenSlider *o;
   
@@ -446,15 +464,15 @@ void SwOSScreenSlider::draw( void ) {
 
 }
 
-bool SwOSScreenSlider::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
+bool SwOSScreenSlider::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
 
-  if ( SwOSScreen::eventHandlerCallback( event, id, nParam, sParam ) ) return true;
+  if ( SwOSScreen::eventHandler( event, id, nParam, sParam ) ) return true;
 
   // catch all joystick stuff
   if ( id == SWOSJOY1LR ) {
   
     // switch left?
-    if ( ( event == FTSWARM_SCREENEVENT_DOWN ) && ( prev ) ) screenManager.activate( prev );
+    if ( ( event == FTSWARM_SCREENEVENT_DOWN ) && ( prev ) ) screenManager.activate( prev ); 
 
     // switch right?
     if ( ( event == FTSWARM_SCREENEVENT_UP ) && ( next ) )   screenManager.activate( next );
@@ -513,7 +531,7 @@ bool SwOSScreenSlider::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t
   // select J1
   if ( id == FTSWARM_J1 ) {
     
-    if ( event == FTSWARM_SCREENEVENT_DOWN ) eventHandlerCallback( FTSWARM_SCREENEVENT_OK, selected->getID() );
+    if ( event == FTSWARM_SCREENEVENT_DOWN ) screenManager.eventHandler( this, FTSWARM_SCREENEVENT_OK, selected->getID() );
 
     return true;
 
@@ -650,14 +668,14 @@ void SwOSScreenChooseOption::draw( void ) {
 
 }
 
-bool SwOSScreenChooseOption::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
+bool SwOSScreenChooseOption::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
 
-  // if ( SwOSScreen::eventHandlerCallback( event, id,nParam, sParam ) ) return true;
+  if ( SwOSScreen::eventHandler( event, id,nParam, sParam ) ) return true;
 
   if ( event == FTSWARM_SCREENEVENT_DOWN ) {
   
     // S1..S4
-    if ( id != FTSWARM_F2 ) parent->eventHandlerCallback( FTSWARM_SCREENEVENT_OK, this->id, value[id - FTSWARM_S1], NULL );
+    if ( id != FTSWARM_F2 ) screenManager.eventHandler( parent, FTSWARM_SCREENEVENT_OK, this->id, value[id - FTSWARM_S1], NULL );
 
     // close
     close();
@@ -691,9 +709,9 @@ SwOSScreenChooseConfig::SwOSScreenChooseConfig( SwOSScreen *parent, SwOSScreenSl
   
 }
 
-bool SwOSScreenChooseConfig::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
+bool SwOSScreenChooseConfig::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
 
-  if ( SwOSScreenSlider::eventHandlerCallback( event, id, nParam, sParam ) ) return true;
+  if ( SwOSScreenSlider::eventHandler( event, id, nParam, sParam ) ) return true;
 
   if ( event == FTSWARM_SCREENEVENT_DOWN ) {
 
@@ -743,9 +761,9 @@ SwOSScreenWifi::SwOSScreenWifi( SwOSScreen *parent, SwOSScreenSlider *next  ) : 
 
 }
 
-bool SwOSScreenWifi::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam , char *sParam ) {
+bool SwOSScreenWifi::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam , const char *sParam ) {
 
-  if ( SwOSScreenSlider::eventHandlerCallback( event, id, nParam, sParam ) ) return true;
+  if ( SwOSScreenSlider::eventHandler( event, id, nParam, sParam ) ) return true;
 
   if ( event == FTSWARM_SCREENEVENT_OK ) {
 
@@ -837,13 +855,12 @@ void SwOSScreenWifiSSID::draw( void ) {
 
 }
 
-bool SwOSScreenWifiSSID::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
+bool SwOSScreenWifiSSID::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
 
-  if ( SwOSScreenSlider::eventHandlerCallback( event, id, nParam, sParam ) ) return true;
+  if ( SwOSScreenSlider::eventHandler( event, id, nParam, sParam ) ) return true;
 
   // must be a J1 click to select and close
-  if (parent) parent->eventHandlerCallback( FTSWARM_SCREENEVENT_OK, this->id, selected->getID(), (char *) selected->getText() );
-  close( );
+  close( FTSWARM_SCREENEVENT_OK, this->id, selected->getID(), (char *) selected->getText() );
 
   return true;
 
@@ -1013,7 +1030,7 @@ void SwOSScreenInput::setKeyboard( uint8_t keyboard ) {
 
 }
 
-bool SwOSScreenInput::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
+bool SwOSScreenInput::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
 
   uint8_t len;
 
@@ -1060,7 +1077,7 @@ bool SwOSScreenInput::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t 
                         return true;
 
       case FTSWARM_S4:  close();
-                        if (parent) parent->eventHandlerCallback( FTSWARM_SCREENEVENT_OK, this->id, atoi(input), input );
+                        screenManager.eventHandler( parent, FTSWARM_SCREENEVENT_OK, this->id, atoi(input), input );
                         return true;
 
       case FTSWARM_F2:  close();
@@ -1116,9 +1133,9 @@ void SwOSScreenSwarm::addMembers( void ) {
 
 }
 
-bool SwOSScreenSwarm::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
+bool SwOSScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
 
-  if ( SwOSScreenSlider::eventHandlerCallback( event, id, nParam, sParam ) ) return true;
+  if ( SwOSScreenSlider::eventHandler( event, id, nParam, sParam ) ) return true;
 
   if ( event == FTSWARM_SCREENEVENT_DOWN ) {
 
@@ -1229,9 +1246,9 @@ SwOSScreenSwarmDetail::SwOSScreenSwarmDetail( SwOSScreen *parent, const char *ti
 
 }
 
-bool SwOSScreenSwarmDetail::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
+bool SwOSScreenSwarmDetail::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
 
-  if ( SwOSScreenSlider::eventHandlerCallback( event, id, nParam, sParam ) ) return true;
+  if ( SwOSScreenSlider::eventHandler( event, id, nParam, sParam ) ) return true;
 
   if ( event == FTSWARM_SCREENEVENT_DOWN ) {
 
@@ -1303,9 +1320,9 @@ void SwOSScreenFactoryReset::draw( void ) {
 
 }
 
-bool SwOSScreenFactoryReset::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
+bool SwOSScreenFactoryReset::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
 
-  if ( SwOSScreenSlider::eventHandlerCallback( event, id ) ) return true;
+  if ( SwOSScreenSlider::eventHandler( event, id ) ) return true;
 
   // YES
   if ( id == FTSWARM_S2 ) {
@@ -1409,7 +1426,7 @@ void SwOSMainScreen::draw( void ) {
 
 }
 
-bool SwOSMainScreen::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
+bool SwOSMainScreen::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
 
   if ( id == FTSWARM_S4 ) {
 
@@ -1484,7 +1501,7 @@ void SwOSSplashScreen::operate( void ) {
 
 }
 
-bool SwOSSplashScreen::eventHandlerCallback( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, char *sParam ) {
+bool SwOSSplashScreen::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
   
   // some pressed a key, so I change to the main screen
   screenManager.activate( new SwOSMainScreen( NULL, title ) );
@@ -1511,24 +1528,97 @@ void SwOS404Screen::draw( void ) {
 
 /***************************************************
  *
- *   SwOSScreenManager
+ * EventQueue
+ *
+ ***************************************************/
+
+QueueHandle_t SwOSScreenEventQueue;
+
+static void screenEventTask( void *parameter ) {
+
+  while (1) {
+
+    SwOSScreenEventQueueElement_t *event;
+  
+    if ( xQueueReceive(SwOSScreenEventQueue, &event, portMAX_DELAY) ) {
+      
+      // process
+      screenManager.eventHandler( event );
+
+      // cleanup
+      if ( event->sParam ) free( event->sParam );
+      delete event;
+
+    }
+
+    // give other processes a change to run
+    vTaskDelay(pdMS_TO_TICKS(1));
+
+  }
+
+}
+
+/***************************************************
+ *
+ * SwOSScreenManager
  *
  ***************************************************/
 
 SwOSScreenManager::SwOSScreenManager() {
 
+  // initialize screen array
   for (uint8_t i=0; i<MAXSCREENS; i++ ) screen[i] = NULL;
+
+  // create queue & receiver task
+  SwOSScreenEventQueue = xQueueCreate( 10, sizeof( SwOSScreenEventQueueElement_t * ) );
+  xTaskCreatePinnedToCore( screenEventTask, "EventTask", 10000, NULL, 1, NULL, ARDUINO_EVENT_RUNNING_CORE );
+
+}
+
+void SwOSScreenManager::eventHandler( SwOSScreen *screen, FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
+
+  SwOSScreenEventQueueElement_t *e = new SwOSScreenEventQueueElement_t();
+
+  // fill event
+  e->USID   = screen->USID;
+  e->event  = event;
+  e->id     = id;
+  e->nParam = nParam;
+  if (sParam) e->sParam = strdup(sParam);
+  else        e->sParam;
+
+  // send
+  if ( xQueueSend( SwOSScreenEventQueue, &e, portMAX_DELAY ) != pdPASS ) SWARM_LOG_ERROR( "Enqueue screen event failed.");
+
+}
+
+void SwOSScreenManager::eventHandler( SwOSScreenEventQueueElement_t *event ) {
+
+  if (!event) return;
+
+  // test on valid pointers
+  SwOSScreen *eventScreen = NULL;
+
+  for (uint8_t i=0; i<MAXSCREENS; i++) {
+
+    if ( ( screen[i] ) && ( event->USID == screen[i]->USID ) ) {
+      eventScreen = screen[i];
+      break;
+    }
+
+  }
+
+  // screen already deallocated
+  if (!eventScreen) return;
+
+  // debugEvent( "eventHandler dequeue", eventScreen->getTitle(), event->event, event->id, event->nParam, event->sParam );
+
+  // send event
+  eventScreen->eventHandler( event->event, event->id, event->nParam, event->sParam );
 
 }
 
 void SwOSScreenManager::operate( void ) {
-
-  if (next) {
-    active = next;
-    next = NULL;
-    active->activate();
-    active->draw();
-  }
 
   // operate active screen
   if (active) active->operate();
@@ -1584,7 +1674,9 @@ void SwOSScreenManager::activate( SwOSScreen *screen ) {
 
   if ( screen ) {
     
-    next   = screen;
+    active = screen;
+    if ( active ) active->activate( );
+    draw();
 
   } else {
 
