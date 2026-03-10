@@ -95,16 +95,7 @@ void SwOSScreenObj::setLabel( const char *label, bool autoDraw ) {
 
   if ( this->label) free( this->label );
 
-  if ( label ) {
-
-    this->label = (char *)calloc( strlen(label) + 1, sizeof( char ) );
-    strcpy( this->label, label );
-
-  } else {
-
-    this->label = NULL;
-  
-  }
+  this->label = STRDUP( label );
 
   if ( autoDraw) draw();
 
@@ -148,17 +139,8 @@ void SwOSScreenSelectable::setText( const char *text, bool autoDraw ) {
     delete this->text;
   }
 
-  if ( text ) {
-
-    this->text = (char *)calloc( strlen(text) + 1, sizeof( char ) );
-    strcpy( this->text, text );
-
-  } else {
-
-    this->text = NULL;
+  this->text = STRDUP( text );
   
-  }
-
   if (autoDraw) draw();
 
 }
@@ -267,12 +249,7 @@ SwOSScreen::SwOSScreen( SwOSScreen *parent, const char *title ) {
   this->USID   = screenUSID++;
   this->parent = parent;
 
-  if ( title ) {
-
-    this->title = (char *) calloc( strlen( title)+1, sizeof( char ) );
-    strncpy( this->title, title, strlen( title ) );
-
-  }
+  this->title = STRDUP( title );
   
   screenManager.registerMe( this );
 
@@ -942,7 +919,8 @@ SwOSScreenInput::SwOSScreenInput( SwOSScreen *parent, uint8_t id, const char *ti
 SwOSScreenInput::SwOSScreenInput( SwOSScreen *parent, uint8_t id, const char *title, int32_t param, uint8_t maxLength ) : SwOSScreen( parent, title ) {
 
   char str[32];
-  itoa( param, str, 10 );
+  if ( param == FTSWARM_NANI32 ) str[0] = '\0';
+  else                           itoa( param, str, 10 );
 
   keyboard    = 2;
   numKeyboard = true;
@@ -1584,9 +1562,8 @@ void SwOSScreenManager::eventHandler( SwOSScreen *screen, FtSwarmScreenEvent_t e
   e->event  = event;
   e->id     = id;
   e->nParam = nParam;
-  if (sParam) e->sParam = strdup(sParam);
-  else        e->sParam;
-
+  e->sParam = STRDUP(sParam);
+  
   // send
   if ( xQueueSend( SwOSScreenEventQueue, &e, portMAX_DELAY ) != pdPASS ) SWARM_LOG_ERROR( "Enqueue screen event failed.");
 

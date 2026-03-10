@@ -81,10 +81,12 @@ SwOSDuino *ftDuino = NULL;
  ***************************************************/
 
 SwOSObj::SwOSObj( const char *name, uint8_t flags) {
+
   _alias = NULL;
-  _name = (char *) malloc( strlen(name)+1 );
-  strcpy( _name, name );
+  _name = STRDUP( name );
+
   this->flags = flags;
+
 }
 
 SwOSObj::~SwOSObj() {
@@ -125,7 +127,7 @@ void SwOSObj::setAlias( const char *alias ) {
   if ( ( _alias ) && ( strcmp( _alias, alias ) == 0 ) ) return;
 
   // free memory?
-  if ( _alias != NULL ) { free( (void*) _alias ); _alias = NULL; }
+  if ( _alias != NULL ) { free( _alias ); _alias = NULL; }
 
   // nothing?
   if ( (!alias) || (alias[0]=='\0') ) {
@@ -134,16 +136,14 @@ void SwOSObj::setAlias( const char *alias ) {
   }
 
   // store
-  _alias = (char *) malloc(strlen(alias)+1);
-  strcpy( _alias, alias );
+  _alias = STRDUP( alias );
 
 }
 
 void SwOSObj::setName( const char *name ) {
 
-  if (_name) { free( (void*) _name); }
-  _name = (char *) malloc(strlen(name)+1);
-  strcpy( _name, name );
+  if (_name) { free( _name ); }
+  _name = STRDUP( name );
   
 }
 
@@ -364,10 +364,7 @@ char *SwOSIO::subscribe( const char *IOName, uint32_t hysteresis ) {
   isSubscribed = true;
 
   // only if I don't know my external name, store it
-  if (!subscribedIOName) {
-    subscribedIOName = (char *)malloc( strlen(IOName)+1 );
-    strcpy( subscribedIOName, IOName );
-  }
+  if (!subscribedIOName) subscribedIOName = STRDUP( IOName );
   
   // return my internal name to outside
   return subscribedIOName;

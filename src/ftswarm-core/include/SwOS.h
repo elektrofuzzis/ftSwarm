@@ -1011,11 +1011,13 @@ class FtSwarm {
     bool IOAvaliable( const char *name ) { return false; };
 };
 
-
-
 // There is one only
 extern FtSwarm ftSwarm;
 
 extern void forever( char *prompt);
 
 extern void forever( const char *prompt);
+
+// some macros for easy living
+
+#define STRDUP(s) ((s) != NULL ? strdup(s) : NULL)
