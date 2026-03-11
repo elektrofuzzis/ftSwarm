@@ -204,8 +204,8 @@ SwOSScreenJ2::SwOSScreenJ2( SwOSScreen *parent, const char *label ) : SwOSScreen
  *
  ***************************************************/
 
-#define JOYMINVALUE 25
-#define JOYMAXVALUE 50
+#define JOYMINVALUE 15
+#define JOYMAXVALUE 25
 
 SwOSScreenJoystickPoti::SwOSScreenJoystickPoti(uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, int16_t x, int16_t y, FtSwarmAlign_t align ):SwOSScreenObj( id, io, parent, label, x, y, align ) {
 
@@ -1029,14 +1029,32 @@ bool SwOSScreenInput::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int3
   switch ( id ) {
 
     case SWOSJOY1LR:  drawCursor( false );
-                      if ( ( event == FTSWARM_SCREENEVENT_DOWN ) && ( cursorC[keyboard] ) )                   cursorC[keyboard]--;
-                      if ( ( event == FTSWARM_SCREENEVENT_UP )   && ( cursorC[keyboard] < cols[keyboard]-1) ) cursorC[keyboard]++;
+                      
+                      if ( event == FTSWARM_SCREENEVENT_DOWN ) {
+                        if ( cursorC[keyboard] ) cursorC[keyboard]--;
+                        else                     cursorC[keyboard] = cols[keyboard]-1;
+                      }
+
+                      if ( event == FTSWARM_SCREENEVENT_UP ) {
+                        if ( cursorC[keyboard] < cols[keyboard]-1) cursorC[keyboard]++;
+                        else                                       cursorC[keyboard] = 0;
+                      }
+
                       drawCursor( true );
                       return true;
 
     case SWOSJOY1FB:  drawCursor( false );
-                      if ( ( event == FTSWARM_SCREENEVENT_UP )   && ( cursorR[keyboard] ) )                   cursorR[keyboard]--;
-                      if ( ( event == FTSWARM_SCREENEVENT_DOWN ) && ( cursorR[keyboard] < rows[keyboard]-1) ) cursorR[keyboard]++;
+
+                      if ( event == FTSWARM_SCREENEVENT_UP ) {
+                        if ( cursorR[keyboard] ) cursorR[keyboard]--;
+                        else                     cursorR[keyboard] = rows[keyboard]-1;
+                      }
+
+                      if ( event == FTSWARM_SCREENEVENT_DOWN ) {
+                        if ( cursorR[keyboard] < rows[keyboard]-1) cursorR[keyboard]++;
+                        else                                       cursorR[keyboard] = 0;
+                      }
+                      
                       drawCursor( true );
                       return true;
 

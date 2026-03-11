@@ -291,8 +291,8 @@ class SwOSScreenInput : public SwOSScreen {
 
     const char S1Label[KEYMAPS][4] = { "A-Z", "NUM", "#$@", "a-z" };
 
-    const uint8_t cols[KEYMAPS] = { 14, 14, 13, 14 };
-    const uint8_t rows[KEYMAPS] = {  2,  2,  1,  2 };
+    const uint8_t cols[KEYMAPS] = { 14, 14,  7, 14 };
+    const uint8_t rows[KEYMAPS] = {  2,  2,  2,  2 };
 
     uint keyboard = 0;
     bool numKeyboard = false;
