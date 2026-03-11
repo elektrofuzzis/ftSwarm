@@ -204,6 +204,9 @@ SwOSScreenJ2::SwOSScreenJ2( SwOSScreen *parent, const char *label ) : SwOSScreen
  *
  ***************************************************/
 
+#define JOYMINVALUE 25
+#define JOYMAXVALUE 50
+
 SwOSScreenJoystickPoti::SwOSScreenJoystickPoti(uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, int16_t x, int16_t y, FtSwarmAlign_t align ):SwOSScreenObj( id, io, parent, label, x, y, align ) {
 
 }
@@ -225,9 +228,9 @@ void SwOSScreenJoystickPoti::setValue( int32_t value ) {
     // to avoid races after start
     if ( maxValue == FTSWARM_NANI32 ) maxValue = value;
     
-    if      ( ( value > -25 ) && ( maxValue < -50 ) ) { event = FTSWARM_SCREENEVENT_DOWN; maxValue = value; }
-    else if ( ( value <  25 ) && ( maxValue >  50 ) ) { event = FTSWARM_SCREENEVENT_UP;   maxValue = value; }
-    else if ( abs(value) > abs ( maxValue ) )         {                                   maxValue = value; }
+    if      ( ( value > -JOYMINVALUE ) && ( maxValue < -JOYMAXVALUE ) ) { event = FTSWARM_SCREENEVENT_DOWN; maxValue = value; }
+    else if ( ( value <  JOYMINVALUE ) && ( maxValue >  JOYMAXVALUE ) ) { event = FTSWARM_SCREENEVENT_UP;   maxValue = value; }
+    else if ( abs(value) > abs ( maxValue ) )                           {                                   maxValue = value; }
 
   }
 
@@ -387,6 +390,8 @@ void SwOSScreenSlider::add( SwOSScreenObj *newObject) {
 
 void SwOSScreenSlider::deleteSelectables( void ) {
 
+  printf("**x0**\n");
+
   SwOSScreenObj *outdated;
 
   if ( !objects ) return;
@@ -403,12 +408,18 @@ void SwOSScreenSlider::deleteSelectables( void ) {
       outdated->next = NULL;
       delete outdated;
 
+    } else {
+
+      list->next = list->next->next;
+
     }
 
   }
 
+  printf("**x1**\n");
+
   // first element?
-  if ( objects->isSelectable() ) {
+  if (( objects) && ( objects->isSelectable() ) ) {
 
     outdated = objects;
     objects = objects->next;
@@ -417,6 +428,8 @@ void SwOSScreenSlider::deleteSelectables( void ) {
     delete outdated;
 
   }
+
+  printf("**x2**\n");
 
   selected = NULL;
 
@@ -1163,7 +1176,7 @@ bool SwOSScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int3
 
                                         strcpy( nvs.swarmName, swarmName );
                                         nvs.swarmPIN = swarmPIN;
-                                        nvs.saveAndRestart( );
+                                        // ToDo: send new pin to all swarm members
 
                                     }
                                     return true;
@@ -1172,9 +1185,12 @@ bool SwOSScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int3
 
                                       if ( myOSSwarm.addController( nParam ) ) {
 
-                                        nvs.saveAndRestart();
+                                        nvs.save();
+                                        printf("**1**\n");
                                         deleteSelectables();
+                                        printf("**2**\n");
                                         addMembers();
+                                        printf("**3**\n");
                                         draw();
                                         
                                       } else {
@@ -1254,7 +1270,7 @@ bool SwOSScreenSwarmDetail::eventHandler( FtSwarmScreenEvent_t event, uint8_t id
 
                                             if ( (ctrl) && ( myOSSwarm.deleteController( ctrl->serialNumber ) ) ) {
 
-                                              nvs.saveAndRestart( );
+                                              nvs.save( );
                                               close( FTSWARM_SCREENEVENT_OK, SWOSSCREENSWARM_CB_DEL, selectedID );
 
                                             } else {
