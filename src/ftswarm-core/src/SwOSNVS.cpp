@@ -22,17 +22,14 @@
 
 SwOSNVS nvs;
 
-bool cmpEvent( SwOSNVSEvent_t *a, SwOSNVSEvent_t *b ) {
+bool SwOSNVSEvent::cmp(  SwOSNVSEvent *otherEvent ) {
 
-  // 2 identical
-  // 1 only parameters different
-  // 0 else
+  if ( ( memcmp( &sensor, &otherEvent->sensor, sizeof(SwOSIOUID) ) == 0 ) && 
+       ( memcmp( &actor,  &otherEvent->actor,  sizeof(SwOSIOUID) ) == 0 ) && 
+       ( triggerMath.bits.trigger == otherEvent->triggerMath.bits.trigger ) &&
+       ( triggerMath.bits.op      == otherEvent->triggerMath.bits.op  ) ) {
 
-  if ( ( memcmp( a, b, sizeof(SwOSIOUID_t) *2 ) == 0 ) && 
-       ( a->triggerMath.bits.trigger == b->triggerMath.bits.trigger ) &&
-       ( a->triggerMath.bits.op      == b->triggerMath.bits.op  ) ) {
-
-    if ( (a->triggerMath.raw == b->triggerMath.raw) && ( a->parameter == b->parameter ) ) return 2;
+    if ( (triggerMath.raw == otherEvent->triggerMath.raw) && ( parameter == otherEvent->parameter ) ) return 2;
     else return 1;
 
   } else return 0;
@@ -373,6 +370,42 @@ void SwOSNVS::loadEvents( void ) {
   dummy = sizeof( oledLabel[3] ); nvs_get_blob( my_handle, "label3", oledLabel[3], &dummy );
 
   nvs_close( my_handle );
+
+}
+
+void SwOSNVS::deleteAllEvents( uint8_t configuration ) {
+
+  // set all events to "NULL"
+  bzero( events[configuration], MAXNVSEVENTS * sizeof( SwOSNVSEvent ) );
+
+}
+
+bool SwOSNVS::addEvent( uint8_t configuration, SwOSNVSEvent *event ) {
+
+  uint8_t i = 0;
+
+  while ( i<MAXNVSEVENTS ) {
+    
+    if ( nvs.events[configuration][i].isNull() ) {
+      nvs.events[configuration][i] = *event;
+      return true;
+    }
+
+    i++;
+
+  }
+
+  return false;
+
+}
+
+bool SwOSNVS::exists( uint8_t configuration, SwOSNVSEvent *event ) {
+
+  for (uint8_t i=0; i<MAXNVSEVENTS; i++ ) {
+    if ( events[configuration][i].cmp( event )) return true;
+  }
+
+  return false;
 
 }
 

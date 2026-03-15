@@ -71,7 +71,7 @@ void SwOSMotor::serialize( Serialize *serialize ) {
   serialize->endObject();
 }
 
-void SwOSMotor::onTrigger( SwOSTriggerMath_t triggerMath, int32_t sensor, int32_t parameter ) {
+void SwOSMotor::onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t parameter ) {
 
   setSpeed( evalTriggerMath( triggerMath, sensor, getSpeed(), parameter, -getMaxSpeed(), getMaxSpeed() ) );
   apply();
@@ -637,7 +637,7 @@ void SwOSServo::setOffset( int16_t offset ) {
 
 }
 
-void SwOSServo::onTrigger( SwOSTriggerMath_t triggerMath, int32_t sensor, int32_t parameter ) {
+void SwOSServo::onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t parameter ) {
 
   setPosition( evalTriggerMath( triggerMath, sensor, getPosition(), parameter, getMinPosition(), getMaxPosition() ) );
 

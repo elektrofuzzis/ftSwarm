@@ -239,7 +239,7 @@ int32_t SwOSIO::evalOperand( FtSwarmOperand_t v, int32_t sensor, int32_t actor, 
 
 }
 
-int32_t SwOSIO::evalTriggerMath( SwOSTriggerMath_t triggerMath, int32_t sensor, int32_t actor, int32_t parameter, int32_t minValue, int32_t maxValue ) {
+int32_t SwOSIO::evalTriggerMath( SwOSTriggerMath triggerMath, int32_t sensor, int32_t actor, int32_t parameter, int32_t minValue, int32_t maxValue ) {
 
   // get operands
   int32_t v1 = evalOperand( triggerMath.bits.v1, sensor, actor, parameter );
@@ -328,7 +328,7 @@ SwOSUIClass_t SwOSIO::getUIClass() {
 
 }
 
-void SwOSIO::getUID( SwOSIOUID_t *uid ) {
+void SwOSIO::getUID( SwOSIOUID *uid ) {
 
   if (!uid) return;
 
@@ -352,7 +352,7 @@ void SwOSIO::serialize( Serialize *serialize ) {
   serialize->item( SERIALIZE_LITERAL_ACTIVE, ( _alias != NULL ) || isInUse() );
 }
 
-void SwOSIO::onTrigger( SwOSTriggerMath_t triggerMath, int32_t sensor, int32_t parameter ) {
+void SwOSIO::onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t parameter ) {
   SWARM_LOG_ERROR( "IO is unable to handle trigger events." );
 }
 
@@ -410,7 +410,7 @@ SwOSEventHandler::~SwOSEventHandler( ) {
   
 }
 
-SwOSEventHandler::SwOSEventHandler( SwOSTriggerMath_t triggerMath, SwOSIO *actor, int32_t parameter  ) {
+SwOSEventHandler::SwOSEventHandler( SwOSTriggerMath triggerMath, SwOSIO *actor, int32_t parameter  ) {
   this->triggerMath = triggerMath;
   this->actor       = actor;
   this->parameter   = parameter;
@@ -431,9 +431,9 @@ SwOSEventInput::~SwOSEventInput() {
 
 }
 
-SwOSTriggerMath_t genTriggerMath( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2) {
+SwOSTriggerMath genTriggerMath( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2) {
 
-  SwOSTriggerMath_t tm;
+  SwOSTriggerMath tm;
   tm.bits.trigger = triggerEvent;
   tm.bits.op      = op;
   tm.bits.v1      = v1;

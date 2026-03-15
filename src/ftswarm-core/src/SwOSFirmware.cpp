@@ -439,16 +439,16 @@ class MenuIOConfig : protected FirmwareIOMenu {
     void changeLabel( void );
 
     void fillEventList( void );
-    void enterIO( const char* prompt, SwOSIOUID_t *uio, bool input );
-    bool enterEvent( SwOSNVSEvent_t *event );
+    void enterIO( const char* prompt, SwOSIOUID *uio, bool input );
+    bool enterEvent( SwOSNVSEvent *event );
 
-    bool changeEvent( SwOSNVSEvent_t *event );
+    bool changeEvent( SwOSNVSEvent *event );
 
     void addEvent( void );
     void deleteEvent( void );
 
     void printEventParameter( FtSwarmOperand_t op, SwOSIO *sensor, SwOSIO *actor, char *doing, int32_t parameter );
-    void printEvent( SwOSNVSEvent_t event, uint8_t details = 0 );
+    void printEvent( SwOSNVSEvent event, uint8_t details = 0 );
 
     void changeConfig( void );
 
@@ -620,7 +620,7 @@ void MenuIOConfig::changeType( void ) {
 
 }
 
-void MenuIOConfig::enterIO( const char* prompt, SwOSIOUID_t *uio, bool input ) {
+void MenuIOConfig::enterIO( const char* prompt, SwOSIOUID *uio, bool input ) {
 
   char   alias[MAXIDENTIFIER] = "";
   SwOSIO *io;
@@ -651,7 +651,7 @@ void MenuIOConfig::enterIO( const char* prompt, SwOSIOUID_t *uio, bool input ) {
 
 }
 
-bool MenuIOConfig::enterEvent( SwOSNVSEvent_t *event ) {
+bool MenuIOConfig::enterEvent( SwOSNVSEvent *event ) {
 
   char   prompt[128];
   SwOSIO *eventIO;
@@ -755,35 +755,23 @@ bool MenuIOConfig::enterEvent( SwOSNVSEvent_t *event ) {
 
 }
 
-bool MenuIOConfig::changeEvent(SwOSNVSEvent_t *event ) {
+bool MenuIOConfig::changeEvent( SwOSNVSEvent *event ) {
 
   // create a copy of the event
-  SwOSNVSEvent_t newEvent;
-  memcpy( &newEvent, event, sizeof(SwOSNVSEvent_t) );
+  SwOSNVSEvent newEvent = *event;
 
   // ask user
   if ( !enterEvent( &newEvent ) ) return false;
 
   // nothing changed?
-  if ( cmpEvent( &newEvent, event ) == 2 ) return false;
+  if ( newEvent.cmp( event ) ) return false;
 
   // duplicates?
-  for (uint8_t i=0; i< MAXNVSEVENTS; i++ ) {
-
-    if ( ( cmpEvent( &newEvent, &nvs.events[nvs.activeEventConfig][i] ) >0 ) &&
-         ( event != &nvs.events[nvs.activeEventConfig][i])
-       ) {
-
-      printf("ERROR: This event already exists.");
-      return false;
-    
-    }
-
-  }
+  if ( !nvs.exists( &newEvent ) ) { printf("ERROR: This event already exists."); return false; }
 
   // change event
   myOSSwarm.deleteEvent( event );
-  memcpy( event, &newEvent, sizeof( SwOSNVSEvent_t ) );
+  *event = newEvent;
   myOSSwarm.addEvent( event );
 
   // events are stored locally only
@@ -826,10 +814,10 @@ void MenuIOConfig::deleteEvent( void ) {
   myOSSwarm.deleteEvent( &nvs.events[nvs.activeEventConfig][event[selected]] );
 
   // move all successors
-  if ( selected+1 < MAXNVSEVENTS ) memcpy( &nvs.events[nvs.activeEventConfig][event[selected]], &nvs.events[nvs.activeEventConfig][event[selected]+1], ( MAXNVSEVENTS - selected -1 ) * sizeof( SwOSNVSEvent_t ) );
+  if ( selected+1 < MAXNVSEVENTS ) memcpy( &nvs.events[nvs.activeEventConfig][event[selected]], &nvs.events[nvs.activeEventConfig][event[selected]+1], ( MAXNVSEVENTS - selected -1 ) * sizeof( SwOSNVSEvent ) );
 
   // cleanup last event
-  bzero( &nvs.events[nvs.activeEventConfig][MAXNVSEVENTS-1], sizeof( SwOSNVSEvent_t) );
+  bzero( &nvs.events[nvs.activeEventConfig][MAXNVSEVENTS-1], sizeof( SwOSNVSEvent) );
 
   // events are stored locally only
   anythingChanged[0] = true;
@@ -857,7 +845,7 @@ void MenuIOConfig::printEventParameter( FtSwarmOperand_t op, SwOSIO *sensor, SwO
 
 }
 
-void MenuIOConfig::printEvent( SwOSNVSEvent_t event, uint8_t details ) {
+void MenuIOConfig::printEvent( SwOSNVSEvent event, uint8_t details ) {
 
   SwOSIO *sensor = dynamic_cast<SwOSIO*>( myOSSwarm.getIO( event.sensor ) );
   SwOSIO *actor  = dynamic_cast<SwOSIO*>( myOSSwarm.getIO( event.actor ) );

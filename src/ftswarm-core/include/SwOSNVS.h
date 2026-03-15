@@ -19,12 +19,6 @@
 
 static const char* NVSNAMESPACE = "ftSwarm";
 
-struct SwOSIOUID_t {
-  FtSwarmSerialNumber_t serialNumber;
-  SwOSIOType_t          ioType;
-  uint8_t               port;
-} __attribute__((packed));
-
 struct SwOSJoyCalibration_t {
 
   int16_t minValue;
@@ -33,7 +27,25 @@ struct SwOSJoyCalibration_t {
 
 } __attribute__((packed));
 
-typedef union {
+class SwOSIOUID {
+
+  public:
+    FtSwarmSerialNumber_t serialNumber;
+    SwOSIOType_t ioType;
+    uint8_t port;
+
+    SwOSIOUID() { serialNumber = 0; ioType = SWOSIO_UNDEF; port = 0; };
+
+    SwOSIOUID( FtSwarmSerialNumber_t serialNumber, SwOSIOType_t ioType, uint8_t port ) { this->serialNumber = serialNumber; this->ioType = ioType; this->port = port; };
+
+    bool isNull( void) { return ( serialNumber == 0 ); };
+
+} __attribute__((packed));
+
+class SwOSTriggerMath {
+
+  public:
+
     uint16_t raw;
     struct {
         FtSwarmTrigger_t  trigger : 4;  // trigger event like up, down, change_value
@@ -41,23 +53,33 @@ typedef union {
         FtSwarmOperand_t  v1      : 4;  // 1st operand like constant, sensor's value, actor's value
         FtSwarmOperand_t  v2      : 4;  // 2nd operand like constant, sensor's value, actor's value
     } bits;
-} SwOSTriggerMath_t;
 
-struct SwOSNVSEvent_t {
-
-  SwOSIOUID_t       sensor;
-  SwOSIOUID_t       actor;
-  SwOSTriggerMath_t triggerMath;
-  int32_t           parameter;
+  SwOSTriggerMath() { raw = 0; };
+  SwOSTriggerMath( FtSwarmTrigger_t trigger, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2 ) { bits.trigger = trigger; bits.op = op; bits.v1 = v1; bits.v2 = v2; };
 
 } __attribute__((packed));
 
-/* cmpEvent
-    2 identical
-    1 only parameter different
-    0 else
-*/
-extern "C" bool cmpEvent( SwOSNVSEvent_t *a, SwOSNVSEvent_t *b );
+class SwOSNVSEvent {
+
+  public: 
+    SwOSIOUID sensor;
+    SwOSIOUID actor;
+    SwOSTriggerMath triggerMath;
+    int32_t parameter = 0;
+
+    SwOSNVSEvent() { sensor.serialNumber = 0; };
+    SwOSNVSEvent( SwOSIOUID sensor, SwOSIOUID actor, SwOSTriggerMath triggerMath, int32_t parameter = 0 ) { this->sensor = sensor; this->actor = actor; this->triggerMath = triggerMath; this->parameter = parameter; };
+
+    // checks, if this event is "NULL"
+    bool isNull( void ) { return sensor.isNull( ); };
+
+    // checks, if myself and otherEvent are the same
+    bool cmp( SwOSNVSEvent *otherEvent );
+
+    // set this event to "NULL"
+    void clear( void ) { sensor.serialNumber = 0; };
+
+} __attribute__((packed));
 
 // wifi types
 typedef enum { wifiOFF, wifiAP, wifiClient } FtSwarmWifi_t;
@@ -77,7 +99,7 @@ class SwOSNVS {
     SwOSJoyCalibration_t   calibration[4];
     uint8_t                pixels;
     uint8_t                activeEventConfig;
-    SwOSNVSEvent_t         events[MAXEVENTCONFIGS][MAXNVSEVENTS];
+    SwOSNVSEvent           events[MAXEVENTCONFIGS][MAXNVSEVENTS];
     char                   oledLabel[MAXEVENTCONFIGS][12][4];
     bool                   webUI;
     bool                   IAmKelda;
@@ -92,21 +114,66 @@ class SwOSNVS {
     int16_t                interruptOnOff[2];
     uint8_t                I2CRegisters;
 
-	  SwOSNVS();                             // constructor
-	  void begin();                          // read data from nvs & run an _initialSetup if needed
-    bool load();                           // load data from nvs, return false if nvs contains invalid data
-	  void save( bool writeAll = false );    // save config to flash
-    void saveAndRestart();                 // save config & restart
-    void saveEvents();                     // save events
-    void loadEvents();                     // load events
-    void createSwarm( char *name, uint16_t pin ); // create a new swarm
-    bool addController( FtSwarmSerialNumber_t serialNumber );                       // add a controller
-    bool deleteController( FtSwarmSerialNumber_t serialNumber );                    // delete a controller
+    // constructor
+	  SwOSNVS();
+
+    // read data from nvs & run an _initialSetup if needed
+	  void begin();
+
+    // load data from nvs, return false if nvs contains invalid data
+    bool load();
+
+    // save config to flash
+	  void save( bool writeAll = false );
+
+    // save config & restart
+    void saveAndRestart();
+
+    // save events
+    void saveEvents();
+
+    // load events
+    void loadEvents();
+
+    // delete all events
+    void deleteAllEvents( uint8_t configuration );
+
+    // add event
+    bool addEvent( uint8_t configuration, SwOSNVSEvent *event );
+
+    // add event
+    bool addEvent( SwOSNVSEvent *event ) { return addEvent( activeEventConfig, event ); };
+
+    // check on dublicates
+    bool exists( uint8_t configuration, SwOSNVSEvent *event );
+
+    // check on dublicates
+    bool exists( SwOSNVSEvent *event ) { return exists ( activeEventConfig, event ); };
+
+    // create a new swarm
+    void createSwarm( char *name, uint16_t pin );
+
+    // add a controller
+    bool addController( FtSwarmSerialNumber_t serialNumber );
+
+    // delete a controller
+    bool deleteController( FtSwarmSerialNumber_t serialNumber );
+
+    // delete all controllers
     void deleteAllControllers( void );
-    uint8_t swarmMembers( void ) ;         // number of swarm members
-    void factorySettings( void );          // reset to factory settings
-    void printNVS();                       // print settings for debugging only  
-    bool upgrade( void );                  // runs an nvs version upgrade, true if an upgrade took place
+
+    // number of swarm members
+    uint8_t swarmMembers( void );
+
+    // reset to factory settings
+    void factorySettings( void );
+
+    // print settings for debugging only  
+    void printNVS();
+
+    // runs an nvs version upgrade, true if an upgrade took place
+    bool upgrade( void );
+
 };
 
 extern SwOSNVS nvs;

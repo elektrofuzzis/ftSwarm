@@ -1072,7 +1072,7 @@ bool SwOSSwarm::deleteController( FtSwarmSerialNumber_t serialNumber ) {
 }
 
 // delete an event
-bool SwOSSwarm::deleteEvent( SwOSNVSEvent_t *event ) {
+bool SwOSSwarm::deleteEvent( SwOSNVSEvent *event ) {
 
   // no event
   if (!event) return false;
@@ -1089,7 +1089,7 @@ bool SwOSSwarm::deleteEvent( SwOSNVSEvent_t *event ) {
 }
 
 // add an event
-bool SwOSSwarm::addEvent( SwOSNVSEvent_t *event ) {
+bool SwOSSwarm::addEvent( SwOSNVSEvent *event ) {
 
   // no event
   if (!event) return false;
