@@ -77,6 +77,13 @@ class OLED : protected U8G2_SSD1306_128X64_NONAME_F_HW_I2C {
     int16_t screenOffset[MAXOLEDSCREENS] = {  0, 16, 64 };
     int16_t screenScroll[MAXOLEDSCREENS] = {  0,  0,  0 };
 
+    /**
+     * Truncates a string to fit within a pixel width (maxWidth) using U8g2's font metrics.
+     * Adds "..." if the text is too long.
+     * @return A pointer to a new heap-allocated string. Must be freed by the caller!
+    */
+    char* truncateText(const char* text, int16_t maxWidth);
+
     int16_t translateY( uint8_t screen, int16_t y );
     bool setFill( FtSwarmOledFill_t fill );
     void resetDrawColor( void ) { setDrawColor( drawColor ); };

@@ -211,6 +211,9 @@ FtSwarmScreenObj *FtSwarmScreenObjList::prev( FtSwarmScreenObj *obj ) {
 
 FtSwarmScreenSelectable::FtSwarmScreenSelectable( uint8_t id, FtSwarmScreen *parent, const char *label, const char *text, int16_t x, int16_t y, int16_t widthLabel, int16_t widthText ) : FtSwarmScreenObj( id, NULL, parent, label, FTSWARM_OLED_MAINSCREEN, x, y, FTSWARM_ALIGNLEFT ) {
 
+  // if (label) printf("FtSwarmScreenSelectable %d %s %s %d %d %d %d\n", id, label, text, x, y, widthLabel, widthText );
+  // else       printf("FtSwarmScreenSelectable %d NULL %s %d %d %d %d\n", id, text, x, y, widthLabel, widthText );
+
   // no label? Center text
   if ( widthLabel == 0) align = FTSWARM_ALIGNCENTER;
 
@@ -241,6 +244,8 @@ void FtSwarmScreenSelectable::draw( void ) {
 
   if (!visible) return;
 
+  printf("draw %s\n", text);
+
   oled.drawStrRect( screen, x,              y, widthLabel,                          label, align, 1, 0 );
   oled.drawStrRect( screen, x + widthLabel, y, oled.getScreenWidth() - widthLabel , text,  align, 1, 0 );
   
@@ -249,6 +254,8 @@ void FtSwarmScreenSelectable::draw( void ) {
 void FtSwarmScreenSelectable::select( void ) {
 
   if (!visible) return;
+
+  printf("select %s\n", text);
 
   oled.drawStrRect( screen, x + widthLabel, y, oled.getScreenWidth() - widthLabel, text,  align, 1, 0, FTSWARM_OLED_FILLWHITE );
   
@@ -450,7 +457,7 @@ void FtSwarmScreen::draw( void ) {
 
   if ( c > 1 ) {
     uint8_t size = oled.getScreenWidth() / c;
-    oled.drawLine( FTSWARM_OLED_UPPERSCREEN, cp*size, 12, (cp+1)*size, 12 );
+    oled.drawLine( FTSWARM_OLED_UPPERSCREEN, cp*size, 13, (cp+1)*size, 13 );
   }
 
 }
@@ -727,6 +734,8 @@ FtSwarmScreenSelectList::FtSwarmScreenSelectList( FtSwarmScreen *parent, const c
 
 template<typename... Tail>
 void FtSwarmScreenSelectList::process(uint8_t id, const char* str, Tail... tail) {
+
+  // printf("FtSwarmScreenSelectList::process %d %s\n", id, str );
 
   add( new FtSwarmScreenSelectable( id, this, str ) );
   process(tail...);
@@ -1643,10 +1652,10 @@ bool SwOSMainScreen::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32
       if ( event == FTSWARM_SCREENEVENT_DOWN ) {
 
         FtSwarmScreen *config = ( FtSwarmScreen * ) new FtSwarmScreenChooseConfig( this, 
-                                                new FtSwarmScreenSwarm( this, 
-                                                  new FtSwarmScreenWifi( this, 
-                                                    new FtSwarmScreenFactoryReset( this, 
-                                                      NULL ) ) ) );
+                                                      new FtSwarmScreenSwarm( this, 
+                                                        new FtSwarmScreenWifi( this, 
+                                                          // new FtSwarmScreenFactoryReset( this, 
+                                                            NULL ) ) );
 
         screenManager.activate( (FtSwarmScreen *) config );
 

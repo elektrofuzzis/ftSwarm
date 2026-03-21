@@ -274,21 +274,81 @@ void OLED::drawStr( uint8_t screen, int16_t x, int16_t y, const char *text, FtSw
 
 }
 
+char* OLED::truncateText(const char* text, int16_t maxWidth) {
+    if (!text) return nullptr;
+
+    int16_t fullWidth = getStrWidth(text);
+
+    // 1. Return a copy if text already fits
+    if (fullWidth <= maxWidth) {
+        return strdup(text);
+    }
+
+    // 2. Account for ellipsis width
+    int16_t dotsWidth = getStrWidth("...");
+    int16_t targetW = maxWidth - dotsWidth;
+
+    // Return empty string if not even "..." fits
+    if (targetW < 0) return strdup(""); 
+
+    // 3. Prepare buffer (+3 for "...", +1 for null terminator)
+    size_t originalLen = strlen(text);
+    char* temp = (char*)malloc(originalLen + 4); 
+    if (!temp) return nullptr;
+    strcpy(temp, text);
+
+    // 4. Fast Approximation (Ratio-based jump)
+    // Reduce number of getStrWidth calls by jumping near the target length
+    float ratio = (float)targetW / (float)fullWidth;
+    size_t currentLen = (size_t)((float)originalLen * ratio);
+    temp[currentLen] = '\0';
+
+    // 5. Fine-tuning (Pixel-perfect adjustment)
+    // If still too wide: trim characters one by one
+    while (currentLen > 0 && getStrWidth(temp) > targetW) {
+        temp[--currentLen] = '\0';
+    }
+    
+    // If too short: add characters back until we hit the limit
+    // Important for proportional fonts where 'i' is much thinner than 'W'
+    while (currentLen < originalLen) {
+        size_t nextLen = currentLen + 1;
+        char nextChar = text[currentLen]; // Get next char from original
+        
+        temp[currentLen] = nextChar;
+        temp[nextLen] = '\0';
+
+        if (getStrWidth(temp) > targetW) {
+            temp[currentLen] = '\0'; // Backtrack: too wide
+            break;
+        }
+        currentLen = nextLen;
+    }
+
+    // 6. Append ellipsis and return
+    strcat(temp, "...");
+    return temp;
+
+}
+
 void OLED::drawStrRect( uint8_t screen, int16_t x, int16_t y, int16_t w, const char *text, FtSwarmAlign_t align, uint8_t paddingH, uint8_t paddingV, FtSwarmOledFill_t fill ) {
 
-  int16_t width = strlen( text ) * U8G2_SSD1306_128X64_NONAME_F_HW_I2C::getStrWidth( text );
+  char *temp = truncateText( text, w );
 
-  // calculate number of chars, which could be printed
-  uint8_t maxChars = strlen( text );
-  if ( w > width ) maxChars = ( (float) width / (float) (w+2) ) * maxChars;
-
-  // copy str->temp in right size
-  char *temp = (char*) calloc( maxChars + 1, sizeof( char) );
-  strncpy( temp, text, maxChars );
-
-  drawRect( screen, x, y, w+2*paddingH, getTextHeight() + 2*paddingV, fill );
+  int16_t xRect = 0;
+  int16_t wTemp = getTextWidth( temp ) + 2*paddingH;
+  switch (align) {
+    case FTSWARM_ALIGNLEFT:   xRect = x;
+                              break;
+    case FTSWARM_ALIGNCENTER: xRect = x - wTemp/2;
+                              break;
+    case FTSWARM_ALIGNRIGHT:  xRect = x - wTemp;
+                              break;
+  }
+  
+  drawRect( screen, xRect, y, wTemp, getTextHeight() + 2*paddingV, fill );
   if ( fill == FTSWARM_OLED_FILLWHITE ) U8G2_SSD1306_128X64_NONAME_F_HW_I2C::setDrawColor(0);
-  drawStr( screen, x + paddingH, y + paddingV, temp, align );
+  drawStr( screen, xRect + paddingH, y + paddingV, temp, FTSWARM_ALIGNLEFT );
   resetDrawColor();
 
   free( temp );
