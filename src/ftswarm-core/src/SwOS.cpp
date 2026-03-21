@@ -885,15 +885,6 @@ void FtSwarmServo::setOffset(int16_t offset) {
 FtSwarmOLED::FtSwarmOLED(FtSwarmSerialNumber_t serialNumber):FtSwarmIO( serialNumber, SWOSIO_OLED) {};
 FtSwarmOLED::FtSwarmOLED( const char *name ):FtSwarmIO( name, SWOSIO_OLED ) {};
 
-void FtSwarmOLED::invertDisplay(bool i) {
-
-  if (!me) return;
-  
-  static_cast<SwOSOLED*>(me)->lock();
-  static_cast<SwOSOLED*>(me)->invertDisplay( i );
-  static_cast<SwOSOLED*>(me)->unlock();
-}
-
 void FtSwarmOLED::dim(bool dim) {
 
   if (!me) return;
@@ -901,198 +892,184 @@ void FtSwarmOLED::dim(bool dim) {
   static_cast<SwOSOLED*>(me)->lock();
   static_cast<SwOSOLED*>(me)->dim( dim );
   static_cast<SwOSOLED*>(me)->unlock();
+
 }
 
-void FtSwarmOLED::drawPixel(int16_t x, int16_t y, bool white ) {
+void FtSwarmOLED::cls( void )  {
 
   if (!me) return;
   
   static_cast<SwOSOLED*>(me)->lock();
-  static_cast<SwOSOLED*>(me)->drawPixel( x, y, white );
+  static_cast<SwOSOLED*>(me)->cls( );
   static_cast<SwOSOLED*>(me)->unlock();
+
 }
 
-void FtSwarmOLED::setRotation(uint8_t r) {
+void FtSwarmOLED::cls( uint8_t screen ) {
 
   if (!me) return;
   
   static_cast<SwOSOLED*>(me)->lock();
-  static_cast<SwOSOLED*>(me)->setRotation( r );
+  static_cast<SwOSOLED*>(me)->cls( screen );
   static_cast<SwOSOLED*>(me)->unlock();
-}
-
-void FtSwarmOLED::clearScreen() {
-
-  fillScreen(0);
 
 }
 
-
-void FtSwarmOLED::fillScreen(bool white) {
-
-  if (!me) return;
-  
-  static_cast<SwOSOLED*>(me)->lock();
-  static_cast<SwOSOLED*>(me)->fillScreen( white );
-  static_cast<SwOSOLED*>(me)->unlock();
-}
-
-void FtSwarmOLED::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool white ) {
-
-  if (!me) return;
-  
-  static_cast<SwOSOLED*>(me)->lock();
-  static_cast<SwOSOLED*>(me)->drawLine( x0, y0, x1, y1, white );
-  static_cast<SwOSOLED*>(me)->unlock();
-}
-
-void FtSwarmOLED::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, bool fill, bool white ) {
-
-  if (!me) return;
-  
-  static_cast<SwOSOLED*>(me)->lock();
-  static_cast<SwOSOLED*>(me)->drawRect( x, y, w, h, fill, white );
-  static_cast<SwOSOLED*>(me)->unlock();
-}
-
-void FtSwarmOLED::drawCircle(int16_t x0, int16_t y0, int16_t r, bool fill, bool white ) {
-
-  if (!me) return;
-  
-  static_cast<SwOSOLED*>(me)->lock();
-  static_cast<SwOSOLED*>(me)->drawCircle( x0, y0, r, fill, white );
-  static_cast<SwOSOLED*>(me)->unlock();
-}
-
-void FtSwarmOLED::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool fill, bool white ) {
-
-  if (!me) return;
-  
-  static_cast<SwOSOLED*>(me)->lock();
-  static_cast<SwOSOLED*>(me)->drawTriangle( x0, y0, x1, y1, x2, y2, fill, white );
-  static_cast<SwOSOLED*>(me)->unlock();
-}
-
-void FtSwarmOLED::drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, bool fill, bool white ) {
-
-  if (!me) return;
-  
-  static_cast<SwOSOLED*>(me)->lock();
-  static_cast<SwOSOLED*>(me)->drawRoundRect( x0, y0, w, h, radius, fill, white );
-  static_cast<SwOSOLED*>(me)->unlock();
-}
-
-void FtSwarmOLED::drawChar(int16_t x, int16_t y, unsigned char c, bool color, bool bg, uint8_t size_x, uint8_t size_y) {
-
-  if (!me) return;
-  
-  static_cast<SwOSOLED*>(me)->lock();
-  static_cast<SwOSOLED*>(me)->drawChar(x, y, c, color, bg, size_x, size_y );
-  static_cast<SwOSOLED*>(me)->unlock();
-}
-
-void FtSwarmOLED::getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h) {
-
-  if (!me) return;
-  
-  static_cast<SwOSOLED*>(me)->lock();
-  static_cast<SwOSOLED*>(me)->getTextBounds( string, x, y, x1, y1, w, h );
-  static_cast<SwOSOLED*>(me)->unlock();
-}
-
-void FtSwarmOLED::setTextSize(uint8_t sx, uint8_t sy) {
-
-  if (!me) return;
-  
-  static_cast<SwOSOLED*>(me)->lock();
-  static_cast<SwOSOLED*>(me)->setTextSize( sx, sy );
-  static_cast<SwOSOLED*>(me)->unlock();
-}
-
-void FtSwarmOLED::setCursor(int16_t x, int16_t y) {
-
-  if (!me) return;
-  
-  static_cast<SwOSOLED*>(me)->lock();
-  static_cast<SwOSOLED*>(me)->setCursor( x, y );
-  static_cast<SwOSOLED*>(me)->unlock();
-}
- 
-void FtSwarmOLED::setTextColor(bool c, bool bg) {
-
-  if (!me) return;
-  
-  static_cast<SwOSOLED*>(me)->lock();
-  static_cast<SwOSOLED*>(me)->setTextColor( c, bg );
-  static_cast<SwOSOLED*>(me)->unlock();
-}
-
-void FtSwarmOLED::setTextWrap(bool w) {
-
-  if (!me) return;
-  
-  static_cast<SwOSOLED*>(me)->lock();
-  static_cast<SwOSOLED*>(me)->setTextWrap( w );
-  static_cast<SwOSOLED*>(me)->unlock();
-}
-
-void FtSwarmOLED::write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align, bool fill, bool invert ) {
-
-  if (!me) return;
-  
-  static_cast<SwOSOLED*>(me)->lock();
-  static_cast<SwOSOLED*>(me)->write( str, x, y, align, fill, invert );
-  static_cast<SwOSOLED*>(me)->unlock();
-}
-
-void FtSwarmOLED::write( const char *str ) {
-
-  if (!me) return;
-  
-  static_cast<SwOSOLED*>(me)->lock();
-  static_cast<SwOSOLED*>(me)->write( str );
-  static_cast<SwOSOLED*>(me)->unlock();
-}
-
-int16_t FtSwarmOLED::getWidth(void) {
+int16_t FtSwarmOLED::getScreenWidth(void) {
 
   if (!me) return 0;
   
   static_cast<SwOSOLED*>(me)->lock();
-  int16_t result = static_cast<SwOSOLED*>(me)->getWidth( );
+  int16_t xReturn = (static_cast<SwOSOLED *>(me)->getScreenWidth());
   static_cast<SwOSOLED*>(me)->unlock();
 
-  return result;
+  return xReturn;
+
 }
 
-int16_t FtSwarmOLED::getHeight(void) {
+int16_t FtSwarmOLED::getScreenHeight( uint8_t screen ) {
 
   if (!me) return 0;
   
   static_cast<SwOSOLED*>(me)->lock();
-  int16_t result = static_cast<SwOSOLED*>(me)->getHeight( );
+  int16_t xReturn = (static_cast<SwOSOLED *>(me)->getScreenHeight());
   static_cast<SwOSOLED*>(me)->unlock();
 
-  return result;
+  return xReturn;
+
 }
 
-uint8_t FtSwarmOLED::getRotation(void) {
+int16_t FtSwarmOLED::getTextWidth( const char *text ) {
 
   if (!me) return 0;
   
   static_cast<SwOSOLED*>(me)->lock();
-  uint8_t result = static_cast<SwOSOLED*>(me)->getRotation( );
+  int16_t xReturn = (static_cast<SwOSOLED *>(me)->getTextWidth( text ));
   static_cast<SwOSOLED*>(me)->unlock();
 
-  return result;
+  return xReturn;
+
 }
 
-void FtSwarmOLED::getCursor(int16_t *x, int16_t *y) {
+
+int16_t FtSwarmOLED::getTextHeight( void ) {
+
+  if (!me) return 0;
+  
+  static_cast<SwOSOLED*>(me)->lock();
+  int16_t xReturn = (static_cast<SwOSOLED *>(me)->getTextHeight( ));
+  static_cast<SwOSOLED*>(me)->unlock();
+
+  return xReturn;
+
+}
+
+void FtSwarmOLED::drawButton( uint8_t screen, int16_t x, int16_t y, uint8_t width, const char *text, uint8_t flags, uint8_t paddingH, uint8_t paddingV ) {
 
   if (!me) return;
   
   static_cast<SwOSOLED*>(me)->lock();
-  static_cast<SwOSOLED*>(me)->getCursor( x, y);
+  static_cast<SwOSOLED*>(me)->drawButton( screen, x, y, width, text, flags, paddingH, paddingV );
+  static_cast<SwOSOLED*>(me)->unlock();
+
+}
+
+void FtSwarmOLED::setDrawColor( uint8_t color ) {
+
+  if (!me) return;
+  
+  static_cast<SwOSOLED*>(me)->lock();
+  static_cast<SwOSOLED*>(me)->setDrawColor( color );
+  static_cast<SwOSOLED*>(me)->unlock();
+
+}
+
+void FtSwarmOLED::drawCircle( uint8_t screen, int16_t x, int16_t y, int16_t r, FtSwarmOledFill_t fill ) {
+
+  if (!me) return;
+  
+  static_cast<SwOSOLED*>(me)->lock();
+  static_cast<SwOSOLED*>(me)->drawCircle( screen, x, y, r, fill );
+  static_cast<SwOSOLED*>(me)->unlock();
+
+}
+
+void FtSwarmOLED::drawEllipse( uint8_t screen, int16_t x, int16_t y, int16_t rx, int16_t ry, FtSwarmOledFill_t fill ) {
+
+  if (!me) return;
+  
+  static_cast<SwOSOLED*>(me)->lock();
+  static_cast<SwOSOLED*>(me)->drawEllipse( screen, x, y, rx, ry, fill );
+  static_cast<SwOSOLED*>(me)->unlock();
+
+}
+    
+void FtSwarmOLED::drawLine( uint8_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1 ) {
+
+  if (!me) return;
+  
+  static_cast<SwOSOLED*>(me)->lock();
+  static_cast<SwOSOLED*>(me)->drawLine( screen, x0, y0, x1, y1 );
+  static_cast<SwOSOLED*>(me)->unlock();
+
+}
+    
+void FtSwarmOLED::drawPixel( uint8_t screen, int16_t x, int16_t y ) {
+
+  if (!me) return;
+  
+  static_cast<SwOSOLED*>(me)->lock();
+  static_cast<SwOSOLED*>(me)->drawPixel( screen, x, y );
+  static_cast<SwOSOLED*>(me)->unlock();
+
+}
+
+void FtSwarmOLED::drawRect( uint8_t screen, int16_t x, int16_t y, int16_t w, int16_t h, FtSwarmOledFill_t fill ) {
+
+  if (!me) return;
+  
+  static_cast<SwOSOLED*>(me)->lock();
+  static_cast<SwOSOLED*>(me)->drawRect( screen, x, y, w, h, fill );
+  static_cast<SwOSOLED*>(me)->unlock();
+
+}
+
+void FtSwarmOLED::drawRoundRect( uint8_t screen, int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, FtSwarmOledFill_t fill ) {
+
+  if (!me) return;
+  
+  static_cast<SwOSOLED*>(me)->lock();
+  static_cast<SwOSOLED*>(me)->drawRoundRect( screen, x, y, w, h, r, fill );
+  static_cast<SwOSOLED*>(me)->unlock();
+
+}
+
+void FtSwarmOLED::drawStr( uint8_t screen, int16_t x, int16_t y, const char *text, FtSwarmAlign_t align ) {
+
+  if (!me) return;
+  
+  static_cast<SwOSOLED*>(me)->lock();
+  static_cast<SwOSOLED*>(me)->drawStr( screen, x, y, text, align );
+  static_cast<SwOSOLED*>(me)->unlock();
+
+}
+
+void FtSwarmOLED::drawStrRect( uint8_t screen, int16_t x, int16_t y, int16_t w, const char *text, FtSwarmAlign_t align, uint8_t paddingH, uint8_t paddingV ) {
+
+  if (!me) return;
+  
+  static_cast<SwOSOLED*>(me)->lock();
+  static_cast<SwOSOLED*>(me)->drawStrRect( screen, x, y, w, text, align, paddingH, paddingV );
+  static_cast<SwOSOLED*>(me)->unlock();
+
+}
+
+void FtSwarmOLED::drawTriangle( uint8_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, FtSwarmOledFill_t fill ) {
+
+  if (!me) return;
+  
+  static_cast<SwOSOLED*>(me)->lock();
+  static_cast<SwOSOLED*>(me)->drawTriangle( screen, x0, y0, x1, y1, x2, y2 );
   static_cast<SwOSOLED*>(me)->unlock();
 
 }

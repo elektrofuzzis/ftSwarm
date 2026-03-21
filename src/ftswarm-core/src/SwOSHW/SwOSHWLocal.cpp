@@ -47,8 +47,6 @@ HC165::HC165( FtSwarmVersion_t CPU ) {
 
 void HC165::operate( ) {
 
-  // if ( millis() < 1500 ) printf("operate\n");
-
   // invalid configuration?
   if (HC165_LD == GPIO_NUM_NC ) {
     return;
@@ -84,73 +82,65 @@ void HC165::operate( ) {
  *
  ***************************************************/
 
+#define FTSWARM_HAL_OLEDS 1
+
 #if FTSWARM_HAL_OLEDS > 0
 
-static void displayTask( void *parameter ) {
+static void displayTaskWrapper( void *parameter ) {
+
+  oled.displayTask();
+
+}
+
+bool OLED::setFill( FtSwarmOledFill_t fill ) {
+
+  switch ( fill ) {
+    case FTSWARM_OLED_FILLBLACK: U8G2_SSD1306_128X64_NONAME_F_HW_I2C::setDrawColor( 0 ); return true;
+    case FTSWARM_OLED_FILLWHITE: U8G2_SSD1306_128X64_NONAME_F_HW_I2C::setDrawColor( 1 ); return true;
+  }
+
+  return false;
+
+}
+
+void OLED::begin( void ) {
+
+  if (initialized) return;
+  
+  // startup hardware
+  if (!U8G2_SSD1306_128X64_NONAME_F_HW_I2C::begin() ) SWARM_LOG_ERROR( "OLED::begin failed.");
+
+  // Font
+  U8G2_SSD1306_128X64_NONAME_F_HW_I2C::setFont(u8g2_font_6x10_tr);
+  U8G2_SSD1306_128X64_NONAME_F_HW_I2C::setFontPosTop();
+
+  // colors
+  U8G2_SSD1306_128X64_NONAME_F_HW_I2C::setDrawColor( drawColor );
+
+  // transfer task
+  xTaskCreatePinnedToCore( displayTaskWrapper, "displayTask", 10000, NULL, 1, NULL, ARDUINO_EVENT_RUNNING_CORE );
+
+  initialized = true;
+
+}
+
+void OLED::displayTask( void ) {
 
   while (1) {
 
-    if (oled) oled->flush();
+    if ( displayDirty ) { displayDirty = false; U8G2_SSD1306_128X64_NONAME_F_HW_I2C::sendBuffer(); }
 
     delay(100);
 
   }
 
-}
-
-OLED::OLED( void ) {
-  
-  // startup hardware
-  // display = new Adafruit_SSD1306 (128, 64, &Wire, -1);
-
-  if ( !display.begin(SSD1306_SWITCHCAPVCC, 0x3C ) ) {
-    SWARM_LOG_ERROR( "Couldn't initialize OLED display." );
-    return;
-  }
-
-  // clear it to kill adafruit logo
-  display.clearDisplay();
-  display.display();
-
-  // transfer task
-  xTaskCreatePinnedToCore( displayTask, "displayTask", 10000, NULL, 1, NULL, ARDUINO_EVENT_RUNNING_CORE );
-
-}
-
-void OLED::flush( void ) { 
-  
-  if ( displayDirty ) { 
-    
-    display.display(); 
-    displayDirty = false; 
-  
-  }
-
-}
-
-void OLED::invertDisplay(bool i) {
- 
-  display.invertDisplay( i );
-  displayDirty = true;
-   
-}
- 
-void OLED::fillScreen(bool white) {
-   
-  drawRect( 0, 0, getWidth(), getHeight(), true, white );
-   
 } 
  
 void OLED::dim(bool dim) {
+
+  U8G2_SSD1306_128X64_NONAME_F_HW_I2C::setContrast( dim ? 1 : 0x8F );
  
-  // origin adafruit code fails with some displays
-  // if (display) display.dim( dim );
-  setContrast( dim ? 1 : 0x8F );
-   
-}
- 
-void OLED::setContrast(uint8_t contrast) {
- 
+  /* legacy adafruit code
   // send set contrast
   Wire.beginTransmission( 0x3C );
   Wire.write( (uint8_t) 0 );
@@ -160,232 +150,174 @@ void OLED::setContrast(uint8_t contrast) {
   // send contast value
   Wire.beginTransmission( 0x3C );
   Wire.write( (uint8_t) 0 );
-  Wire.write( contrast );
+  Wire.write( dim ? 1 : 0x8F );
   Wire.endTransmission();
+  */
    
 }
 
-void OLED::clearDisplay( bool fullscreen ) {
+void OLED::buttonScreen( bool activate ) {
 
-  if ( fullscreen ) display.clearDisplay();
-  else drawRect( 0, 0, getWidth(), getHeight(), true, SSD1306_BLACK );
+  if ( ( activate ) && ( screenHeight[ FTSWARM_OLED_BUTTONSCREEN ] == 0 ) ) {
+    screenHeight[ FTSWARM_OLED_BUTTONSCREEN ] = getTextHeight() + 2;
+    screenHeight[ FTSWARM_OLED_MAINSCREEN   ] = getDisplayHeight() - screenHeight[ FTSWARM_OLED_UPPERSCREEN ] - screenHeight[ FTSWARM_OLED_BUTTONSCREEN ] ;
+    screenOffset[ FTSWARM_OLED_BUTTONSCREEN ] = screenOffset[ FTSWARM_OLED_MAINSCREEN ] +screenHeight[ FTSWARM_OLED_MAINSCREEN ];
+  } 
   
-}
-
-void OLED::cp437( bool x ) { 
-  
-  display.cp437( x ); 
-
-}
- 
-void OLED::drawPixel(int16_t x, int16_t y, bool white ) {
-   
-  display.drawPixel( x, y + YELLOWPIXELS, (white)?(SSD1306_WHITE):(0) );
-  displayDirty = true;
-
-}
- 
-void OLED::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool white) {
-   
-  if      (x0==x1) display.drawFastVLine( x0, y0 + YELLOWPIXELS, y1 - y0,               (white)?(SSD1306_WHITE):(0) ); 
-  else if (y0==y1) display.drawFastHLine( x0, y0 + YELLOWPIXELS, x1 - x0,               (white)?(SSD1306_WHITE):(0) ); 
-  else             display.drawLine(      x0, y0 + YELLOWPIXELS, x1, y1 + YELLOWPIXELS, (white)?(SSD1306_WHITE):(0) );
-  displayDirty = true;
-
-} 
- 
-void OLED::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, bool fill, bool white) {
- 
-  if (fill) display.fillRect( x, y + YELLOWPIXELS, w, h, (white)?(SSD1306_WHITE):(0) );
-  else      display.drawRect( x, y + YELLOWPIXELS, w, h, (white)?(SSD1306_WHITE):(0) );
-  displayDirty = true;
-   
-}
- 
-void OLED::drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, bool fill, bool white) {
-   
-  if (fill) display.fillRoundRect( x0, y0 + YELLOWPIXELS, w, h, radius, (white)?(SSD1306_WHITE):(0)); 
-  else      display.drawRoundRect( x0, y0 + YELLOWPIXELS, w, h, radius, (white)?(SSD1306_WHITE):(0)); 
-  displayDirty = true;
-   
-} 
- 
- 
-void OLED::drawCircle(int16_t x0, int16_t y0, int16_t r, bool fill, bool white) {
-   
-  if (fill) display.fillCircle( x0, y0 + YELLOWPIXELS, r, (white)?(SSD1306_WHITE):(0)); 
-  else      display.drawCircle( x0, y0 + YELLOWPIXELS, r, (white)?(SSD1306_WHITE):(0)); 
-  displayDirty = true;
-   
-} 
- 
-void OLED::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool fill, bool white) {
-   
-  if (fill) display.fillTriangle( x0, y0 + YELLOWPIXELS, x1, y1 + YELLOWPIXELS, x2, y2 + YELLOWPIXELS, (white)?(SSD1306_WHITE):(0)); 
-  else      display.drawTriangle( x0, y0 + YELLOWPIXELS, x1, y1 + YELLOWPIXELS, x2, y2 + YELLOWPIXELS, (white)?(SSD1306_WHITE):(0)); 
-  displayDirty = true;
- 
-} 
- 
-void OLED::setCursor(int16_t x, int16_t y) {
-   
-  display.setCursor( x, y  + YELLOWPIXELS);
-  displayDirty = true;
-   
-}
- 
-void OLED::getCursor(int16_t *x, int16_t *y) {
-   
-  *x = display.getCursorX( );
-  *y = display.getCursorY( );
-   
-}
- 
-void OLED::setTextColor(bool c, bool bg) {
-
-  color      = c;
-  background = bg;
-   
-  display.setTextColor( (c)?(SSD1306_WHITE):(0), (bg)?(SSD1306_WHITE):(0) );
-  displayDirty = true;
-
-}
-
-void OLED::setTextWrap( bool w ) {
-
-  textWrap = w;   
-  display.setTextWrap( w );
-   
-}
-
-bool OLED::getTextWrap( void ) {
-
-  return textWrap;
-   
-}
- 
-void OLED::setRotation(uint8_t r) {
-   
-  display.setRotation( r );
-  displayDirty = true;
-   
-}
- 
-uint8_t OLED::getRotation(void)  {
-   
-  return display.getRotation( ); 
-   
-}
- 
-void OLED::setTextSize(uint8_t sx, uint8_t sy) {
-   
-  textSizeX = sx;
-  textSizeY = sy;
-   
-  display.setTextSize( sx, sy );
-   
-} 
- 
-void OLED::getTextSize( uint8_t *sx, uint8_t *sy ) {
-
-  *sx = textSizeX;
-  *sy = textSizeY;
-
-}
-
-uint8_t OLED::getTextHeight( void ) {
-
-  return textSizeY * 8;
-
-}
-
-uint8_t OLED::getTextWidth( void ) {
-
-  return textSizeX * 6;
-
-}
- 
-void OLED::drawChar(int16_t x, int16_t y, unsigned char c, bool color, bool bg, uint8_t size_x, uint8_t size_y) {
-   
-  display.drawChar( x, y + YELLOWPIXELS, c, (color)?(SSD1306_WHITE):(0), (bg)?(SSD1306_WHITE):(0), size_x, size_y );
-  displayDirty = true;
- 
-} 
- 
-void OLED::write( const char *str ) {
-   
-  display.write(str);
-  displayDirty = true;
-   
-}
- 
-void OLED::write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align, bool fill, bool invert ) { 
- 
-  int16_t x1, y1, x2, y2;
-  uint16_t w, h;
-  getTextBounds( str, 0, 0, &x1, &y1, &w, &h );
- 
-  switch (align) {
-
-    case FTSWARM_ALIGNLEFT:   x2 = x;       y2 = y; break;
-    case FTSWARM_ALIGNCENTER: x2 = x - w/2; y2 = y; break;
-    case FTSWARM_ALIGNRIGHT:  x2 = x - w;   y2 = y; break;
-    default:                  x2 = x;       y2 = y; break;
+  if ( ( !activate ) && ( screenHeight[ FTSWARM_OLED_BUTTONSCREEN ] != 0 ) ) {
+    screenHeight[ FTSWARM_OLED_BUTTONSCREEN ] = 0;
+    screenHeight[ FTSWARM_OLED_MAINSCREEN   ] = getDisplayHeight() - screenHeight[ FTSWARM_OLED_UPPERSCREEN ];
+    screenOffset[ FTSWARM_OLED_BUTTONSCREEN ] = getDisplayHeight();
   }
 
-  bool c = color;
-  bool bg = background;
- 
-  if (invert) setTextColor( !c, !bg );
+}
 
-  if (fill) display.fillRect( x2-1, y2-1 + YELLOWPIXELS, w+2, h+1, invert );
-  setCursor( x2+1, y2 );
-  write( str );
+void OLED::cls( uint8_t screen ) {
 
-  if (invert) setTextColor( c, bg );
+  if ( screen >= MAXOLEDSCREENS ) return;
+
+  U8G2_SSD1306_128X64_NONAME_F_HW_I2C::setDrawColor(0);
+  U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawBox( 0, screenOffset[screen], getWidth(), screenHeight[screen] );
+  U8G2_SSD1306_128X64_NONAME_F_HW_I2C::setDrawColor(drawColor);
 
 }
 
-void OLED::writeRectangle( const char *str, int16_t x, int16_t y, int16_t width, int16_t height, FtSwarmAlign_t align, bool fill, bool invert ) {
+int16_t OLED::getScreenWidth(void)  {
+   
+  return U8G2_SSD1306_128X64_NONAME_F_HW_I2C::getDisplayWidth( ); 
+   
+}
+ 
+int16_t OLED::getScreenHeight( uint8_t screen ) {
+ 
+  if ( screen < MAXOLEDSCREENS ) return screenHeight[screen];
+  else return 0;
 
-  int16_t w = strlen( str ) * getTextWidth();
+}
+
+void OLED::setDrawColor( uint8_t color ) {
+
+  if ( color > 2 ) return;
+  drawColor = color;
+  U8G2_SSD1306_128X64_NONAME_F_HW_I2C::setDrawColor( drawColor );
+
+}
+
+void OLED::drawButton( uint8_t screen, int16_t x, int16_t y, uint8_t width, const char *text, uint8_t flags, uint8_t paddingH, uint8_t paddingV ) {
+
+  U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawButtonUTF8( x, translateY( screen, y ), flags, width, paddingH, paddingV, text );
+  displayDirty = true;
+
+}
+
+void OLED::drawRect( uint8_t screen, int16_t x, int16_t y, int16_t w, int16_t h, FtSwarmOledFill_t fill ) {
+
+  if ( setFill( fill ) ) { U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawBox(   x, translateY( screen, y ), w, h ); resetDrawColor(); }
+  else                     U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawFrame( x, translateY( screen, y ), w, h );
+  displayDirty = true;
+
+}
+
+void OLED::drawRoundRect( uint8_t screen, int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, FtSwarmOledFill_t fill ) {
+
+  if ( setFill( fill ) ) { U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawRBox(   x, translateY( screen, y ), w, h, r ); resetDrawColor(); }
+  else                     U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawRFrame( x, translateY( screen, y ), w, h, r );
+  displayDirty = true;
+
+}
+
+void OLED::drawCircle( uint8_t screen, int16_t x, int16_t y, int16_t r, FtSwarmOledFill_t fill ) {
+
+  if ( setFill( fill ) ) { U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawDisc(   x, translateY( screen, y ), r ); resetDrawColor(); }
+  else                     U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawCircle( x, translateY( screen, y ), r );
+  displayDirty = true;
+
+}
+
+void OLED::drawEllipse( uint8_t screen, int16_t x, int16_t y, int16_t rx, int16_t ry, FtSwarmOledFill_t fill ) {
+
+  if ( setFill( fill ) ) { U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawFilledEllipse( x, translateY( screen, y ), rx, ry ); resetDrawColor(); }
+  else                     U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawEllipse( x, translateY( screen, y ), rx, ry );
+  displayDirty = true;
+}
+
+void OLED::drawLine( uint8_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1 ) {
+
+  if      ( y0 == y1 ) U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawHLine( x0, translateY( screen, y0), x1-x0 );
+  else if ( x0 == x1 ) U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawVLine( x0, translateY( screen, y0), y1-y0 );
+  else                 U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawLine(  x0, translateY( screen, y0), x1, translateY( screen, y1) );
+  displayDirty = true;
+
+}
+ 
+void OLED::drawPixel( uint8_t screen, int16_t x, int16_t y ) {
+   
+  U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawPixel( x, translateY( screen, y ) );
+  displayDirty = true;
+
+}
+
+void OLED::drawStr( uint8_t screen, int16_t x, int16_t y, const char *text, FtSwarmAlign_t align ) {
+
+  int16_t width = U8G2_SSD1306_128X64_NONAME_F_HW_I2C::getStrWidth( text );
+
+  int16_t x1;
+  switch ( align ) {
+    case FTSWARM_ALIGNLEFT:   x1 = x;                break;
+    case FTSWARM_ALIGNCENTER: x1 = x - ( width / 2); break;
+    case FTSWARM_ALIGNRIGHT:  x1 = x - width;        break;
+    default:                  x1 = x;                break;
+  }
+
+  U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawStr( x1, translateY( screen, y ), text );
+  displayDirty = true;
+
+}
+
+void OLED::drawStrRect( uint8_t screen, int16_t x, int16_t y, int16_t w, const char *text, FtSwarmAlign_t align, uint8_t paddingH, uint8_t paddingV, FtSwarmOledFill_t fill ) {
+
+  int16_t width = strlen( text ) * U8G2_SSD1306_128X64_NONAME_F_HW_I2C::getStrWidth( text );
 
   // calculate number of chars, which could be printed
-  uint8_t maxChars = strlen( str );
+  uint8_t maxChars = strlen( text );
   if ( w > width ) maxChars = ( (float) width / (float) (w+2) ) * maxChars;
 
   // copy str->temp in right size
   char *temp = (char*) calloc( maxChars + 1, sizeof( char) );
-  strncpy( temp, str, maxChars );
+  strncpy( temp, text, maxChars );
 
-  // draw rectangle?
-  if (fill) drawRect( x, y, width, height, true, false );
+  drawRect( screen, x, y, w+2*paddingH, getTextHeight() + 2*paddingV, fill );
+  if ( fill == FTSWARM_OLED_FILLWHITE ) U8G2_SSD1306_128X64_NONAME_F_HW_I2C::setDrawColor(0);
+  drawStr( screen, x + paddingH, y + paddingV, temp, align );
+  resetDrawColor();
 
-  // write text
-  write( temp, x, y, align, fill, invert );
-
-  // cleanup
   free( temp );
 
 }
 
-void OLED::getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h) {
- 
-  display.getTextBounds( string, x, y + YELLOWPIXELS, x1, y1, w, h );
-  *y1 -=  + YELLOWPIXELS;
+void OLED::drawTriangle( uint8_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, FtSwarmOledFill_t fill ) {
    
+  if ( setFill(fill) ) {
+    U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawTriangle( x0, translateY( screen, y0 ), x1, translateY( screen, y1 ), x2, translateY( screen, y2 ) ); 
+    resetDrawColor();
+  
+  } else {
+    drawLine( screen, x0, y0, x1, y1 );
+    drawLine( screen, x1, y1, x2, y2 );
+    drawLine( screen, x2, y2, x0, y0 );
+  }
+
+  displayDirty = true;
+ 
 } 
- 
-int16_t OLED::getWidth(void)  {
-   
-  return display.width( ); 
-   
-}
- 
-int16_t OLED::getHeight(void) {
- 
-  return display.height( ) - YELLOWPIXELS; 
-   
+
+int16_t OLED::translateY( uint8_t screen, int16_t y ) {
+
+  // out-of-bounds
+  if (screen >=3 ) return y;
+
+  return y + screenOffset[ screen ] + screenScroll[ screen ];
+
 }
 
 #else
@@ -423,7 +355,7 @@ void OLED::getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, 
 
 #endif
 
-OLED *oled  = NULL;
+OLED oled;
 
 /***************************************************
  *

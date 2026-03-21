@@ -25,7 +25,7 @@
 #include "SwOSFilter.h"
 
 // only to feed that silly compiler
-class SwOSScreenObj;
+class FtSwarmScreenObj;
 
 #define BRIGHTNESSDEFAULT 48
 
@@ -142,7 +142,7 @@ class SwOSIO : public SwOSObj {
 protected:
 	uint8_t       port;  // local port
   SwOSCtrl      *ctrl; // pointer to my Controller
-  SwOSScreenObj *subscribedScreenObj = NULL;
+  FtSwarmScreenObj *subscribedScreenObj = NULL;
   SwOSIOType_t  ioType               = SWOSIO_UNDEF;
   bool          isSubscribed         = false;
   int32_t       lastsubscribedValue  = 0;
@@ -184,13 +184,13 @@ public:
   virtual char* subscribe( const char *IOName, uint32_t hysteresis ); 
 
   // subscribe io to send status information to a Screen
-  virtual void subscribe( SwOSScreenObj *screenObj );
+  virtual void subscribe( FtSwarmScreenObj *screenObj );
 
   // clear subscription
 	virtual void unsubscribe();
 
   // clear subscription of a screen object
-  virtual void unsubscribe(  SwOSScreenObj *screenObj );
+  virtual void unsubscribe(  FtSwarmScreenObj *screenObj );
 
   // get my port
   virtual uint8_t getPort() { return port; };

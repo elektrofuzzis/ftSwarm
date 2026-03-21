@@ -371,7 +371,7 @@ char *SwOSIO::subscribe( const char *IOName, uint32_t hysteresis ) {
 
 } 
 
-void SwOSIO::subscribe( SwOSScreenObj *screenObj ) {
+void SwOSIO::subscribe( FtSwarmScreenObj *screenObj ) {
   subscribedScreenObj = screenObj;
 }
 
@@ -381,7 +381,7 @@ void SwOSIO::unsubscribe() {
   subscribedIOName = NULL;
 }
 
-void SwOSIO::unsubscribe( SwOSScreenObj *screenObj ) {
+void SwOSIO::unsubscribe( FtSwarmScreenObj *screenObj ) {
 
   // to avoid races, test on same object
   if ( subscribedScreenObj == screenObj ) subscribedScreenObj = NULL;

@@ -441,6 +441,12 @@ typedef enum {
   SWOSLABEL_MAX
 } SwOSLabel_t;
 
+typedef enum { FTSWARM_OLED_NOFILL, FTSWARM_OLED_FILLBLACK, FTSWARM_OLED_FILLWHITE } FtSwarmOledFill_t;
+
+#define FTSWARM_OLED_UPPERSCREEN  0
+#define FTSWARM_OLED_MAINSCREEN   1
+#define FTSWARM_OLED_BUTTONSCREEN 2
+
 const char EXTMODE[7][14] = { "off", "I2C-Master", "I2C-Slave", "Outputs", "Servos", "Lidar", "" }; // "" just to avoid seg faults
 const char GYRO[3][8]     = { "off", "LSM6", "MPU6050"};
 const char ONOFF[2][5]    = { "off", "on" };
@@ -942,45 +948,60 @@ class FtSwarmOLED : public FtSwarmIO {
     FtSwarmOLED(FtSwarmSerialNumber_t serialNumber);
     FtSwarmOLED( const char *name );
 
-    // clear blue area
-    void clearScreen( void );
-
-    void invertDisplay(bool i);
-    void fillScreen( bool white=true);    
+    // dim - reduce display brightness
     void dim(bool dim);
-    int16_t getWidth(void);
-    int16_t getHeight(void);
+
+    // clear display
+    void cls( void );
+
+    // clear screen
+    void cls( uint8_t screen );
+
+    // get display width
+    int16_t getScreenWidth(void);
+
+    // get screen height
+    int16_t getScreenHeight( uint8_t screen = FTSWARM_OLED_MAINSCREEN );
+
+    // get text width
+    int16_t getTextWidth( const char *text );
+
+    // set get height
+    int16_t getTextHeight( void );
+
+    // draw button
+    void drawButton( uint8_t screen, int16_t x, int16_t y, uint8_t width, const char *text, uint8_t flags = 0, uint8_t paddingH = 0, uint8_t paddingV = 0 );
+
+    // set draw color ( 0=black, 1=white, 2=XOR )
+    void setDrawColor( uint8_t color );
+
+    // draw a circle
+    void drawCircle( uint8_t screen, int16_t x, int16_t y, int16_t r, FtSwarmOledFill_t fill = FTSWARM_OLED_NOFILL );
+
+    // draw an ellipse
+    void drawEllipse( uint8_t screen, int16_t x, int16_t y, int16_t rx, int16_t ry, FtSwarmOledFill_t fill = FTSWARM_OLED_NOFILL );
     
-    void drawPixel(int16_t x, int16_t y, bool white=true);  
-    void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool white=true);
-    void drawRect(int16_t x, int16_t y, int16_t w, int16_t h, bool fill=false, bool white=true);
-    void drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, bool fill=false, bool white=true);
-    void drawCircle(int16_t x0, int16_t y0, int16_t r, bool fill=false, bool white=true);
-    void drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool fill, bool white=true);
-    void drawChar(int16_t x, int16_t y, unsigned char c, bool color=true, bool bg=false, uint8_t size_x=1, uint8_t size_y=1);
-
-    // print a text str
-    void write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align = FTSWARM_ALIGNCENTER, bool fill = true, bool invert = false );
-
-    // print a text str
-    void write( const char *str );
-   
-    void setCursor(int16_t x, int16_t y);
-    void getCursor(int16_t *x, int16_t *y);
-
-    void setTextColor(bool c, bool bg=false);
-    void setTextWrap(bool w);
-
-    void setRotation(uint8_t r);
-    uint8_t getRotation(void);
-
-    // set Font Size
-    void setTextSize(uint8_t sx, uint8_t sy=1);
-
-    // get Font Size
-    void getTextSize( uint8_t *sx, uint8_t *sy );
+    // draw line
+    void drawLine( uint8_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1 );
     
-    void getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h);
+    // draw pixel
+    void drawPixel( uint8_t screen, int16_t x, int16_t y );
+
+    // draw a rectangular
+    void drawRect( uint8_t screen, int16_t x, int16_t y, int16_t w, int16_t h, FtSwarmOledFill_t fill = FTSWARM_OLED_NOFILL );
+
+    // draw a round rectangular
+    void drawRoundRect( uint8_t screen, int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, FtSwarmOledFill_t fill = FTSWARM_OLED_NOFILL );
+
+    // draw a string
+    void drawStr( uint8_t screen, int16_t x, int16_t y, const char *text, FtSwarmAlign_t align = FTSWARM_ALIGNLEFT );
+
+    // draw a string in an rectangular
+    void drawStrRect( uint8_t screen, int16_t x, int16_t y, int16_t w, const char *text, FtSwarmAlign_t align = FTSWARM_ALIGNLEFT, uint8_t paddingH = 0, uint8_t paddingV = 0 );
+
+    // draw a triangle
+    void drawTriangle( uint8_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, FtSwarmOledFill_t fill = FTSWARM_OLED_NOFILL );
+
 };
 
 class FtSwarmCAM : public FtSwarmIO {

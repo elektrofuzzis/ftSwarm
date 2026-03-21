@@ -155,157 +155,113 @@ SwOSOLED::SwOSOLED(const char *name, SwOSCtrl *ctrl, uint8_t flags ) : SwOSIO( n
  
 void SwOSOLED::setupLocal() {
  
-  // startup hardware
-  if (!oled) oled = new OLED( );
-  // if (!oledMenu) oledMenu = new OLEDMenu( ctrl );
+  oled.begin();
 
 }
 
-
-void SwOSOLED::invertDisplay(bool i) {
- 
-  if (oled) oled->invertDisplay( i );
-
-}
- 
-void SwOSOLED::fillScreen(bool white) {
-
-  if (oled) oled->fillScreen( white );
-
-} 
- 
-void SwOSOLED::dim(bool dim) {
-
-  if (oled) oled->dim( dim );
-   
-}
- 
-void SwOSOLED::setContrast(uint8_t contrast) {
- 
-  if (oled) oled->setContrast( contrast );
-   
-}
- 
-void SwOSOLED::drawPixel(int16_t x, int16_t y, bool white ) {
-
-  if (oled) oled->drawPixel( x, y, white );
+void SwOSOLED::dim(bool dim) { 
+  
+  oled.dim( dim ); 
 
 }
- 
-void SwOSOLED::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool white) {
-   
-  if (oled) oled->drawLine( x0, y0, x1, y1, white );
 
-} 
- 
-void SwOSOLED::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, bool fill, bool white) {
- 
-  if (oled) oled->drawRect( x, y, w, h, fill, white );
-   
-}
- 
-void SwOSOLED::drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, bool fill, bool white) {
-   
-  if (oled) oled->drawRoundRect( x0, y0, w, h, radius, fill, white );
-   
-} 
- 
- 
-void SwOSOLED::drawCircle(int16_t x0, int16_t y0, int16_t r, bool fill, bool white) {
+void SwOSOLED::cls( void ) { 
+  
+  oled.cls();
 
-  if (oled) oled->drawCircle( x0, y0, r, fill, white );
-   
-} 
- 
-void SwOSOLED::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool fill, bool white) {
-   
-  if (oled) oled->drawTriangle( x0, y0, x1, y1, x2, y2, fill, white );
- 
-} 
- 
-void SwOSOLED::setCursor(int16_t x, int16_t y) {
+};
 
-  if (oled) oled->setCursor( x, y );
-   
-}
- 
-void SwOSOLED::getCursor(int16_t *x, int16_t *y) {
-   
-  if (oled) oled->getCursor( x, y );
-   
-}
- 
-void SwOSOLED::setTextColor(bool c, bool bg) {
-   
-  if (oled) oled->setTextColor( c, bg );
+void SwOSOLED::cls( uint8_t screen ) {
+
+  oled.cls( screen );
 
 }
- 
-void SwOSOLED::setTextWrap(bool w) {
-   
-  if (oled) oled->setTextWrap(w);
+
+int16_t SwOSOLED::getScreenWidth(void) {
+
+  return oled.getScreenWidth();
 
 }
- 
-void SwOSOLED::setRotation(uint8_t r) {
-   
-  if (oled) oled->setRotation(r);
-   
-}
- 
-uint8_t SwOSOLED::getRotation(void)  {
 
-  if (oled) return oled->getRotation();
-  return 0;
-   
-}
- 
-void SwOSOLED::setTextSize(uint8_t sx, uint8_t sy) {
-   
-  if (oled) oled->setTextSize( sx, sy );
-   
-} 
- 
-void SwOSOLED::getTextSize( uint8_t *sx, uint8_t *sy ) {
+int16_t SwOSOLED:: getScreenHeight( uint8_t screen ) {
 
-  if (oled) oled->getTextSize( sx, sy );
+  return oled.getScreenHeight();
 
 }
- 
-void SwOSOLED::drawChar(int16_t x, int16_t y, unsigned char c, bool color, bool bg, uint8_t size_x, uint8_t size_y) {
-   
-  if (oled) oled->drawChar( x, y,c, color, bg, size_x, size_y );
- 
-} 
- 
-void SwOSOLED::write( const char *str ) {
 
-  if (oled) oled->write( str );
-   
-}
- 
-void SwOSOLED::write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align, bool fill, bool invert ) { 
+int16_t SwOSOLED::getTextWidth( const char *text ) { 
+  
+  return oled.getTextWidth( text );
 
-  if (oled) oled->write( str, x, y, align, fill, invert );
-   
 }
- 
-void SwOSOLED::getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h) {
- 
-  if (oled) oled->getTextBounds( string, x, y, x1, y1, w, h );
-   
-} 
- 
-int16_t SwOSOLED::getWidth(void)  {
 
-  if (oled) return oled->getWidth();
-  return 0;
-   
+int16_t SwOSOLED::getTextHeight( void ) { 
+
+  return oled.getTextHeight();
+
 }
- 
-int16_t SwOSOLED::getHeight(void) {
- 
-  if (oled) return oled->getHeight();
-  return 0;
-   
+
+void SwOSOLED::drawButton( uint8_t screen, int16_t x, int16_t y, uint8_t width, const char *text, uint8_t flags, uint8_t paddingH, uint8_t paddingV ) {
+
+  oled.drawButton( screen, x, y, width, text, flags, paddingH, paddingV );
+
+}
+
+void SwOSOLED::setDrawColor( uint8_t color ) {
+
+  oled.setDrawColor( color );
+
+}
+
+void SwOSOLED::drawCircle( uint8_t screen, int16_t x, int16_t y, int16_t r, FtSwarmOledFill_t fill ) {
+
+  oled.drawCircle( screen, x, y, r, fill );
+
+}
+
+void SwOSOLED::drawEllipse( uint8_t screen, int16_t x, int16_t y, int16_t rx, int16_t ry, FtSwarmOledFill_t fill ) {
+
+  oled.drawEllipse( screen, x, y, rx, ry, fill );
+
+}
+
+void SwOSOLED::drawLine( uint8_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1 ) {
+
+  oled.drawLine( screen, x0, y0, x1, y1 );
+
+}
+    
+void SwOSOLED::drawPixel( uint8_t screen, int16_t x, int16_t y ) {
+
+  oled.drawPixel( screen, x, y );
+
+}
+
+void SwOSOLED::drawRect( uint8_t screen, int16_t x, int16_t y, int16_t w, int16_t h, FtSwarmOledFill_t fill ) {
+
+  oled.drawRect( screen, x, y, w, h, fill );
+
+}
+
+void SwOSOLED::drawRoundRect( uint8_t screen, int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, FtSwarmOledFill_t fill ) {
+
+  oled.drawRoundRect( screen, x, y, w, h, r, fill );
+
+}
+
+void SwOSOLED::drawStr( uint8_t screen, int16_t x, int16_t y, const char *text, FtSwarmAlign_t align ) {
+
+  oled.drawStr( screen, x, y, text, align );
+
+}
+
+void SwOSOLED::drawStrRect( uint8_t screen, int16_t x, int16_t y, int16_t w, const char *text, FtSwarmAlign_t align, uint8_t paddingH, uint8_t paddingV ) {
+
+  oled.drawStrRect( screen, x, y, w, text, align, paddingH, paddingV );
+}
+
+void SwOSOLED::drawTriangle( uint8_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, FtSwarmOledFill_t fill ) {
+
+  oled.drawTriangle( screen, x0, y0, x1, y1, x2, y2, fill );
+
 }

@@ -469,7 +469,7 @@ void SwOSSwarm::testFactoryReset( void ) {
   #endif
 
   #if FTSWARM_HAL_OLEDS > 0
-    screenManager.activate( new SwOSScreenFactoryReset( screenManager.active, NULL ) );
+    screenManager.activate( new FtSwarmScreenFactoryReset( screenManager.active, NULL ) );
   #endif
   
 }

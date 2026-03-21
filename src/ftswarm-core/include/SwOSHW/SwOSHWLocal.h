@@ -13,8 +13,7 @@
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 
 #if FTSWARM_HAL_OLEDS > 0
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <U8g2lib.h>
 #endif
 
 /**************************************************
@@ -55,17 +54,17 @@ extern HC165 *hc165;
  *
  ***************************************************/
 
-#define YELLOWPIXELS 16
+#define MAXOLEDSCREENS 3
 
-class OLED {
+class OLED : protected U8G2_SSD1306_128X64_NONAME_F_HW_I2C {
 
   protected:
 
-    #if FTSWARM_HAL_OLEDS > 0 
-    Adafruit_SSD1306 display = Adafruit_SSD1306 (128, 64, &Wire, -1);
-    #endif
+    bool initialized  = false;
 
     bool displayDirty = false;
+
+    uint8_t drawColor = 1;
     
     uint8_t textSizeX = 0;
     uint8_t textSizeY = 0;
@@ -73,59 +72,86 @@ class OLED {
     bool textWrap   = true;
     bool color      = true;
     bool background = false;
-    
+
+    int16_t screenHeight[MAXOLEDSCREENS] = { 16, 48,  0 };
+    int16_t screenOffset[MAXOLEDSCREENS] = {  0, 16, 64 };
+    int16_t screenScroll[MAXOLEDSCREENS] = {  0,  0,  0 };
+
+    int16_t translateY( uint8_t screen, int16_t y );
+    bool setFill( FtSwarmOledFill_t fill );
+    void resetDrawColor( void ) { setDrawColor( drawColor ); };
+
   public:
 
-    OLED( void );
+    // constructor
+    OLED( ) : U8G2_SSD1306_128X64_NONAME_F_HW_I2C(U8G2_R0, U8X8_PIN_NONE) { };
 
-    void flush( void );
+    // begin - initializes HW. Must be called before anything else
+    void begin( void );
 
-    void invertDisplay(bool i);
-    void fillScreen( bool white);    
+    // to be called once to run the display task
+    void displayTask( void );
+
+    // dim - reduce display brightness
     void dim(bool dim);
-    void setContrast(uint8_t contrast = 0x8F );
-    int16_t getWidth(void);
-    int16_t getHeight(void);
-    void clearDisplay( bool fullscreen = false );
-    void cp437( bool x );
+
+    // activat/deactivate button screen - change sizes of MAIN and BUTTON screens
+    void buttonScreen( bool activate );
+
+    // clear display
+    void cls( void ) { U8G2_SSD1306_128X64_NONAME_F_HW_I2C::clearBuffer(); displayDirty = true; };
+
+    // clear screen
+    void cls( uint8_t screen );
+
+    // get display width
+    int16_t getScreenWidth(void);
+
+    // get screen height
+    int16_t getScreenHeight( uint8_t screen = FTSWARM_OLED_MAINSCREEN );
+
+    // get text width
+    int16_t getTextWidth( const char *text ) { return U8G2_SSD1306_128X64_NONAME_F_HW_I2C::getStrWidth( text ); };
+
+    // set get height
+    int16_t getTextHeight( void ) { return U8G2_SSD1306_128X64_NONAME_F_HW_I2C::getMaxCharHeight(); };
+
+    // draw button
+    void drawButton( uint8_t screen, int16_t x, int16_t y, uint8_t width, const char *text, uint8_t flags = 0, uint8_t paddingH = 0, uint8_t paddingV = 0 );
+
+    // set draw color ( 0=black, 1=white, 2=XOR )
+    void setDrawColor( uint8_t color );
+
+    // draw a circle
+    void drawCircle( uint8_t screen, int16_t x, int16_t y, int16_t r, FtSwarmOledFill_t fill = FTSWARM_OLED_NOFILL );
+
+    // draw an ellipse
+    void drawEllipse( uint8_t screen, int16_t x, int16_t y, int16_t rx, int16_t ry, FtSwarmOledFill_t fill = FTSWARM_OLED_NOFILL );
     
-    void drawPixel(int16_t x, int16_t y, bool white);  
-    void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool white);
-    void drawRect(int16_t x, int16_t y, int16_t w, int16_t h, bool fill, bool white);
-    void drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, bool fill, bool white);
-    void drawCircle(int16_t x0, int16_t y0, int16_t r, bool fill, bool white);
-    void drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool fill, bool white);
-    void drawChar(int16_t x, int16_t y, unsigned char c, bool color, bool bg, uint8_t size_x, uint8_t size_y);
-
-    // write some text
-    void write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align, bool fill, bool invert );
-
-    // write text in a rectangle, cuts the text to need one line only
-    void writeRectangle( const char *str, int16_t x, int16_t y, int16_t width, int16_t height, FtSwarmAlign_t align, bool fill, bool invert );
-
-    // write some text at thcursor
-    void write( const char *str );
-   
-    void setCursor(int16_t x, int16_t y);
-    void getCursor(int16_t *x, int16_t *y);
-
-    void setTextColor( bool c,  bool bg);
-    void setTextWrap(bool w);
-    bool getTextWrap( void );
-
-    void setRotation(uint8_t r);
-    uint8_t getRotation(void);
-
-    void setTextSize(uint8_t sx, uint8_t sy);
-    void getTextSize( uint8_t *sx, uint8_t *sy );
-    uint8_t getTextHeight( void );
-    uint8_t getTextWidth( void );
+    // draw line
+    void drawLine( uint8_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1 );
     
-    void getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h);
+    // draw pixel
+    void drawPixel( uint8_t screen, int16_t x, int16_t y );
+
+    // draw a rectangular
+    void drawRect( uint8_t screen, int16_t x, int16_t y, int16_t w, int16_t h, FtSwarmOledFill_t fill = FTSWARM_OLED_NOFILL );
+
+    // draw a round rectangular
+    void drawRoundRect( uint8_t screen, int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, FtSwarmOledFill_t fill = FTSWARM_OLED_NOFILL );
+
+    // draw a string
+    void drawStr( uint8_t screen, int16_t x, int16_t y, const char *text, FtSwarmAlign_t align = FTSWARM_ALIGNLEFT );
+
+    // draw a string in an rectangular
+    void drawStrRect( uint8_t screen, int16_t x, int16_t y, int16_t w, const char *text, FtSwarmAlign_t align = FTSWARM_ALIGNLEFT, uint8_t paddingH = 0, uint8_t paddingV = 0, FtSwarmOledFill_t fill = FTSWARM_OLED_FILLBLACK );
+
+    // draw a triangle
+    void drawTriangle( uint8_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, FtSwarmOledFill_t fill = FTSWARM_OLED_NOFILL );
     
 };
 
-extern OLED *oled;
+extern OLED oled;
 
 /***************************************************
  *

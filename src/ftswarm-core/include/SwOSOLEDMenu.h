@@ -21,35 +21,36 @@ typedef enum { FTSWARM_SCREENEVENT_NONE = -1, FTSWARM_SCREENEVENT_DOWN, FTSWARM_
 
 /***************************************************
  *
- * SwOSScreenObj - Any element on a screen
+ * FtSwarmScreenObj - Any element on a screen
  *
  ***************************************************/
 
-class SwOSScreen;
+class FtSwarmScreen;
 
-class SwOSScreenObj {
+class FtSwarmScreenObj {
 
   protected:
     uint8_t        id;
     SwOSIO         *io     = NULL;
-    SwOSScreen     *parent = NULL;
+    FtSwarmScreen  *parent = NULL;
     int32_t        value   = FTSWARM_NANI32;
     char           *label  = NULL;
+    uint8_t        screen;
     FtSwarmAlign_t align;
     int16_t        x, y;
     FtSwarmScreenEvent_t lastEvent = FTSWARM_SCREENEVENT_NONE;
     
   public:
-    SwOSScreenObj  *next   = NULL;
+    FtSwarmScreenObj  *next   = NULL;
 
     // Constructor
-    SwOSScreenObj( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, int16_t x, int16_t y, FtSwarmAlign_t align );
+    FtSwarmScreenObj( uint8_t id, SwOSIO *io, FtSwarmScreen *parent, const char *label, uint8_t screen, int16_t x, int16_t y, FtSwarmAlign_t align );
 
     // Destructor
-    ~SwOSScreenObj();
+    ~FtSwarmScreenObj();
 
     // add an object to my list
-    virtual void add( SwOSScreenObj *newObject);
+    virtual void add( FtSwarmScreenObj *newObject);
 
     // activate myself, if my screen is getting active
     virtual void activate( void );
@@ -91,25 +92,25 @@ class SwOSScreenObj {
 
 /***************************************************
  *
- * SwOSScreenObjList
+ * FtSwarmScreenObjList
  *
  ***************************************************/
 
-class SwOSScreenObjList {
+class FtSwarmScreenObjList {
 
   protected:
-    SwOSScreenObj *list = NULL;
+    FtSwarmScreenObj *list = NULL;
 
   public:
 
     // destructor
-    ~SwOSScreenObjList() { cleanup(); };
+    ~FtSwarmScreenObjList() { cleanup(); };
 
     // delete list
     void cleanup( void ) { if (list) delete list; list = NULL; };
   
     // add an object
-    void add( SwOSScreenObj *newObject );
+    void add( FtSwarmScreenObj *newObject );
 
     // activate all elements, my screen is getting active
     void activate( void );
@@ -124,7 +125,7 @@ class SwOSScreenObjList {
     int16_t getNextY( void );
 
     // get prev element
-    SwOSScreenObj *prev( SwOSScreenObj *obj );
+    FtSwarmScreenObj *prev( FtSwarmScreenObj *obj );
 
     // debugging
     void print( void ) { if (list) list->print(); };
@@ -133,11 +134,11 @@ class SwOSScreenObjList {
 
 /***************************************************
  *
- * SwOSScreenSelectable - label + text
+ * FtSwarmScreenSelectable - label + text
  *
  ***************************************************/
 
-class SwOSScreenSelectable : public SwOSScreenObj {
+class FtSwarmScreenSelectable : public FtSwarmScreenObj {
 
   protected:
     int16_t widthLabel;
@@ -148,10 +149,10 @@ class SwOSScreenSelectable : public SwOSScreenObj {
   public:
 
     // Constructor
-    SwOSScreenSelectable( uint8_t id, SwOSScreen *parent, const char *label, const char *text, int16_t x, int16_t y, int16_t widthLabel, int16_t widthText );
+    FtSwarmScreenSelectable( uint8_t id, FtSwarmScreen *parent, const char *label, const char *text, int16_t x, int16_t y, int16_t widthLabel, int16_t widthText );
 
     // create a text entry at  the next possible position
-    SwOSScreenSelectable( uint8_t id, SwOSScreen *parent, const char *text );
+    FtSwarmScreenSelectable( uint8_t id, FtSwarmScreen *parent, const char *text );
     
     // change text
     virtual void setText( const char *text, bool autoDraw = true );
@@ -184,16 +185,16 @@ class SwOSScreenSelectable : public SwOSScreenObj {
 
 /***************************************************
  *
- * SwOSScreenButton - button class
+ * FtSwarmScreenButton - button class
  *
  ***************************************************/
 
-class SwOSScreenButton : public SwOSScreenObj {
+class FtSwarmScreenButton : public FtSwarmScreenObj {
 
   public:
 
     // Constructor
-    SwOSScreenButton( uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, int16_t x, int16_t y, FtSwarmAlign_t align ) : SwOSScreenObj( id, io, parent, label, x, y, align ) {};
+    FtSwarmScreenButton( uint8_t id, SwOSIO *io, FtSwarmScreen *parent, const char *label, uint8_t screen, int16_t x, int16_t y, FtSwarmAlign_t align ) : FtSwarmScreenObj( id, io, parent, label, screen, x, y, align ) {};
 
     // draw myself
     virtual void draw( void );    
@@ -202,72 +203,71 @@ class SwOSScreenButton : public SwOSScreenObj {
 
  /***************************************************
  *
- * SwOSScreenXX - local Buttons
+ * FtSwarmScreenXX - local Buttons
  *
  ***************************************************/
 
 #define OLEDLOWERLINE 38
-#define OLEDWIDTH     128
 
-class SwOSScreenS1 : public SwOSScreenButton {
+class FtSwarmScreenS1 : public FtSwarmScreenButton {
   public:
-    SwOSScreenS1( SwOSScreen *parent, const char *label );
+    FtSwarmScreenS1( FtSwarmScreen *parent, const char *label );
 };
 
-class SwOSScreenS2 : public SwOSScreenButton {
+class FtSwarmScreenS2 : public FtSwarmScreenButton {
   public:
-    SwOSScreenS2( SwOSScreen *parent, const char *label );
+    FtSwarmScreenS2( FtSwarmScreen *parent, const char *label );
 };
 
-class SwOSScreenS3 : public SwOSScreenButton {
+class FtSwarmScreenS3 : public FtSwarmScreenButton {
   public:
-    SwOSScreenS3( SwOSScreen *parent, const char *label );
+    FtSwarmScreenS3( FtSwarmScreen *parent, const char *label );
 };
 
-class SwOSScreenS4 : public SwOSScreenButton {
+class FtSwarmScreenS4 : public FtSwarmScreenButton {
   public:
-    SwOSScreenS4( SwOSScreen *parent, const char *label );
+    FtSwarmScreenS4( FtSwarmScreen *parent, const char *label );
 };
 
-class SwOSScreenF1 : public SwOSScreenButton {
+class FtSwarmScreenF1 : public FtSwarmScreenButton {
   public:
-    SwOSScreenF1( SwOSScreen *parent, const char *label );
+    FtSwarmScreenF1( FtSwarmScreen *parent, const char *label );
 };
 
-class SwOSScreenF2 : public SwOSScreenButton {
+class FtSwarmScreenF2 : public FtSwarmScreenButton {
   public:
-    SwOSScreenF2( SwOSScreen *parent, const char *label );
+    FtSwarmScreenF2( FtSwarmScreen *parent, const char *label );
 };
 
-class SwOSScreenJ1 : public SwOSScreenButton {
+class FtSwarmScreenJ1 : public FtSwarmScreenButton {
   public:
-    SwOSScreenJ1( SwOSScreen *parent, const char *label );
+    FtSwarmScreenJ1( FtSwarmScreen *parent, const char *label );
 };
 
-class SwOSScreenJ2 : public SwOSScreenButton {
+class FtSwarmScreenJ2 : public FtSwarmScreenButton {
   public:
-    SwOSScreenJ2( SwOSScreen *parent, const char *label );
+    FtSwarmScreenJ2( FtSwarmScreen *parent, const char *label );
 };
 
-class SwOSScreenESC : public SwOSScreenF2 {
+class FtSwarmScreenESC : public FtSwarmScreenF2 {
   public:
-    SwOSScreenESC( SwOSScreen *parent ) : SwOSScreenF2( parent, "^" ) {};
+    FtSwarmScreenESC( FtSwarmScreen *parent ) : FtSwarmScreenF2( parent, "^" ) {};
 };
 
 /***************************************************
  *
- * SwOSScreenJoystickPoti - Helper class
+ * FtSwarmScreenJoystickPoti - Helper class
  *
  ***************************************************/
 
-class SwOSScreenJoystickPoti : public SwOSScreenObj {
+class FtSwarmScreenJoystickPoti : public FtSwarmScreenObj {
 
   protected:
     int32_t maxValue = FTSWARM_NANI32;
 
   public:
 
-    SwOSScreenJoystickPoti(uint8_t id, SwOSIO *io, SwOSScreen *parent, const char *label, int16_t x, int16_t y, FtSwarmAlign_t align );
+    FtSwarmScreenJoystickPoti(uint8_t id, SwOSIO *io, FtSwarmScreen *parent, const char *label, int16_t x, int16_t y, FtSwarmAlign_t align );
 
     // io sends new value, return true if it's processed by the screen
     virtual void setValue( int32_t value );
@@ -276,26 +276,26 @@ class SwOSScreenJoystickPoti : public SwOSScreenObj {
 
 /***************************************************
  *
- * SwOSScreen - Base class for all screens
+ * FtSwarmScreen - Base class for all screens
  *
  ***************************************************/
 
-class SwOSScreen {
+class FtSwarmScreen {
 
   protected:
 
-    SwOSScreen *parent  = NULL;
-    char       *title   = NULL;
-    bool       blockEvents = true;
-    bool       navigation  = false;
+    FtSwarmScreen *parent     = NULL;
+    char          *title      = NULL;
+    bool          blockEvents = true;
+    bool          navigation  = false;
 
-    SwOSScreen *prev = NULL;
-    SwOSScreen *next = NULL;
+    FtSwarmScreen *prev = NULL;
+    FtSwarmScreen *next = NULL;
 
-    SwOSScreenObjList objects;
-    SwOSScreenObjList selectables;
+    FtSwarmScreenObjList objects;
+    FtSwarmScreenObjList selectables;
 
-    SwOSScreenSelectable *selected = NULL;
+    FtSwarmScreenSelectable *selected = NULL;
 
     void addNavigation( void );
     uint8_t countPrev( void );
@@ -308,13 +308,13 @@ class SwOSScreen {
     bool     toBeDestroyed = false;
 
     // constructor
-    SwOSScreen( SwOSScreen *parent, const char *title, SwOSScreen *next = NULL );
+    FtSwarmScreen( FtSwarmScreen *parent, const char *title, FtSwarmScreen *next = NULL );
 
     // destructor
-    ~SwOSScreen();
+    ~FtSwarmScreen();
 
     // add a screen object
-    virtual void add( SwOSScreenObj *newObject );
+    virtual void add( FtSwarmScreenObj *newObject );
 
     // cls and draw all elements
     virtual void draw( void ); 
@@ -344,13 +344,13 @@ class SwOSScreen {
 
 /***************************************************
  *
- * SwOSScreenInput
+ * FtSwarmScreenInput
  *
  ***************************************************/
 
 #define KEYMAPS 4
 
-class SwOSScreenInput : public SwOSScreen {
+class FtSwarmScreenInput : public FtSwarmScreen {
 
   protected:
 
@@ -359,7 +359,7 @@ class SwOSScreenInput : public SwOSScreen {
     char    *input    = NULL;
     uint8_t maxLength = 0;
 
-    SwOSScreenS1 *S1 = NULL;
+    FtSwarmScreenS1 *S1 = NULL;
     
     const char keyboardMap[KEYMAPS][30] = { R"(abcdefghijklmnopqrstuvwxyz@ )",
                                             R"(ABCDEFGHIJKLMNOPQRSTUVWXYZ_ )",
@@ -379,7 +379,7 @@ class SwOSScreenInput : public SwOSScreen {
     uint8_t cursorR[5] = { 0, 0, 0, 0, 0 };
     uint8_t cursorC[5] = { 0, 0, 0, 0, 0 };
 
-    void init( SwOSScreen *parent, uint8_t id, const char *title, const char *param, uint8_t maxLength );
+    void init( FtSwarmScreen *parent, uint8_t id, const char *title, const char *param, uint8_t maxLength );
     uint8_t keymapIndex( void ) { return cursorR[keyboard]*cols[keyboard] + cursorC[keyboard]; };
     void setKeyboard( uint8_t keyboard );
     void drawCursor( bool invert );
@@ -388,13 +388,13 @@ class SwOSScreenInput : public SwOSScreen {
   public:
    
     // Constructor to enter strings
-    SwOSScreenInput( SwOSScreen *parent, uint8_t id, const char *title, const char *param, uint8_t maxLength );
+    FtSwarmScreenInput( FtSwarmScreen *parent, uint8_t id, const char *title, const char *param, uint8_t maxLength );
 
     // constructor to enter numbers
-    SwOSScreenInput( SwOSScreen *parent, uint8_t id, const char *title, const int32_t param, uint8_t maxLength );
+    FtSwarmScreenInput( FtSwarmScreen *parent, uint8_t id, const char *title, const int32_t param, uint8_t maxLength );
 
     // Destructor
-    ~SwOSScreenInput( );
+    ~FtSwarmScreenInput( );
 
     // cls and draw all elements
     virtual void draw( void );
@@ -406,11 +406,11 @@ class SwOSScreenInput : public SwOSScreen {
 
 /***************************************************
  *
- * SwOSScreenChooseOption
+ * FtSwarmScreenChooseOption
  *
  ***************************************************/
 
- class SwOSScreenChooseOption : public SwOSScreen {
+ class FtSwarmScreenChooseOption : public FtSwarmScreen {
 
   protected:
     uint8_t id;
@@ -421,14 +421,14 @@ class SwOSScreenInput : public SwOSScreen {
   public:
 
     // constructor
-    SwOSScreenChooseOption( SwOSScreen *parent, uint8_t id, const char *title, const char *text, 
-                            int32_t value1,   const char *option1, 
-                            int32_t value2=0, const char *option2=NULL, 
-                            int32_t value3=0, const char *option3=NULL, 
-                            int32_t value4=0, const char *option4=NULL );
+    FtSwarmScreenChooseOption( FtSwarmScreen *parent, uint8_t id, const char *title, const char *text, 
+                               int32_t value1,   const char *option1, 
+                               int32_t value2=0, const char *option2=NULL, 
+                               int32_t value3=0, const char *option3=NULL, 
+                               int32_t value4=0, const char *option4=NULL );
 
     // destructor
-    ~SwOSScreenChooseOption();
+    ~FtSwarmScreenChooseOption();
 
     // cls and draw all elements
     virtual void draw( void );
@@ -440,46 +440,46 @@ class SwOSScreenInput : public SwOSScreen {
 
 /***************************************************
  *
- * SwOSScreenYesNo
+ * FtSwarmScreenYesNo
  *
  ***************************************************/
 
-class SwOSScreenYesNo : public SwOSScreenChooseOption {
+class FtSwarmScreenYesNo : public FtSwarmScreenChooseOption {
 
   public: 
-    SwOSScreenYesNo( SwOSScreen *parent, uint8_t id, const char *title, const char *text, int32_t yes = 1 ) : SwOSScreenChooseOption( parent, id, title, text, 0, NULL, yes, "YES", 0, "NO" ) {};
+    FtSwarmScreenYesNo( FtSwarmScreen *parent, uint8_t id, const char *title, const char *text, int32_t yes = 1 ) : FtSwarmScreenChooseOption( parent, id, title, text, 0, NULL, yes, "YES", 0, "NO" ) {};
 
 };
 
 
 /***************************************************
  *
- * SwOSScreenError
+ * FtSwarmScreenError
  *
  ***************************************************/
 
-class SwOSScreenError : public SwOSScreenChooseOption {
+class FtSwarmScreenError : public FtSwarmScreenChooseOption {
 
   public: 
-    SwOSScreenError( SwOSScreen *parent, const char *text ) : SwOSScreenChooseOption( parent, 0, "Error", text, 0, NULL, 0, NULL, 0, NULL, 1, "OK" ) {};
+    FtSwarmScreenError( FtSwarmScreen *parent, const char *text ) : FtSwarmScreenChooseOption( parent, 0, "Error", text, 0, NULL, 0, NULL, 0, NULL, 1, "OK" ) {};
 
 };
 
 
 /***************************************************
  *
- * SwOSScreenChooseConfig - asks about the config S1..S4
+ * FtSwarmScreenChooseConfig - asks about the config S1..S4
  *
  ***************************************************/
 
- class SwOSScreenChooseConfig : public SwOSScreen {
+ class FtSwarmScreenChooseConfig : public FtSwarmScreen {
 
   protected:
     
   public:
 
     // constructor
-    SwOSScreenChooseConfig( SwOSScreen *parent, SwOSScreen *next  );
+    FtSwarmScreenChooseConfig( FtSwarmScreen *parent, FtSwarmScreen *next  );
 
     // cls and draw all elements
     virtual void draw( void );
@@ -491,26 +491,62 @@ class SwOSScreenError : public SwOSScreenChooseOption {
 
 /***************************************************
  *
- *   SwOSScreenWifi
+ *   FtSwarmScreenSelectList
  *
  ***************************************************/
 
-class SwOSScreenWifi : public SwOSScreen {
+ class FtSwarmScreenSelectList : public FtSwarmScreen {
 
   protected:
 
-    SwOSScreenSelectable *wifiModeSO = NULL;
-    SwOSScreenSelectable *wifiSSIDSO = NULL;
-    SwOSScreenSelectable *wifiPwdSO  = NULL;
+    uint8_t callbackID;
+
+    void process() {};
+
+    template<typename... Tail>
+    void process(uint8_t id, const char* str, Tail... tail);
+
+  public:
+
+    // Constructor - parent gets a callback: eventHandler( FTSWARM_SCREENEVENT_OK, callbackID, selected object's ID )
+    // example: new FtSwarmScreenSelectList( this, "Number", NULL, SELECTMYNUMBER_CB, 42, "fourty-two", 17, "seventeen" )
+    // template<typename... Args>
+    // FtSwarmScreenSelectList( FtSwarmScreen *parent, char *title, FtSwarmScreen *next, uint8_t callbackID, Args... args);
+
+    // Constructor - parent gets a callback: eventHandler( FTSWARM_SCREENEVENT_OK, callbackID, selected object's ID )
+    // example: new FtSwarmScreenSelectList( this, "Number", NULL, SELECTMYNUMBER_CB, 42, "fourty-two", 17, "seventeen" )
+    template<typename... Args>
+    FtSwarmScreenSelectList( FtSwarmScreen *parent, const char *title, uint8_t callbackID, Args... args);
+
+    // eval external events like pressing buttons
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
+ };
+
+
+/*--------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/***************************************************
+ *
+ *   FtSwarmScreenWifi
+ *
+ ***************************************************/
+
+class FtSwarmScreenWifi : public FtSwarmScreen {
+
+  protected:
+
+    FtSwarmScreenSelectable *wifiModeSO = NULL;
+    FtSwarmScreenSelectable *wifiSSIDSO = NULL;
+    FtSwarmScreenSelectable *wifiPwdSO  = NULL;
     bool anythingChanged = false;
-    SwOSScreenS4 *S4 = NULL;;
+    FtSwarmScreenS4 *S4 = NULL;;
 
     char wifiPwd[64];
     char wifiSSID[64];
     FtSwarmWifi_t wifiMode;
 
   public:
-    SwOSScreenWifi( SwOSScreen *parent, SwOSScreen *next  );
+    FtSwarmScreenWifi( FtSwarmScreen *parent, FtSwarmScreen *next  );
 
   // eval external events like pressing buttons
   virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
@@ -519,11 +555,11 @@ class SwOSScreenWifi : public SwOSScreen {
 
 /***************************************************
  *
- *   SwOSScreenWifiSSID
+ *   FtSwarmScreenWifiSSID
  *
  ***************************************************/
 
-class SwOSScreenWifiSSID : public SwOSScreen {
+class FtSwarmScreenWifiSSID : public FtSwarmScreen {
 
   protected:
 
@@ -533,10 +569,10 @@ class SwOSScreenWifiSSID : public SwOSScreen {
   public:
 
     // constructor
-    SwOSScreenWifiSSID( SwOSScreen *parent, uint8_t id );
+    FtSwarmScreenWifiSSID( FtSwarmScreen *parent, uint8_t id );
 
     // destructor
-    ~SwOSScreenWifiSSID();
+    ~FtSwarmScreenWifiSSID();
 
     // cls and draw all elements
     virtual void draw( void );
@@ -551,11 +587,11 @@ class SwOSScreenWifiSSID : public SwOSScreen {
 
 /***************************************************
  *
- *   SwOSScreenSwarm
+ *   FtSwarmScreenSwarm
  *
  ***************************************************/
 
-class SwOSScreenSwarm : public SwOSScreen {
+class FtSwarmScreenSwarm : public FtSwarmScreen {
 
   protected:
 
@@ -564,7 +600,7 @@ class SwOSScreenSwarm : public SwOSScreen {
   public:
 
     // Constructor
-    SwOSScreenSwarm( SwOSScreen *parent, SwOSScreen *next  );
+    FtSwarmScreenSwarm( FtSwarmScreen *parent, FtSwarmScreen *next  );
 
     // eval external events like pressing buttons
     virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL ) override;
@@ -573,11 +609,11 @@ class SwOSScreenSwarm : public SwOSScreen {
 
 /***************************************************
  *
- *   SwOSScreenSwarmDetail
+ *   FtSwarmScreenSwarmDetail
  *
  ***************************************************/
 
-class SwOSScreenSwarmDetail : public SwOSScreen {
+class FtSwarmScreenSwarmDetail : public FtSwarmScreen {
 
   protected:
     FtSwarmSerialNumber_t device;
@@ -585,7 +621,7 @@ class SwOSScreenSwarmDetail : public SwOSScreen {
   public:
 
     // Constructor
-    SwOSScreenSwarmDetail( SwOSScreen *parent, const char *title, FtSwarmSerialNumber_t device  );
+    FtSwarmScreenSwarmDetail( FtSwarmScreen *parent, const char *title, FtSwarmSerialNumber_t device  );
 
     // eval external events like pressing buttons
     virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL ) override;
@@ -594,54 +630,17 @@ class SwOSScreenSwarmDetail : public SwOSScreen {
 
 /***************************************************
  *
- *   SwOSScreenQuickCfg
- *
- ***************************************************/
-
-typedef struct {
-  SwOSIOType_t      sensorIoType;
-  uint8_t           sensorPort;
-  SwOSIOType_t      actorIoType;
-  uint8_t           actorPort;
-  FtSwarmTrigger_t  event;
-  FtSwarmOperator_t op;
-  FtSwarmOperand_t  v1;
-  FtSwarmOperand_t  v2;
-  int32_t           parameter;
-} EventCfg_t;
-
-class SwOSScreenQuickCfg : public SwOSScreen {
-
-  protected:
-
-    uint8_t function = 0;
-    FtSwarmSerialNumber_t device;
-
-    void loadCfg( FtSwarmSerialNumber_t ctrl, FtSwarmSerialNumber_t device, uint8_t configuration, EventCfg_t *cfg, uint8_t items );
-
-  public:
-
-    // Constructor
-    SwOSScreenQuickCfg( SwOSScreen *parent, FtSwarmSerialNumber_t device);
-
-    // eval external events like pressing buttons
-    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL ) override;
-
-};
-
-/***************************************************
- *
- * SwOSScreenFactoryReset 
+ * FtSwarmScreenFactoryReset 
  * Ask user to reset controller to factory setting
  *
  ***************************************************/
 
-class SwOSScreenFactoryReset : public SwOSScreen {
+class FtSwarmScreenFactoryReset : public FtSwarmScreen {
 
   public:
 
     // constructor
-    SwOSScreenFactoryReset( SwOSScreen *parent, SwOSScreen *next );
+    FtSwarmScreenFactoryReset( FtSwarmScreen *parent, FtSwarmScreen *next );
     
     // cls and draw all elements
     virtual void draw( void );
@@ -657,7 +656,7 @@ class SwOSScreenFactoryReset : public SwOSScreen {
  *
  ***************************************************/
 
-class SwOSMainScreen : public SwOSScreen {
+class SwOSMainScreen : public FtSwarmScreen {
 
   protected:
 
@@ -667,7 +666,7 @@ class SwOSMainScreen : public SwOSScreen {
   public:
 
     // Constructor
-    SwOSMainScreen( SwOSScreen *parent, const char *title );
+    SwOSMainScreen( FtSwarmScreen *parent, const char *title );
 
     // cls and draw all elements
     virtual void draw( void );
@@ -683,7 +682,7 @@ class SwOSMainScreen : public SwOSScreen {
  *
  ***************************************************/
 
-class SwOSSplashScreen : public SwOSScreen {
+class SwOSSplashScreen : public FtSwarmScreen {
 
   protected:
     unsigned long startTime;
@@ -691,7 +690,7 @@ class SwOSSplashScreen : public SwOSScreen {
   public:
 
     // constructor
-    SwOSSplashScreen( SwOSScreen *parent, const char *title );
+    SwOSSplashScreen( FtSwarmScreen *parent, const char *title );
     
     // cls and draw all elements
     virtual void draw( void );
@@ -710,14 +709,14 @@ class SwOSSplashScreen : public SwOSScreen {
  *
  ***************************************************/
 
-class SwOS404Screen : public SwOSScreen {
+class SwOS404Screen : public FtSwarmScreen {
 
   protected:
 
   public:
 
     // constructor
-    SwOS404Screen( SwOSScreen *parent ):SwOSScreen( parent, "Page not found" ) {  };
+    SwOS404Screen( FtSwarmScreen *parent ):FtSwarmScreen( parent, "Page not found" ) {  };
     
     // cls and draw all elements
     virtual void draw( void );
@@ -726,11 +725,11 @@ class SwOS404Screen : public SwOSScreen {
 
 /***************************************************
  *
- * SwOSScreenEvent
+ * FtSwarmScreenEvent
  *
  ***************************************************/
 
-struct SwOSScreenEventQueueElement_t { 
+struct FtSwarmScreenEventQueueElement_t { 
   uint32_t             USID; 
   FtSwarmScreenEvent_t event;
   uint8_t              id;
@@ -740,31 +739,31 @@ struct SwOSScreenEventQueueElement_t {
 
 /***************************************************
  *
- * SwOSScreenManager - class to handle the active screen
+ * FtSwarmScreenManager - class to handle the active screen
  *
  ***************************************************/
 
  #define MAXSCREENS 15
 
-class SwOSScreenManager {
+class FtSwarmScreenManager {
 
   protected:
-    SwOSScreen *screen[MAXSCREENS];
+    FtSwarmScreen *screen[MAXSCREENS];
 
     // get a free index in screen[]
-    uint8_t getIndex( SwOSScreen *screen );
+    uint8_t getIndex( FtSwarmScreen *screen );
 
   public:
-    SwOSScreen *active = NULL;
-    bool blockEvents   = false;
+    FtSwarmScreen *active = NULL;
+    bool blockEvents = false;
 
-    SwOSScreenManager();
+    FtSwarmScreenManager();
 
     // send an event to active screen
-    void eventHandler( SwOSScreen *screen, FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
+    void eventHandler( FtSwarmScreen *screen, FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
 
     // receive an event and forward it to the active screen
-    void eventHandler( SwOSScreenEventQueueElement_t *event );
+    void eventHandler( FtSwarmScreenEventQueueElement_t *event );
 
     // does all the stuff to replace and operate the screen
     void operate( void );
@@ -773,13 +772,13 @@ class SwOSScreenManager {
     void draw( void );
     
     // register myself in garbage collector
-    void registerMe( SwOSScreen *screen );
+    void registerMe( FtSwarmScreen *screen );
     
     // activate
-    void activate( SwOSScreen *screen );
+    void activate( FtSwarmScreen *screen );
 
 };
 
-extern SwOSScreenManager screenManager;
+extern FtSwarmScreenManager screenManager;
 
 #endif

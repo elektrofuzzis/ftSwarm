@@ -978,42 +978,27 @@ void SwOSCtrl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
   
   #if FTSWARM_HAL_OLEDS > 0
 
-  // rember old values
-  uint8_t sx, sy;
-  oled->getTextSize( &sx, &sy );
-  int16_t cx, cy;
-  oled->getCursor( &cx, &cy );
-  
-  int16_t w = oled->getWidth();
+  int16_t w = oled.getScreenWidth();
 
   // clear status bar
-  oled->drawRect( 0, -YELLOWPIXELS, w, YELLOWPIXELS, true, false );
+  oled.cls( FTSWARM_OLED_UPPERSCREEN );
 
   // status message
-  if ( ( state == RUNNING ) && (SSID) ) {
-    char _SSID[15];
-    strncpy( _SSID, SSID, 14 );
-    oled->write( _SSID, w/2, -YELLOWPIXELS, FTSWARM_ALIGNCENTER, false, false );
-  } else {
-    oled->write( (char *) OLEDMSG[state], w/2, -YELLOWPIXELS, FTSWARM_ALIGNCENTER, false, false );
-  }
+  if ( ( state == RUNNING ) && (SSID) ) oled.drawStr( FTSWARM_OLED_UPPERSCREEN, w/2, 0, SSID,           FTSWARM_ALIGNCENTER );
+  else                                  oled.drawStr( FTSWARM_OLED_UPPERSCREEN, w/2, 0, OLEDMSG[state], FTSWARM_ALIGNCENTER );
 
   // members
   if ( members > 0) {
     char m[10];
     sprintf( m, "%d", members );
-    oled->write( m, w-1, -YELLOWPIXELS, FTSWARM_ALIGNRIGHT, false, false );
+    oled.drawStr( FTSWARM_OLED_UPPERSCREEN, w-1, 0, m, FTSWARM_ALIGNRIGHT );
   }
 
   // Kelda
-  if (IAmKelda) oled->write( (char *) "K", 0, -YELLOWPIXELS, FTSWARM_ALIGNLEFT, false, false );
+  if (IAmKelda) oled.drawStr( FTSWARM_OLED_UPPERSCREEN, 0, 0, "K", FTSWARM_ALIGNLEFT );
 
   // cool line
-  oled->drawLine( 0, -5, w, -5, true );
-
-  // restore values
-  oled->setCursor( cx, cy );
-  oled->setTextSize( sx, sy );
+  oled.drawLine( FTSWARM_OLED_UPPERSCREEN, 0, 11, w, 11 );
 
   #endif
   
