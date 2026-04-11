@@ -82,8 +82,6 @@ void HC165::operate( ) {
  *
  ***************************************************/
 
-#define FTSWARM_HAL_OLEDS 1
-
 #if FTSWARM_HAL_OLEDS > 0
 
 static void displayTaskWrapper( void *parameter ) {
@@ -159,7 +157,7 @@ void OLED::dim(bool dim) {
 void OLED::buttonScreen( bool activate ) {
 
   if ( ( activate ) && ( screenHeight[ FTSWARM_OLED_BUTTONSCREEN ] == 0 ) ) {
-    screenHeight[ FTSWARM_OLED_BUTTONSCREEN ] = getTextHeight() + 2;
+    screenHeight[ FTSWARM_OLED_BUTTONSCREEN ] = getTextHeight() + 1;
     screenHeight[ FTSWARM_OLED_MAINSCREEN   ] = getDisplayHeight() - screenHeight[ FTSWARM_OLED_UPPERSCREEN ] - screenHeight[ FTSWARM_OLED_BUTTONSCREEN ] ;
     screenOffset[ FTSWARM_OLED_BUTTONSCREEN ] = screenOffset[ FTSWARM_OLED_MAINSCREEN ] +screenHeight[ FTSWARM_OLED_MAINSCREEN ];
   } 
@@ -172,9 +170,12 @@ void OLED::buttonScreen( bool activate ) {
 
 }
 
-void OLED::cls( uint8_t screen ) {
+void OLED::cls( FtSwarmOledScreen_t screen ) {
 
-  if ( screen >= MAXOLEDSCREENS ) return;
+  if ( screen == FTSWARM_OLED_MAXSCREEN ) return;
+
+  U8G2_SSD1306_128X64_NONAME_F_HW_I2C::setMaxClipWindow();
+  clipScreen = FTSWARM_OLED_MAXSCREEN;
 
   U8G2_SSD1306_128X64_NONAME_F_HW_I2C::setDrawColor(0);
   U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawBox( 0, screenOffset[screen], getWidth(), screenHeight[screen] );
@@ -188,9 +189,9 @@ int16_t OLED::getScreenWidth(void)  {
    
 }
  
-int16_t OLED::getScreenHeight( uint8_t screen ) {
+int16_t OLED::getScreenHeight( FtSwarmOledScreen_t screen ) {
  
-  if ( screen < MAXOLEDSCREENS ) return screenHeight[screen];
+  if ( screen != FTSWARM_OLED_MAXSCREEN  ) return screenHeight[screen];
   else return 0;
 
 }
@@ -203,62 +204,86 @@ void OLED::setDrawColor( uint8_t color ) {
 
 }
 
-void OLED::drawButton( uint8_t screen, int16_t x, int16_t y, uint8_t width, const char *text, uint8_t flags, uint8_t paddingH, uint8_t paddingV ) {
+void OLED::drawButton( FtSwarmOledScreen_t screen, int16_t x, int16_t y, uint8_t width, const char *text, uint8_t flags, uint8_t paddingH, uint8_t paddingV ) {
+
+  setClipping( screen );
 
   U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawButtonUTF8( x, translateY( screen, y ), flags, width, paddingH, paddingV, text );
+  
   displayDirty = true;
 
 }
 
-void OLED::drawRect( uint8_t screen, int16_t x, int16_t y, int16_t w, int16_t h, FtSwarmOledFill_t fill ) {
+void OLED::drawRect( FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t w, int16_t h, FtSwarmOledFill_t fill ) {
 
+  setClipping( screen );
+  
   if ( setFill( fill ) ) { U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawBox(   x, translateY( screen, y ), w, h ); resetDrawColor(); }
   else                     U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawFrame( x, translateY( screen, y ), w, h );
+  
   displayDirty = true;
 
 }
 
-void OLED::drawRoundRect( uint8_t screen, int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, FtSwarmOledFill_t fill ) {
+void OLED::drawRoundRect( FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, FtSwarmOledFill_t fill ) {
 
+  setClipping( screen );
+  
   if ( setFill( fill ) ) { U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawRBox(   x, translateY( screen, y ), w, h, r ); resetDrawColor(); }
   else                     U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawRFrame( x, translateY( screen, y ), w, h, r );
+  
   displayDirty = true;
 
 }
 
-void OLED::drawCircle( uint8_t screen, int16_t x, int16_t y, int16_t r, FtSwarmOledFill_t fill ) {
+void OLED::drawCircle( FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t r, FtSwarmOledFill_t fill ) {
 
+  setClipping( screen );
+  
   if ( setFill( fill ) ) { U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawDisc(   x, translateY( screen, y ), r ); resetDrawColor(); }
   else                     U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawCircle( x, translateY( screen, y ), r );
+  
   displayDirty = true;
 
 }
 
-void OLED::drawEllipse( uint8_t screen, int16_t x, int16_t y, int16_t rx, int16_t ry, FtSwarmOledFill_t fill ) {
+void OLED::drawEllipse( FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t rx, int16_t ry, FtSwarmOledFill_t fill ) {
 
+  setClipping( screen );
+  
   if ( setFill( fill ) ) { U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawFilledEllipse( x, translateY( screen, y ), rx, ry ); resetDrawColor(); }
   else                     U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawEllipse( x, translateY( screen, y ), rx, ry );
+  
   displayDirty = true;
+
 }
 
-void OLED::drawLine( uint8_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1 ) {
+void OLED::drawLine( FtSwarmOledScreen_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1 ) {
 
+  setClipping( screen );
+  
   if      ( y0 == y1 ) U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawHLine( x0, translateY( screen, y0), x1-x0 );
   else if ( x0 == x1 ) U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawVLine( x0, translateY( screen, y0), y1-y0 );
-  else                 U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawLine(  x0, translateY( screen, y0), x1, translateY( screen, y1) );
+  else    U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawLine(  x0, translateY( screen, y0), x1, translateY( screen, y1) );
+  
   displayDirty = true;
 
 }
  
-void OLED::drawPixel( uint8_t screen, int16_t x, int16_t y ) {
+void OLED::drawPixel( FtSwarmOledScreen_t screen, int16_t x, int16_t y ) {
    
+  setClipping( screen );
+  
   U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawPixel( x, translateY( screen, y ) );
+  
   displayDirty = true;
 
 }
 
-void OLED::drawStr( uint8_t screen, int16_t x, int16_t y, const char *text, FtSwarmAlign_t align ) {
+void OLED::drawStr( FtSwarmOledScreen_t screen, int16_t x, int16_t y, const char *text, FtSwarmAlign_t align ) {
 
+  setClipping( screen );
+  
   int16_t width = U8G2_SSD1306_128X64_NONAME_F_HW_I2C::getStrWidth( text );
 
   int16_t x1;
@@ -270,68 +295,70 @@ void OLED::drawStr( uint8_t screen, int16_t x, int16_t y, const char *text, FtSw
   }
 
   U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawStr( x1, translateY( screen, y ), text );
+  
   displayDirty = true;
 
 }
 
 char* OLED::truncateText(const char* text, int16_t maxWidth) {
-    if (!text) return nullptr;
+  
+  if (!text) return nullptr;
 
-    int16_t fullWidth = getStrWidth(text);
+  int16_t fullWidth = getStrWidth(text);
 
-    // 1. Return a copy if text already fits
-    if (fullWidth <= maxWidth) {
-        return strdup(text);
-    }
+  // 1. Return a copy if text already fits
+  if (fullWidth <= maxWidth) return strdup(text);
 
-    // 2. Account for ellipsis width
-    int16_t dotsWidth = getStrWidth("...");
-    int16_t targetW = maxWidth - dotsWidth;
+  // 2. Account for ellipsis width
+  int16_t dotsWidth = getStrWidth("...");
+  int16_t targetW = maxWidth - dotsWidth;
 
-    // Return empty string if not even "..." fits
-    if (targetW < 0) return strdup(""); 
+  // Return empty string if not even "..." fits
+  if (targetW < 0) return strdup(""); 
 
-    // 3. Prepare buffer (+3 for "...", +1 for null terminator)
-    size_t originalLen = strlen(text);
-    char* temp = (char*)malloc(originalLen + 4); 
-    if (!temp) return nullptr;
-    strcpy(temp, text);
+  // 3. Prepare buffer (+3 for "...", +1 for null terminator)
+  size_t originalLen = strlen(text);
+  char* temp = (char*)malloc(originalLen + 4); 
+  if (!temp) return nullptr;
+  strcpy(temp, text);
 
-    // 4. Fast Approximation (Ratio-based jump)
-    // Reduce number of getStrWidth calls by jumping near the target length
-    float ratio = (float)targetW / (float)fullWidth;
-    size_t currentLen = (size_t)((float)originalLen * ratio);
-    temp[currentLen] = '\0';
+  // 4. Fast Approximation (Ratio-based jump)
+  // Reduce number of getStrWidth calls by jumping near the target length
+  float ratio = (float)targetW / (float)fullWidth;
+  size_t currentLen = (size_t)((float)originalLen * ratio);
+  temp[currentLen] = '\0';
 
-    // 5. Fine-tuning (Pixel-perfect adjustment)
-    // If still too wide: trim characters one by one
-    while (currentLen > 0 && getStrWidth(temp) > targetW) {
-        temp[--currentLen] = '\0';
-    }
+  // 5. Fine-tuning (Pixel-perfect adjustment)
+  // If still too wide: trim characters one by one
+  while (currentLen > 0 && getStrWidth(temp) > targetW) {
+    temp[--currentLen] = '\0';
+  }
     
-    // If too short: add characters back until we hit the limit
-    // Important for proportional fonts where 'i' is much thinner than 'W'
-    while (currentLen < originalLen) {
-        size_t nextLen = currentLen + 1;
-        char nextChar = text[currentLen]; // Get next char from original
+  // If too short: add characters back until we hit the limit
+  // Important for proportional fonts where 'i' is much thinner than 'W'
+  while (currentLen < originalLen) {
+    size_t nextLen = currentLen + 1;
+    char nextChar = text[currentLen]; // Get next char from original
         
-        temp[currentLen] = nextChar;
-        temp[nextLen] = '\0';
+    temp[currentLen] = nextChar;
+    temp[nextLen] = '\0';
 
-        if (getStrWidth(temp) > targetW) {
-            temp[currentLen] = '\0'; // Backtrack: too wide
-            break;
-        }
-        currentLen = nextLen;
+    if (getStrWidth(temp) > targetW) {
+      temp[currentLen] = '\0'; // Backtrack: too wide
+      break;
     }
+  
+  currentLen = nextLen;
+  
+  }
 
-    // 6. Append ellipsis and return
-    strcat(temp, "...");
-    return temp;
+  // 6. Append ellipsis and return
+  strcat(temp, "...");
+  return temp;
 
 }
 
-void OLED::drawStrRect( uint8_t screen, int16_t x, int16_t y, int16_t w, const char *text, FtSwarmAlign_t align, uint8_t paddingH, uint8_t paddingV, FtSwarmOledFill_t fill ) {
+void OLED::drawStrRect( FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t w, const char *text, FtSwarmAlign_t align, uint8_t paddingH, uint8_t paddingV, FtSwarmOledFill_t fill ) {
 
   char *temp = truncateText( text, w );
 
@@ -355,8 +382,10 @@ void OLED::drawStrRect( uint8_t screen, int16_t x, int16_t y, int16_t w, const c
 
 }
 
-void OLED::drawTriangle( uint8_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, FtSwarmOledFill_t fill ) {
+void OLED::drawTriangle( FtSwarmOledScreen_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, FtSwarmOledFill_t fill ) {
    
+  setClipping( screen );
+  
   if ( setFill(fill) ) {
     U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawTriangle( x0, translateY( screen, y0 ), x1, translateY( screen, y1 ), x2, translateY( screen, y2 ) ); 
     resetDrawColor();
@@ -371,47 +400,68 @@ void OLED::drawTriangle( uint8_t screen, int16_t x0, int16_t y0, int16_t x1, int
  
 } 
 
-int16_t OLED::translateY( uint8_t screen, int16_t y ) {
+int16_t OLED::translateY( FtSwarmOledScreen_t screen, int16_t y ) {
 
-  // out-of-bounds
-  if (screen >=3 ) return y;
-
-  return y + screenOffset[ screen ] + screenScroll[ screen ];
+  return y + screenOffset[ screen ] - screenScroll[ screen ];
 
 }
 
-#else
+void OLED::drawVSlider( FtSwarmOledScreen_t screen, int16_t maxHeight ) {
 
-// no local hardware - just define stubs
+  if ( screen == FTSWARM_OLED_MAXSCREEN ) return;
 
-OLED::OLED( void ) {};
-void OLED::flush( void ) {};
-void OLED::invertDisplay(bool i) {};
-void OLED::fillScreen( bool white) {};
-void OLED::dim(bool dim) {};
-void OLED::setContrast(uint8_t contrast ) {};
-int16_t OLED::getWidth(void) { return 0; };
-int16_t OLED::getHeight(void) { return 0; };
-void OLED::clearDisplay( bool fullscreen) {};
-void OLED::cp437( bool x ) {};
-void OLED::drawPixel(int16_t x, int16_t y, bool white) {}; 
-void OLED::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, bool white) {};
-void OLED::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, bool fill, bool white) {};
-void OLED::drawRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius, bool fill, bool white) {};
-void OLED::drawCircle(int16_t x0, int16_t y0, int16_t r, bool fill, bool white) {};
-void OLED::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool fill, bool white) {};
-void OLED::drawChar(int16_t x, int16_t y, unsigned char c, bool color, bool bg, uint8_t size_x, uint8_t size_y) {};
-void OLED::write( const char *str, int16_t x, int16_t y, FtSwarmAlign_t align, bool fill, bool invert ) {};
-void OLED::write( const char *str ) {};
-void OLED::setCursor(int16_t x, int16_t y) {};
-void OLED::getCursor(int16_t *x, int16_t *y) {};
-void OLED::setTextColor( bool c,  bool bg) {};
-void OLED::setTextWrap(bool w) {};
-void OLED::setRotation(uint8_t r) {};
-uint8_t OLED::getRotation(void) { return 0; };
-void OLED::setTextSize(uint8_t sx, uint8_t sy) {};
-void OLED::getTextSize( uint8_t *sx, uint8_t *sy ) {};
-void OLED::getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h) {};
+  // Nothing to scroll if virtual height fits on screen
+  if ( maxHeight <= screenHeight[screen] ) return;
+
+  uint16_t screenH = getScreenHeight(screen);
+  uint16_t width = getScreenWidth();
+
+  // 1. Calculate the scale factor
+  float scale = (float)screenH / (float)maxHeight;
+
+  // 2. Calculate the indicator's position and height
+  int16_t indicatorY = (int16_t)(screenScroll[screen] * scale);
+  int16_t indicatorHeight = (int16_t)(screenH * scale);
+
+  // Safety: ensure the indicator is at least 2 pixels high so it's visible
+  if ( indicatorHeight < 2 ) indicatorHeight = 2;
+
+  // 3. Drawing
+  // Clear the slider area (2 pixels wide on the right edge)
+  drawRect( screen, width - 2, 0, 2, screenH, FTSWARM_OLED_FILLBLACK );
+
+  // Draw the indicator line (1 pixel wide at the very edge)
+  // Must be drawn by native function, to avoid to be shifted by my own screen
+  U8G2_SSD1306_128X64_NONAME_F_HW_I2C::drawVLine( width - 1, indicatorY + screenOffset[screen], indicatorHeight);
+    
+}
+
+bool OLED::scroll(FtSwarmOledScreen_t screen, int16_t yLow, int16_t yHigh ) {
+
+  if ( screen == FTSWARM_OLED_MAXSCREEN ) return false;
+
+  int16_t currentScroll = screenScroll[screen];
+  int16_t viewHeight = screenHeight[screen];
+
+  // 1. Check if y is ABOVE the current visible window
+  if ( yLow < currentScroll ) { screenScroll[screen] = yLow; return true; }
+
+  // 2. Check if y is BELOW the current visible window
+  if ( yHigh >= (currentScroll + viewHeight) ) { screenScroll[screen] = yHigh - viewHeight + 1; return true; };
+
+  return false;
+
+}
+
+void OLED::setClipping( FtSwarmOledScreen_t screen ) {
+
+  if ( ( clipScreen == screen )|| ( screen == FTSWARM_OLED_MAXSCREEN ) ) return;
+  
+  clipScreen = screen;
+
+  U8G2_SSD1306_128X64_NONAME_F_HW_I2C::setClipWindow( 0, screenOffset[screen], getScreenWidth(), screenOffset[screen] + screenHeight[screen] );
+
+}
 
 #endif
 

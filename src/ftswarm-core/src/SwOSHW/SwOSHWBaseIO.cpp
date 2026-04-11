@@ -206,7 +206,7 @@ SwOSIO::SwOSIO( const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioT
 SwOSIO::~SwOSIO() {
 
   #if FTSWARM_HAL_OLEDS > 0
-  if ( subscribedScreenObj ) subscribedScreenObj->unregister( this );
+  if ( subscribedScreenIO ) subscribedScreenIO->unregister( this );
   #endif
 
 }
@@ -371,8 +371,8 @@ char *SwOSIO::subscribe( const char *IOName, uint32_t hysteresis ) {
 
 } 
 
-void SwOSIO::subscribe( FtSwarmScreenObj *screenObj ) {
-  subscribedScreenObj = screenObj;
+void SwOSIO::subscribe( FtSwarmScreenIO *screenIO ) {
+  subscribedScreenIO = screenIO;
 }
 
 void SwOSIO::unsubscribe() {
@@ -381,17 +381,17 @@ void SwOSIO::unsubscribe() {
   subscribedIOName = NULL;
 }
 
-void SwOSIO::unsubscribe( FtSwarmScreenObj *screenObj ) {
+void SwOSIO::unsubscribe( FtSwarmScreenIO *screenIO ) {
 
   // to avoid races, test on same object
-  if ( subscribedScreenObj == screenObj ) subscribedScreenObj = NULL;
+  if ( subscribedScreenIO == screenIO ) subscribedScreenIO = NULL;
 
 }
 
 void SwOSIO::setLabelText( char *text ) {
 
   #if FTSWARM_HAL_OLEDS > 0
-  if ( subscribedScreenObj ) subscribedScreenObj->setLabel( text );
+  if ( subscribedScreenIO ) subscribedScreenIO->setText( text );
   #endif
 
 }
@@ -633,7 +633,7 @@ void SwOSInput::setReading( int32_t newValue, FtSwarmTrigger_t secondTriggerEven
   if (changes) {
 
     #if FTSWARM_HAL_OLEDS > 0
-    if ( subscribedScreenObj ) subscribedScreenObj->setValue( newValue ) ;
+    if ( subscribedScreenIO ) subscribedScreenIO->setValue( newValue ) ;
 
     // trigger event - if not blocked
     if ( !screenManager.blockEvents ) {

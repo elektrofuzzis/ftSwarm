@@ -171,7 +171,7 @@ void SwOSOLED::cls( void ) {
 
 };
 
-void SwOSOLED::cls( uint8_t screen ) {
+void SwOSOLED::cls( FtSwarmOledScreen_t screen ) {
 
   oled.cls( screen );
 
@@ -183,7 +183,7 @@ int16_t SwOSOLED::getScreenWidth(void) {
 
 }
 
-int16_t SwOSOLED:: getScreenHeight( uint8_t screen ) {
+int16_t SwOSOLED:: getScreenHeight( FtSwarmOledScreen_t screen ) {
 
   return oled.getScreenHeight();
 
@@ -201,7 +201,7 @@ int16_t SwOSOLED::getTextHeight( void ) {
 
 }
 
-void SwOSOLED::drawButton( uint8_t screen, int16_t x, int16_t y, uint8_t width, const char *text, uint8_t flags, uint8_t paddingH, uint8_t paddingV ) {
+void SwOSOLED::drawButton( FtSwarmOledScreen_t screen, int16_t x, int16_t y, uint8_t width, const char *text, uint8_t flags, uint8_t paddingH, uint8_t paddingV ) {
 
   oled.drawButton( screen, x, y, width, text, flags, paddingH, paddingV );
 
@@ -213,54 +213,54 @@ void SwOSOLED::setDrawColor( uint8_t color ) {
 
 }
 
-void SwOSOLED::drawCircle( uint8_t screen, int16_t x, int16_t y, int16_t r, FtSwarmOledFill_t fill ) {
+void SwOSOLED::drawCircle( FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t r, FtSwarmOledFill_t fill ) {
 
   oled.drawCircle( screen, x, y, r, fill );
 
 }
 
-void SwOSOLED::drawEllipse( uint8_t screen, int16_t x, int16_t y, int16_t rx, int16_t ry, FtSwarmOledFill_t fill ) {
+void SwOSOLED::drawEllipse( FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t rx, int16_t ry, FtSwarmOledFill_t fill ) {
 
   oled.drawEllipse( screen, x, y, rx, ry, fill );
 
 }
 
-void SwOSOLED::drawLine( uint8_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1 ) {
+void SwOSOLED::drawLine( FtSwarmOledScreen_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1 ) {
 
   oled.drawLine( screen, x0, y0, x1, y1 );
 
 }
     
-void SwOSOLED::drawPixel( uint8_t screen, int16_t x, int16_t y ) {
+void SwOSOLED::drawPixel( FtSwarmOledScreen_t screen, int16_t x, int16_t y ) {
 
   oled.drawPixel( screen, x, y );
 
 }
 
-void SwOSOLED::drawRect( uint8_t screen, int16_t x, int16_t y, int16_t w, int16_t h, FtSwarmOledFill_t fill ) {
+void SwOSOLED::drawRect( FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t w, int16_t h, FtSwarmOledFill_t fill ) {
 
   oled.drawRect( screen, x, y, w, h, fill );
 
 }
 
-void SwOSOLED::drawRoundRect( uint8_t screen, int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, FtSwarmOledFill_t fill ) {
+void SwOSOLED::drawRoundRect( FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, FtSwarmOledFill_t fill ) {
 
   oled.drawRoundRect( screen, x, y, w, h, r, fill );
 
 }
 
-void SwOSOLED::drawStr( uint8_t screen, int16_t x, int16_t y, const char *text, FtSwarmAlign_t align ) {
+void SwOSOLED::drawStr( FtSwarmOledScreen_t screen, int16_t x, int16_t y, const char *text, FtSwarmAlign_t align ) {
 
   oled.drawStr( screen, x, y, text, align );
 
 }
 
-void SwOSOLED::drawStrRect( uint8_t screen, int16_t x, int16_t y, int16_t w, const char *text, FtSwarmAlign_t align, uint8_t paddingH, uint8_t paddingV ) {
+void SwOSOLED::drawStrRect( FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t w, const char *text, FtSwarmAlign_t align, uint8_t paddingH, uint8_t paddingV ) {
 
   oled.drawStrRect( screen, x, y, w, text, align, paddingH, paddingV );
 }
 
-void SwOSOLED::drawTriangle( uint8_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, FtSwarmOledFill_t fill ) {
+void SwOSOLED::drawTriangle( FtSwarmOledScreen_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, FtSwarmOledFill_t fill ) {
 
   oled.drawTriangle( screen, x0, y0, x1, y1, x2, y2, fill );
 

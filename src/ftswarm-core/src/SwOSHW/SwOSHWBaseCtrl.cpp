@@ -977,6 +977,10 @@ void SwOSCtrl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
   if (pixel1) pixel1->setColor( LEDCOLOR1[state] );
   
   #if FTSWARM_HAL_OLEDS > 0
+  screenManager.setState( state,OLEDMSG[state], members, SSID );
+  #endif
+  
+  /*
 
   int16_t w = oled.getScreenWidth();
 
@@ -1000,7 +1004,9 @@ void SwOSCtrl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
   // cool line
   oled.drawLine( FTSWARM_OLED_UPPERSCREEN, 0, 11, w, 11 );
 
-  #endif
+  */
+
+
   
 }
 

@@ -9,11 +9,6 @@
  
 #pragma once
 
-// #include <stdint.h>
-
-// #include <driver/ledc.h>
-// #include <driver/gpio.h>
-
 #include <nvs.h>
 
 #include "SwOSHW/SwOSHWDuino.h"
@@ -24,8 +19,6 @@
 #include "serialize.h"
 #include "SwOSFilter.h"
 
-// only to feed that silly compiler
-class FtSwarmScreenObj;
 
 #define BRIGHTNESSDEFAULT 48
 
@@ -37,6 +30,7 @@ extern SwOSDuino *ftDuino;
 
 // forward declaration
 class SwOSCtrl; 
+class FtSwarmScreenIO;
 
 // comState
 typedef enum { 
@@ -142,7 +136,7 @@ class SwOSIO : public SwOSObj {
 protected:
 	uint8_t       port;  // local port
   SwOSCtrl      *ctrl; // pointer to my Controller
-  FtSwarmScreenObj *subscribedScreenObj = NULL;
+  FtSwarmScreenIO *subscribedScreenIO = NULL;
   SwOSIOType_t  ioType               = SWOSIO_UNDEF;
   bool          isSubscribed         = false;
   int32_t       lastsubscribedValue  = 0;
@@ -184,13 +178,13 @@ public:
   virtual char* subscribe( const char *IOName, uint32_t hysteresis ); 
 
   // subscribe io to send status information to a Screen
-  virtual void subscribe( FtSwarmScreenObj *screenObj );
+  virtual void subscribe( FtSwarmScreenIO *screenIO );
 
   // clear subscription
 	virtual void unsubscribe();
 
   // clear subscription of a screen object
-  virtual void unsubscribe(  FtSwarmScreenObj *screenObj );
+  virtual void unsubscribe(  FtSwarmScreenIO *screenIO );
 
   // get my port
   virtual uint8_t getPort() { return port; };

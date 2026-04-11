@@ -385,11 +385,6 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
   }
 
-  // set splash screen
-  #if FTSWARM_HAL_OLEDS > 0
-  screenManager.activate( new SwOSSplashScreen( NULL, myOSSwarm.Ctrl[0]->getAliasOrName() ) );
-  #endif
-
   // now I can visualize my state
   setState( BOOTING );
   
@@ -466,10 +461,6 @@ void SwOSSwarm::testFactoryReset( void ) {
     factoryReset();
 
   }
-  #endif
-
-  #if FTSWARM_HAL_OLEDS > 0
-    screenManager.activate( new FtSwarmScreenFactoryReset( screenManager.active, NULL ) );
   #endif
   
 }
@@ -919,16 +910,6 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
                               }
                               break;
 
-    case CMD_SETACTIVECONFIG: // change event list, local only
-                              if ( affected == 0 ) {
-                                deleteEvents( );
-                                nvs.activeEventConfig = com->data.configCmd.config;
-                                addEvents( nvs.activeEventConfig, Ctrl[affected]->serialNumber );
-                                #if FTSWARM_HAL_OLEDS > 0
-                                screenManager.draw();
-                                #endif
-                              }
-                              break;
 
     default:                  if ( Ctrl[affected] ) {
                                 // any other type of msg will be processed on controller level

@@ -39,41 +39,103 @@ void debugEvent( const char *s1, const char *s2, FtSwarmScreenEvent_t event, uin
  *
  ***************************************************/
 
-
-FtSwarmScreenObj::FtSwarmScreenObj( uint8_t id, SwOSIO *io, FtSwarmScreen *parent, const char *label, uint8_t screen, int16_t x, int16_t y, FtSwarmAlign_t align ) {
+FtSwarmScreenObj::FtSwarmScreenObj( uint8_t id, FtSwarmScreen *parent, FtSwarmOledScreen_t screen, int16_t x, int16_t y ) {
   
   this->id     = id;
-  this->io     = io;
   this->parent = parent;
   this->screen = screen;
   this->x      = x;
   this->y      = y;
-  this->align  = align;
-
-  if ( screen == FTSWARM_OLED_BUTTONSCREEN ) oled.buttonScreen( true );
-
-  setLabel( label, false );
 
 }
 
-FtSwarmScreenObj::~FtSwarmScreenObj() {
+void FtSwarmScreenObj::debug( void ) {
+
+  printf("id:%d text:%s type:%d x:%d, y:%d screen:%d visible:%d\n", getID(), getText(), getType(), x, y, screen, visible );
+
+}
+
+/***************************************************
+ *
+ * FtSwarmScreenLine
+ *
+ ***************************************************/
+
+FtSwarmScreenLine::FtSwarmScreenLine( uint8_t id, FtSwarmScreen *parent, FtSwarmOledScreen_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1 ) : FtSwarmScreenObj( id, parent, screen, x0, y0 ) {
+
+  this->x1 = x1;
+  this->y1 = y1;
+
+}
+
+void FtSwarmScreenLine::draw( bool selected ) {
+
+  if ( visible ) oled.drawLine( screen, x, y, x1, y1 );
+
+}
+
+/***************************************************
+ *
+ * FtSwarmScreenText
+ *
+ ***************************************************/
+
+FtSwarmScreenText::FtSwarmScreenText( uint8_t id, FtSwarmScreen *parent, FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t width, FtSwarmAlign_t align, const char *text ) : FtSwarmScreenObj( id, parent, screen, x, y ) {
+
+  this->width = width;
+  this->align = align;
+  this->text  = strdup( text );
+
+}
+
+FtSwarmScreenText::FtSwarmScreenText( uint8_t id, FtSwarmScreen *parent, FtSwarmOledScreen_t screen, int16_t x, int16_t y, FtSwarmAlign_t align, const char *text ) : FtSwarmScreenText( id, parent, screen, x, y, oled.getTextWidth( text ), align, text ) {
+
+}
+
+FtSwarmScreenText::~FtSwarmScreenText() {
+
+  if ( text ) free( text );
+
+}
+
+void FtSwarmScreenText::draw( bool selected ) {
+
+  if (visible) oled.drawStrRect( screen, x, y, width, text, align );
+
+}
+
+int16_t FtSwarmScreenText::getHeight( void ) { 
+  
+  return oled.getTextHeight();
+  
+}
+
+void FtSwarmScreenText::setText( const char *text ) {
+
+  if ( this->text ) free( this->text );
+  this->text  = strdup( text );
+
+}
+
+/***************************************************
+ *
+ * FtSwarmScreenIO
+ *
+ ***************************************************/
+
+FtSwarmScreenIO::FtSwarmScreenIO( uint8_t id, FtSwarmScreen *parent, FtSwarmOledScreen_t screen, int16_t x, int16_t y, FtSwarmAlign_t align, const char *text, SwOSIO *io ) : FtSwarmScreenText( id, parent, screen, x, y, align, text ) {
+
+  this->io = io;
+
+}
+
+FtSwarmScreenIO::~FtSwarmScreenIO() {
 
   if (io) io->unsubscribe( this );
 
-  if ( label ) free( label );
-
-  if ( next ) delete( next );
-
 }
 
-void FtSwarmScreenObj::add( FtSwarmScreenObj *newObject) {
-
-  if (next) next->add( newObject );
-  else      next = newObject;
-
-}
-
-void FtSwarmScreenObj::activate( void ) {
+void FtSwarmScreenIO::activate( void ) {
 
   if (!io) return;
   
@@ -82,7 +144,7 @@ void FtSwarmScreenObj::activate( void ) {
 
 }
 
-void FtSwarmScreenObj::deactivate( void ) {
+void FtSwarmScreenIO::deactivate( void ) {
 
   if (!io) return;
   
@@ -90,27 +152,17 @@ void FtSwarmScreenObj::deactivate( void ) {
 
 }
 
-void FtSwarmScreenObj::unregister( SwOSIO *io ) {
+void FtSwarmScreenIO::unregister( SwOSIO *io ) {
 
-  if ( this->io == io ) this->io = NULL;
-
-}
-
-void FtSwarmScreenObj::setLabel( const char *label, bool autoDraw ) {
-
-  if ( this->label) free( this->label );
-
-  this->label = STRDUP( label );
-
-  if ( autoDraw ) draw();
+  if ( this->io == io ) this->io = nullptr;
 
 }
 
-void FtSwarmScreenObj::setValue( int32_t newValue ) {
+void FtSwarmScreenIO::setValue( int32_t newValue ) {
 
   value = newValue;
 
-  draw( );
+  draw( false );
 
   FtSwarmScreenEvent_t event;
 
@@ -123,163 +175,24 @@ void FtSwarmScreenObj::setValue( int32_t newValue ) {
 
 }
 
-void FtSwarmScreenObj::print( void ) {
-
-  printf("id=%d x=%d y=%d label=", id, x, y );
-  if ( label ) printf( label ); else printf("NULL");
-  printf("\n");
-  
-  if( next ) next->print();
-
-}
-
 /***************************************************
  *
- * FtSwarmScreenObjList
+ * FtSwarmScreenSelectable - to be selected by joy1
  *
  ***************************************************/
 
-void FtSwarmScreenObjList::add( FtSwarmScreenObj *newObject ) {
-
-  if (list) list->add( newObject );
-  else      list = newObject;
+FtSwarmScreenSelectable::FtSwarmScreenSelectable( uint8_t id, FtSwarmScreen *parent, FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t width, FtSwarmAlign_t align, const char *text ) : FtSwarmScreenText( id, parent, screen, x, y, width, align, text ) {
 
 }
 
-void FtSwarmScreenObjList::draw( void ) {
-
-  FtSwarmScreenObj *x = list;
-  while ( x ) {
-    x->draw();
-    x = x->next;
-  }
+FtSwarmScreenSelectable::FtSwarmScreenSelectable( uint8_t id, FtSwarmScreen *parent, const char *text ) : FtSwarmScreenText( id, parent, FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2, (parent)?parent->getNextY( FTSWARM_OLED_MAINSCREEN):0, oled.getTextWidth(text), FTSWARM_ALIGNCENTER, text ) {
 
 }
 
-void FtSwarmScreenObjList::activate( void ) { 
+void FtSwarmScreenSelectable::draw( bool selected ) {
 
-  FtSwarmScreenObj *x = list;
-  while ( x ) {
-    x->activate();
-    x = x->next;
-  }
-
-}
-
-void FtSwarmScreenObjList::deactivate( void ) { 
-
-  FtSwarmScreenObj *x = list;
-  while ( x ) {
-    x->deactivate();
-    x = x->next;
-  }
-
-}
-
-int16_t FtSwarmScreenObjList::getNextY( void ) {
+  if (visible) oled.drawStrRect( screen, x, y, width, text,  align, 1, 0, selected ? FTSWARM_OLED_FILLWHITE : FTSWARM_OLED_FILLBLACK ); 
   
-  int16_t y = 0;
-  int16_t textHeight = oled.getTextHeight();
-
-  FtSwarmScreenObj *obj = list;
-  while ( obj ) {
-
-    if ( ( obj->isVisible() ) && ( obj->getY() >= y ) ) y = obj->getY() + textHeight + 2;
-
-    obj = obj->next;
-
-  }
-
-  return y;
-
-}
-
-FtSwarmScreenObj *FtSwarmScreenObjList::prev( FtSwarmScreenObj *obj ) {
-
-  FtSwarmScreenObj *p = list;
-  while ( ( p ) && ( p->next != obj ) ) p = p->next;
-
-  return p;
-
-}
-
-/***************************************************
- *
- * FtSwarmScreenSelectable - label + text
- *
- ***************************************************/
-
-FtSwarmScreenSelectable::FtSwarmScreenSelectable( uint8_t id, FtSwarmScreen *parent, const char *label, const char *text, int16_t x, int16_t y, int16_t widthLabel, int16_t widthText ) : FtSwarmScreenObj( id, NULL, parent, label, FTSWARM_OLED_MAINSCREEN, x, y, FTSWARM_ALIGNLEFT ) {
-
-  // if (label) printf("FtSwarmScreenSelectable %d %s %s %d %d %d %d\n", id, label, text, x, y, widthLabel, widthText );
-  // else       printf("FtSwarmScreenSelectable %d NULL %s %d %d %d %d\n", id, text, x, y, widthLabel, widthText );
-
-  // no label? Center text
-  if ( widthLabel == 0) align = FTSWARM_ALIGNCENTER;
-
-  this->widthLabel = widthLabel;
-  this->widthText  = widthText;
-
-  setText( text, false );
-
-}
-
-FtSwarmScreenSelectable::FtSwarmScreenSelectable( uint8_t id, FtSwarmScreen *parent, const char *text ) : FtSwarmScreenSelectable( id, parent, "", text, oled.getScreenWidth()/2, parent->getNextY() , 0, oled.getScreenWidth() ) {
-
-}
-
-void FtSwarmScreenSelectable::setText( const char *text, bool autoDraw ) {
-
-  if ( this->text) {
-    delete this->text;
-  }
-
-  this->text = STRDUP( text );
-  
-  if (autoDraw) draw();
-
-}
-
-void FtSwarmScreenSelectable::draw( void ) {
-
-  if (!visible) return;
-
-  printf("draw %s\n", text);
-
-  oled.drawStrRect( screen, x,              y, widthLabel,                          label, align, 1, 0 );
-  oled.drawStrRect( screen, x + widthLabel, y, oled.getScreenWidth() - widthLabel , text,  align, 1, 0 );
-  
-}
-
-void FtSwarmScreenSelectable::select( void ) {
-
-  if (!visible) return;
-
-  printf("select %s\n", text);
-
-  oled.drawStrRect( screen, x + widthLabel, y, oled.getScreenWidth() - widthLabel, text,  align, 1, 0, FTSWARM_OLED_FILLWHITE );
-  
-}
-
-void FtSwarmScreenSelectable::setVisible( bool visible ) {
-
-  this->visible = visible;
-
-  if (visible) draw();
-  else         oled.drawStrRect( screen, x + widthLabel + 1, y, widthLabel, text,  align, 1, 1 );
-
-}
-
-void FtSwarmScreenSelectable::print( void ) {
-
-  printf("id=%d x=%d y=%d label=", id, x, y );
-  if ( label ) printf( label ); else printf("NULL");
-  printf(" text=");
-  if ( text )  printf( text ); else printf("NULL");
-  printf("\n");
-  
-  if( next ) next->print();
-
 }
 
 /***************************************************
@@ -288,32 +201,462 @@ void FtSwarmScreenSelectable::print( void ) {
  *
  ***************************************************/
 
-void FtSwarmScreenButton::draw( void ) {
+void FtSwarmScreenButton::draw( bool selected ) {
 
-  if ( ( label ) && ( label[0] != '\0' )  ) {
+  if ( ( !visible ) || ( !text ) || ( text[0] == '\0' ) ) return;
 
-    if (value>0) oled.setDrawColor(2);
-    oled.drawStrRect( screen, x, y, oled.getTextWidth(label), label, align, 1, 1 );
-    oled.setDrawColor(1);
-
-  }
+  oled.drawStrRect( screen, x, y, width, text, align, 1, 1, value > 0 ? FTSWARM_OLED_FILLWHITE : FTSWARM_OLED_FILLBLACK );
 
 } 
-
+  
 /***************************************************
  *
- * FtSwarmScreenObjXX - local Buttons
+ * FtSwarmScreenObjList
  *
  ***************************************************/
 
-FtSwarmScreenS1::FtSwarmScreenS1( FtSwarmScreen *parent, const char *label ) : FtSwarmScreenButton( FTSWARM_S1, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_S1), parent, label, FTSWARM_OLED_BUTTONSCREEN, 0,                             0, FTSWARM_ALIGNLEFT ) {};
-FtSwarmScreenS2::FtSwarmScreenS2( FtSwarmScreen *parent, const char *label ) : FtSwarmScreenButton( FTSWARM_S2, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_S2), parent, label, FTSWARM_OLED_BUTTONSCREEN, 41,                            0, FTSWARM_ALIGNCENTER ) {};
-FtSwarmScreenS3::FtSwarmScreenS3( FtSwarmScreen *parent, const char *label ) : FtSwarmScreenButton( FTSWARM_S3, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_S3), parent, label, FTSWARM_OLED_BUTTONSCREEN, oled.getScreenWidth() -1 -41,  0, FTSWARM_ALIGNCENTER ) {};
-FtSwarmScreenS4::FtSwarmScreenS4( FtSwarmScreen *parent, const char *label ) : FtSwarmScreenButton( FTSWARM_S4, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_S4), parent, label, FTSWARM_OLED_BUTTONSCREEN, oled.getScreenWidth() -1,      0, FTSWARM_ALIGNRIGHT ) {};
-FtSwarmScreenF1::FtSwarmScreenF1( FtSwarmScreen *parent, const char *label ) : FtSwarmScreenButton( FTSWARM_F1, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_F1), parent, label, FTSWARM_OLED_UPPERSCREEN,  0,                             0, FTSWARM_ALIGNLEFT ) {};
-FtSwarmScreenF2::FtSwarmScreenF2( FtSwarmScreen *parent, const char *label ) : FtSwarmScreenButton( FTSWARM_F2, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_F2), parent, label, FTSWARM_OLED_UPPERSCREEN,  oled.getScreenWidth() -1,      0, FTSWARM_ALIGNRIGHT ) {};
-FtSwarmScreenJ1::FtSwarmScreenJ1( FtSwarmScreen *parent, const char *label ) : FtSwarmScreenButton( FTSWARM_J1, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_J1), parent, label, FTSWARM_OLED_MAINSCREEN,   48,                           16, FTSWARM_ALIGNCENTER ) {};
-FtSwarmScreenJ2::FtSwarmScreenJ2( FtSwarmScreen *parent, const char *label ) : FtSwarmScreenButton( FTSWARM_J2, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_J2), parent, label, FTSWARM_OLED_MAINSCREEN,   oled.getScreenWidth() -1 -48, 16, FTSWARM_ALIGNCENTER ) {};
+
+FtSwarmScreenObjList::~FtSwarmScreenObjList( ) {
+
+  if (list) delete list;
+
+}
+
+/*
+bool FtSwarmScreenObjList::add( FtSwarmScreenObj *newObject ) {
+
+  // don't store nullptrs
+  if ( !newObject ) return true;
+
+  printf("add "); newObject->debug();
+
+  // out of space?
+  if ( maxItem >= maxItems - 1) return false;
+
+  // add in the middle?
+  for ( int16_t i=0; i<=maxItem; i++ ) {
+
+    // right space to insert the new element in y order
+    if ( list[i]->getY() > newObject->getY() ) {
+
+      // move objects
+      maxItem++;
+      memmove( &list[i+1], &list[i], (maxItems-i-1) * sizeof(list[0]) );
+      list[i] = newObject;
+
+      // move selected?
+      if ( selected >= i ) selected++;
+
+
+      if ( ( selected < 0 ) && ( newObject->getType() == FTSWARMSCREEN_SELECTABLE ) ) {
+        selected = i;
+      }
+
+      return true;
+
+    }
+
+  }
+
+  // add at end
+  maxItem++;
+  list[maxItem] = newObject;
+  if ( ( selected < 0 ) && ( newObject->getType() == FTSWARMSCREEN_SELECTABLE ) ) selected = maxItem;
+
+  return true;
+
+}
+
+void FtSwarmScreenObjList::del( int16_t i ) {
+
+  // out of bounds?
+  if ( ( i<0 ) || ( i>maxItem ) ) return;
+
+  // drop selected element?
+  if (selected == i) prevSelectable( );
+  if (selected == i) selected = -1;
+
+  // drop element
+  FtSwarmScreenObj *old = list[i];
+  memmove( &list[i], &list[i+1], sizeof( list[0] ) * ( maxItems - i - 1) );
+  list[maxItems-1] = nullptr;
+  delete old;
+  maxItem--;
+
+}
+
+void FtSwarmScreenObjList::del( FtSwarmScreenObj *delObject ) {
+
+  // not initialized or nullptr?
+  if ( ( !list ) || (!delObject) ) return;
+
+  // search for item to be killed
+  for ( int16_t i=0; i<=maxItem; i++ ) {
+
+    if ( list[i] == delObject ) {
+      
+      // delete element
+      del(i);
+
+      // done
+      return;
+
+    }
+
+  }
+
+}
+
+void FtSwarmScreenObjList::deleteAll( FtSwarmOledScreen_t screen, FtSwarmScreenObj_t type ) {
+
+  if ( ( !list ) || ( maxItem < 0 ) ) return;
+
+  int16_t i=0;
+
+  while ( i<=maxItem ) {
+
+    if ( ( list[i] ) && ( list[i]->getType() == type ) && ( list[i]->getScreen() == screen ) ) del(i);
+    else i++;
+
+  }
+
+  // if (type == FTSWARMSCREEN_SELECTABLE) selected = -1;
+
+}
+
+void FtSwarmScreenObjList::draw( void ) {
+
+  if (!list) return;
+  for ( int16_t i=0; i<=maxItem; i++ ) if ( list[i] ) {
+    list[i]->draw( selected == i );
+  }
+
+}
+
+void FtSwarmScreenObjList::activate( void ) { 
+
+  if (!list) return;
+  for ( int16_t i=0; i<=maxItem; i++ ) if ( list[i] ) list[i]->activate();
+
+}
+
+void FtSwarmScreenObjList::deactivate( void ) { 
+
+  if (!list) return;
+  for ( int16_t i=0; i<=maxItem; i++ ) if ( list[i] ) list[i]->deactivate();
+
+}
+
+int16_t FtSwarmScreenObjList::getNextY( FtSwarmOledScreen_t screen ) {
+
+  // not initialized or no entries
+  if ( ( !list ) || ( maxItem < 0 ) || ( !list[maxItem] ) ) return 0;
+
+  for ( int16_t i=maxItem; i>=0; i-- ) {
+
+    // since list is ordered by y & we're searching backwards, the first hit is fine
+    if ( ( list[i] ) && ( list[i]->getScreen() == screen ) ) {
+      return list[i]->getY( ) + list[i]->getHeight();
+    }
+
+  }
+
+  // no hit, so start with 0
+  return 0;
+
+}
+
+FtSwarmScreenSelectable *FtSwarmScreenObjList::nextSelectable( void ) {
+
+  if ( ( !list ) || ( selected < 0 ) ) return nullptr;
+
+  for ( int16_t i = selected+1; i<=maxItem; i++ ) {
+
+    // next selectable found
+    if ( list[i]->getType() == FTSWARMSCREEN_SELECTABLE ) {
+      selected = i;
+      return (FtSwarmScreenSelectable *)list[selected];
+    }
+
+  }
+
+  // selected is already the last one
+  return (FtSwarmScreenSelectable *)list[selected];
+
+}
+
+FtSwarmScreenSelectable *FtSwarmScreenObjList::prevSelectable( void ) {
+
+  if ( (!list) || ( selected < 0 ) ) return nullptr;
+
+  for ( int16_t i = selected - 1; i>0; i-- ) {
+
+    // next selectable found
+    if ( list[i]->getType() == FTSWARMSCREEN_SELECTABLE ) {
+      selected = i;
+      return (FtSwarmScreenSelectable *)list[selected];
+    }
+
+  }
+
+  // selected is already the last one
+  return (FtSwarmScreenSelectable *)list[selected];
+
+}
+
+FtSwarmScreenSelectable *FtSwarmScreenObjList::getSelected( void ) {
+
+  if ( selected < 0 ) return nullptr;
+
+  return (FtSwarmScreenSelectable *)list[selected];
+
+}
+
+void FtSwarmScreenObjList::debug( void ) {
+
+  printf("FtSwarmScreenObjList::debug %d\n", maxItem);
+  for ( int16_t i=0; i<=maxItem; i++ ) if ( list[i] ) { printf("%d: ", i); list[i]->debug(); }
+  printf("---\n");
+
+}
+
+*/
+
+void FtSwarmScreenObjList::add( FtSwarmScreenObj *newObject ) {
+
+  // selection?
+  if ( ( !selected ) && ( newObject->getType() == FTSWARMSCREEN_SELECTABLE ) ) selected = (FtSwarmScreenSelectable *) newObject;
+
+  // no existing data
+  if (!list) { list = newObject; return; }
+
+  uint8_t screen = newObject->getScreen();
+  int16_t y = newObject->getY();
+
+  // compare with first in list
+  if ( ( list->getScreen() == screen ) && ( list->getY() > y ) ) {
+    newObject->next = list;
+    list = newObject;
+    return;
+  }
+
+  // insert in list
+  FtSwarmScreenObj *x = list;
+  while (x->next) {
+    if ( ( x->next->getScreen() == screen ) && ( x->next->getY() > y ) ) {
+      newObject->next = x->next;
+      x->next = newObject;
+      return;
+    }
+    x = x->next;
+  }
+
+  // append
+  x->next = newObject;
+  return;
+
+}
+
+void FtSwarmScreenObjList::del( FtSwarmScreenObj *delObject ) {
+
+  // empty list
+  if ( !list ) return;
+
+  // first element
+  if ( list == delObject ) {
+
+    // selection?
+    if ( list == selected ) nextSelectable();
+
+    // delete
+    list = list->next;
+    delObject->next = nullptr;
+    delete delObject;
+    return;
+
+  }
+
+  // in list
+  FtSwarmScreenObj *x = list;
+  while (x->next) {
+
+    if ( x->next == delObject ) {
+
+      // selection?
+      if ( x == selected ) nextSelectable();
+
+      // delete
+      x->next = x->next->next;
+      delObject->next = nullptr;
+      delete delObject;
+      return;
+
+    }
+
+  }  
+
+}
+
+void FtSwarmScreenObjList::deleteAll( FtSwarmOledScreen_t screen, FtSwarmScreenObj_t type ) {
+
+  // empty list
+  if ( !list ) return;
+
+  // selection
+  if ( type == FTSWARMSCREEN_SELECTABLE ) selected = nullptr;
+
+  // first elements
+  while ( ( list ) && ( list->getScreen() == screen ) && ( list->getType() == type ) ) {
+    FtSwarmScreenObj *old = list;
+    list = list->next;
+    old->next = nullptr;
+    delete old;
+  }
+
+  FtSwarmScreenObj *x = list;
+  while ( x->next ) {
+    
+    if ( ( x->next->getScreen() == screen ) && ( x->next->getType() == type ) ) {
+
+      // delete next element
+      FtSwarmScreenObj *old = x->next;
+      x->next = x->next->next;
+      old->next = nullptr;
+      delete old;
+
+    } else {
+
+      // continue
+      x = x->next;
+
+    }
+
+  }
+
+}
+
+void FtSwarmScreenObjList::activate( void ) {
+
+  FtSwarmScreenObj *x = list;
+
+  while (x) {
+    x->activate();
+    x=x->next;
+  }
+
+}
+
+void FtSwarmScreenObjList::deactivate( void ) {
+
+  FtSwarmScreenObj *x = list;
+
+  while (x) {
+    x->deactivate();
+    x=x->next;
+  }
+
+}
+
+void FtSwarmScreenObjList::draw( void ) {
+
+  FtSwarmScreenObj *x = list;
+
+  while (x) {
+    x->draw( x == selected );
+    x=x->next;
+  }
+
+}
+
+int16_t FtSwarmScreenObjList::getNextY( FtSwarmOledScreen_t screen ) {
+
+  int16_t y = INT16_MIN;
+  FtSwarmScreenObj *x = list;
+
+  while (x) {
+    if ( ( screen == x->getScreen() ) && ( y < x->getY() + x->getHeight() ) ) y = x->getY() + x->getHeight();
+    x=x->next;
+  }
+
+  return (y>=0)? y : 0;
+
+
+}
+
+FtSwarmScreenSelectable *FtSwarmScreenObjList::nextSelectable( void ) {
+
+  // no data
+  if ( !list ) return nullptr;
+
+  FtSwarmScreenObj *x;
+
+  // start with selected or list
+  if ( selected ) x = selected->next;
+  else            x = list;
+
+  while ( x ) {
+
+    // next selectable found?
+    if ( ( x->getScreen() == FTSWARM_OLED_MAINSCREEN ) && ( x->getType() == FTSWARMSCREEN_SELECTABLE ) ) {
+      selected = (FtSwarmScreenSelectable *) x;
+      return selected;
+    }
+
+    x = x->next;
+
+  }
+
+  return selected;
+
+}
+
+FtSwarmScreenSelectable *FtSwarmScreenObjList::prevSelectable( void ) {
+
+  // no data
+  if ( !list ) return nullptr;
+
+  FtSwarmScreenObj *x    = list;
+  FtSwarmScreenObj *prev = nullptr;
+  
+  while (x) {
+
+    // found a selectable
+    if ( ( x->getScreen() == FTSWARM_OLED_MAINSCREEN ) && ( x->getType() == FTSWARMSCREEN_SELECTABLE ) ) {
+
+      // if selected is the actual element, so return the previous one
+      if ( x == selected ) {
+        if (prev) selected = (FtSwarmScreenSelectable *) prev;
+        return selected;
+
+      // store actual element and continue
+      } else { prev = x; }
+
+    }
+
+    x = x->next;
+
+  }
+
+  return selected;
+
+}
+
+void FtSwarmScreenObjList::debug( void ) {
+
+  printf("FtSwarmScreenObjList::debug\n");
+  if (!list) { printf("null\n"); return; }
+
+  printf("selected: ");
+  if (selected) selected->debug();
+  else printf("null\n");
+
+  FtSwarmScreenObj *x = list;
+  while (x) {
+    x->debug();
+    x = x->next;
+  }
+
+}
 
 /***************************************************
  *
@@ -324,7 +667,7 @@ FtSwarmScreenJ2::FtSwarmScreenJ2( FtSwarmScreen *parent, const char *label ) : F
 #define JOYMINVALUE 15
 #define JOYMAXVALUE 25
 
-FtSwarmScreenJoystickPoti::FtSwarmScreenJoystickPoti(uint8_t id, SwOSIO *io, FtSwarmScreen *parent, const char *label, int16_t x, int16_t y, FtSwarmAlign_t align ):FtSwarmScreenObj( id, io, parent, label, FTSWARM_OLED_MAINSCREEN, x, y, align ) {
+FtSwarmScreenJoystickPoti::FtSwarmScreenJoystickPoti( uint8_t id, FtSwarmScreen *parent, FtSwarmOledScreen_t screen, int16_t x, int16_t y, FtSwarmAlign_t align, const char *text, SwOSIO *IO ):FtSwarmScreenIO( id, parent, screen, x, y, align, text, IO ) {
 
 }
 
@@ -337,7 +680,7 @@ void FtSwarmScreenJoystickPoti::setValue( int32_t value ) {
   this->value = value;
 
   // draw myself
-  draw();
+  draw( false );
 
   // check on event
   if ( value != FTSWARM_NANI32 ) {
@@ -362,278 +705,54 @@ void FtSwarmScreenJoystickPoti::setValue( int32_t value ) {
  *
  ***************************************************/
 
-#define SWOSJOY1LR 100
-#define SWOSJOY1FB 101
-#define SWOSJOY2LR 102
-#define SWOSJOY2FB 103
-
 uint32_t screenUSID = 0;
 
-FtSwarmScreen::FtSwarmScreen( FtSwarmScreen *parent, const char *title, FtSwarmScreen *next ) {
+FtSwarmScreen::FtSwarmScreen( FtSwarmScreen *parent, const char *title, const char *text ) {
   
   this->USID   = screenUSID++;
   this->parent = parent;
 
-  this->title = STRDUP( title );
-
   oled.buttonScreen( false );
-  
-  // need a back button?
-  if ( parent ) add( new FtSwarmScreenESC( this ) );
 
-  // handle sliders
-  this->next = next;
-  if (next) {
-    next->prev = this;
-    addNavigation();
+  // title, line
+  add( new FtSwarmScreenText( FTSWARMSCREEN_NOID, this, FTSWARM_OLED_UPPERSCREEN, oled.getScreenWidth() / 2, 0, FTSWARM_ALIGNCENTER, title ) );
+  add( new FtSwarmScreenLine( FTSWARMSCREEN_NOID, this, FTSWARM_OLED_UPPERSCREEN, 0, 11, oled.getScreenWidth()-1, 11 ) );
+
+  // text in main screen
+  splitText( text );
+
+  // need a back button?
+  if ( parent ) {
+    addESC();
+    ESC=true;
   }
 
   screenManager.registerMe( this );
 
 }
 
-void FtSwarmScreen::addNavigation( void ) {
+void FtSwarmScreen::splitText( const char *text ) {
 
-  // already installed?
-  if (navigation) return;
-
-  // add left joystick elements
-  add( new FtSwarmScreenJoystickPoti( SWOSJOY1LR, myOSSwarm.Ctrl[0]->getIO( SWOSIO_JOYSTICK_POTI, FTSWARM_HAL_FIRSTJPOTI   ), this, "", 0, 0, FTSWARM_ALIGNLEFT ) );
-  add( new FtSwarmScreenJoystickPoti( SWOSJOY1FB, myOSSwarm.Ctrl[0]->getIO( SWOSIO_JOYSTICK_POTI, FTSWARM_HAL_FIRSTJPOTI+1 ), this, "", 0, 0, FTSWARM_ALIGNLEFT ) );
-  add( new FtSwarmScreenJ1( this, "" ) );
-
-  // add right joystick
-  add( new FtSwarmScreenJoystickPoti( SWOSJOY2FB, myOSSwarm.Ctrl[0]->getIO( SWOSIO_JOYSTICK_POTI, FTSWARM_HAL_FIRSTJPOTI+3 ), this, "", 0, 0, FTSWARM_ALIGNLEFT ) );
-
-  // all done
-  navigation = true;
-
-}
-
-FtSwarmScreen::~FtSwarmScreen() {
-
-  if ( title ) free( title );
-
-}
-
-void FtSwarmScreen::add( FtSwarmScreenObj *newObject ) {
-  
-  if (!newObject) return;
-
-  if (newObject->isSelectable() ) {
-
-    addNavigation();
-    selectables.add( newObject );
-    if ( (!selected) && (newObject)) selected = (FtSwarmScreenSelectable *) newObject;
-
-  } else {
-    
-    objects.add( newObject );
-
-  }
-
-}
-
-void FtSwarmScreen::draw( void ) {
-
-  // cls
-  oled.cls( );
-      
-  if ( title ) oled.drawStr( FTSWARM_OLED_UPPERSCREEN, oled.getScreenWidth() / 2, 0, title, FTSWARM_ALIGNCENTER );
-  
-  // cool line
-  oled.drawLine( FTSWARM_OLED_UPPERSCREEN, 0, 11, oled.getScreenWidth(), 11 );
-
-  objects.draw();
-  selectables.draw();
-
-  // selected element?
-  if (selected) selected->select();
-
-  // top slider
-  uint8_t cp = countPrev();
-  uint8_t cn = countNext();
-  uint8_t c  = cp + cn + 1;
-
-  if ( c > 1 ) {
-    uint8_t size = oled.getScreenWidth() / c;
-    oled.drawLine( FTSWARM_OLED_UPPERSCREEN, cp*size, 13, (cp+1)*size, 13 );
-  }
-
-}
-
-void FtSwarmScreen::activate( void ) {
-
-  screenManager.blockEvents = blockEvents;
-  objects.activate();
-  selectables.activate();
-
-}
-
-void FtSwarmScreen::deactivate( void ) {
-
-  objects.deactivate();
-  selectables.deactivate();
-
-}
-
-void FtSwarmScreen::close( FtSwarmScreenEvent_t event, uint8_t id, uint8_t nParam, const char *sParam ) { 
-  
-  FtSwarmScreen *o;
-  
-  // cleanup to the left
-  FtSwarmScreen *p = prev;
-  while (p) {
-    p->toBeDestroyed = true;
-    p = p->prev;
-  }
-
-  // cleanup to the right
-  FtSwarmScreen *n = next;
-  while (n) {
-    n->toBeDestroyed = true;
-    n = n->next;
-  }
-
-  toBeDestroyed = true;
-
-  screenManager.activate( parent ); 
-
-  if ( event != FTSWARM_SCREENEVENT_NONE ) screenManager.eventHandler( parent, event, id, nParam, sParam );
-
-};
-
-void FtSwarmScreen::deleteSelectables( void ) {
-
-  selectables.cleanup();
-  selected = NULL;
-
-}
-
-bool FtSwarmScreen::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
-
-  if ( !navigation ) return false;
-
-  // catch all joystick stuff
-  if ( id == SWOSJOY1LR ) {
-  
-    // switch left?
-    if ( ( event == FTSWARM_SCREENEVENT_DOWN ) && ( prev ) ) screenManager.activate( prev ); 
-
-    // switch right?
-    if ( ( event == FTSWARM_SCREENEVENT_UP ) && ( next ) )   screenManager.activate( next );
-
-    return true;
-
-  }
-
-  if ( id == SWOSJOY1FB ) {
-
-    FtSwarmScreenObj *nextSelection = NULL;
-
-    // go up ?
-    if ( ( event == FTSWARM_SCREENEVENT_UP ) && ( selected ) ) nextSelection = selectables.prev( (FtSwarmScreenObj *) selected );
-
-    // go down ?
-    if ( ( event == FTSWARM_SCREENEVENT_DOWN ) && ( selected ) ) nextSelection = selected->next;
-
-    // found?
-    if (nextSelection) {
-
-      // set old one to normal
-      selected->draw();
-
-      // select new one
-      selected = (FtSwarmScreenSelectable *) nextSelection;
-      selected->select();
-
-    }
-
-    return true;
-
-  }
-
-  // select J1
-  if ( id == FTSWARM_J1 ) {
-    
-    if ( event == FTSWARM_SCREENEVENT_DOWN ) screenManager.eventHandler( this, FTSWARM_SCREENEVENT_OK, selected->getID() );
-
-    return true;
-
-  }
-
-  // back
-  if ( id == FTSWARM_F2 )  {
-    
-    if ( event == FTSWARM_SCREENEVENT_DOWN ) close();
-
-    return true;
-
-  }
-
-  // other events
-  return false;
-
-}
-
-uint8_t FtSwarmScreen::countPrev( void ) {
-
-  uint8_t count = 0;
-  FtSwarmScreen *screen = prev;
-
-  while( screen ) { count++; screen = screen->prev; }
-
-  return count;
-
-}
-
-uint8_t FtSwarmScreen::countNext( void ) {
-
-  uint8_t count = 0;
-  FtSwarmScreen *screen = next;
-
-  while( screen ) { count++; screen = screen->next; }
-
-  return count;
-
-}
-
-int16_t FtSwarmScreen::getNextY( void ) {
-
-  return selectables.getNextY();
-
-}
-
-/***************************************************
- *
- *   FtSwarmScreenChooseOption
- *
- ***************************************************/   
-
-FtSwarmScreenChooseOption::FtSwarmScreenChooseOption( FtSwarmScreen *parent, uint8_t id, const char *title, const char *text,
-                                                int32_t value1, const char *option1, 
-                                                int32_t value2, const char *option2, 
-                                                int32_t value3, const char *option3, 
-                                                int32_t value4, const char *option4 ) : FtSwarmScreen( parent, title) {
-
-  this->id = id;
-  this->value[0] = value1;
-  this->value[1] = value2;
-  this->value[2] = value3;
-  this->value[3] = value4;
-
-  add( new FtSwarmScreenESC( this ) );
-  if (option1) add( new FtSwarmScreenS1( this, option1) );
-  if (option2) add( new FtSwarmScreenS2( this, option2) );
-  if (option3) add( new FtSwarmScreenS3( this, option3) );
-  if (option4) add( new FtSwarmScreenS4( this, option4) );
+  if ( ( !text)  || ( text[0]=='\0' ) ) return;
 
   // ** split text **
-  uint8_t len = strlen( text );
-  uint8_t maxCharsPerRow = oled.getScreenWidth() / oled.getTextWidth( text );
-  uint8_t neededRows = len / maxCharsPerRow + 1;
-  uint8_t optLength  = len / neededRows;
+  int16_t len = strlen( text );
+  int16_t screenWidth = oled.getScreenWidth();
+  int16_t textWidth =  oled.getTextWidth( text );
 
+  // 1. Calculate average pixels per character
+  // We use float or multiply by 10 to avoid integer truncation issues
+  float avgCharWidth = (float)textWidth / len;
+
+  // 2. Calculate how many characters actually fit in the screen width
+  int16_t maxCharsPerRow = screenWidth / avgCharWidth;
+
+  // Safety check: if a single char is wider than the screen
+  if (maxCharsPerRow <= 0) maxCharsPerRow = 1;
+
+  // Use maxCharsPerRow as your baseline for optLength
+  int16_t optLength = maxCharsPerRow;
+  
   // add some chars to be more flexible
   uint8_t diff = maxCharsPerRow - optLength;
   if ( diff > 4 ) optLength += 4;
@@ -642,9 +761,9 @@ FtSwarmScreenChooseOption::FtSwarmScreenChooseOption( FtSwarmScreen *parent, uin
   // start splitting
   uint16_t cut;
   char *todo = (char *)text;
-  maxLine = -1;
+  char line[30];
 
-  while ( ( todo[0] != '\0' ) && ( maxLine < 4) ) {
+  while ( todo[0] != '\0' ) {
 
     if ( strlen( todo ) <= optLength )
       // last line
@@ -661,9 +780,9 @@ FtSwarmScreenChooseOption::FtSwarmScreenChooseOption( FtSwarmScreen *parent, uin
 
     }
 
-    // copy
-    line[++maxLine] = (char *) calloc( cut+1, sizeof( char ) );
-    strncpy( line[maxLine], todo, cut );
+    strncpy( line, todo, cut );
+    line[cut] = '\0';
+    addText( FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth() / 2, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNCENTER, line );
 
     // skip space?
     if ( todo[cut] == ' ' ) cut++;
@@ -675,37 +794,262 @@ FtSwarmScreenChooseOption::FtSwarmScreenChooseOption( FtSwarmScreen *parent, uin
 
 }
 
-FtSwarmScreenChooseOption::~FtSwarmScreenChooseOption() {
+void FtSwarmScreen::addNavigation( void ) {
 
-  for ( uint8_t i=0; i<=maxLine; i++ ) free( line[i] );
+  // already installed?
+  if (navigation) return;
+
+  // add joysticks
+  addJoystick( FTSWARM_OLED_NOSCREEN, "", 0 );
+  // addJoystick( FTSWARM_OLED_MAINSCREEN, 1 );
+
+  // all done
+  navigation = true;
+
 }
 
-void FtSwarmScreenChooseOption::draw( void ) {
+FtSwarmScreenObj *FtSwarmScreen::add( FtSwarmScreenObj *newObject ) {
+  
+  if (!newObject) return newObject;
 
-  FtSwarmScreen::draw();
+  objects.add( newObject );
 
-  int8_t rowHeight = oled.getTextHeight()+1;
-  int8_t space     = 48 - rowHeight; 
-  int8_t y         = ( space - ( (maxLine+2) * oled.getTextHeight() ) ) / 2;
+  if ( newObject->getType() == FTSWARMSCREEN_SELECTABLE ) addNavigation();
 
-  // just in case
-  if ( y<0 ) y = 0;
-
-  for ( uint8_t i=0; i<=maxLine; i++ ) {
-    oled.drawStr( FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2, y, line[i], FTSWARM_ALIGNCENTER );
-    y += rowHeight;
+  if ( newObject->getScreen() == FTSWARM_OLED_BUTTONSCREEN ) {
+    buttonScreen = true;
+    oled.buttonScreen( true );
   }
+
+  return newObject;
+
+}
+
+void FtSwarmScreen::draw( void ) {
+
+  // cls
+  oled.cls( );
+
+  // draw objects in all screens
+  objects.draw( );
+
+  // vertical slider?
+  oled.drawVSlider( FTSWARM_OLED_MAINSCREEN, objects.getNextY( FTSWARM_OLED_MAINSCREEN ) );
+
+}
+
+void FtSwarmScreen::activate( void ) {
+
+  screenManager.blockEvents = blockEvents;
+  objects.activate();
+  oled.buttonScreen( buttonScreen );
+
+}
+
+void FtSwarmScreen::deactivate( void ) {
+
+  objects.deactivate();
+
+}
+
+void FtSwarmScreen::close( FtSwarmScreenEvent_t event, uint8_t id, uint8_t nParam, const char *sParam ) { 
+  
+  screenManager.activate( parent ); 
+
+  if ( event != FTSWARM_SCREENEVENT_NONE ) screenManager.eventHandler( parent, event, id, nParam, sParam );
+
+  toBeDestroyed = true;
+
+};
+
+bool FtSwarmScreen::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
+
+  // debugEvent( "FtSwarmScreen::eventHandler", "", event, id, nParam, sParam );
+
+  // explizit no handling?
+  if ( id == FTSWARMSCREEN_NOID) return true;
+
+  // back
+  if ( ( id == FTSWARM_F2 ) && ESC ) {
+    
+    if ( event == FTSWARM_SCREENEVENT_DOWN ) close();
+
+    return true;
+
+  }
+
+  // I don't use navigation? done!
+  if ( !navigation ) return false;
+
+  if ( id == FTSWARMSCREEN_JOY1FB ) {
+
+    FtSwarmScreenSelectable *lastSelection = objects.getSelected();
+    FtSwarmScreenSelectable *nextSelection = nullptr;
+
+    // go up ?
+    if ( event == FTSWARM_SCREENEVENT_UP ) {
+      if ( lastSelection ) nextSelection = objects.prevSelectable();
+    }
+
+    // go down ?
+    if ( event == FTSWARM_SCREENEVENT_DOWN ) {
+      if ( lastSelection ) nextSelection = objects.nextSelectable();
+    }
+
+    // found?
+    if ( nextSelection ) {
+
+      // need to scoll?
+      if ( oled.scroll( FTSWARM_OLED_MAINSCREEN, nextSelection->getY(), nextSelection->getY() + oled.getTextHeight() ) ) draw( );
+
+      // redraw old one unselected
+      if ( lastSelection ) lastSelection->draw( false );
+
+      // redraw new one selected
+      if ( nextSelection ) nextSelection->draw( true );
+
+    } else {
+
+    }
+
+    return true;
+
+  }
+
+  // select J1
+  if ( id == FTSWARM_J1 ) {
+    
+    if ( ( event == FTSWARM_SCREENEVENT_DOWN ) && ( objects.getSelected() ) ) screenManager.eventHandler( this, FTSWARM_SCREENEVENT_OK, objects.getSelected()->getID() );
+
+    return true;
+
+  }
+
+  // other events
+  return false;
+
+}
+
+int16_t FtSwarmScreen::getNextY( FtSwarmOledScreen_t screen ) {
+
+  return objects.getNextY( screen );
+
+}
+
+
+FtSwarmScreenButton *FtSwarmScreen::addS1( const char *text ) {
+
+  return (FtSwarmScreenButton*) add( new FtSwarmScreenButton( FTSWARM_S1, this, FTSWARM_OLED_BUTTONSCREEN, 0, 0, FTSWARM_ALIGNLEFT, text, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_S1 ) ) );
+
+}
+
+FtSwarmScreenButton *FtSwarmScreen::addS2( const char *text ) {
+
+  return (FtSwarmScreenButton*) add( new FtSwarmScreenButton( FTSWARM_S2, this, FTSWARM_OLED_BUTTONSCREEN, 41, 0, FTSWARM_ALIGNCENTER, text, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_S2 ) ) );
+
+}
+
+FtSwarmScreenButton *FtSwarmScreen::addS3( const char *text ) {
+
+  return (FtSwarmScreenButton*) add( new FtSwarmScreenButton( FTSWARM_S3, this, FTSWARM_OLED_BUTTONSCREEN, oled.getScreenWidth() -1 -41, 0, FTSWARM_ALIGNCENTER, text, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_S3 ) ) );
+
+}
+
+FtSwarmScreenButton *FtSwarmScreen::addS4( const char *text ) {
+
+  return (FtSwarmScreenButton*) add( new FtSwarmScreenButton( FTSWARM_S4, this, FTSWARM_OLED_BUTTONSCREEN, oled.getScreenWidth() -1, 0, FTSWARM_ALIGNRIGHT, text, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_S4 ) ) );
+
+}
+
+FtSwarmScreenButton *FtSwarmScreen::addF1( const char *text ) {
+
+  return (FtSwarmScreenButton*) add( new FtSwarmScreenButton( FTSWARM_F1, this, FTSWARM_OLED_UPPERSCREEN, 0, 0, FTSWARM_ALIGNLEFT, text, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_F1  ) ) );
+
+}
+
+FtSwarmScreenButton *FtSwarmScreen::addF2( const char *text ) {
+
+  return (FtSwarmScreenButton*) add( new FtSwarmScreenButton( FTSWARM_F2, this, FTSWARM_OLED_UPPERSCREEN, oled.getScreenWidth() -1, 0, FTSWARM_ALIGNRIGHT, text, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_F2 ) ) );
+
+}
+
+FtSwarmScreenButton *FtSwarmScreen::addESC( void ) { 
+  
+  return addF2( "^" ) ; 
+
+};
+
+FtSwarmScreenButton *FtSwarmScreen::addJ1( const char *text, FtSwarmOledScreen_t screen ) {
+
+  return (FtSwarmScreenButton*) add( new FtSwarmScreenButton( FTSWARM_J1, this, screen, 48, 16, FTSWARM_ALIGNLEFT, text, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_J1 ) ) );
+
+}
+
+FtSwarmScreenButton *FtSwarmScreen::addJ2( const char *text, FtSwarmOledScreen_t screen ) {
+
+  return (FtSwarmScreenButton*) add( new FtSwarmScreenButton( FTSWARM_J2, this, screen, oled.getScreenWidth() -1 -48, 16, FTSWARM_ALIGNRIGHT, text, myOSSwarm.Ctrl[0]->getIO( SWOSIO_BUTTON, FTSWARM_F2 ) ) );
+
+}
+
+FtSwarmScreenText *FtSwarmScreen::addText( FtSwarmOledScreen_t screen, int16_t x, int16_t y, FtSwarmAlign_t align, const char *text ) {
+
+  if ( y + oled.getTextHeight() > oled.getScreenHeight( screen ) ) addNavigation();
+
+  return (FtSwarmScreenText*) add( new FtSwarmScreenText( FTSWARMSCREEN_NOID, this, screen, x, y, align, text ) );
+
+}
+
+void FtSwarmScreen::addJoystick( FtSwarmOledScreen_t screen, const char *text, uint8_t joystick ) {
+
+  switch ( joystick ) {
+    case 0: add( new FtSwarmScreenJoystickPoti( FTSWARMSCREEN_JOY1LR, this, screen, 0, 0, FTSWARM_ALIGNLEFT, "", myOSSwarm.Ctrl[0]->getIO( SWOSIO_JOYSTICK_POTI, FTSWARM_HAL_FIRSTJPOTI   ) ) );
+            add( new FtSwarmScreenJoystickPoti( FTSWARMSCREEN_JOY1FB, this, screen, 0, 0, FTSWARM_ALIGNLEFT, "", myOSSwarm.Ctrl[0]->getIO( SWOSIO_JOYSTICK_POTI, FTSWARM_HAL_FIRSTJPOTI+1 ) ) );
+            addJ1( text, screen );
+            break;
+
+    case 1: add( new FtSwarmScreenJoystickPoti( FTSWARMSCREEN_JOY2LR, this, screen, 0, 0, FTSWARM_ALIGNLEFT, "", myOSSwarm.Ctrl[0]->getIO( SWOSIO_JOYSTICK_POTI, FTSWARM_HAL_FIRSTJPOTI+2 ) ) );
+            add( new FtSwarmScreenJoystickPoti( FTSWARMSCREEN_JOY2FB, this, screen, 0, 0, FTSWARM_ALIGNLEFT, "", myOSSwarm.Ctrl[0]->getIO( SWOSIO_JOYSTICK_POTI, FTSWARM_HAL_FIRSTJPOTI+3 ) ) );
+            addJ2( text, screen );
+            break;
+  }
+  
+}
+
+/***************************************************
+ *
+ *   FtSwarmScreenChooseOption
+ *
+ ***************************************************/   
+
+FtSwarmScreenChooseOption::FtSwarmScreenChooseOption( FtSwarmScreen *parent, const char *title, const char *text, uint8_t callbackID,
+                                                      int32_t value1, const char *option1, 
+                                                      int32_t value2, const char *option2, 
+                                                      int32_t value3, const char *option3, 
+                                                      int32_t value4, const char *option4 ) : FtSwarmScreen( parent, title, text ) {
+
+  this->callbackID = callbackID;
+
+  addESC();
+  if (option1) addS1( option1 );
+  if (option2) addS2( option2 );
+  if (option3) addS3( option3 );
+  if (option4) addS4( option4 );
+
+  value[0] = value1;
+  value[1] = value2;
+  value[2] = value3;
+  value[3] = value4;
 
 }
 
 bool FtSwarmScreenChooseOption::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
 
-  if ( FtSwarmScreen::eventHandler( event, id,nParam, sParam ) ) return true;
+  if ( FtSwarmScreen::eventHandler( event, id, nParam, sParam ) ) return true;
 
   if ( event == FTSWARM_SCREENEVENT_DOWN ) {
   
     // S1..S4
-    if ( id != FTSWARM_F2 ) screenManager.eventHandler( parent, FTSWARM_SCREENEVENT_OK, this->id, value[id - FTSWARM_S1], NULL );
+    if ( ( id >= FTSWARM_S1 ) && ( id <= FTSWARM_S4 ) ) screenManager.eventHandler( parent, FTSWARM_SCREENEVENT_OK, this->callbackID, value[id - FTSWARM_S1], nullptr );
 
     // close
     close();
@@ -722,7 +1066,7 @@ bool FtSwarmScreenChooseOption::eventHandler( FtSwarmScreenEvent_t event, uint8_
  ***************************************************/
 
 template<typename... Args>
-FtSwarmScreenSelectList::FtSwarmScreenSelectList( FtSwarmScreen *parent, const char *title, uint8_t callbackID, Args... args ) : FtSwarmScreen( parent, title, NULL ) {
+FtSwarmScreenSelectList::FtSwarmScreenSelectList( FtSwarmScreen *parent, const char *title, const char *text, uint8_t callbackID, Args... args ) : FtSwarmScreen( parent, title, text ) {
 
   this->callbackID = callbackID;
 
@@ -735,8 +1079,6 @@ FtSwarmScreenSelectList::FtSwarmScreenSelectList( FtSwarmScreen *parent, const c
 template<typename... Tail>
 void FtSwarmScreenSelectList::process(uint8_t id, const char* str, Tail... tail) {
 
-  // printf("FtSwarmScreenSelectList::process %d %s\n", id, str );
-
   add( new FtSwarmScreenSelectable( id, this, str ) );
   process(tail...);
 
@@ -746,227 +1088,11 @@ bool FtSwarmScreenSelectList::eventHandler( FtSwarmScreenEvent_t event, uint8_t 
 
   if ( FtSwarmScreen::eventHandler( event, id, nParam, sParam ) ) return true;
 
-  if ( event == FTSWARM_SCREENEVENT_OK ) { close( event, callbackID, selected->getID() ); return true; }
+  if ( event == FTSWARM_SCREENEVENT_OK ) { close( event, callbackID, objects.getSelected()->getID() ); return true; }
 
   return false;
 
 }
-
-/***************************************************
- *
- *   FtSwarmScreenChooseConfig
- *
- ***************************************************/
-
-FtSwarmScreenChooseConfig::FtSwarmScreenChooseConfig( FtSwarmScreen *parent, FtSwarmScreen *next  ) : FtSwarmScreen( parent, "Configuration", next ) {
-
-  add( new FtSwarmScreenS1( this, "#1" ) );
-  add( new FtSwarmScreenS2( this, "#2" ) );
-  add( new FtSwarmScreenS3( this, "#3" ) );
-  add( new FtSwarmScreenS4( this, "#4" ) );
-
-}
-
- void FtSwarmScreenChooseConfig::draw( void ) {
-
-  FtSwarmScreen::draw();
-  oled.drawStr( FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2, 7, "Choose new", FTSWARM_ALIGNCENTER );
-  oled.drawStr( FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2, 16, "configuration", FTSWARM_ALIGNCENTER );
-  
-}
-
-bool FtSwarmScreenChooseConfig::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
-
-  if ( FtSwarmScreen::eventHandler( event, id, nParam, sParam ) ) return true;
-
-  if ( event == FTSWARM_SCREENEVENT_DOWN ) {
-
-    // change config asynchronous
-    SwOSCom setConfig( myOSSwarm.Ctrl[0]->macAddr, myOSSwarm.Ctrl[0]->serialNumber, CMD_SETACTIVECONFIG );
-    setConfig.data.configCmd.config = id - FTSWARM_S1;
-    xQueueSend( myOSNetwork.recvNotification, &setConfig, ESPNOW_MAXDELAY );
-
-    // replace myself with the previous screen
-    close();
-
-    return true;
-
-  }
-
-  return false;
-  
-}
-
-/***************************************************
- *
- *   FtSwarmScreenWifi
- *
- ***************************************************/
-
-#define SWOSSCREENWIFI_MODE      ( SWOSSCREENID_BASE + 0 )
-#define SWOSSCREENWIFI_SSID      ( SWOSSCREENID_BASE + 1 )
-#define SWOSSCREENWIFI_PASSWD    ( SWOSSCREENID_BASE + 2 )
-#define SWOSSCREENWIFI_CB_MODE   ( SWOSSCREENID_BASE + 3 )
-#define SWOSSCREENWIFI_CB_SSID   ( SWOSSCREENID_BASE + 4 )
-#define SWOSSCREENWIFI_CB_PASSWD ( SWOSSCREENID_BASE + 5 )
-#define SWOSSCREENWIFI_CB_SAVE   ( SWOSSCREENID_BASE + 6 )
-
-FtSwarmScreenWifi::FtSwarmScreenWifi( FtSwarmScreen *parent, FtSwarmScreen *next  ) : FtSwarmScreen( parent, "Wifi", next ) {
-
-  strcpy( wifiSSID, nvs.wifiSSID );
-  strcpy( wifiPwd,  nvs.wifiPwd );
-  wifiMode = nvs.wifiMode;
-
-  add( wifiModeSO = new FtSwarmScreenSelectable( SWOSSCREENWIFI_MODE,   this, "Mode",   WIFI[wifiMode], 0,  1, 40, oled.getScreenWidth()-40 ) );
-  add( wifiSSIDSO = new FtSwarmScreenSelectable( SWOSSCREENWIFI_SSID,   this, "SSID",   wifiSSID, 0, 10, 40, oled.getScreenWidth()-40 ) );
-  add( wifiPwdSO  = new FtSwarmScreenSelectable( SWOSSCREENWIFI_PASSWD, this, "Passwd", "*****",  0, 19, 40, oled.getScreenWidth()-40 ) );
-  add( S4 = new FtSwarmScreenS4( this, "" ) );
-
-  wifiSSIDSO->setVisible( ( wifiMode != wifiOFF ) );
-  wifiPwdSO->setVisible ( ( wifiMode != wifiOFF ) );
-
-}
-
-bool FtSwarmScreenWifi::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam , const char *sParam ) {
-
-  if ( FtSwarmScreen::eventHandler( event, id, nParam, sParam ) ) return true;
-
-  if ( event == FTSWARM_SCREENEVENT_OK ) {
-
-    switch (id) {
-
-      case SWOSSCREENWIFI_MODE:       screenManager.activate( new FtSwarmScreenChooseOption( this, SWOSSCREENWIFI_CB_MODE, "wifi mode", "choose wifi mode", wifiOFF, "off", wifiAP, "AP", wifiClient, "client" ) );
-                                      break;
-
-      case SWOSSCREENWIFI_CB_MODE:    wifiMode = (FtSwarmWifi_t) nParam;
-                                      wifiModeSO->setText( WIFI[wifiMode] );
-                                      wifiSSIDSO->setVisible( ( wifiMode != wifiOFF ) );
-                                      wifiPwdSO->setVisible ( ( wifiMode != wifiOFF ) );
-                                      anythingChanged = true;
-                                      break;
-
-      case SWOSSCREENWIFI_SSID:       if ( wifiMode == wifiAP ) screenManager.activate( new FtSwarmScreenInput( this, SWOSSCREENWIFI_CB_SSID, "SSID", wifiSSID, 63 ) );
-                                      else                      screenManager.activate( new FtSwarmScreenWifiSSID( this, SWOSSCREENWIFI_CB_SSID ) );
-                                      break;
-
-      case SWOSSCREENWIFI_CB_SSID:    if (sParam) { 
-                                        strcpy( wifiSSID, sParam); 
-                                        wifiSSIDSO->setText( wifiSSID );
-                                        anythingChanged = true;
-                                      }
-                                      break;
-
-      case SWOSSCREENWIFI_PASSWD:     screenManager.activate( new FtSwarmScreenInput( this, SWOSSCREENWIFI_CB_PASSWD, "Password", "", 63 ) );
-                                      break;
-
-      case SWOSSCREENWIFI_CB_PASSWD:  if ( sParam) {
-                                        if ( ( strlen(sParam) > 0 ) && ( strlen(sParam) < 8 ) ) screenManager.activate( new FtSwarmScreenError( this, "wifi passwords needs at minimum 8 chars" ) );
-                                        else {
-                                          strcpy( wifiPwd, sParam);
-                                          anythingChanged = true;
-                                        }
-                                      }
-                                      break;
-
-      case SWOSSCREENWIFI_CB_SAVE:    if (nParam) {
-                                        nvs.wifiMode = wifiMode;
-                                        strcpy( nvs.wifiSSID, wifiSSID );
-                                        strcpy( nvs.wifiPwd,  wifiPwd );
-                                        nvs.saveAndRestart();
-                                      }
-                                      break;
-
-    }
-
-    if ( anythingChanged ) S4->setLabel("Save");
-    
-    return true;
-    
-  }
-  
-  if ( event == FTSWARM_SCREENEVENT_DOWN ) {
-
-    if ( ( id == FTSWARM_S4 ) && ( anythingChanged ) )  screenManager.activate( new FtSwarmScreenYesNo( this, SWOSSCREENWIFI_CB_SAVE, "wifi", "Save new settings and reboot?" ) );
-    return true;
-
-  }
-
-  return false;
-
-}
-
-/***************************************************
- *
- *   FtSwarmScreenWifiSSID
- *
- ***************************************************/
-
-FtSwarmScreenWifiSSID::FtSwarmScreenWifiSSID( FtSwarmScreen *parent, uint8_t id  ): FtSwarmScreen( parent, "SSID", NULL ) {
-
-  this->id = id;
-  scanStatus = WIFI_SCAN_RUNNING;
-  WiFi.scanNetworks(true);
-
-}
-
-FtSwarmScreenWifiSSID::~FtSwarmScreenWifiSSID() {
-  WiFi.scanDelete();
-}
-
-void FtSwarmScreenWifiSSID::draw( void ) {
-  
-  FtSwarmScreen::draw();
-
-  if ( scanStatus == WIFI_SCAN_RUNNING ) 
-  oled.drawStr( FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2, 32,  "scanning...", FTSWARM_ALIGNCENTER );
-
-}
-
-bool FtSwarmScreenWifiSSID::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
-
-  if ( FtSwarmScreen::eventHandler( event, id, nParam, sParam ) ) return true;
-
-  // must be a J1 click to select and close
-  close( FTSWARM_SCREENEVENT_OK, this->id, selected->getID(), (char *) selected->getText() );
-
-  return true;
-
-}
-
-void FtSwarmScreenWifiSSID::operate( void ) {
-
-  // done?
-  if ( scanStatus > 0 ) return;
-
-  // continue?
-  scanStatus = WiFi.scanComplete();
-
-  if ( scanStatus > 0 ) {
-
-    for ( uint8_t i=0; i<scanStatus; i++ ) {
-
-      bool unique = true;
-
-      for ( uint8_t j=0; j<i; j++ ) {
-        if ( WiFi.SSID(i) == WiFi.SSID(j) ) {
-          unique = false;
-          break;
-        }
-      }
-
-      if ( unique ) add( new FtSwarmScreenSelectable( i, this, "", WiFi.SSID(i).c_str(), 0, i*9+1, 0, oled.getScreenWidth() ) );
-
-    }
-
-    draw();
-
-  } else if ( scanStatus != WIFI_SCAN_RUNNING ) {
-
-    close();
-
-  }
-
-};
 
 /***************************************************
  *
@@ -974,9 +1100,12 @@ void FtSwarmScreenWifiSSID::operate( void ) {
  *
  ***************************************************/
 
-void FtSwarmScreenInput::init(FtSwarmScreen *parent,  uint8_t id, const char *title, const char *param, uint8_t maxLength ) {
+void FtSwarmScreenInput::init(FtSwarmScreen *parent, const char *title, uint8_t callbackID, const char *param, uint8_t maxLength ) {
 
-  this->id = id;
+  lineHeight = oled.getTextHeight() + 3;
+  charWidth  = oled.getTextWidth( " " ) + 3;
+
+  this->callbackID = callbackID;
 
   this->maxLength = maxLength;
   input = (char *) calloc( this->maxLength+1, sizeof( char ) );
@@ -987,26 +1116,22 @@ void FtSwarmScreenInput::init(FtSwarmScreen *parent,  uint8_t id, const char *ti
 
   setKeyboard( keyboard );
 
-  add( new FtSwarmScreenJoystickPoti( SWOSJOY1LR, myOSSwarm.Ctrl[0]->getIO( SWOSIO_JOYSTICK_POTI, FTSWARM_HAL_FIRSTJPOTI   ), this, "", 0, 0, FTSWARM_ALIGNLEFT ) );
-  add( new FtSwarmScreenJoystickPoti( SWOSJOY1FB, myOSSwarm.Ctrl[0]->getIO( SWOSIO_JOYSTICK_POTI, FTSWARM_HAL_FIRSTJPOTI+1 ), this, "", 0, 0, FTSWARM_ALIGNLEFT ) );
-  add( new FtSwarmScreenJ1( this, "" ) );
+  addJoystick( FTSWARM_OLED_NOSCREEN, "", 0 );
 
-  add( new FtSwarmScreenESC( this ) );
-
-  if (!numKeyboard) add( S1 = new FtSwarmScreenS1( this, S1Label[keyboard] ) );
-
-  add( new FtSwarmScreenS3( this, "<]") );
-  add( new FtSwarmScreenS4( this, "OK") );
+  if (!numKeyboard) S1 = addS1( S1Label[keyboard] );
+  
+  addS3( "<]" );
+  addS4( "OK" );
 
 }
 
-FtSwarmScreenInput::FtSwarmScreenInput( FtSwarmScreen *parent, uint8_t id, const char *title, const char *param, uint8_t maxLength ) : FtSwarmScreen( parent, title ) {
+FtSwarmScreenInput::FtSwarmScreenInput( FtSwarmScreen *parent, const char *title, uint8_t callbackID, const char *param, uint8_t maxLength ) : FtSwarmScreen( parent, title, "" ) {
 
-  init( parent, id, title, param, maxLength );
+  init( parent, title, callbackID, param, maxLength );
 
 }
 
-FtSwarmScreenInput::FtSwarmScreenInput( FtSwarmScreen *parent, uint8_t id, const char *title, int32_t param, uint8_t maxLength ) : FtSwarmScreen( parent, title ) {
+FtSwarmScreenInput::FtSwarmScreenInput( FtSwarmScreen *parent, const char *title, uint8_t callbackID, int32_t param, uint8_t maxLength ) : FtSwarmScreen( parent, title, "" ) {
 
   char str[32];
   if ( param == FTSWARM_NANI32 ) str[0] = '\0';
@@ -1014,7 +1139,7 @@ FtSwarmScreenInput::FtSwarmScreenInput( FtSwarmScreen *parent, uint8_t id, const
 
   keyboard    = 2;
   numKeyboard = true;
-  init( parent, id, title, str, maxLength );
+  init( parent, title, callbackID, str, maxLength );
 
 
 }
@@ -1025,17 +1150,20 @@ FtSwarmScreenInput::~FtSwarmScreenInput() {
 
 void FtSwarmScreenInput::drawCursor( bool invert ) {
   
-  uint8_t cx = keyboardX + cursorC[keyboard] *  9 +1;
-  uint8_t cy = keyboardY + cursorR[keyboard] * 11 +1;
+  uint8_t cx = keyboardX + cursorC[keyboard] * charWidth;
+  uint8_t cy = keyboardY + cursorR[keyboard] * lineHeight;
 
   char key[2];
   key[0] = keyboardMap[keyboard][keymapIndex()];
   key[1] = '\0';
 
-  uint8_t flags = U8G2_BTN_BW1;
-  if ( invert) flags |= U8G2_BTN_INV;
+  // uint8_t flags = U8G2_BTN_BW1;
+  // if ( invert) flags |= U8G2_BTN_INV;
 
-  oled.drawButton( FTSWARM_OLED_MAINSCREEN, cx, cy, 9, key, flags, 1, 1 );
+  // oled.drawButton( FTSWARM_OLED_MAINSCREEN, cx, cy, 9, key, flags, 1, 1 );
+
+  oled.drawStrRect( FTSWARM_OLED_MAINSCREEN, cx, cy, lineHeight, key, FTSWARM_ALIGNLEFT, 2, 2, invert? FTSWARM_OLED_FILLWHITE:FTSWARM_OLED_FILLBLACK );
+  oled.drawRect( FTSWARM_OLED_MAINSCREEN, cx, cy, charWidth+1, lineHeight+1 );
 
 }
 
@@ -1073,15 +1201,14 @@ void FtSwarmScreenInput::draw( void ) {
   char key[2];
   key[1] = '\0';
 
-  int16_t lineHeight = oled.getTextHeight() + 3;
-  int16_t charWidth  = oled.getTextWidth( " " ) + 3;
-
   for (uint8_t r=0; r<rows[keyboard]; r++) {
 
     x1 = keyboardX;
     for (uint8_t c=0; c<cols[keyboard]; c++ ) {
       key[0] = keyboardMap[keyboard][ r*cols[keyboard] + c ];
-      oled.drawButton( FTSWARM_OLED_MAINSCREEN, x1+2, y1+2, 9, key, U8G2_BTN_BW1, 1, 1 );
+      oled.drawStrRect( FTSWARM_OLED_MAINSCREEN, x1, y1, lineHeight, key, FTSWARM_ALIGNLEFT, 2, 2 );
+      oled.drawRect( FTSWARM_OLED_MAINSCREEN, x1, y1, charWidth+1, lineHeight+1 );
+      // oled.drawButton( FTSWARM_OLED_MAINSCREEN, x1+2, y1+2, 9, key, U8G2_BTN_BW1, 1, 1 );
       x1 += charWidth;
     }
 
@@ -1090,7 +1217,7 @@ void FtSwarmScreenInput::draw( void ) {
   }
 
   // keys area
-  oled.drawRect( FTSWARM_OLED_MAINSCREEN, keyboardX, keyboardY, keyboardWidth, keyboardHeight );
+  // oled.drawRect( FTSWARM_OLED_MAINSCREEN, keyboardX, keyboardY, keyboardWidth, keyboardHeight );
 
   drawCursor( true );
 
@@ -1101,10 +1228,10 @@ void FtSwarmScreenInput::setKeyboard( uint8_t keyboard ) {
   if ( keyboard > KEYMAPS-1 ) this->keyboard = 0;
   else                        this->keyboard = keyboard;
 
-  keyboardWidth  = cols[this->keyboard] *  9 + 1;
-  keyboardHeight = rows[this->keyboard] * 11 + 1;
+  keyboardWidth  = cols[this->keyboard] * charWidth + 1;
+  keyboardHeight = rows[this->keyboard] * lineHeight + 1;
   keyboardX      = ( oled.getScreenWidth() - this->keyboardWidth ) / 2;
-  keyboardY      = 11;
+  keyboardY      = 10;
 
 }
 
@@ -1115,7 +1242,7 @@ bool FtSwarmScreenInput::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
   // joystick
   switch ( id ) {
 
-    case SWOSJOY1LR:  drawCursor( false );
+    case FTSWARMSCREEN_JOY1LR:  drawCursor( false );
                       
                       if ( event == FTSWARM_SCREENEVENT_DOWN ) {
                         if ( cursorC[keyboard] ) cursorC[keyboard]--;
@@ -1130,7 +1257,7 @@ bool FtSwarmScreenInput::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
                       drawCursor( true );
                       return true;
 
-    case SWOSJOY1FB:  drawCursor( false );
+    case FTSWARMSCREEN_JOY1FB:  drawCursor( false );
 
                       if ( event == FTSWARM_SCREENEVENT_UP ) {
                         if ( cursorR[keyboard] ) cursorR[keyboard]--;
@@ -1153,7 +1280,7 @@ bool FtSwarmScreenInput::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
     switch (id) {
 
       case FTSWARM_S1:  setKeyboard( keyboard + 1 );
-                        S1->setLabel( S1Label[keyboard] );
+                        S1->setText( S1Label[keyboard] );
                         draw();
                         return true;
 
@@ -1173,7 +1300,7 @@ bool FtSwarmScreenInput::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
                         return true;
 
       case FTSWARM_S4:  close();
-                        screenManager.eventHandler( parent, FTSWARM_SCREENEVENT_OK, this->id, atoi(input), input );
+                        screenManager.eventHandler( parent, FTSWARM_SCREENEVENT_OK, callbackID, atoi(input), input );
                         return true;
 
       case FTSWARM_F2:  close();
@@ -1187,6 +1314,203 @@ bool FtSwarmScreenInput::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
 
 }
 
+/******************************* FIRMWARE SCREENS ***********************************/
+
+/***************************************************
+ *
+ *   FtSwarmScreenWifi
+ *
+ ***************************************************/
+
+#define FTSWARMSCREENWIFI_MODE      ( FTSWARMSCREEN_BASEID + 0 )
+#define FTSWARMSCREENWIFI_SSID      ( FTSWARMSCREEN_BASEID + 1 )
+#define FTSWARMSCREENWIFI_PASSWD    ( FTSWARMSCREEN_BASEID + 2 )
+#define FTSWARMSCREENWIFI_CB_MODE   ( FTSWARMSCREEN_BASEID + 3 )
+#define FTSWARMSCREENWIFI_CB_SSID   ( FTSWARMSCREEN_BASEID + 4 )
+#define FTSWARMSCREENWIFI_CB_PASSWD ( FTSWARMSCREEN_BASEID + 5 )
+#define FTSWARMSCREENWIFI_CB_SAVE   ( FTSWARMSCREEN_BASEID + 6 )
+
+FtSwarmScreenWifi::FtSwarmScreenWifi( FtSwarmScreen *parent  ) : FtSwarmScreen( parent, "Wifi", "" ) {
+
+  strcpy( wifiSSID, nvs.wifiSSID );
+  strcpy( wifiPwd,  nvs.wifiPwd );
+  wifiMode = nvs.wifiMode;
+
+  int16_t y = getNextY( FTSWARM_OLED_MAINSCREEN );
+  addText( FTSWARM_OLED_MAINSCREEN, 0, y, FTSWARM_ALIGNLEFT, "Mode" );
+  wifiModeSelect = ( FtSwarmScreenSelectable* ) add( new FtSwarmScreenSelectable( FTSWARMSCREENWIFI_MODE,    this, FTSWARM_OLED_MAINSCREEN, 40,  1, oled.getScreenWidth()-40, FTSWARM_ALIGNLEFT, WIFI[wifiMode] ) );
+
+  y = getNextY( FTSWARM_OLED_MAINSCREEN );
+  wifiSSIDText   = addText( FTSWARM_OLED_MAINSCREEN, 0, y, FTSWARM_ALIGNLEFT, "SSID" );
+  wifiSSIDSelect = ( FtSwarmScreenSelectable* ) add( new FtSwarmScreenSelectable( FTSWARMSCREENWIFI_SSID,    this, FTSWARM_OLED_MAINSCREEN, 40, 10, oled.getScreenWidth()-40, FTSWARM_ALIGNLEFT, wifiSSID ) );
+
+  y = getNextY( FTSWARM_OLED_MAINSCREEN );
+  wifiPwdText    = addText( FTSWARM_OLED_MAINSCREEN, 0, y, FTSWARM_ALIGNLEFT, "Passwd" );
+  wifiPwdSelect  = ( FtSwarmScreenSelectable* ) add( new FtSwarmScreenSelectable( FTSWARMSCREENWIFI_PASSWD, this, FTSWARM_OLED_MAINSCREEN, 40, 19, oled.getScreenWidth()-40, FTSWARM_ALIGNLEFT, "*****" ) );
+
+  if (wifiMode == wifiOFF ) {
+    wifiSSIDText->setVisible( false );
+    wifiSSIDSelect->setVisible( false );
+    wifiPwdText->setVisible( false );
+    wifiPwdSelect->setVisible( false );
+  }
+
+  S4 = addS4( "Save" );
+  S4->setVisible(false);
+
+}
+
+bool FtSwarmScreenWifi::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam , const char *sParam ) {
+
+  if ( FtSwarmScreen::eventHandler( event, id, nParam, sParam ) ) return true;
+
+  if ( event == FTSWARM_SCREENEVENT_OK ) {
+
+    bool changes = false;
+    FtSwarmWifi_t newWifiMode;
+
+    switch (id) {
+
+      case FTSWARMSCREENWIFI_MODE:      screenManager.activate( new FtSwarmScreenChooseOption( this, "wifi mode", "Choose wifi mode.", FTSWARMSCREENWIFI_CB_MODE, wifiOFF, "off", wifiAP, "AP", wifiClient, "client" ) );
+                                        break;
+
+      case FTSWARMSCREENWIFI_CB_MODE:   newWifiMode = (FtSwarmWifi_t) nParam;
+                                        if ( newWifiMode != wifiMode ) {
+                                          wifiMode = newWifiMode;
+                                          wifiModeSelect->setText( WIFI[wifiMode] );
+                                          wifiSSIDSelect->setVisible( ( wifiMode != wifiOFF ) );
+                                          wifiPwdSelect->setVisible ( ( wifiMode != wifiOFF ) );
+                                          changes = true;
+                                        }
+                                        break;
+
+      case FTSWARMSCREENWIFI_SSID:      if ( wifiMode == wifiAP ) screenManager.activate( new FtSwarmScreenInput( this, "SSID", FTSWARMSCREENWIFI_CB_SSID, wifiSSID, 63 ) );
+                                        else                      screenManager.activate( new FtSwarmScreenWifiSSID( this, FTSWARMSCREENWIFI_CB_SSID ) );
+                                        break;
+
+      case FTSWARMSCREENWIFI_CB_SSID:   if (sParam) { 
+                                          strcpy( wifiSSID, sParam); 
+                                          wifiSSIDSelect->setText( wifiSSID );
+                                          changes = true;
+                                        }
+                                        break;
+
+      case FTSWARMSCREENWIFI_PASSWD:    screenManager.activate( new FtSwarmScreenInput( this, "Password", FTSWARMSCREENWIFI_CB_PASSWD, "", 63 ) );
+                                        break;
+
+      case FTSWARMSCREENWIFI_CB_PASSWD: if ( sParam) {
+                                          if ( ( strlen(sParam) > 0 ) && ( strlen(sParam) < 8 ) ) screenManager.activate( new FtSwarmScreenError( this, "wifi passwords needs at minimum 8 chars" ) );
+                                          else {
+                                            strcpy( wifiPwd, sParam);
+                                            changes = true;
+                                          }
+                                        }
+                                        break;
+
+      case FTSWARMSCREENWIFI_CB_SAVE:   if (nParam) {
+                                          nvs.wifiMode = wifiMode;
+                                          strcpy( nvs.wifiSSID, wifiSSID );
+                                          strcpy( nvs.wifiPwd,  wifiPwd );
+                                          nvs.saveAndRestart();
+                                        }
+                                        break;
+
+    }
+
+    if ( changes ) {
+      anythingChanged = true;
+      S4->setVisible( true );
+      draw();
+    }
+
+    return true;
+    
+  }
+  
+  if ( event == FTSWARM_SCREENEVENT_DOWN ) {
+
+    if ( ( id == FTSWARM_S4 ) && ( anythingChanged ) )  screenManager.activate( new FtSwarmScreenYesNo( this, "wifi", "Save new settings and reboot?", FTSWARMSCREENWIFI_CB_SAVE ) );
+    return true;
+
+  }
+
+  return false;
+
+}
+
+/***************************************************
+ *
+ *   FtSwarmScreenWifiSSID
+ *
+ ***************************************************/
+
+FtSwarmScreenWifiSSID::FtSwarmScreenWifiSSID( FtSwarmScreen *parent, uint8_t id  ): FtSwarmScreen( parent, "SSID", "" ) {
+
+  this->id = id;
+  scanStatus = WIFI_SCAN_RUNNING;
+  WiFi.scanNetworks(true);
+
+}
+
+FtSwarmScreenWifiSSID::~FtSwarmScreenWifiSSID() {
+  WiFi.scanDelete();
+}
+
+void FtSwarmScreenWifiSSID::draw( void ) {
+  
+  FtSwarmScreen::draw();
+
+  if ( scanStatus == WIFI_SCAN_RUNNING ) 
+  oled.drawStr( FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2, 32,  "scanning...", FTSWARM_ALIGNCENTER );
+
+}
+
+bool FtSwarmScreenWifiSSID::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
+
+  if ( FtSwarmScreen::eventHandler( event, id, nParam, sParam ) ) return true;
+
+  // must be a J1 click to select and close
+  close( FTSWARM_SCREENEVENT_OK, this->id, objects.getSelected()->getID(), (char *) objects.getSelected()->getText() );
+
+  return true;
+
+}
+
+void FtSwarmScreenWifiSSID::operate( void ) {
+
+  // done?
+  if ( scanStatus > 0 ) return;
+
+  // continue?
+  scanStatus = WiFi.scanComplete();
+
+  if ( scanStatus > 0 ) {
+
+    for ( uint8_t i=0; i<scanStatus; i++ ) {
+
+      bool unique = true;
+
+      for ( uint8_t j=0; j<i; j++ ) {
+        if ( WiFi.SSID(i) == WiFi.SSID(j) ) {
+          unique = false;
+          break;
+        }
+      }
+
+      if ( unique ) add( new FtSwarmScreenSelectable( i, this, FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2, getNextY( FTSWARM_OLED_MAINSCREEN ), oled.getScreenWidth(), FTSWARM_ALIGNCENTER, WiFi.SSID(i).c_str() ) );
+
+    }
+
+    draw();
+
+  } else if ( scanStatus != WIFI_SCAN_RUNNING ) {
+
+    close();
+
+  }
+
+};
+
 
 /***************************************************
  *
@@ -1194,21 +1518,21 @@ bool FtSwarmScreenInput::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
  *
  ***************************************************/
 
- #define SWOSSCREENSWARM_CB_CFG  ( SWOSSCREENID_BASE + 0 )
- #define SWOSSCREENSWARM_CB_PIN  ( SWOSSCREENID_BASE + 1 )
- #define SWOSSCREENSWARM_CB_ADD  ( SWOSSCREENID_BASE + 2 )
- #define SWOSSCREENSWARM_CB_DEL  ( SWOSSCREENID_BASE + 3 )
+ #define FTSWARMSCREENSWARM_CB_CFG  ( FTSWARMSCREEN_BASEID + 0 )
+ #define FTSWARMSCREENSWARM_CB_PIN  ( FTSWARMSCREEN_BASEID + 1 )
+ #define FTSWARMSCREENSWARM_CB_ADD  ( FTSWARMSCREEN_BASEID + 2 )
+ #define FTSWARMSCREENSWARM_CB_DEL  ( FTSWARMSCREEN_BASEID + 3 )
 
- #define SWOSSCREENSWARM_CB_SEL  ( SWOSSCREENID_BASE + 10 )
+ #define FTSWARMSCREENSWARM_CB_SEL  ( FTSWARMSCREEN_BASEID + 10 )
  
-FtSwarmScreenSwarm::FtSwarmScreenSwarm( FtSwarmScreen *parent, FtSwarmScreen *next  ) : FtSwarmScreen( parent, "Remote", next ) {
+FtSwarmScreenSwarm::FtSwarmScreenSwarm( FtSwarmScreen *parent  ) : FtSwarmScreen( parent, "Remote", "" ) {
+
+  addS1( "add" );
+  S2 = addS2( "del" );
+  S3 = addS3( "cfg" );
+  addS4( "pin" );
 
   addMembers();
-
-  add( new FtSwarmScreenS1( this, "add" ) );
-  add( new FtSwarmScreenS2( this, "del" ) );
-  add( new FtSwarmScreenS3( this, "config" ) );
-  add( new FtSwarmScreenS4( this, "pin" ) );
 
 }
 
@@ -1219,11 +1543,21 @@ void FtSwarmScreenSwarm::addMembers( void ) {
 
   for (uint8_t i=1; i<members ; i++ ) {
     
-    if ( myOSSwarm.Ctrl[i] ) 
-      add( new FtSwarmScreenSelectable( SWOSSCREENSWARM_CB_SEL + i, this, myOSSwarm.Ctrl[i]->isOnline()? " " : "X", myOSSwarm.Ctrl[i]->getAliasOrName(), 0, getNextY(), 10, oled.getScreenWidth()-10 ) );
+    if ( myOSSwarm.Ctrl[i] )  {
+
+      int16_t y = getNextY( FTSWARM_OLED_MAINSCREEN );
+      addText( FTSWARM_OLED_MAINSCREEN, 0, y, FTSWARM_ALIGNLEFT, myOSSwarm.Ctrl[i]->isOnline()? " " : "X" );
+      add( new FtSwarmScreenSelectable( FTSWARMSCREENSWARM_CB_SEL + i, this, FTSWARM_OLED_MAINSCREEN, 10, y, oled.getScreenWidth()-10, FTSWARM_ALIGNLEFT, myOSSwarm.Ctrl[i]->getAliasOrName() ) );
+
+    }
 
   }
 
+  S2->setVisible( members>1 );
+  S3->setVisible( members>1 );
+
+  objects.debug();
+  
 }
 
 bool FtSwarmScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
@@ -1236,22 +1570,22 @@ bool FtSwarmScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
 
     switch ( id ) {
 
-      case FTSWARM_S1:  // ask for new device, call SWOSSCREENSWARM_CB_ADD afterwards
-                        screenManager.activate( new FtSwarmScreenInput( this, SWOSSCREENSWARM_CB_ADD, "SN to add", FTSWARM_NANI32, 4 ) );
+      case FTSWARM_S1:  // ask for new device, call FTSWARMSCREENSWARM_CB_ADD afterwards
+                        screenManager.activate( new FtSwarmScreenInput( this, "SN to add", FTSWARMSCREENSWARM_CB_ADD, FTSWARM_NANI32, 4 ) );
                         return true;
 
-      case FTSWARM_S2:  // ask to delete the selected device, call SWOSSCREENSWARM_CB_DEL afterwards
-                        if (selected ) {
-                          i = selected->getID() - SWOSSCREENSWARM_CB_SEL;
-                          if ( ( i < MAXCTRL ) && ( myOSSwarm.Ctrl[i] ) ) screenManager.activate( new FtSwarmScreenYesNo( this, SWOSSCREENSWARM_CB_DEL, selected->getText(), "Revoke controller?", myOSSwarm.Ctrl[i]->serialNumber ) );
+      case FTSWARM_S2:  // ask to delete the selected device, call FTSWARMSCREENSWARM_CB_DEL afterwards
+                        if ( objects.getSelected() ) {
+                          i = objects.getSelected()->getID() - FTSWARMSCREENSWARM_CB_SEL;
+                          if ( ( i < MAXCTRL ) && ( myOSSwarm.Ctrl[i] ) ) screenManager.activate( new FtSwarmScreenYesNo( this, objects.getSelected()->getText(), "Revoke controller?", FTSWARMSCREENSWARM_CB_DEL, myOSSwarm.Ctrl[i]->serialNumber ) );
                         }
                         return true;
 
-      case FTSWARM_S3:  screenManager.activate( new FtSwarmScreenSelectList( this, "Quick Config", SWOSSCREENSWARM_CB_CFG, 0, "Car", 1, "Car + signal", 2, "Catapillar", 3, "Catapillar + signal", 4, "Crane", 5, "Trailer") );
+      case FTSWARM_S3:  screenManager.activate( new FtSwarmScreenSelectList( this, "Quick Config", "", FTSWARMSCREENSWARM_CB_CFG, 0, "Car", 1, "Car + signal", 2, "Catapillar", 3, "Catapillar + signal", 4, "Crane", 5, "Trailer" ) );
                         return true;
 
-      case FTSWARM_S4:  // ask for a new swarm pin, call SWOSSCREENSWARM_CB_PIN afterwards
-                        screenManager.activate( new FtSwarmScreenInput( this, SWOSSCREENSWARM_CB_PIN, "Swarm Pin", nvs.swarmPIN, 4 ) );
+      case FTSWARM_S4:  // ask for a new swarm pin, call FTSWARMSCREENSWARM_CB_PIN afterwards
+                        screenManager.activate( new FtSwarmScreenInput( this, "Swarm Pin", FTSWARMSCREENSWARM_CB_PIN, nvs.swarmPIN, 4 ) );
                         return true;
 
     }
@@ -1265,18 +1599,19 @@ bool FtSwarmScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
 
     switch ( id )  {
 
-      case SWOSSCREENSWARM_CB_PIN:  // user entered new pin
+      case FTSWARMSCREENSWARM_CB_PIN:  // user entered new pin
                                     nvs.swarmPIN = nParam;
                                     nvs.save();
                                     return true;
 
-      case SWOSSCREENSWARM_CB_ADD:  // nParam is the sn to be added to the swarm
+      case FTSWARMSCREENSWARM_CB_ADD:  // nParam is the sn to be added to the swarm
                                     if (nParam) {
 
                                       if ( myOSSwarm.addController( nParam ) ) {
 
                                         nvs.save();
-                                        deleteSelectables();
+                                        objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_SELECTABLE );
+                                        objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_TEXT );
                                         addMembers();
                                         draw();
                                         
@@ -1291,32 +1626,33 @@ bool FtSwarmScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
 
                                     return true;
 
-      case SWOSSCREENSWARM_CB_DEL:  // delete selected controller, nParam is sn
+      case FTSWARMSCREENSWARM_CB_DEL:  // delete selected controller, nParam is sn
                                     if (nParam) { 
 
                                       if ( myOSSwarm.deleteController( nParam ) ) {
 
                                         nvs.save( );
-                                        deleteSelectables( ); 
+                                        objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_SELECTABLE ); 
+                                        objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_TEXT );
                                         addMembers();
                                         draw(); 
 
                                       } else {
 
-                                        sprintf( error, "Couldn't revoke % from swarm.", selected->getText() );
+                                        sprintf( error, "Couldn't revoke % from swarm.", objects.getSelected()->getText() );
                                         screenManager.activate( new FtSwarmScreenError( this, error) );
                                       }
 
                                     }
                                     return true;
 
-      case SWOSSCREENSWARM_CB_CFG:  printf("SWOSSCREENSWARM_CB_CFG %d\n", nParam);
+      case FTSWARMSCREENSWARM_CB_CFG:  printf("FTSWARMSCREENSWARM_CB_CFG %d\n", nParam);
                                     return true;
 
-      default:                      if (id >= SWOSSCREENSWARM_CB_SEL) {
+      default:                      if (id >= FTSWARMSCREENSWARM_CB_SEL) {
                                       // SN is endorsed in id
-                                      i = id - SWOSSCREENSWARM_CB_SEL;
-                                      if ( ( i < MAXCTRL ) && ( myOSSwarm.Ctrl[i] ) ) screenManager.activate( new FtSwarmScreenSwarmDetail( this, selected->getText(), myOSSwarm.Ctrl[i]->serialNumber ) );
+                                      i = id - FTSWARMSCREENSWARM_CB_SEL;
+                                      if ( ( i < MAXCTRL ) && ( myOSSwarm.Ctrl[i] ) ) screenManager.activate( new FtSwarmScreenSwarmDetail( this, objects.getSelected()->getText(), myOSSwarm.Ctrl[i]->serialNumber ) );
                                     }
                                     return true;
 
@@ -1335,14 +1671,14 @@ bool FtSwarmScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
  *
  ***************************************************/
 
-#define SWOSSCREENSWARMDETAIL_CB_DEL ( SWOSSCREENID_BASE + 0 )
+#define SWOSSCREENSWARMDETAIL_CB_DEL ( FTSWARMSCREEN_BASEID + 0 )
 
-FtSwarmScreenSwarmDetail::FtSwarmScreenSwarmDetail( FtSwarmScreen *parent, const char *title, FtSwarmSerialNumber_t device  ) : FtSwarmScreen( parent, title, NULL ) {
+FtSwarmScreenSwarmDetail::FtSwarmScreenSwarmDetail( FtSwarmScreen *parent, const char *title, FtSwarmSerialNumber_t device  ) : FtSwarmScreen( parent, title, nullptr ) {
 
   this->device = device;
 
-  add( new FtSwarmScreenS1( this, "Configure" ) );
-  add( new FtSwarmScreenS4( this, "Save" ) );
+  addS1( "configure" );
+  addS4( "Save" );
 
   // need to activate navigation until more details are shown in the screen
   addNavigation();
@@ -1379,12 +1715,12 @@ bool FtSwarmScreenSwarmDetail::eventHandler( FtSwarmScreenEvent_t event, uint8_t
  *
  ***************************************************/
 
-#define SWOSSCREENQUICKCFG_CAR     ( SWOSSCREENID_BASE + 0 )
-#define SWOSSCREENQUICKCFG_CARTS   ( SWOSSCREENID_BASE + 1 )
-#define SWOSSCREENQUICKCFG_CAT     ( SWOSSCREENID_BASE + 2 )
-#define SWOSSCREENQUICKCFG_CATTS   ( SWOSSCREENID_BASE + 3 )
-#define SWOSSCREENQUICKCFG_CRANE   ( SWOSSCREENID_BASE + 4 )
-#define SWOSSCREENQUICKCFG_TRAILER ( SWOSSCREENID_BASE + 5 )
+#define SWOSSCREENQUICKCFG_CAR     ( FTSWARMSCREEN_BASEID + 0 )
+#define SWOSSCREENQUICKCFG_CARTS   ( FTSWARMSCREEN_BASEID + 1 )
+#define SWOSSCREENQUICKCFG_CAT     ( FTSWARMSCREEN_BASEID + 2 )
+#define SWOSSCREENQUICKCFG_CATTS   ( FTSWARMSCREEN_BASEID + 3 )
+#define SWOSSCREENQUICKCFG_CRANE   ( FTSWARMSCREEN_BASEID + 4 )
+#define SWOSSCREENQUICKCFG_TRAILER ( FTSWARMSCREEN_BASEID + 5 )
 
 /* Standard configuration types
 
@@ -1452,7 +1788,7 @@ bool FtSwarmScreenSwarmDetail::eventHandler( FtSwarmScreenEvent_t event, uint8_t
 
 /*
 
-FtSwarmScreenQuickCfg::FtSwarmScreenQuickCfg( FtSwarmScreen *parent, FtSwarmSerialNumber_t device ) : FtSwarmScreen( parent, "Quick Config", NULL ) {
+FtSwarmScreenQuickCfg::FtSwarmScreenQuickCfg( FtSwarmScreen *parent, FtSwarmSerialNumber_t device ) : FtSwarmScreen( parent, "Quick Config", nullptr ) {
 
   this->device = device;
 
@@ -1515,43 +1851,104 @@ bool FtSwarmScreenQuickCfg::eventHandler( FtSwarmScreenEvent_t event, uint8_t id
 
 */
 
+
 /***************************************************
  *
- * SwOSFactoryResetScreen 
- * Ask user to reset controller to factory setting
+ *   SwOSTestScreen
  *
  ***************************************************/
 
-FtSwarmScreenFactoryReset::FtSwarmScreenFactoryReset( FtSwarmScreen *parent, FtSwarmScreen *next ) : FtSwarmScreen( parent, "Factory Reset", next ) {
+ class SwOSTestScreen:public FtSwarmScreen {
+  public:
+  SwOSTestScreen( FtSwarmScreen *parent );
+ };
 
-  // set buttons
-  add( new FtSwarmScreenS2( this, "YES" ) );
-  add( new FtSwarmScreenS3( this, "NO" ) );
+ SwOSTestScreen::SwOSTestScreen( FtSwarmScreen *parent ):FtSwarmScreen( parent, "Test Screen", "" ) {
+  
+  blockEvents = true;
+
+  addText( FTSWARM_OLED_MAINSCREEN, 64, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNCENTER, "Line #1" );
+  addText( FTSWARM_OLED_MAINSCREEN, 64, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNCENTER, "Line #2" );
+  addText( FTSWARM_OLED_MAINSCREEN, 64, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNCENTER, "Line #3" );
+  addText( FTSWARM_OLED_MAINSCREEN, 64, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNCENTER, "Line #4" );
+  addText( FTSWARM_OLED_MAINSCREEN, 64, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNCENTER, "Line #5" );
+  addText( FTSWARM_OLED_MAINSCREEN, 64, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNCENTER, "Line #6" );
+  addText( FTSWARM_OLED_MAINSCREEN, 64, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNCENTER, "Line #7" );
+  addText( FTSWARM_OLED_MAINSCREEN, 64, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNCENTER, "Line #8" );
+  addText( FTSWARM_OLED_MAINSCREEN, 64, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNCENTER, "Line #9" );
+  addText( FTSWARM_OLED_MAINSCREEN, 64, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNCENTER, "Line #10" );
+
+}
+
+/***************************************************
+ *
+ *   FtSwarmScreenSetup
+ *
+ ***************************************************/
+
+#define FTSWARMSCREENSETUP_CONFIG    ( FTSWARMSCREEN_BASEID + 0 )
+#define FTSWARMSCREENSETUP_CONFIG_CB ( FTSWARMSCREEN_BASEID + 1 )
+#define FTSWARMSCREENSETUP_WIFI      ( FTSWARMSCREEN_BASEID + 2 )
+#define FTSWARMSCREENSETUP_REMOTE    ( FTSWARMSCREEN_BASEID + 3 )
+#define FTSWARMSCREENSETUP_RESET     ( FTSWARMSCREEN_BASEID + 4 )
+#define FTSWARMSCREENSETUP_RESET_CB  ( FTSWARMSCREEN_BASEID + 5 )
+
+class FtSwarmScreenSetup:public FtSwarmScreen {
+
+  public:
+
+    // constructor
+    FtSwarmScreenSetup( FtSwarmScreen *parent );
+
+    // eval external events like pressing buttons
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam );
+
+};
+
+ FtSwarmScreenSetup::FtSwarmScreenSetup( FtSwarmScreen *parent ):FtSwarmScreen( parent, "Setup", "" ) {
+  
+  blockEvents = true;
+
+  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_CONFIG, this, "Configuration") );
+  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_WIFI,   this, "wifi") );
+  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_REMOTE, this, "Remote Control") );
+  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_RESET,  this, "Factory Reset") );
   
 }
 
-void FtSwarmScreenFactoryReset::draw( void ) {
-
-  FtSwarmScreen::draw();
-  oled.drawStr( FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2,  7, "Reset controller to", FTSWARM_ALIGNCENTER );
-  oled.drawStr( FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2, 16, "factory settings?",   FTSWARM_ALIGNCENTER );
-  
-}
-
-bool FtSwarmScreenFactoryReset::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
+bool FtSwarmScreenSetup::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
 
   if ( FtSwarmScreen::eventHandler( event, id ) ) return true;
 
-  // YES
-  if ( id == FTSWARM_S2 ) {
-    if ( event == FTSWARM_SCREENEVENT_DOWN )  myOSSwarm.factoryReset();
-    return true;
-  }
+  if ( event == FTSWARM_SCREENEVENT_OK ) {
 
-  // NO
-  if ( id == FTSWARM_S3 ) {
-    if ( event == FTSWARM_SCREENEVENT_DOWN ) screenManager.activate( new SwOSMainScreen( NULL, "Main" ) );
+    switch (id) {
+
+      case FTSWARMSCREENSETUP_CONFIG:     screenManager.activate( new FtSwarmScreenChooseOption( this, "Configuration", "Choose new configuration", FTSWARMSCREENSETUP_CONFIG_CB, 0, "#1", 1, "#2", 2, "#3", 3, "#4" ) );
+                                          break;
+
+      case FTSWARMSCREENSETUP_CONFIG_CB:  nvs.activeEventConfig = nParam;
+                                          nvs.save();
+                                          myOSSwarm.deleteEvents();
+                                          myOSSwarm.addEvents( nParam );
+                                          break;
+
+      case FTSWARMSCREENSETUP_WIFI:       screenManager.activate( new FtSwarmScreenWifi( this ) );
+                                          break;
+
+      case FTSWARMSCREENSETUP_REMOTE:     screenManager.activate( new FtSwarmScreenSwarm( this ) );
+                                          break;
+
+      case FTSWARMSCREENSETUP_RESET:      screenManager.activate( new FtSwarmScreenYesNo( this, "Factory Reset", "Reset to factory settings and reboot?", FTSWARMSCREENSETUP_RESET_CB ) );
+                                          break;
+
+      case FTSWARMSCREENSETUP_RESET_CB:   if (nParam) myOSSwarm.factoryReset();
+                                          break;
+
+    }
+
     return true;
+
   }
 
   return false;
@@ -1564,18 +1961,18 @@ bool FtSwarmScreenFactoryReset::eventHandler( FtSwarmScreenEvent_t event, uint8_
  *
  ***************************************************/
 
-SwOSMainScreen::SwOSMainScreen( FtSwarmScreen *parent, const char *title ) : FtSwarmScreen( parent, title ) {
+SwOSMainScreen::SwOSMainScreen( void ) : FtSwarmScreen( nullptr, myOSSwarm.Ctrl[0]->getAliasOrName() ) {
 
   blockEvents = false;
 
-  add( new FtSwarmScreenS1( this, nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_S1 ] ) );
-  add( new FtSwarmScreenS2( this, nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_S2 ] ) );
-  add( new FtSwarmScreenS3( this, nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_S3 ] ) );
-  add( new FtSwarmScreenS4( this, "SET" ) );
-  add( new FtSwarmScreenJ1( this, nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_J1 ] ) );
-  add( new FtSwarmScreenJ2( this, nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_J2 ] ) );
-  add( new FtSwarmScreenF1( this, nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_F1 ] ) );
-  add( new FtSwarmScreenF2( this, nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_F2 ] ) );
+  addS1( nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_S1 ] );
+  addS2( nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_S2 ] );
+  addS3( nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_S3 ] );
+  addS4( "SET" );
+  addJ1( nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_J1 ] );
+  addJ2( nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_J2 ] );
+  addF1( nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_F1 ] );
+  addF2( nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_F2 ] );
 
 }
 
@@ -1640,7 +2037,7 @@ void SwOSMainScreen::draw( void ) {
 
   char cfg[5];
   sprintf( cfg, "#%d", nvs.activeEventConfig+1 );
-  oled.drawStr( FTSWARM_OLED_MAINSCREEN, 64, 38, cfg, FTSWARM_ALIGNCENTER );
+  oled.drawStr( FTSWARM_OLED_BUTTONSCREEN, oled.getScreenWidth()/2, 0, cfg, FTSWARM_ALIGNCENTER );
 
 }
 
@@ -1651,12 +2048,17 @@ bool SwOSMainScreen::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32
       // set new screen and all done
       if ( event == FTSWARM_SCREENEVENT_DOWN ) {
 
-        FtSwarmScreen *config = ( FtSwarmScreen * ) new FtSwarmScreenChooseConfig( this, 
+        FtSwarmScreen *config = ( FtSwarmScreen * ) new FtSwarmScreenSetup( this );
+
+        // FtSwarmScreen *config = ( FtSwarmScreen * ) new FtSwarmScreenChooseConfig( this, nullptr );
+
+        /*
+        FtSwarmScreen *config = ( FtSwarmScreen * ) new FtSwarmScreenChooseConfig( this,          
                                                       new FtSwarmScreenSwarm( this, 
                                                         new FtSwarmScreenWifi( this, 
                                                           // new FtSwarmScreenFactoryReset( this, 
-                                                            NULL ) ) );
-
+                                                            nullptr ) ) );
+        */
         screenManager.activate( (FtSwarmScreen *) config );
 
         return true;
@@ -1668,72 +2070,23 @@ bool SwOSMainScreen::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32
 
 }
 
+
 /***************************************************
  *
  *   SwOSSplashScreen
  *
  ***************************************************/
 
- SwOSSplashScreen::SwOSSplashScreen( FtSwarmScreen *parent, const char *title ):FtSwarmScreen( parent, title ) {
+ SwOSSplashScreen::SwOSSplashScreen( void ):FtSwarmScreen( nullptr, "Booting..." ) {
   
-  startTime = millis();
   blockEvents = false;
+  addText( FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2, 16, FTSWARM_ALIGNCENTER, "ftSwarm" );
 
-  add( new FtSwarmScreenS1( this, "" ) );
-  add( new FtSwarmScreenS2( this, "" ) );
-  add( new FtSwarmScreenS3( this, "" ) );
-  add( new FtSwarmScreenS4( this, "" ) );
-  add( new FtSwarmScreenJ1( this, "" ) );
-  add( new FtSwarmScreenJ2( this, "" ) );
-  add( new FtSwarmScreenF1( this, "" ) );
-  add( new FtSwarmScreenF2( this, "" ) );
-
-}
-
- void SwOSSplashScreen::draw( void ) {
-
-  FtSwarmScreen::draw();
-  
-  // Logo
-  oled.drawStr( FTSWARM_OLED_UPPERSCREEN, oled.getScreenWidth()/2, 0, "ftSwarm", FTSWARM_ALIGNCENTER );
-  
-  // hostname & version          
+  // hostname & version 
   char line[100];
   sprintf( line, "%s %s", nvs.swarmName, SWOSVERSION );
-  oled.drawStr( FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2, 32, line, FTSWARM_ALIGNCENTER );
- 
-}
+  info = addText( FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2, 32, FTSWARM_ALIGNCENTER, line );
 
-void SwOSSplashScreen::operate( void ) {
-
-  // change to Main Screen after 5 seconds
-  if ( millis()-startTime > 5000L ) {
-    screenManager.activate( new SwOSMainScreen( NULL, title ) );
-    toBeDestroyed = true;
-  }
-
-}
-
-bool SwOSSplashScreen::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
-  
-  // some pressed a key, so I change to the main screen
-  screenManager.activate( new SwOSMainScreen( NULL, title ) );
-  toBeDestroyed = true;
-  return true;
-
-}
-
-/***************************************************
- *
- *   SwOS404Screen
- *
- ***************************************************/
-
-void SwOS404Screen::draw( void ) {
-
-  FtSwarmScreen::draw();
-  oled.drawStr( FTSWARM_OLED_MAINSCREEN, 64, 0, "404", FTSWARM_ALIGNCENTER );
-  oled.drawStr( FTSWARM_OLED_MAINSCREEN, 30, 0, "Page not found.", FTSWARM_ALIGNCENTER );  
 }
 
 /***************************************************
@@ -1777,11 +2130,11 @@ static void screenEventTask( void *parameter ) {
 FtSwarmScreenManager::FtSwarmScreenManager() {
 
   // initialize screen array
-  for (uint8_t i=0; i<MAXSCREENS; i++ ) screen[i] = NULL;
+  for ( uint8_t i=0; i<MAXSCREENS; i++ ) screen[i] = nullptr;
 
   // create queue & receiver task
   FtSwarmScreenEventQueue = xQueueCreate( 10, sizeof( FtSwarmScreenEventQueueElement_t * ) );
-  xTaskCreatePinnedToCore( screenEventTask, "EventTask", 10000, NULL, 1, NULL, ARDUINO_EVENT_RUNNING_CORE );
+  xTaskCreatePinnedToCore( screenEventTask, "EventTask", 10000, nullptr, 1, nullptr, ARDUINO_EVENT_RUNNING_CORE );
 
 }
 
@@ -1806,7 +2159,7 @@ void FtSwarmScreenManager::eventHandler( FtSwarmScreenEventQueueElement_t *event
   if (!event) return;
 
   // test on valid pointers
-  FtSwarmScreen *eventScreen = NULL;
+  FtSwarmScreen *eventScreen = nullptr;
 
   for (uint8_t i=0; i<MAXSCREENS; i++) {
 
@@ -1836,7 +2189,7 @@ void FtSwarmScreenManager::operate( void ) {
   for ( uint8_t i=0; i<MAXSCREENS; i++ ) {
     if ( ( screen[i] ) && ( screen[i]->toBeDestroyed )  && ( screen[i] != active ) ) {
       FtSwarmScreen *obsolete = screen[i];
-      screen[i] = NULL;
+      screen[i] = nullptr;
       delete obsolete;
     }
 
@@ -1891,10 +2244,46 @@ void FtSwarmScreenManager::activate( FtSwarmScreen *screen ) {
 
   } else {
 
-    FtSwarmScreen *vier0vier = new SwOS404Screen( NULL );
+    FtSwarmScreen *vier0vier = new SwOS404Screen( );
     registerMe( vier0vier );
     activate( vier0vier );
 
+  }
+
+}
+
+void FtSwarmScreenManager::setState( SwOSState_t state, const char *text, uint8_t members, const char *SSID ) {
+
+  switch (state) {
+
+    case BOOTING:   if (!splashScreen) splashScreen = new SwOSSplashScreen( );
+                    activate( splashScreen );
+                    break;
+
+    case STARTWIFI: if ( (splashScreen) && ( splashScreen->info )  ) splashScreen->info->setText( text );
+                    break;
+
+    case RUNNING:   activate( new SwOSMainScreen( ) );
+                    // if (splashScreen) splashScreen->close();
+                    break;
+
+    case ERROR:     activate( new FtSwarmScreenError( active, text ) );
+                    break;
+
+    case WAITING:   activate( new FtSwarmScreenInfo( active, text ) );
+                    break;
+
+    case IDENTIFY:  activate( new FtSwarmScreenInfo( active, text ) );
+                    break;
+
+    case FATAL:     activate( new FtSwarmScreen( active, "Fatal Error", text ) );
+                    break;
+
+    case FACTORY1:  if ( (splashScreen) && ( splashScreen->info )  ) splashScreen->info->setText( "Factory Reset?" );
+                    break;
+
+    case FACTORY2:  if ( (splashScreen) && ( splashScreen->info )  ) splashScreen->info->setText( "Factory Reset!" );
+                    break;
   }
 
 }

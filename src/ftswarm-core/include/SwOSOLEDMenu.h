@@ -11,46 +11,184 @@
 
 #include "SwOS.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
+#include "SwOSHW/SwOSHWBaseIO.h"
 
-#define FTSWARM_HAL_OLEDS 1
+// #define FTSWARM_HAL_OLEDS 1
+
 #if FTSWARM_HAL_OLEDS > 0
+
+#include "SwOSHW/SwOSHWLocal.h"
 
 typedef enum { FTSWARM_SCREENEVENT_NONE = -1, FTSWARM_SCREENEVENT_DOWN, FTSWARM_SCREENEVENT_UP, FTSWARM_SCREENEVENT_OK } FtSwarmScreenEvent_t;
 
-#define SWOSSCREENID_BASE 30
+#define FTSWARMSCREEN_JOY1LR 26
+#define FTSWARMSCREEN_JOY1FB 27
+#define FTSWARMSCREEN_JOY2LR 28
+#define FTSWARMSCREEN_JOY2FB 29
+#define FTSWARMSCREEN_BASEID 30
+#define FTSWARMSCREEN_NOID   255
 
 /***************************************************
  *
- * FtSwarmScreenObj - Any element on a screen
+ * FtSwarmScreenObj - Base class for screen elements
  *
  ***************************************************/
 
 class FtSwarmScreen;
 
+typedef enum { FTSWARMSCREEN_OBJ, FTSWARMSCREEN_LINE, FTSWARMSCREEN_TEXT, FTSWARMSCREEN_IO, FTSWARMSCREEN_SELECTABLE, FTSWARMSCREEN_BUTTON } FtSwarmScreenObj_t;
+
 class FtSwarmScreenObj {
 
   protected:
-    uint8_t        id;
-    SwOSIO         *io     = NULL;
-    FtSwarmScreen  *parent = NULL;
-    int32_t        value   = FTSWARM_NANI32;
-    char           *label  = NULL;
-    uint8_t        screen;
-    FtSwarmAlign_t align;
-    int16_t        x, y;
-    FtSwarmScreenEvent_t lastEvent = FTSWARM_SCREENEVENT_NONE;
-    
+    uint8_t             id;
+    FtSwarmOledScreen_t screen;
+    int16_t             x, y;
+    bool                visible = true;
+    FtSwarmScreen      *parent = nullptr;
+
   public:
-    FtSwarmScreenObj  *next   = NULL;
+
+    FtSwarmScreenObj    *next = nullptr;
 
     // Constructor
-    FtSwarmScreenObj( uint8_t id, SwOSIO *io, FtSwarmScreen *parent, const char *label, uint8_t screen, int16_t x, int16_t y, FtSwarmAlign_t align );
+    FtSwarmScreenObj( uint8_t id, FtSwarmScreen *parent, FtSwarmOledScreen_t screen, int16_t x, int16_t y );
 
-    // Destructor
-    ~FtSwarmScreenObj();
+    // destructor
+    virtual ~FtSwarmScreenObj() { if (next) delete next; };
 
-    // add an object to my list
-    virtual void add( FtSwarmScreenObj *newObject);
+    // return my type
+    virtual FtSwarmScreenObj_t getType( void ) { return FTSWARMSCREEN_OBJ; };
+
+    // draw myself
+    virtual void draw( bool selected = false ) {};
+
+    // set my label
+    virtual void setText( const char *text ) {};
+
+    // set visibility
+    virtual void setVisible( bool visible ) { this->visible = visible; };
+
+    // get my label
+    virtual const char *getText( void ) { return ""; };
+
+    // get my ID
+    virtual uint8_t getID( void ) { return id; };
+
+    // get my y-Position
+    virtual int16_t getY( void ) { return y; };
+
+    // get my height
+    virtual int16_t getHeight( void ) { return 0; };
+
+    // get my screen
+    virtual uint8_t getScreen( void ) { return screen; };
+
+    // activate myself, if my screen is getting active
+    virtual void activate( void ) {};
+
+    // deactivate myself, if my screen is getting offline
+    virtual void deactivate( void ) {};
+    
+    // IO informs myself, it's going down
+    virtual void unregister( SwOSIO *io ) {}; 
+
+    // debug
+    virtual void debug( void );
+
+
+};
+
+/***************************************************
+ *
+ * FtSwarmScreenLine - draw a line
+ *
+ ***************************************************/
+
+class FtSwarmScreenLine : public FtSwarmScreenObj {
+
+  protected:
+    int16_t x1, y1;
+
+  public:
+
+    FtSwarmScreenLine( uint8_t id, FtSwarmScreen *parent, FtSwarmOledScreen_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1 );
+
+    // return my type
+    virtual FtSwarmScreenObj_t getType( void ) { return FTSWARMSCREEN_LINE; };
+
+    // draw myself
+    virtual void draw( bool selected = false );  
+
+    // get my height
+    virtual int16_t getHeight( void ) { return y1 - y; };
+
+};
+
+/***************************************************
+ *
+ * FtSwarmScreenText
+ *
+ ***************************************************/
+
+class FtSwarmScreenText : public FtSwarmScreenObj {
+
+  protected:
+    int16_t        width;
+    char           *text  = nullptr;
+    FtSwarmAlign_t align = FTSWARM_ALIGNLEFT;
+
+  public:
+
+    // constructor
+    FtSwarmScreenText( uint8_t id, FtSwarmScreen *parent, FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t width, FtSwarmAlign_t align, const char *text );
+
+    // return my type
+    virtual FtSwarmScreenObj_t getType( void ) { return FTSWARMSCREEN_TEXT; };
+
+    // constructor
+    FtSwarmScreenText( uint8_t id, FtSwarmScreen *parent, FtSwarmOledScreen_t screen, int16_t x, int16_t y, FtSwarmAlign_t align, const char *text );
+
+    // destructor
+    ~FtSwarmScreenText();
+
+    // draw myself
+    virtual void draw( bool selected = false );      
+
+    // get my height
+    virtual int16_t getHeight( void );
+
+    // set my label
+    virtual void setText( const char *text );
+
+    // get text
+    virtual const char *getText( void ) { return text; };
+
+};
+
+/***************************************************
+ *
+ * FtSwarmScreenIO
+ *
+ ***************************************************/
+
+class FtSwarmScreenIO : public FtSwarmScreenText {
+
+  protected:
+    SwOSIO               *io       = nullptr;
+    int32_t              value     = FTSWARM_NANI32;
+    FtSwarmScreenEvent_t lastEvent = FTSWARM_SCREENEVENT_NONE;
+
+  public:
+
+    // constructor
+    FtSwarmScreenIO( uint8_t id, FtSwarmScreen *parent, FtSwarmOledScreen_t screen, int16_t x, int16_t y, FtSwarmAlign_t align, const char *text, SwOSIO *io );
+
+    // return my type
+    virtual FtSwarmScreenObj_t getType( void ) { return FTSWARMSCREEN_IO; };
+
+    // destructor
+    ~FtSwarmScreenIO();
 
     // activate myself, if my screen is getting active
     virtual void activate( void );
@@ -59,34 +197,79 @@ class FtSwarmScreenObj {
     virtual void deactivate( void );
     
     // IO informs myself, it's going down
-    virtual void unregister( SwOSIO *io );
-
-    // change label text
-    virtual void setLabel( const char *label, bool autoDraw = true );
-
-    // draw myself
-    virtual void draw( void ) {};
+    virtual void unregister( SwOSIO *io );    
 
     // io sends new value, return true if it's processed by the screen
     virtual void setValue( int32_t value );
 
-    // is io clickable?
-    virtual bool isSelectable( void ) { return false; };
+};
 
-    // is io visible?
-    virtual bool isVisible( void ) { return label[0] != '\0'; };
+/***************************************************
+ *
+ * FtSwarmScreenSelectable - to be selected by joy1
+ *
+ ***************************************************/
 
-    // get my label
-    virtual char *getLabel( void ) { return label; };
+class FtSwarmScreenSelectable : public FtSwarmScreenText {
 
-    // get my ID
-    virtual uint8_t getID( void ) { return id; };
+  protected:
+    int16_t widthLabel;
+    int16_t widthText;
 
-    // get my y-Position
-    virtual int16_t getY( void ) { return y; };
+  public:
 
-    // debugging
-    virtual void print( void );
+    // Constructor
+    FtSwarmScreenSelectable( uint8_t id, FtSwarmScreen *parent, FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t width, FtSwarmAlign_t align, const char *text );
+
+    // Constructor
+    FtSwarmScreenSelectable( uint8_t id, FtSwarmScreen *parent, const char *text );
+
+    // return my type
+    virtual FtSwarmScreenObj_t getType( void ) { return FTSWARMSCREEN_SELECTABLE; };
+    
+    // draw myself
+    virtual void draw( bool selected = false );
+
+};
+
+/***************************************************
+ *
+ * FtSwarmScreenButton - button class
+ *
+ ***************************************************/
+
+class FtSwarmScreenButton : public FtSwarmScreenIO {
+
+  public:
+
+    // Constructor
+    FtSwarmScreenButton( uint8_t id, FtSwarmScreen *parent, FtSwarmOledScreen_t screen, int16_t x, int16_t y, FtSwarmAlign_t align, const char *text, SwOSIO *IO ) : FtSwarmScreenIO( id, parent, screen, x, y, align, text, IO ) { };
+
+    // return my type
+    virtual FtSwarmScreenObj_t getType( void ) { return FTSWARMSCREEN_BUTTON; };
+
+    // draw myself
+    virtual void draw( bool selected = false );    
+
+};
+
+/***************************************************
+ *
+ * FtSwarmScreenJoystickPoti - Helper class
+ *
+ ***************************************************/
+
+class FtSwarmScreenJoystickPoti : public FtSwarmScreenIO {
+
+  protected:
+    int32_t maxValue = FTSWARM_NANI32;
+
+  public:
+
+    FtSwarmScreenJoystickPoti(uint8_t id, FtSwarmScreen *parent, FtSwarmOledScreen_t screen, int16_t x, int16_t y, FtSwarmAlign_t align, const char *label, SwOSIO *IO );
+
+    // io sends new value, return true if it's processed by the screen
+    virtual void setValue( int32_t value );
 
 };
 
@@ -99,18 +282,24 @@ class FtSwarmScreenObj {
 class FtSwarmScreenObjList {
 
   protected:
-    FtSwarmScreenObj *list = NULL;
+    FtSwarmScreenObj        *list     = nullptr;
+    FtSwarmScreenSelectable *selected = nullptr;    
+    int16_t drawCursor = -1;
+
 
   public:
 
     // destructor
-    ~FtSwarmScreenObjList() { cleanup(); };
-
-    // delete list
-    void cleanup( void ) { if (list) delete list; list = NULL; };
+    ~FtSwarmScreenObjList();
   
-    // add an object
+    // add an object, returns false if out ouf space
     void add( FtSwarmScreenObj *newObject );
+
+    // delete an object and release it
+    void del( FtSwarmScreenObj *delObject );
+
+    // delete all of one type
+    void deleteAll( FtSwarmOledScreen_t screen, FtSwarmScreenObj_t type );
 
     // activate all elements, my screen is getting active
     void activate( void );
@@ -121,156 +310,20 @@ class FtSwarmScreenObjList {
     // draw
     void draw( void );
 
-    // get next free space on screen
-    int16_t getNextY( void );
+    // get next free line within the referenced screen
+    int16_t getNextY( FtSwarmOledScreen_t screen );
 
-    // get prev element
-    FtSwarmScreenObj *prev( FtSwarmScreenObj *obj );
+    // moves selected element and returns it
+    FtSwarmScreenSelectable *nextSelectable( void );
 
-    // debugging
-    void print( void ) { if (list) list->print(); };
+    // moves selected element and returns it
+    FtSwarmScreenSelectable *prevSelectable( void );
 
-};
-
-/***************************************************
- *
- * FtSwarmScreenSelectable - label + text
- *
- ***************************************************/
-
-class FtSwarmScreenSelectable : public FtSwarmScreenObj {
-
-  protected:
-    int16_t widthLabel;
-    int16_t widthText;
-    char *text   = NULL;
-    bool visible = true;
-
-  public:
-
-    // Constructor
-    FtSwarmScreenSelectable( uint8_t id, FtSwarmScreen *parent, const char *label, const char *text, int16_t x, int16_t y, int16_t widthLabel, int16_t widthText );
-
-    // create a text entry at  the next possible position
-    FtSwarmScreenSelectable( uint8_t id, FtSwarmScreen *parent, const char *text );
-    
-    // change text
-    virtual void setText( const char *text, bool autoDraw = true );
-
-    // get text
-    virtual const char *getText( void ) { return text; };
-    
-    // draw myself
-    virtual void draw( void );
-
-    // render myself as selected
-    virtual void select( void );
-
-    // is io clickable?
-    virtual bool isSelectable( void ) { return true; };
-
-    // is io visible?
-    virtual bool isVisible( void ) { return visible; };
-
-    // return my id
-    virtual uint8_t getID( void ) { return id; };
-
-    // hide/show
-    virtual void setVisible( bool visible );
+    // get actual selected element
+    FtSwarmScreenSelectable *getSelected( void ) { return selected; };
 
     // debug
-    virtual void print( void );
-
-};
-
-/***************************************************
- *
- * FtSwarmScreenButton - button class
- *
- ***************************************************/
-
-class FtSwarmScreenButton : public FtSwarmScreenObj {
-
-  public:
-
-    // Constructor
-    FtSwarmScreenButton( uint8_t id, SwOSIO *io, FtSwarmScreen *parent, const char *label, uint8_t screen, int16_t x, int16_t y, FtSwarmAlign_t align ) : FtSwarmScreenObj( id, io, parent, label, screen, x, y, align ) {};
-
-    // draw myself
-    virtual void draw( void );    
-
-};
-
- /***************************************************
- *
- * FtSwarmScreenXX - local Buttons
- *
- ***************************************************/
-
-#define OLEDLOWERLINE 38
-
-class FtSwarmScreenS1 : public FtSwarmScreenButton {
-  public:
-    FtSwarmScreenS1( FtSwarmScreen *parent, const char *label );
-};
-
-class FtSwarmScreenS2 : public FtSwarmScreenButton {
-  public:
-    FtSwarmScreenS2( FtSwarmScreen *parent, const char *label );
-};
-
-class FtSwarmScreenS3 : public FtSwarmScreenButton {
-  public:
-    FtSwarmScreenS3( FtSwarmScreen *parent, const char *label );
-};
-
-class FtSwarmScreenS4 : public FtSwarmScreenButton {
-  public:
-    FtSwarmScreenS4( FtSwarmScreen *parent, const char *label );
-};
-
-class FtSwarmScreenF1 : public FtSwarmScreenButton {
-  public:
-    FtSwarmScreenF1( FtSwarmScreen *parent, const char *label );
-};
-
-class FtSwarmScreenF2 : public FtSwarmScreenButton {
-  public:
-    FtSwarmScreenF2( FtSwarmScreen *parent, const char *label );
-};
-
-class FtSwarmScreenJ1 : public FtSwarmScreenButton {
-  public:
-    FtSwarmScreenJ1( FtSwarmScreen *parent, const char *label );
-};
-
-class FtSwarmScreenJ2 : public FtSwarmScreenButton {
-  public:
-    FtSwarmScreenJ2( FtSwarmScreen *parent, const char *label );
-};
-
-class FtSwarmScreenESC : public FtSwarmScreenF2 {
-  public:
-    FtSwarmScreenESC( FtSwarmScreen *parent ) : FtSwarmScreenF2( parent, "^" ) {};
-};
-
-/***************************************************
- *
- * FtSwarmScreenJoystickPoti - Helper class
- *
- ***************************************************/
-
-class FtSwarmScreenJoystickPoti : public FtSwarmScreenObj {
-
-  protected:
-    int32_t maxValue = FTSWARM_NANI32;
-
-  public:
-
-    FtSwarmScreenJoystickPoti(uint8_t id, SwOSIO *io, FtSwarmScreen *parent, const char *label, int16_t x, int16_t y, FtSwarmAlign_t align );
-
-    // io sends new value, return true if it's processed by the screen
-    virtual void setValue( int32_t value );
+    void debug( void );
 
 };
 
@@ -284,23 +337,16 @@ class FtSwarmScreen {
 
   protected:
 
-    FtSwarmScreen *parent     = NULL;
-    char          *title      = NULL;
-    bool          blockEvents = true;
-    bool          navigation  = false;
-
-    FtSwarmScreen *prev = NULL;
-    FtSwarmScreen *next = NULL;
+    FtSwarmScreen *parent      = nullptr;
+    bool          blockEvents  = true;
+    bool          navigation   = false;
+    bool          ESC          = false;
+    bool          buttonScreen = false;
 
     FtSwarmScreenObjList objects;
-    FtSwarmScreenObjList selectables;
 
-    FtSwarmScreenSelectable *selected = NULL;
-
+    void splitText( const char *text );
     void addNavigation( void );
-    uint8_t countPrev( void );
-    uint8_t countNext( void );
-    void deleteSelectables( void );    
 
   public:
 
@@ -308,13 +354,10 @@ class FtSwarmScreen {
     bool     toBeDestroyed = false;
 
     // constructor
-    FtSwarmScreen( FtSwarmScreen *parent, const char *title, FtSwarmScreen *next = NULL );
-
-    // destructor
-    ~FtSwarmScreen();
+    FtSwarmScreen( FtSwarmScreen *parent, const char *title, const char *text = nullptr );
 
     // add a screen object
-    virtual void add( FtSwarmScreenObj *newObject );
+    virtual FtSwarmScreenObj *add( FtSwarmScreenObj *newObject );
 
     // cls and draw all elements
     virtual void draw( void ); 
@@ -329,80 +372,48 @@ class FtSwarmScreen {
     virtual void operate( void ) {};
 
     // eval external events like pressing buttons
-    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
-
-    // get my title
-    virtual const char *getTitle( void ) { return title; };
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );
 
     // close myself
-    virtual void close( FtSwarmScreenEvent_t event = FTSWARM_SCREENEVENT_NONE, uint8_t id=0, uint8_t nParam = 0, const char *sParam = NULL );
+    virtual void close( FtSwarmScreenEvent_t event = FTSWARM_SCREENEVENT_NONE, uint8_t id=0, uint8_t nParam = 0, const char *sParam = nullptr );
 
     // calculate next free line
-    virtual int16_t getNextY( void );
+    virtual int16_t getNextY( FtSwarmOledScreen_t screen );
+
+    // Button S1
+    FtSwarmScreenButton *addS1( const char *text );
+
+    // Button S2
+    FtSwarmScreenButton *addS2( const char *text );
+
+    // Button S3
+    FtSwarmScreenButton *addS3( const char *text );
+
+    // Button S4
+    FtSwarmScreenButton *addS4( const char *text );
+
+    // Button F1
+    FtSwarmScreenButton *addF1( const char *text );
+
+    // Button F2
+    FtSwarmScreenButton *addF2( const char *text );
+
+    // Button J1
+    FtSwarmScreenButton *addJ1( const char *text, FtSwarmOledScreen_t screen = FTSWARM_OLED_MAINSCREEN );
+
+    // Button J2
+    FtSwarmScreenButton *addJ2( const char *text, FtSwarmOledScreen_t screen = FTSWARM_OLED_MAINSCREEN );
+
+    // Button ESC
+    FtSwarmScreenButton *addESC( void );
+
+    // Simple Text
+    FtSwarmScreenText *addText( FtSwarmOledScreen_t screen, int16_t x, int16_t y, FtSwarmAlign_t align, const char *text );
+    
+    // joysticks
+    void addJoystick( FtSwarmOledScreen_t screen, const char *text, uint8_t joystick );
 
 };
-
-/***************************************************
- *
- * FtSwarmScreenInput
- *
- ***************************************************/
-
-#define KEYMAPS 4
-
-class FtSwarmScreenInput : public FtSwarmScreen {
-
-  protected:
-
-    uint8_t id;
-
-    char    *input    = NULL;
-    uint8_t maxLength = 0;
-
-    FtSwarmScreenS1 *S1 = NULL;
-    
-    const char keyboardMap[KEYMAPS][30] = { R"(abcdefghijklmnopqrstuvwxyz@ )",
-                                            R"(ABCDEFGHIJKLMNOPQRSTUVWXYZ_ )",
-                                            R"(0123456789+-.)",
-                                            R"(!"#$%&':;<=>?\^`|~[](){})*/,)" };
-
-    const char S1Label[KEYMAPS][4] = { "A-Z", "NUM", "#$@", "a-z" };
-
-    const uint8_t cols[KEYMAPS] = { 14, 14,  7, 14 };
-    const uint8_t rows[KEYMAPS] = {  2,  2,  2,  2 };
-
-    uint keyboard = 0;
-    bool numKeyboard = false;
-
-    uint8_t keyboardX, keyboardY, keyboardWidth, keyboardHeight;
-
-    uint8_t cursorR[5] = { 0, 0, 0, 0, 0 };
-    uint8_t cursorC[5] = { 0, 0, 0, 0, 0 };
-
-    void init( FtSwarmScreen *parent, uint8_t id, const char *title, const char *param, uint8_t maxLength );
-    uint8_t keymapIndex( void ) { return cursorR[keyboard]*cols[keyboard] + cursorC[keyboard]; };
-    void setKeyboard( uint8_t keyboard );
-    void drawCursor( bool invert );
-    void drawInput( void );
-    
-  public:
-   
-    // Constructor to enter strings
-    FtSwarmScreenInput( FtSwarmScreen *parent, uint8_t id, const char *title, const char *param, uint8_t maxLength );
-
-    // constructor to enter numbers
-    FtSwarmScreenInput( FtSwarmScreen *parent, uint8_t id, const char *title, const int32_t param, uint8_t maxLength );
-
-    // Destructor
-    ~FtSwarmScreenInput( );
-
-    // cls and draw all elements
-    virtual void draw( void );
-
-    // eval external events like pressing buttons
-    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
-
-}; 
 
 /***************************************************
  *
@@ -413,79 +424,20 @@ class FtSwarmScreenInput : public FtSwarmScreen {
  class FtSwarmScreenChooseOption : public FtSwarmScreen {
 
   protected:
-    uint8_t id;
+    uint8_t callbackID;
     int32_t value[4];
-    char    *line[4];
-    int8_t  maxLine = -1;
 
   public:
 
     // constructor
-    FtSwarmScreenChooseOption( FtSwarmScreen *parent, uint8_t id, const char *title, const char *text, 
+    FtSwarmScreenChooseOption( FtSwarmScreen *parent, const char *title, const char *text, uint8_t callbackID, 
                                int32_t value1,   const char *option1, 
-                               int32_t value2=0, const char *option2=NULL, 
-                               int32_t value3=0, const char *option3=NULL, 
-                               int32_t value4=0, const char *option4=NULL );
-
-    // destructor
-    ~FtSwarmScreenChooseOption();
-
-    // cls and draw all elements
-    virtual void draw( void );
+                               int32_t value2=0, const char *option2=nullptr, 
+                               int32_t value3=0, const char *option3=nullptr, 
+                               int32_t value4=0, const char *option4=nullptr );
 
     // eval external events like pressing buttons
-    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
-
-};
-
-/***************************************************
- *
- * FtSwarmScreenYesNo
- *
- ***************************************************/
-
-class FtSwarmScreenYesNo : public FtSwarmScreenChooseOption {
-
-  public: 
-    FtSwarmScreenYesNo( FtSwarmScreen *parent, uint8_t id, const char *title, const char *text, int32_t yes = 1 ) : FtSwarmScreenChooseOption( parent, id, title, text, 0, NULL, yes, "YES", 0, "NO" ) {};
-
-};
-
-
-/***************************************************
- *
- * FtSwarmScreenError
- *
- ***************************************************/
-
-class FtSwarmScreenError : public FtSwarmScreenChooseOption {
-
-  public: 
-    FtSwarmScreenError( FtSwarmScreen *parent, const char *text ) : FtSwarmScreenChooseOption( parent, 0, "Error", text, 0, NULL, 0, NULL, 0, NULL, 1, "OK" ) {};
-
-};
-
-
-/***************************************************
- *
- * FtSwarmScreenChooseConfig - asks about the config S1..S4
- *
- ***************************************************/
-
- class FtSwarmScreenChooseConfig : public FtSwarmScreen {
-
-  protected:
-    
-  public:
-
-    // constructor
-    FtSwarmScreenChooseConfig( FtSwarmScreen *parent, FtSwarmScreen *next  );
-
-    // cls and draw all elements
-    virtual void draw( void );
-
-    // eval external events like pressing buttons
-    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );
 
 };
 
@@ -509,21 +461,114 @@ class FtSwarmScreenError : public FtSwarmScreenChooseOption {
   public:
 
     // Constructor - parent gets a callback: eventHandler( FTSWARM_SCREENEVENT_OK, callbackID, selected object's ID )
-    // example: new FtSwarmScreenSelectList( this, "Number", NULL, SELECTMYNUMBER_CB, 42, "fourty-two", 17, "seventeen" )
+    // example: new FtSwarmScreenSelectList( this, "Number", nullptr, SELECTMYNUMBER_CB, 42, "fourty-two", 17, "seventeen" )
     // template<typename... Args>
-    // FtSwarmScreenSelectList( FtSwarmScreen *parent, char *title, FtSwarmScreen *next, uint8_t callbackID, Args... args);
-
-    // Constructor - parent gets a callback: eventHandler( FTSWARM_SCREENEVENT_OK, callbackID, selected object's ID )
-    // example: new FtSwarmScreenSelectList( this, "Number", NULL, SELECTMYNUMBER_CB, 42, "fourty-two", 17, "seventeen" )
+    // example: new FtSwarmScreenSelectList( this, "Number", nullptr, SELECTMYNUMBER_CB, 42, "fourty-two", 17, "seventeen" )
     template<typename... Args>
-    FtSwarmScreenSelectList( FtSwarmScreen *parent, const char *title, uint8_t callbackID, Args... args);
+    FtSwarmScreenSelectList( FtSwarmScreen *parent, const char *title, const char *text, uint8_t callbackID, Args... args);
 
     // eval external events like pressing buttons
-    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );
+
  };
 
+/***************************************************
+ *
+ * FtSwarmScreenInput
+ *
+ ***************************************************/
 
-/*--------------------------------------------------------------------------------------------------------------------------------------------------*/
+#define KEYMAPS 4
+
+class FtSwarmScreenInput : public FtSwarmScreen {
+
+  protected:
+
+    uint8_t callbackID;
+
+    char    *input    = nullptr;
+    uint8_t maxLength = 0;
+
+    int16_t lineHeight;
+    int16_t charWidth;
+
+    FtSwarmScreenButton *S1 = nullptr;
+    
+    const char keyboardMap[KEYMAPS][30] = { R"(abcdefghijklmnopqrstuvwxyz@ )",
+                                            R"(ABCDEFGHIJKLMNOPQRSTUVWXYZ_ )",
+                                            R"(0123456789+-.)",
+                                            R"(!"#$%&':;<=>?\^`|~[](){})*/,)" };
+
+    const char S1Label[KEYMAPS][4] = { "A-Z", "NUM", "#$@", "a-z" };
+
+    const uint8_t cols[KEYMAPS] = { 14, 14,  7, 14 };
+    const uint8_t rows[KEYMAPS] = {  2,  2,  2,  2 };
+
+    uint8_t keyboard = 0;
+    bool numKeyboard = false;
+
+    uint8_t keyboardX, keyboardY, keyboardWidth, keyboardHeight;
+
+    uint8_t cursorR[5] = { 0, 0, 0, 0, 0 };
+    uint8_t cursorC[5] = { 0, 0, 0, 0, 0 };
+
+    void init( FtSwarmScreen *parent, const char *title, uint8_t callbackID, const char *param, uint8_t maxLength );
+    uint8_t keymapIndex( void ) { return cursorR[keyboard]*cols[keyboard] + cursorC[keyboard]; };
+    void setKeyboard( uint8_t keyboard );
+    void drawCursor( bool invert );
+    void drawInput( void );
+    
+  public:
+   
+    // Constructor to enter strings
+    FtSwarmScreenInput( FtSwarmScreen *parent, const char *title, uint8_t callbackID, const char *param, uint8_t maxLength );
+
+    // constructor to enter numbers
+    FtSwarmScreenInput( FtSwarmScreen *parent, const char *title, uint8_t callbackID, const int32_t param, uint8_t maxLength );
+
+    // Destructor
+    ~FtSwarmScreenInput( );
+
+    // cls and draw all elements
+    virtual void draw( void );
+
+    // eval external events like pressing buttons
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );
+
+}; 
+
+/***************************************************
+ *
+ * FtSwarmScreenYesNo
+ *
+ ***************************************************/
+
+class FtSwarmScreenYesNo : public FtSwarmScreenChooseOption {
+
+  public: 
+    FtSwarmScreenYesNo( FtSwarmScreen *parent, const char *title, const char *text, uint8_t callbackID, int32_t yes = 1 ) : FtSwarmScreenChooseOption( parent, title, text, callbackID, 0, nullptr, yes, "YES", 0, "NO" ) {};
+
+};
+
+/***************************************************
+ *
+ * FtSwarmScreenError
+ *
+ ***************************************************/
+
+class FtSwarmScreenError : public FtSwarmScreenChooseOption {
+
+  public: 
+    FtSwarmScreenError( FtSwarmScreen *parent, const char *text ) : FtSwarmScreenChooseOption( parent, "Error", text, FTSWARMSCREEN_NOID,  0, nullptr, 0, nullptr, 0, nullptr, 1, "OK" ) {};
+
+};
+
+class FtSwarmScreenInfo : public FtSwarmScreenChooseOption {
+
+  public: 
+    FtSwarmScreenInfo( FtSwarmScreen *parent, const char *text ) : FtSwarmScreenChooseOption( parent, "Info", text, FTSWARMSCREEN_NOID,  0, nullptr, 0, nullptr, 0, nullptr, 1, "OK" ) {};
+
+};
 
 /***************************************************
  *
@@ -535,21 +580,24 @@ class FtSwarmScreenWifi : public FtSwarmScreen {
 
   protected:
 
-    FtSwarmScreenSelectable *wifiModeSO = NULL;
-    FtSwarmScreenSelectable *wifiSSIDSO = NULL;
-    FtSwarmScreenSelectable *wifiPwdSO  = NULL;
+    FtSwarmScreenSelectable *wifiModeSelect = nullptr;
+    FtSwarmScreenSelectable *wifiSSIDSelect = nullptr;
+    FtSwarmScreenText       *wifiSSIDText   = nullptr;
+    FtSwarmScreenSelectable *wifiPwdSelect  = nullptr;
+    FtSwarmScreenText       *wifiPwdText    = nullptr;
+
     bool anythingChanged = false;
-    FtSwarmScreenS4 *S4 = NULL;;
+    FtSwarmScreenButton *S4 = nullptr;
 
     char wifiPwd[64];
     char wifiSSID[64];
     FtSwarmWifi_t wifiMode;
 
   public:
-    FtSwarmScreenWifi( FtSwarmScreen *parent, FtSwarmScreen *next  );
+    FtSwarmScreenWifi( FtSwarmScreen *parent  );
 
   // eval external events like pressing buttons
-  virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
+  virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );
 
 };
 
@@ -578,7 +626,7 @@ class FtSwarmScreenWifiSSID : public FtSwarmScreen {
     virtual void draw( void );
 
     // eval external events like pressing buttons
-    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );
 
     // called all 25ms, so be minimalistic
     virtual void operate( void );
@@ -595,15 +643,18 @@ class FtSwarmScreenSwarm : public FtSwarmScreen {
 
   protected:
 
+    FtSwarmScreenButton *S2 = nullptr;
+    FtSwarmScreenButton *S3 = nullptr;
+
     void addMembers( void );
 
   public:
 
     // Constructor
-    FtSwarmScreenSwarm( FtSwarmScreen *parent, FtSwarmScreen *next  );
+    FtSwarmScreenSwarm( FtSwarmScreen *parent );
 
     // eval external events like pressing buttons
-    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL ) override;
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );
 
 };
 
@@ -624,29 +675,7 @@ class FtSwarmScreenSwarmDetail : public FtSwarmScreen {
     FtSwarmScreenSwarmDetail( FtSwarmScreen *parent, const char *title, FtSwarmSerialNumber_t device  );
 
     // eval external events like pressing buttons
-    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL ) override;
-
-};
-
-/***************************************************
- *
- * FtSwarmScreenFactoryReset 
- * Ask user to reset controller to factory setting
- *
- ***************************************************/
-
-class FtSwarmScreenFactoryReset : public FtSwarmScreen {
-
-  public:
-
-    // constructor
-    FtSwarmScreenFactoryReset( FtSwarmScreen *parent, FtSwarmScreen *next );
-    
-    // cls and draw all elements
-    virtual void draw( void );
-
-    // eval external events like pressing buttons
-    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );
 
 };
 
@@ -666,13 +695,15 @@ class SwOSMainScreen : public FtSwarmScreen {
   public:
 
     // Constructor
-    SwOSMainScreen( FtSwarmScreen *parent, const char *title );
+    SwOSMainScreen( void );
 
     // cls and draw all elements
     virtual void draw( void );
 
     // eval external events like pressing buttons
-    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );
+
+
 };
 
 /***************************************************
@@ -684,24 +715,14 @@ class SwOSMainScreen : public FtSwarmScreen {
 
 class SwOSSplashScreen : public FtSwarmScreen {
 
-  protected:
-    unsigned long startTime;
-
   public:
 
+    FtSwarmScreenText *info = nullptr;
+
     // constructor
-    SwOSSplashScreen( FtSwarmScreen *parent, const char *title );
-    
-    // cls and draw all elements
-    virtual void draw( void );
-    
-    // called all 25ms, so be minimalistic
-    virtual void operate( void );
+    SwOSSplashScreen( void );
 
-    // eval external events like pressing buttons
-    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
-
-};
+  };
 
 /***************************************************
  *
@@ -716,10 +737,7 @@ class SwOS404Screen : public FtSwarmScreen {
   public:
 
     // constructor
-    SwOS404Screen( FtSwarmScreen *parent ):FtSwarmScreen( parent, "Page not found" ) {  };
-    
-    // cls and draw all elements
-    virtual void draw( void );
+    SwOS404Screen( void ):FtSwarmScreen( nullptr, "Page not found", "Internal error - the requested page is not available." ) {};
 
 };
 
@@ -743,24 +761,27 @@ struct FtSwarmScreenEventQueueElement_t {
  *
  ***************************************************/
 
- #define MAXSCREENS 15
-
 class FtSwarmScreenManager {
 
   protected:
-    FtSwarmScreen *screen[MAXSCREENS];
+
+    static const uint8_t MAXSCREENS = 10;
+
+    SwOSSplashScreen *splashScreen = nullptr;
+
+    FtSwarmScreen *screen[ MAXSCREENS];
 
     // get a free index in screen[]
     uint8_t getIndex( FtSwarmScreen *screen );
 
   public:
-    FtSwarmScreen *active = NULL;
+    FtSwarmScreen *active = nullptr;
     bool blockEvents = false;
 
     FtSwarmScreenManager();
 
     // send an event to active screen
-    void eventHandler( FtSwarmScreen *screen, FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = NULL );
+    void eventHandler( FtSwarmScreen *screen, FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );
 
     // receive an event and forward it to the active screen
     void eventHandler( FtSwarmScreenEventQueueElement_t *event );
@@ -776,6 +797,9 @@ class FtSwarmScreenManager {
     
     // activate
     void activate( FtSwarmScreen *screen );
+
+    // display swarm Status
+    void setState( SwOSState_t state, const char *text, uint8_t members, const char *SSID );
 
 };
 

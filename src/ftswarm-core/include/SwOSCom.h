@@ -35,7 +35,6 @@ typedef enum {
 
   CMD_SAVE,                   // Kelda to Member: save settings to NVS
   CMD_SETWIFI,                // set wifi settings
-  CMD_SETACTIVECONFIG,        // set active config
   CMD_REBOOT,                 // reboot controller
 
   CMD_GOTYOU,                 // anybody's reply on ANYBODYOUTTHERE
@@ -200,10 +199,6 @@ struct wifiCmd_t {
   char          PSK[128];
 } __attribute__((packed));
 
-struct configCmd_t {
-  uint8_t config;
-} __attribute__((packed));
-
 struct saveCmd_t {
   uint8_t scope;
 } __attribute__((packed));
@@ -235,7 +230,6 @@ struct SwOSDatagram_t {
     parameterCmd_t parameterCmd;
     wifiCmd_t wifiCmd;
     saveCmd_t saveCmd;
-    configCmd_t configCmd;
   };
 } __attribute__((packed));
 

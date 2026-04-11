@@ -905,7 +905,7 @@ void FtSwarmOLED::cls( void )  {
 
 }
 
-void FtSwarmOLED::cls( uint8_t screen ) {
+void FtSwarmOLED::cls( FtSwarmOledScreen_t screen ) {
 
   if (!me) return;
   
@@ -927,7 +927,7 @@ int16_t FtSwarmOLED::getScreenWidth(void) {
 
 }
 
-int16_t FtSwarmOLED::getScreenHeight( uint8_t screen ) {
+int16_t FtSwarmOLED::getScreenHeight( FtSwarmOledScreen_t screen ) {
 
   if (!me) return 0;
   
@@ -964,7 +964,7 @@ int16_t FtSwarmOLED::getTextHeight( void ) {
 
 }
 
-void FtSwarmOLED::drawButton( uint8_t screen, int16_t x, int16_t y, uint8_t width, const char *text, uint8_t flags, uint8_t paddingH, uint8_t paddingV ) {
+void FtSwarmOLED::drawButton( FtSwarmOledScreen_t screen, int16_t x, int16_t y, uint8_t width, const char *text, uint8_t flags, uint8_t paddingH, uint8_t paddingV ) {
 
   if (!me) return;
   
@@ -984,7 +984,7 @@ void FtSwarmOLED::setDrawColor( uint8_t color ) {
 
 }
 
-void FtSwarmOLED::drawCircle( uint8_t screen, int16_t x, int16_t y, int16_t r, FtSwarmOledFill_t fill ) {
+void FtSwarmOLED::drawCircle( FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t r, FtSwarmOledFill_t fill ) {
 
   if (!me) return;
   
@@ -994,7 +994,7 @@ void FtSwarmOLED::drawCircle( uint8_t screen, int16_t x, int16_t y, int16_t r, F
 
 }
 
-void FtSwarmOLED::drawEllipse( uint8_t screen, int16_t x, int16_t y, int16_t rx, int16_t ry, FtSwarmOledFill_t fill ) {
+void FtSwarmOLED::drawEllipse( FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t rx, int16_t ry, FtSwarmOledFill_t fill ) {
 
   if (!me) return;
   
@@ -1004,7 +1004,7 @@ void FtSwarmOLED::drawEllipse( uint8_t screen, int16_t x, int16_t y, int16_t rx,
 
 }
     
-void FtSwarmOLED::drawLine( uint8_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1 ) {
+void FtSwarmOLED::drawLine( FtSwarmOledScreen_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1 ) {
 
   if (!me) return;
   
@@ -1014,7 +1014,7 @@ void FtSwarmOLED::drawLine( uint8_t screen, int16_t x0, int16_t y0, int16_t x1, 
 
 }
     
-void FtSwarmOLED::drawPixel( uint8_t screen, int16_t x, int16_t y ) {
+void FtSwarmOLED::drawPixel( FtSwarmOledScreen_t screen, int16_t x, int16_t y ) {
 
   if (!me) return;
   
@@ -1024,7 +1024,7 @@ void FtSwarmOLED::drawPixel( uint8_t screen, int16_t x, int16_t y ) {
 
 }
 
-void FtSwarmOLED::drawRect( uint8_t screen, int16_t x, int16_t y, int16_t w, int16_t h, FtSwarmOledFill_t fill ) {
+void FtSwarmOLED::drawRect( FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t w, int16_t h, FtSwarmOledFill_t fill ) {
 
   if (!me) return;
   
@@ -1034,7 +1034,7 @@ void FtSwarmOLED::drawRect( uint8_t screen, int16_t x, int16_t y, int16_t w, int
 
 }
 
-void FtSwarmOLED::drawRoundRect( uint8_t screen, int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, FtSwarmOledFill_t fill ) {
+void FtSwarmOLED::drawRoundRect( FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, FtSwarmOledFill_t fill ) {
 
   if (!me) return;
   
@@ -1044,7 +1044,7 @@ void FtSwarmOLED::drawRoundRect( uint8_t screen, int16_t x, int16_t y, int16_t w
 
 }
 
-void FtSwarmOLED::drawStr( uint8_t screen, int16_t x, int16_t y, const char *text, FtSwarmAlign_t align ) {
+void FtSwarmOLED::drawStr( FtSwarmOledScreen_t screen, int16_t x, int16_t y, const char *text, FtSwarmAlign_t align ) {
 
   if (!me) return;
   
@@ -1054,7 +1054,7 @@ void FtSwarmOLED::drawStr( uint8_t screen, int16_t x, int16_t y, const char *tex
 
 }
 
-void FtSwarmOLED::drawStrRect( uint8_t screen, int16_t x, int16_t y, int16_t w, const char *text, FtSwarmAlign_t align, uint8_t paddingH, uint8_t paddingV ) {
+void FtSwarmOLED::drawStrRect( FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t w, const char *text, FtSwarmAlign_t align, uint8_t paddingH, uint8_t paddingV ) {
 
   if (!me) return;
   
@@ -1064,7 +1064,7 @@ void FtSwarmOLED::drawStrRect( uint8_t screen, int16_t x, int16_t y, int16_t w, 
 
 }
 
-void FtSwarmOLED::drawTriangle( uint8_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, FtSwarmOledFill_t fill ) {
+void FtSwarmOLED::drawTriangle( FtSwarmOledScreen_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, FtSwarmOledFill_t fill ) {
 
   if (!me) return;
   
