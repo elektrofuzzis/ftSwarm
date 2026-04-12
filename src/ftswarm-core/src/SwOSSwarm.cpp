@@ -9,10 +9,13 @@
 
 #include "SwOS.h"
 
-#include <WiFi.h>
+// #include <WiFi.h>
+// #include <ESPmDNS.h>
 #include <esp_now.h>
-#include <esp_wifi.h>
-#include <ESPmDNS.h>
+#include "esp_wifi.h"
+#include "esp_event.h"
+#include "esp_netif.h"
+#include "mdns.h"
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -200,6 +203,8 @@ SwOSIO *SwOSSwarm::waitFor( char *alias ) {
   
 }
 
+/*
+
 void SwOSSwarm::startWifi( void ) {
 
   // no wifi config?
@@ -293,6 +298,147 @@ void SwOSSwarm::startWifi( void ) {
       printf("hostname: %s\nip-address: %d.%d.%d.%d\n", Ctrl[0]->getHostname(), WiFi.softAPIP()[0], WiFi.softAPIP()[1], WiFi.softAPIP()[2], WiFi.softAPIP()[3]);
     else
       printf("hostname: %s\nip-address: %d.%d.%d.%d\n", Ctrl[0]->getHostname(), WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
+  }
+
+}
+
+*/
+
+void SwOSSwarm::startWifi( void ) {
+
+  // 1. Initialize TCP/IP stack
+  ESP_ERROR_CHECK( esp_netif_init() );
+
+  // 2. Create default event loop if not already running
+  if ( esp_event_loop_create_default() != ESP_OK ) {
+  // Handle error or assume it's already created
+    }
+
+  // 3. Create Netif instances for Station
+  esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
+  esp_netif_t *ap_netif  = esp_netif_create_default_wifi_ap();
+
+  // 4. Init WiFi with default config
+  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+  ESP_ERROR_CHECK( esp_wifi_init( &cfg ) );
+
+  // Replacement for WiFi.mode(WIFI_AP_STA)
+  ESP_ERROR_CHECK( esp_wifi_set_mode( WIFI_MODE_APSTA ) );
+
+  // 5. Set Storage to RAM (to avoid flash wear during frequent reboots)
+  ESP_ERROR_CHECK( esp_wifi_set_storage( WIFI_STORAGE_RAM ) );
+
+  // 6. start wifi
+  if ( nvs.wifiMode == wifiAP ) {
+    // Provide network via SoftAP
+
+    // setup soft ap config
+    wifi_config_t ap_config = {};
+    strlcpy( (char *) ap_config.ap.ssid,     nvs.wifiSSID, sizeof( ap_config.ap.ssid ) );
+    strlcpy( (char *) ap_config.ap.password, nvs.wifiPwd,  sizeof( ap_config.ap.password ) );
+    ap_config.ap.channel = nvs.channel;
+    ap_config.ap.max_connection = 4;
+    ap_config.ap.authmode = ( strlen( nvs.wifiPwd ) == 0) ? WIFI_AUTH_OPEN : WIFI_AUTH_WPA2_PSK;
+
+    // set config
+    ESP_ERROR_CHECK( esp_wifi_set_config( WIFI_IF_AP, &ap_config ) );
+
+    if (verbose) printf("Create own SSID: %s\n", nvs.wifiSSID );
+    
+    wifiHandler = new WifiHandler();
+
+    ESP_ERROR_CHECK( esp_wifi_start() );
+    esp_wifi_set_ps(WIFI_PS_NONE);
+    wifiConnected = true;
+    
+  } else {
+    // use infrastructure as client
+
+    // setup config
+    wifi_config_t sta_config = {};
+    strlcpy( (char *) sta_config.sta.ssid,     nvs.wifiSSID, sizeof( sta_config.sta.ssid ) );
+    strlcpy( (char *) sta_config.sta.password, nvs.wifiPwd,  sizeof( sta_config.sta.password ) );
+        
+    // Disable PMF (Protected Management Frames) for better compatibility
+    sta_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+    
+    // set config
+    ESP_ERROR_CHECK( esp_wifi_set_config( WIFI_IF_STA, &sta_config ) );
+
+    if (verbose) printf( "Attempting to connect to SSID: %s ", nvs.wifiSSID );
+
+    wifiHandler = new WifiHandler();
+    
+    // Start WiFi
+    ESP_ERROR_CHECK( esp_wifi_start() );
+    esp_wifi_set_ps(WIFI_PS_NONE);
+  
+    // connect
+    esp_wifi_connect();
+        
+    // Manual polling loop (simulating your 10s wait)
+    for (int i = 0; i < 20; i++) {
+      
+      esp_netif_ip_info_t ip_info;
+      if (esp_netif_get_ip_info( sta_netif, &ip_info ) == ESP_OK && ip_info.ip.addr != 0) {
+        wifiConnected = true;
+        if ( verbose ) printf( "\nConnected to %s\n", nvs.wifiSSID );
+        break;
+      }
+
+      // user interrupt?
+      if ( anyKey() ) { 
+        printf( "\nStarting setup..\n" );
+        mainMenu();
+        ESP.restart();
+      }
+      
+      if (verbose) { printf("."); flushStdIO(); }
+      
+      vTaskDelay(pdMS_TO_TICKS(500));
+
+    }
+
+    // connection failed?
+    if ( !wifiConnected ) {
+      SWARM_LOG_ERROR( "Can't connect to SSID %s", nvs.wifiSSID );
+      printf( "\nStarting setup..\n" );
+      mainMenu();
+      ESP.restart();
+    }
+
+  }
+
+  // 7. MDNS
+  esp_err_t err = mdns_init();
+
+  if (err != ESP_OK) {
+    SWARM_LOG_ERROR( "MDNS init failed: %s", err );
+  } else {
+    ESP_ERROR_CHECK( mdns_hostname_set( Ctrl[0]->getHostname() ) );
+    mdns_service_add( nullptr, "_http", "_tcp", 80, nullptr, 0 );
+  }
+
+  // 8. MAC
+  uint8_t mac[ESP_NOW_ETH_ALEN];
+  esp_read_mac(mac, ESP_MAC_WIFI_STA);
+  Ctrl[0]->macAddr.set( mac );
+
+  // 9. some pretty print
+  if ( verbose ) {
+
+    esp_netif_ip_info_t ip_info;
+
+    esp_netif_t* netif;
+    if (nvs.wifiMode == wifiAP) netif = ap_netif;
+    else                        netif = sta_netif;
+
+    if ( esp_netif_get_ip_info( netif, &ip_info ) == ESP_OK ) 
+      printf( "hostname: %s\nip-address: %d.%d.%d.%d\nMAC: %02X:%02X:%02X:%02X:%02X:%02X\n", 
+              Ctrl[0]->getHostname(), 
+              IP2STR( &ip_info.ip ),
+              mac[0], mac[1], mac[2], mac[3], mac[4], mac[5] );
+
   }
 
 }

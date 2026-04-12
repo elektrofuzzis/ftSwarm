@@ -10,7 +10,6 @@
 #include <nvs.h>
 #include <nvs_flash.h>
 #include <esp_err.h>
-#include <WiFi.h>
 #include <esp_task_wdt.h>
 
 #include "SwOS.h"

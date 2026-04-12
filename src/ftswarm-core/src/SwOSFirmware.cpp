@@ -7,10 +7,10 @@
  * 
  */
 
+// #include <WiFi.h>
+#include "esp_netif.h"
+
 #include "SwOSFirmware.h"
-
-#include <WiFi.h>
-
 #include "SwOS.h"
 #include "SwOSSwarm.h"
 #include "SwOSNVS.h"
@@ -288,14 +288,21 @@ void MenuLocalSettings::run( void ) {
 
   char info[250];
   
+  // get IP
+  esp_netif_ip_info_t ip_info;
+  esp_netif_t* netif = NULL;
+  if      (nvs.wifiMode == wifiAP)     netif = esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
+  else if (nvs.wifiMode == wifiClient) netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+  if      ( netif ) esp_netif_get_ip_info( netif, &ip_info );
+
   while(1) {
 
     switch ( nvs.wifiMode ) {
-    case wifiAP:      sprintf(info, "hostname:            %s\nip-address:          %d.%d.%d.%d\n\n", myOSSwarm.Ctrl[0]->getHostname(), WiFi.softAPIP()[0], WiFi.softAPIP()[1], WiFi.softAPIP()[2], WiFi.softAPIP()[3]);
-                      break;
-    case wifiClient:  sprintf(info, "hostname:            %s\nip-address:          %d.%d.%d.%d\n\n", myOSSwarm.Ctrl[0]->getHostname(), WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
-                      break;
-    default:          sprintf(info, "hostname:            %s\nip-address:          none\n\n",myOSSwarm.Ctrl[0]->getHostname());
+      case wifiAP:      
+      case wifiClient:  sprintf(info, "hostname:            %s\nip-address:          %d.%d.%d.%d\n\n", myOSSwarm.Ctrl[0]->getHostname(), IP2STR(&ip_info.ip) );
+                        break;
+      default:          sprintf(info, "hostname:            %s\nip-address:          none\n\n",myOSSwarm.Ctrl[0]->getHostname());
+                        break;
     }
 
     // build menu
@@ -1457,7 +1464,7 @@ void MainMenu::run( void ) {
 
     start( );
     add("Wifi & Local Settings", "", MENU_WEB, 'w' );
-    if ( ( WiFi.status() == WL_CONNECTED ) || ( nvs.wifiMode == wifiAP ) || ( FTSWARM_HAL_RS485 ) ) {
+    if ( ( myOSSwarm.wifiConnected ) || ( nvs.wifiMode == wifiAP ) || ( FTSWARM_HAL_RS485 ) ) {
       add("Swarm Configuration", "", MENU_SWARM, 's' );
     } else {
       add("Swarm Configuration - activate WiFi", "", MENU_DEACTIVATED );

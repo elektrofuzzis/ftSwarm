@@ -52,6 +52,7 @@ public:
 	int8_t   maxCtrl = -1;
   SwOSCtrl *Kelda = NULL;
 	SwOSCtrl *Ctrl[MAXCTRL];
+  bool     wifiConnected = false;
 
   // constructor
   SwOSSwarm( ) { for ( uint8_t i=0; i<MAXCTRL; i++ ) { Ctrl[i] = NULL; } }; 

@@ -10,6 +10,121 @@
 #include "SwOSHW/SwOSHWLocal.h"
 #include "SwOSLog.h"
 
+#include "esp_event.h"
+#include "esp_wifi.h"
+
+/***************************************************
+ *
+ * wifiHandler
+ *
+ ***************************************************/
+
+WifiHandler* wifiHandler = nullptr;
+
+static void wifiEventHandler( void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data ) {
+
+  if ( wifiHandler ) wifiHandler->eventHandler( arg, event_base, event_id, event_data );
+
+}
+
+WifiHandler::WifiHandler() {
+
+  ESP_ERROR_CHECK( esp_event_handler_instance_register( WIFI_EVENT, WIFI_EVENT_SCAN_DONE, &wifiEventHandler, nullptr, nullptr ) );
+
+}
+
+WifiHandler::~WifiHandler() {
+
+  if ( ap ) free( ap );
+
+}
+
+void WifiHandler::eventHandler( void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data ) {
+
+  if ( event_base == WIFI_EVENT && event_id == WIFI_EVENT_SCAN_DONE ) {
+
+    // Get the number of APs found
+    esp_wifi_scan_get_ap_num( &aps );
+    if ( ap ) free( ap );
+    ap = (wifi_ap_record_t*) malloc( sizeof( wifi_ap_record_t ) * aps );
+
+    // Fetch the actual records
+    ESP_ERROR_CHECK( esp_wifi_scan_get_ap_records( &aps, ap ) );
+
+    scanActive = false;
+
+ }
+
+}
+
+void WifiHandler::startScan( void ) {
+
+  // stopScan();
+  if ( ap ) { free( ap ); ap = nullptr; }
+  aps = 0;
+
+  wifi_scan_config_t scan_config = { .show_hidden = false };
+  scanActive = true;
+  ESP_ERROR_CHECK( esp_wifi_scan_start( &scan_config, false ) );
+
+}
+
+void WifiHandler::stopScan( void ) {
+
+  if (!scanActive) return;
+
+  ESP_ERROR_CHECK( esp_wifi_scan_stop( ) );
+  scanActive = false;
+
+}
+
+void WifiHandler::uniqueScanResult( void ) {
+
+  wifi_ap_record_t temp;
+  uint16_t i=1;
+
+  while ( i < aps ) {
+
+    // printf("uniqueScanResult %d %d %s %s %d\n", i, aps, (char*) ap[i-1].ssid, (char*) ap[i].ssid, ap[i].rssi );
+
+    int8_t cmp = strcmp( (char*) ap[i-1].ssid, (char*) ap[i].ssid );
+
+    if ( ap[i].rssi <= -80 ) {
+      // poor signal: kill item
+      // printf("poor signal %s\n", ap[i].ssid );
+      aps--;
+      if ( i < aps ) memmove( &ap[i], &ap[i+1], ( aps - i ) * sizeof( wifi_ap_record_t ) );
+
+    } else if ( cmp == 0 ) {
+      // deduplicate, take the strongest
+      // printf("duplicate %s\n", ap[i].ssid );
+      if ( ap[i-1].rssi < ap[i].rssi ) memcpy( &ap[i-1], &ap[i],   sizeof( wifi_ap_record_t ) );
+      aps--;
+      if ( i < aps ) memmove( &ap[i], &ap[i+1], ( aps - i ) * sizeof( wifi_ap_record_t ) );      
+
+    } else if ( cmp > 0 ) {
+      // wrong order, change i-1 and i
+      // printf("order %s\n", ap[i].ssid );
+      memcpy( &temp,    &ap[i-1], sizeof( wifi_ap_record_t ) );
+      memcpy( &ap[i-1], &ap[i],   sizeof( wifi_ap_record_t ) );
+      memcpy( &ap[i],   &temp,    sizeof( wifi_ap_record_t ) );
+
+      // need to bubble up?
+      if ( i>1 ) i--;
+
+    } else {
+      // nothing to deduplicate, order is fine, continue
+      i++;
+    }
+
+  }
+
+  // printf("---\n");
+  // for ( int16_t x=0; x<aps; x++ ) printf("%d %s %d\n", i, (char*) ap[x].ssid, ap[x].rssi );
+
+
+}
+
 /***************************************************
  *
  *   HC165

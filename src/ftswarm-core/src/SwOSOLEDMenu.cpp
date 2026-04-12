@@ -7,7 +7,7 @@
  * 
  */
 
-#include <WiFi.h>
+// #include <WiFi.h>
 
 #include "SwOSOLEDMenu.h"
 #include "SwOSLog.h"
@@ -221,206 +221,6 @@ FtSwarmScreenObjList::~FtSwarmScreenObjList( ) {
   if (list) delete list;
 
 }
-
-/*
-bool FtSwarmScreenObjList::add( FtSwarmScreenObj *newObject ) {
-
-  // don't store nullptrs
-  if ( !newObject ) return true;
-
-  printf("add "); newObject->debug();
-
-  // out of space?
-  if ( maxItem >= maxItems - 1) return false;
-
-  // add in the middle?
-  for ( int16_t i=0; i<=maxItem; i++ ) {
-
-    // right space to insert the new element in y order
-    if ( list[i]->getY() > newObject->getY() ) {
-
-      // move objects
-      maxItem++;
-      memmove( &list[i+1], &list[i], (maxItems-i-1) * sizeof(list[0]) );
-      list[i] = newObject;
-
-      // move selected?
-      if ( selected >= i ) selected++;
-
-
-      if ( ( selected < 0 ) && ( newObject->getType() == FTSWARMSCREEN_SELECTABLE ) ) {
-        selected = i;
-      }
-
-      return true;
-
-    }
-
-  }
-
-  // add at end
-  maxItem++;
-  list[maxItem] = newObject;
-  if ( ( selected < 0 ) && ( newObject->getType() == FTSWARMSCREEN_SELECTABLE ) ) selected = maxItem;
-
-  return true;
-
-}
-
-void FtSwarmScreenObjList::del( int16_t i ) {
-
-  // out of bounds?
-  if ( ( i<0 ) || ( i>maxItem ) ) return;
-
-  // drop selected element?
-  if (selected == i) prevSelectable( );
-  if (selected == i) selected = -1;
-
-  // drop element
-  FtSwarmScreenObj *old = list[i];
-  memmove( &list[i], &list[i+1], sizeof( list[0] ) * ( maxItems - i - 1) );
-  list[maxItems-1] = nullptr;
-  delete old;
-  maxItem--;
-
-}
-
-void FtSwarmScreenObjList::del( FtSwarmScreenObj *delObject ) {
-
-  // not initialized or nullptr?
-  if ( ( !list ) || (!delObject) ) return;
-
-  // search for item to be killed
-  for ( int16_t i=0; i<=maxItem; i++ ) {
-
-    if ( list[i] == delObject ) {
-      
-      // delete element
-      del(i);
-
-      // done
-      return;
-
-    }
-
-  }
-
-}
-
-void FtSwarmScreenObjList::deleteAll( FtSwarmOledScreen_t screen, FtSwarmScreenObj_t type ) {
-
-  if ( ( !list ) || ( maxItem < 0 ) ) return;
-
-  int16_t i=0;
-
-  while ( i<=maxItem ) {
-
-    if ( ( list[i] ) && ( list[i]->getType() == type ) && ( list[i]->getScreen() == screen ) ) del(i);
-    else i++;
-
-  }
-
-  // if (type == FTSWARMSCREEN_SELECTABLE) selected = -1;
-
-}
-
-void FtSwarmScreenObjList::draw( void ) {
-
-  if (!list) return;
-  for ( int16_t i=0; i<=maxItem; i++ ) if ( list[i] ) {
-    list[i]->draw( selected == i );
-  }
-
-}
-
-void FtSwarmScreenObjList::activate( void ) { 
-
-  if (!list) return;
-  for ( int16_t i=0; i<=maxItem; i++ ) if ( list[i] ) list[i]->activate();
-
-}
-
-void FtSwarmScreenObjList::deactivate( void ) { 
-
-  if (!list) return;
-  for ( int16_t i=0; i<=maxItem; i++ ) if ( list[i] ) list[i]->deactivate();
-
-}
-
-int16_t FtSwarmScreenObjList::getNextY( FtSwarmOledScreen_t screen ) {
-
-  // not initialized or no entries
-  if ( ( !list ) || ( maxItem < 0 ) || ( !list[maxItem] ) ) return 0;
-
-  for ( int16_t i=maxItem; i>=0; i-- ) {
-
-    // since list is ordered by y & we're searching backwards, the first hit is fine
-    if ( ( list[i] ) && ( list[i]->getScreen() == screen ) ) {
-      return list[i]->getY( ) + list[i]->getHeight();
-    }
-
-  }
-
-  // no hit, so start with 0
-  return 0;
-
-}
-
-FtSwarmScreenSelectable *FtSwarmScreenObjList::nextSelectable( void ) {
-
-  if ( ( !list ) || ( selected < 0 ) ) return nullptr;
-
-  for ( int16_t i = selected+1; i<=maxItem; i++ ) {
-
-    // next selectable found
-    if ( list[i]->getType() == FTSWARMSCREEN_SELECTABLE ) {
-      selected = i;
-      return (FtSwarmScreenSelectable *)list[selected];
-    }
-
-  }
-
-  // selected is already the last one
-  return (FtSwarmScreenSelectable *)list[selected];
-
-}
-
-FtSwarmScreenSelectable *FtSwarmScreenObjList::prevSelectable( void ) {
-
-  if ( (!list) || ( selected < 0 ) ) return nullptr;
-
-  for ( int16_t i = selected - 1; i>0; i-- ) {
-
-    // next selectable found
-    if ( list[i]->getType() == FTSWARMSCREEN_SELECTABLE ) {
-      selected = i;
-      return (FtSwarmScreenSelectable *)list[selected];
-    }
-
-  }
-
-  // selected is already the last one
-  return (FtSwarmScreenSelectable *)list[selected];
-
-}
-
-FtSwarmScreenSelectable *FtSwarmScreenObjList::getSelected( void ) {
-
-  if ( selected < 0 ) return nullptr;
-
-  return (FtSwarmScreenSelectable *)list[selected];
-
-}
-
-void FtSwarmScreenObjList::debug( void ) {
-
-  printf("FtSwarmScreenObjList::debug %d\n", maxItem);
-  for ( int16_t i=0; i<=maxItem; i++ ) if ( list[i] ) { printf("%d: ", i); list[i]->debug(); }
-  printf("---\n");
-
-}
-
-*/
 
 void FtSwarmScreenObjList::add( FtSwarmScreenObj *newObject ) {
 
@@ -800,7 +600,7 @@ void FtSwarmScreen::addNavigation( void ) {
   if (navigation) return;
 
   // add joysticks
-  addJoystick( FTSWARM_OLED_NOSCREEN, "", 0 );
+  addJoystick( FTSWARM_OLED_NOSCREEN, "JOY1", 0 );
   // addJoystick( FTSWARM_OLED_MAINSCREEN, 1 );
 
   // all done
@@ -1447,21 +1247,25 @@ bool FtSwarmScreenWifi::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, in
 FtSwarmScreenWifiSSID::FtSwarmScreenWifiSSID( FtSwarmScreen *parent, uint8_t id  ): FtSwarmScreen( parent, "SSID", "" ) {
 
   this->id = id;
-  scanStatus = WIFI_SCAN_RUNNING;
-  WiFi.scanNetworks(true);
+  
+  waitForScan = true;
+  addNavigation();
+
+  wifiHandler->startScan();  
 
 }
 
 FtSwarmScreenWifiSSID::~FtSwarmScreenWifiSSID() {
-  WiFi.scanDelete();
+  
+  wifiHandler->stopScan();
+  
 }
 
 void FtSwarmScreenWifiSSID::draw( void ) {
   
   FtSwarmScreen::draw();
 
-  if ( scanStatus == WIFI_SCAN_RUNNING ) 
-  oled.drawStr( FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2, 32,  "scanning...", FTSWARM_ALIGNCENTER );
+  if ( wifiHandler->scanActive ) oled.drawStr( FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2, 32,  "scanning...", FTSWARM_ALIGNCENTER );
 
 }
 
@@ -1478,39 +1282,22 @@ bool FtSwarmScreenWifiSSID::eventHandler( FtSwarmScreenEvent_t event, uint8_t id
 
 void FtSwarmScreenWifiSSID::operate( void ) {
 
-  // done?
-  if ( scanStatus > 0 ) return;
+  if ( !wifiHandler )             return;
+  if ( wifiHandler->scanActive )  return;
+  if ( !waitForScan )             return;
 
-  // continue?
-  scanStatus = WiFi.scanComplete();
+  // scan done
+  waitForScan = false;
 
-  if ( scanStatus > 0 ) {
+  // cleanup
+  wifiHandler->uniqueScanResult();
 
-    for ( uint8_t i=0; i<scanStatus; i++ ) {
+  // list 
+  for ( uint16_t i=0; i<wifiHandler->aps; i++ ) add( new FtSwarmScreenSelectable( i + FTSWARMSCREEN_BASEID, this, FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2, getNextY( FTSWARM_OLED_MAINSCREEN ), oled.getScreenWidth(), FTSWARM_ALIGNCENTER, (char *) wifiHandler->ap[i].ssid ) );
 
-      bool unique = true;
-
-      for ( uint8_t j=0; j<i; j++ ) {
-        if ( WiFi.SSID(i) == WiFi.SSID(j) ) {
-          unique = false;
-          break;
-        }
-      }
-
-      if ( unique ) add( new FtSwarmScreenSelectable( i, this, FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2, getNextY( FTSWARM_OLED_MAINSCREEN ), oled.getScreenWidth(), FTSWARM_ALIGNCENTER, WiFi.SSID(i).c_str() ) );
-
-    }
-
-    draw();
-
-  } else if ( scanStatus != WIFI_SCAN_RUNNING ) {
-
-    close();
-
-  }
+  draw();
 
 };
-
 
 /***************************************************
  *
@@ -2172,8 +1959,6 @@ void FtSwarmScreenManager::eventHandler( FtSwarmScreenEventQueueElement_t *event
 
   // screen already deallocated
   if (!eventScreen) return;
-
-  // debugEvent( "eventHandler dequeue", eventScreen->getTitle(), event->event, event->id, event->nParam, event->sParam );
 
   // send event
   eventScreen->eventHandler( event->event, event->id, event->nParam, event->sParam );

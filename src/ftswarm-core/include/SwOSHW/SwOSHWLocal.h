@@ -18,6 +18,44 @@
 #include <U8g2lib.h>
 #endif
 
+/***************************************************
+ *
+ * wifiHandler
+ *
+ ***************************************************/
+
+class WifiHandler {
+
+  protected:
+
+  public:
+
+    bool scanActive = false;
+    uint16_t aps = 0;
+    wifi_ap_record_t *ap = nullptr;
+
+    // constructor
+    WifiHandler();
+
+    // destructor
+    ~WifiHandler();
+
+    // eventHandler - don't call
+    void eventHandler( void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data );
+    
+    // start a network scan
+    void startScan( void );
+
+    // stop a network scan
+    void stopScan( void );
+
+    // deduplicate ap list
+    void uniqueScanResult( void );
+
+};
+
+extern WifiHandler *wifiHandler;
+
 /**************************************************
  *
  *   HC165
