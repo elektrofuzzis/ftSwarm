@@ -401,7 +401,15 @@ void SwOSSwarm::startWifi( void ) {
 
     // connection failed?
     if ( !wifiConnected ) {
+      
       SWARM_LOG_ERROR( "Can't connect to SSID %s", nvs.wifiSSID );
+
+      #if FTSWARM_HAL_OLEDS > 0
+        // start local operate/read task & show wifi dialog
+        xTaskCreatePinnedToCore( readTask,    "ReadTask",    20000, NULL, 1, NULL, ARDUINO_EVENT_RUNNING_CORE );
+        screenManager.wifiMenu();
+      #endif
+
       printf( "\nStarting setup..\n" );
       mainMenu();
       ESP.restart();

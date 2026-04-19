@@ -56,9 +56,18 @@ typedef uint8_t  FtSwarmPort_t;
 typedef enum { SWOS_OK, SWOS_TIMEOUT, SWOS_DENY } SwOSError_t;
 
 // communication
-typedef enum { SWARMCOM_WIFI = 1, SWARMCOM_RS485 = 2, SWARMCOM_BOTH = 3, SWARMCOM_MAX } FtSwarmCommunication_t; 
 
-const char FTSWARMCOMMUNICATION[ SWARMCOM_MAX ][13] = { "none", "wifi", "RS485", "wifi & RS485" };
+union FtSwarmCommunication_t {
+  struct {
+    uint8_t wifi:1;
+    uint8_t rs485:1;
+    uint8_t bt:1;
+  };
+  uint8_t raw;
+};
+
+// typedef enum { SWARMCOM_WIFI = 1, SWARMCOM_RS485 = 2, SWARMCOM_BOTH = 3, SWARMCOM_MAX } FtSwarmCommunication_t; 
+// const char FTSWARMCOMMUNICATION[SWARMCOM_MAX][13] = { "none", "wifi", "RS485", "wifi & RS485" };
 
 // state
 typedef enum { OFFLINE, BOOTING, STARTWIFI, RUNNING, ERROR, WAITING, IDENTIFY, FATAL, FACTORY1, FACTORY2, MAXSTATE } SwOSState_t;

@@ -241,18 +241,9 @@ void MenuLocalSettings::wifiMode( void ) {
 
   if ( nvs.wifiMode != wifiMode ) {
     
-    if ( ( wifiMode == wifiOFF ) && ( nvs.swarmCommunication & 0x1 ) ) {
-      printf("\e[0;31mError: please deactivate wifi in swarm communication first.\e[0m\n");
-
-    } else {
-
-      nvs.wifiMode = wifiMode;
-      
-      if ( ( nvs.wifiMode == wifiAP ) && ( ( nvs.channel < 1 ) || ( nvs.channel > 13 ) ) ) nvs.channel = 1; // to avoid invalid channel settings
-      
-      anythingChanged = true;
-
-    } 
+    nvs.wifiMode = wifiMode;   
+    if ( ( nvs.wifiMode == wifiAP ) && ( ( nvs.channel < 1 ) || ( nvs.channel > 13 ) ) ) nvs.channel = 1; // to avoid invalid channel settings
+    anythingChanged = true;
 
   }
 
@@ -348,6 +339,8 @@ void MenuLocalSettings::run( void ) {
     }
 
     addExit();
+
+    if ( ( nvs.wifiMode == wifiOFF ) && ( nvs.swarmCommunication.wifi ) ) printf("\nHINT: Check wifi settings vs. swarm communication settings\n");
 
     char line[100];
 
@@ -1186,13 +1179,15 @@ void MenuIOList::run( void ) {
 class MenuSwarmConfig : Menu {
 
   private:
-    static const int8_t MENU_NEW           = -1;
-    static const int8_t MENU_ADD           = -2;
-    static const int8_t MENU_DELETE        = -3;
-    static const int8_t MENU_COMMUNICATION = -4;
-    static const int8_t MENU_SPEED         = -5;
-    static const int8_t MENU_PIN           = -6;
-    static const int8_t MENU_ALIAS         = -7;
+    static const int8_t MENU_NEW       = -1;
+    static const int8_t MENU_ADD       = -2;
+    static const int8_t MENU_DELETE    = -3;
+    static const int8_t MENU_COM_WIFI  = -4;
+    static const int8_t MENU_COM_RS485 = -5;
+    static const int8_t MENU_COM_BT    = -6;
+    static const int8_t MENU_SPEED     = -7;
+    static const int8_t MENU_PIN       = -8;
+    static const int8_t MENU_ALIAS     = -9;
 
     SwOSCtrl *ctrl[MAXCTRL];
     int8_t   maxCtrl = -1;
@@ -1339,14 +1334,16 @@ void MenuSwarmConfig::run( void ) {
     add("Swarm Name", nvs.swarmName, MENU_DEACTIVATED, MENU_NOKEY );
     if ( myOSSwarm.Kelda ) add("Kelda", myOSSwarm.Kelda->getAliasOrName(), MENU_DEACTIVATED, MENU_NOKEY );
 
+    // wifi
+    if ( nvs.wifiMode != wifiOFF ) add( "Communication WIFI", ONOFF[nvs.swarmCommunication.wifi], MENU_COM_WIFI, 'W' );
+
+    // rs485
     if ( FTSWARM_HAL_RS485 ) {    
-      add( "Communication", FTSWARMCOMMUNICATION[nvs.swarmCommunication], MENU_COMMUNICATION, 'c' );
-      if ( nvs.swarmCommunication != SWARMCOM_WIFI ) {
+      add( "Communication RS485", ONOFF[nvs.swarmCommunication.rs485], MENU_COM_RS485, 'R' );
+      if ( nvs.swarmCommunication.rs485 ) {
         add( "Swarm speed", nvs.swarmSpeed, MENU_SPEED, 's' );
       }
     }
-    else
-      add( "Communication", FTSWARMCOMMUNICATION[nvs.swarmCommunication], MENU_DEACTIVATED, MENU_NOKEY );
 
     add("Pin", nvs.swarmPIN, MENU_DEACTIVATED, MENU_NOKEY );
     
@@ -1384,20 +1381,14 @@ void MenuSwarmConfig::run( void ) {
       case MENU_EXIT: // main
         return;
 
-      case MENU_COMMUNICATION: 
-        if ( nvs.IAmKelda ) swarmCommunication = (FtSwarmCommunication_t) enterNumber( "enter swarm communication [1-wifi, 2-RS485, 3-both]:", nvs.swarmCommunication, 1, 3 );
-        else                swarmCommunication = (FtSwarmCommunication_t) enterNumber( "enter swarm communication [1-wifi, 2-RS485]:", nvs.swarmCommunication, 1, 2 );
-        if (nvs.swarmCommunication != swarmCommunication) {
-          // test if wifiMode is OFF and swarm should use wifi
-          if ( ( nvs.wifiMode == wifiOFF ) && ( swarmCommunication & 0x1 ) ) {
-            printf("\e[0;31mError: please activate wifi first.\e[0m\n");
-          } else {
-            // let's save data
-            nvs.swarmCommunication = swarmCommunication;
-            if ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) nvs.saveAndRestart();
-          }
-        }
-        break;
+      case MENU_COM_RS485:  
+      case MENU_COM_WIFI: if ( choice == MENU_COM_RS485 ) swarmCommunication.rs485 = !nvs.swarmCommunication.rs485; 
+                          if ( choice == MENU_COM_WIFI)   swarmCommunication.wifi  = !swarmCommunication.wifi;
+                          if ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) {
+                            nvs.swarmCommunication = swarmCommunication;
+                            nvs.saveAndRestart();
+                          }
+                          break;
 
       case MENU_SPEED:  nvs.swarmSpeed = enterNumber( "(0) low ... (4) highspeed (max. 50m)>", nvs.swarmSpeed, 0, 4 );
                         if ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) nvs.saveAndRestart();

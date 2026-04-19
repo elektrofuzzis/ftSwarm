@@ -529,17 +529,14 @@ static void tx_Wifi( SwOSCom *com ) {
 static void tx_task( void *pvParameters) {
 
   SwOSCom com;
-  bool wifi  = ( myOSNetwork.communication & SWARMCOM_WIFI );
-  bool rs485 = ( myOSNetwork.communication & SWARMCOM_RS485 );
 
   while(1) {
 
     // wait to send data
     if ( ( myOSNetwork.active ) && (pdTRUE == xQueueReceive( myOSNetwork.tx_queue, &com, portMAX_DELAY ) ) ) {
 
-      if (rs485) tx_RS485( &com );
-      if (wifi)  tx_Wifi( &com );
-      
+      if (myOSNetwork.communication.rs485) tx_RS485( &com );
+      if (myOSNetwork.communication.wifi)  tx_Wifi( &com );      
 
     }
 
@@ -824,7 +821,7 @@ bool SwOSNetwork::begin( uint16_t swarmSecret, uint16_t swarmPIN, FtSwarmCommuni
     ok = ok && _StartWifi( );
   } 
 
-  if ( swarmCommunication & SWARMCOM_RS485 ) {
+  if ( swarmCommunication.rs485 ) {
     // initialize RS485
     ok = ok && _StartRS485( );
   }

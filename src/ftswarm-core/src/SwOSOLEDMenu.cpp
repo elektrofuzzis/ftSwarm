@@ -632,7 +632,7 @@ void FtSwarmScreen::draw( void ) {
 
   // draw objects in all screens
   objects.draw( );
-
+  
   // vertical slider?
   oled.drawVSlider( FTSWARM_OLED_MAINSCREEN, objects.getNextY( FTSWARM_OLED_MAINSCREEN ) );
 
@@ -1178,14 +1178,17 @@ bool FtSwarmScreenWifi::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, in
                                         if ( newWifiMode != wifiMode ) {
                                           wifiMode = newWifiMode;
                                           wifiModeSelect->setText( WIFI[wifiMode] );
+                                          wifiSSIDText->setVisible( ( wifiMode != wifiOFF ) );
                                           wifiSSIDSelect->setVisible( ( wifiMode != wifiOFF ) );
+                                          wifiPwdText->setVisible( ( wifiMode != wifiOFF ) );
                                           wifiPwdSelect->setVisible ( ( wifiMode != wifiOFF ) );
                                           changes = true;
+
                                         }
                                         break;
 
-      case FTSWARMSCREENWIFI_SSID:      if ( wifiMode == wifiAP ) screenManager.activate( new FtSwarmScreenInput( this, "SSID", FTSWARMSCREENWIFI_CB_SSID, wifiSSID, 63 ) );
-                                        else                      screenManager.activate( new FtSwarmScreenWifiSSID( this, FTSWARMSCREENWIFI_CB_SSID ) );
+      case FTSWARMSCREENWIFI_SSID:      if ( ( wifiHandler ) && ( wifiMode == wifiClient ) ) screenManager.activate( new FtSwarmScreenWifiSSID( this, FTSWARMSCREENWIFI_CB_SSID ) ); 
+                                        else                                                 screenManager.activate( new FtSwarmScreenInput( this, "SSID", FTSWARMSCREENWIFI_CB_SSID, wifiSSID, 63 ) );
                                         break;
 
       case FTSWARMSCREENWIFI_CB_SSID:   if (sParam) { 

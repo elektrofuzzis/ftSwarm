@@ -102,7 +102,7 @@ SwOSNVS::SwOSNVS() {
   swarmPIN           = 9999;
   swarmName[0]       = '\0';
   webUI              = true;
-  swarmCommunication = SWARMCOM_WIFI;
+  swarmCommunication.wifi = 1;
   IAmKelda           = true;
   memset( &swarmMember, 0, sizeof( swarmMember ) );
   extensionPort      = FTSWARM_EXT_OFF;
@@ -208,9 +208,12 @@ bool SwOSNVS::load() {
   nvs_get_u8(  my_handle, "swarmSpeed",                &swarmSpeed );
 
   // Kelda & swarmMembers
-  nvs_get_u8 ( my_handle, "IAmKelda", (uint8_t *) &IAmKelda );
-  nvs_get_u32( my_handle, "swarmCom", (uint32_t *) &swarmCommunication);
+  nvs_get_u8( my_handle, "IAmKelda", (uint8_t *) &IAmKelda );
+  nvs_get_u8( my_handle, "swarmCom", &swarmCommunication.raw);
   dummy = sizeof( swarmMember );  nvs_get_blob( my_handle, "swarmMember", &swarmMember, &dummy );
+
+  // to avoid hickups
+  if ( wifiMode == wifiOFF ) swarmCommunication.wifi = 0;
 
   // webUI
   nvs_get_u8 ( my_handle, "webUI", (uint8_t *) &webUI );
@@ -275,7 +278,7 @@ void SwOSNVS::save( bool writeAll ) {
   
   // Kelda & swarmMembers
   nvs_set_u8  ( my_handle, "IAmKelda",     (uint8_t) IAmKelda );
-  nvs_set_u32 ( my_handle, "swarmCom",     swarmCommunication );
+  nvs_set_u8  ( my_handle, "swarmCom",     swarmCommunication.raw );
   nvs_set_blob( my_handle, "swarmMember",  (void *)swarmMember, sizeof( swarmMember ) );
   nvs_set_u8  ( my_handle, "swarmSpeed",   swarmSpeed );
 
@@ -425,7 +428,7 @@ void SwOSNVS::factorySettings( void ) {
   swarmSecret        = generateSecret( serialNumber ); 
   swarmPIN           = serialNumber;
   IAmKelda           = true;
-  swarmCommunication = SWARMCOM_WIFI;
+  swarmCommunication.wifi = 1;
   swarmSpeed         = 4;
 
   for (uint8_t j=0;j<4;j++) {

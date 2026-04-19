@@ -13,7 +13,7 @@
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWBaseIO.h"
 
-#define FTSWARM_HAL_OLEDS 1
+// #define FTSWARM_HAL_OLEDS 1
 
 #if FTSWARM_HAL_OLEDS > 0
 
@@ -539,6 +539,19 @@ class FtSwarmScreenInput : public FtSwarmScreen {
 
 /***************************************************
  *
+ * FtSwarmScreenConfirm
+ *
+ ***************************************************/
+
+class FtSwarmScreenConfirm : public FtSwarmScreenChooseOption {
+
+  public: 
+    FtSwarmScreenConfirm( FtSwarmScreen *parent, const char *title, const char *text, uint8_t callbackID, int32_t ok = 1 ) : FtSwarmScreenChooseOption( parent, title, text, callbackID, ok, "OK" ) {};
+
+};
+
+/***************************************************
+ *
  * FtSwarmScreenYesNo
  *
  ***************************************************/
@@ -800,6 +813,8 @@ class FtSwarmScreenManager {
 
     // display swarm Status
     void setState( SwOSState_t state, const char *text, uint8_t members, const char *SSID );
+
+    void wifiMenu( void ) { activate( new FtSwarmScreenWifi( active ) ); };
 
 };
 
