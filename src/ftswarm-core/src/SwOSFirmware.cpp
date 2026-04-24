@@ -1188,9 +1188,10 @@ class MenuSwarmConfig : Menu {
     static const int8_t MENU_SPEED     = -7;
     static const int8_t MENU_PIN       = -8;
     static const int8_t MENU_ALIAS     = -9;
-
+    
     SwOSCtrl *ctrl[MAXCTRL];
     int8_t   maxCtrl = -1;
+    bool     communicationChanges = false;
 
     void fillCtrlList( void );
     void changeAlias( void );
@@ -1324,7 +1325,8 @@ void MenuSwarmConfig::deleteController( void ) {
 
 void MenuSwarmConfig::run( void ) {
 
-  FtSwarmCommunication_t swarmCommunication;
+  FtSwarmCommunication_t swarmCommunication = nvs.swarmCommunication;
+  uint8_t swarmSpeed = nvs.swarmSpeed;
 
   while (1) {
     
@@ -1335,84 +1337,103 @@ void MenuSwarmConfig::run( void ) {
     if ( myOSSwarm.Kelda ) add("Kelda", myOSSwarm.Kelda->getAliasOrName(), MENU_DEACTIVATED, MENU_NOKEY );
 
     // wifi
-    if ( nvs.wifiMode != wifiOFF ) add( "Communication WIFI", ONOFF[nvs.swarmCommunication.wifi], MENU_COM_WIFI, 'W' );
+    if ( nvs.wifiMode != wifiOFF ) add( "Communication WIFI", ONOFF[swarmCommunication.wifi], MENU_COM_WIFI, 'w' );
 
     // rs485
     if ( FTSWARM_HAL_RS485 ) {    
-      add( "Communication RS485", ONOFF[nvs.swarmCommunication.rs485], MENU_COM_RS485, 'R' );
-      if ( nvs.swarmCommunication.rs485 ) {
-        add( "Swarm speed", nvs.swarmSpeed, MENU_SPEED, 's' );
+      add( "Communication RS485", ONOFF[swarmCommunication.rs485], MENU_COM_RS485, 'r' );
+      if ( swarmCommunication.rs485 ) {
+        add( "Swarm speed", swarmSpeed, MENU_SPEED, 's' );
       }
     }
 
-    add("Pin", nvs.swarmPIN, MENU_DEACTIVATED, MENU_NOKEY );
+    // no communication channel selected?
+    if ( !( ( ( nvs.wifiMode != wifiOFF ) && ( swarmCommunication.wifi ) ) || ( swarmCommunication.rs485 ) ) ) {
+
+      addExit();
+      printf("\n*** You need to invoke a communication method. Maybe you need to setup wifi first. ***\n");
+
+    // need to apply some communication changes before applying swarm operations?
+    } else if ( communicationChanges ) {
+
+      addExit();
+      printf("\n*** to apply your changes you need to save & restart the device first. ***\n");
+
+    } else {
+
+      add("Pin", nvs.swarmPIN, MENU_DEACTIVATED, MENU_NOKEY );
     
-    printf("\n");
+      printf("\n");
 
-    printf("     Name        Status   NW-Age    Alias\n" );
+      printf("     Name        Status   NW-Age    Alias\n" );
 
-    for ( int8_t i=0; i<=maxCtrl; i++ ) {
+      for ( int8_t i=0; i<=maxCtrl; i++ ) {
       
-      if ( ctrl[i]->isOnline() ) { 
-        printf("(%2d) ", i+1); 
-        add( i ); 
+        if ( ctrl[i]->isOnline() ) { 
+          printf("(%2d) ", i+1); 
+          add( i ); 
       
-      } else { 
-        printf("     "); 
+        } else { 
+          printf("     "); 
+        }
+
+        printf( "%10s  %-7s  [%.6lu]  %s\n", ctrl[i]->getName(), SWOSCOMSTATE[ctrl[i]->getComState()], ctrl[i]->networkAge(), ctrl[i]->getAlias() );
       }
 
-      printf( "%10s  %-7s  [%.6lu]  %s\n", ctrl[i]->getName(), SWOSCOMSTATE[ctrl[i]->getComState()], ctrl[i]->networkAge(), ctrl[i]->getAlias() );
+      printf("\n\n");
+      add( "create new swarm", "", MENU_NEW,    'n' );
+
+      if (myOSSwarm.Ctrl[0]->IAmKelda) {
+        add( "add a controller to my swarm", "", MENU_ADD,    '+' );
+        if (myOSSwarm.maxCtrl > 0) add( "revoke a controller from my swarm", "", MENU_DELETE, '-' );
+      }
+
+      add( "set alias name", "", MENU_ALIAS,  'a' );
+
+      addExit();
     }
-
-    printf("\n\n");
-    add( "create new swarm", "", MENU_NEW,    'n' );
-
-    if (myOSSwarm.Ctrl[0]->IAmKelda) {
-      add( "add a controller to my swarm", "", MENU_ADD,    '+' );
-      if (myOSSwarm.maxCtrl > 0) add( "revoke a controller from my swarm", "", MENU_DELETE, '-' );
-    }
-
-    add( "set alias name", "", MENU_ALIAS,  'a' );
-    addExit();
   
     int8_t choice = userChoice();
 
     switch( choice ) {
-      case MENU_EXIT: // main
-        return;
+      case MENU_EXIT:       if ( communicationChanges ) {
+                              if ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) {
+                                nvs.swarmSpeed = swarmSpeed;
+                                nvs.swarmCommunication = swarmCommunication;
+                                nvs.saveAndRestart();
+                              }                           
+                            }
+                            return;
 
       case MENU_COM_RS485:  
-      case MENU_COM_WIFI: if ( choice == MENU_COM_RS485 ) swarmCommunication.rs485 = !nvs.swarmCommunication.rs485; 
-                          if ( choice == MENU_COM_WIFI)   swarmCommunication.wifi  = !swarmCommunication.wifi;
-                          if ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) {
-                            nvs.swarmCommunication = swarmCommunication;
-                            nvs.saveAndRestart();
-                          }
-                          break;
+      case MENU_COM_WIFI:   if ( choice == MENU_COM_RS485 ) swarmCommunication.rs485 = !swarmCommunication.rs485; 
+                            if ( choice == MENU_COM_WIFI)   swarmCommunication.wifi  = !swarmCommunication.wifi;
+                            communicationChanges = true;
+                            break;
 
-      case MENU_SPEED:  nvs.swarmSpeed = enterNumber( "(0) low ... (4) highspeed (max. 50m)>", nvs.swarmSpeed, 0, 4 );
-                        if ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) nvs.saveAndRestart();
-                        break;
+      case MENU_SPEED:      swarmSpeed = enterNumber( "(0) low ... (4) highspeed (max. 50m)>", nvs.swarmSpeed, 0, 4 );
+                            communicationChanges = true;
+                            break;
 
-      case MENU_NEW:    newSwarm();
-                        break;
+      case MENU_NEW:        newSwarm();
+                            break;
         
-      case MENU_ADD:    addController();
-                        break;
+      case MENU_ADD:        addController();
+                            break;
 
-      case MENU_DELETE: deleteController();
-                        break;
+      case MENU_DELETE:     deleteController();
+                            break;
 
-      case MENU_ALIAS:  changeAlias();
-                        break;
+      case MENU_ALIAS:      changeAlias();
+                            break;
 
-      default:          if (ctrl[choice]->getComState() != COMSTATE_ONLINE ) {
-                          printf("\e[0;31mERROR: %s is not online.\n\e[0m\n", ctrl[choice]->getAliasOrName() );
-                        } else {
-                          MenuIOList MenuIOList( prompt, ctrl[choice] );
-                          MenuIOList.run();
-                        }
-                        break;
+      default:              if (ctrl[choice]->getComState() != COMSTATE_ONLINE ) {
+                              printf("\e[0;31mERROR: %s is not online.\n\e[0m\n", ctrl[choice]->getAliasOrName() );
+                            } else {
+                              MenuIOList MenuIOList( prompt, ctrl[choice] );
+                              MenuIOList.run();
+                            }
+                            break;
 
       }
 

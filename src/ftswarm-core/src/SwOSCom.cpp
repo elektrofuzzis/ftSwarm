@@ -768,7 +768,7 @@ bool SwOSNetwork::_StartRS485( void ) {
     UART1.rs485_conf.rs485tx_rx_en = 1;   // loopback
     UART1.rs485_conf.rs485rxby_tx_en = 0; // don't send data if receiver is busy - reduce collitions
 
-    if ( myOSNetwork.communication & SWARMCOM_RS485 ) {
+    if ( myOSNetwork.communication.rs485 ) {
       xTaskCreatePinnedToCore( RS485_rx_task, "RS485_rx_task", 10240, NULL, 12, NULL, ARDUINO_EVENT_RUNNING_CORE );
     }
 
@@ -816,7 +816,7 @@ bool SwOSNetwork::begin( uint16_t swarmSecret, uint16_t swarmPIN, FtSwarmCommuni
 
   bool ok = true;
 
-  if ( nvs.wifiMode != wifiOFF ) { 
+  if ( swarmCommunication.wifi ) { 
     // if wifi is on, initialize wifi
     ok = ok && _StartWifi( );
   } 

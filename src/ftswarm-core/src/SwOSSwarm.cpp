@@ -29,6 +29,7 @@
 #include "SwOSWeb.h"
 #include "easyKey.h"
 #include "SwOSLog.h"
+#include "SwOSHW/SwOSHWLocal.h"
 
 // There can only be once!
 SwOSSwarm myOSSwarm;
@@ -314,16 +315,18 @@ void SwOSSwarm::startWifi( void ) {
   // Handle error or assume it's already created
     }
 
-  // 3. Create Netif instances for Station
+  // 3. Create Netif instances for Station & AP
   esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
   esp_netif_t *ap_netif  = esp_netif_create_default_wifi_ap();
+
+  esp_netif_set_hostname(sta_netif, Ctrl[0]->getHostname() );
+  esp_netif_set_hostname(ap_netif,  Ctrl[0]->getHostname() );
 
   // 4. Init WiFi with default config
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
   ESP_ERROR_CHECK( esp_wifi_init( &cfg ) );
 
-  // Replacement for WiFi.mode(WIFI_AP_STA)
-  ESP_ERROR_CHECK( esp_wifi_set_mode( WIFI_MODE_APSTA ) );
+  ESP_ERROR_CHECK( esp_wifi_set_mode( (nvs.wifiMode == wifiAP) ? WIFI_MODE_AP : WIFI_MODE_STA ) );
 
   // 5. Set Storage to RAM (to avoid flash wear during frequent reboots)
   ESP_ERROR_CHECK( esp_wifi_set_storage( WIFI_STORAGE_RAM ) );
@@ -372,6 +375,8 @@ void SwOSSwarm::startWifi( void ) {
     // Start WiFi
     ESP_ERROR_CHECK( esp_wifi_start() );
     esp_wifi_set_ps(WIFI_PS_NONE);
+
+    esp_netif_set_hostname(sta_netif, Ctrl[0]->getHostname() );
   
     // connect
     esp_wifi_connect();
