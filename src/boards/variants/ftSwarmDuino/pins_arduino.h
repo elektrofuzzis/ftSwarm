@@ -44,8 +44,8 @@ static const int8_t GYRO_INTERNAL_I2C  = 2;
 static const int8_t GYRO_EXTERNAL_I2C  = 3;
 
 // I2C (Standard-Bus)
-#define PIN_SDA GPIO_NUM_4
-#define PIN_SDC GPIO_NUM_5
+#define PIN_SDA GPIO_NUM_5
+#define PIN_SDC GPIO_NUM_4
 static const gpio_num_t SDA = PIN_SDA;
 static const gpio_num_t SCL = PIN_SDC;
 
