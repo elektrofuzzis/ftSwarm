@@ -204,10 +204,10 @@ uint8_t SwOSCtrl::setupLocalI2C( uint8_t maxIO, FtSwarmExtMode_t extensionPort )
   if ( extensionPort == FTSWARM_EXT_I2C_SLAVE ) { io[ maxIO++ ] = new SwOSI2C ( "I2C", this, false, nvs.I2CAddr ); };
 
   // ftPwrDrive
-  if ( CPU == FTSWARMPWRDRIVE_1V141 ) ftPwrDrive = new FtPwrDrive( 32, &Wire1 ); 
+  if ( CPU == FTSWARMPWRDRIVE_1V141 ) ftPwrDrive = new FtPwrDrive( 32, &Wire ); 
 
   // ftDuino
-  if ( CPU == FTSWARMDUINO_1V141)     ftDuino    = new SwOSDuino( &Wire1 );
+  if ( CPU == FTSWARMDUINO_1V141)     ftDuino    = new SwOSDuino( &Wire );
 
   return maxIO;
 

@@ -50,24 +50,24 @@ void SwOSDigitalInput::setupLocal() {
   gpio_config_t io_conf = {};
   
   // initialize A2 pullup
-  if (PUA2 != GPIO_NUM_NC) {
+  #if PUA2 != GPIO_NUM_NC
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
     io_conf.pin_bit_mask = 1ULL << PUA2;
     gpio_config(&io_conf);
     gpio_set_level( (gpio_num_t) PUA2, 0 );
-  }
-
+  #endif
+  
   // initialize A1 pulldown
-  if (USTX != GPIO_NUM_NC) {
+  #if USTX != GPIO_NUM_NC
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pin_bit_mask = 1ULL << USTX;
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
     gpio_config(&io_conf);
     gpio_set_level( (gpio_num_t) USTX, 0 );
-  }
+  #endif
 
   // set A1 pullup if available
   if ( ( PUA2 != GPIO_NUM_NC ) && ( ioType != SWOSIO_ULTRASONIC ) ) {
