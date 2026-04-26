@@ -23,6 +23,11 @@
 #define FTSWARM_HAL_OLEDS      1
 #define FTSWARM_HAL_HC165      1
 
+#define FTSWARM_JOY1LR FTSWARM_HAL_FIRSTJPOTI
+#define FTSWARM_JOY1FB FTSWARM_HAL_FIRSTJPOTI+1
+#define FTSWARM_JOY2LR FTSWARM_HAL_FIRSTJPOTI+2
+#define FTSWARM_JOY2FB FTSWARM_HAL_FIRSTJPOTI+3
+
 // due to some hen&egg problemns with including adc_types.h using esp32 cpu
 // #include <hal/adc_hal.h>
 #define xADC_UNIT_1       1

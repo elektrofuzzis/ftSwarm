@@ -89,7 +89,8 @@ static const gpio_num_t C4 = GPIO_NUM_NC;
 static const gpio_num_t USTX    = GPIO_NUM_NC;
 static const gpio_num_t PUA2    = GPIO_NUM_NC;
 
-// Named ports
+// special input ports
+#define FACTORYSETTINGS "I1"
 
 // array based
 static const char         INPUT_NAME[][3]     = { "I1",                   "I2",                   "I3",                   "I4",                   "I5",                   "I6",                   "I7",                   "I8",                   "C1",                   "C2",                   "C3",                   "C4" };

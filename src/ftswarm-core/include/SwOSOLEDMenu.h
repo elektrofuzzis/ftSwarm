@@ -660,6 +660,7 @@ class FtSwarmScreenSwarm : public FtSwarmScreen {
     FtSwarmScreenButton *S3 = nullptr;
 
     void addMembers( void );
+    void configureSelected( uint8_t config );
 
   public:
 

@@ -82,7 +82,8 @@ static const gpio_num_t EM      = GPIO_NUM_NC;
 static const gpio_num_t USTX    = GPIO_NUM_NC;
 static const gpio_num_t PUA2    = GPIO_NUM_NC;
 
-// Named ports
+// special input ports
+#define FACTORYSETTINGS "EM"
 
 // array based
 static const char         INPUT_NAME[][7]     = { "ES1",                  "ES2",                  "ES3",                  "ES4",                  "EM" };
