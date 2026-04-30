@@ -209,10 +209,10 @@ SwOSIO *SwOSSwarm::waitFor( char *alias ) {
 void SwOSSwarm::startWifi( void ) {
 
   // no wifi config?
-  if (nvs.wifiSSID[0]=='\0') {
+  if (nvs.wifi.SSID[0]=='\0') {
     if (verbose) printf("Invalid wifi configuration found. Starting AP mode.\n");
-    strcpy( nvs.wifiSSID, Ctrl[0]->getHostname() );
-    nvs.wifiMode = wifiAP;
+    strcpy( nvs.wifi.SSID, Ctrl[0]->getHostname() );
+    nvs.wifi.mode = wifiAP;
   }
 
   // Start wifi
@@ -227,20 +227,20 @@ void SwOSSwarm::startWifi( void ) {
   WiFi.mode(WIFI_AP_STA);
   delay(100);
 
-  if ( nvs.wifiMode == wifiAP ) {
+  if ( nvs.wifi.mode == wifiAP ) {
     // work as AP in standard 
-    if (verbose) printf("Create own SSID: %s\n", nvs.wifiSSID );
+    if (verbose) printf("Create own SSID: %s\n", nvs.wifi.SSID );
 
     // esp_wifi_set_ps(WIFI_PS_NONE);
     WiFi.softAPsetHostname( Ctrl[0]->getHostname() );
-    WiFi.softAP( nvs.wifiSSID, nvs.wifiPwd, nvs.channel ); // passphrase not allowed on ESP32WROOM
+    WiFi.softAP( nvs.wifi.SSID, nvs.wifi.Password, nvs.wifi.channel ); // passphrase not allowed on ESP32WROOM
     
   } else {
     // normal operation
-    if (verbose) printf("Attempting to connect to SSID: %s", nvs.wifiSSID);
+    if (verbose) printf("Attempting to connect to SSID: %s", nvs.wifi.SSID);
 
     WiFi.setHostname(Ctrl[0]->getHostname() );
-    WiFi.begin( nvs.wifiSSID, nvs.wifiPwd );
+    WiFi.begin( nvs.wifi.SSID, nvs.wifi.Password );
 
     bool keyBreak = false;
     
@@ -275,7 +275,7 @@ void SwOSSwarm::startWifi( void ) {
 
     // connection failed?
     if (WiFi.status() != WL_CONNECTED) {
-      SWARM_LOG_ERROR( "Can't connect to SSID %s", nvs.wifiSSID );
+      SWARM_LOG_ERROR( "Can't connect to SSID %s", nvs.wifi.SSID );
       printf( "\nStarting setup..\n" );
       mainMenu();
       ESP.restart();
@@ -295,7 +295,7 @@ void SwOSSwarm::startWifi( void ) {
   Ctrl[0]->macAddr.set( mac );
 
   if (verbose) {
-    if ( nvs.wifiMode == wifiAP )
+    if ( nvs.wifi.mode == wifiAP )
       printf("hostname: %s\nip-address: %d.%d.%d.%d\n", Ctrl[0]->getHostname(), WiFi.softAPIP()[0], WiFi.softAPIP()[1], WiFi.softAPIP()[2], WiFi.softAPIP()[3]);
     else
       printf("hostname: %s\nip-address: %d.%d.%d.%d\n", Ctrl[0]->getHostname(), WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
@@ -326,27 +326,27 @@ void SwOSSwarm::startWifi( void ) {
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
   ESP_ERROR_CHECK( esp_wifi_init( &cfg ) );
 
-  ESP_ERROR_CHECK( esp_wifi_set_mode( (nvs.wifiMode == wifiAP) ? WIFI_MODE_AP : WIFI_MODE_STA ) );
+  ESP_ERROR_CHECK( esp_wifi_set_mode( (nvs.wifi.mode == wifiAP) ? WIFI_MODE_AP : WIFI_MODE_STA ) );
 
   // 5. Set Storage to RAM (to avoid flash wear during frequent reboots)
   ESP_ERROR_CHECK( esp_wifi_set_storage( WIFI_STORAGE_RAM ) );
 
   // 6. start wifi
-  if ( nvs.wifiMode == wifiAP ) {
+  if ( nvs.wifi.mode == wifiAP ) {
     // Provide network via SoftAP
 
     // setup soft ap config
     wifi_config_t ap_config = {};
-    strlcpy( (char *) ap_config.ap.ssid,     nvs.wifiSSID, sizeof( ap_config.ap.ssid ) );
-    strlcpy( (char *) ap_config.ap.password, nvs.wifiPwd,  sizeof( ap_config.ap.password ) );
-    ap_config.ap.channel = nvs.channel;
+    strlcpy( (char *) ap_config.ap.ssid,     nvs.wifi.SSID, sizeof( ap_config.ap.ssid ) );
+    strlcpy( (char *) ap_config.ap.password, nvs.wifi.Password,  sizeof( ap_config.ap.password ) );
+    ap_config.ap.channel = nvs.wifi.channel;
     ap_config.ap.max_connection = 4;
-    ap_config.ap.authmode = ( strlen( nvs.wifiPwd ) == 0) ? WIFI_AUTH_OPEN : WIFI_AUTH_WPA2_PSK;
+    ap_config.ap.authmode = ( strlen( nvs.wifi.Password ) == 0) ? WIFI_AUTH_OPEN : WIFI_AUTH_WPA2_PSK;
 
     // set config
     ESP_ERROR_CHECK( esp_wifi_set_config( WIFI_IF_AP, &ap_config ) );
 
-    if (verbose) printf("Create own SSID: %s\n", nvs.wifiSSID );
+    if (verbose) printf("Create own SSID: %s\n", nvs.wifi.SSID );
     
     wifiHandler = new WifiHandler();
 
@@ -359,8 +359,8 @@ void SwOSSwarm::startWifi( void ) {
 
     // setup config
     wifi_config_t sta_config = {};
-    strlcpy( (char *) sta_config.sta.ssid,     nvs.wifiSSID, sizeof( sta_config.sta.ssid ) );
-    strlcpy( (char *) sta_config.sta.password, nvs.wifiPwd,  sizeof( sta_config.sta.password ) );
+    strlcpy( (char *) sta_config.sta.ssid,     nvs.wifi.SSID, sizeof( sta_config.sta.ssid ) );
+    strlcpy( (char *) sta_config.sta.password, nvs.wifi.Password,  sizeof( sta_config.sta.password ) );
         
     // Disable PMF (Protected Management Frames) for better compatibility
     sta_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
@@ -368,7 +368,7 @@ void SwOSSwarm::startWifi( void ) {
     // set config
     ESP_ERROR_CHECK( esp_wifi_set_config( WIFI_IF_STA, &sta_config ) );
 
-    if (verbose) printf( "Attempting to connect to SSID: %s ", nvs.wifiSSID );
+    if (verbose) printf( "Attempting to connect to SSID: %s ", nvs.wifi.SSID );
 
     wifiHandler = new WifiHandler();
     
@@ -387,7 +387,7 @@ void SwOSSwarm::startWifi( void ) {
       esp_netif_ip_info_t ip_info;
       if (esp_netif_get_ip_info( sta_netif, &ip_info ) == ESP_OK && ip_info.ip.addr != 0) {
         wifiConnected = true;
-        if ( verbose ) printf( "\nConnected to %s\n", nvs.wifiSSID );
+        if ( verbose ) printf( "\nConnected to %s\n", nvs.wifi.SSID );
         break;
       }
 
@@ -407,7 +407,7 @@ void SwOSSwarm::startWifi( void ) {
     // connection failed?
     if ( !wifiConnected ) {
       
-      SWARM_LOG_ERROR( "Can't connect to SSID %s", nvs.wifiSSID );
+      SWARM_LOG_ERROR( "Can't connect to SSID %s", nvs.wifi.SSID );
 
       #if FTSWARM_HAL_OLEDS > 0
         // start local operate/read task & show wifi dialog
@@ -443,7 +443,7 @@ void SwOSSwarm::startWifi( void ) {
     esp_netif_ip_info_t ip_info;
 
     esp_netif_t* netif;
-    if (nvs.wifiMode == wifiAP) netif = ap_netif;
+    if (nvs.wifi.mode == wifiAP) netif = ap_netif;
     else                        netif = sta_netif;
 
     if ( esp_netif_get_ip_info( netif, &ip_info ) == ESP_OK ) 
@@ -480,8 +480,8 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
   // Who I am?
   if (this->verbose) {
-    printf("Boot %s (SN:%d).\n", nvs.swarmName, nvs.serialNumber );
-    if ( nvs.IAmKelda )  { printf( "I am KELDA!\n"); }
+    printf("Boot %s (SN:%d).\n", nvs.swarm.name, nvs.serialNumber );
+    if ( nvs.swarm.IAmKelda )  { printf( "I am KELDA!\n"); }
 
     // PSRAM
     uint32_t totalPsram = ESP.getPsramSize();
@@ -493,11 +493,11 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
   SwOSCtrlConfig_t localCtrlConfig = {
     .CPU           = nvs.CPU,
-    .IAmKelda      = nvs.IAmKelda,
-    .extensionPort = nvs.extensionPort,
+    .IAmKelda      = nvs.swarm.IAmKelda,
+    .extensionPort = nvs.extensionPort.mode,
     .IOs           = 0,
     .pixels        = nvs.pixels,
-    .gyro          = nvs.gyro
+    .gyro          = nvs.extensionPort.gyro
   };
 
   // initial setup?
@@ -514,15 +514,15 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   // initialize all swarm members from nvs list
   for (uint8_t i=0; i<MAXCTRL; i++) {
     
-    if ( nvs.swarmMember[i] ) {
+    if ( nvs.swarm.member[i] ) {
       maxCtrl++;
-      Ctrl[maxCtrl] = new SwOSCtrl( nvs.swarmMember[i],  MacAddr( broadcast ), false, noCtrlConfig );
+      Ctrl[maxCtrl] = new SwOSCtrl( nvs.swarm.member[i],  MacAddr( broadcast ), false, noCtrlConfig );
     }
 
   }
 
   // set Kelda link if i'm the Kelda
-  if ( nvs.IAmKelda ) Kelda = Ctrl[0];
+  if ( nvs.swarm.IAmKelda ) Kelda = Ctrl[0];
 
   // check on nvs version upgrades
   if ( nvs.upgrade() ) myOSSwarm.Ctrl[0]->saveToNVS( );
@@ -548,10 +548,10 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   setState( BOOTING );
   
   // wifi
-  if ( nvs.wifiMode != wifiOFF ) startWifi( );
+  if ( nvs.wifi.mode != wifiOFF ) startWifi( );
 
   // Init Communication
-  if (!myOSNetwork.begin( nvs.swarmSecret, nvs.swarmPIN, nvs.swarmCommunication )) SWARM_LOG_FATAL("Error initializing swarm communication.");
+  if (!myOSNetwork.begin( nvs.swarm.secret, nvs.swarm.pin, nvs.swarm.communication )) SWARM_LOG_FATAL("Error initializing swarm communication.");
 
   // start the tasks
   xTaskCreatePinnedToCore( recvTask,    "RecvTask",    10000, NULL, 1, NULL, ARDUINO_EVENT_RUNNING_CORE );
@@ -559,15 +559,15 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   xTaskCreatePinnedToCore( connectTask, "connectTask", 10000, NULL, 1, NULL, ARDUINO_EVENT_RUNNING_CORE );
 
   // start web server
-  if ( ( nvs.webUI ) && ( nvs.wifiMode != wifiOFF ) ) SwOSStartWebServer();
+  if ( ( nvs.wifi.webUI ) && ( nvs.wifi.mode != wifiOFF ) ) SwOSStartWebServer();
 
   // firmware events?
   if (verbose) printf("Starting events.\n");
-  addEvents( nvs.activeEventConfig, myOSSwarm.Ctrl[0]->serialNumber );
+  addEvents( nvs.events.activeConfig, myOSSwarm.Ctrl[0]->serialNumber );
   
   if (verbose) printf("Start normal operation.\n");
 
-  if ( ( nvs.IAmKelda) && ( nvs.wifiMode == wifiAP ) ) 
+  if ( ( nvs.swarm.IAmKelda) && ( nvs.wifi.mode == wifiAP ) ) 
     SWARM_LOG_WARN( "A swarm using wifi ap mode provided by the Kelda isn't stable. Best practice is to use your local wifi or to provide the AP via a swarm member.");
 
   initialized = true;
@@ -630,7 +630,7 @@ void SwOSSwarm::factoryReset( void ) {
   halt();
 
   // NVS - local controller & swarm settings
-  nvs.factorySettings();
+  nvs.reset( true );
 
   // restart
   nvs.saveAndRestart();
@@ -826,7 +826,7 @@ size_t SwOSSwarm::approxSerialize( SerialFormat_t format ) {
 void SwOSSwarm::serializeEvents( Serialize *serialize ) {
 
   serialize->startObject( );
-  serialize->item( SERIALIZE_LITERAL_ACTIVECONFIG, nvs.activeEventConfig );
+  serialize->item( SERIALIZE_LITERAL_ACTIVECONFIG, nvs.events.activeConfig );
   serialize->startArray( SERIALIZE_LITERAL_EVENTS );
   for (uint8_t i=0; i<=maxCtrl; i++ ) {
     if ( Ctrl ) Ctrl[i]->serializeEvents( serialize );
@@ -839,7 +839,7 @@ void SwOSSwarm::serializeEvents( Serialize *serialize ) {
 void SwOSSwarm::serialize( Serialize *serialize) {
 
   serialize->startObject( );
-  serialize->item( SERIALIZE_LITERAL_NAME, nvs.swarmName );
+  serialize->item( SERIALIZE_LITERAL_NAME, nvs.swarm.name );
   serialize->item( SERIALIZE_LITERAL_KELDA, Ctrl[0]->IAmKelda );
 
 	serialize->startArray( SERIALIZE_LITERAL_CTRLS );
@@ -901,7 +901,7 @@ void SwOSSwarm::setState( SwOSState_t state ) {
 
   if (Ctrl[0]) {
     Ctrl[0]->lock();
-    Ctrl[0]->setState( state, members(), nvs.wifiSSID );
+    Ctrl[0]->setState( state, members(), nvs.wifi.SSID );
     Ctrl[0]->unlock();
   }
 
@@ -973,8 +973,8 @@ void SwOSSwarm::cmdJoinMySwarm( SwOSCom *com, uint8_t source, uint8_t affected )
   // I'm fine to join the swarm: ack
 
   // take swarm settings
-  nvs.swarmPIN = com->data.registerCmd.swarmPIN;
-  strcpy( nvs.swarmName, com->data.registerCmd.swarmName );
+  nvs.swarm.pin = com->data.registerCmd.swarmPIN;
+  strcpy( nvs.swarm.name, com->data.registerCmd.swarmName );
 
   // replace old controller
   replaceCtrl( com, source, affected );
@@ -982,7 +982,7 @@ void SwOSSwarm::cmdJoinMySwarm( SwOSCom *com, uint8_t source, uint8_t affected )
   // getting member, knowing my Kelda
   deleteEvents();
   Ctrl[0]->IAmKelda = false;
-  nvs.IAmKelda = false;
+  nvs.swarm.IAmKelda = false;
   Kelda = Ctrl[source];
   
   // Send my data      
@@ -1025,7 +1025,7 @@ void SwOSSwarm::cmdRevokeFromSwarm( SwOSCom *com, uint8_t source, uint8_t affect
   // Kelda to member: get out of my swarm
 
   // for me?
-  if ( ( com->data.affectedSN != Ctrl[0]->serialNumber ) || (com->data.joinCmd.pin == nvs.swarmPIN) || strcmp( com->data.registerCmd.swarmName, nvs.swarmName ) ) return;
+  if ( ( com->data.affectedSN != Ctrl[0]->serialNumber ) || (com->data.joinCmd.pin == nvs.swarm.pin) || strcmp( com->data.registerCmd.swarmName, nvs.swarm.name ) ) return;
 
   // User info
   printf("\n\n[INFO] leaving swarm %s and reboot.\n\n", com->data.registerCmd.swarmName );
@@ -1065,7 +1065,7 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
 
     case CMD_IOCONFIG:        // needs to be initiated at swarm level to be able to start events
                               if ( ( Ctrl[affected]->ioConfig( com ) ) && ( Ctrl[0]->IAmKelda ) ) {
-                                addEvents( nvs.activeEventConfig, Ctrl[affected]->serialNumber );
+                                addEvents( nvs.events.activeConfig, Ctrl[affected]->serialNumber );
                               }
                               break;
 
@@ -1117,7 +1117,7 @@ void SwOSSwarm::newSwarm( void ) {
   }
 
   // set new swarm
-  nvs.IAmKelda = true;
+  nvs.swarm.IAmKelda = true;
   Ctrl[0]->lock();
   Ctrl[0]->IAmKelda = true;
   Ctrl[0]->unlock(); 
@@ -1267,10 +1267,10 @@ void SwOSSwarm::addEvents( uint8_t config, FtSwarmSerialNumber_t sn ) {
   for ( uint i=0; i<MAXNVSEVENTS; i++ ) {
 
     // end of list?
-    if ( nvs.events[config][i].sensor.serialNumber == 0 ) return;
+    if ( nvs.events.events[config][i].sensor.serialNumber == 0 ) return;
 
     // add event, if sn is fitting
-    if ( ( sn == 0 ) || ( nvs.events[config][i].sensor.serialNumber == sn ) || ( nvs.events[config][i].actor.serialNumber == sn ) ) addEvent( &nvs.events[config][i] );
+    if ( ( sn == 0 ) || ( nvs.events.events[config][i].sensor.serialNumber == sn ) || ( nvs.events.events[config][i].actor.serialNumber == sn ) ) addEvent( &nvs.events.events[config][i] );
 
   }
 

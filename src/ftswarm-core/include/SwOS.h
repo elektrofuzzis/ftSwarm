@@ -56,7 +56,6 @@ typedef uint8_t  FtSwarmPort_t;
 typedef enum { SWOS_OK, SWOS_TIMEOUT, SWOS_DENY } SwOSError_t;
 
 // communication
-
 union FtSwarmCommunication_t {
   struct {
     uint8_t wifi:1;
@@ -459,6 +458,16 @@ const char GYRO[3][8]     = { "off", "LSM6", "MPU6050"};
 const char ONOFF[2][5]    = { "off", "on" };
 const char OFFM1M2[3][5]  = { "off", "M1", "M2" };
 const char WIFI[3][12]    = { "off", "AP-Mode", "Client-Mode"};
+
+// Quick Config Type
+typedef enum {
+  FTSWARM_CFG_INDIVIDUAL,
+  FTSWARM_CFG_CAR,
+  FTSWARM_CFG_CATAPILLAR,
+  FTSWARM_CFG_TRAILER,
+  FTSWARM_CFG_CRANE1,
+  FTSWARM_CFG_CRANE2
+} FtSwarmQuickConfig_t;
 
 // **** some internal types & classes, don't use them at all ****
 

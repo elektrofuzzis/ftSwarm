@@ -191,7 +191,7 @@ uint8_t SwOSCtrl::setupLocalI2C( uint8_t maxIO, FtSwarmExtMode_t extensionPort )
   if (!local) return maxIO;
 
   // external I2C
-  if ( ( SDA != GPIO_NUM_NC ) && ( ( nvs.extensionPort == FTSWARM_EXT_I2C_MASTER ) || ( nvs.extensionPort == FTSWARM_EXT_LIDAR ) ) ) {
+  if ( ( SDA != GPIO_NUM_NC ) && ( ( nvs.extensionPort.mode == FTSWARM_EXT_I2C_MASTER ) || ( nvs.extensionPort.mode == FTSWARM_EXT_LIDAR ) ) ) {
     Wire.begin( SDA, SCL, 400000 );
   }
 
@@ -201,7 +201,7 @@ uint8_t SwOSCtrl::setupLocalI2C( uint8_t maxIO, FtSwarmExtMode_t extensionPort )
   }
 
   // use parameter to handle remote devices correctly
-  if ( extensionPort == FTSWARM_EXT_I2C_SLAVE ) { io[ maxIO++ ] = new SwOSI2C ( "I2C", this, false, nvs.I2CAddr ); };
+  if ( extensionPort == FTSWARM_EXT_I2C_SLAVE ) { io[ maxIO++ ] = new SwOSI2C ( "I2C", this, false, nvs.extensionPort.I2CAddr ); };
 
   // ftPwrDrive
   if ( CPU == FTSWARMPWRDRIVE_1V141 ) ftPwrDrive = new FtPwrDrive( 32, &Wire ); 
@@ -1317,8 +1317,8 @@ void SwOSCtrl::registerMe( SwOSCom *com ){
   com->data.registerCmd.ctrlConfig.pixels        = pixels;
   
   // swarm data
-  strcpy( com->data.registerCmd.swarmName, nvs.swarmName );
-  com->data.registerCmd.swarmPIN = nvs.swarmPIN; 
+  strcpy( com->data.registerCmd.swarmName, nvs.swarm.name );
+  com->data.registerCmd.swarmPIN = nvs.swarm.pin; 
 
 
 }
@@ -1443,9 +1443,9 @@ void SwOSCtrl::deleteEvents( void ) {
 void SwOSCtrl::setWifi( FtSwarmWifi_t mode, char *SSID, char*PSK ) {
 
   if (isLocal()) {
-    nvs.wifiMode = mode;
-    strcpy( nvs.wifiSSID, SSID );
-    strcpy( nvs.wifiPwd, PSK );
+    nvs.wifi.mode = mode;
+    strcpy( nvs.wifi.SSID, SSID );
+    strcpy( nvs.wifi.Password, PSK );
 
   } else {
     SwOSCom cmd( macAddr, serialNumber, CMD_SETMICROSTEPMODE );

@@ -85,34 +85,61 @@ class SwOSNVSEvent {
 typedef enum { wifiOFF, wifiAP, wifiClient } FtSwarmWifi_t;
 
 class SwOSNVS {
+    
   public:
-    void initialSetup();   // ask user for HW details
-	  int32_t                version = NVSVERSION;
-    bool                   factoryReset = false; // flag to reset the IOs settings via reboot
-	  FtSwarmVersion_t       CPU;
-	  FtSwarmSerialNumber_t  serialNumber;
-    uint8_t                channel;
-	  char                   wifiSSID[64], wifiPwd[128];
-    char                   swarmName[MAXIDENTIFIER];
-    uint16_t               swarmSecret, swarmPIN;
-    FtSwarmWifi_t          wifiMode;
-    SwOSJoyCalibration_t   calibration[4];
-    uint8_t                pixels;
-    uint8_t                activeEventConfig;
-    SwOSNVSEvent           events[MAXEVENTCONFIGS][MAXNVSEVENTS];
-    char                   oledLabel[MAXEVENTCONFIGS][12][4];
-    bool                   webUI;
-    bool                   IAmKelda;
-    FtSwarmCommunication_t swarmCommunication;
-    FtSwarmSerialNumber_t  swarmMember[MAXCTRL];
-    uint8_t                swarmSpeed = 4;
-    FtSwarmExtMode_t       extensionPort;
-    bool                   gyro;
-    bool                   spiGyro;
-    uint8_t                I2CAddr;
-    uint8_t                interruptLine; // 0 off, 1 M1, 2 M2
-    int16_t                interruptOnOff[2];
-    uint8_t                I2CRegisters;
+    
+	  int32_t version; // Version
+
+	  FtSwarmVersion_t CPU;               // CPU Type & Version
+	  FtSwarmSerialNumber_t serialNumber; // Serial Number
+
+    bool factoryReset; // flag to reset the IOs settings via reboot
+
+    // wifi
+    struct wifi_t {
+      uint8_t channel;       // Channel in AP Mode
+	    char SSID[64];         // wifi SSID
+      char Password[64];     // wifi password
+      FtSwarmWifi_t mode;    // wifi mode
+      bool webUI;            // webUI on/off
+    } wifi;
+
+    // swarm
+    struct swarm_t {    
+      bool IAmKelda;                         // who is Kelda?
+      char name[MAXIDENTIFIER];              // name
+      uint16_t secret;                       // protocol secret
+      uint16_t pin;                          // pin
+      FtSwarmCommunication_t communication;  // communication protocol
+      FtSwarmSerialNumber_t member[MAXCTRL]; // members
+      uint8_t speed;                         // communication speed for RS485
+    } swarm;
+    
+    SwOSJoyCalibration_t calibration[4]; // Joystick calibration
+
+    uint8_t pixels; // ftSwarmPixels
+
+    // event
+    struct event_t {
+      uint8_t activeConfig;                               // used event config
+      SwOSNVSEvent events[MAXEVENTCONFIGS][MAXNVSEVENTS]; // event configs
+      char oledLabel[MAXEVENTCONFIGS][12][4];             // labels
+      FtSwarmQuickConfig_t quickConfig[MAXEVENTCONFIGS];  // used quick configuration per config
+    } events;
+
+    bool spiGyro; // spi gyro?
+
+    struct extensionPort_t {
+      FtSwarmExtMode_t mode;      // use of extension port
+      uint8_t I2CAddr;            // own I2C address
+      uint8_t interruptLine;      // Interrupt line for I2C based communication - 0 off, 1 M1, 2 M2
+      int16_t interruptOnOff[2];  // High/Low-Values for Interrupt lines
+      uint8_t I2CRegisters;       // number of I2C-Registers
+      bool gyro;                  // gyro enabled?
+    } extensionPort;
+
+    // ask user for HW details
+    void initialSetup();   
 
     // constructor
 	  SwOSNVS();
@@ -142,13 +169,13 @@ class SwOSNVS {
     bool addEvent( uint8_t configuration, SwOSNVSEvent *event );
 
     // add event
-    bool addEvent( SwOSNVSEvent *event ) { return addEvent( activeEventConfig, event ); };
+    bool addEvent( SwOSNVSEvent *event ) { return addEvent( events.activeConfig, event ); };
 
     // check on dublicates
     bool exists( uint8_t configuration, SwOSNVSEvent *event );
 
     // check on dublicates
-    bool exists( SwOSNVSEvent *event ) { return exists ( activeEventConfig, event ); };
+    bool exists( SwOSNVSEvent *event ) { return exists ( events.activeConfig, event ); };
 
     // create a new swarm
     void createSwarm( char *name, uint16_t pin );
@@ -165,8 +192,8 @@ class SwOSNVS {
     // number of swarm members
     uint8_t swarmMembers( void );
 
-    // reset to factory settings
-    void factorySettings( void );
+    // initialize
+    void reset( bool factorySettings );
 
     // print settings for debugging only  
     void printNVS();

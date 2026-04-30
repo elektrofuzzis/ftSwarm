@@ -425,7 +425,7 @@ void I2CReceiveEvent(int bytesReceived){
 void I2CRequestEvent() {
   // i2C-Interrupt to send data to master
 
-  for (uint8_t i=0; i<nvs.I2CRegisters; i++) Wire.write( I2CSlave_value[i] );
+  for (uint8_t i=0; i<nvs.extensionPort.I2CRegisters; i++) Wire.write( I2CSlave_value[i] );
   I2CSlave_read = true;
   
 }
@@ -434,10 +434,10 @@ void SwOSI2C::operate( ) {
   
   for( uint8_t i=0; i<MAXI2CREGISTERS; i++) myRegister[i] = I2CSlave_value[i];
 
-  if ( (I2CSlave_read) && ( nvs.interruptLine ) ) { 
+  if ( (I2CSlave_read) && ( nvs.extensionPort.interruptLine ) ) { 
     I2CSlave_read=false; 
     if (intIO) {
-      intIO->setSpeed(nvs.interruptOnOff[0]);
+      intIO->setSpeed(nvs.extensionPort.interruptOnOff[0]);
       intIO->apply();
     }
   }
@@ -450,10 +450,10 @@ void SwOSI2C::setupLocal(uint8_t I2CAddress) {
   Wire.onReceive(I2CReceiveEvent);
   Wire.onRequest(I2CRequestEvent);
   
-  if ( nvs.interruptLine ) { 
+  if ( nvs.extensionPort.interruptLine ) { 
     I2CSlave_read=false; 
     if (intIO) {
-      intIO->setSpeed(nvs.interruptOnOff[0]);
+      intIO->setSpeed(nvs.extensionPort.interruptOnOff[0]);
       intIO->apply();      
     }
   }
@@ -494,26 +494,26 @@ void SwOSI2C::setLocal( uint8_t reg, uint8_t value ) {
 
   I2CSlave_value[reg] = value;
 
-  if ( nvs.interruptLine ) { 
+  if ( nvs.extensionPort.interruptLine ) { 
     // Use M1/M2 as interrupt line
     
     // reset read semaphore
     I2CSlave_read = false;
 
     // get MotorIO
-    intIO = (SwOSMotor*) ctrl->getIO( SWOSIO_MOTOR, nvs.interruptLine - 1 + FTSWARM_M1 );
+    intIO = (SwOSMotor*) ctrl->getIO( SWOSIO_MOTOR, nvs.extensionPort.interruptLine - 1 + FTSWARM_M1 );
 
     if (intIO) {
 
       // if the remote controller didn't ack the last interrupt, so I need to reset the interupt line first 
-      if ( intIO->getSpeed() != nvs.interruptOnOff[0] ) {
-        intIO->setSpeed(nvs.interruptOnOff[0]);
+      if ( intIO->getSpeed() != nvs.extensionPort.interruptOnOff[0] ) {
+        intIO->setSpeed(nvs.extensionPort.interruptOnOff[0]);
         intIO->apply();
         delay(1);
       }
 
       // set interrupt
-      intIO->setSpeed(nvs.interruptOnOff[1]);
+      intIO->setSpeed(nvs.extensionPort.interruptOnOff[1]);
       intIO->apply();
 
     }

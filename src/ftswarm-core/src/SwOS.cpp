@@ -1176,7 +1176,7 @@ FtSwarmSerialNumber_t FtSwarm::begin( bool verbose, bool waitOnControllers ) {
 
   FtSwarmSerialNumber_t result = myOSSwarm.begin( verbose );
 
-  if (!nvs.IAmKelda) {
+  if (!nvs.swarm.IAmKelda) {
     SWARM_LOG_ERROR("Please configure this controller as Kelda.");
     firmware();
     ESP.restart();

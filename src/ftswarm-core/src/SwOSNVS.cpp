@@ -18,7 +18,6 @@
 #include "SwOSLog.h"
 #include "lsm6dsr_reg.h"
 
-
 SwOSNVS nvs;
 
 bool SwOSNVSEvent::cmp(  SwOSNVSEvent *otherEvent ) {
@@ -52,17 +51,17 @@ void SwOSNVS::initialSetup( void ) {
   CPU = CPUFirmware;
 
   pixels = FTSWARM_HAL_PIXELS;
-  extensionPort = ( FTSWARM_HAL_EXT_PORT ) ? FTSWARM_EXT_OFF : FTSWARM_EXT_I2C_MASTER; 
+  extensionPort.mode = ( FTSWARM_HAL_EXT_PORT ) ? FTSWARM_EXT_OFF : FTSWARM_EXT_I2C_MASTER; 
 
   serialNumber = enterNumber("Serial number [1..65535]>", 0, 1, 65535 );
 
-  wifiMode = wifiAP;
-  sprintf( wifiSSID, "ftSwarm%d", serialNumber );
-  wifiPwd[0]  = '\0';
+  sprintf( wifi.SSID, "ftSwarm%d", serialNumber );
+  strcpy( wifi.Password, wifi.SSID );
 
-  strcpy( swarmName, wifiSSID );
-  swarmSecret = generateSecret( serialNumber ); 
-  swarmPIN    = serialNumber;
+  strcpy( swarm.name, wifi.SSID );
+
+  swarm.secret = generateSecret( serialNumber ); 
+  swarm.pin    = serialNumber;
 
   // check on i2c/spi LSMR
   if ( ( CPU == FTSWARMRS_2V1 ) ||
@@ -91,42 +90,7 @@ void SwOSNVS::initialSetup( void ) {
 
 SwOSNVS::SwOSNVS() {
 
-	// initialize to undefined
-	version            = NVSVERSION;
-	serialNumber       = 0;
-	CPU                = FTSWARM_NOVERSION;
-	wifiSSID[0]        = '\0';
-	wifiPwd[0]         = '\0';
-  wifiMode           = wifiAP;
-  swarmSecret        = 0xFFFF;
-  swarmPIN           = 9999;
-  swarmName[0]       = '\0';
-  webUI              = true;
-  swarmCommunication.wifi = 1;
-  IAmKelda           = true;
-  memset( &swarmMember, 0, sizeof( swarmMember ) );
-  extensionPort      = FTSWARM_EXT_OFF;
-  I2CAddr            = 0x66;
-  interruptLine      = 0;
-  interruptOnOff[0]  = 0;
-  interruptOnOff[1]  = 255;
-  I2CRegisters       = MAXI2CREGISTERS;
-  gyro               = false;
-  spiGyro            = false;
-
-  // initialize zero positions
-  for (uint8_t j=0;j<4;j++) {
-    calibration[j].minValue = 200;
-    calibration[j].midValue = 1900;
-    calibration[j].maxValue = 3700;
-  }
-
-  // initialize events
-  activeEventConfig = 0;
-  bzero( events, sizeof( events ) );
-
-  // initialize lables
-  bzero( oledLabel, sizeof( oledLabel ) );
+  reset( false );
 
 }
 
@@ -196,37 +160,37 @@ bool SwOSNVS::load() {
   nvs_get_u8( my_handle, "RGBLeds", &pixels );
   
   // wifi
-  nvs_get_u32( my_handle, "wifiMode", (uint32_t *) &wifiMode );
-  nvs_get_u8 ( my_handle, "Channel",  &channel );
-  dummy = sizeof( wifiSSID ); nvs_get_str( my_handle, "wifiSSID", wifiSSID, &dummy );
-  dummy = sizeof( wifiPwd );  nvs_get_str( my_handle, "wifiPwd",  wifiPwd,  &dummy );
+  nvs_get_u32( my_handle, "wifiMode", (uint32_t *) &wifi.mode );
+  nvs_get_u8 ( my_handle, "Channel",  &wifi.channel );
+  dummy = sizeof( wifi.SSID ); nvs_get_str( my_handle, "wifiSSID", wifi.SSID, &dummy );
+  dummy = sizeof( wifi.Password ); nvs_get_str( my_handle, "wifiPwd",  wifi.Password,  &dummy );
 
   // swarm
-  nvs_get_u16( my_handle, "swarmSecret",               &swarmSecret );
-  nvs_get_u16( my_handle, "swarmPIN",                  &swarmPIN );
-  dummy = sizeof( swarmName );  nvs_get_str( my_handle, "swarmName", swarmName, &dummy );
-  nvs_get_u8(  my_handle, "swarmSpeed",                &swarmSpeed );
+  nvs_get_u16( my_handle, "swarmSecret", &swarm.secret );
+  nvs_get_u16( my_handle, "swarmPIN",  &swarm.pin );
+  dummy = sizeof( swarm.name ); nvs_get_str( my_handle, "swarmName", swarm.name, &dummy );
+  nvs_get_u8(  my_handle, "swarmSpeed", &swarm.speed );
 
-  // Kelda & swarmMembers
-  nvs_get_u8( my_handle, "IAmKelda", (uint8_t *) &IAmKelda );
-  nvs_get_u8( my_handle, "swarmCom", &swarmCommunication.raw);
-  dummy = sizeof( swarmMember );  nvs_get_blob( my_handle, "swarmMember", &swarmMember, &dummy );
+  // Kelda & swarm.members
+  nvs_get_u8( my_handle, "IAmKelda", (uint8_t *) &swarm.IAmKelda );
+  nvs_get_u8( my_handle, "swarmCom", &swarm.communication.raw);
+  dummy = sizeof( swarm.member ); nvs_get_blob( my_handle, "swarmMember", &swarm.member, &dummy );
 
   // to avoid hickups
-  if ( wifiMode == wifiOFF ) swarmCommunication.wifi = 0;
+  if ( wifi.mode == wifiOFF ) swarm.communication.wifi = 0;
 
   // webUI
-  nvs_get_u8 ( my_handle, "webUI", (uint8_t *) &webUI );
+  nvs_get_u8 ( my_handle, "webUI", (uint8_t *) &wifi.webUI );
 
   // ExtentionPort
   nvs_get_u32( my_handle, "extensionPort", (uint32_t *) &extensionPort);
-  if ( ( CPU == FTSWARMCONTROL_1V3 ) && ( extensionPort == FTSWARM_EXT_OFF ) ) { extensionPort = FTSWARM_EXT_I2C_MASTER; } // backward compatibility
-  nvs_get_u8 ( my_handle, "I2CAddr",        &I2CAddr );
-  nvs_get_u8 ( my_handle, "interruptLine", &interruptLine );
-  nvs_get_i16( my_handle, "interruptLow",  &interruptOnOff[0] );
-  nvs_get_i16( my_handle, "interruptHigh", &interruptOnOff[1] );
-  nvs_get_u8 ( my_handle, "I2CRegisters",  &I2CRegisters );
-  nvs_get_u8 ( my_handle, "Gyro",          (uint8_t *) &gyro);
+  if ( ( CPU == FTSWARMCONTROL_1V3 ) && ( extensionPort.mode == FTSWARM_EXT_OFF ) ) { extensionPort.mode = FTSWARM_EXT_I2C_MASTER; } // backward compatibility
+  nvs_get_u8 ( my_handle, "I2CAddr",       &extensionPort.I2CAddr );
+  nvs_get_u8 ( my_handle, "interruptLine", &extensionPort.interruptLine );
+  nvs_get_i16( my_handle, "interruptLow",  &extensionPort.interruptOnOff[0] );
+  nvs_get_i16( my_handle, "interruptHigh", &extensionPort.interruptOnOff[1] );
+  nvs_get_u8 ( my_handle, "I2CRegisters",  &extensionPort.I2CRegisters );
+  nvs_get_u8 ( my_handle, "Gyro",          (uint8_t *) &extensionPort.gyro);
   nvs_get_u8 ( my_handle, "spiGyro",       (uint8_t *) &spiGyro);
 
   nvs_close( my_handle );
@@ -239,7 +203,7 @@ bool SwOSNVS::load() {
 
 void SwOSNVS::deleteAllControllers(  void ) {
 
-  bzero( swarmMember, MAXCTRL );
+  bzero( swarm.member, MAXCTRL );
 
 }
 
@@ -266,33 +230,33 @@ void SwOSNVS::save( bool writeAll ) {
   nvs_set_u8( my_handle, "RGBLeds", pixels );
 
   // wifi
-  nvs_set_u32( my_handle, "wifiMode", wifiMode );
-  nvs_set_u8 ( my_handle, "Channel",  (uint8_t) channel );
-  nvs_set_str( my_handle, "wifiSSID",           wifiSSID);
-  nvs_set_str( my_handle, "wifiPwd",            wifiPwd);
+  nvs_set_u32( my_handle, "wifiMode", wifi.mode );
+  nvs_set_u8 ( my_handle, "Channel",  (uint8_t) wifi.channel );
+  nvs_set_str( my_handle, "wifiSSID",           wifi.SSID);
+  nvs_set_str( my_handle, "wifiPwd",            wifi.Password);
 
   // swarm
-  nvs_set_u16( my_handle, "swarmSecret", swarmSecret );
-  nvs_set_u16( my_handle, "swarmPIN",    swarmPIN );
-  nvs_set_str( my_handle, "swarmName",   swarmName );
+  nvs_set_u16( my_handle, "swarmSecret", swarm.secret );
+  nvs_set_u16( my_handle, "swarmPIN",    swarm.pin );
+  nvs_set_str( my_handle, "swarmName",   swarm.name );
   
-  // Kelda & swarmMembers
-  nvs_set_u8  ( my_handle, "IAmKelda",     (uint8_t) IAmKelda );
-  nvs_set_u8  ( my_handle, "swarmCom",     swarmCommunication.raw );
-  nvs_set_blob( my_handle, "swarmMember",  (void *)swarmMember, sizeof( swarmMember ) );
-  nvs_set_u8  ( my_handle, "swarmSpeed",   swarmSpeed );
+  // Kelda & swarm.members
+  nvs_set_u8  ( my_handle, "IAmKelda",     (uint8_t) swarm.IAmKelda );
+  nvs_set_u8  ( my_handle, "swarmCom",     swarm.communication.raw );
+  nvs_set_blob( my_handle, "swarmMember",  (void *)swarm.member, sizeof( swarm.member ) );
+  nvs_set_u8  ( my_handle, "swarmSpeed",   swarm.speed );
 
   // webUI
-  nvs_set_u8 ( my_handle,  "webUI",   (uint8_t) webUI );
+  nvs_set_u8 ( my_handle,  "webUI",   (uint8_t) wifi.webUI );
 
   // extensionPort
-  nvs_set_u8 ( my_handle, "I2CAddr",       I2CAddr );
-  nvs_set_u8 ( my_handle, "interruptLine", interruptLine );
-  nvs_set_i16( my_handle, "interruptLow",  interruptOnOff[0] );
-  nvs_set_i16( my_handle, "interruptHigh", interruptOnOff[1] );
-  nvs_set_u8 ( my_handle, "I2CRegisters",  I2CRegisters );
-  nvs_set_u32( my_handle, "extensionPort", (uint32_t) extensionPort);
-  nvs_set_u8 ( my_handle, "Gyro",          (uint8_t)  gyro);
+  nvs_set_u8 ( my_handle, "I2CAddr",       extensionPort.I2CAddr );
+  nvs_set_u8 ( my_handle, "interruptLine", extensionPort.interruptLine );
+  nvs_set_i16( my_handle, "interruptLow",  extensionPort.interruptOnOff[0] );
+  nvs_set_i16( my_handle, "interruptHigh", extensionPort.interruptOnOff[1] );
+  nvs_set_u8 ( my_handle, "I2CRegisters",  extensionPort.I2CRegisters );
+  nvs_set_u32( my_handle, "extensionPort", (uint32_t) extensionPort.mode);
+  nvs_set_u8 ( my_handle, "Gyro",          (uint8_t)  extensionPort.gyro);
   nvs_set_u8 ( my_handle, "spiGyro",       (uint8_t)  spiGyro);
 
   // commit
@@ -326,19 +290,22 @@ void SwOSNVS::saveEvents( void ) {
   if ( nvs_open( NVSNAMESPACE, NVS_READWRITE, &my_handle) != ESP_OK ) { SWARM_LOG_ERROR("Save events failed: Can't open NVS."); return; };
 
   // active config
-  nvs_set_u8( my_handle, "activeConfig", activeEventConfig );
-  
+  nvs_set_u8( my_handle, "activeConfig", events.activeConfig );
+
+  // quick config
+  nvs_set_blob( my_handle, "quickConfig", (void *)events.quickConfig, sizeof( events.quickConfig ) );
+
   // save events
-  nvs_set_blob( my_handle, "event0", (void *)events[0], sizeof( events[0] ) );
-  nvs_set_blob( my_handle, "event1", (void *)events[1], sizeof( events[1] ) );
-  nvs_set_blob( my_handle, "event2", (void *)events[2], sizeof( events[2] ) );
-  nvs_set_blob( my_handle, "event3", (void *)events[3], sizeof( events[3] ) );
+  nvs_set_blob( my_handle, "event0", (void *)events.events[0], sizeof( events.events[0] ) );
+  nvs_set_blob( my_handle, "event1", (void *)events.events[1], sizeof( events.events[1] ) );
+  nvs_set_blob( my_handle, "event2", (void *)events.events[2], sizeof( events.events[2] ) );
+  nvs_set_blob( my_handle, "event3", (void *)events.events[3], sizeof( events.events[3] ) );
 
   // save labels
-  nvs_set_blob( my_handle, "label0", (void *)oledLabel[0], sizeof( oledLabel[0] ) );
-  nvs_set_blob( my_handle, "label1", (void *)oledLabel[1], sizeof( oledLabel[1] ) );
-  nvs_set_blob( my_handle, "label2", (void *)oledLabel[2], sizeof( oledLabel[2] ) );
-  nvs_set_blob( my_handle, "label3", (void *)oledLabel[3], sizeof( oledLabel[3] ) );
+  nvs_set_blob( my_handle, "label0", (void *)events.oledLabel[0], sizeof( events.oledLabel[0] ) );
+  nvs_set_blob( my_handle, "label1", (void *)events.oledLabel[1], sizeof( events.oledLabel[1] ) );
+  nvs_set_blob( my_handle, "label2", (void *)events.oledLabel[2], sizeof( events.oledLabel[2] ) );
+  nvs_set_blob( my_handle, "label3", (void *)events.oledLabel[3], sizeof( events.oledLabel[3] ) );
 
   // commit
   nvs_commit( my_handle );
@@ -357,19 +324,22 @@ void SwOSNVS::loadEvents( void ) {
   if ( nvs_open( NVSNAMESPACE, NVS_READWRITE, &my_handle) != ESP_OK ) SWARM_LOG_FATAL("Can't open NVS.");
 
   // active config
-  nvs_get_u8( my_handle, "activeConfig", &activeEventConfig );
+  nvs_get_u8( my_handle, "activeConfig", &events.activeConfig );
+
+  // quick config
+  dummy = sizeof( events.quickConfig ); nvs_get_blob( my_handle, "quickConfig", events.quickConfig, &dummy );
 
   // load events
-  dummy = sizeof( events[0] ); nvs_get_blob( my_handle, "event0", events[0], &dummy );
-  dummy = sizeof( events[1] ); nvs_get_blob( my_handle, "event1", events[1], &dummy );
-  dummy = sizeof( events[2] ); nvs_get_blob( my_handle, "event2", events[2], &dummy );
-  dummy = sizeof( events[3] ); nvs_get_blob( my_handle, "event3", events[3], &dummy );
+  dummy = sizeof( events.events[0] ); nvs_get_blob( my_handle, "event0", events.events[0], &dummy );
+  dummy = sizeof( events.events[1] ); nvs_get_blob( my_handle, "event1", events.events[1], &dummy );
+  dummy = sizeof( events.events[2] ); nvs_get_blob( my_handle, "event2", events.events[2], &dummy );
+  dummy = sizeof( events.events[3] ); nvs_get_blob( my_handle, "event3", events.events[3], &dummy );
 
   // load labels
-  dummy = sizeof( oledLabel[0] ); nvs_get_blob( my_handle, "label0", oledLabel[0], &dummy );
-  dummy = sizeof( oledLabel[1] ); nvs_get_blob( my_handle, "label1", oledLabel[1], &dummy );
-  dummy = sizeof( oledLabel[2] ); nvs_get_blob( my_handle, "label2", oledLabel[2], &dummy );
-  dummy = sizeof( oledLabel[3] ); nvs_get_blob( my_handle, "label3", oledLabel[3], &dummy );
+  dummy = sizeof( events.oledLabel[0] ); nvs_get_blob( my_handle, "label0", events.oledLabel[0], &dummy );
+  dummy = sizeof( events.oledLabel[1] ); nvs_get_blob( my_handle, "label1", events.oledLabel[1], &dummy );
+  dummy = sizeof( events.oledLabel[2] ); nvs_get_blob( my_handle, "label2", events.oledLabel[2], &dummy );
+  dummy = sizeof( events.oledLabel[3] ); nvs_get_blob( my_handle, "label3", events.oledLabel[3], &dummy );
 
   nvs_close( my_handle );
 
@@ -378,18 +348,21 @@ void SwOSNVS::loadEvents( void ) {
 void SwOSNVS::deleteAllEvents( uint8_t configuration ) {
 
   // set all events to "NULL"
-  bzero( events[configuration], MAXNVSEVENTS * sizeof( SwOSNVSEvent ) );
+  bzero( events.events[configuration], MAXNVSEVENTS * sizeof( SwOSNVSEvent ) );
+  events.quickConfig[configuration] = FTSWARM_CFG_INDIVIDUAL;
 
 }
 
 bool SwOSNVS::addEvent( uint8_t configuration, SwOSNVSEvent *event ) {
 
+  events.quickConfig[configuration] = FTSWARM_CFG_INDIVIDUAL;
+
   uint8_t i = 0;
 
   while ( i<MAXNVSEVENTS ) {
     
-    if ( nvs.events[configuration][i].isNull() ) {
-      nvs.events[configuration][i] = *event;
+    if ( nvs.events.events[configuration][i].isNull() ) {
+      nvs.events.events[configuration][i] = *event;
       return true;
     }
 
@@ -404,71 +377,85 @@ bool SwOSNVS::addEvent( uint8_t configuration, SwOSNVSEvent *event ) {
 bool SwOSNVS::exists( uint8_t configuration, SwOSNVSEvent *event ) {
 
   for (uint8_t i=0; i<MAXNVSEVENTS; i++ ) {
-    if ( events[configuration][i].cmp( event )) return true;
+    if ( events.events[configuration][i].cmp( event )) return true;
   }
 
   return false;
 
 }
 
-void SwOSNVS::factorySettings( void ) {
+void SwOSNVS::reset( bool factoryReset ) {
 
-  factoryReset = true;
+  // initial settings
+  if ( !factoryReset ) {
+    version = NVSVERSION;
+    CPU = FTSWARM_NOVERSION;
+    serialNumber = 0;
+    spiGyro = false;
+  }
 
-  channel = 1;
-  
-  memset( wifiSSID, '\0', 64 );
-  memset( wifiPwd,  '\0', 128 );
-  
-  wifiMode = wifiAP;
-  sprintf( wifiSSID, "ftSwarm%d", serialNumber );
-  webUI = true;
+  this->factoryReset = factoryReset;
 
-  strcpy( swarmName, wifiSSID );
-  swarmSecret        = generateSecret( serialNumber ); 
-  swarmPIN           = serialNumber;
-  IAmKelda           = true;
-  swarmCommunication.wifi = 1;
-  swarmSpeed         = 4;
+  // wifi
+  wifi.channel = 1;
+  wifi.mode = wifiAP;
+  sprintf( wifi.SSID, "ftSwarm%d", serialNumber );
+  strcpy( wifi.Password, wifi.SSID );
 
-  for (uint8_t j=0;j<4;j++) {
+  wifi.webUI = true;
+
+  // swarm
+  strcpy( swarm.name, wifi.SSID );
+  swarm.secret             = generateSecret( serialNumber ); 
+  swarm.pin                = serialNumber;
+  swarm.IAmKelda           = true;
+  swarm.communication.wifi = 1;
+  swarm.speed              = 4;
+
+  for ( uint8_t j=0; j<4; j++ ) {
     calibration[j].minValue = 200;
     calibration[j].midValue = 1900;
     calibration[j].maxValue = 3700;
   }
 
-  pixels             = FTSWARM_HAL_PIXELS;
+  pixels = FTSWARM_HAL_PIXELS;
 
-  extensionPort      = FTSWARM_EXT_OFF;
-  I2CAddr            = 0x66;
-  gyro               = false;
-  // no factory settings for spiGyro
+  extensionPort.mode               = FTSWARM_EXT_OFF;
+  extensionPort.I2CAddr            = 0x66;
+  extensionPort.interruptLine      = 0;
+  extensionPort.interruptOnOff[0]  = 0;
+  extensionPort.interruptOnOff[1]  = 255;
+  extensionPort.I2CRegisters       = MAXI2CREGISTERS;
+  extensionPort.gyro               = false;
 
-  bzero(swarmMember, sizeof(swarmMember));
-  activeEventConfig  = 0;
-  bzero(events,      sizeof(events));
+  bzero( swarm.member, sizeof( swarm.member ) );
+  events.activeConfig  = 0;
+  bzero( events.events, sizeof( events.events ) );
 
   // initialize lables
-  bzero( oledLabel, sizeof( oledLabel ) );
+  bzero( events.oledLabel, sizeof( events.oledLabel ) );
+
+  // Quick Configs
+  for ( uint8_t j=0; j<MAXEVENTCONFIGS; j++ ) events.quickConfig[j] = FTSWARM_CFG_INDIVIDUAL;
 
 }
 
 void SwOSNVS::createSwarm( char *name, uint16_t pin ) {
 
-  // failsave copy of swarmName
-  strncpy( swarmName, name, MAXIDENTIFIER ); swarmName[MAXIDENTIFIER] = '\0';
-  swarmPIN = pin;
+  // failsave copy of swarm.name
+  strlcpy( swarm.name, name, MAXIDENTIFIER );
+  swarm.pin = pin;
 
   // kill all old swarm members
-  bzero( swarmMember, sizeof( swarmMember ) );
+  bzero( swarm.member, sizeof( swarm.member ) );
 
   // genenerate a really new secret
   uint16_t newSecret;
   while (1) {
     newSecret = generateSecret( serialNumber );
-    if ( newSecret != swarmSecret ) break;
+    if ( newSecret != swarm.secret ) break;
   }
-  swarmSecret = newSecret; 
+  swarm.secret = newSecret; 
   
 }
 
@@ -477,7 +464,7 @@ bool SwOSNVS::addController( FtSwarmSerialNumber_t serialNumber ) {
   for (int8_t i=0; i<MAXCTRL; i++ ) {
 
     // already in list? done.
-    if ( swarmMember[i] == serialNumber ) {
+    if ( swarm.member[i] == serialNumber ) {
       return false;
     }
 
@@ -486,8 +473,8 @@ bool SwOSNVS::addController( FtSwarmSerialNumber_t serialNumber ) {
   for (int8_t i=0; i<MAXCTRL; i++ ) {
 
     // free space in list? save index
-    if ( swarmMember[i] == 0 ) {
-      swarmMember[i] = serialNumber;
+    if ( swarm.member[i] == 0 ) {
+      swarm.member[i] = serialNumber;
       return true;
     };
 
@@ -504,8 +491,8 @@ bool SwOSNVS::deleteController( FtSwarmSerialNumber_t serialNumber ) {
   for (uint8_t i=0; i<MAXCTRL; i++) {
 
     // serialNumber found? kill it
-    if (swarmMember[i] == serialNumber) {
-      swarmMember[i] = 0;
+    if (swarm.member[i] == serialNumber) {
+      swarm.member[i] = 0;
       return true;
     }
 
@@ -520,7 +507,7 @@ uint8_t SwOSNVS::swarmMembers( void ) {
 
   uint8_t result = 0;
   for (uint8_t i=0; i<MAXCTRL; i++ ) {
-    if ( swarmMember[i] ) result++;
+    if ( swarm.member[i] ) result++;
   }
 
   return result;
@@ -532,48 +519,51 @@ void SwOSNVS::printNVS() {
   printf( "NVSVersion: %d\n", version );
   printf( "CPU: %d\n", CPU );
   printf( "serialNumber: %d\n", serialNumber );
-  printf( "wifiMode: %d\n", wifiMode );
-  printf( "wifiSSID: >%s<\n", wifiSSID );
+
+  printf( "wifi.Mode: %d\n", wifi.mode );
+  printf( "wifi.Channel: %d\n", wifi.channel );
+  printf( "wifi.SSID: >%s<\n", wifi.SSID );
+  
   printf( "pixels: %d\n", pixels );
-  printf( "gyro: %d\n", gyro );
   printf( "spiGyro: %d\n", spiGyro );
-  printf( "extensionPort: %d\n", extensionPort );
-  printf( "I2CAddr: %d\n", I2CAddr );
-  printf( "I2CRegisters: %d\n", I2CRegisters );
-  printf( "InterruptLine: %d\n", interruptLine );
-  printf( "interruptOnOff: %d %d\n", interruptOnOff[0], interruptOnOff[1] );
-  printf( "swarmSecret: 0x%4X\n", swarmSecret );
-  printf( "swarmPIN: %d\n", swarmPIN );
-  printf( "swarmName: >%s<\n", swarmName );
-  printf( "IAmKelda: %d\n", IAmKelda );
+  printf( "extensionPort.gyro: %d\n", extensionPort.gyro );
+  printf( "extensionPort.extensionPort: %d\n", extensionPort.mode );
+  printf( "extensionPort.I2CAddr: %d\n", extensionPort.I2CAddr );
+  printf( "extensionPort.I2CRegisters: %d\n", extensionPort.I2CRegisters );
+  printf( "extensionPort.InterruptLine: %d\n", extensionPort.interruptLine );
+  printf( "extensionPort.interruptOnOff: %d %d\n", extensionPort.interruptOnOff[0], extensionPort.interruptOnOff[1] );
+  printf( "swarm.secret: 0x%4X\n", swarm.secret );
+  printf( "swarm.pin: %d\n", swarm.pin );
+  printf( "swarm.name: >%s<\n", swarm.name );
+  printf( "swarm.IAmKelda: %d\n", swarm.IAmKelda );
   printf( "calibration: %d %d %d %d\n", calibration[0], calibration[1], calibration[2], calibration[3] );
-  printf( "swarmCommunication %d\n", swarmCommunication );
-  printf( "swarmSpeed %d\n", swarmSpeed );
+  printf( "swarm.communication %d\n", swarm.communication );
+  printf( "swarm.speed %d\n", swarm.speed );
 
   printf( "swarm members:");
-  for (uint8_t i=0; i<MAXCTRL; i++) { if (swarmMember[i]) printf(" %d", swarmMember[i]); }
+  for (uint8_t i=0; i<MAXCTRL; i++) { if (swarm.member[i]) printf(" %d", swarm.member[i]); }
   printf( "\n");
 
   printf( "events:\n" );
-  printf( "activeEventConfig %d\n", activeEventConfig);
+  printf( "events.activeConfig %d\n", events.activeConfig);
 
   // configs
   for ( uint8_t c=0; c<MAXEVENTCONFIGS; c++ ) {
   
     printf("Event configuration %d", c);
-    if ( c== activeEventConfig ) printf(" - active -");
+    if ( c== events.activeConfig ) printf(" - active -");
     printf("\n");
 
     // events
       for ( uint8_t i=0; i<MAXNVSEVENTS; i++ ) {
 
-        if ( events[c][i].sensor.serialNumber != 0 ) {
+        if ( events.events[c][i].sensor.serialNumber != 0 ) {
           printf( "#%d input %d.%d.%d actor %d.%d.%d trigger %d parameter %d\n", 
                   i, 
-                  events[c][i].sensor.serialNumber, events[c][i].sensor.ioType, events[c][i].sensor.port,
-                  events[c][i].actor.serialNumber,  events[c][i].actor.ioType,  events[c][i].actor.port,
-                  events[c][i].parameter,
-                  events[c][i].triggerMath.raw
+                  events.events[c][i].sensor.serialNumber, events.events[c][i].sensor.ioType, events.events[c][i].sensor.port,
+                  events.events[c][i].actor.serialNumber,  events.events[c][i].actor.ioType,  events.events[c][i].actor.port,
+                  events.events[c][i].parameter,
+                  events.events[c][i].triggerMath.raw
                 );
         }
       }

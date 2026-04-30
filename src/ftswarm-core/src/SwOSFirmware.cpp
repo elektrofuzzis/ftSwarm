@@ -237,12 +237,12 @@ class MenuLocalSettings : private Menu {
 
 void MenuLocalSettings::wifiMode( void ) {
 
-  FtSwarmWifi_t wifiMode = (FtSwarmWifi_t) enterNumber( "enter wifi mode [ 0-off , 1-AP-Mode, 2-Client-Mode]: ", nvs.wifiMode, 0, 2 );
+  FtSwarmWifi_t wifiMode = (FtSwarmWifi_t) enterNumber( "enter wifi mode [ 0-off , 1-AP-Mode, 2-Client-Mode]: ", nvs.wifi.mode, 0, 2 );
 
-  if ( nvs.wifiMode != wifiMode ) {
+  if ( nvs.wifi.mode != wifiMode ) {
     
-    nvs.wifiMode = wifiMode;   
-    if ( ( nvs.wifiMode == wifiAP ) && ( ( nvs.channel < 1 ) || ( nvs.channel > 13 ) ) ) nvs.channel = 1; // to avoid invalid channel settings
+    nvs.wifi.mode = wifiMode;   
+    if ( ( nvs.wifi.mode == wifiAP ) && ( ( nvs.wifi.channel < 1 ) || ( nvs.wifi.channel > 13 ) ) ) nvs.wifi.channel = 1; // to avoid invalid channel settings
     anythingChanged = true;
 
   }
@@ -265,7 +265,7 @@ bool MenuLocalSettings::setPassword( void ) {
       printf("Please use at minimum 8 chars.\n");
 
     } else {
-      strcpy( nvs.wifiPwd, pwd );
+      strcpy( nvs.wifi.Password, pwd );
       return true;
     }
 
@@ -282,13 +282,13 @@ void MenuLocalSettings::run( void ) {
   // get IP
   esp_netif_ip_info_t ip_info;
   esp_netif_t* netif = NULL;
-  if      (nvs.wifiMode == wifiAP)     netif = esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
-  else if (nvs.wifiMode == wifiClient) netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+  if      (nvs.wifi.mode == wifiAP)     netif = esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
+  else if (nvs.wifi.mode == wifiClient) netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
   if      ( netif ) esp_netif_get_ip_info( netif, &ip_info );
 
   while(1) {
 
-    switch ( nvs.wifiMode ) {
+    switch ( nvs.wifi.mode ) {
       case wifiAP:      
       case wifiClient:  sprintf(info, "hostname:            %s\nip-address:          %d.%d.%d.%d\n\n", myOSSwarm.Ctrl[0]->getHostname(), IP2STR(&ip_info.ip) );
                         break;
@@ -299,39 +299,39 @@ void MenuLocalSettings::run( void ) {
     // build menu
     start( );
     printf(info);
-    add( "wifi mode", WIFI[nvs.wifiMode], MENU_WIFI, 'w');
+    add( "wifi mode", WIFI[nvs.wifi.mode], MENU_WIFI, 'w');
 
-    if (nvs.wifiMode != wifiOFF ) {
+    if (nvs.wifi.mode != wifiOFF ) {
       
-      add( "SSID", nvs.wifiSSID, MENU_SSID, 's');
+      add( "SSID", nvs.wifi.SSID, MENU_SSID, 's');
       add( "Password", "*****", MENU_PASSWORD, 'p' );
       
-      if (nvs.wifiMode == wifiAP) {
-        add( "channel", nvs.channel, MENU_CHANNEL, 'c' );
+      if (nvs.wifi.mode == wifiAP) {
+        add( "channel", nvs.wifi.channel, MENU_CHANNEL, 'c' );
       } 
       
-      add( "Web UI", ONOFF[nvs.webUI], MENU_WEBUI, 'u' );
+      add( "Web UI", ONOFF[nvs.wifi.webUI], MENU_WEBUI, 'u' );
       
-      if ( ( nvs.webUI ) && ( FTSWARM_HAL_PIXELS ) ) add( "ftPixels in UI", nvs.pixels, MENU_PIXELS, 'f' );
+      if ( ( nvs.wifi.webUI ) && ( FTSWARM_HAL_PIXELS ) ) add( "ftPixels in UI", nvs.pixels, MENU_PIXELS, 'f' );
 
     }
      
     if ( FTSWARM_HAL_EXT_PORT ) { 
-      add("Extension Port", EXTMODE[ nvs.extensionPort] , MENU_EXT, 'e' ); 
+      add("Extension Port", EXTMODE[ nvs.extensionPort.mode] , MENU_EXT, 'e' ); 
     }
 
     // I2C Slave Mode. Options I2C Slave Address and Interrupt Line
-    if ( nvs.extensionPort == FTSWARM_EXT_I2C_SLAVE ) {
-      add("I2C Slave Address", nvs.I2CAddr, MENU_I2CADDR, 'a');
-      add("Interrupt Line", OFFM1M2[nvs.interruptLine], MENU_I2CINT, 'i' );
-      add("Interrupt Low Value",  nvs.interruptOnOff[0], MENU_I2CLOW, 'l' );
-      add("Interrupt High Value", nvs.interruptOnOff[1], MENU_I2CHIGH, 'h' );
-      add("I2C Registers", nvs.I2CRegisters, MENU_I2CREGS, 'r' );
+    if ( nvs.extensionPort.mode == FTSWARM_EXT_I2C_SLAVE ) {
+      add("I2C Slave Address", nvs.extensionPort.I2CAddr, MENU_I2CADDR, 'a');
+      add("Interrupt Line", OFFM1M2[nvs.extensionPort.interruptLine], MENU_I2CINT, 'i' );
+      add("Interrupt Low Value",  nvs.extensionPort.interruptOnOff[0], MENU_I2CLOW, 'l' );
+      add("Interrupt High Value", nvs.extensionPort.interruptOnOff[1], MENU_I2CHIGH, 'h' );
+      add("I2C Registers", nvs.extensionPort.I2CRegisters, MENU_I2CREGS, 'r' );
     }
 
     // gyro if available
     if ( myOSSwarm.Ctrl[0]->hasGyro() ) { 
-      add("Gyro", ONOFF[nvs.gyro], MENU_GYRO, 'g' ); 
+      add("Gyro", ONOFF[nvs.extensionPort.gyro], MENU_GYRO, 'g' ); 
     }
 
     if ( FTSWARM_HAL_JOYSTICKS ) {
@@ -340,7 +340,7 @@ void MenuLocalSettings::run( void ) {
 
     addExit();
 
-    if ( ( nvs.wifiMode == wifiOFF ) && ( nvs.swarmCommunication.wifi ) ) printf("\nHINT: Check wifi settings vs. swarm communication settings\n");
+    if ( ( nvs.wifi.mode == wifiOFF ) && ( nvs.swarm.communication.wifi ) ) printf("\nHINT: Check wifi settings vs. swarm communication settings\n");
 
     char line[100];
 
@@ -357,19 +357,19 @@ void MenuLocalSettings::run( void ) {
                             break;
         
       case MENU_SSID:       anythingChanged = true;
-                            sprintf( line, "Please enter new SSID [%s]: ", nvs.wifiSSID );
-                            enterString( line, nvs.wifiSSID, nvs.wifiSSID, 64);
+                            sprintf( line, "Please enter new SSID [%s]: ", nvs.wifi.SSID );
+                            enterString( line, nvs.wifi.SSID, nvs.wifi.SSID, 64);
                             break;
         
       case MENU_PASSWORD:   if ( setPassword() ) anythingChanged = true;
                             break;
 
       case MENU_CHANNEL:    anythingChanged = true;
-                            nvs.channel = enterNumber( "enter channel [1..13] - use 1,6 or 11 if possible: ", nvs.channel, 1, 13 );
+                            nvs.wifi.channel = enterNumber( "enter channel [1..13] - use 1,6 or 11 if possible: ", nvs.wifi.channel, 1, 13 );
                             break;
 
       case MENU_WEBUI:      anythingChanged = true;
-                            nvs.webUI = !nvs.webUI;
+                            nvs.wifi.webUI = !nvs.wifi.webUI;
                             break;
         
       case MENU_PIXELS:     anythingChanged = true;
@@ -383,28 +383,28 @@ void MenuLocalSettings::run( void ) {
                             break;
 
       case MENU_GYRO:       anythingChanged = true;
-                            nvs.gyro = (FtSwarmGyroMode_t) enterNumber( "(0) off (1) on: ", nvs.gyro, 0, 1 );
-                            if ( ( nvs.gyro ) && ( nvs.CPU != FTSWARMRS_2V1 ) ) nvs.extensionPort = FTSWARM_EXT_I2C_MASTER;
+                            nvs.extensionPort.gyro = (FtSwarmGyroMode_t) enterNumber( "(0) off (1) on: ", nvs.extensionPort.gyro, 0, 1 );
+                            if ( ( nvs.extensionPort.gyro ) && ( nvs.CPU != FTSWARMRS_2V1 ) ) nvs.extensionPort.mode = FTSWARM_EXT_I2C_MASTER;
                             break;
 
       case MENU_I2CADDR:    anythingChanged = true;
-                            nvs.I2CAddr = (uint8_t) enterNumber( "[16..127]: ", nvs.I2CAddr, 16, 127 );
+                            nvs.extensionPort.I2CAddr = (uint8_t) enterNumber( "[16..127]: ", nvs.extensionPort.I2CAddr, 16, 127 );
                             break;
 
       case MENU_I2CHIGH:    anythingChanged = true;
-                            nvs.interruptOnOff[1] = (int16_t) enterNumber( "High Value [-255..255]", nvs.interruptOnOff[1], -255, 255 );
+                            nvs.extensionPort.interruptOnOff[1] = (int16_t) enterNumber( "High Value [-255..255]", nvs.extensionPort.interruptOnOff[1], -255, 255 );
                             break;
 
       case MENU_I2CLOW:     anythingChanged = true;
-                            nvs.interruptOnOff[1] = (int16_t) enterNumber( "High Value [-255..255]", nvs.interruptOnOff[1], -255, 255 );
+                            nvs.extensionPort.interruptOnOff[1] = (int16_t) enterNumber( "High Value [-255..255]", nvs.extensionPort.interruptOnOff[1], -255, 255 );
                             break;
 
       case MENU_I2CINT:     anythingChanged = true;
-                            nvs.interruptLine = (uint8_t) enterNumber( "motor (1 for M1, 2 for M2, ...) or 0 to skip: ", nvs.interruptLine, 0, FTSWARM_HAL_MOTORS );
+                            nvs.extensionPort.interruptLine = (uint8_t) enterNumber( "motor (1 for M1, 2 for M2, ...) or 0 to skip: ", nvs.extensionPort.interruptLine, 0, FTSWARM_HAL_MOTORS );
                             break;
 
       case MENU_I2CREGS:    anythingChanged = true;
-                            nvs.I2CRegisters = (uint8_t) enterNumber( "I2C Registers [1..8]", nvs.I2CRegisters, 1, MAXI2CREGISTERS);
+                            nvs.extensionPort.I2CRegisters = (uint8_t) enterNumber( "I2C Registers [1..8]", nvs.extensionPort.I2CRegisters, 1, MAXI2CREGISTERS);
                             break;
 
     }
@@ -484,12 +484,12 @@ void MenuIOConfig::fillEventList( void ) {
   for (uint8_t i=0; i<MAXNVSEVENTS; i++) {
 
     // end of list?
-    if ( nvs.events[nvs.activeEventConfig][i].sensor.serialNumber == 0) break;
+    if ( nvs.events.events[nvs.events.activeConfig][i].sensor.serialNumber == 0) break;
 
     // io not specified OR event is about my io
     if ( (!io) || 
-         ( io == myOSSwarm.getIO( nvs.events[nvs.activeEventConfig][i].sensor ) ) ||
-         ( io == myOSSwarm.getIO( nvs.events[nvs.activeEventConfig][i].actor  ) ) 
+         ( io == myOSSwarm.getIO( nvs.events.events[nvs.events.activeConfig][i].sensor ) ) ||
+         ( io == myOSSwarm.getIO( nvs.events.events[nvs.events.activeConfig][i].actor  ) ) 
        ) {
 
       // end of list?
@@ -515,14 +515,14 @@ void MenuIOConfig::changeLabel( void ) {
   SwOSLabel_t label = io->getLabel();
   
   // ask user for new label
-  sprintf( prompt, "Please enter new label [%s]: ", nvs.oledLabel[nvs.activeEventConfig][label] );
+  sprintf( prompt, "Please enter new label [%s]: ", nvs.events.oledLabel[nvs.events.activeConfig][label] );
   if ( ( label == SWOSLABEL_J1 ) || ( label == SWOSLABEL_J2 ) ) enterString( prompt, text, 3 );
   else enterString( prompt, text, 4 );
 
   // nothing changed
-  if ( strcmp( text, nvs.oledLabel[nvs.activeEventConfig][label] ) == 0 ) return;
+  if ( strcmp( text, nvs.events.oledLabel[nvs.events.activeConfig][label] ) == 0 ) return;
 
-  strcpy( nvs.oledLabel[nvs.activeEventConfig][label], text );
+  strcpy( nvs.events.oledLabel[nvs.events.activeConfig][label], text );
 
   io->setLabelText( text );
 
@@ -786,9 +786,9 @@ void MenuIOConfig::addEvent( void ) {
   for ( uint8_t i=0; i<MAXNVSEVENTS; i++ ) {
 
     // free space found?
-    if ( nvs.events[nvs.activeEventConfig][i].sensor.serialNumber == 0) {
+    if ( nvs.events.events[nvs.events.activeConfig][i].sensor.serialNumber == 0) {
 
-      changeEvent( &nvs.events[nvs.activeEventConfig][i] );
+      changeEvent( &nvs.events.events[nvs.events.activeConfig][i] );
 
       return;
 
@@ -811,13 +811,13 @@ void MenuIOConfig::deleteEvent( void ) {
   selected = selected -1;
 
   // delete event
-  myOSSwarm.deleteEvent( &nvs.events[nvs.activeEventConfig][event[selected]] );
+  myOSSwarm.deleteEvent( &nvs.events.events[nvs.events.activeConfig][event[selected]] );
 
   // move all successors
-  if ( selected+1 < MAXNVSEVENTS ) memcpy( &nvs.events[nvs.activeEventConfig][event[selected]], &nvs.events[nvs.activeEventConfig][event[selected]+1], ( MAXNVSEVENTS - selected -1 ) * sizeof( SwOSNVSEvent ) );
+  if ( selected+1 < MAXNVSEVENTS ) memcpy( &nvs.events.events[nvs.events.activeConfig][event[selected]], &nvs.events.events[nvs.events.activeConfig][event[selected]+1], ( MAXNVSEVENTS - selected -1 ) * sizeof( SwOSNVSEvent ) );
 
   // cleanup last event
-  bzero( &nvs.events[nvs.activeEventConfig][MAXNVSEVENTS-1], sizeof( SwOSNVSEvent) );
+  bzero( &nvs.events.events[nvs.events.activeConfig][MAXNVSEVENTS-1], sizeof( SwOSNVSEvent) );
 
   // events are stored locally only
   anythingChanged[0] = true;
@@ -888,11 +888,11 @@ void MenuIOConfig::changeConfig( void ) {
   uint8_t newConfig;
 
   sprintf( line, "Switch to configuration [1..%d]", MAXEVENTCONFIGS );
-  newConfig = enterNumber( line, nvs.activeEventConfig+1, 1, MAXEVENTCONFIGS ) -1;
+  newConfig = enterNumber( line, nvs.events.activeConfig+1, 1, MAXEVENTCONFIGS ) -1;
   
-  if ( newConfig != nvs.activeEventConfig ) {
+  if ( newConfig != nvs.events.activeConfig ) {
       anythingChanged[0] = true;
-      nvs.activeEventConfig = newConfig;
+      nvs.events.activeConfig = newConfig;
       myOSSwarm.deleteEvents();
       myOSSwarm.addEvents( newConfig );
   }
@@ -914,7 +914,7 @@ void MenuIOConfig::run( void ) {
 
       // test on label
       SwOSLabel_t label = io->getLabel();
-      if ( (label != SWOSLABEL_UNDEF ) && ( label < SWOSLABEL_MAX ) ) add( "label", nvs.oledLabel[nvs.activeEventConfig][label], MENU_LABEL, 'l' );
+      if ( (label != SWOSLABEL_UNDEF ) && ( label < SWOSLABEL_MAX ) ) add( "label", nvs.events.oledLabel[nvs.events.activeConfig][label], MENU_LABEL, 'l' );
 
       if ( maxEvent >= 0 ) printf("\n     Events:\n");
 
@@ -923,7 +923,7 @@ void MenuIOConfig::run( void ) {
     for (uint8_t i=0; i<=maxEvent; i++) {
 
       printf("(%2d) ", i+1 );
-      printEvent( nvs.events[nvs.activeEventConfig][event[i]] );
+      printEvent( nvs.events.events[nvs.events.activeConfig][event[i]] );
 
       add( i );
 
@@ -977,7 +977,7 @@ void MenuIOConfig::run( void ) {
                           break;
 
       default:            printf("\n"); 
-                          changeEvent( &nvs.events[nvs.activeEventConfig][event[choice-1]] );
+                          changeEvent( &nvs.events.events[nvs.events.activeConfig][event[choice-1]] );
                           break;
 
     }
@@ -1103,11 +1103,11 @@ void MenuIOList::run( void ) {
       for (uint8_t e=0; i<MAXNVSEVENTS; e++) {
 
         // end of list?
-        if ( nvs.events[nvs.activeEventConfig][e].sensor.serialNumber == 0) break;
+        if ( nvs.events.events[nvs.events.activeConfig][e].sensor.serialNumber == 0) break;
 
         // my event?
-        if ( ( io[i] == myOSSwarm.getIO( nvs.events[nvs.activeEventConfig][e].sensor ) ) ||
-             ( io[i] == myOSSwarm.getIO( nvs.events[nvs.activeEventConfig][e].actor  ) ) 
+        if ( ( io[i] == myOSSwarm.getIO( nvs.events.events[nvs.events.activeConfig][e].sensor ) ) ||
+             ( io[i] == myOSSwarm.getIO( nvs.events.events[nvs.events.activeConfig][e].actor  ) ) 
            ) 
           events++;
 
@@ -1268,8 +1268,8 @@ void MenuSwarmConfig::newSwarm( void ) {
     if (!yesNo( "Leave the existing swarm and create a new one? [Y/N] " ) ) return;
   }
 
-  strcpy( nvs.swarmName, name );
-  nvs.swarmPIN = pin;
+  strcpy( nvs.swarm.name, name );
+  nvs.swarm.pin = pin;
 
   myOSSwarm.newSwarm(  );
 
@@ -1325,19 +1325,19 @@ void MenuSwarmConfig::deleteController( void ) {
 
 void MenuSwarmConfig::run( void ) {
 
-  FtSwarmCommunication_t swarmCommunication = nvs.swarmCommunication;
-  uint8_t swarmSpeed = nvs.swarmSpeed;
+  FtSwarmCommunication_t swarmCommunication = nvs.swarm.communication;
+  uint8_t swarmSpeed = nvs.swarm.speed;
 
   while (1) {
     
     fillCtrlList();
     start();
 
-    add("Swarm Name", nvs.swarmName, MENU_DEACTIVATED, MENU_NOKEY );
+    add("Swarm Name", nvs.swarm.name, MENU_DEACTIVATED, MENU_NOKEY );
     if ( myOSSwarm.Kelda ) add("Kelda", myOSSwarm.Kelda->getAliasOrName(), MENU_DEACTIVATED, MENU_NOKEY );
 
     // wifi
-    if ( nvs.wifiMode != wifiOFF ) add( "Communication WIFI", ONOFF[swarmCommunication.wifi], MENU_COM_WIFI, 'w' );
+    if ( nvs.wifi.mode != wifiOFF ) add( "Communication WIFI", ONOFF[swarmCommunication.wifi], MENU_COM_WIFI, 'w' );
 
     // rs485
     if ( FTSWARM_HAL_RS485 ) {    
@@ -1348,7 +1348,7 @@ void MenuSwarmConfig::run( void ) {
     }
 
     // no communication channel selected?
-    if ( !( ( ( nvs.wifiMode != wifiOFF ) && ( swarmCommunication.wifi ) ) || ( swarmCommunication.rs485 ) ) ) {
+    if ( !( ( ( nvs.wifi.mode != wifiOFF ) && ( swarmCommunication.wifi ) ) || ( swarmCommunication.rs485 ) ) ) {
 
       addExit();
       printf("\n*** You need to invoke a communication method. Maybe you need to setup wifi first. ***\n");
@@ -1361,7 +1361,7 @@ void MenuSwarmConfig::run( void ) {
 
     } else {
 
-      add("Pin", nvs.swarmPIN, MENU_DEACTIVATED, MENU_NOKEY );
+      add("Pin", nvs.swarm.pin, MENU_DEACTIVATED, MENU_NOKEY );
     
       printf("\n");
 
@@ -1398,8 +1398,8 @@ void MenuSwarmConfig::run( void ) {
     switch( choice ) {
       case MENU_EXIT:       if ( communicationChanges ) {
                               if ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) {
-                                nvs.swarmSpeed = swarmSpeed;
-                                nvs.swarmCommunication = swarmCommunication;
+                                nvs.swarm.speed = swarmSpeed;
+                                nvs.swarm.communication = swarmCommunication;
                                 nvs.saveAndRestart();
                               }                           
                             }
@@ -1411,7 +1411,7 @@ void MenuSwarmConfig::run( void ) {
                             communicationChanges = true;
                             break;
 
-      case MENU_SPEED:      swarmSpeed = enterNumber( "(0) low ... (4) highspeed (max. 50m)>", nvs.swarmSpeed, 0, 4 );
+      case MENU_SPEED:      swarmSpeed = enterNumber( "(0) low ... (4) highspeed (max. 50m)>", nvs.swarm.speed, 0, 4 );
                             communicationChanges = true;
                             break;
 
@@ -1476,7 +1476,7 @@ void MainMenu::run( void ) {
 
     start( );
     add("Wifi & Local Settings", "", MENU_WEB, 'w' );
-    if ( ( myOSSwarm.wifiConnected ) || ( nvs.wifiMode == wifiAP ) || ( FTSWARM_HAL_RS485 ) ) {
+    if ( ( myOSSwarm.wifiConnected ) || ( nvs.wifi.mode == wifiAP ) || ( FTSWARM_HAL_RS485 ) ) {
       add("Swarm Configuration", "", MENU_SWARM, 's' );
     } else {
       add("Swarm Configuration - activate WiFi", "", MENU_DEACTIVATED );
@@ -1537,7 +1537,7 @@ void firmware( void ) {
 
   myOSSwarm.begin( true );
 
-  if ( nvs.IAmKelda ) {
+  if ( nvs.swarm.IAmKelda ) {
     
     // only Keldas use CLI
     SwOSCLI cli;

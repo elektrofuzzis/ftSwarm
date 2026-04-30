@@ -13,7 +13,7 @@
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWBaseIO.h"
 
-// #define FTSWARM_HAL_OLEDS 1
+#define FTSWARM_HAL_OLEDS 1
 
 #if FTSWARM_HAL_OLEDS > 0
 

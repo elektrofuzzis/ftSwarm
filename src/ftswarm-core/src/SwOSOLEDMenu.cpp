@@ -1159,9 +1159,9 @@ bool FtSwarmScreenInput::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
 
 FtSwarmScreenWifi::FtSwarmScreenWifi( FtSwarmScreen *parent  ) : FtSwarmScreen( parent, "Wifi", "" ) {
 
-  strcpy( wifiSSID, nvs.wifiSSID );
-  strcpy( wifiPwd,  nvs.wifiPwd );
-  wifiMode = nvs.wifiMode;
+  strcpy( wifiSSID, nvs.wifi.SSID );
+  strcpy( wifiPwd,  nvs.wifi.Password );
+  wifiMode = nvs.wifi.mode;
 
   int16_t y = getNextY( FTSWARM_OLED_MAINSCREEN );
   addText( FTSWARM_OLED_MAINSCREEN, 0, y, FTSWARM_ALIGNLEFT, "Mode" );
@@ -1238,9 +1238,9 @@ bool FtSwarmScreenWifi::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, in
                                         break;
 
       case FTSWARMSCREENWIFI_CB_SAVE:   if (nParam) {
-                                          nvs.wifiMode = wifiMode;
-                                          strcpy( nvs.wifiSSID, wifiSSID );
-                                          strcpy( nvs.wifiPwd,  wifiPwd );
+                                          nvs.wifi.mode = wifiMode;
+                                          strcpy( nvs.wifi.SSID, wifiSSID );
+                                          strcpy( nvs.wifi.Password,  wifiPwd );
                                           nvs.saveAndRestart();
                                         }
                                         break;
@@ -1341,18 +1341,6 @@ void FtSwarmScreenWifiSSID::operate( void ) {
  #define FTSWARMSCREENSWARM_CB_DEL  ( FTSWARMSCREEN_BASEID + 3 )
 
  #define FTSWARMSCREENSWARM_CB_SEL  ( FTSWARMSCREEN_BASEID + 10 )
- 
-#define CFG_CAR     0x01
-#define CFG_CAT     0x02
-#define CFG_CRANE   0x04
-#define CFG_TRAILER 0x08
-#define CFG_GEAR    0x10
-#define CFG_LIGHTS  0x20
-
-#define CFG_CAR_GEAR   CFG_CAR | CFG_GEAR
-#define CFG_CAT_GEAR   CFG_CAT | CFG_GEAR
-#define CFG_CAR_LIGHTS CFG_CAR | CFG_LIGHTS
-#define CFG_CAT_LIGHTS CFG_CAT | CFG_LIGHTS
 
 FtSwarmScreenSwarm::FtSwarmScreenSwarm( FtSwarmScreen *parent  ) : FtSwarmScreen( parent, "Remote", "" ) {
 
@@ -1467,9 +1455,9 @@ void FtSwarmScreenSwarm::configureSelected( uint8_t config ) {
   FtSwarmSerialNumber_t remoteSN = ctrl->serialNumber;
 
   // clean my config
-  nvs.deleteAllEvents( nvs.activeEventConfig );
+  nvs.deleteAllEvents( nvs.events.activeConfig );
 
-  if ( config | CFG_CAR ) {
+  if ( config  == FTSWARM_CFG_CAR ) {
 
     // Drive: JOY1.FB RC     M4 (WHEELDRIVE)
     //                others M1 (XS)
@@ -1480,7 +1468,7 @@ void FtSwarmScreenSwarm::configureSelected( uint8_t config ) {
                                     0 
                                   )
                 );
-    strcpy( nvs.oledLabel[ nvs.activeEventConfig ][ SWOSLABEL_JOY1FB ], "FB" );
+    strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_JOY1FB ], "FB" );
 
     // Steer: JOY2.LR RC     M1 (RCSERVO)
     //                others SERVO1
@@ -1491,7 +1479,7 @@ void FtSwarmScreenSwarm::configureSelected( uint8_t config ) {
                                     0 
                                   )
                 );
-    strcpy( nvs.oledLabel[ nvs.activeEventConfig ][ SWOSLABEL_JOY2LR ], "LR" );
+    strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_JOY2LR ], "LR" );
 
     // Gear: S1/S2 RS M2 (RCServo)
     if ( ctrl->getCPU() == FTSWARMRC_1V141 ) {
@@ -1501,14 +1489,14 @@ void FtSwarmScreenSwarm::configureSelected( uint8_t config ) {
                                       45
                                     )
                   );
-      strcpy( nvs.oledLabel[ nvs.activeEventConfig ][ SWOSLABEL_S1 ], "G+" );
+      strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_S1 ], "G+" );
       nvs.addEvent( new SwOSNVSEvent( SwOSIOUID( localSN, SWOSIO_BUTTON, FTSWARM_S2 ), 
                                       SwOSIOUID( remoteSN, SWOSIO_RCSERVO, FTSWARM_M2 ), 
                                       SwOSTriggerMath( FTSWARM_TRIGGERUP, FTSWARM_ADD, FTSWARM_CONSTANT, FTSWARM_MAXOPERAND ),
                                       -45
                                     )
                   );
-      strcpy( nvs.oledLabel[ nvs.activeEventConfig ][ SWOSLABEL_S2 ], "G-" );
+      strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_S2 ], "G-" );
     }
 
     // Function: F1/F2 RC     M3 XSMOTOR
@@ -1527,7 +1515,7 @@ void FtSwarmScreenSwarm::configureSelected( uint8_t config ) {
                                     0 
                                   )
                 );
-    strcpy( nvs.oledLabel[ nvs.activeEventConfig ][ SWOSLABEL_F1 ], "F+" );
+    strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_F1 ], "F+" );
     nvs.addEvent( new SwOSNVSEvent( SwOSIOUID( localSN, SWOSIO_BUTTON, FTSWARM_F2 ), 
                                     ( ctrl->getCPU() == FTSWARMRC_1V141 ) ? SwOSIOUID( remoteSN, SWOSIO_XSMOTOR, FTSWARM_M3 ) : 
                                                                             SwOSIOUID( remoteSN, SWOSIO_XSMOTOR, FTSWARM_M2 ), 
@@ -1542,9 +1530,9 @@ void FtSwarmScreenSwarm::configureSelected( uint8_t config ) {
                                     0 
                                   )
                 );
-    strcpy( nvs.oledLabel[ nvs.activeEventConfig ][ SWOSLABEL_F2 ], "F-" );
+    strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_F2 ], "F-" );
 
-  } else if ( config | CFG_CAT ) {
+  } else if ( config == FTSWARM_CFG_CATAPILLAR ) {
 
     // Drive: JOY1.FB RC     M4 (WHEELDRIVE)
     //                others M1 (XS)
@@ -1555,7 +1543,7 @@ void FtSwarmScreenSwarm::configureSelected( uint8_t config ) {
                                     0 
                                   )
                 );
-    strcpy( nvs.oledLabel[ nvs.activeEventConfig ][ SWOSLABEL_JOY1FB ], "FB" );
+    strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_JOY1FB ], "FB" );
 
     // Steer: JOY2.LR RC     M1 (RCSERVO)
     //                others SERVO1
@@ -1566,7 +1554,7 @@ void FtSwarmScreenSwarm::configureSelected( uint8_t config ) {
                                     0 
                                   )
                 );
-    strcpy( nvs.oledLabel[ nvs.activeEventConfig ][ SWOSLABEL_JOY2LR ], "LR" );
+    strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_JOY2LR ], "LR" );
 
   }
 
@@ -1600,16 +1588,15 @@ bool FtSwarmScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
                                                                              "Quick Config", 
                                                                              "", 
                                                                              FTSWARMSCREENSWARM_CB_CFG, 
-                                                                             CFG_CAR_GEAR,   "Car with gear", 
-                                                                             CFG_CAR_LIGHTS, "Car with lights", 
-                                                                             CFG_CAT_GEAR,   "Cat with gear", 
-                                                                             CFG_CAT_LIGHTS, "Cat with lights", 
-                                                                             CFG_CRANE,      "Crane", 
-                                                                             CFG_TRAILER,    "Trailer" ) );
+                                                                             FTSWARM_CFG_CAR,     "Car", 
+                                                                             FTSWARM_CFG_CAR,     "Catapillar", 
+                                                                             FTSWARM_CFG_CRANE1,  "Crane Type 1", 
+                                                                             FTSWARM_CFG_CRANE2,  "Crane Type 2", 
+                                                                             FTSWARM_CFG_TRAILER, "Trailer" ) );
                         return true;
 
       case FTSWARM_S4:  // ask for a new swarm pin, call FTSWARMSCREENSWARM_CB_PIN afterwards
-                        screenManager.activate( new FtSwarmScreenInput( this, "Swarm Pin", FTSWARMSCREENSWARM_CB_PIN, nvs.swarmPIN, 4 ) );
+                        screenManager.activate( new FtSwarmScreenInput( this, "Swarm Pin", FTSWARMSCREENSWARM_CB_PIN, nvs.swarm.pin, 4 ) );
                         return true;
 
     }
@@ -1624,7 +1611,7 @@ bool FtSwarmScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
     switch ( id )  {
 
       case FTSWARMSCREENSWARM_CB_PIN: // user entered new pin
-                                      nvs.swarmPIN = nParam;
+                                      nvs.swarm.pin = nParam;
                                       nvs.save();
                                       return true;
 
@@ -1950,7 +1937,7 @@ bool FtSwarmScreenSetup::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
       case FTSWARMSCREENSETUP_CONFIG:     screenManager.activate( new FtSwarmScreenChooseOption( this, "Configuration", "Choose new configuration", FTSWARMSCREENSETUP_CONFIG_CB, 0, "#1", 1, "#2", 2, "#3", 3, "#4" ) );
                                           break;
 
-      case FTSWARMSCREENSETUP_CONFIG_CB:  nvs.activeEventConfig = nParam;
+      case FTSWARMSCREENSETUP_CONFIG_CB:  nvs.events.activeConfig = nParam;
                                           nvs.save();
                                           myOSSwarm.deleteEvents();
                                           myOSSwarm.addEvents( nParam );
@@ -1988,14 +1975,14 @@ SwOSMainScreen::SwOSMainScreen( void ) : FtSwarmScreen( nullptr, myOSSwarm.Ctrl[
 
   blockEvents = false;
 
-  addS1( nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_S1 ] );
-  addS2( nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_S2 ] );
-  addS3( nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_S3 ] );
+  addS1( nvs.events.oledLabel[nvs.events.activeConfig][ SWOSLABEL_S1 ] );
+  addS2( nvs.events.oledLabel[nvs.events.activeConfig][ SWOSLABEL_S2 ] );
+  addS3( nvs.events.oledLabel[nvs.events.activeConfig][ SWOSLABEL_S3 ] );
   addS4( "SET" );
-  addJ1( nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_J1 ] );
-  addJ2( nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_J2 ] );
-  addF1( nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_F1 ] );
-  addF2( nvs.oledLabel[nvs.activeEventConfig][ SWOSLABEL_F2 ] );
+  addJ1( nvs.events.oledLabel[nvs.events.activeConfig][ SWOSLABEL_J1 ] );
+  addJ2( nvs.events.oledLabel[nvs.events.activeConfig][ SWOSLABEL_J2 ] );
+  addF1( nvs.events.oledLabel[nvs.events.activeConfig][ SWOSLABEL_F1 ] );
+  addF2( nvs.events.oledLabel[nvs.events.activeConfig][ SWOSLABEL_F2 ] );
 
 }
 
@@ -2057,11 +2044,11 @@ void SwOSMainScreen::draw( void ) {
   if (myOSSwarm.Ctrl[0]->IAmKelda) oled.drawStr( FTSWARM_OLED_UPPERSCREEN, 0, 0, "K", FTSWARM_ALIGNLEFT );
   */
 
-  joystick( nvs.oledLabel[nvs.activeEventConfig][SWOSLABEL_JOY1LR], nvs.oledLabel[nvs.activeEventConfig][SWOSLABEL_JOY1FB], 48,     20, true );
-  joystick( nvs.oledLabel[nvs.activeEventConfig][SWOSLABEL_JOY2LR], nvs.oledLabel[nvs.activeEventConfig][SWOSLABEL_JOY2FB], 128-48, 20, false );
+  joystick( nvs.events.oledLabel[nvs.events.activeConfig][SWOSLABEL_JOY1LR], nvs.events.oledLabel[nvs.events.activeConfig][SWOSLABEL_JOY1FB], 48,     20, true );
+  joystick( nvs.events.oledLabel[nvs.events.activeConfig][SWOSLABEL_JOY2LR], nvs.events.oledLabel[nvs.events.activeConfig][SWOSLABEL_JOY2FB], 128-48, 20, false );
 
   char cfg[5];
-  sprintf( cfg, "#%d", nvs.activeEventConfig+1 );
+  sprintf( cfg, "#%d", nvs.events.activeConfig+1 );
   oled.drawStr( FTSWARM_OLED_BUTTONSCREEN, oled.getScreenWidth()/2, 0, cfg, FTSWARM_ALIGNCENTER );
 
 }
@@ -2109,7 +2096,7 @@ bool SwOSMainScreen::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32
 
   // hostname & version 
   char line[100];
-  sprintf( line, "%s %s", nvs.swarmName, SWOSVERSION );
+  sprintf( line, "%s %s", nvs.swarm.name, SWOSVERSION );
   info = addText( FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2, 32, FTSWARM_ALIGNCENTER, line );
 
 }

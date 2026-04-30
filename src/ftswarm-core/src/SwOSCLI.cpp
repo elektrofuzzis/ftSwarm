@@ -1051,7 +1051,7 @@ void SwOSCLI::executeSwarmCmd( bool *loggedIn ) {
     case CLICMD_useConfig:      if ( parameter[0].inRange( "config", 1, MAXEVENTCONFIGS-1, response ) ) {
                                   OK();
                                   newConfig = parameter[0].getNumber()-1;
-                                  nvs.activeEventConfig = newConfig;
+                                  nvs.events.activeConfig = newConfig;
                                   myOSSwarm.deleteEvents();
                                   myOSSwarm.addEvents( newConfig );
                                 }

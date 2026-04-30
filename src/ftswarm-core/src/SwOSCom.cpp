@@ -383,7 +383,7 @@ bool _OnDataRecv( SwOSCom *payload ) {
       SWARM_LOG_INFO("_onDataRecv: my own multicast.");
     #endif
 
-  } else if ( ( payload->data.affectedSN != nvs.serialNumber ) && ( payload->data.affectedSN != broadcastSN )  && ( !nvs.IAmKelda ) ) {
+  } else if ( ( payload->data.affectedSN != nvs.serialNumber ) && ( payload->data.affectedSN != broadcastSN )  && ( !nvs.swarm.IAmKelda ) ) {
     // direct communication to somebody else
     #ifdef DEBUG_COMMUNICATION_DETAIL
       SWARM_LOG_INFO("_onDataRecv: to someone else.");
@@ -754,7 +754,7 @@ bool SwOSNetwork::_StartRS485( void ) {
 
     // UART configuration
     uart_config_t uart_config = {
-        .baud_rate = BAUDRATE[nvs.swarmSpeed],
+        .baud_rate = BAUDRATE[nvs.swarm.speed],
         .data_bits = UART_DATA_8_BITS,
         .parity    = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
