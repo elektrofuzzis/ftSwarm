@@ -214,7 +214,7 @@ void SwOSCom::pushIO( uint8_t index, SwOSIOType_t ioType, uint8_t port, const ch
   uint8_t len_alias = strlen( alias );
   
   // not enough space to add to buffer?
-  if ( ( bufferIndex + len_name + len_alias + 5 ) >= MAXCONFIGPAYLOAD ) flushBuffer();
+  if ( ( bufferIndex + len_name + len_alias + 7 ) >= MAXCONFIGPAYLOAD ) flushBuffer();
 
   data.ioConfigCmd.payload[bufferIndex++] = index;
   data.ioConfigCmd.payload[bufferIndex++] = (uint8_t) ioType;
