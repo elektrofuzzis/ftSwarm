@@ -242,8 +242,6 @@ int16_t SwOSDCMotor::duty( void ) {
 
 void SwOSDCMotor::setPWM( int16_t xin1, int16_t xin2, gpio_num_t pwm, uint32_t duty ) {
 
-  printf("setPWM %d\n", duty);
-
   // check if it's needed to stop running pwm
   if ( ( ( duty == 0 ) || ( pwm != ledc_channel->gpio_num ) ) && ( ledc_channel->gpio_num != GPIO_NUM_NC ) ) {
 
@@ -531,6 +529,12 @@ bool SwOSStepper::isRunning( void ) {
 }
 
 void SwOSStepper::setValue( int32_t distance, int32_t position, bool isHoming, bool isRunning ) {
+  if ( isSubscribed ) {
+    if ( ( hysteresis & 0x01 ) && ( this->motorIsRunning != isRunning ) ) printf("S: %s running %d\n",  subscribedIOName, isRunning );
+    if ( ( hysteresis & 0x02 ) && ( this->motorIsHoming  != isHoming  ) ) printf("S: %s homing %d\n",   subscribedIOName, isHoming );
+    if ( ( hysteresis & 0x04 ) && ( this->distance != distance ) )        printf("S: %s distance %d\n", subscribedIOName, distance );
+    if ( ( hysteresis & 0x08 ) && ( this->position != position ) )        printf("S: %s position %d\n", subscribedIOName, position );
+  }
 
   this->distance = distance;
   this->position = position;
@@ -545,20 +549,10 @@ void SwOSStepper::operate() {
 
   // ftPwrDrive
   if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && ( ftPwrDrive ) ) { 
-  
     bool newMotorIsRunning = ( ftPwrDrive->lastState[port] & ISMOVING ) > 0;
     bool newMotorIsHoming  = ( ftPwrDrive->lastState[port] & HOMING ) > 0;
-
-    if ( (isSubscribed) && ( hysteresis & 0x01 ) && ( motorIsRunning != newMotorIsRunning ) )        printf("S: %s running %d\n",  subscribedIOName, newMotorIsRunning );
-    if ( (isSubscribed) && ( hysteresis & 0x02 ) && ( motorIsHoming  != newMotorIsHoming  ) )        printf("S: %s homing %d\n",   subscribedIOName, newMotorIsHoming );
-    if ( (isSubscribed) && ( hysteresis & 0x04 ) && ( distance != ftPwrDrive->lastDistance[port] ) ) printf("S: %s distance %d\n", subscribedIOName, ftPwrDrive->lastDistance[port] );
-    if ( (isSubscribed) && ( hysteresis & 0x08 ) && ( position != ftPwrDrive->lastPosition[port] ) ) printf("S: %s position %d\n", subscribedIOName, ftPwrDrive->lastPosition[port] );
     
-    distance       = ftPwrDrive->lastDistance[port];
-    position       = ftPwrDrive->lastPosition[port];
-    motorIsHoming  = newMotorIsHoming;
-    motorIsRunning = newMotorIsRunning;
-
+    setValue( ftPwrDrive->lastDistance[port], ftPwrDrive->lastPosition[port], newMotorIsHoming, newMotorIsRunning );
   }
 
 }
@@ -592,10 +586,17 @@ uint8_t SwOSStepper::popState( uint8_t *buffer ) {
 
   uint8_t *buf = buffer;
 
-  memcpy( &position,       buf, sizeof( position ) );       buf += sizeof( position );
-  memcpy( &distance,       buf, sizeof( distance ) );       buf += sizeof( distance );
-  memcpy( &motorIsHoming,  buf, sizeof( motorIsHoming ) );  buf += sizeof( motorIsHoming );
-  memcpy( &motorIsRunning, buf, sizeof( motorIsRunning ) ); buf += sizeof( motorIsRunning );
+  int32_t newPosition;
+  int32_t newDistance;
+  bool newMotorIsHoming;
+  bool newMotorIsRunning;
+
+  memcpy( &newPosition,       buf, sizeof( position ) );       buf += sizeof( position );
+  memcpy( &newDistance,       buf, sizeof( distance ) );       buf += sizeof( distance );
+  memcpy( &newMotorIsHoming,  buf, sizeof( motorIsHoming ) );  buf += sizeof( motorIsHoming );
+  memcpy( &newMotorIsRunning, buf, sizeof( motorIsRunning ) ); buf += sizeof( motorIsRunning );
+
+  setValue( newDistance, newPosition, newMotorIsHoming, newMotorIsRunning );
 
   return sizeof( position ) + sizeof( distance ) + sizeof( motorIsHoming ) + sizeof( motorIsRunning );
   
