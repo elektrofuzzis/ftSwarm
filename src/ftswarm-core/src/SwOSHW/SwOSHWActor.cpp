@@ -455,6 +455,7 @@ void SwOSStepper::startStop( bool start ) {
     
   }
 
+  this->motorIsRunning = start;
 }
 
 void SwOSStepper::setPosition( int32_t position ) {
@@ -481,19 +482,18 @@ int32_t SwOSStepper::getPosition( void ) {
 }
 
 void SwOSStepper::homing( int32_t maxDistance ) {
-
   if   (!ctrl->isLocal()) {
     // send remote
     SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_STEPPERHOMING );
     cmd.data.actorStepperCmd.index  = ctrl->getIndex(this);
     cmd.data.actorStepperCmd.paraml = maxDistance;
     cmd.send( );
-
   } else if ( ( ctrl->getCPU() == FTSWARMPWRDRIVE_1V141 ) && (ftPwrDrive ) ) {
     // set local
     ftPwrDrive->homing(pwrDriveMotor, maxDistance );
   }
 
+  this->motorIsHoming = true;
 }
 
 void SwOSStepper::setHomingOffset( int32_t offset ) {
