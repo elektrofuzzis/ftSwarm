@@ -54,7 +54,7 @@ FtSwarmIO::FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, Sw
     
     // no success, wait 25 ms
     if ( (!me) && ( firstTry ) ) {
-      SWARM_LOG_WAIT("Waiting for device - SN controler: %d port: %d ioType: %d\n", serialNumber, port, ioType );
+      SWARM_LOG_WAIT("Waiting for device - SN controller: %d port: %d ioType: %d\n", serialNumber, port, ioType );
       firstTry = false;
     }
     
