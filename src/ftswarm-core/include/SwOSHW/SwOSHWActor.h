@@ -153,6 +153,7 @@ class SwOSDCMotor : public SwOSMotor {
     virtual bool isRunning( void );                                // check if motor is running
     virtual void setIsHoming( bool isHoming );                     // used by controller during operate() to set local info
     virtual void setIsRunning( bool isRunning );                   // used by controller during operate() to set local info
+    virtual void halt( void ) { startStop(false); };
     
     /*virtual void setAbsDistance(int32_t distance );              // set a absolute distance to go
     virtual int32_t getStepsToGo( void );                          // number of needed steps to go to distance

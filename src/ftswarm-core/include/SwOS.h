@@ -431,6 +431,17 @@ const char BUTTON[8][3] = { "S1", "S2", "S3", "S4", "F1", "F2", "J1", "J2" };
 #define FTSWARM_SERVO3 2
 #define FTSWARM_SERVO4 3
 
+// Steppers
+#define FTSWARM_STEP1 0
+#define FTSWARM_STEP2 1
+#define FTSWARM_STEP3 2
+#define FTSWARM_STEP4 3
+
+#define FTSWARM_MICROSTEP_MODE_FULL 0
+#define FTSWARM_MICROSTEP_MODE_HALF 1
+#define FTSWARM_MICROSTEP_MODE_QUARTER 2
+#define FTSWARM_MICROSTEP_MODE_SIXTEENTH 3
+
 // Labels
 typedef enum { 
   SWOSLABEL_UNDEF  = -1,
