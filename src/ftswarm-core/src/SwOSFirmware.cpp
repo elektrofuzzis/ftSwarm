@@ -824,12 +824,7 @@ void MenuIOConfig::deleteEvent( void ) {
 
   // delete event
   myOSSwarm.deleteEvent( &nvs.events.events[nvs.events.activeConfig][event[selected]] );
-
-  // move all successors
-  if ( selected+1 < MAXNVSEVENTS ) memcpy( &nvs.events.events[nvs.events.activeConfig][event[selected]], &nvs.events.events[nvs.events.activeConfig][event[selected]+1], ( MAXNVSEVENTS - selected -1 ) * sizeof( SwOSNVSEvent ) );
-
-  // cleanup last event
-  bzero( &nvs.events.events[nvs.events.activeConfig][MAXNVSEVENTS-1], sizeof( SwOSNVSEvent) );
+  nvs.deleteEvent( nvs.events.activeConfig, selected );
 
   // events are stored locally only
   anythingChanged[0] = true;

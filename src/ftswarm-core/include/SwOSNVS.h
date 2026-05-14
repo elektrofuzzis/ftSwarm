@@ -164,6 +164,12 @@ class SwOSNVS {
     // delete all events
     void deleteAllEvents( uint8_t configuration );
 
+    // delete all events
+    void deleteAllEvents( void ) { for ( uint8_t i=0; i<MAXEVENTCONFIGS; i++ ) deleteAllEvents(i); };
+
+    // delete event
+    void deleteEvent( uint8_t configuration, uint8_t eventIndex );
+
     // add event
     bool addEvent( uint8_t configuration, SwOSNVSEvent *event );
 

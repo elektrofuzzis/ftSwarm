@@ -374,6 +374,16 @@ bool SwOSNVS::addEvent( uint8_t configuration, SwOSNVSEvent *event ) {
 
 }
 
+void SwOSNVS::deleteEvent( uint8_t configuration, uint8_t eventIndex ) {
+
+  // move all successors
+  if ( eventIndex+1 < MAXNVSEVENTS ) memcpy( &nvs.events.events[nvs.events.activeConfig][eventIndex], &nvs.events.events[nvs.events.activeConfig][eventIndex+1], ( MAXNVSEVENTS - eventIndex -1 ) * sizeof( SwOSNVSEvent ) );
+
+  // cleanup last event
+  bzero( &nvs.events.events[nvs.events.activeConfig][MAXNVSEVENTS-1], sizeof( SwOSNVSEvent) );
+
+}
+
 bool SwOSNVS::exists( uint8_t configuration, SwOSNVSEvent *event ) {
 
   for (uint8_t i=0; i<MAXNVSEVENTS; i++ ) {
@@ -494,6 +504,23 @@ bool SwOSNVS::deleteController( FtSwarmSerialNumber_t serialNumber ) {
     // serialNumber found? kill it
     if (swarm.member[i] == serialNumber) {
       swarm.member[i] = 0;
+
+      // check all configs
+      for ( uint8_t config=0; config<MAXEVENTCONFIGS; config++ ) {
+
+        // check all events
+        uint8_t event = 0;
+
+        while ( ( event < MAXNVSEVENTS ) && ( events.events[config][event].sensor.serialNumber ) )
+
+          // if sensor or actor fits to SN, delete
+          if ( ( events.events[config][event].sensor.serialNumber == serialNumber ) ||
+               ( events.events[config][event].actor.serialNumber == serialNumber ) ) {
+            deleteEvent( config, event );
+          } else event++;
+
+      }
+
       return true;
     }
 

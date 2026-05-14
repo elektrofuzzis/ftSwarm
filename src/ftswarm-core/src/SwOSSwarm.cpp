@@ -1116,6 +1116,9 @@ void SwOSSwarm::newSwarm( void ) {
     
   }
 
+  // delete all nvs events
+  nvs.deleteAllEvents();
+
   // set new swarm
   nvs.swarm.IAmKelda = true;
   Ctrl[0]->lock();
@@ -1206,7 +1209,7 @@ bool SwOSSwarm::deleteController( FtSwarmSerialNumber_t serialNumber ) {
   oldCtrl->lock();
   delete oldCtrl;
   nvs.deleteController( serialNumber );
- 
+
   return true;
 
 }
