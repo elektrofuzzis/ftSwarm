@@ -67,9 +67,9 @@ class FtPwrDrive {
   public:
 
     // readings from last read() cmd;
-    uint8_t  lastState[4];
-    int32_t     lastPosition[4];
-    int32_t     lastDistance[4];
+    uint8_t lastState[4];
+    int32_t lastPosition[4];
+    int32_t lastDistance[4];
     
     FtPwrDrive( uint8_t myI2CAddress = 32, TwoWire *twi = &Wire );
       // constructor

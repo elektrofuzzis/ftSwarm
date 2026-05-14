@@ -13,7 +13,7 @@
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWBaseIO.h"
 
-#define FTSWARM_HAL_OLEDS 1
+//#define FTSWARM_HAL_OLEDS 1
 
 #if FTSWARM_HAL_OLEDS > 0
 
@@ -413,6 +413,9 @@ class FtSwarmScreen {
     // joysticks
     void addJoystick( FtSwarmOledScreen_t screen, const char *text, uint8_t joystick );
 
+    // Line
+    FtSwarmScreenLine *addLine( FtSwarmOledScreen_t screen, int16_t x1, int16_t y1, int16_t x2, int16_t y2 );
+
 };
 
 /***************************************************
@@ -443,7 +446,7 @@ class FtSwarmScreen {
 
 /***************************************************
  *
- *   FtSwarmScreenSelectList
+ * FtSwarmScreenSelectList & FtSwarmScreenSelectList2
  *
  ***************************************************/
 
@@ -453,6 +456,21 @@ class FtSwarmScreen {
 
     uint8_t callbackID;
 
+  public:
+
+    // same with a two arrays callbackID and str
+    FtSwarmScreenSelectList( FtSwarmScreen *parent, const char *title, const char *text, uint8_t items, uint8_t callbackID[], char *str[] );
+
+    // eval external events like pressing buttons
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );
+
+ };
+
+ class FtSwarmScreenSelectList2 : public FtSwarmScreen {
+
+  protected:
+
+    uint8_t callbackID;
     void process() {};
 
     template<typename... Tail>
@@ -465,14 +483,14 @@ class FtSwarmScreen {
     // template<typename... Args>
     // example: new FtSwarmScreenSelectList( this, "Number", nullptr, SELECTMYNUMBER_CB, 42, "fourty-two", 17, "seventeen" )
     template<typename... Args>
-    FtSwarmScreenSelectList( FtSwarmScreen *parent, const char *title, const char *text, uint8_t callbackID, Args... args);
+    FtSwarmScreenSelectList2( FtSwarmScreen *parent, const char *title, const char *text, uint8_t callbackID, Args... args);
 
     // eval external events like pressing buttons
     virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );
 
- };
+};
 
-/***************************************************
+ /***************************************************
  *
  * FtSwarmScreenInput
  *
@@ -657,10 +675,8 @@ class FtSwarmScreenSwarm : public FtSwarmScreen {
   protected:
 
     FtSwarmScreenButton *S2 = nullptr;
-    FtSwarmScreenButton *S3 = nullptr;
 
     void addMembers( void );
-    void configureSelected( uint8_t config );
 
   public:
 
@@ -674,19 +690,20 @@ class FtSwarmScreenSwarm : public FtSwarmScreen {
 
 /***************************************************
  *
- *   FtSwarmScreenSwarmDetail
+ *   FtSwarmScreenRemote
  *
  ***************************************************/
 
-class FtSwarmScreenSwarmDetail : public FtSwarmScreen {
+class FtSwarmScreenRemote : public FtSwarmScreen {
 
   protected:
-    FtSwarmSerialNumber_t device;
+    // void configureSelected( uint8_t config );
+    int8_t selectedCtrl = -1; // index of selected controller
 
   public:
 
     // Constructor
-    FtSwarmScreenSwarmDetail( FtSwarmScreen *parent, const char *title, FtSwarmSerialNumber_t device  );
+    FtSwarmScreenRemote( FtSwarmScreen *parent  );
 
     // eval external events like pressing buttons
     virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );

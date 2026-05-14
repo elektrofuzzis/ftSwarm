@@ -242,8 +242,6 @@ int16_t SwOSDCMotor::duty( void ) {
 
 void SwOSDCMotor::setPWM( int16_t xin1, int16_t xin2, gpio_num_t pwm, uint32_t duty ) {
 
-  printf("setPWM %d\n", duty);
-
   // check if it's needed to stop running pwm
   if ( ( ( duty == 0 ) || ( pwm != ledc_channel->gpio_num ) ) && ( ledc_channel->gpio_num != GPIO_NUM_NC ) ) {
 
@@ -739,8 +737,8 @@ void SwOSDigitalServo::setLocal() {
 
  // min/max positions
 
-#define RCSERVO_LOW  390 // 510 // 1600   // 1700.0
-#define RCSERVO_HIGH 890 // 870 // 3300   // 3750.0
+#define RCSERVO_LOW  490 // 510 // 1600   // 1700.0
+#define RCSERVO_HIGH 910 // 890 // 870 // 3300   // 3750.0
 #define RCSERVO_RESOLUTION 90
 #define RCMAXDELTA   2
 
@@ -788,6 +786,7 @@ SwOSRCServo::~SwOSRCServo() {
 }
 
 void SwOSRCServo::poti2position( ) {
+  // printf("poti->getValueI32() %d\n", poti->getValueI32());
   position = ( ( (float) poti->getValueI32() - RCSERVO_LOW ) / ( RCSERVO_HIGH - RCSERVO_LOW ) * RCSERVO_RESOLUTION ) - offset;
 }
 

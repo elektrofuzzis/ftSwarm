@@ -380,6 +380,7 @@ bool SwOSNVS::exists( uint8_t configuration, SwOSNVSEvent *event ) {
     if ( events.events[configuration][i].cmp( event )) return true;
   }
 
+
   return false;
 
 }
@@ -553,6 +554,8 @@ void SwOSNVS::printNVS() {
     printf("Event configuration %d", c);
     if ( c== events.activeConfig ) printf(" - active -");
     printf("\n");
+
+    printf("Config Type %s\n", FTSWARMQUICKCONFIG[events.quickConfig[c]] );
 
     // events
       for ( uint8_t i=0; i<MAXNVSEVENTS; i++ ) {

@@ -439,7 +439,7 @@ class MenuIOConfig : protected FirmwareIOMenu {
     void changeLabel( void );
 
     void fillEventList( void );
-    void enterIO( const char* prompt, SwOSIOUID *uio, bool input );
+    bool enterIO( const char* prompt, SwOSIOUID *uio, bool input );
     bool enterEvent( SwOSNVSEvent *event );
 
     bool changeEvent( SwOSNVSEvent *event );
@@ -620,7 +620,7 @@ void MenuIOConfig::changeType( void ) {
 
 }
 
-void MenuIOConfig::enterIO( const char* prompt, SwOSIOUID *uio, bool input ) {
+bool MenuIOConfig::enterIO( const char* prompt, SwOSIOUID *uio, bool input ) {
 
   char   alias[MAXIDENTIFIER] = "";
   SwOSIO *io;
@@ -637,17 +637,19 @@ void MenuIOConfig::enterIO( const char* prompt, SwOSIOUID *uio, bool input ) {
     io = myOSSwarm.getIO( alias );
 
     // error handling;
-    if      ( !io )                              printf("Error: %s doesn't exists.\n", alias); 
+    if      ( alias[0] == '\0' )                 return false; // no entry
+    else if (!io)                                printf("Error: %s doesn't exists.\n", alias); 
     else if ( ( input  ) && ( !io->isInput() ) ) printf("Error: %s is not a sensor\n", alias);
     else if ( ( !input ) && ( !io->isActor() ) ) printf("Error: %s is not a actor\n", alias);
-    // all good
-    else break;
+    else break; // all good
     
   }
 
   uio->serialNumber = io->getCtrl()->serialNumber;
   uio->ioType       = io->getIOType();
   uio->port         = io->getPort();
+
+  return true;
 
 }
 
@@ -669,7 +671,7 @@ bool MenuIOConfig::enterEvent( SwOSNVSEvent *event ) {
     if (eventIO) sprintf( prompt, "Enter sensor's name [%s]: ", eventIO->getAliasOrName() );
     else         sprintf( prompt, "Enter sensor's name: " );
     
-    enterIO( prompt, &event->sensor, true  );
+    if (!enterIO( prompt, &event->sensor, true ) ) return false;
 
   }
 
@@ -699,7 +701,7 @@ bool MenuIOConfig::enterEvent( SwOSNVSEvent *event ) {
     if (eventIO) sprintf( prompt, "Enter actor's name [%s]: ", eventIO->getAliasOrName() );
     else         sprintf( prompt, "Enter actor's name: " );
   
-    enterIO( prompt,  &event->actor,  false );
+    if (!enterIO( prompt,  &event->actor,  false ) ) return false;
 
   }
 
@@ -756,6 +758,16 @@ bool MenuIOConfig::enterEvent( SwOSNVSEvent *event ) {
 }
 
 bool MenuIOConfig::changeEvent( SwOSNVSEvent *event ) {
+ 
+  if ( event->sensor.serialNumber != 0 ) {
+
+    SwOSIO *sensor = dynamic_cast<SwOSIO*>( myOSSwarm.getIO( event->sensor ) );
+    SwOSIO *actor  = dynamic_cast<SwOSIO*>( myOSSwarm.getIO( event->actor ) );
+
+    if (!sensor) { printf("Error: ftSwarm%d is offline.\n", event->sensor.serialNumber); return false; }
+    if (!actor)  { printf("Error: ftSwarm%d is offline.\n", event->actor.serialNumber);  return false; }
+
+  }
 
   // create a copy of the event
   SwOSNVSEvent newEvent = *event;
@@ -767,7 +779,7 @@ bool MenuIOConfig::changeEvent( SwOSNVSEvent *event ) {
   if ( newEvent.cmp( event ) ) return false;
 
   // duplicates?
-  if ( !nvs.exists( &newEvent ) ) { printf("ERROR: This event already exists."); return false; }
+  if ( nvs.exists( &newEvent ) ) { printf("ERROR: This event already exists."); return false; }
 
   // change event
   myOSSwarm.deleteEvent( event );
@@ -853,32 +865,45 @@ void MenuIOConfig::printEvent( SwOSNVSEvent event, uint8_t details ) {
   if (details) printf("\n");
 
   char uniqueName[2*MAXIDENTIFIER+1];
-  sensor->getUniqeName( uniqueName );
-  printf("%s.%s",  uniqueName, FTSWARMTRIGGER[ event.triggerMath.bits.trigger ] );
-  if (details == 1 ) { printf("\n"); return; }
 
-  char doing[15];
-  if      ( actor->isMotor() ) strcpy( doing, "Speed");
-  else if ( actor->isServo() ) strcpy( doing, "Position");
-  else if ( actor->isPixel() ) strcpy( doing, "Color" );
-  else                         strcpy( doing, "???" );
+  // print sensor
+  if (!sensor) { 
+    printf("ftSwarm%d.???", event.sensor.serialNumber ); 
 
-  actor->getUniqeName( uniqueName );
-  printf(" -> %s.set%s( ", uniqueName, doing );
-  if (details == 2 ) { printf("\n"); return; }
+  } else {
+    sensor->getUniqeName( uniqueName );
+    printf("%s.%s",  uniqueName, FTSWARMTRIGGER[ event.triggerMath.bits.trigger ] );
+    if (details == 1 ) { printf("\n"); return; }
+  }
 
-  printEventParameter( event.triggerMath.bits.v1, sensor, actor, doing, event.parameter );
-  if (details == 3 ) { printf("\n"); return; }
+  // print actor
+  if (!actor) { 
+    printf("-> ftSwarm%d.???\n", event.actor.serialNumber ); 
 
-  if ( event.triggerMath.bits.op != FTSWARM_ASSIGN ) {
+  } else {
+    char doing[15];
+    if      ( actor->isMotor() ) strcpy( doing, "Speed");
+    else if ( actor->isServo() ) strcpy( doing, "Position");
+    else if ( actor->isPixel() ) strcpy( doing, "Color" );
+    else                         strcpy( doing, "???" );
+
+    actor->getUniqeName( uniqueName );
+    printf(" -> %s.set%s( ", uniqueName, doing );
+    if (details == 2 ) { printf("\n"); return; }
+
+    printEventParameter( event.triggerMath.bits.v1, sensor, actor, doing, event.parameter );
+    if (details == 3 ) { printf("\n"); return; }
+
+    if ( event.triggerMath.bits.op != FTSWARM_ASSIGN ) {
   
-    printf(" %s ", FTSWARMOPERATOR[event.triggerMath.bits.op] );
-    if (details == 4 ) { printf("\n"); return; }
+      printf(" %s ", FTSWARMOPERATOR[event.triggerMath.bits.op] );
+      if (details == 4 ) { printf("\n"); return; }
   
-    printEventParameter( event.triggerMath.bits.v2, sensor, actor, doing, event.parameter );
-  } 
+      printEventParameter( event.triggerMath.bits.v2, sensor, actor, doing, event.parameter );
+    } 
   
-  printf(" )\n");
+    printf(" )\n");
+  }
 
 }
 
@@ -1365,7 +1390,7 @@ void MenuSwarmConfig::run( void ) {
     
       printf("\n");
 
-      printf("     Name        Status   NW-Age    Alias\n" );
+      printf("     Name         Status   NW-Age    Alias\n" );
 
       for ( int8_t i=0; i<=maxCtrl; i++ ) {
       
@@ -1377,7 +1402,7 @@ void MenuSwarmConfig::run( void ) {
           printf("     "); 
         }
 
-        printf( "%10s  %-7s  [%.6lu]  %s\n", ctrl[i]->getName(), SWOSCOMSTATE[ctrl[i]->getComState()], ctrl[i]->networkAge(), ctrl[i]->getAlias() );
+        printf( "%-11.11s  %-7s  [%.6lu]  %s\n", ctrl[i]->getName(), SWOSCOMSTATE[ctrl[i]->getComState()], ctrl[i]->networkAge(), ctrl[i]->getAlias() );
       }
 
       printf("\n\n");

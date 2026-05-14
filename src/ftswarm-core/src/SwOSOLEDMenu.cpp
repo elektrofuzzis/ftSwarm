@@ -107,7 +107,7 @@ void FtSwarmScreenText::draw( bool selected ) {
     debug();
   #endif
 
-  if (visible) oled.drawStrRect( screen, x, y, width, text, align );
+  if ( text && (visible) ) oled.drawStrRect( screen, x, y, width, text, align );
 
 }
 
@@ -539,6 +539,7 @@ FtSwarmScreen::FtSwarmScreen( FtSwarmScreen *parent, const char *title, const ch
   this->USID   = screenUSID++;
   this->parent = parent;
 
+  oled.scroll( FTSWARM_OLED_MAINSCREEN, 0, 0 );
   oled.buttonScreen( false );
 
   // title, line
@@ -826,6 +827,14 @@ FtSwarmScreenText *FtSwarmScreen::addText( FtSwarmOledScreen_t screen, int16_t x
 
 }
 
+FtSwarmScreenLine *FtSwarmScreen::addLine( FtSwarmOledScreen_t screen, int16_t x1, int16_t y1, int16_t x2, int16_t y2 ) {
+
+  if ( ( y1 > oled.getScreenHeight( screen ) ) || ( y2 > oled.getScreenHeight( screen ) ) ) addNavigation();
+
+  return (FtSwarmScreenLine*) add( new FtSwarmScreenLine( FTSWARMSCREEN_NOID, this, screen, x1, y1, x2, y2 ) );
+
+}
+
 void FtSwarmScreen::addJoystick( FtSwarmOledScreen_t screen, const char *text, uint8_t joystick ) {
 
   switch ( joystick ) {
@@ -892,8 +901,26 @@ bool FtSwarmScreenChooseOption::eventHandler( FtSwarmScreenEvent_t event, uint8_
  *
  ***************************************************/
 
+FtSwarmScreenSelectList::FtSwarmScreenSelectList( FtSwarmScreen *parent, const char *title, const char *text, uint8_t items, uint8_t callbackID[], char *str[] ) : FtSwarmScreen( parent, title, text ) {
+
+  for ( uint8_t i=0; i<items; i++ ) {
+    add( new FtSwarmScreenSelectable( callbackID[i], this, (const char*) str[i] ) );
+  }
+
+}
+
+bool FtSwarmScreenSelectList::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam , const char *sParam ) {
+
+  if ( FtSwarmScreen::eventHandler( event, id, nParam, sParam ) ) return true;
+
+  if ( event == FTSWARM_SCREENEVENT_OK ) { close( event, callbackID, objects.getSelected()->getID(), objects.getSelected()->getText() ); return true; }
+
+  return false;
+
+}
+
 template<typename... Args>
-FtSwarmScreenSelectList::FtSwarmScreenSelectList( FtSwarmScreen *parent, const char *title, const char *text, uint8_t callbackID, Args... args ) : FtSwarmScreen( parent, title, text ) {
+FtSwarmScreenSelectList2::FtSwarmScreenSelectList2( FtSwarmScreen *parent, const char *title, const char *text, uint8_t callbackID, Args... args ) : FtSwarmScreen( parent, title, text ) {
 
   this->callbackID = callbackID;
 
@@ -904,18 +931,18 @@ FtSwarmScreenSelectList::FtSwarmScreenSelectList( FtSwarmScreen *parent, const c
 };
 
 template<typename... Tail>
-void FtSwarmScreenSelectList::process(uint8_t id, const char* str, Tail... tail) {
+void FtSwarmScreenSelectList2::process(uint8_t id, const char* str, Tail... tail) {
 
   add( new FtSwarmScreenSelectable( id, this, str ) );
   process(tail...);
 
 }
 
-bool FtSwarmScreenSelectList::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam , const char *sParam ) {
+bool FtSwarmScreenSelectList2::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam , const char *sParam ) {
 
   if ( FtSwarmScreen::eventHandler( event, id, nParam, sParam ) ) return true;
 
-  if ( event == FTSWARM_SCREENEVENT_OK ) { close( event, callbackID, objects.getSelected()->getID() ); return true; }
+  if ( event == FTSWARM_SCREENEVENT_OK ) { close( event, callbackID, objects.getSelected()->getID(), objects.getSelected()->getText() ); return true; }
 
   return false;
 
@@ -1157,7 +1184,7 @@ bool FtSwarmScreenInput::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
 #define FTSWARMSCREENWIFI_CB_PASSWD ( FTSWARMSCREEN_BASEID + 5 )
 #define FTSWARMSCREENWIFI_CB_SAVE   ( FTSWARMSCREEN_BASEID + 6 )
 
-FtSwarmScreenWifi::FtSwarmScreenWifi( FtSwarmScreen *parent  ) : FtSwarmScreen( parent, "Wifi", "" ) {
+FtSwarmScreenWifi::FtSwarmScreenWifi( FtSwarmScreen *parent  ) : FtSwarmScreen( parent, "Wifi Settings", "" ) {
 
   strcpy( wifiSSID, nvs.wifi.SSID );
   strcpy( wifiPwd,  nvs.wifi.Password );
@@ -1335,18 +1362,15 @@ void FtSwarmScreenWifiSSID::operate( void ) {
  *
  ***************************************************/
 
- #define FTSWARMSCREENSWARM_CB_CFG  ( FTSWARMSCREEN_BASEID + 0 )
- #define FTSWARMSCREENSWARM_CB_PIN  ( FTSWARMSCREEN_BASEID + 1 )
- #define FTSWARMSCREENSWARM_CB_ADD  ( FTSWARMSCREEN_BASEID + 2 )
- #define FTSWARMSCREENSWARM_CB_DEL  ( FTSWARMSCREEN_BASEID + 3 )
+ #define FTSWARMSCREENSWARM_CB_PIN  ( FTSWARMSCREEN_BASEID + 0 )
+ #define FTSWARMSCREENSWARM_CB_ADD  ( FTSWARMSCREEN_BASEID + 1 )
+ #define FTSWARMSCREENSWARM_CB_DEL  ( FTSWARMSCREEN_BASEID + 2 )
+ #define FTSWARMSCREENSWARM_CB_SEL  ( FTSWARMSCREEN_BASEID + 3 )
 
- #define FTSWARMSCREENSWARM_CB_SEL  ( FTSWARMSCREEN_BASEID + 10 )
-
-FtSwarmScreenSwarm::FtSwarmScreenSwarm( FtSwarmScreen *parent  ) : FtSwarmScreen( parent, "Remote", "" ) {
+ FtSwarmScreenSwarm::FtSwarmScreenSwarm( FtSwarmScreen *parent  ) : FtSwarmScreen( parent, "Swarm Config", "" ) {
 
   addS1( "add" );
   S2 = addS2( "del" );
-  S3 = addS3( "cfg" );
   addS4( "pin" );
 
   addMembers();
@@ -1371,10 +1395,141 @@ void FtSwarmScreenSwarm::addMembers( void ) {
   }
 
   S2->setVisible( members>1 );
-  S3->setVisible( members>1 );
   
 }
 
+bool FtSwarmScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
+
+  if ( FtSwarmScreen::eventHandler( event, id, nParam, sParam ) ) return true;
+
+  if ( event == FTSWARM_SCREENEVENT_DOWN ) {
+
+    uint8_t i;
+
+    switch ( id ) {
+
+      case FTSWARM_S1:  // ask for new device, call FTSWARMSCREENSWARM_CB_ADD afterwards
+                        screenManager.activate( new FtSwarmScreenInput( this, "SN to add", FTSWARMSCREENSWARM_CB_ADD, FTSWARM_NANI32, 4 ) );
+                        return true;
+
+      case FTSWARM_S2:  // ask to delete the selected device, call FTSWARMSCREENSWARM_CB_DEL afterwards
+                        if ( objects.getSelected() ) {
+                          i = objects.getSelected()->getID() - FTSWARMSCREENSWARM_CB_SEL;
+                          if ( ( i < MAXCTRL ) && ( myOSSwarm.Ctrl[i] ) ) screenManager.activate( new FtSwarmScreenYesNo( this, objects.getSelected()->getText(), "Revoke controller?", FTSWARMSCREENSWARM_CB_DEL, myOSSwarm.Ctrl[i]->serialNumber ) );
+                        }
+                        return true;
+
+      case FTSWARM_S4:  // ask for a new swarm pin, call FTSWARMSCREENSWARM_CB_PIN afterwards
+                        screenManager.activate( new FtSwarmScreenInput( this, "Swarm Pin", FTSWARMSCREENSWARM_CB_PIN, nvs.swarm.pin, 4 ) );
+                        return true;
+
+    }
+
+  }
+
+  if ( event == FTSWARM_SCREENEVENT_OK ) {
+
+    char    error[100];
+    uint8_t i;
+
+    switch ( id )  {
+
+      case FTSWARMSCREENSWARM_CB_PIN: // user entered new pin
+                                      nvs.swarm.pin = nParam;
+                                      nvs.save();
+                                      return true;
+
+      case FTSWARMSCREENSWARM_CB_ADD: // nParam is the sn to be added to the swarm
+                                      if (nParam) {
+
+                                        if ( myOSSwarm.addController( nParam ) ) {
+
+                                          nvs.save();
+                                          objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_SELECTABLE );
+                                          objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_TEXT );
+                                          addMembers();
+                                          draw();
+                                        
+                                        } else {
+
+                                          sprintf( error, "Could not add ftSwarm%d to swarm.", nParam);
+                                          screenManager.activate( new FtSwarmScreenError( this, error) );
+
+                                        }
+
+                                      }
+
+                                      return true;
+
+      case FTSWARMSCREENSWARM_CB_DEL: // delete selected controller, nParam is sn
+                                      if (nParam) { 
+
+                                        if ( myOSSwarm.deleteController( nParam ) ) {
+
+                                          nvs.save( );
+                                          objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_SELECTABLE ); 
+                                          objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_TEXT );
+                                          addMembers();
+                                          draw(); 
+
+                                        } else {
+
+                                          sprintf( error, "Couldn't revoke % from swarm.", objects.getSelected()->getText() );
+                                          screenManager.activate( new FtSwarmScreenError( this, error) );
+                                        }
+
+                                      }
+                                      return true;
+
+    }
+
+  }
+
+  return false;
+
+}
+
+/***************************************************
+ *
+ * FtSwarmScreenRemote
+ *
+ ***************************************************/
+
+#define FTSWARMSCREENREMOTE_CB_CHOOSECFG  ( FTSWARMSCREEN_BASEID + 0 )
+#define FTSWARMSCREENREMOTE_CB_CHOOSECTRL ( FTSWARMSCREEN_BASEID + 30 )
+
+
+FtSwarmScreenRemote::FtSwarmScreenRemote( FtSwarmScreen *parent  ) : FtSwarmScreen( parent, "Remote Control" ) {
+
+  char text[50];
+
+  sprintf( text, "config type:  %s", FTSWARMQUICKCONFIG[ nvs.events.quickConfig[nvs.events.activeConfig] ] );
+  addText( FTSWARM_OLED_MAINSCREEN, 0, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNLEFT, text );
+  
+  sprintf( text, "active config: %d", nvs.events.activeConfig );
+  addText( FTSWARM_OLED_MAINSCREEN, 0, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNLEFT, text );
+
+  for ( uint8_t i=0; i<MAXNVSEVENTS; i++ ) {
+
+    if ( nvs.events.events[ nvs.events.activeConfig ][i].sensor.serialNumber == 0 ) break;
+
+    SwOSIO *sensor = myOSSwarm.getIO( nvs.events.events[ nvs.events.activeConfig ][i].sensor );
+    SwOSIO *actor  = myOSSwarm.getIO( nvs.events.events[ nvs.events.activeConfig ][i].actor );
+      
+    if ( ( sensor ) && ( actor ) ) {
+
+      sprintf( text, "%s -> %s", sensor->getAliasOrName(), actor->getAliasOrName() );
+      addText( FTSWARM_OLED_MAINSCREEN, 0, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNLEFT, text );
+
+    }
+
+  }
+
+  addS1( "Quick" );
+
+}
+
+ 
 /* Standard configuration types
 
   Type        Controller    Function    Key      Settings
@@ -1439,7 +1594,8 @@ void FtSwarmScreenSwarm::addMembers( void ) {
 
 */
 
-void FtSwarmScreenSwarm::configureSelected( uint8_t config ) {
+/*
+void FtSwarmScreenRemote::configureSelected( uint8_t config ) {
 
   // is a controller selected?
   if (!objects.getSelected()) return;
@@ -1449,6 +1605,12 @@ void FtSwarmScreenSwarm::configureSelected( uint8_t config ) {
   if ( ( i < 1 ) || ( i >= myOSSwarm.members() ) ) return;
   if ( !myOSSwarm.Ctrl[i] ) return;
   SwOSCtrl *ctrl = myOSSwarm.Ctrl[i];
+
+  // test, if remote controller is online
+  if ( !ctrl->isOnline() ) {
+    screenManager.activate( new FtSwarmScreenInfo( this, "Remote controller is offline." ) );
+    return;
+  }
 
   // get serial numbers
   FtSwarmSerialNumber_t localSN  = myOSSwarm.Ctrl[0]->serialNumber;
@@ -1562,41 +1724,32 @@ void FtSwarmScreenSwarm::configureSelected( uint8_t config ) {
   myOSSwarm.Ctrl[0]->loadFromNVS( );
 
 }
+*/
 
-bool FtSwarmScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
+bool FtSwarmScreenRemote::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
 
   if ( FtSwarmScreen::eventHandler( event, id, nParam, sParam ) ) return true;
 
   if ( event == FTSWARM_SCREENEVENT_DOWN ) {
 
     uint8_t i;
+    uint8_t callbackID[MAXCTRL];
+    char    *str[MAXCTRL];
+    uint8_t items = 0;
 
     switch ( id ) {
 
-      case FTSWARM_S1:  // ask for new device, call FTSWARMSCREENSWARM_CB_ADD afterwards
-                        screenManager.activate( new FtSwarmScreenInput( this, "SN to add", FTSWARMSCREENSWARM_CB_ADD, FTSWARM_NANI32, 4 ) );
-                        return true;
-
-      case FTSWARM_S2:  // ask to delete the selected device, call FTSWARMSCREENSWARM_CB_DEL afterwards
-                        if ( objects.getSelected() ) {
-                          i = objects.getSelected()->getID() - FTSWARMSCREENSWARM_CB_SEL;
-                          if ( ( i < MAXCTRL ) && ( myOSSwarm.Ctrl[i] ) ) screenManager.activate( new FtSwarmScreenYesNo( this, objects.getSelected()->getText(), "Revoke controller?", FTSWARMSCREENSWARM_CB_DEL, myOSSwarm.Ctrl[i]->serialNumber ) );
+      case FTSWARM_S1:  // Generate a list of controllers
+                        for ( uint8_t i=0; i<MAXCTRL; i++ ) {
+                          if ( ( myOSSwarm.Ctrl[i] ) && ( myOSSwarm.Ctrl[i]->isOnline() ) ) {
+                            callbackID[items] = FTSWARMSCREENREMOTE_CB_CHOOSECTRL + i;
+                            str[items]        = (char *) myOSSwarm.Ctrl[i]->getAliasOrName();
+                            items++;
+                          }
                         }
-                        return true;
 
-      case FTSWARM_S3:  screenManager.activate( new FtSwarmScreenSelectList( this, 
-                                                                             "Quick Config", 
-                                                                             "", 
-                                                                             FTSWARMSCREENSWARM_CB_CFG, 
-                                                                             FTSWARM_CFG_CAR,     "Car", 
-                                                                             FTSWARM_CFG_CAR,     "Catapillar", 
-                                                                             FTSWARM_CFG_CRANE1,  "Crane Type 1", 
-                                                                             FTSWARM_CFG_CRANE2,  "Crane Type 2", 
-                                                                             FTSWARM_CFG_TRAILER, "Trailer" ) );
-                        return true;
-
-      case FTSWARM_S4:  // ask for a new swarm pin, call FTSWARMSCREENSWARM_CB_PIN afterwards
-                        screenManager.activate( new FtSwarmScreenInput( this, "Swarm Pin", FTSWARMSCREENSWARM_CB_PIN, nvs.swarm.pin, 4 ) );
+                        screenManager.activate( new FtSwarmScreenSelectList( this, "Select Controller", nullptr, items, callbackID, str ) );
+      
                         return true;
 
     }
@@ -1610,113 +1763,26 @@ bool FtSwarmScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
 
     switch ( id )  {
 
-      case FTSWARMSCREENSWARM_CB_PIN: // user entered new pin
-                                      nvs.swarm.pin = nParam;
-                                      nvs.save();
-                                      return true;
+      case FTSWARMSCREENREMOTE_CB_CHOOSECFG:  // nParam = type
+                                              return true;
 
-      case FTSWARMSCREENSWARM_CB_ADD: // nParam is the sn to be added to the swarm
-                                      if (nParam) {
-
-                                        if ( myOSSwarm.addController( nParam ) ) {
-
-                                          nvs.save();
-                                          objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_SELECTABLE );
-                                          objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_TEXT );
-                                          addMembers();
-                                          draw();
-                                        
-                                        } else {
-
-                                          sprintf( error, "Could not add ftSwarm%d to swarm.", nParam);
-                                          screenManager.activate( new FtSwarmScreenError( this, error) );
-
-                                        }
-
-                                      }
-
-                                      return true;
-
-      case FTSWARMSCREENSWARM_CB_DEL: // delete selected controller, nParam is sn
-                                      if (nParam) { 
-
-                                        if ( myOSSwarm.deleteController( nParam ) ) {
-
-                                          nvs.save( );
-                                          objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_SELECTABLE ); 
-                                          objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_TEXT );
-                                          addMembers();
-                                          draw(); 
-
-                                        } else {
-
-                                          sprintf( error, "Couldn't revoke % from swarm.", objects.getSelected()->getText() );
-                                          screenManager.activate( new FtSwarmScreenError( this, error) );
-                                        }
-
-                                      }
-                                      return true;
-
-      case FTSWARMSCREENSWARM_CB_CFG: configureSelected( nParam );
-                                      return true;
-
-      default:                        if (id >= FTSWARMSCREENSWARM_CB_SEL) {
-                                        // SN is endorsed in id
-                                        i = id - FTSWARMSCREENSWARM_CB_SEL;
-                                        if ( ( i < MAXCTRL ) && ( myOSSwarm.Ctrl[i] ) ) screenManager.activate( new FtSwarmScreenSwarmDetail( this, objects.getSelected()->getText(), myOSSwarm.Ctrl[i]->serialNumber ) );
-                                      }
-                                      return true;
-
+      default:                                selectedCtrl = nParam - FTSWARMSCREENREMOTE_CB_CHOOSECTRL;
+                                              screenManager.activate( new FtSwarmScreenSelectList2( this, 
+                                                                                                    sParam, 
+                                                                                                    nullptr, 
+                                                                                                    FTSWARMSCREENREMOTE_CB_CHOOSECFG, 
+                                                                                                    FTSWARM_CFG_CAR,     "Car", 
+                                                                                                    FTSWARM_CFG_CAR,     "Catapillar", 
+                                                                                                    FTSWARM_CFG_CRANE1,  "Crane Type 1", 
+                                                                                                    FTSWARM_CFG_CRANE2,  "Crane Type 2", 
+                                                                                                    FTSWARM_CFG_TRAILER, "Trailer" ) );
+      
     }
 
   }
 
   return false;
 
-}
-
-/***************************************************
- *
- *   FtSwarmScreenSwarmDetail
- *
- ***************************************************/
-
-#define SWOSSCREENSWARMDETAIL_CB_DEL ( FTSWARMSCREEN_BASEID + 0 )
-
-FtSwarmScreenSwarmDetail::FtSwarmScreenSwarmDetail( FtSwarmScreen *parent, const char *title, FtSwarmSerialNumber_t device  ) : FtSwarmScreen( parent, title, nullptr ) {
-
-  this->device = device;
-
-  addS1( "configure" );
-  addS4( "Save" );
-
-  // need to activate navigation until more details are shown in the screen
-  addNavigation();
-
-}
-
-bool FtSwarmScreenSwarmDetail::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
-
-  if ( FtSwarmScreen::eventHandler( event, id, nParam, sParam ) ) return true;
-
-  if ( event == FTSWARM_SCREENEVENT_DOWN ) {
-
-    switch ( id ) {
-
-      case FTSWARM_S1:  // Quick Config
-                        // screenManager.activate( new FtSwarmScreenQuickCfg( this, device ) );
-                        return true;
-
-      case FTSWARM_S4:  // save
-                        close( );
-                        return true;
-
-    }
-  
-  }
-
-  return false;
-  
 }
 
 /***************************************************
@@ -1899,9 +1965,10 @@ bool FtSwarmScreenQuickCfg::eventHandler( FtSwarmScreenEvent_t event, uint8_t id
 #define FTSWARMSCREENSETUP_CONFIG    ( FTSWARMSCREEN_BASEID + 0 )
 #define FTSWARMSCREENSETUP_CONFIG_CB ( FTSWARMSCREEN_BASEID + 1 )
 #define FTSWARMSCREENSETUP_WIFI      ( FTSWARMSCREEN_BASEID + 2 )
-#define FTSWARMSCREENSETUP_REMOTE    ( FTSWARMSCREEN_BASEID + 3 )
-#define FTSWARMSCREENSETUP_RESET     ( FTSWARMSCREEN_BASEID + 4 )
-#define FTSWARMSCREENSETUP_RESET_CB  ( FTSWARMSCREEN_BASEID + 5 )
+#define FTSWARMSCREENSETUP_SWARM     ( FTSWARMSCREEN_BASEID + 4 )
+#define FTSWARMSCREENSETUP_REMOTE    ( FTSWARMSCREEN_BASEID + 5 )
+#define FTSWARMSCREENSETUP_RESET     ( FTSWARMSCREEN_BASEID + 6 )
+#define FTSWARMSCREENSETUP_RESET_CB  ( FTSWARMSCREEN_BASEID + 7 )
 
 class FtSwarmScreenSetup:public FtSwarmScreen {
 
@@ -1919,9 +1986,10 @@ class FtSwarmScreenSetup:public FtSwarmScreen {
   
   blockEvents = true;
 
-  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_CONFIG, this, "Configuration") );
-  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_WIFI,   this, "wifi") );
+  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_CONFIG, this, "Select Config") );
   add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_REMOTE, this, "Remote Control") );
+  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_WIFI,   this, "Wifi Settings") );
+  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_SWARM,  this, "Swarm Config") );
   add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_RESET,  this, "Factory Reset") );
   
 }
@@ -1934,7 +2002,7 @@ bool FtSwarmScreenSetup::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
 
     switch (id) {
 
-      case FTSWARMSCREENSETUP_CONFIG:     screenManager.activate( new FtSwarmScreenChooseOption( this, "Configuration", "Choose new configuration", FTSWARMSCREENSETUP_CONFIG_CB, 0, "#1", 1, "#2", 2, "#3", 3, "#4" ) );
+      case FTSWARMSCREENSETUP_CONFIG:     screenManager.activate( new FtSwarmScreenChooseOption( this, "Select Config", "Choose acive configuration", FTSWARMSCREENSETUP_CONFIG_CB, 0, "#1", 1, "#2", 2, "#3", 3, "#4" ) );
                                           break;
 
       case FTSWARMSCREENSETUP_CONFIG_CB:  nvs.events.activeConfig = nParam;
@@ -1946,7 +2014,10 @@ bool FtSwarmScreenSetup::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
       case FTSWARMSCREENSETUP_WIFI:       screenManager.activate( new FtSwarmScreenWifi( this ) );
                                           break;
 
-      case FTSWARMSCREENSETUP_REMOTE:     screenManager.activate( new FtSwarmScreenSwarm( this ) );
+      case FTSWARMSCREENSETUP_SWARM:      screenManager.activate( new FtSwarmScreenSwarm( this ) );
+                                          break;
+
+      case FTSWARMSCREENSETUP_REMOTE:     screenManager.activate( new FtSwarmScreenRemote( this ) );
                                           break;
 
       case FTSWARMSCREENSETUP_RESET:      screenManager.activate( new FtSwarmScreenYesNo( this, "Factory Reset", "Reset to factory settings and reboot?", FTSWARMSCREENSETUP_RESET_CB ) );

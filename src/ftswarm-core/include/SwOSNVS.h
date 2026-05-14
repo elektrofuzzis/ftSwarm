@@ -14,7 +14,6 @@
 #include <stdint.h>
 
 #define MAXNVSEVENTS    50
-#define MAXEVENTCONFIGS 4
 #define NVSVERSION      3
 
 static const char* NVSNAMESPACE = "ftSwarm";

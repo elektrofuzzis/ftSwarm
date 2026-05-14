@@ -469,6 +469,10 @@ typedef enum {
   FTSWARM_CFG_CRANE2
 } FtSwarmQuickConfig_t;
 
+#define MAXEVENTCONFIGS 4
+
+const char FTSWARMQUICKCONFIG[MAXEVENTCONFIGS][6][11] = {"Individual", "Car", "Catapillar", "Trailer", "Crane1", "Crane2" };
+
 // **** some internal types & classes, don't use them at all ****
 
 class SwOSQuaternion {
