@@ -44,9 +44,6 @@ uint8_t SwOSCtrl::setupLocalInputs( uint8_t maxIO ) {
 
   }
 
-
-  
-
   // LIDAR
   if ( extensionPort == FTSWARM_EXT_LIDAR ) {
     io[ maxIO++ ] = new SwOSLidarInput( "LIDAR", this, FTSWARM_HAL_FLAG_NONE );

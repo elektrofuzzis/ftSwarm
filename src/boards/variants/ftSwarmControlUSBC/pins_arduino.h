@@ -113,8 +113,8 @@ static const int8_t       INPUT_IOTYPE[]      = { FTSWARM_HAL_IO_DIGITAL, FTSWAR
 
 static const char         JOYSTICK_NAME[][5]   = { "JOY1", "JOY2"};
 static const char         JOYSTICK_BUTTON[][3] = { "J1", "J2" };
-static const char         JOYSTICK_LR[][7]     = { "JOY1LR", "JOY1FB" };
-static const char         JOYSTICK_FB[][7]     = { "JOY2LR", "JOY2FB" };
+static const char         JOYSTICK_LR[][7]     = { "JOY1LR", "JOY2LR" };
+static const char         JOYSTICK_FB[][7]     = { "JOY1FB", "JOY2FB" };
 
 // Motor
 static const gpio_num_t   M1A = GPIO_NUM_45;

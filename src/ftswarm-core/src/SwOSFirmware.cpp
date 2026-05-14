@@ -21,8 +21,8 @@
 #include "SwOSHW/SwOSHWLocal.h"
 
 void initCalibration( SwOSJoyCalibration_t *calibration ) {
-  calibration->minValue = 500;
-  calibration->maxValue = 3500;
+  calibration->minValue = 1000;
+  calibration->maxValue = 3000;
 }
 
 bool testCalibration( int32_t value, SwOSJoyCalibration_t *calibration, char visualizer[], uint8_t p1, uint8_t p2 ) {
@@ -91,8 +91,8 @@ bool calibrateJoysticks( SwOSJoyCalibration_t calibration[4] ) {
 
     if ( testCalibration( joy[0]->lr->getValueI32(), &newCalibration[0], visualizer, 0, 3 ) ||
          testCalibration( joy[0]->fb->getValueI32(), &newCalibration[1], visualizer, 1, 2 ) ||
-         testCalibration( joy[1]->lr->getValueI32(), &newCalibration[2], visualizer, 5, 8 ) ||
-         testCalibration( joy[1]->fb->getValueI32(), &newCalibration[3], visualizer, 6, 7 ) ) {
+         testCalibration( joy[1]->lr->getValueI32(), &newCalibration[2], visualizer, 8, 5 ) ||
+         testCalibration( joy[1]->fb->getValueI32(), &newCalibration[3], visualizer, 7, 6 ) ) {
       printf("\b\b\b\b\b\b\b\b\b%s", visualizer); flushStdIO();
     }
     

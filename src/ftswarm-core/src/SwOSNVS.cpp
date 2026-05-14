@@ -562,9 +562,9 @@ void SwOSNVS::printNVS() {
   printf( "extensionPort.interruptOnOff: %d %d\n", extensionPort.interruptOnOff[0], extensionPort.interruptOnOff[1] );
   printf( "swarm.secret: 0x%4X\n", swarm.secret );
   printf( "swarm.pin: %d\n", swarm.pin );
-  printf( "swarm.name: >%s<\n", swarm.name );
+  printf( "swarm.name: %s\n", swarm.name );
   printf( "swarm.IAmKelda: %d\n", swarm.IAmKelda );
-  printf( "calibration: %d %d %d %d\n", calibration[0], calibration[1], calibration[2], calibration[3] );
+  for (uint8_t i=0; i<4; i++ ) printf( "joystick calibration[%d]: %d %d %d\n", i, calibration[i].minValue, calibration[i].midValue, calibration[i].maxValue );
   printf( "swarm.communication %d\n", swarm.communication );
   printf( "swarm.speed %d\n", swarm.speed );
 
