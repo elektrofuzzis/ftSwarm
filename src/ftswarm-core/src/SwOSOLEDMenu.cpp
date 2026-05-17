@@ -78,6 +78,43 @@ void FtSwarmScreenLine::draw( bool selected ) {
 
 /***************************************************
  *
+ * FtSwarmScreenTriangle - draw a triangle
+ *
+ ***************************************************/
+
+FtSwarmScreenTriangle::FtSwarmScreenTriangle( uint8_t id, FtSwarmScreen *parent, FtSwarmOledScreen_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool filled ) : FtSwarmScreenObj( id, parent, screen, x0, y0 ) {
+
+  this->x1 = x1;
+  this->y1 = y1;
+  this->x2 = x2;
+  this->y2 = y2;
+  this->filled = false;
+
+}
+
+void FtSwarmScreenTriangle::draw( bool selected ) {
+
+  if ( visible ) oled.drawTriangle( screen, x, y, x1, y1, x2, y2, filled ? FTSWARM_OLED_FILLWHITE : FTSWARM_OLED_NOFILL );
+
+}
+
+int16_t FtSwarmScreenTriangle::getHeight( void ) {
+
+  int16_t yMin = y;
+  int16_t yMax = y;
+
+  if ( yMin < y1 ) yMin = y1;
+  if ( yMin < y2 ) yMin = y2;
+
+  if ( y1 > yMax ) yMax = y1;
+  if ( y2 > yMax ) yMax = y2;
+
+  return yMax - yMin;
+
+}
+
+/***************************************************
+ *
  * FtSwarmScreenText
  *
  ***************************************************/
@@ -500,6 +537,11 @@ FtSwarmScreenJoystickPoti::FtSwarmScreenJoystickPoti( uint8_t id, FtSwarmScreen 
 
 void FtSwarmScreenJoystickPoti::setValue( int32_t value ) {
 
+    #ifdef FTSWARMSCREEN_DEBUG
+    printf("FtSwarmScreenJoystickPoti %s.setValue(%d) ", getText(), value );
+    debug();
+  #endif
+
   // new event
   FtSwarmScreenEvent_t event = FTSWARM_SCREENEVENT_NONE;
 
@@ -681,7 +723,7 @@ void FtSwarmScreen::deactivate( void ) {
 }
 
 void FtSwarmScreen::close( FtSwarmScreenEvent_t event, uint8_t id, uint8_t nParam, const char *sParam ) { 
-  
+
   screenManager.activate( parent ); 
 
   if ( event != FTSWARM_SCREENEVENT_NONE ) screenManager.eventHandler( parent, event, id, nParam, sParam );
@@ -691,8 +733,6 @@ void FtSwarmScreen::close( FtSwarmScreenEvent_t event, uint8_t id, uint8_t nPara
 };
 
 bool FtSwarmScreen::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
-
-  // debugEvent( "FtSwarmScreen::eventHandler", "", event, id, nParam, sParam );
 
   // explizit no handling?
   if ( id == FTSWARMSCREEN_NOID) return true;
@@ -1787,188 +1827,19 @@ bool FtSwarmScreenRemote::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, 
 
 /***************************************************
  *
- *   FtSwarmScreenQuickCfg
- *
- ***************************************************/
-
-#define SWOSSCREENQUICKCFG_CAR     ( FTSWARMSCREEN_BASEID + 0 )
-#define SWOSSCREENQUICKCFG_CARTS   ( FTSWARMSCREEN_BASEID + 1 )
-#define SWOSSCREENQUICKCFG_CAT     ( FTSWARMSCREEN_BASEID + 2 )
-#define SWOSSCREENQUICKCFG_CATTS   ( FTSWARMSCREEN_BASEID + 3 )
-#define SWOSSCREENQUICKCFG_CRANE   ( FTSWARMSCREEN_BASEID + 4 )
-#define SWOSSCREENQUICKCFG_TRAILER ( FTSWARMSCREEN_BASEID + 5 )
-
-/* Standard configuration types
-
-  Type        Controller    Function    Key      Settings
-
-  Car         ftSwarmRC     drive       JOY1FB - Wheeldrive M4
-                            steer       JOY2LR - RCServo M1
-                            gear        S1/S2  - RCServo M2
-                            light       S3     - LED4/4 white, LED7/8 forward: red backward: white
-
-                            - option "Car + turn signal" -
-                            turn signal F1     - LED2/6 blink orange
-                                        F2     - LED5/9 blink orange
-
-                            - option "Car" -
-                            addon       F1/F2  - XSMotor M3
-
-              ftSwarmJST    drive       JOY1FB - XSMotor M1
-              ftSwarmRS     steer       JOY2LR - Servo Servo1 
-              ftSwarmXL     gear        S1/S2  - maxspeed M1
-                            light       S3     - LED4/5 white, LED8/9 forward: red backward: white
-
-                            -- option "Car + turn signal" -
-                            turn signal F1     - LED3/7 blink orange
-                                        F2     - LED6/10 blink orange
-
-                            -- option "Car" -
-                            addon       F1/F2  - XSMotor M2
-
-  Catapillar  ftSwarmJST    drive       JOY1FB - XSMotor M1+M2
-              ftSwarmRS     steer       JOY2LR - XSMotor M1+M2
-                            gear        S1/S2  - maxspeed M1+M2
-                            light       S3     - LED4/5 white, LED8/9 forward: red backward: white
-                            turn signal F1     - LED3/7 blink orange
-                                        F2     - LED6/10 blink orange
-
-              ftSwarmRC     drive       JOY1FB - XSMotor M1+M2
-              ftSwarmXL     steer       JOY2LR - XSMotor M1+M2
-                            gear        S1/S2  - maxspeed M1+M2
-                            light       S3     - LED4/5 white, LED8/9 forward: red backward: white
-
-                            -- option "Catapillar + turn signal" -
-                            turn signal F1     - LED3/7 blink orange
-                                        F2     - LED6/10 blink orange
-
-                            -- option "Catapillar" -
-                            addon       F1/F2  - XSMotor M3
-
-  Crane       ftSwarmJST    turn        JOY1LR - XSMotor M1
-              fTSwarmRS     up and down JOY2FB - XSMotor M2
-                            light       S3     - LED3 white
-
-              ftSwarmRC     turn        JOY1LR - XSMotor M1
-              ftSwarmXL     up and down JOY2FB - XSMotor M2
-                            boom        F1/F2  - XSMotor M3
-                            angle       S1/S2  - XSMotor M4
-                            light       S3     - LED3 white
-
-  Trailer                   addon       JOY1FB - XSMotor M1
-                            light       S3     - LED4/5 white, LED8/9 forward: red backward: white
-                            turn signal F1     - LED3/7 blink orange
-                                        F2     - LED6/10 blink orange
-
-*/
-
-/*
-
-FtSwarmScreenQuickCfg::FtSwarmScreenQuickCfg( FtSwarmScreen *parent, FtSwarmSerialNumber_t device ) : FtSwarmScreen( parent, "Quick Config", nullptr ) {
-
-  this->device = device;
-
-  add( new FtSwarmScreenSelectable( SWOSSCREENQUICKCFG_CAR,     this, "Car") );
-  add( new FtSwarmScreenSelectable( SWOSSCREENQUICKCFG_CARTS,   this, "Car + signal") );
-  add( new FtSwarmScreenSelectable( SWOSSCREENQUICKCFG_CAT,     this, "Catapillar") );
-  add( new FtSwarmScreenSelectable( SWOSSCREENQUICKCFG_CATTS,   this, "Catapillar + signal") );
-  add( new FtSwarmScreenSelectable( SWOSSCREENQUICKCFG_CRANE,   this, "Crane") );
-  add( new FtSwarmScreenSelectable( SWOSSCREENQUICKCFG_TRAILER, this, "Trailer") );
-
-}
-
-
-void FtSwarmScreenQuickCfg::loadCfg( FtSwarmSerialNumber_t ctrl, FtSwarmSerialNumber_t device, uint8_t configuration, EventCfg_t *cfg, uint8_t items ) {
-
-  for (uint8_t i=0; i<items; i++ ) {
-
-    SwOSNVSEvent event( SwOSIOUID( ctrl,   cfg[i].sensorIoType, cfg[i].sensorPort), 
-                        SwOSIOUID( device, cfg[i].actorIoType,  cfg[i].actorPort), 
-                        SwOSTriggerMath( cfg[i].event, cfg[i].op, cfg[i].v1, cfg[i].v2),
-                        cfg[i].parameter 
-                      );
-    nvs.addEvent( configuration, &event );
-
-  }
-
-}
-
-bool FtSwarmScreenQuickCfg::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam  ) {
-
-  if ( FtSwarmScreen::eventHandler( event, id, nParam, sParam ) ) return true;
-
-  // function selected?
-  if ( event == FTSWARM_SCREENEVENT_OK ) {
-
-    if (id == 1234 ) {
-
-      switch ( function ) {
-        case SWOSSCREENQUICKCFG_CAR:    // loadCfg( myOSSwarm.Ctrl[0]->serialNumber, myOSSwarm.getController())
-                                        return true;
-        case SWOSSCREENQUICKCFG_CAT:    return true;
-        case SWOSSCREENQUICKCFG_CRANE:  return true;
-      }
-
-      printf("hier gehts los %d %d.\n", id, function );
-      return true;
-
-    } else {
-      function = id;
-      screenManager.activate( new FtSwarmScreenChooseOption( this, 1234, "Configuration", "In which configuration should this function be applied?", 0, "#0", 1, "#1", 2, "#3", 3, "#4" ) );
-      return true;
-
-    }
-
-  }
-
-  return false;
-
-}
-
-*/
-
-
-/***************************************************
- *
- *   SwOSTestScreen
- *
- ***************************************************/
-
- class SwOSTestScreen:public FtSwarmScreen {
-  public:
-  SwOSTestScreen( FtSwarmScreen *parent );
- };
-
- SwOSTestScreen::SwOSTestScreen( FtSwarmScreen *parent ):FtSwarmScreen( parent, "Test Screen", "" ) {
-  
-  blockEvents = true;
-
-  addText( FTSWARM_OLED_MAINSCREEN, 64, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNCENTER, "Line #1" );
-  addText( FTSWARM_OLED_MAINSCREEN, 64, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNCENTER, "Line #2" );
-  addText( FTSWARM_OLED_MAINSCREEN, 64, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNCENTER, "Line #3" );
-  addText( FTSWARM_OLED_MAINSCREEN, 64, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNCENTER, "Line #4" );
-  addText( FTSWARM_OLED_MAINSCREEN, 64, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNCENTER, "Line #5" );
-  addText( FTSWARM_OLED_MAINSCREEN, 64, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNCENTER, "Line #6" );
-  addText( FTSWARM_OLED_MAINSCREEN, 64, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNCENTER, "Line #7" );
-  addText( FTSWARM_OLED_MAINSCREEN, 64, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNCENTER, "Line #8" );
-  addText( FTSWARM_OLED_MAINSCREEN, 64, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNCENTER, "Line #9" );
-  addText( FTSWARM_OLED_MAINSCREEN, 64, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNCENTER, "Line #10" );
-
-}
-
-/***************************************************
- *
  *   FtSwarmScreenSetup
  *
  ***************************************************/
 
-#define FTSWARMSCREENSETUP_CONFIG    ( FTSWARMSCREEN_BASEID + 0 )
-#define FTSWARMSCREENSETUP_CONFIG_CB ( FTSWARMSCREEN_BASEID + 1 )
-#define FTSWARMSCREENSETUP_WIFI      ( FTSWARMSCREEN_BASEID + 2 )
-#define FTSWARMSCREENSETUP_SWARM     ( FTSWARMSCREEN_BASEID + 4 )
-#define FTSWARMSCREENSETUP_REMOTE    ( FTSWARMSCREEN_BASEID + 5 )
-#define FTSWARMSCREENSETUP_RESET     ( FTSWARMSCREEN_BASEID + 6 )
-#define FTSWARMSCREENSETUP_RESET_CB  ( FTSWARMSCREEN_BASEID + 7 )
+#define FTSWARMSCREENSETUP_CONFIG      ( FTSWARMSCREEN_BASEID + 0 )
+#define FTSWARMSCREENSETUP_CONFIG_CB   ( FTSWARMSCREEN_BASEID + 1 )
+#define FTSWARMSCREENSETUP_WIFI        ( FTSWARMSCREEN_BASEID + 2 )
+#define FTSWARMSCREENSETUP_SWARM       ( FTSWARMSCREEN_BASEID + 4 )
+#define FTSWARMSCREENSETUP_REMOTE      ( FTSWARMSCREEN_BASEID + 5 )
+#define FTSWARMSCREENSETUP_RESET       ( FTSWARMSCREEN_BASEID + 6 )
+#define FTSWARMSCREENSETUP_RESET_CB    ( FTSWARMSCREEN_BASEID + 7 )
+#define FTSWARMSCREENSETUP_CALIBRATION ( FTSWARMSCREEN_BASEID + 8 )
+#define FTSWARMSCREENSETUP_SERVOOFFSET ( FTSWARMSCREEN_BASEID + 9 )
 
 class FtSwarmScreenSetup:public FtSwarmScreen {
 
@@ -1986,11 +1857,13 @@ class FtSwarmScreenSetup:public FtSwarmScreen {
   
   blockEvents = true;
 
-  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_CONFIG, this, "Select Config") );
-  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_REMOTE, this, "Remote Control") );
-  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_WIFI,   this, "Wifi Settings") );
-  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_SWARM,  this, "Swarm Config") );
-  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_RESET,  this, "Factory Reset") );
+  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_CONFIG,      this, "Select Config") );
+  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_CALIBRATION, this, "Calibration") );
+  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_SERVOOFFSET, this, "Servo Offset") );
+  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_REMOTE,      this, "Remote Control") );
+  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_WIFI,        this, "Wifi Settings") );
+  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_SWARM,       this, "Swarm Config") );
+  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_RESET,       this, "Factory Reset") );
   
 }
 
@@ -2002,35 +1875,271 @@ bool FtSwarmScreenSetup::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
 
     switch (id) {
 
-      case FTSWARMSCREENSETUP_CONFIG:     screenManager.activate( new FtSwarmScreenChooseOption( this, "Select Config", "Choose acive configuration", FTSWARMSCREENSETUP_CONFIG_CB, 0, "#1", 1, "#2", 2, "#3", 3, "#4" ) );
-                                          break;
+      case FTSWARMSCREENSETUP_CONFIG:       screenManager.activate( new FtSwarmScreenChooseOption( this, "Select Config", "Choose acive configuration", FTSWARMSCREENSETUP_CONFIG_CB, 0, "#1", 1, "#2", 2, "#3", 3, "#4" ) );
+                                            break;
 
-      case FTSWARMSCREENSETUP_CONFIG_CB:  nvs.events.activeConfig = nParam;
-                                          nvs.save();
-                                          myOSSwarm.deleteEvents();
-                                          myOSSwarm.addEvents( nParam );
-                                          break;
+      case FTSWARMSCREENSETUP_CONFIG_CB:    nvs.events.activeConfig = nParam;
+                                            nvs.save();
+                                            myOSSwarm.deleteEvents();
+                                            myOSSwarm.addEvents( nParam );
+                                            break;
 
-      case FTSWARMSCREENSETUP_WIFI:       screenManager.activate( new FtSwarmScreenWifi( this ) );
-                                          break;
+      case FTSWARMSCREENSETUP_CALIBRATION:  screenManager.activate( new FtSwarmScreenCalibrateList( this ) );
+                                            break;
 
-      case FTSWARMSCREENSETUP_SWARM:      screenManager.activate( new FtSwarmScreenSwarm( this ) );
-                                          break;
+      case FTSWARMSCREENSETUP_SERVOOFFSET:  screenManager.activate( new FtSwarmScreenServoOffsetList( this ) );
+                                            break;
 
-      case FTSWARMSCREENSETUP_REMOTE:     screenManager.activate( new FtSwarmScreenRemote( this ) );
-                                          break;
+      case FTSWARMSCREENSETUP_WIFI:         screenManager.activate( new FtSwarmScreenWifi( this ) );
+                                            break;
 
-      case FTSWARMSCREENSETUP_RESET:      screenManager.activate( new FtSwarmScreenYesNo( this, "Factory Reset", "Reset to factory settings and reboot?", FTSWARMSCREENSETUP_RESET_CB ) );
-                                          break;
+      case FTSWARMSCREENSETUP_SWARM:        screenManager.activate( new FtSwarmScreenSwarm( this ) );
+                                            break;
 
-      case FTSWARMSCREENSETUP_RESET_CB:   if (nParam) myOSSwarm.factoryReset();
-                                          break;
+      case FTSWARMSCREENSETUP_REMOTE:       screenManager.activate( new FtSwarmScreenRemote( this ) );
+                                            break;
+
+      case FTSWARMSCREENSETUP_RESET:        screenManager.activate( new FtSwarmScreenYesNo( this, "Factory Reset", "Reset to factory settings and reboot?", FTSWARMSCREENSETUP_RESET_CB ) );
+                                            break;
+
+      case FTSWARMSCREENSETUP_RESET_CB:     if (nParam) myOSSwarm.factoryReset();
+                                            break;
 
     }
 
     return true;
 
   }
+
+  return false;
+
+}
+
+/***************************************************
+ *
+ *   FtSwarmScreenSelectIO
+ *
+ ***************************************************/
+
+#define FTSWARMSCREENSELECTIO_CB ( FTSWARMSCREEN_BASEID + 0 )
+
+FtSwarmScreenSelectIO::FtSwarmScreenSelectIO( FtSwarmScreen *parent, const char *title, const char *text ) : FtSwarmScreen( parent, title, text ) {
+
+}
+
+void FtSwarmScreenSelectIO::addIO( SwOSIOType_t ioType, bool localOnly ) {
+
+  // check all Controllers for ios with ioType
+  for ( uint8_t ctrl=0; ctrl < (localOnly?1:MAXCTRL); ctrl++ ) {
+
+    if (myOSSwarm.Ctrl[ctrl]) {
+
+      // check all ports
+      for ( int8_t i=0; i<myOSSwarm.Ctrl[ctrl]->IOs; i++ ) {
+
+        if ( ( myOSSwarm.Ctrl[ctrl]->io[i] ) && ( myOSSwarm.Ctrl[ctrl]->io[i]->getIOType() == ioType ) ) {
+          io[++maxIO] = myOSSwarm.Ctrl[ctrl]->io[i];
+          char text[MAXIDENTIFIER*2+2];
+          myOSSwarm.Ctrl[ctrl]->io[i]->getUniqueName( text );
+          add( new FtSwarmScreenSelectable( FTSWARMSCREENSELECTIO_CB + maxIO, this, FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2,  getNextY( FTSWARM_OLED_MAINSCREEN ), oled.getScreenWidth(), FTSWARM_ALIGNCENTER, text ) );
+        }
+
+        // end of space in array?
+        if ( maxIO>=19 ) return;
+
+      }
+
+    }
+
+  }
+
+}
+
+/***************************************************
+ *
+ *   FtSwarmScreenCalibrateList
+ *
+ ***************************************************/
+
+FtSwarmScreenCalibrateList::FtSwarmScreenCalibrateList( FtSwarmScreen *parent ) : FtSwarmScreenSelectIO( parent, "Calibrate" ) {
+
+  addIO( SWOSIO_JOYSTICK, true );
+  addIO( SWOSIO_RCSERVO, false );
+
+}
+
+bool FtSwarmScreenCalibrateList::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
+
+  if ( FtSwarmScreenSelectIO::eventHandler( event, id, nParam, sParam ) ) return true;
+
+  if ( ( event == FTSWARM_SCREENEVENT_OK ) && ( id >= FTSWARMSCREENSELECTIO_CB ) ) {
+
+    switch ( io[ id - FTSWARMSCREENSELECTIO_CB ]->getIOType() ) {
+
+      case SWOSIO_JOYSTICK: screenManager.activate( new FtSwarmScreenCalibrateJoystick( parent, (SwOSJoystick*) io[ id - FTSWARMSCREENSELECTIO_CB ] ) );
+                            return true;
+
+    }
+
+  }
+
+  return false;
+
+}
+
+/***************************************************
+ *
+ *   FtSwarmScreenCalibrateJoystick
+ *
+ ***************************************************/
+
+FtSwarmScreenCalibrateJoystick::FtSwarmScreenCalibrateJoystick( FtSwarmScreen *parent, SwOSJoystick *joystick ) : FtSwarmScreen( parent, joystick->getAliasOrName() ) {
+
+  if (!joystick) SWARM_LOG_FATAL( "Parameter joystick is NULL.");
+  this->joystick = joystick;
+
+  // revoke joystick filters
+  joystick->deleteFilters();
+
+  // start with a new set of calibration values
+  calibration[0] = { 1000, 2000, 3000 };
+  calibration[1] = { 1000, 2000, 3000 };
+
+  // calculate oled joystick visualize position
+  int16_t size   = 8;
+  int16_t midX   = ( joystick->getPort() ? oled.getScreenWidth() - 3 * size : 2 * size + 2 );
+  int16_t midY   = 2 * size + 2;
+  int16_t space  = 2;
+
+  // print joystick on oled
+  uint8_t port = joystick->getPort();
+  triangle[2+port] = (FtSwarmScreenTriangle *) add( new FtSwarmScreenTriangle( 0, this, FTSWARM_OLED_MAINSCREEN, midX - 2*size-space, midY,                midX-size-space, midY-size,       midX-size-space, midY+size,       false ) );
+  triangle[3-port] = (FtSwarmScreenTriangle *) add( new FtSwarmScreenTriangle( 1, this, FTSWARM_OLED_MAINSCREEN, midX + 2*size+space, midY,                midX+size+space, midY-size,       midX+size+space, midY+size,       false ) );
+  triangle[0+port] = (FtSwarmScreenTriangle *) add( new FtSwarmScreenTriangle( 2, this, FTSWARM_OLED_MAINSCREEN, midX,                midY - 2*size-space, midX-size,       midY-size-space, midX+size,       midY-size-space, false ) );
+  triangle[1-port] = (FtSwarmScreenTriangle *) add( new FtSwarmScreenTriangle( 3, this, FTSWARM_OLED_MAINSCREEN, midX,                midY + 2*size+space, midX-size,       midY+size+space, midX+size,       midY+size+space, false ) );
+  
+  // add text on oled
+  int16_t textOffset = ( joystick->getPort() ? 0 : 4*size + 10 );
+  text[0] = addText( FTSWARM_OLED_MAINSCREEN, textOffset, 10, FTSWARM_ALIGNLEFT, "Rotate to fill" );
+  text[1] = addText( FTSWARM_OLED_MAINSCREEN, textOffset, 20, FTSWARM_ALIGNLEFT, "all triangles" );
+
+}
+
+
+bool FtSwarmScreenCalibrateJoystick::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
+
+  // don't call the parent class' event handler since we need to work on ESC
+
+  if ( event == FTSWARM_SCREENEVENT_DOWN ) {
+
+    uint8_t i = 2*joystick->getPort();
+
+    if ( id == FTSWARM_S4 ) {
+      // save new settings
+      memcpy( &nvs.calibration[i], calibration, 2 * sizeof( SwOSJoyCalibration_t ) );
+      nvs.save();
+    }
+
+    // restore filters
+    joystick->addFilters();
+
+    close();
+    
+  }
+
+  return true;
+
+}
+
+void FtSwarmScreenCalibrateJoystick::operate( void ) {
+
+  int32_t value[2];
+  value[0] = joystick->fb->getValueI32();
+  value[1] = joystick->lr->getValueI32();
+
+  // status stores the calibration progress
+  // 0x00..0x0F - step 1 test all directions
+  // 0x0F..0x3F - step 2 wait for released joystick
+  // 0x4F                wait for user
+
+  if ( status < 0x0F ) {
+
+    // first step, get min/max poti values
+
+    for (uint8_t i=0; i<=1; i++) {
+
+      if ( value[i] < calibration[i].minValue ) {
+        calibration[i].minValue = value[i];
+        triangle[2*i]->setFilled( true );
+        status = status | ( 1 << i );
+      }
+
+      if ( value[i] > calibration[i].maxValue ) {
+        calibration[i].maxValue = value[i];
+        triangle[2*i+1]->setFilled( true );
+        status = status | ( 4 << i );
+      }
+    
+    }
+
+    // switch to 2nd step?
+    if ( status >= 0x0F ) {
+      text[0]->setText("Release to");
+      text[1]->setText("get mid pos");
+      this->draw();
+    }
+
+  } else if ( status < 0x40 ) {
+    // 2nd step: stable value for 3 times?
+
+    value[0] = value[0] >> 1;
+    value[1] = value[1] >> 1;
+    
+    if ( ( lastValue[0] == value[0] ) && ( lastValue[1] == value[1] ) ) {
+      status += 0x10;
+    
+    } else { 
+
+      lastValue[0] = value[0]; 
+      lastValue[1] = value[1];
+      status = 0x0F;
+
+    }
+
+    if ( status > 0x3F ) {
+
+      calibration[0].midValue = value[0]<<1;
+      calibration[1].midValue = value[1]<<1;
+
+      text[0]->setText( "Save new" );
+      text[1]->setText( "calibration?" );
+
+      addS4( "save" )->activate();
+
+      this->draw();
+
+    }
+
+  }
+
+}
+
+/***************************************************
+ *
+ *   FtSwarmScreenServoOffsetList
+ *
+ ***************************************************/
+
+FtSwarmScreenServoOffsetList::FtSwarmScreenServoOffsetList( FtSwarmScreen *parent ) : FtSwarmScreenSelectIO( parent, "Servo Offset" ) {
+
+  addIO( SWOSIO_SERVO, false );
+  addIO( SWOSIO_RCSERVO, false );
+
+}
+
+bool FtSwarmScreenServoOffsetList::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
+
+  if ( FtSwarmScreenSelectIO::eventHandler( event, id, nParam, sParam ) ) return true;
 
   return false;
 

@@ -98,4 +98,11 @@
   
     // commands
     virtual void getValue( int16_t* FB, int16_t* LR ) { *FB = fb->getValueI32(); *LR = lr->getValueI32(); };
+
+    // start calibration
+    virtual void deleteFilters( void );
+
+    // start calibration
+    virtual void addFilters( void );
+
   };

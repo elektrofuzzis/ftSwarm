@@ -338,7 +338,7 @@ void SwOSIO::getUID( SwOSIOUID *uid ) {
 
 }
 
-void SwOSIO::getUniqeName( char *name ) {
+void SwOSIO::getUniqueName( char *name ) {
 
   if (_alias) strcpy( name, _alias );
   else sprintf( name, "%s.%s", ctrl->getAliasOrName(), _name );

@@ -12,8 +12,11 @@
 #include "SwOS.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWBaseIO.h"
+#include "SwOSHW/SwOSHWAnalog.h"
 
-//#define FTSWARM_HAL_OLEDS 1
+class SwOSJoystick;
+
+#define FTSWARM_HAL_OLEDS 1
 
 #if FTSWARM_HAL_OLEDS > 0
 
@@ -36,7 +39,7 @@ typedef enum { FTSWARM_SCREENEVENT_NONE = -1, FTSWARM_SCREENEVENT_DOWN, FTSWARM_
 
 class FtSwarmScreen;
 
-typedef enum { FTSWARMSCREEN_OBJ, FTSWARMSCREEN_LINE, FTSWARMSCREEN_TEXT, FTSWARMSCREEN_IO, FTSWARMSCREEN_SELECTABLE, FTSWARMSCREEN_BUTTON } FtSwarmScreenObj_t;
+typedef enum { FTSWARMSCREEN_OBJ, FTSWARMSCREEN_LINE, FTSWARMSCREEN_TRIANGLE, FTSWARMSCREEN_TEXT, FTSWARMSCREEN_IO, FTSWARMSCREEN_SELECTABLE, FTSWARMSCREEN_BUTTON } FtSwarmScreenObj_t;
 
 class FtSwarmScreenObj {
 
@@ -122,6 +125,36 @@ class FtSwarmScreenLine : public FtSwarmScreenObj {
 
     // get my height
     virtual int16_t getHeight( void ) { return y1 - y; };
+
+};
+
+/***************************************************
+ *
+ * FtSwarmScreenTriangle - draw a triangle
+ *
+ ***************************************************/
+
+class FtSwarmScreenTriangle : public FtSwarmScreenObj {
+
+  protected:
+    bool    filled;
+    int16_t x1, y1, x2, y2;
+
+  public:
+
+    FtSwarmScreenTriangle( uint8_t id, FtSwarmScreen *parent, FtSwarmOledScreen_t screen, int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool filled );
+
+    // return my type
+    virtual FtSwarmScreenObj_t getType( void ) { return FTSWARMSCREEN_TRIANGLE; };
+
+    // draw myself
+    virtual void draw( bool selected = false );  
+
+    // get my height
+    virtual int16_t getHeight( void );
+
+    // change filled
+    virtual void setFilled( bool filled ) { this->filled = filled; draw(); };
 
 };
 
@@ -704,6 +737,94 @@ class FtSwarmScreenRemote : public FtSwarmScreen {
 
     // Constructor
     FtSwarmScreenRemote( FtSwarmScreen *parent  );
+
+    // eval external events like pressing buttons
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );
+
+};
+
+/***************************************************
+ *
+ *   FtSwarmScreenSelectIO
+ *
+ ***************************************************/
+
+class FtSwarmScreenSelectIO : public FtSwarmScreen {
+
+  protected:
+
+    SwOSIO *io[20];
+    int8_t maxIO = -1;
+
+    void addIO( SwOSIOType_t ioType, bool localOnly );
+
+  public:
+
+    // Constructor
+    FtSwarmScreenSelectIO( FtSwarmScreen *parent, const char *title, const char *text = nullptr );
+
+};
+
+/***************************************************
+ *
+ *   FtSwarmScreenCalibrateJoystick
+ *
+ ***************************************************/
+
+class FtSwarmScreenCalibrateJoystick : public FtSwarmScreen {
+
+  protected:
+
+    uint8_t status = 0;
+    int32_t lastValue[2] = {FILTER_INVALID, FILTER_INVALID};
+    SwOSJoystick *joystick;
+    SwOSJoyCalibration_t calibration[2];
+    FtSwarmScreenTriangle *triangle[4];
+    FtSwarmScreenText *text[2];
+
+  public:
+
+    // Constructor
+    FtSwarmScreenCalibrateJoystick( FtSwarmScreen *parent, SwOSJoystick *joystick );
+
+    // eval external events like pressing buttons
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );
+
+    // called all 25ms, so be minimalistic
+    virtual void operate( void );
+    
+};
+
+/***************************************************
+ *
+ *   FtSwarmScreenCalibrateList
+ *
+ ***************************************************/
+
+class FtSwarmScreenCalibrateList : public FtSwarmScreenSelectIO {
+
+  public:
+
+    // Constructor
+    FtSwarmScreenCalibrateList( FtSwarmScreen *parent );
+
+    // eval external events like pressing buttons
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );
+
+};
+
+/***************************************************
+ *
+ *   FtSwarmScreenServoOffsetList
+ *
+ ***************************************************/
+
+class FtSwarmScreenServoOffsetList : public FtSwarmScreenSelectIO {
+
+  public:
+
+    // Constructor
+    FtSwarmScreenServoOffsetList( FtSwarmScreen *parent );
 
     // eval external events like pressing buttons
     virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );
