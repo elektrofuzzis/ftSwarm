@@ -73,7 +73,7 @@ void SwOSNVS::initialSetup( void ) {
   }
 
   if ( yesNo("Save configuration (Y/N)?>") ) {
-    save( true );
+    save( FTSWARM_NVSSCOPE_INITAL );
     printf( "saving");
     for (uint8_t i=0; i<3; i++ ) {
       putchar('.');
@@ -156,6 +156,10 @@ bool SwOSNVS::load() {
   dummy = sizeof( calibration );
   nvs_get_blob( my_handle, "calibration", &calibration, &dummy );
 
+  // servoOffsets
+  dummy = sizeof( servoOffset );
+  nvs_get_blob( my_handle, "servoOffset", &servoOffset, &dummy );
+
   // RGBLeds
   nvs_get_u8( my_handle, "RGBLeds", &pixels );
   
@@ -207,71 +211,81 @@ void SwOSNVS::deleteAllControllers(  void ) {
 
 }
 
-void SwOSNVS::save( bool writeAll ) {
+void SwOSNVS::save( FtSwarmNVSScope_t scope ) {
 
   // Open
   nvs_handle_t my_handle;
   if ( nvs_open(NVSNAMESPACE, NVS_READWRITE, &my_handle) != ESP_OK ) { SWARM_LOG_ERROR("NVS save: Can't open NVS."); return; };
 
   // Write
-  if (writeAll) {
+  if ( scope | FTSWARM_NVSSCOPE_CORE ) {
     nvs_set_i32( my_handle, "NVSVersion", NVSVERSION ) ;
     nvs_set_u16( my_handle, "serialNumber", (FtSwarmSerialNumber_t) serialNumber ) ;
     nvs_set_u32( my_handle, "CPU", (uint32_t) CPU ) ;
   }
 
   // factoryReset
-  nvs_set_u8( my_handle, "factoryReset", factoryReset );
+  if ( scope | FTSWARM_NVSSCOPE_FACTORYRESET ) nvs_set_u8( my_handle, "factoryReset", factoryReset );
   
   // ftSwarmControl: set joystick calibration
-  nvs_set_blob( my_handle, "calibration",  (void *)&calibration, sizeof( calibration ) );
+  if ( scope | FTSWARM_NVSSCOPE_JOYSTICK ) nvs_set_blob( my_handle, "calibration",  (void *)&calibration, sizeof( calibration ) );
+
+  // servo offset
+  if ( scope | FTSWARM_NVSSCOPE_SERVO ) nvs_set_blob( my_handle, "servoOffset",  (void *)&servoOffset, sizeof( servoOffset ) );
 
   // RGBLeds
-  nvs_set_u8( my_handle, "RGBLeds", pixels );
+  if ( scope | FTSWARM_NVSSCOPE_PIXEL ) nvs_set_u8( my_handle, "RGBLeds", pixels );
 
   // wifi
-  nvs_set_u32( my_handle, "wifiMode", wifi.mode );
-  nvs_set_u8 ( my_handle, "Channel",  (uint8_t) wifi.channel );
-  nvs_set_str( my_handle, "wifiSSID",           wifi.SSID);
-  nvs_set_str( my_handle, "wifiPwd",            wifi.Password);
+  if ( scope | FTSWARM_NVSSCOPE_WIFI ) {
+    nvs_set_u32( my_handle, "wifiMode", wifi.mode );
+    nvs_set_u8 ( my_handle, "Channel",  (uint8_t) wifi.channel );
+    nvs_set_str( my_handle, "wifiSSID",           wifi.SSID);
+    nvs_set_str( my_handle, "wifiPwd",            wifi.Password);
+  }
 
   // swarm
-  nvs_set_u16( my_handle, "swarmSecret", swarm.secret );
-  nvs_set_u16( my_handle, "swarmPIN",    swarm.pin );
-  nvs_set_str( my_handle, "swarmName",   swarm.name );
+  if ( scope | FTSWARM_NVSSCOPE_SWARM ) {
+    nvs_set_u16( my_handle, "swarmSecret", swarm.secret );
+    nvs_set_u16( my_handle, "swarmPIN",    swarm.pin );
+    nvs_set_str( my_handle, "swarmName",   swarm.name );
   
-  // Kelda & swarm.members
-  nvs_set_u8  ( my_handle, "IAmKelda",     (uint8_t) swarm.IAmKelda );
-  nvs_set_u8  ( my_handle, "swarmCom",     swarm.communication.raw );
-  nvs_set_blob( my_handle, "swarmMember",  (void *)swarm.member, sizeof( swarm.member ) );
-  nvs_set_u8  ( my_handle, "swarmSpeed",   swarm.speed );
+    // Kelda & swarm.members
+    nvs_set_u8  ( my_handle, "IAmKelda",     (uint8_t) swarm.IAmKelda );
+    nvs_set_u8  ( my_handle, "swarmCom",     swarm.communication.raw );
+    nvs_set_blob( my_handle, "swarmMember",  (void *)swarm.member, sizeof( swarm.member ) );
+    nvs_set_u8  ( my_handle, "swarmSpeed",   swarm.speed );
+
+  }
 
   // webUI
-  nvs_set_u8 ( my_handle,  "webUI",   (uint8_t) wifi.webUI );
+  if ( scope | FTSWARM_NVSSCOPE_WEBUI ) nvs_set_u8 ( my_handle,  "webUI",   (uint8_t) wifi.webUI );
 
   // extensionPort
-  nvs_set_u8 ( my_handle, "I2CAddr",       extensionPort.I2CAddr );
-  nvs_set_u8 ( my_handle, "interruptLine", extensionPort.interruptLine );
-  nvs_set_i16( my_handle, "interruptLow",  extensionPort.interruptOnOff[0] );
-  nvs_set_i16( my_handle, "interruptHigh", extensionPort.interruptOnOff[1] );
-  nvs_set_u8 ( my_handle, "I2CRegisters",  extensionPort.I2CRegisters );
-  nvs_set_u32( my_handle, "extensionPort", (uint32_t) extensionPort.mode);
-  nvs_set_u8 ( my_handle, "Gyro",          (uint8_t)  extensionPort.gyro);
-  nvs_set_u8 ( my_handle, "spiGyro",       (uint8_t)  spiGyro);
+  if ( scope | FTSWARM_NVSSCOPE_EXTPORT ) {
+    nvs_set_u8 ( my_handle, "I2CAddr",       extensionPort.I2CAddr );
+    nvs_set_u8 ( my_handle, "interruptLine", extensionPort.interruptLine );
+    nvs_set_i16( my_handle, "interruptLow",  extensionPort.interruptOnOff[0] );
+    nvs_set_i16( my_handle, "interruptHigh", extensionPort.interruptOnOff[1] );
+    nvs_set_u8 ( my_handle, "I2CRegisters",  extensionPort.I2CRegisters );
+    nvs_set_u32( my_handle, "extensionPort", (uint32_t) extensionPort.mode);
+    nvs_set_u8 ( my_handle, "Gyro",          (uint8_t)  extensionPort.gyro);
+    nvs_set_u8 ( my_handle, "spiGyro",       (uint8_t)  spiGyro);
+  }
 
   // commit
   nvs_commit( my_handle );
 
   nvs_close( my_handle );
 
-  saveEvents();
+  if ( scope | FTSWARM_NVSSCOPE_EVENTS ) saveEvents();
 
 }
 
-void SwOSNVS::saveAndRestart( void ) {
+void SwOSNVS::saveAndRestart( FtSwarmNVSScope_t scope ) {
 
   // save settings
-  save();
+  save( scope );
 
   // Arduino + S3-Bug
   esp_task_wdt_delete(NULL);
@@ -423,11 +437,15 @@ void SwOSNVS::reset( bool factoryReset ) {
   swarm.communication.wifi = 1;
   swarm.speed              = 4;
 
+  // joystick calibration
   for ( uint8_t j=0; j<4; j++ ) {
     calibration[j].minValue = 200;
     calibration[j].midValue = 1900;
     calibration[j].maxValue = 3700;
   }
+
+  // servo offsets
+  bzero( servoOffset, sizeof( servoOffset ) );
 
   pixels = FTSWARM_HAL_PIXELS;
 
@@ -564,13 +582,15 @@ void SwOSNVS::printNVS() {
   printf( "swarm.pin: %d\n", swarm.pin );
   printf( "swarm.name: %s\n", swarm.name );
   printf( "swarm.IAmKelda: %d\n", swarm.IAmKelda );
-  for (uint8_t i=0; i<4; i++ ) printf( "joystick calibration[%d]: %d %d %d\n", i, calibration[i].minValue, calibration[i].midValue, calibration[i].maxValue );
   printf( "swarm.communication %d\n", swarm.communication );
   printf( "swarm.speed %d\n", swarm.speed );
 
   printf( "swarm members:");
   for (uint8_t i=0; i<MAXCTRL; i++) { if (swarm.member[i]) printf(" %d", swarm.member[i]); }
   printf( "\n");
+
+  for (uint8_t i=0; i<4; i++ ) printf( "joystick calibration[%d]: %d %d %d\n", i, calibration[i].minValue, calibration[i].midValue, calibration[i].maxValue );
+  for (uint8_t i=0; i<4; i++ ) printf( "servo offset [%d]: %d\n", i, servoOffset[i] );
 
   printf( "events:\n" );
   printf( "events.activeConfig %d\n", events.activeConfig);
@@ -615,7 +635,7 @@ bool SwOSNVS::upgrade( void ) {
     nvs_close( my_handle );
     
     // save again
-    save( true );
+    save( FTSWARM_NVSSCOPE_INITAL );
     return true;   
   }
 

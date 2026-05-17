@@ -535,7 +535,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
     // reset flag, don't load IO settings and save
     nvs.factoryReset = false;
     myOSSwarm.Ctrl[0]->saveToNVS( );
-    nvs.save();
+    nvs.save( FTSWARM_NVSSCOPE_FACTORYRESET );
 
   } else {
 
@@ -633,7 +633,7 @@ void SwOSSwarm::factoryReset( void ) {
   nvs.reset( true );
 
   // restart
-  nvs.saveAndRestart();
+  nvs.saveAndRestart( FTSWARM_NVSSCOPE_FACTORYRESET );
 
 }
 

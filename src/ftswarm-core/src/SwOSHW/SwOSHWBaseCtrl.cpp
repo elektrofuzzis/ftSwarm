@@ -1470,7 +1470,7 @@ void SwOSCtrl::save( uint8_t scope ){
 
   if (local) {
 
-    if ( ( scope == 0) || ( scope == 1 ) ) nvs.save();
+    if ( ( scope == 0) || ( scope == 1 ) ) nvs.save( FTSWARM_NVSSCOPE_ALL );
     if ( ( scope == 0) || ( scope == 2 ) ) saveToNVS();
     if ( ( scope == 0) || ( scope == 3 ) ) nvs.saveEvents();
 

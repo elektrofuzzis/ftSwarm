@@ -11,7 +11,6 @@
 
 #include "SwOSFirmware.h"
 #include "SwOS.h"
-#include "SwOSCalibration.h"
 #include "SwOSSwarm.h"
 #include "SwOSNVS.h"
 #include "easyKey.h"
@@ -85,7 +84,6 @@ class MenuLocalSettings : private Menu {
   static const int8_t MENU_I2CHIGH    = -12;
   static const int8_t MENU_I2CREGS    = -13;
   static const int8_t MENU_GYRO       = -14;
-  static const int8_t MENU_CALIBRATE  = -15;
 
   bool anythingChanged = false;
   bool setPassword( void );
@@ -141,6 +139,7 @@ bool MenuLocalSettings::setPassword( void ) {
 void MenuLocalSettings::run( void ) {
 
   char info[250];
+  uint32_t scope = FTSWARM_NVSSCOPE_NONE;
   
   // get IP
   esp_netif_ip_info_t ip_info;
@@ -197,10 +196,6 @@ void MenuLocalSettings::run( void ) {
       add("Gyro", ONOFF[nvs.extensionPort.gyro], MENU_GYRO, 'g' ); 
     }
 
-    if ( FTSWARM_HAL_JOYSTICKS ) {
-      add("Calibrate Joysticks", "", MENU_CALIBRATE, 'j', false );
-    }
-
     addExit();
 
     if ( ( nvs.wifi.mode == wifiOFF ) && ( nvs.swarm.communication.wifi ) ) printf("\nHINT: Check wifi settings vs. swarm communication settings\n");
@@ -211,63 +206,69 @@ void MenuLocalSettings::run( void ) {
 
       case MENU_EXIT:       if ( ( anythingChanged) && ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) ) {
                               // save config
-                              nvs.saveAndRestart();
+                              nvs.saveAndRestart( (FtSwarmNVSScope_t) scope );
                             } else {
                               return;
                             }
         
       case MENU_WIFI:       wifiMode( );
+                            scope = scope | FTSWARM_NVSSCOPE_WIFI;
                             break;
         
       case MENU_SSID:       anythingChanged = true;
                             sprintf( line, "Please enter new SSID [%s]: ", nvs.wifi.SSID );
                             enterString( line, nvs.wifi.SSID, nvs.wifi.SSID, 64);
+                            scope = scope | FTSWARM_NVSSCOPE_WIFI;
                             break;
         
       case MENU_PASSWORD:   if ( setPassword() ) anythingChanged = true;
+                            scope = scope | FTSWARM_NVSSCOPE_WIFI;
                             break;
 
       case MENU_CHANNEL:    anythingChanged = true;
                             nvs.wifi.channel = enterNumber( "enter channel [1..13] - use 1,6 or 11 if possible: ", nvs.wifi.channel, 1, 13 );
+                            scope = scope | FTSWARM_NVSSCOPE_WIFI;
                             break;
 
       case MENU_WEBUI:      anythingChanged = true;
                             nvs.wifi.webUI = !nvs.wifi.webUI;
+                            scope = scope | FTSWARM_NVSSCOPE_WEBUI;
                             break;
         
       case MENU_PIXELS:     anythingChanged = true;
                             nvs.pixels = enterNumber( "enter number of ftPixel in WebUI [2..18]: ", nvs.pixels, 2, MAXLEDS );
-                            break;
-
-      case MENU_CALIBRATE:  if  ( yesNo( "\nStart calibration (Y/N)?" ) ) {
-                              anythingChanged = true;
-                              calibrateJoysticks( false, nvs.calibration );
-                            }
+                            scope = scope | FTSWARM_NVSSCOPE_PIXEL;
                             break;
 
       case MENU_GYRO:       anythingChanged = true;
                             nvs.extensionPort.gyro = (FtSwarmGyroMode_t) enterNumber( "(0) off (1) on: ", nvs.extensionPort.gyro, 0, 1 );
                             if ( ( nvs.extensionPort.gyro ) && ( nvs.CPU != FTSWARMRS_2V1 ) ) nvs.extensionPort.mode = FTSWARM_EXT_I2C_MASTER;
+                            scope = scope | FTSWARM_NVSSCOPE_EXTPORT;
                             break;
 
       case MENU_I2CADDR:    anythingChanged = true;
                             nvs.extensionPort.I2CAddr = (uint8_t) enterNumber( "[16..127]: ", nvs.extensionPort.I2CAddr, 16, 127 );
+                            scope = scope | FTSWARM_NVSSCOPE_EXTPORT;
                             break;
 
       case MENU_I2CHIGH:    anythingChanged = true;
                             nvs.extensionPort.interruptOnOff[1] = (int16_t) enterNumber( "High Value [-255..255]", nvs.extensionPort.interruptOnOff[1], -255, 255 );
+                            scope = scope | FTSWARM_NVSSCOPE_EXTPORT;
                             break;
 
       case MENU_I2CLOW:     anythingChanged = true;
                             nvs.extensionPort.interruptOnOff[1] = (int16_t) enterNumber( "High Value [-255..255]", nvs.extensionPort.interruptOnOff[1], -255, 255 );
+                            scope = scope | FTSWARM_NVSSCOPE_EXTPORT;
                             break;
 
       case MENU_I2CINT:     anythingChanged = true;
                             nvs.extensionPort.interruptLine = (uint8_t) enterNumber( "motor (1 for M1, 2 for M2, ...) or 0 to skip: ", nvs.extensionPort.interruptLine, 0, FTSWARM_HAL_MOTORS );
+                            scope = scope | FTSWARM_NVSSCOPE_EXTPORT;
                             break;
 
       case MENU_I2CREGS:    anythingChanged = true;
                             nvs.extensionPort.I2CRegisters = (uint8_t) enterNumber( "I2C Registers [1..8]", nvs.extensionPort.I2CRegisters, 1, MAXI2CREGISTERS);
+                            scope = scope | FTSWARM_NVSSCOPE_EXTPORT;
                             break;
 
     }
@@ -1156,7 +1157,7 @@ void MenuSwarmConfig::newSwarm( void ) {
 
   myOSSwarm.newSwarm(  );
 
-  nvs.save( );
+  nvs.save( FTSWARM_NVSSCOPE_SWARM );
 
 }
 
@@ -1184,7 +1185,7 @@ void MenuSwarmConfig::addController( void ) {
   
   if ( !myOSSwarm.isOnline( serialNumber ) ) printf("\e[0;31mWARNING: Please switch controller #%d on.\e[0m\n", serialNumber);
 
-  nvs.save( );
+  nvs.save( FTSWARM_NVSSCOPE_SWARM );
 
 }
 
@@ -1202,7 +1203,7 @@ void MenuSwarmConfig::deleteController( void ) {
 
   printf("Controller SN %d was revoked from the swarm.\n", serialNumber );
 
-  nvs.save( );
+  nvs.save( FTSWARM_NVSSCOPE_SWARM );
 
 }
 
@@ -1283,7 +1284,7 @@ void MenuSwarmConfig::run( void ) {
                               if ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) {
                                 nvs.swarm.speed = swarmSpeed;
                                 nvs.swarm.communication = swarmCommunication;
-                                nvs.saveAndRestart();
+                                nvs.saveAndRestart( FTSWARM_NVSSCOPE_SWARM );
                               }                           
                             }
                             return;

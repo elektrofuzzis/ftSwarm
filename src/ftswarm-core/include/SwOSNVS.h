@@ -83,6 +83,22 @@ class SwOSNVSEvent {
 // wifi types
 typedef enum { wifiOFF, wifiAP, wifiClient } FtSwarmWifi_t;
 
+typedef enum {
+  FTSWARM_NVSSCOPE_NONE         = 0,
+  FTSWARM_NVSSCOPE_INITAL       = 0b11111111111,
+  FTSWARM_NVSSCOPE_ALL          = 0b11111111110,
+  FTSWARM_NVSSCOPE_CORE         = 0b00000000001,
+  FTSWARM_NVSSCOPE_FACTORYRESET = 0b00000000010,
+  FTSWARM_NVSSCOPE_SWARM        = 0b00000000100,
+  FTSWARM_NVSSCOPE_JOYSTICK     = 0b00000001000,
+  FTSWARM_NVSSCOPE_SERVO        = 0b00000010000,
+  FTSWARM_NVSSCOPE_PIXEL        = 0b00000100000,
+  FTSWARM_NVSSCOPE_WIFI         = 0b00001000000,
+  FTSWARM_NVSSCOPE_WEBUI        = 0b00010000000,
+  FTSWARM_NVSSCOPE_EXTPORT      = 0b00100000000,
+  FTSWARM_NVSSCOPE_EVENTS       = 0b01000000000
+} FtSwarmNVSScope_t;
+
 class SwOSNVS {
     
   public:
@@ -115,6 +131,7 @@ class SwOSNVS {
     } swarm;
     
     SwOSJoyCalibration_t calibration[4]; // Joystick calibration
+    int16_t servoOffset[4]; // Servo offsets
 
     uint8_t pixels; // ftSwarmPixels
 
@@ -150,10 +167,10 @@ class SwOSNVS {
     bool load();
 
     // save config to flash
-	  void save( bool writeAll = false );
+	  void save( FtSwarmNVSScope_t scope );
 
     // save config & restart
-    void saveAndRestart();
+    void saveAndRestart( FtSwarmNVSScope_t scope );
 
     // save events
     void saveEvents();

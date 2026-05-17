@@ -1308,7 +1308,7 @@ bool FtSwarmScreenWifi::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, in
                                           nvs.wifi.mode = wifiMode;
                                           strcpy( nvs.wifi.SSID, wifiSSID );
                                           strcpy( nvs.wifi.Password,  wifiPwd );
-                                          nvs.saveAndRestart();
+                                          nvs.saveAndRestart( FTSWARM_NVSSCOPE_WIFI );
                                         }
                                         break;
 
@@ -1476,7 +1476,7 @@ bool FtSwarmScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
 
       case FTSWARMSCREENSWARM_CB_PIN: // user entered new pin
                                       nvs.swarm.pin = nParam;
-                                      nvs.save();
+                                      nvs.save( FTSWARM_NVSSCOPE_SWARM );
                                       return true;
 
       case FTSWARMSCREENSWARM_CB_ADD: // nParam is the sn to be added to the swarm
@@ -1484,7 +1484,7 @@ bool FtSwarmScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
 
                                         if ( myOSSwarm.addController( nParam ) ) {
 
-                                          nvs.save();
+                                          nvs.save( FTSWARM_NVSSCOPE_SWARM );
                                           objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_SELECTABLE );
                                           objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_TEXT );
                                           addMembers();
@@ -1506,7 +1506,7 @@ bool FtSwarmScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
 
                                         if ( myOSSwarm.deleteController( nParam ) ) {
 
-                                          nvs.save( );
+                                          nvs.save( FTSWARM_NVSSCOPE_SWARM );
                                           objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_SELECTABLE ); 
                                           objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_TEXT );
                                           addMembers();
@@ -1879,7 +1879,7 @@ bool FtSwarmScreenSetup::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
                                             break;
 
       case FTSWARMSCREENSETUP_CONFIG_CB:    nvs.events.activeConfig = nParam;
-                                            nvs.save();
+                                            nvs.save( FTSWARM_NVSSCOPE_EVENTS );
                                             myOSSwarm.deleteEvents();
                                             myOSSwarm.addEvents( nParam );
                                             break;
@@ -2037,7 +2037,7 @@ bool FtSwarmScreenCalibrateJoystick::eventHandler( FtSwarmScreenEvent_t event, u
     if ( id == FTSWARM_S4 ) {
       // save new settings
       memcpy( &nvs.calibration[i], calibration, 2 * sizeof( SwOSJoyCalibration_t ) );
-      nvs.save();
+      nvs.save( FTSWARM_NVSSCOPE_JOYSTICK );
     }
 
     // restore filters
