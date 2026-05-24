@@ -345,8 +345,8 @@ void SwOSCom::send( void ) {
   data.size = size();
   
   #ifdef DEBUG_TXCOMMUNICATION
-  if ( data.cmd != 8 ) {
-    SWOS_LOG_INFO("SwOSCom.send\n");
+  if ( data.cmd != CMD_STATE ) {
+    SWARM_LOG_INFO("SwOSCom.send\n");
     print();
   }
   #endif
@@ -366,7 +366,7 @@ void SwOSCom::send( void ) {
 
 static void _OnDataSent(const uint8_t *macAddr, esp_now_send_status_t status) { 
   // works on transmitted packets
-  
+
   // stop on uninitialized
   if (!myOSNetwork.sendNotificationWifi) return;
   if (!myOSNetwork.active ) return;
@@ -517,8 +517,15 @@ void SwOSNetwork::AddPeer( MacAddr macAddr ) {
   // initialize
   memset( peerInfo, 0, sizeof(esp_now_peer_info_t) );
   memcpy( peerInfo->peer_addr, macAddr.addr, ESP_NOW_ETH_ALEN );
-  // peerInfo->channel = 0;  
-  // peerInfo->encrypt = true;
+
+  if ( nvs.wifi.mode == wifiAP ) {
+    peerInfo->ifidx   = WIFI_IF_AP;
+    peerInfo->channel = nvs.wifi.channel;
+
+  } else {
+    peerInfo->ifidx   = WIFI_IF_STA;
+    peerInfo->channel = 0;             // use router setting
+  }
 
   // and add it to the internal peer list
   esp_err_t err = esp_now_add_peer( peerInfo );
@@ -543,6 +550,7 @@ static void tx_Wifi( SwOSCom *com ) {
   }
     
   myOSNetwork.AddPeer( com->macAddr );
+
   waitAck = 1;
   esp_now_send( com->macAddr.addr, (uint8_t *) &com->data, com->size() );
 
@@ -824,8 +832,8 @@ bool SwOSNetwork::_StartWifi( void ) {
   }
 
   // register callback funtions
-  esp_now_register_send_cb(_OnDataSent);
-  esp_now_register_recv_cb(_OnDataRecvWifi);
+  esp_now_register_send_cb( _OnDataSent );
+  esp_now_register_recv_cb( _OnDataRecvWifi );
 
   return true;
 
