@@ -33,6 +33,7 @@ class WifiHandler {
     bool scanActive = false;
     uint16_t aps = 0;
     wifi_ap_record_t *ap = nullptr;
+    uint8_t connectedDevices = 0;
 
     // constructor
     WifiHandler();

@@ -40,6 +40,9 @@
 // max # of controllers in swarm
 #define MAXCTRL 32
 
+// max number of clients in AP Mode
+#define MAX_AP_CONNECTIONS 10
+
 typedef uint16_t FtSwarmSerialNumber_t;
 typedef uint8_t  FtSwarmPort_t;
 

@@ -204,107 +204,6 @@ SwOSIO *SwOSSwarm::waitFor( char *alias ) {
   
 }
 
-/*
-
-void SwOSSwarm::startWifi( void ) {
-
-  // no wifi config?
-  if (nvs.wifi.SSID[0]=='\0') {
-    if (verbose) printf("Invalid wifi configuration found. Starting AP mode.\n");
-    strcpy( nvs.wifi.SSID, Ctrl[0]->getHostname() );
-    nvs.wifi.mode = wifiAP;
-  }
-
-  // Start wifi
-  setState( STARTWIFI  );
-
-  // best practise to throw away anything during a soft reboot
-  WiFi.disconnect( true );
-  delay(100);
-
-  // some common stuff  
-  // WiFi.useStaticBuffers(true); 
-  WiFi.mode(WIFI_AP_STA);
-  delay(100);
-
-  if ( nvs.wifi.mode == wifiAP ) {
-    // work as AP in standard 
-    if (verbose) printf("Create own SSID: %s\n", nvs.wifi.SSID );
-
-    // esp_wifi_set_ps(WIFI_PS_NONE);
-    WiFi.softAPsetHostname( Ctrl[0]->getHostname() );
-    WiFi.softAP( nvs.wifi.SSID, nvs.wifi.Password, nvs.wifi.channel ); // passphrase not allowed on ESP32WROOM
-    
-  } else {
-    // normal operation
-    if (verbose) printf("Attempting to connect to SSID: %s", nvs.wifi.SSID);
-
-    WiFi.setHostname(Ctrl[0]->getHostname() );
-    WiFi.begin( nvs.wifi.SSID, nvs.wifi.Password );
-
-    bool keyBreak = false;
-    
-    // try 10 seconds to join my wifi
-    for (uint8_t i=0; i<20; i++ ) {
-
-      // connected?
-      if (WiFi.status() == WL_CONNECTED) break;
-
-      // any key ?
-      keyBreak = anyKey();
-      if ( keyBreak ) break;
-
-      // user entertainment
-      if (verbose) { 
-        printf("."); 
-        // fflush(stdout);
-        flushStdIO();
-      }
-
-      // wait
-      delay(500);
-      
-    }
-
-    // any key?
-    if ( keyBreak ) {
-      printf( "\nStarting setup..\n" );
-      mainMenu();
-      ESP.restart();
-    }
-
-    // connection failed?
-    if (WiFi.status() != WL_CONNECTED) {
-      SWARM_LOG_ERROR( "Can't connect to SSID %s", nvs.wifi.SSID );
-      printf( "\nStarting setup..\n" );
-      mainMenu();
-      ESP.restart();
-    }
-
-    // register hostname
-    MDNS.begin(Ctrl[0]->getHostname());
-
-    esp_wifi_set_ps(WIFI_PS_NONE);
-    
-    if (verbose) printf("connected!\n");
-  }
-
-  // set mac addr of local controller
-  uint8_t mac[ESP_NOW_ETH_ALEN];
-  WiFi.macAddress( mac );
-  Ctrl[0]->macAddr.set( mac );
-
-  if (verbose) {
-    if ( nvs.wifi.mode == wifiAP )
-      printf("hostname: %s\nip-address: %d.%d.%d.%d\n", Ctrl[0]->getHostname(), WiFi.softAPIP()[0], WiFi.softAPIP()[1], WiFi.softAPIP()[2], WiFi.softAPIP()[3]);
-    else
-      printf("hostname: %s\nip-address: %d.%d.%d.%d\n", Ctrl[0]->getHostname(), WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
-  }
-
-}
-
-*/
-
 void SwOSSwarm::startWifi( void ) {
 
   // 1. Initialize TCP/IP stack
@@ -340,7 +239,7 @@ void SwOSSwarm::startWifi( void ) {
     strlcpy( (char *) ap_config.ap.ssid,     nvs.wifi.SSID, sizeof( ap_config.ap.ssid ) );
     strlcpy( (char *) ap_config.ap.password, nvs.wifi.Password,  sizeof( ap_config.ap.password ) );
     ap_config.ap.channel = nvs.wifi.channel;
-    ap_config.ap.max_connection = 4;
+    ap_config.ap.max_connection = MAX_AP_CONNECTIONS;
     ap_config.ap.authmode = ( strlen( nvs.wifi.Password ) == 0) ? WIFI_AUTH_OPEN : WIFI_AUTH_WPA2_PSK;
 
     // set config
@@ -368,7 +267,7 @@ void SwOSSwarm::startWifi( void ) {
     // set config
     ESP_ERROR_CHECK( esp_wifi_set_config( WIFI_IF_STA, &sta_config ) );
 
-    if (verbose) printf( "Attempting to connect to SSID: %s ", nvs.wifi.SSID );
+    if (verbose) printf( "Connecting to SSID: %s ", nvs.wifi.SSID );
 
     wifiHandler = new WifiHandler();
     
@@ -387,7 +286,7 @@ void SwOSSwarm::startWifi( void ) {
       esp_netif_ip_info_t ip_info;
       if (esp_netif_get_ip_info( sta_netif, &ip_info ) == ESP_OK && ip_info.ip.addr != 0) {
         wifiConnected = true;
-        if ( verbose ) printf( "\nConnected to %s\n", nvs.wifi.SSID );
+        if ( verbose ) printf( " Connected!\n" );
         break;
       }
 
@@ -444,13 +343,13 @@ void SwOSSwarm::startWifi( void ) {
 
     esp_netif_t* netif;
     if (nvs.wifi.mode == wifiAP) netif = ap_netif;
-    else                        netif = sta_netif;
+    else                         netif = sta_netif;
 
     if ( esp_netif_get_ip_info( netif, &ip_info ) == ESP_OK ) 
-      printf( "hostname: %s\nip-address: %d.%d.%d.%d\nMAC: %02X:%02X:%02X:%02X:%02X:%02X\n", 
-              Ctrl[0]->getHostname(), 
-              IP2STR( &ip_info.ip ),
-              mac[0], mac[1], mac[2], mac[3], mac[4], mac[5] );
+      SWARM_LOG_INFO( "hostname: %s ip-address: %d.%d.%d.%d MAC: %02X:%02X:%02X:%02X:%02X:%02X", 
+                      Ctrl[0]->getHostname(), 
+                      IP2STR( &ip_info.ip ),
+                      mac[0], mac[1], mac[2], mac[3], mac[4], mac[5] );
 
   }
 
@@ -562,13 +461,13 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   if ( ( nvs.wifi.webUI ) && ( nvs.wifi.mode != wifiOFF ) ) SwOSStartWebServer();
 
   // firmware events?
-  if (verbose) printf("Starting events.\n");
   addEvents( nvs.events.activeConfig, myOSSwarm.Ctrl[0]->serialNumber );
-  
-  if (verbose) printf("Start normal operation.\n");
 
-  if ( ( nvs.swarm.IAmKelda) && ( nvs.wifi.mode == wifiAP ) ) 
-    SWARM_LOG_WARN( "A swarm using wifi ap mode provided by the Kelda isn't stable. Best practice is to use your local wifi or to provide the AP via a swarm member.");
+  if ( nvs.wifi.mode == wifiAP ) {
+    if ( verbose )           SWARM_LOG_INFO( "Wifi ap mode is limited to %d network clients.", MAX_AP_CONNECTIONS );
+    if ( nvs.swarm.IAmKelda) SWARM_LOG_WARN( "A swarm using wifi ap mode provided by the Kelda isn't stable. Best practice is to use your local wifi or to provide the AP via a swarm member.");
+
+  }
 
   initialized = true;
 
@@ -937,7 +836,7 @@ void SwOSSwarm::replaceCtrl( SwOSCom *com, uint8_t source, uint8_t affected ) {
     newCtrl = new SwOSCtrl( com->data.sourceSN , com->macAddr, false, com->data.registerCmd.ctrlConfig );
     
     if (verbose) { 
-      printf("\n[Info] ftSwarm%d joined the swarm.\n", com->data.sourceSN ); 
+      SWARM_LOG_INFO("ftSwarm%d joined the swarm.", com->data.sourceSN ); 
     }
 
   }

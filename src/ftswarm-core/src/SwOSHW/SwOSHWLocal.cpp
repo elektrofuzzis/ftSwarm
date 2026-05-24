@@ -29,7 +29,9 @@ static void wifiEventHandler( void* arg, esp_event_base_t event_base, int32_t ev
 
 WifiHandler::WifiHandler() {
 
-  ESP_ERROR_CHECK( esp_event_handler_instance_register( WIFI_EVENT, WIFI_EVENT_SCAN_DONE, &wifiEventHandler, nullptr, nullptr ) );
+  // ESP_ERROR_CHECK( esp_event_handler_instance_register( WIFI_EVENT, WIFI_EVENT_SCAN_DONE, &wifiEventHandler, nullptr, nullptr ) );
+
+  ESP_ERROR_CHECK( esp_event_handler_instance_register( WIFI_EVENT, ESP_EVENT_ANY_ID, &wifiEventHandler, nullptr, nullptr ) );
 
 }
 
@@ -41,19 +43,31 @@ WifiHandler::~WifiHandler() {
 
 void WifiHandler::eventHandler( void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data ) {
 
-  if ( event_base == WIFI_EVENT && event_id == WIFI_EVENT_SCAN_DONE ) {
+  if ( event_base == WIFI_EVENT ) {
+    
+    switch ( event_id ) {
+      
+      case WIFI_EVENT_SCAN_DONE:          // Get the number of APs found
+                                          esp_wifi_scan_get_ap_num( &aps );
+                                          if ( ap ) free( ap );
+                                          ap = (wifi_ap_record_t*) malloc( sizeof( wifi_ap_record_t ) * aps );
 
-    // Get the number of APs found
-    esp_wifi_scan_get_ap_num( &aps );
-    if ( ap ) free( ap );
-    ap = (wifi_ap_record_t*) malloc( sizeof( wifi_ap_record_t ) * aps );
+                                          // Fetch the actual records
+                                          ESP_ERROR_CHECK( esp_wifi_scan_get_ap_records( &aps, ap ) );
 
-    // Fetch the actual records
-    ESP_ERROR_CHECK( esp_wifi_scan_get_ap_records( &aps, ap ) );
+                                          scanActive = false;
+                                          break;
 
-    scanActive = false;
+      case WIFI_EVENT_AP_STACONNECTED:    connectedDevices++;
+                                          if ( connectedDevices >= MAX_AP_CONNECTIONS ) SWARM_LOG_WARN( "Maximum number of clients (%d) in AP mode reached.",MAX_AP_CONNECTIONS);
+                                          break;
 
- }
+      case WIFI_EVENT_AP_STADISCONNECTED: if (connectedDevices) connectedDevices--;
+                                          break;
+
+    }
+
+  }
 
 }
 
