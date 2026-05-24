@@ -141,7 +141,8 @@ float SwOSAnalogInput::getVoltage() {
   if ( ctrl->getCPU() == FTSWARMDUINO_1V141 )
     return ( (float) lastRawValue ) / 1000;
   else if ( ioType == SWOSIO_POWER )
-    return round( ( 0.00001158854430694 * lastRawValue * lastRawValue -0.03759004605973 * lastRawValue + 34.9580282817 ) * 10 ) / 10;
+    if ( lastRawValue < 1600 ) return 0;
+    else return round( ( 0.00001158854430694 * lastRawValue * lastRawValue -0.03759004605973 * lastRawValue + 34.9580282817 ) * 10 ) / 10;
   else
     return ( (float) lastRawValue ) / 1000 * (129.0/82.0);
 }
@@ -313,10 +314,10 @@ void SwOSJoystick::addFilters( void ) {
 
   if ( !ctrl->isLocal() ) return;
 
-  lr->addFilter( new SwOSFJoystick( nvs.calibration[port*2+1].minValue, nvs.calibration[port*2+1].midValue, nvs.calibration[port*2].maxValue ) );
+  lr->addFilter( new SwOSFJoystick( nvs.joystick[port*2+1].minValue, nvs.joystick[port*2+1].midValue, nvs.joystick[port*2].maxValue ) );
   if ( port) lr->addFilter( new SwOSMultiply( -1 ) ); 
 
-  fb->addFilter( new SwOSFJoystick( nvs.calibration[port*2].minValue, nvs.calibration[port*2].midValue, nvs.calibration[port*2].maxValue) );
+  fb->addFilter( new SwOSFJoystick( nvs.joystick[port*2].minValue, nvs.joystick[port*2].midValue, nvs.joystick[port*2].maxValue) );
   if (!port) fb->addFilter( new SwOSMultiply( -1 ) ); 
   
 }

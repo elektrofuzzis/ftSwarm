@@ -102,6 +102,12 @@ class SwOSObj {
 
     // test flags
     bool testFlag( uint8_t flag ) { return ( ( flags & flag) > 0 ); };
+
+    // getNVSParameter to send nvs parameters like servo offset via createIO
+    virtual uint8_t *getNVSParameter( uint8_t *size ) { *size = 0; return nullptr; };
+    
+    // setNVSParameter to receive nvs parameters like servo offset via createIO
+    virtual void setNVSParameter( uint8_t parameter[], uint8_t *size ) { };
   
     // set new name
 	  void setName( const char *name);
@@ -228,7 +234,7 @@ public:
   // pop my state from a buffer
   virtual uint8_t popState( uint8_t *buffer )  { return 0; };
 
-  // set parameter from remote - depricated?
+  // set parameter from remote 
   virtual void setParameter( int32_t parameter ) {};
 
   // is the io online?

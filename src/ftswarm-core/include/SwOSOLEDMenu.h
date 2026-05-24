@@ -7,16 +7,18 @@
  * 
  */
 
-#pragma once
+#pragma once 
 
 #include "SwOS.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWBaseIO.h"
 #include "SwOSHW/SwOSHWAnalog.h"
+#include "SwOSHW/SwOSHWActor.h"
 
 class SwOSJoystick;
+class SwOSServo;
 
-#define FTSWARM_HAL_OLEDS 1
+// #define FTSWARM_HAL_OLEDS 1
 
 #if FTSWARM_HAL_OLEDS > 0
 
@@ -825,6 +827,29 @@ class FtSwarmScreenServoOffsetList : public FtSwarmScreenSelectIO {
 
     // Constructor
     FtSwarmScreenServoOffsetList( FtSwarmScreen *parent );
+
+    // eval external events like pressing buttons
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );
+
+};
+
+/***************************************************
+ *
+ *   FtSwarmScreenServoOffset
+ *
+ ***************************************************/
+
+class FtSwarmScreenServoOffset : public FtSwarmScreen {
+
+  protected:
+
+    FtSwarmScreenText *text = nullptr;
+    SwOSServo *servo = nullptr;
+
+  public:
+
+    // Constructor
+    FtSwarmScreenServoOffset( FtSwarmScreen *parent, SwOSServo *servo );
 
     // eval external events like pressing buttons
     virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );

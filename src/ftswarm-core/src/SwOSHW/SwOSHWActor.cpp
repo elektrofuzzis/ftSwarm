@@ -9,7 +9,7 @@
 
 #include "SwOSHW/SwOSHWActor.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
-
+#include "SwOSLog.h"
 #include "SwOSCom.h"
 
 /***************************************************
@@ -623,8 +623,8 @@ void SwOSServo::setPosition( int16_t position ) {
   this->position = position;
 
   // apply local or remote
-  if (ctrl->isLocal()) setLocal();
-  else                 setRemote();
+  if (ctrl->isLocal()) setLocal( );
+  else                 setRemote( );
 
 }
 
@@ -633,8 +633,8 @@ void SwOSServo::setOffset( int16_t offset ) {
   this->offset = offset;
  
   // apply local or remote
-  if (ctrl->isLocal()) setLocal();
-  else                 setRemote();
+  if (ctrl->isLocal()) setLocal( );
+  else                 setRemote( );
 
 }
 
@@ -644,13 +644,30 @@ void SwOSServo::onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t 
 
 }
 
-void SwOSServo::setRemote( ) {
+void SwOSServo::setRemote( void ) {
 
   SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETSERVO );
-  cmd.data.servoCmd.index    = ctrl->getIndex(this);
-  cmd.data.servoCmd.position = position;
-  cmd.data.servoCmd.offset   = offset;
+  cmd.data.servoCmd.index            = ctrl->getIndex(this);
+  cmd.data.servoCmd.position         = position;
+  cmd.data.servoCmd.offset           = offset;
   cmd.send( );
+}
+
+uint8_t *SwOSServo::getNVSParameter( uint8_t *size ) { 
+
+  *size = sizeof( SwOSServoParameter_t );
+  uint8_t *parameter = (uint8_t *) malloc( *size );
+  memcpy( parameter, &nvs.servo[port], *size );
+  return parameter;
+
+}
+
+void SwOSServo::setNVSParameter( uint8_t parameter[], uint8_t *size ) {
+
+  if ( sizeof( SwOSServoParameter_t ) != *size ) SWARM_LOG_FATAL( "SwOSServo::setNVSParameter size does not match." );
+
+  setOffset( ((SwOSServoParameter_t*)parameter)->offset );
+
 }
 
 /***************************************************
@@ -668,6 +685,8 @@ void SwOSServo::setRemote( ) {
 
 void SwOSDigitalServo::setupLocal() {
   // initialize local HW
+
+  offset = nvs.servo[port].offset;
 
   #if FTSWARM_HAL_SERVOS > 0
 
@@ -714,7 +733,7 @@ void SwOSDigitalServo::setupLocal() {
 
 }
 
-void SwOSDigitalServo::setLocal() {
+void SwOSDigitalServo::setLocal(void ) {
 
   // calc duty
   float p = offset + position;
@@ -755,6 +774,8 @@ SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, uint8_t
 }
 
 void SwOSRCServo::setupLocal( void ) {
+
+  offset = nvs.servo[port].offset;
 
   #if FTSWARM_HAL_RCSERVOS > 0
 

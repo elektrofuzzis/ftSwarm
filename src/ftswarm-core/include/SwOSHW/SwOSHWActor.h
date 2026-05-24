@@ -178,10 +178,10 @@ class SwOSDCMotor : public SwOSMotor {
     int16_t offset   = 45;
 
     // local HW procedures
-    virtual void setLocal() {};   // set position locally
+    virtual void setLocal( void ) {};   // set position locally
 
     // remote HW procedures
-    virtual void setRemote();  // setPosition remotely 
+    virtual void setRemote( void );  // setPosition remotely 
 
   public:
     // constructor
@@ -204,7 +204,12 @@ class SwOSDCMotor : public SwOSMotor {
 	  virtual int16_t getPosition( ) { return position; };
 	  virtual void setOffset( int16_t offset );
 	  virtual void setPosition( int16_t position );
- 
+
+    // getNVSParameter to send nvs parameters like servo offset via createIO
+    virtual uint8_t *getNVSParameter( uint8_t *size );
+    
+    // setNVSParameter to receive nvs parameters like servo offset via createIO
+    virtual void setNVSParameter( uint8_t parameter[], uint8_t *size );
   };
   
 /***************************************************
@@ -219,8 +224,8 @@ class SwOSDigitalServo : public SwOSServo {
 	  ledc_channel_t  channelSERVO;
     
     // local HW procedures
-    virtual void setupLocal() override; // initializes local HW
-    virtual void setLocal() override;   // set position locally
+    virtual void setupLocal( void ) override; // initializes local HW
+    virtual void setLocal( void ) override;   // set position locally
   
   public:
     // constructor
@@ -245,10 +250,10 @@ class SwOSDigitalServo : public SwOSServo {
     // local HW procedures
 
     // initialize local HW
-    virtual void setupLocal() override; 
+    virtual void setupLocal( void ) override; 
 
     // set position locally
-    virtual void setLocal() override;       
+    virtual void setLocal( void ) override;       
 
     // get position from poti
     virtual void poti2position();           

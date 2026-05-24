@@ -156,7 +156,7 @@ public:
   // delete all events
   void deleteEvents( void );
 
-  void save( uint8_t scope );
+  void save( FtSwarmNVSScope_t scope );
 
 };
 

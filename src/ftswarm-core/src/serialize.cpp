@@ -26,7 +26,7 @@ const char SLITERAL[ SERIALIZE_LITERAL_MAX ][24] = {
   "valueLR",            // SERIALIZE_LITERAL_VALUELR
   "valueFB",            // SERIALIZE_LITERAL_VALUEFB
   "name",               // SERIALIZE_LITERAL_NAME
-  "alias"               // SERIALIZE_LITERAL_ALIAS
+  "alias",              // SERIALIZE_LITERAL_ALIAS
   "id",                 // SERIALIZE_LITERAL_ID,
   "serialNumber",       // SERIALIZE_LITERAL_SERIALNUMBER
   "CtrlVersion",        // SERIALIZE_LITERAL_CTRLVERSION
@@ -213,6 +213,8 @@ void Serialize::item( SerialLiteral_t literal, float value, uint8_t decimalPlace
     sprintf( str, "[%0.*f,\"%s\"]", decimalPlaces, value, unit);
   else
     sprintf( str, "%0.*f", decimalPlaces, value);
+
+  write( str );
 
 }
 

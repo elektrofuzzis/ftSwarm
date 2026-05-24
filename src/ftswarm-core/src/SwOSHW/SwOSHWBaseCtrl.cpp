@@ -1181,8 +1181,10 @@ bool SwOSCtrl::ioConfig( SwOSCom *com ) {
   char         *name;
   char         *alias;
   uint8_t      flags;
+  uint8_t      parameter[10];
+  uint8_t      size = 10;
 
-  while ( com->popIO( &index, &ioType,  &port, &name, &alias, &flags ) ) {
+  while ( com->popIO( &index, &ioType,  &port, &name, &alias, &flags, parameter, &size ) ) {
 
     if ( index == 254 ) {
       // hostname
@@ -1197,12 +1199,16 @@ bool SwOSCtrl::ioConfig( SwOSCom *com ) {
       // set IOType + alias name as transmitted
       changeIOType( index, ioType, flags );
       io[index]->setAlias( alias );
+      if (size) io[index]->setNVSParameter( parameter, &size );
 
     } else {
       // any type of io
       io[index] = createIO( ioType, port, name, alias, flags );
+      if (size) io[index]->setNVSParameter( parameter, &size );
 
     }
+
+    size = 10;
 
   }
 
@@ -1222,7 +1228,7 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
     
   switch (com->data.cmd) {
 
-    case CMD_SAVE:                    save( com->data.saveCmd.scope ); return true;
+    case CMD_SAVE:                    save( com->data.saveCmd.scope, com->data.saveCmd.port ); return true;
     case CMD_REBOOT:                  ESP.restart();
     case CMD_SETWIFI:                 setWifi( com->data.wifiCmd.mode, com->data.wifiCmd.SSID, com->data.wifiCmd.PSK ); return true;
     case CMD_STATE:                   return recvState( com );
@@ -1361,7 +1367,20 @@ void SwOSCtrl::sendIOConfig( MacAddr destination ) {
   SwOSCom ioConfig( destination, serialNumber, CMD_IOCONFIG );
 
   // IOs
-  for (uint8_t i=0; i<IOs;i++) if (io[i]) ioConfig.pushIO( i, io[i]->getIOType(), io[i]->getPort(), io[i]->getName(), io[i]->getAlias(), io[i]->getFlags() ); 
+  for (uint8_t i=0; i<IOs;i++) {
+    
+    if (io[i]) {
+  
+      uint8_t size = 0;
+      uint8_t *parameter = io[i]->getNVSParameter( &size );
+      
+      ioConfig.pushIO( i, io[i]->getIOType(), io[i]->getPort(), io[i]->getName(), io[i]->getAlias(), io[i]->getFlags(), parameter, size ); 
+
+      if (parameter) free( parameter );
+
+    }
+
+  }
 
   // hostname - identifies last data
   ioConfig.pushHostname( getName(), getAlias(), getFlags() ); 
@@ -1466,18 +1485,40 @@ void SwOSCtrl::reboot( void ) {
 
 }
 
-void SwOSCtrl::save( uint8_t scope ){
+void SwOSCtrl::save( FtSwarmNVSScope_t scope, uint8_t port ) {
 
   if (local) {
 
-    if ( ( scope == 0) || ( scope == 1 ) ) nvs.save( FTSWARM_NVSSCOPE_ALL );
-    if ( ( scope == 0) || ( scope == 2 ) ) saveToNVS();
-    if ( ( scope == 0) || ( scope == 3 ) ) nvs.saveEvents();
+    if ( scope | FTSWARM_NVSSCOPE_SERVO ) {
+
+      uint8_t minPort = port < 4 ? port:0;
+      uint8_t maxPort = port < 4 ? port:3;
+      
+      for ( uint8_t i=0; i<IOs; i++ ) {
+
+        // copy parameters if io is a servo
+        if ( ( io[i] ) && 
+             ( ( io[i]->getIOType() == SWOSIO_RCSERVO ) || ( io[i]->getIOType() == SWOSIO_SERVO ) ) &&
+             ( io[i]->getPort() >= minPort ) && ( io[i]->getPort() <= maxPort )
+           ) {
+          printf("servo %d %d\n", ((SwOSServo*)io[i])->getPort(), ((SwOSServo*)io[i])->getOffset( ));
+          nvs.servo[((SwOSServo*)io[i])->getPort()].offset = ((SwOSServo*)io[i])->getOffset( );
+        }
+      
+      }
+
+    }
+
+    nvs.save( scope );
+    if ( scope | FTSWARM_NVSSCOPE_ALIAS ) saveToNVS();
 
   } else {
+
     SwOSCom cmd( macAddr, serialNumber, CMD_SAVE );
     cmd.data.saveCmd.scope = scope;
+    cmd.data.saveCmd.port = port;
     cmd.send();
+
   }
 
 }

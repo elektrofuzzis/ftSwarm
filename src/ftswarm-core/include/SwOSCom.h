@@ -200,7 +200,8 @@ struct wifiCmd_t {
 } __attribute__((packed));
 
 struct saveCmd_t {
-  uint8_t scope;
+  FtSwarmNVSScope_t scope;
+  uint8_t port;
 } __attribute__((packed));
 
 struct SwOSDatagram_t {
@@ -269,9 +270,9 @@ public:
   size_t size( void );
 
   // send my alias names buffered
-  void pushHostname( const char *name, const char *alias, uint8_t flags ) { pushIO( 254, SWOSIO_MAXIOTYPE, SWOS_NOPORT, name, alias, flags ); };
-  void pushIO( uint8_t index, SwOSIOType_t ioType,  uint8_t port,  const char *name, const char *alias, uint8_t flags );
-  bool popIO( uint8_t *index, SwOSIOType_t *ioType, uint8_t *port, char **name, char **alias, uint8_t *flags);
+  void pushHostname( const char *name, const char *alias, uint8_t flags ) { pushIO( 254, SWOSIO_MAXIOTYPE, SWOS_NOPORT, name, alias, flags, nullptr, 0 ); };
+  void pushIO( uint8_t index, SwOSIOType_t ioType,  uint8_t port,  const char *name, const char *alias, uint8_t flags, uint8_t *parameter, uint8_t size );
+  bool popIO( uint8_t *index, SwOSIOType_t *ioType, uint8_t *port, char **name, char **alias, uint8_t *flags, uint8_t *parameter, uint8_t *size);
   void flushBuffer( void );
   
   void send( void );

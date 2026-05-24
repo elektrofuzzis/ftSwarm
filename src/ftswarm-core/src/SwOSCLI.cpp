@@ -527,7 +527,10 @@ void SwOSCLI::executeControllerCmd(void ) {
 
     case CLICMD_save:               if ( parameter[0].inRange( "scope", 0, 3, response ) ) {
                                       OK();
-                                      ctrl->save( parameter[0].getNumber() );
+                                      uint8_t scope = parameter[0].getNumber();
+                                      if      ( scope <= 1 ) ctrl->save( FTSWARM_NVSSCOPE_ALL, SWOS_NOPORT );
+                                      else if ( scope == 2 ) ctrl->save( FTSWARM_NVSSCOPE_ALIAS, SWOS_NOPORT );
+                                      else if ( scope == 3 ) ctrl->save( FTSWARM_NVSSCOPE_EVENTS, SWOS_NOPORT );
                                     }
                                     break;
 
@@ -1044,7 +1047,10 @@ void SwOSCLI::executeSwarmCmd( bool *loggedIn ) {
     
     case CLICMD_save:           if ( parameter[0].inRange( "scope", 0, 3, response ) ) {
                                   OK();
-                                  myOSSwarm.save( parameter[0].getNumber() );
+                                  uint8_t scope = parameter[0].getNumber();
+                                  if      ( scope <= 1 ) myOSSwarm.save( FTSWARM_NVSSCOPE_ALL );
+                                  else if ( scope == 2 ) myOSSwarm.save( FTSWARM_NVSSCOPE_ALIAS );
+                                  else if ( scope == 3 ) myOSSwarm.save( FTSWARM_NVSSCOPE_EVENTS );                                  
                                 }
                                 break;
 

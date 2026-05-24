@@ -172,8 +172,8 @@ public:
   // print my local settings
   void printNVS( void ); 
 
-  // save settings to nvs: scope 0 - all, 1 - controller, 2 - alias, 3 - events
-  void save( uint8_t scope );
+  // save settings to nvs
+  void save( FtSwarmNVSScope_t scope, uint8_t port );
 
   void setState( SwOSState_t state, uint8_t members = 0, char *SSID = NULL ); // visualizes controller's state like booting, error,...
   SwOSState_t getState( void ) { return isOnline()?state:OFFLINE; };

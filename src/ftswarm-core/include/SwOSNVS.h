@@ -26,6 +26,14 @@ struct SwOSJoyCalibration_t {
 
 } __attribute__((packed));
 
+struct SwOSServoParameter_t {
+
+  int16_t offset;
+  int16_t minValue;
+  int16_t maxValue;
+
+} __attribute__((packed));
+
 class SwOSIOUID {
 
   public:
@@ -85,8 +93,7 @@ typedef enum { wifiOFF, wifiAP, wifiClient } FtSwarmWifi_t;
 
 typedef enum {
   FTSWARM_NVSSCOPE_NONE         = 0,
-  FTSWARM_NVSSCOPE_INITAL       = 0b11111111111,
-  FTSWARM_NVSSCOPE_ALL          = 0b11111111110,
+  
   FTSWARM_NVSSCOPE_CORE         = 0b00000000001,
   FTSWARM_NVSSCOPE_FACTORYRESET = 0b00000000010,
   FTSWARM_NVSSCOPE_SWARM        = 0b00000000100,
@@ -96,7 +103,13 @@ typedef enum {
   FTSWARM_NVSSCOPE_WIFI         = 0b00001000000,
   FTSWARM_NVSSCOPE_WEBUI        = 0b00010000000,
   FTSWARM_NVSSCOPE_EXTPORT      = 0b00100000000,
-  FTSWARM_NVSSCOPE_EVENTS       = 0b01000000000
+  FTSWARM_NVSSCOPE_EVENTS       = 0b01000000000,
+  FTSWARM_NVSSCOPE_ALIAS        = 0b10000000000,
+
+  FTSWARM_NVSSCOPE_INITAL       = 0b11111111111,
+  FTSWARM_NVSSCOPE_ALL          = 0b11111111110,
+  FTSWARM_NVSSCOPE_ALIASSERVO   = FTSWARM_NVSSCOPE_ALIAS | FTSWARM_NVSSCOPE_SERVO
+
 } FtSwarmNVSScope_t;
 
 class SwOSNVS {
@@ -130,8 +143,8 @@ class SwOSNVS {
       uint8_t speed;                         // communication speed for RS485
     } swarm;
     
-    SwOSJoyCalibration_t calibration[4]; // Joystick calibration
-    int16_t servoOffset[4]; // Servo offsets
+    SwOSJoyCalibration_t joystick[4];        // Joystick calibration
+    SwOSServoParameter_t servo[4];           // Servo offsets
 
     uint8_t pixels; // ftSwarmPixels
 

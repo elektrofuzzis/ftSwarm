@@ -153,12 +153,12 @@ bool SwOSNVS::load() {
   size_t dummy;
        
   // ftSwarmControl / joystick calibration
-  dummy = sizeof( calibration );
-  nvs_get_blob( my_handle, "calibration", &calibration, &dummy );
+  dummy = sizeof( joystick );
+  nvs_get_blob( my_handle, "joystick", &joystick, &dummy );
 
   // servoOffsets
-  dummy = sizeof( servoOffset );
-  nvs_get_blob( my_handle, "servoOffset", &servoOffset, &dummy );
+  dummy = sizeof( servo );
+  nvs_get_blob( my_handle, "servo", &servo, &dummy );
 
   // RGBLeds
   nvs_get_u8( my_handle, "RGBLeds", &pixels );
@@ -228,10 +228,10 @@ void SwOSNVS::save( FtSwarmNVSScope_t scope ) {
   if ( scope | FTSWARM_NVSSCOPE_FACTORYRESET ) nvs_set_u8( my_handle, "factoryReset", factoryReset );
   
   // ftSwarmControl: set joystick calibration
-  if ( scope | FTSWARM_NVSSCOPE_JOYSTICK ) nvs_set_blob( my_handle, "calibration",  (void *)&calibration, sizeof( calibration ) );
+  if ( scope | FTSWARM_NVSSCOPE_JOYSTICK ) nvs_set_blob( my_handle, "joystick",  (void *)&joystick, sizeof( joystick ) );
 
   // servo offset
-  if ( scope | FTSWARM_NVSSCOPE_SERVO ) nvs_set_blob( my_handle, "servoOffset",  (void *)&servoOffset, sizeof( servoOffset ) );
+  if ( scope | FTSWARM_NVSSCOPE_SERVO ) nvs_set_blob( my_handle, "servo",  (void *)&servo, sizeof( servo ) );
 
   // RGBLeds
   if ( scope | FTSWARM_NVSSCOPE_PIXEL ) nvs_set_u8( my_handle, "RGBLeds", pixels );
@@ -439,13 +439,17 @@ void SwOSNVS::reset( bool factoryReset ) {
 
   // joystick calibration
   for ( uint8_t j=0; j<4; j++ ) {
-    calibration[j].minValue = 200;
-    calibration[j].midValue = 1900;
-    calibration[j].maxValue = 3700;
+    joystick[j].minValue = 200;
+    joystick[j].midValue = 1900;
+    joystick[j].maxValue = 3700;
   }
 
-  // servo offsets
-  bzero( servoOffset, sizeof( servoOffset ) );
+  // servo offset
+  for ( uint8_t j=0; j<4; j++ ) {
+    servo[j].offset = 45;
+    servo[j].minValue = -1;
+    servo[j].maxValue = -1;
+  }
 
   pixels = FTSWARM_HAL_PIXELS;
 
@@ -589,8 +593,8 @@ void SwOSNVS::printNVS() {
   for (uint8_t i=0; i<MAXCTRL; i++) { if (swarm.member[i]) printf(" %d", swarm.member[i]); }
   printf( "\n");
 
-  for (uint8_t i=0; i<4; i++ ) printf( "joystick calibration[%d]: %d %d %d\n", i, calibration[i].minValue, calibration[i].midValue, calibration[i].maxValue );
-  for (uint8_t i=0; i<4; i++ ) printf( "servo offset [%d]: %d\n", i, servoOffset[i] );
+  for (uint8_t i=0; i<4; i++ ) printf( "joystick calibration[%d] min: %d mid: %d max: %d\n", i, joystick[i].minValue, joystick[i].midValue, joystick[i].maxValue );
+  for (uint8_t i=0; i<4; i++ ) printf( "servo[%d] offset: %d min: %d max: %d\n", i, servo[i].offset, servo[i].minValue, servo[i].maxValue );
 
   printf( "events:\n" );
   printf( "events.activeConfig %d\n", events.activeConfig);

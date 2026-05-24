@@ -1279,10 +1279,10 @@ void SwOSSwarm::addEvents( uint8_t config, FtSwarmSerialNumber_t sn ) {
 
 }
 
-void SwOSSwarm::save( uint8_t scope ) {
+void SwOSSwarm::save( FtSwarmNVSScope_t scope ) {
  
   for (uint8_t i=0; i<=maxCtrl; i++) {
-    if ( Ctrl[i] ) Ctrl[i]->save( scope );
+    if ( Ctrl[i] ) Ctrl[i]->save( scope, SWOS_NOPORT );
   }
   
 }

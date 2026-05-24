@@ -49,7 +49,7 @@ void FirmwareIOMenu::save( void ) {
     if ( anythingChanged[0] ) {
 
        // save in local nvs
-       myOSSwarm.Ctrl[0]->save(2);
+       myOSSwarm.Ctrl[0]->save( FTSWARM_NVSSCOPE_ALIASSERVO, SWOS_NOPORT );
        nvs.saveEvents();
 
        // send new config to Kelda
@@ -61,7 +61,7 @@ void FirmwareIOMenu::save( void ) {
     for ( i=1; i<MAXCTRL; i++ ) {
       if ( anythingChanged[i] ) {
         myOSSwarm.Ctrl[i]->sendIOConfig( myOSSwarm.Ctrl[i]->macAddr );
-        myOSSwarm.Ctrl[i]->save( 2 );
+        myOSSwarm.Ctrl[i]->save( FTSWARM_NVSSCOPE_ALIASSERVO, SWOS_NOPORT );
       }
     }
           
@@ -289,6 +289,7 @@ class MenuIOConfig : protected FirmwareIOMenu {
     static const int8_t MENU_CFG      = -6;
     static const int8_t MENU_PREVIOUS = -7;
     static const int8_t MENU_NEXT     = -8;
+    static const int8_t MENU_OFFSET   = -9;
 
     SwOSIO* io;
     bool    selfSave = false;
@@ -796,6 +797,10 @@ void MenuIOConfig::run( void ) {
       add( "IO type", SWOSIOTYPE[ io->getIOType() ], MENU_TYPE, 't' );
       add( "alias",   io->getAlias(), MENU_ALIAS, 'a' );
 
+      if ( io->isServo() ) {
+        add( "offset", ((SwOSServo *)io)->getOffset(), MENU_OFFSET, 'o' );
+      }
+
       // test on label
       SwOSLabel_t label = io->getLabel();
       if ( (label != SWOSLABEL_UNDEF ) && ( label < SWOSLABEL_MAX ) ) add( "label", nvs.events.oledLabel[nvs.events.activeConfig][label], MENU_LABEL, 'l' );
@@ -839,6 +844,10 @@ void MenuIOConfig::run( void ) {
                           break;
 
       case MENU_LABEL:    changeLabel( );
+                          break;
+
+      case MENU_OFFSET:   ((SwOSServo*)io)->setOffset( enterNumber( "new offset [0..90]>", ((SwOSServo*)io)->getOffset(), 0, 90 ) );
+                          anythingChanged[0] = true;
                           break;
 
       case MENU_ADD:      printf("\n" ); 
@@ -1135,7 +1144,7 @@ void MenuSwarmConfig::changeAlias(void ) {
 
   // change name
   ctrl[selected]->setAlias( alias );
-  ctrl[selected]->save(2);
+  ctrl[selected]->save( FTSWARM_NVSSCOPE_ALIAS, SWOS_NOPORT );
 
 }
 
@@ -1253,7 +1262,7 @@ void MenuSwarmConfig::run( void ) {
 
       for ( int8_t i=0; i<=maxCtrl; i++ ) {
       
-        if ( ctrl[i]->isOnline() ) { 
+        if ( ( ctrl[i]->isOnline() ) && ( myOSSwarm.Ctrl[0]->IAmKelda ) ) { 
           printf("(%2d) ", i+1); 
           add( i ); 
       

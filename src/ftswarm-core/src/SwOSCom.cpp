@@ -208,22 +208,41 @@ size_t SwOSCom::size( void ) {
 
 }
 
-void SwOSCom::pushIO( uint8_t index, SwOSIOType_t ioType, uint8_t port, const char *name, const char *alias, uint8_t flags ) {
+void SwOSCom::pushIO( uint8_t index, SwOSIOType_t ioType, uint8_t port, const char *name, const char *alias, uint8_t flags, uint8_t *parameter, uint8_t size ) {
 
   uint8_t len_name  = strlen( name );
   uint8_t len_alias = strlen( alias );
+  uint8_t psize = parameter ? size:0;
   
   // not enough space to add to buffer?
-  if ( ( bufferIndex + len_name + len_alias + 7 ) >= MAXCONFIGPAYLOAD ) flushBuffer();
+  if ( ( bufferIndex + len_name + len_alias + psize + 8 ) >= MAXCONFIGPAYLOAD ) flushBuffer();
 
+  // index
   data.ioConfigCmd.payload[bufferIndex++] = index;
+
+  // ioType
   data.ioConfigCmd.payload[bufferIndex++] = (uint8_t) ioType;
+
+  // port
   data.ioConfigCmd.payload[bufferIndex++] = port;
+
+  // name
   strcpy( (char*) &(data.ioConfigCmd.payload[bufferIndex]), name );
   bufferIndex += len_name + 1;
+
+  // alias
   strcpy( (char*) &(data.ioConfigCmd.payload[bufferIndex]), alias );
   bufferIndex += len_alias + 1;
+
+  // flags
   data.ioConfigCmd.payload[bufferIndex++] = (uint8_t) flags;
+
+  // parameter
+  data.ioConfigCmd.payload[bufferIndex++] = psize;
+  if (psize) {
+    memcpy( &data.ioConfigCmd.payload[bufferIndex], parameter, psize );
+    bufferIndex += psize;
+  }
   
 }
 
@@ -241,7 +260,7 @@ void SwOSCom::flushBuffer( ) {
   
 }
 
-bool SwOSCom::popIO( uint8_t *index, SwOSIOType_t *ioType, uint8_t *port, char **name, char **alias, uint8_t *flags ) {
+bool SwOSCom::popIO( uint8_t *index, SwOSIOType_t *ioType, uint8_t *port, char **name, char **alias, uint8_t *flags, uint8_t *parameter, uint8_t *size ) {
 
   // end of data?
   if ( data.ioConfigCmd.payload[bufferIndex] == 255 ) return false;
@@ -251,15 +270,26 @@ bool SwOSCom::popIO( uint8_t *index, SwOSIOType_t *ioType, uint8_t *port, char *
   
   // corrupt packet?
   if ( ( bufferIndex + len_name + len_alias + 5 ) >= MAXCONFIGPAYLOAD ) {
-    SWARM_LOG_FATAL( "SwOSCOM::getNextIO corrupt packet found:\n");
+    SWARM_LOG_FATAL( "SwOSCOM::popIO corrupt packet found.");
   }
  
-  *index      = data.ioConfigCmd.payload[bufferIndex++]; 
-  *ioType     = ( SwOSIOType_t ) data.ioConfigCmd.payload[bufferIndex++];
-  *port       = data.ioConfigCmd.payload[bufferIndex++];
-  *name       = ( char * ) &(data.ioConfigCmd.payload[bufferIndex]); bufferIndex += len_name+1;
-  *alias      = ( char * ) &(data.ioConfigCmd.payload[bufferIndex]); bufferIndex += len_alias+1;
-  *flags      = ( uint8_t ) data.ioConfigCmd.payload[bufferIndex++];
+  *index        = data.ioConfigCmd.payload[bufferIndex++]; 
+  *ioType       = ( SwOSIOType_t ) data.ioConfigCmd.payload[bufferIndex++];
+  *port         = data.ioConfigCmd.payload[bufferIndex++];
+  *name         = ( char * ) &(data.ioConfigCmd.payload[bufferIndex]); bufferIndex += len_name+1;
+  *alias        = ( char * ) &(data.ioConfigCmd.payload[bufferIndex]); bufferIndex += len_alias+1;
+  *flags        = ( uint8_t ) data.ioConfigCmd.payload[bufferIndex++];
+  uint8_t pSize = ( uint8_t ) data.ioConfigCmd.payload[bufferIndex++];
+
+  // enough space to copy parameters?
+  if ( pSize > *size ) SWARM_LOG_FATAL( "SwOSCOM::popIO parameter exceeds size." );
+
+  // copy parameters
+  *size = pSize;
+  if ( pSize ) {
+    memcpy( parameter, (uint8_t *) &data.ioConfigCmd.payload[bufferIndex], pSize );
+    bufferIndex += pSize;
+  }
   
   return true;
 

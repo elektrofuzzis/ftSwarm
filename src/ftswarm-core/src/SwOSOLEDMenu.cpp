@@ -735,7 +735,7 @@ void FtSwarmScreen::close( FtSwarmScreenEvent_t event, uint8_t id, uint8_t nPara
 bool FtSwarmScreen::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
 
   // explizit no handling?
-  if ( id == FTSWARMSCREEN_NOID) return true;
+  if ( id == FTSWARMSCREEN_NOID ) return true;
 
   // back
   if ( ( id == FTSWARM_F2 ) && ESC ) {
@@ -2036,7 +2036,7 @@ bool FtSwarmScreenCalibrateJoystick::eventHandler( FtSwarmScreenEvent_t event, u
 
     if ( id == FTSWARM_S4 ) {
       // save new settings
-      memcpy( &nvs.calibration[i], calibration, 2 * sizeof( SwOSJoyCalibration_t ) );
+      memcpy( &nvs.joystick[i], joystick, 2 * sizeof( SwOSJoyCalibration_t ) );
       nvs.save( FTSWARM_NVSSCOPE_JOYSTICK );
     }
 
@@ -2140,6 +2140,69 @@ FtSwarmScreenServoOffsetList::FtSwarmScreenServoOffsetList( FtSwarmScreen *paren
 bool FtSwarmScreenServoOffsetList::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
 
   if ( FtSwarmScreenSelectIO::eventHandler( event, id, nParam, sParam ) ) return true;
+
+  if ( ( event == FTSWARM_SCREENEVENT_OK ) && ( id >= FTSWARMSCREENSELECTIO_CB ) ) {
+
+    screenManager.activate( new FtSwarmScreenServoOffset( parent, (SwOSServo*) io[ id - FTSWARMSCREENSELECTIO_CB ] ) );
+    return true;
+
+  }
+
+  return false;
+
+}
+
+/***************************************************
+ *
+ *   FtSwarmScreenServoOffset
+ *
+ ***************************************************/
+
+FtSwarmScreenServoOffset::FtSwarmScreenServoOffset( FtSwarmScreen *parent, SwOSServo *servo ) : FtSwarmScreen( parent, servo->getAliasOrName() ) {
+
+  this->servo = servo;
+
+  char x[20];
+  sprintf( x, "Offset: %2d", servo->getOffset() );
+  text = addText( FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2, 15, FTSWARM_ALIGNCENTER, x );
+
+  addS1( "-" );
+  addS2( "+" );
+  addS4( "Save" );
+
+}
+
+bool FtSwarmScreenServoOffset::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
+
+  if ( FtSwarmScreen::eventHandler( event, id, nParam, sParam ) ) return true;
+
+  if ( event == FTSWARM_SCREENEVENT_DOWN ) {
+
+    int16_t offset = servo->getOffset();
+
+    switch ( id ) {
+
+      case FTSWARM_S1:  if ( offset > 5 ) offset = offset - 5;
+                        break;
+
+      case FTSWARM_S2:  if ( offset < 85 ) offset = offset + 5;
+                        break;
+                        
+      case FTSWARM_S4:  servo->getCtrl()->save( FTSWARM_NVSSCOPE_SERVO, servo->getPort() );
+                        close();
+                        return true;
+
+    }
+
+    servo->setOffset( offset );
+    char x[20];
+    sprintf( x, "Offset: %2d", servo->getOffset() );
+    text->setText( x );
+    text->draw();
+
+    return true;
+
+  }
 
   return false;
 
