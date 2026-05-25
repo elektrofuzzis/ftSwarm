@@ -356,13 +356,14 @@ class RGBLed {
   protected:
 
     uint8_t  brightness  = 16;
-    uint32_t color = 0;
+    RgbColor color = COLOR::Black;
+    void set( void );
     void setPWM( uint8_t c, uint32_t duty );
 
   public:
 
     RGBLed();
-    void setColor( uint32_t color );
+    void setColor( RgbColor color );
     void setBrightness( uint8_t brightness );
 
 };

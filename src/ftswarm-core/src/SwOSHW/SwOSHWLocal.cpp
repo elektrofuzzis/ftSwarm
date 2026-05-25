@@ -638,21 +638,28 @@ void RGBLed::setPWM( uint8_t c, uint32_t duty ) {
 
 }
 
-void RGBLed::setColor( uint32_t color ) {
+void RGBLed::setColor( RgbColor color ) {
 
   this->color = color;
 
-  setPWM( 0, ( ( color >> 16 ) & 0xFF ) * brightness);
-  setPWM( 1, ( ( color >> 8  ) & 0xFF ) * brightness );
-  setPWM( 2, (   color         & 0xFF ) * brightness );
+  set();
 
 }
 
 void RGBLed::setBrightness( uint8_t brightness ) {
 
-  this->brightness = brightness / 16;
-  setColor( color );
+  this->brightness = brightness;
+  set();
 
+}
+
+void RGBLed::set( void ) {
+
+  RgbColor c = color.Dim( brightness );
+  setPWM( 0, c.R );
+  setPWM( 1, c.G );
+  setPWM( 2, c.B );
+  
 }
 
 RGBLed *rgbLed = NULL;

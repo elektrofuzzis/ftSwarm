@@ -1035,7 +1035,7 @@ bool SwOSCtrl::setPixel( SwOSCom *com ) {
 
   SwOSPixel *pixel = (SwOSPixel *)io[com->data.pixelCmd.index];
   pixel->setBrightness( com->data.pixelCmd.brightness );
-  pixel->setColor( com->data.pixelCmd.color );
+  pixel->setColor( RgbColor( com->data.pixelCmd.R, com->data.pixelCmd.G, com->data.pixelCmd.B ) );
 
   return true;
 

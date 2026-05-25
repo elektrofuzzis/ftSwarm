@@ -18,6 +18,7 @@
 
 #include "SwOS.h"
 #include "SwOSNVS.h"
+#include "SwOSColor.h"
 
 #define ESPNOW_MAXDELAY     128
 #define DEFAULTSECRET       0x2506
@@ -154,7 +155,9 @@ struct actorTypeCmd_t{
 struct pixelCmd_t { 
   uint8_t index; 
   uint8_t brightness; 
-  uint32_t color;
+  uint8_t R;
+  uint8_t G;
+  uint8_t B;
 } __attribute__((packed));
 
 struct ioConfigCmd_t { 

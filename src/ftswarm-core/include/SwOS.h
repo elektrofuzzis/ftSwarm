@@ -22,7 +22,7 @@
 #include <stdint.h>
 #include <cstddef>
 
-#include <FastLED.h>
+#include "SwOSColor.h"
 #include "ftPwrDrive/ftPwrDrive.h"
 #include "esp_camera.h"
 
@@ -358,16 +358,6 @@ const char FTSWARMOPERATOR[ FTSWARM_MAXOPERATOR][2] = { "=", "+", "*" };
 // trigger operands
 typedef enum { FTSWARM_CONSTANT, FTSWARM_SENSORVALUE, FTSWARM_ACTORVALUE, FTSWARM_MAXOPERAND } FtSwarmOperand_t;
 const char FTSWARMOPERAND[ FTSWARM_MAXOPERAND][15] = { "constant", "sensor's value", "actor's value" };
-
-typedef enum {
-    Red        = 0xFF0000,
-    Green      = 0x808080,
-    Blue       = 0x0000FF,
-    Yellow     = 0xFFFF00,
-    Cyan       = 0x00FFFF,
-    Aquamarine = 0x7FFFD4,
-    Black      = 0x000000
-} FtSwarmColor;
 
 #define MAXSPEED256  255 
 #define MAXSPEED4096 4095 
@@ -930,8 +920,8 @@ class FtSwarmPixel : public FtSwarmIO {
     void setBrightness(uint8_t brightness);
 
     // color
-    uint32_t getColor();
-    void setColor(uint32_t color);
+    RgbColor getColor();
+    void setColor(RgbColor color);
 };
 
 class FtSwarmI2C : public FtSwarmIO {

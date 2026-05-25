@@ -113,10 +113,10 @@ void Serialize::write( int value ) {
   write( str );
 }
 
-void Serialize::writeX( uint32_t value ) {
+void Serialize::write( RgbColor value ) {
   
   char str[64];
-  sprintf( str, "%06X", value);
+  sprintf( str, "%02X%02X%02X", value.R, value.G, value.B );
   write( str );
 }
 
@@ -191,11 +191,11 @@ void Serialize::item( SerialLiteral_t literal, int value ) {
 
 }
 
-void Serialize::itemX( SerialLiteral_t literal, uint32_t value ) {
+void Serialize::item( SerialLiteral_t literal, RgbColor value ) {
   
   newObject( SERIALIZE_Item );
   write( literal);
-  writeX( value );
+  write( value );
 
 }
 

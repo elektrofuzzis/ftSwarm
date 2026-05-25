@@ -1,0 +1,156 @@
+/*
+ * SwOSColors.h
+ *
+ * some common color defintions
+ * 
+ * (C) 2021-26 Christian Bergschneider & Stefan Fuss
+ * 
+ */
+
+#pragma once
+
+#include <NeoPixelBus.h>
+
+namespace COLOR {
+    const RgbColor AliceBlue(240, 248, 255);
+    const RgbColor AntiqueWhite(250, 235, 215);
+    const RgbColor Aqua(0, 255, 255);
+    const RgbColor Aquamarine(127, 255, 212);
+    const RgbColor Azure(240, 255, 255);
+    const RgbColor Beige(245, 245, 220);
+    const RgbColor Bisque(255, 228, 196);
+    const RgbColor Black(0, 0, 0);
+    const RgbColor BlanchedAlmond(255, 235, 205);
+    const RgbColor Blue(0, 0, 255);
+    const RgbColor BlueViolet(138, 43, 226);
+    const RgbColor Brown(165, 42, 42);
+    const RgbColor BurlyWood(222, 184, 135);
+    const RgbColor CadetBlue(95, 158, 160);
+    const RgbColor Chartreuse(127, 255, 0);
+    const RgbColor Chocolate(210, 105, 30);
+    const RgbColor Coral(255, 127, 80);
+    const RgbColor CornflowerBlue(100, 149, 237);
+    const RgbColor Cornsilk(255, 248, 220);
+    const RgbColor Crimson(220, 20, 60);
+    const RgbColor Cyan(0, 255, 255);
+    const RgbColor DarkBlue(0, 0, 139);
+    const RgbColor DarkCyan(0, 139, 139);
+    const RgbColor DarkGoldenRod(184, 134, 11);
+    const RgbColor DarkGray(169, 169, 169);
+    const RgbColor DarkGreen(0, 100, 0);
+    const RgbColor DarkKhaki(189, 183, 107);
+    const RgbColor DarkMagenta(139, 0, 139);
+    const RgbColor DarkOliveGreen(85, 107, 47);
+    const RgbColor DarkOrange(255, 140, 0);
+    const RgbColor DarkOrchid(153, 50, 204);
+    const RgbColor DarkRed(139, 0, 0);
+    const RgbColor DarkSalmon(233, 150, 122);
+    const RgbColor DarkSeaGreen(143, 188, 143);
+    const RgbColor DarkSlateBlue(72, 61, 139);
+    const RgbColor DarkSlateGray(47, 79, 79);
+    const RgbColor DarkTurquoise(0, 206, 209);
+    const RgbColor DarkViolet(148, 0, 211);
+    const RgbColor DeepPink(255, 20, 147);
+    const RgbColor DeepSkyBlue(0, 191, 255);
+    const RgbColor DimGray(105, 105, 105);
+    const RgbColor DodgerBlue(30, 144, 255);
+    const RgbColor FireBrick(178, 34, 34);
+    const RgbColor FloralWhite(255, 250, 240);
+    const RgbColor ForestGreen(34, 139, 34);
+    const RgbColor Fuchsia(255, 0, 255);
+    const RgbColor Gainsboro(220, 220, 220);
+    const RgbColor GhostWhite(248, 248, 255);
+    const RgbColor Gold(255, 215, 0);
+    const RgbColor GoldenRod(218, 165, 32);
+    const RgbColor Gray(128, 128, 128);
+    const RgbColor Green(0, 128, 0);
+    const RgbColor GreenYellow(173, 255, 47);
+    const RgbColor HoneyDew(240, 255, 240);
+    const RgbColor HotPink(255, 105, 180);
+    const RgbColor IndianRed(205, 92, 92);
+    const RgbColor Indigo(75, 0, 130);
+    const RgbColor Ivory(255, 255, 240);
+    const RgbColor Khaki(240, 230, 140);
+    const RgbColor Lavender(230, 230, 250);
+    const RgbColor LavenderBlush(255, 240, 245);
+    const RgbColor LawnGreen(124, 252, 0);
+    const RgbColor LemonChiffon(255, 250, 205);
+    const RgbColor LightBlue(173, 216, 230);
+    const RgbColor LightCoral(240, 128, 128);
+    const RgbColor LightCyan(224, 255, 255);
+    const RgbColor LightGoldenRodYellow(250, 250, 210);
+    const RgbColor LightGray(211, 211, 211);
+    const RgbColor LightGreen(144, 238, 144);
+    const RgbColor LightPink(255, 182, 193);
+    const RgbColor LightSalmon(255, 160, 122);
+    const RgbColor LightSeaGreen(32, 178, 170);
+    const RgbColor LightSkyBlue(135, 206, 250);
+    const RgbColor LightSlateGray(119, 136, 153);
+    const RgbColor LightSteelBlue(176, 196, 222);
+    const RgbColor LightYellow(255, 255, 224);
+    const RgbColor Lime(0, 255, 0);
+    const RgbColor LimeGreen(50, 205, 50);
+    const RgbColor Linen(250, 240, 230);
+    const RgbColor Magenta(255, 0, 255);
+    const RgbColor Maroon(128, 0, 0);
+    const RgbColor MediumAquaMarine(102, 205, 170);
+    const RgbColor MediumBlue(0, 0, 205);
+    const RgbColor MediumOrchid(186, 85, 211);
+    const RgbColor MediumPurple(147, 112, 219);
+    const RgbColor MediumSeaGreen(60, 179, 113);
+    const RgbColor MediumSlateBlue(123, 104, 238);
+    const RgbColor MediumSpringGreen(0, 250, 154);
+    const RgbColor MediumTurquoise(72, 209, 204);
+    const RgbColor MediumVioletRed(199, 21, 133);
+    const RgbColor MidnightBlue(25, 25, 112);
+    const RgbColor MintCream(245, 255, 250);
+    const RgbColor MistyRose(255, 228, 225);
+    const RgbColor Moccasin(255, 228, 181);
+    const RgbColor NavajoWhite(255, 222, 173);
+    const RgbColor Navy(0, 0, 128);
+    const RgbColor OldLace(253, 245, 230);
+    const RgbColor Olive(128, 128, 0);
+    const RgbColor OliveDrab(107, 142, 35);
+    const RgbColor Orange(255, 165, 0);
+    const RgbColor OrangeRed(255, 69, 0);
+    const RgbColor Orchid(218, 112, 214);
+    const RgbColor PaleGoldenRod(238, 232, 170);
+    const RgbColor PaleGreen(152, 251, 152);
+    const RgbColor PaleTurquoise(175, 238, 238);
+    const RgbColor PaleVioletRed(219, 112, 147);
+    const RgbColor PapayaWhip(255, 239, 213);
+    const RgbColor PeachPuff(255, 218, 185);
+    const RgbColor Peru(205, 133, 63);
+    const RgbColor Pink(255, 192, 203);
+    const RgbColor Plum(221, 160, 221);
+    const RgbColor PowderBlue(176, 224, 230);
+    const RgbColor Purple(128, 0, 128);
+    const RgbColor RebeccaPurple(102, 51, 153);
+    const RgbColor Red(255, 0, 0);
+    const RgbColor RosyBrown(188, 143, 143);
+    const RgbColor RoyalBlue(65, 105, 225);
+    const RgbColor SaddleBrown(139, 69, 19);
+    const RgbColor Salmon(250, 128, 114);
+    const RgbColor SandyBrown(244, 164, 96);
+    const RgbColor SeaGreen(46, 139, 87);
+    const RgbColor SeaShell(255, 245, 238);
+    const RgbColor Sienna(160, 82, 45);
+    const RgbColor Silver(192, 192, 192);
+    const RgbColor SkyBlue(135, 206, 235);
+    const RgbColor SlateBlue(106, 90, 205);
+    const RgbColor SlateGray(112, 128, 144);
+    const RgbColor Snow(255, 250, 250);
+    const RgbColor SpringGreen(0, 255, 127);
+    const RgbColor SteelBlue(70, 130, 180);
+    const RgbColor Tan(210, 180, 140);
+    const RgbColor Teal(0, 128, 128);
+    const RgbColor Thistle(216, 191, 216);
+    const RgbColor Tomato(255, 99, 71);
+    const RgbColor Turquoise(64, 224, 208);
+    const RgbColor Violet(238, 130, 238);
+    const RgbColor Wheat(245, 222, 179);
+    const RgbColor White(255, 255, 255);
+    const RgbColor WhiteSmoke(245, 245, 245);
+    const RgbColor Yellow(255, 255, 0);
+    const RgbColor YellowGreen(154, 205, 50);
+}

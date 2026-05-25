@@ -3,13 +3,14 @@
  *
  * simple framework to build a json reply for a REST based service
  * 
- * (C) 2021/22 Christian Bergschneider & Stefan Fuss
+ * (C) 2021-26 Christian Bergschneider & Stefan Fuss
  * 
  */
 
 #pragma once
 
 #include <esp_http_server.h>
+#include "SwOSColor.h"
 
 typedef enum {
   SERIALIZE_RAW,
@@ -84,7 +85,7 @@ protected:
 
   void write( SerialLiteral_t literal );
   void write( int value );
-  void writeX( uint32_t value );
+  void write( RgbColor value );
   void writeBinary( uint8_t v );
 
 public:
@@ -110,7 +111,7 @@ public:
   // items
   void item( SerialLiteral_t literal, const char *value );
   void item( SerialLiteral_t literal, int value);
-  void itemX( SerialLiteral_t literal, uint32_t value);
+  void item( SerialLiteral_t literal, RgbColor value);
   void item( SerialLiteral_t literal, float value, uint8_t decimalPlaces, const char *unit = NULL );
   void item( SerialLiteral_t literal, float v1, float v2, float v3, float v4 );
   void item( SerialLiteral_t literal, float v1, float v2, float v3 );

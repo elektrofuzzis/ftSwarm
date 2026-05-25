@@ -810,10 +810,10 @@ bool SwOSNetwork::_StartRS485( void ) {
       xTaskCreatePinnedToCore( RS485_rx_task, "RS485_rx_task", 10240, NULL, 12, NULL, ARDUINO_EVENT_RUNNING_CORE );
     }
 
-    return true;
-  
   #endif
 
+  return true;
+  
 }
 
 bool SwOSNetwork::_StartWifi( void ) {

@@ -758,18 +758,18 @@ void FtSwarmPixel::setBrightness(uint8_t brightness) {
   static_cast<SwOSPixel*>(me)->unlock();
 }
 
-uint32_t FtSwarmPixel::getColor() {
+RgbColor FtSwarmPixel::getColor() {
 
   if (!me) return 0;
   
   static_cast<SwOSPixel*>(me)->lock();
-  uint32_t xReturn = (static_cast<SwOSPixel *>(me)->getColor());
+  RgbColor xReturn = (static_cast<SwOSPixel *>(me)->getColor());
   static_cast<SwOSPixel*>(me)->unlock();
 
   return xReturn;
 };
 
-void FtSwarmPixel::setColor(uint32_t color) {
+void FtSwarmPixel::setColor(RgbColor color) {
 
   if (!me) return;
 

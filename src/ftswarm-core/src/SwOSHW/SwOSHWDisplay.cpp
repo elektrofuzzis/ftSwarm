@@ -7,7 +7,7 @@
  * 
  */
 
-#include <FastLED.h>
+#include <SwOSColor.h>
  
 #include "SwOSHW/SwOSHWDisplay.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
@@ -22,8 +22,10 @@
  *
  ***************************************************/
 
-// LED Representation in FastLED library
-CRGB led[MAXLEDS];
+#ifdef RGB_BUILTIN
+NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> neoPixel(MAXLEDS, RGB_BUILTIN);
+#endif
+
 uint8_t usedPixels = 0;
 bool ledsInitialized = false;
 
@@ -44,28 +46,33 @@ void SwOSPixel::setupLocal() {
     #endif
 
     #ifdef RGB_BUILTIN
-    FastLED.addLeds<WS2812, RGB_BUILTIN, GRB>(led, MAXLEDS).setCorrection( TypicalLEDStrip ); 
+    neoPixel.Begin();
     #endif
 
-    setBrightness( BRIGHTNESSDEFAULT );
     ledsInitialized = true;
 
   }
 
   // initialize pixel
   if ( port < MAXLEDS ) {
-    setColor( FtSwarmColor::Black );
+    setColor( COLOR::Black );
   }
 
 }
 
-void SwOSPixel::setColor(uint32_t color) {
+void SwOSPixel::setColor( uint32_t color ) {
+
+  setColor( castUI32ToColor( color ) );
+
+}
+
+void SwOSPixel::setColor( RgbColor color ) {
 
   // store new color
   this->color = color;
 
   // apply local or remote
-  if (ctrl->isLocal()) setColorLocal();
+  if (ctrl->isLocal()) setLocal();
   else                 setRemote();
 }
 
@@ -73,12 +80,14 @@ void SwOSPixel::setRemote() {
   
   SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETPIXEL );
   cmd.data.pixelCmd.index = ctrl->getIndex(this);
-  cmd.data.pixelCmd.color = color;
+  cmd.data.pixelCmd.R = color.R;
+  cmd.data.pixelCmd.G = color.G;
+  cmd.data.pixelCmd.B = color.B;
   cmd.data.pixelCmd.brightness = brightness;
   cmd.send( );
 }
 
-void SwOSPixel::setColorLocal() {
+void SwOSPixel::setLocal() {
 
   // set color
 
@@ -87,12 +96,15 @@ void SwOSPixel::setColorLocal() {
   #if FTSWARM_HAL_DISCRETE_RGBS > 0
   if ( port == 0 ) {
       rgbLed->setColor( color );
+      rgbLed->setBrightness( brightness );
       return;
   }
   #endif
 
-  led[(FTSWARM_HAL_DISCRETE_RGBS)?port-1:port] = color;
-  FastLED.show();
+  #ifdef RGB_BUILTIN
+  neoPixel.SetPixelColor((FTSWARM_HAL_DISCRETE_RGBS)?port-1:port, color.Dim( brightness) );
+  neoPixel.Show();
+  #endif
 
 }
 
@@ -102,26 +114,8 @@ void SwOSPixel::setBrightness(uint8_t brightness) {
   this->brightness = brightness;
 
   // apply local or remote
-  if (ctrl->isLocal()) setBrightnessLocal();
+  if (ctrl->isLocal()) setLocal();
   else                 setRemote();
-
-}
-
-void SwOSPixel::setBrightnessLocal() {
-
-  // set brightness
-
-  if ( port>=MAXLEDS ) return;
-
-  #if FTSWARM_HAL_DISCRETE_RGBS > 0
-  if ( port == 0 ) {
-      rgbLed->setBrightness( brightness );
-      return;
-  }
-  #endif
-
-  FastLED.setBrightness( brightness );
-  FastLED.show();
 
 }
 
@@ -129,14 +123,26 @@ void SwOSPixel::serialize( Serialize *serialize ) {
   serialize->startObject( );
   SwOSIO::serialize( serialize );
   serialize->item( SERIALIZE_LITERAL_BRIGHTNESS, brightness);
-  serialize->itemX( SERIALIZE_LITERAL_COLOR,     color);
+  serialize->item( SERIALIZE_LITERAL_COLOR,      color);
   serialize->endObject();
 }
 
 void SwOSPixel::onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t parameter ) {
   
-  setColor( evalTriggerMath( triggerMath, sensor, getColor(), parameter, 0, 0xFFFFFF ) );
 
+  setColor( castColorToUI32( evalTriggerMath( triggerMath, sensor, castColorToUI32( getColor() ), parameter, 0, 0xFFFFFF ) ) );
+
+}
+
+RgbColor castUI32ToColor(uint32_t color) {
+    uint8_t r = (uint8_t)((color >> 16) & 0xFF);
+    uint8_t g = (uint8_t)((color >> 8) & 0xFF);
+    uint8_t b = (uint8_t)(color & 0xFF);
+    return RgbColor(r, g, b);
+}
+
+uint32_t castColorToUI32(RgbColor color) {
+    return ((uint32_t)color.R << 16) | ((uint32_t)color.G << 8) | (uint32_t)color.B;
 }
 
 /***************************************************

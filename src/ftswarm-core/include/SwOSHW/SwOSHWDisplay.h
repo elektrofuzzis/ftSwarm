@@ -11,6 +11,7 @@
 
 #include "SwOSHWBaseIO.h"
 #include "SwOSOLEDMenu.h"
+#include "SwOSColor.h"
 
 // only to feed that silly compiler
 class OLEDMenu;
@@ -21,16 +22,18 @@ class OLEDMenu;
  *
  ***************************************************/
 
+ extern "C" RgbColor castUI32ToColor(uint32_t color);
+ extern "C" uint32_t castColorToUI32(RgbColor color);
+
  class SwOSPixel : public SwOSIO {
   protected:
-    uint32_t color = 0;
+    RgbColor color = 0;
     uint8_t  brightness = BRIGHTNESSDEFAULT;
     bool     dynamic = false;
   
     // local HW procedures
     virtual void setupLocal(); 
-    virtual void setColorLocal();
-    virtual void setBrightnessLocal();
+    virtual void setLocal();
   
     // remote HW procedures
     virtual void setRemote();
@@ -46,11 +49,12 @@ class OLEDMenu;
     virtual bool isActor( void ) { return true; };
   
     // commands
-    virtual uint32_t getColor()      { return color; };
+    virtual RgbColor getColor()      { return color; };
     virtual uint8_t  getBrightness() { return this->brightness; };
-    virtual void     setColor(uint32_t color);
+    virtual void     setColor( RgbColor color );
+    virtual void     setColor( uint32_t color );
     virtual void     setBrightness(uint8_t brightness);
-    virtual void     setValue( uint8_t brightness, uint32_t color ) { this->brightness = brightness; this->color = color; };
+    virtual void     setValue( uint8_t brightness, RgbColor color ) { this->brightness = brightness; this->color = color; };
   };
 
 /***************************************************

@@ -459,9 +459,9 @@ void testPixels( uint8_t pixels ) {
 
       for (uint8_t i=0; i<pixels; i++ ) {
 
-        if      (c==0) px[i]->setColor(0xFF0000);
-        else if (c==1) px[i]->setColor(0x00FF00);
-        else           px[i]->setColor(0x0000FF);
+        if      (c==0) px[i]->setColor( COLOR::Red   );
+        else if (c==1) px[i]->setColor( COLOR::Green );
+        else           px[i]->setColor( COLOR::Blue  );
 
         delay(100);
 
@@ -914,6 +914,8 @@ void SwOSCLI::executeServoCmd( void ) {
 
 void SwOSCLI::executePixelCmd( void ) {
 
+  RgbColor color;
+
   switch ( cmd ) {
     case CLICMD_setBrightness:   if (parameter[0].inRange( "brightness", 0, 255, response ) ) { 
                                   OK();
@@ -930,12 +932,13 @@ void SwOSCLI::executePixelCmd( void ) {
 
     case CLICMD_setColor:       OK();
                                 io->lock(); 
-                                ((SwOSPixel *)io)->setColor( (uint) parameter[0].getNumber() );
+                                ((SwOSPixel *)io)->setColor( (uint32_t) parameter[0].getNumber() );
                                 io->unlock();
                                 break;
 
     case CLICMD_getColor:       io->lock();
-                                sprintf( response, "R: #%X", ((SwOSPixel *)io)->getColor() ); 
+                                color = ((SwOSPixel *)io)->getColor();
+                                sprintf( response, "R: #%02X%02X%02X", color.R, color.G, color.B ); 
                                 io->unlock();
                                 break;
 
