@@ -443,7 +443,7 @@ char *SwOSCLI::eval( char* in, bool *loggedIn ) {
 
 void SwOSCLI::OK ( void ) {
 
-  sprintf( response, "R: ok" );
+  sprintf( response, "R: %d ok", myOSSwarm.sync );
 
 }
 
@@ -512,7 +512,7 @@ void SwOSCLI::executeControllerCmd(void ) {
                                     break;
 
     case CLICMD_setMicrostepMode:   if (parameter[0].inRange( "MicroStepMode", 0, 7, response ) ) {
-                                      OK();
+                                      OK( );
                                       ctrl->lock();
                                       ctrl->setMicrostepMode( (uint8_t) parameter[0].getNumber() );
                                       ctrl->unlock();
@@ -526,7 +526,7 @@ void SwOSCLI::executeControllerCmd(void ) {
                                     break;
 
     case CLICMD_save:               if ( parameter[0].inRange( "scope", 0, 3, response ) ) {
-                                      OK();
+                                      OK( );
                                       uint8_t scope = parameter[0].getNumber();
                                       if      ( scope <= 1 ) ctrl->save( FTSWARM_NVSSCOPE_ALL, SWOS_NOPORT );
                                       else if ( scope == 2 ) ctrl->save( FTSWARM_NVSSCOPE_ALIAS, SWOS_NOPORT );
@@ -535,7 +535,7 @@ void SwOSCLI::executeControllerCmd(void ) {
                                     break;
 
     case CLICMD_reboot:             ctrl->reboot();
-                                    OK();
+                                    OK( );
                                     break;
 
     case CLICMD_setWifi:            // wifi mode in range from 0 to 2?
@@ -546,7 +546,7 @@ void SwOSCLI::executeControllerCmd(void ) {
                                     else if ( ( parameter[0].getNumber() == wifiClient ) && ( !parameter[2].isString() ) ) Error( ERROR_PSKEXPECTED );
                                     // everything is fine
                                     else {
-                                      OK();
+                                      OK( );
                                       ctrl->setWifi( (FtSwarmWifi_t) parameter[0].getNumber(), parameter[1].getString(), parameter[2].getString() );
                                     }
                                     break;
@@ -583,8 +583,7 @@ void SwOSCLI::executeInputCmd( void ) {
                                   if ( ctrl->changeIOType( index, newIOType, false ) ) {
                                     io = ctrl->io[ index ];
                                     if (io) io->setParameter( parameter[1].getNumber() );
-                                    OK();
-                                  }
+                                    OK( );                                  }
 
                                 } else Error( ERROR_WRONGIOTYPE, 0, newIOType );
 
@@ -655,7 +654,6 @@ void SwOSCLI::executeInputCmd( void ) {
                                      ( parameter[3].inRange( "operand2", 0, FTSWARM_MAXOPERAND-1, response ) ) &&
                                      ( parameter[4].isIO() ) &&
                                      ( parameter[5].isNumber() ) ) {
-                                  OK();
                                   io->lock();
                                   ((SwOSInput *)io)->addEvent(  (FtSwarmTrigger_t)parameter[0].getNumber(), 
                                                                 (FtSwarmOperator_t)parameter[1].getNumber(), 
@@ -664,6 +662,7 @@ void SwOSCLI::executeInputCmd( void ) {
                                                                 parameter[4].getIO(), 
                                                                 parameter[5].getNumber() );
                                   io->unlock();
+                                  OK( );
                                 }
                                 break;
 
@@ -701,7 +700,7 @@ void SwOSCLI::executeActorCmd( void ) {
                                       motor->unlock();
                                     }
 
-                                    OK();
+                                    OK( );
 
                                   }
 
@@ -715,11 +714,11 @@ void SwOSCLI::executeActorCmd( void ) {
                                 break;
 
     case CLICMD_setSpeed:       if (parameter[0].inRange( "speed", -motor->getMaxSpeed(), motor->getMaxSpeed(), response ) ) { 
-                                  OK();
                                   motor->lock(); 
                                   motor->setSpeed( parameter[0].getNumber() );
                                   motor->apply();
                                   motor->unlock();
+                                  OK( );
                                 }
                                 break;
 
@@ -729,11 +728,11 @@ void SwOSCLI::executeActorCmd( void ) {
                                 break;
 
     case CLICMD_setMotionType:  if (parameter[0].inRange( "motionType", 0, FTSWARM_MAXMOTION-1, response) ) { 
-                                  OK();
                                   motor->lock(); 
                                   motor->setMotionType( (FtSwarmMotion_t) parameter[0].getNumber() );
                                   motor->apply();
                                   motor->unlock();
+                                  OK( );
                                 }
                                 break;
 
@@ -743,10 +742,10 @@ void SwOSCLI::executeActorCmd( void ) {
                                 break;
 
     case CLICMD_setDistance:    if ( stepper->getIOType() == SWOSIO_STEPPER ) {
-                                  OK();
                                   stepper->lock(); 
                                   stepper->setDistance( parameter[0].getNumber(), (parameter[1].getNumber() > 0) );
                                   stepper->unlock();
+                                  OK( );
                                 } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
                                 break;
 
@@ -758,10 +757,10 @@ void SwOSCLI::executeActorCmd( void ) {
                                 break;
 
     case CLICMD_run:            if ( stepper->getIOType() == SWOSIO_STEPPER ) {
-                                  OK();
                                   stepper->lock(); 
                                   stepper->startStop( true );
                                   stepper->unlock();
+                                  OK( );
                                 } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
                                 break;
 
@@ -773,18 +772,18 @@ void SwOSCLI::executeActorCmd( void ) {
                                 break;
 
     case CLICMD_stop:           if ( stepper->getIOType() == SWOSIO_STEPPER ) {
-                                  OK();
                                   stepper->lock(); 
                                   stepper->startStop( false );
                                   stepper->unlock();
+                                  OK( );
                                 } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
                                 break;
 
     case CLICMD_setPosition:    if ( stepper->getIOType() == SWOSIO_STEPPER ) {
-                                  OK();
                                   stepper->lock(); 
                                   stepper->setPosition( parameter[0].getNumber() );
                                   stepper->unlock();
+                                  OK( );
                                 } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
                                 break;
 
@@ -796,10 +795,10 @@ void SwOSCLI::executeActorCmd( void ) {
                                 break;
 
     case CLICMD_homing:         if ( stepper->getIOType() == SWOSIO_STEPPER ) {
-                                  OK();
                                   stepper->lock(); 
                                   stepper->homing( parameter[0].getNumber() );
                                   stepper->unlock();
+                                  OK( );
                                 } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
                                 break;
                                 
@@ -811,10 +810,10 @@ void SwOSCLI::executeActorCmd( void ) {
                                 break;
 
     case CLICMD_setHomingOffset: if ( stepper->getIOType() == SWOSIO_STEPPER ) {
-                                  OK();
                                   stepper->lock(); 
                                   stepper->setHomingOffset( parameter[0].getNumber() );
                                   stepper->unlock();
+                                  OK( );
                                 } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
                                 break;
 
@@ -841,7 +840,6 @@ void SwOSCLI::executeJoystickCmd( void ) {
                                    ( parameter[3].inRange( "operand2", 0, FTSWARM_MAXOPERAND-1, response ) ) &&
                                    ( parameter[4].isIO() ) &&
                                    ( parameter[5].isNumber() ) ) {
-                                OK();
                                 io->lock();
                                 ((SwOSJoystick *)io)->lr->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), 
                                                                     (FtSwarmOperator_t)parameter[1].getNumber(), 
@@ -850,6 +848,7 @@ void SwOSCLI::executeJoystickCmd( void ) {
                                                                     parameter[4].getIO(), 
                                                                     parameter[5].getNumber() );
                                 io->unlock();
+                                OK( );
                               }
                               break;
 
@@ -859,7 +858,6 @@ void SwOSCLI::executeJoystickCmd( void ) {
                                    ( parameter[3].inRange( "operand2", 0, FTSWARM_MAXOPERAND-1, response ) ) &&
                                    ( parameter[4].isIO() ) &&
                                    ( parameter[5].isNumber() ) ) {
-                                OK();
                                 io->lock();
                                 ((SwOSJoystick *)io)->fb->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), 
                                                                     (FtSwarmOperator_t)parameter[1].getNumber(), 
@@ -868,6 +866,7 @@ void SwOSCLI::executeJoystickCmd( void ) {
                                                                     parameter[4].getIO(), 
                                                                     parameter[5].getNumber() );
                                 io->unlock();
+                                OK( );
                               }
                               break;
 
@@ -881,10 +880,10 @@ void SwOSCLI::executeServoCmd( void ) {
   
   switch ( cmd ) {
     case CLICMD_setPosition:    if (parameter[0].inRange( "position", -255, 255, response ) ) { 
-                                  OK();
                                   io->lock(); 
                                   ((SwOSServo*) io)->setPosition( (int16_t) parameter[0].getNumber() );
                                   io->unlock();
+                                  OK( );
                                 }
                                 break;
 
@@ -894,10 +893,10 @@ void SwOSCLI::executeServoCmd( void ) {
                                 break;
 
     case CLICMD_setOffset:      if (parameter[0].inRange( "offset", -255, 255, response ) ) { 
-                                  OK();
                                   io->lock(); 
                                   ((SwOSServo*) io)->setOffset( (int16_t) parameter[0].getNumber() );
                                   io->unlock();
+                                  OK( );
                                 }
                                 break;
 
@@ -918,10 +917,10 @@ void SwOSCLI::executePixelCmd( void ) {
 
   switch ( cmd ) {
     case CLICMD_setBrightness:   if (parameter[0].inRange( "brightness", 0, 255, response ) ) { 
-                                  OK();
                                   io->lock(); 
                                   ((SwOSPixel *)io)->setBrightness( (uint8_t) parameter[0].getNumber() );
                                   io->unlock();
+                                  OK( );
                                 }
                                 break;
 
@@ -930,10 +929,10 @@ void SwOSCLI::executePixelCmd( void ) {
                                 io->unlock();
                                 break;
 
-    case CLICMD_setColor:       OK();
-                                io->lock(); 
+    case CLICMD_setColor:       io->lock(); 
                                 ((SwOSPixel *)io)->setColor( (uint32_t) parameter[0].getNumber() );
                                 io->unlock();
+                                OK( );
                                 break;
 
     case CLICMD_getColor:       io->lock();
@@ -953,10 +952,10 @@ void SwOSCLI::executeI2CCmd( void ) {
   switch ( cmd ) {
     case CLICMD_setRegister:    if ( (parameter[0].inRange( "register", 0, MAXI2CREGISTERS-1, response ) ) &&
                                      ( parameter[1].inRange( "value", 0, 255, response ) ) ) { 
-                                  OK();
                                   io->lock(); 
                                   ((SwOSI2C *)io)->setRegister( (uint8_t) parameter[0].getNumber(), (uint8_t) parameter[1].getNumber() );
                                   io->unlock();
+                                  OK( );
                                 }
                                 break;
 
@@ -972,7 +971,6 @@ void SwOSCLI::executeI2CCmd( void ) {
                                      ( parameter[3].inRange( "operand2", 0, FTSWARM_MAXOPERAND-1, response ) ) &&
                                      ( parameter[4].isIO() ) &&
                                      ( parameter[5].isNumber() ) ) {
-                                  OK();
                                   io->lock();
                                   ((SwOSI2C *)io)->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), 
                                                              (FtSwarmOperator_t)parameter[1].getNumber(), 
@@ -981,6 +979,7 @@ void SwOSCLI::executeI2CCmd( void ) {
                                                              parameter[4].getIO(), 
                                                              parameter[5].getNumber() );
                                   io->unlock();
+                                  OK( );
                                 }
                                 break;
 
@@ -1020,7 +1019,7 @@ void SwOSCLI::executeSwarmCmd( bool *loggedIn ) {
     case CLICMD_login:          if ( parameter[0].inRange( "pin", 0, 9999, response ) ) {
                                   *loggedIn = ( parameter[0].getNumber() == myOSNetwork.pin );
                                   if (!*loggedIn) Error( ERROR_WRONGPIN );
-                                  else OK();
+                                  else OK( );
                                 }
                                 break;
 
@@ -1049,7 +1048,7 @@ void SwOSCLI::executeSwarmCmd( bool *loggedIn ) {
                                 break;
     
     case CLICMD_save:           if ( parameter[0].inRange( "scope", 0, 3, response ) ) {
-                                  OK();
+                                  OK( );
                                   uint8_t scope = parameter[0].getNumber();
                                   if      ( scope <= 1 ) myOSSwarm.save( FTSWARM_NVSSCOPE_ALL );
                                   else if ( scope == 2 ) myOSSwarm.save( FTSWARM_NVSSCOPE_ALIAS );
@@ -1058,7 +1057,7 @@ void SwOSCLI::executeSwarmCmd( bool *loggedIn ) {
                                 break;
 
     case CLICMD_useConfig:      if ( parameter[0].inRange( "config", 1, MAXEVENTCONFIGS-1, response ) ) {
-                                  OK();
+                                  OK( );
                                   newConfig = parameter[0].getNumber()-1;
                                   nvs.events.activeConfig = newConfig;
                                   myOSSwarm.deleteEvents();
@@ -1085,7 +1084,7 @@ void SwOSCLI::executeIOCommand( void ) {
 
     if (myOSSwarm.getIO(alias)) { Error( ERROR_ALIASNOTNUNIQUE ); return; }
 
-    OK();
+    OK( );
     if (io)     { io->setAlias(alias); return; }
     if (ctrl)   { ctrl->setAlias(alias); return; }
 
@@ -1318,7 +1317,7 @@ void SwOSCLI::evalComplexCommand( char *token, bool *loggedIn ) {
       io->unlock();
     }
 
-    OK();
+    OK( );
 
   } else if ( cmd==CLICMD_unsubscribe ) {
 
@@ -1335,7 +1334,7 @@ void SwOSCLI::evalComplexCommand( char *token, bool *loggedIn ) {
       io->unlock();
     }
 
-    OK();
+    OK( );
 
   } else if (swarm) {
 

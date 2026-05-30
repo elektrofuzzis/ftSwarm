@@ -740,6 +740,7 @@ void SwOSSwarm::serialize( Serialize *serialize) {
   serialize->startObject( );
   serialize->item( SERIALIZE_LITERAL_NAME, nvs.swarm.name );
   serialize->item( SERIALIZE_LITERAL_KELDA, Ctrl[0]->IAmKelda );
+  serialize->item( SERIALIZE_LITERAL_SYNC , sync++ );
 
 	serialize->startArray( SERIALIZE_LITERAL_CTRLS );
 

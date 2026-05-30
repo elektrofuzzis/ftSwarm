@@ -49,7 +49,8 @@ protected:
   void cmdRevokeFromSwarm( SwOSCom *com, uint8_t source, uint8_t affected );
 
 public:
-	int8_t   maxCtrl = -1;
+  uint8_t  sync = 0;
+  int8_t   maxCtrl = -1;
   SwOSCtrl *Kelda = NULL;
 	SwOSCtrl *Ctrl[MAXCTRL];
   bool     wifiConnected = false;
