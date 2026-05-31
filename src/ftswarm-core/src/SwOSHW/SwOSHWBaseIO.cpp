@@ -605,14 +605,50 @@ float SwOSInput::getValueF() {
   return (float)lastRawValue;
 }
 
-uint8_t SwOSInput::pushState( uint8_t *buffer ) { 
+uint8_t SwOSInput::pushState8( uint8_t *buffer ) { 
+  
+  memcpy( buffer, &lastRawValue + 3, 1 );
+  return 1;
+
+};
+
+uint8_t SwOSInput::pushState16( uint8_t *buffer ) { 
+  
+  memcpy( buffer, &lastRawValue + 2, 2 );
+  return 2;
+
+};
+
+uint8_t SwOSInput::pushState32( uint8_t *buffer ) { 
   
   memcpy( buffer, &lastRawValue, sizeof( lastRawValue ) );
   return sizeof( lastRawValue );
 
 };
 
-uint8_t SwOSInput::popState( uint8_t *buffer ) { 
+uint8_t SwOSInput::popState8( uint8_t *buffer ) { 
+
+  int8_t newValue;
+  
+  memcpy( &newValue, buffer, sizeof( newValue ) );
+  setReading( newValue, FTSWARM_NOTRIGGER );
+
+  return sizeof( newValue );
+  
+};
+
+uint8_t SwOSInput::popState16( uint8_t *buffer ) { 
+
+  int16_t newValue;
+  
+  memcpy( &newValue, buffer, sizeof( newValue ) );
+  setReading( newValue, FTSWARM_NOTRIGGER );
+
+  return sizeof( newValue );
+  
+};
+
+uint8_t SwOSInput::popState32( uint8_t *buffer ) { 
 
   int32_t newValue;
   

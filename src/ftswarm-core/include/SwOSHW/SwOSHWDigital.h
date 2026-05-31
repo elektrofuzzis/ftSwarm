@@ -38,6 +38,13 @@
 	  virtual void operate();
     virtual void setReading( int32_t newValue, FtSwarmTrigger_t secondTriggerEvent );
 
+    // push my state to a buffer
+    virtual uint8_t pushState( uint8_t *buffer ) { return pushState8( buffer ); };
+
+    // pop my state from a buffer
+    virtual uint8_t popState( uint8_t *buffer )  { return popState8( buffer ); };
+
+
     // external commands
     virtual void            setParameter( int32_t parameter );                        
     virtual FtSwarmToggle_t getToggle( void );                                  

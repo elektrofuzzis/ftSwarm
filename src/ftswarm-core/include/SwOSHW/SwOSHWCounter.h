@@ -40,7 +40,6 @@
     // administrative stuff
     virtual void serialize( Serialize *serialize );
     virtual bool isCounter( void ) { return true; };
-    // virtual void registerEvent( int32_t value );
 
     // read sensor
 	  virtual void operate();

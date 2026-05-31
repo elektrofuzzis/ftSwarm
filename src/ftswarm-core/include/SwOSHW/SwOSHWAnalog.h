@@ -61,6 +61,13 @@
     // read sensor
 	  virtual void operate();
 
+    // push my state to a buffer
+    virtual uint8_t pushState( uint8_t *buffer ) { return pushState16( buffer ); };
+
+    // pop my state from a buffer
+    virtual uint8_t popState( uint8_t *buffer )  { return popState16( buffer ); };
+
+
     // external commands
     virtual float  getVoltage();
     virtual float  getResistance();

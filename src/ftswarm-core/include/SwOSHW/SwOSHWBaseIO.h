@@ -313,6 +313,14 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
 	
     virtual void setupLocal();
     virtual void subscription();
+
+    virtual uint8_t pushState8( uint8_t *buffer );
+    virtual uint8_t pushState16( uint8_t *buffer );
+    virtual uint8_t pushState32( uint8_t *buffer );
+
+    virtual uint8_t popState8( uint8_t *buffer );
+    virtual uint8_t popState16( uint8_t *buffer );
+    virtual uint8_t popState32( uint8_t *buffer );
 	  
 
   public:
@@ -322,8 +330,12 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
     // administrative stuff
 	  virtual void serialize( Serialize *serialize ) {};
 	  void serializeEvents( Serialize *serialize );
-    virtual uint8_t pushState( uint8_t *buffer );
-    virtual uint8_t popState( uint8_t *buffer );
+
+    // push my state to a buffer
+    virtual uint8_t pushState( uint8_t *buffer ) { return pushState32( buffer ); };
+
+    // pop my state from a buffer
+    virtual uint8_t popState( uint8_t *buffer )  { return popState32( buffer ); };
   
     // Test, if I'm an input
     virtual bool isInput( void ) { return true; };
