@@ -41,10 +41,26 @@ export class Result<T, E> {
     return this.value as T;
   }
 
+  unwrapOr<V>(defaultValue: V): T | V {
+    if (this.isError) {
+      return defaultValue;
+    }
+
+    return this.value as T;
+  }
+
   unwrapErr(): E {
     if (!this.isError) {
       throw new Error(`Unwrapped value: ${this.value}`);
     }
+    return this.value as E;
+  }
+
+  unwrapErrOr<V>(defaultValue: V): E | V {
+    if (!this.isError) {
+      return defaultValue;
+    }
+
     return this.value as E;
   }
 

@@ -15,7 +15,7 @@ export const IoFrame: ParentComponent<IoCardProps> = (props) => {
     const om = useOMContext()
 
     const [optimisticAlias, setOptimisticAlias, _, {setEditing: setAliasEditing}] = om.useBoundStore(
-        registryKeyOfProps(props, IOFrameOptimisticStores.ALIAS),
+        registryKeyOfProps(props, {kind: "Frame", val: IOFrameOptimisticStores.ALIAS}),
         sequencedDatumFactory(props, (_) => props.io.alias ?? props.io.name),
         async (newAlias) => {
             logger.debug(`Setting alias of ${props.io.name} to ${newAlias}`)

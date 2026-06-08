@@ -125,14 +125,12 @@ export class WebSocketTransport implements Transport {
 
   async receiveResult(): Promise<Result<SwarmToSocketRpcResponse, SwarmToSocketError>> {
     if (this.messageQueue.length > 0) {
-      console.log(this.messageQueue);
       return this.messageQueue.shift()!;
     }
 
     return new Promise<Result<SwarmToSocketRpcResponse, SwarmToSocketError>>((resolve) => {
       this.waitLocks.push(() => {
         if (this.messageQueue.length > 0) {
-          console.log(this.messageQueue);
           resolve(this.messageQueue.shift()!);
         } else {
           this.adapter.onError(
