@@ -214,6 +214,11 @@ export const Sidebar: Component = () => {
             Log In
           </Button>
         </Show>
+        <Show when={loginState.status() == LoginState.LOGGED_IN}>
+          <Button class="w-full" variant="outline" on:click={loginState.logout}>
+            Log out
+          </Button>
+        </Show>
         <BottomRowIndicator>
           <StatusCircle class="bg-thm-ok" /> Online &bull; Up to date
         </BottomRowIndicator>

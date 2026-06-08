@@ -2,6 +2,7 @@ import {useTransportContext} from "../contexts/transport/context.ts";
 import {useLoginContext} from "../contexts/LoginContext.tsx";
 import {transactMessage} from "./transport";
 import {Result, Unit} from "../util/result.ts";
+import logger from "../util/logger.ts";
 
 export type Authenticator = {
     authenticate: (code: String) => Promise<Result<Unit, AuthenticatorError>>;
@@ -20,11 +21,11 @@ export const useAuthenticator = () => {
     return {
         async authenticate(code: String): Promise<Result<Unit, AuthenticatorError>> {
             const result = await transactMessage(transport, `swarm.login(${code})`)
-            console.log(result)
             return result
                 .mapErr(({message}) => message.includes("wrong pin") ? AuthenticatorError.INVALID_CODE : AuthenticatorError.UNKNOWN_ERROR)
                 .map(_ => {
                     // State transition: we're logged in
+                    logger.info("Logged in")
                     state.login()
                     return Unit
                 })
