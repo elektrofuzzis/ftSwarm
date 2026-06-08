@@ -41,5 +41,6 @@ export const ftSwarmReplacements: Record<string, string> = {
   166: '"operator":',
   167: '"operand1":',
   168: '"operand2":',
-  169: '"YawPitchRoll":'
+  169: '"YawPitchRoll":',
+  170: '"sync":'
 };

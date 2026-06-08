@@ -8,8 +8,10 @@ import { ftSwarmReplacements } from "./generated/genApiTranslations";
  * 1. Go over every byte. If it is a key in ftSwarmReplacements, append the corresponding value to strbuf.
  * 2. If it is not a key in ftSwarmReplacements, append the byte as a character to strbuf.
  */
-export async function decompressBlob(blob: Blob): Promise<string> {
+export async function decompressBlob(blob: Blob | string): Promise<string> {
   let strbuf = "";
+
+  if (typeof blob === "string") return blob;
 
   const arrayBuffer = await blob.arrayBuffer();
   const uint8Array = new Uint8Array(arrayBuffer);

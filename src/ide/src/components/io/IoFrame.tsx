@@ -1,5 +1,5 @@
 import {Show, type ParentComponent} from "solid-js";
-import {type IoCardProps, registryKeyOfProps} from "./index.tsx";
+import {type IoCardProps, registryKeyOfProps, sequencedDatumFactory} from "./index.tsx";
 import {useOMContext} from "../../contexts/transport/context.ts";
 import logger from "../../util/logger.ts";
 import {Dynamic} from "solid-js/web";
@@ -14,10 +14,13 @@ enum IOFrameOptimisticStores {
 export const IoFrame: ParentComponent<IoCardProps> = (props) => {
     const om = useOMContext()
 
-    const [optimisticAlias, setOptimisticAlias, _, { setEditing: setAliasEditing }] = om.useBoundStore(
+    const [optimisticAlias, setOptimisticAlias, _, {setEditing: setAliasEditing}] = om.useBoundStore(
         registryKeyOfProps(props, IOFrameOptimisticStores.ALIAS),
-        () => props.io.alias ?? props.io.name,
-        async (newAlias) => logger.debug(`Setting alias of ${props.io.name} to ${newAlias}`)
+        sequencedDatumFactory(props, (_) => props.io.alias ?? props.io.name),
+        async (newAlias) => {
+            logger.debug(`Setting alias of ${props.io.name} to ${newAlias}`)
+            return undefined
+        }
     )
 
     return (
@@ -25,7 +28,8 @@ export const IoFrame: ParentComponent<IoCardProps> = (props) => {
             class="border bg-thm-surface-2 border-thm-surface-border-2 rounded-lg p-3 flex flex-col transition-all">
             <div class="flex items-center justify-between mb-1">
                 <div class="relative flex items-center justify-between w-full">
-                    <span class="text-[10px] font-bold uppercase text-thm-primary tracking-wider pr-2">{props.io.name}</span>
+                    <span
+                        class="text-[10px] font-bold uppercase text-thm-primary tracking-wider pr-2">{props.io.name}</span>
                     <select
                         value={props.io.IOType}
                         class="appearance-none bg-transparent text-[10px] w-full font-bold uppercase tracking-wider text-thm-font-muted hover:text-thm-font pr-4 transition-colors outline-none cursor-pointer z-10"
@@ -59,7 +63,7 @@ export const IoFrame: ParentComponent<IoCardProps> = (props) => {
             <div class="flex items-center gap-2 mb-2">
         <span
             class="text-xs font-mono font-bold text-thm-font-muted py-0.5">
-            <Dynamic component={getIoIcon(props.io.IOType)} class="w-5 h-5" />
+            <Dynamic component={getIoIcon(props.io.IOType)} class="w-5 h-5"/>
         </span>
                 <input
                     type="text"

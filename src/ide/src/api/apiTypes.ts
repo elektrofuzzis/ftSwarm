@@ -141,5 +141,6 @@ export type ApiController = {
 export type ApiGetSwarmResponse = {
   name: string;
   kelda: number;
+  sync: number;
   controllers: ApiController[];
 };

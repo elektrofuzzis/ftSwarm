@@ -1,3 +1,6 @@
+export type Unit = null
+export const Unit: Unit = null
+
 export class Result<T, E> {
   private value: T | E;
   private isError: boolean;

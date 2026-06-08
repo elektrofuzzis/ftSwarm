@@ -6,12 +6,6 @@ export enum LogChannel {
   APP = "App",
 }
 
-export enum DebugMode {
-  SCREEN_RIGHT = "Screen Right",
-  ATTACHED_RIGHT = "Attached Right",
-  ATTACHED_BOTTOM = "Attached Bottom",
-}
-
 export type LogMessage = {
   channel: LogChannel;
   timestamp: number;

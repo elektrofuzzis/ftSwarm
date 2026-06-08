@@ -1,4 +1,4 @@
-import { type Component, type ParentComponent } from "solid-js";
+import { Show, type Component, type ParentComponent } from "solid-js";
 import TitleImage from "../assets/ftswarm.svg";
 import Telescope from "lucide-solid/icons/telescope";
 import FolderPen from "lucide-solid/icons/folder-pen";
@@ -16,6 +16,8 @@ import { For } from "solid-js/web";
 import { SwOSState } from "../api/generated/genApiEnums";
 import { useLocation } from "@solidjs/router";
 import { getControllerIcon } from "../api/icons.ts";
+import { Button } from "./Button.tsx";
+import { LoginState, useLoginContext } from "../contexts/LoginContext.tsx";
 
 export const Title = () => {
   const { toggleMenu } = useDebug();
@@ -105,7 +107,7 @@ const state2Bg: Record<SwOSState, string> = {
   [SwOSState.FACTORY2]: "bg-thm-error",
 };
 
-export const Sidebar = () => {
+export const Sidebar: Component = () => {
   const swarm = useOMContext();
   const controllers = () => Object.values(swarm.controllers);
   const totalControllers = () => controllers().length;
@@ -114,6 +116,8 @@ export const Sidebar = () => {
 
   const location = useLocation();
   const route = () => location.pathname;
+
+  const loginState = useLoginContext();
 
   return (
     <aside class="flex flex-col gap-3 h-full">
@@ -205,6 +209,11 @@ export const Sidebar = () => {
         />
       </div>
       <div class="flex flex-col gap-3">
+        <Show when={loginState.status() == LoginState.LOGGED_OUT}>
+          <Button class="w-full" on:click={loginState.startLogin}>
+            Log In
+          </Button>
+        </Show>
         <BottomRowIndicator>
           <StatusCircle class="bg-thm-ok" /> Online &bull; Up to date
         </BottomRowIndicator>

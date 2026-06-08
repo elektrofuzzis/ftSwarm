@@ -26,9 +26,10 @@ const isInvalidState = (state: SwOSState) => INVALID_STATES.includes(state);
 
 type SwarmStatusRenderComponent = Component<{
   controller: Accessor<ApiController>;
+  seq: Accessor<number>;
 }>;
 
-const InvalidState: SwarmStatusRenderComponent = ({ controller }) => {
+const InvalidState: SwarmStatusRenderComponent = ({ controller, seq: _ }) => {
   const icon = () => getControllerIcon(controller().CtrlVersion);
 
   return (
@@ -77,7 +78,7 @@ const Divider: Component<{ name: string }> = ({ name }) => (
   </div>
 );
 
-const ControllerDetail: SwarmStatusRenderComponent = ({ controller }) => {
+const ControllerDetail: SwarmStatusRenderComponent = ({ controller, seq }) => {
   const ios = () => controller().io;
   const inputs = () =>
     ios().filter((io) => IOTypeClasses[io.IOType] == "input");
@@ -109,7 +110,7 @@ const ControllerDetail: SwarmStatusRenderComponent = ({ controller }) => {
             <Divider name={name} />
             <div class="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-4">
               <For each={iosFn()}>
-                {(value) => <IoCard io={value} controller={controller()} />}
+                {(value) => <IoCard io={value} controller={controller()} seq={seq} />}
               </For>
             </div>
           </>
@@ -128,9 +129,9 @@ export const SwarmControllerDetailRoute: Component = () => {
   return (
     <>
       {isInvalidState(controller().state) ? (
-        <InvalidState controller={controller} />
+        <InvalidState controller={controller} seq={om.lastSequence} />
       ) : (
-        <ControllerDetail controller={controller} />
+        <ControllerDetail controller={controller} seq={om.lastSequence} />
       )}
     </>
   );

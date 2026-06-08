@@ -1,12 +1,13 @@
 import { useIsRouting } from "@solidjs/router";
 import { Sidebar } from "./Sidebar";
 import { Surface1 } from "./Surface";
-import type { ParentComponent } from "solid-js";
-import { DebugMenu } from "./DebugMenu";
+import { type ParentComponent, lazy } from "solid-js";
 import { DebugToggle } from "./DebugToggle";
-import { useDebug } from "../contexts/DebugContext";
-import { DebugMode } from "../contexts/logtypes";
-import { Show } from "solid-js";
+import { LoginOverlay } from "./LoginOverlay";
+
+const DebugMenu = lazy(() =>
+  import("./DebugMenu").then((m) => ({ default: m.DebugMenu })),
+);
 
 const Content: ParentComponent = (props) => {
   const isRouting = useIsRouting();
@@ -20,35 +21,17 @@ const Content: ParentComponent = (props) => {
 };
 
 export const Layout: ParentComponent = (props) => {
-  const { isOpen, mode } = useDebug();
-
   return (
     <>
-      <div
-        class="w-full h-full flex p-4 gap-4"
-        classList={{
-          "flex-col": isOpen() && mode() === DebugMode.ATTACHED_BOTTOM,
-        }}
-      >
+      <div class="w-full h-full flex p-4 gap-4">
         <div class="flex flex-1 gap-4" style={{ "min-height": "0" }}>
           <Sidebar />
           <Content>{props.children}</Content>
-          <Show when={isOpen() && mode() === DebugMode.ATTACHED_RIGHT}>
-            <div class="w-1/3 flex flex-col">
-              <DebugMenu />
-            </div>
-          </Show>
         </div>
-        <Show when={isOpen() && mode() === DebugMode.ATTACHED_BOTTOM}>
-          <div class="h-1/3 flex flex-col">
-            <DebugMenu />
-          </div>
-        </Show>
       </div>
+      <LoginOverlay />
 
-      <Show when={mode() === DebugMode.SCREEN_RIGHT}>
-        <DebugMenu />
-      </Show>
+      <DebugMenu />
       <DebugToggle />
     </>
   );

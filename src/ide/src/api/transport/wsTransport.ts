@@ -9,13 +9,14 @@ import { Mutex } from "../../util/lock";
 import logger from "../../util/logger";
 import { decompressBlob } from "../rawTranslator";
 import { WatchdogTimer } from "../watchdog";
-import type { SwarmToSocketRpcResponse } from "./swarm2socket";
+import type {SwarmToSocketError, SwarmToSocketRpcResponse} from "./swarm2socket";
 import { parseSwarmToSocketMessage } from "./swarm2socket";
+import {Result} from "../../util/result.ts";
 
 export class WebSocketTransport implements Transport {
   private readonly webSocket: WebSocket;
   private readonly adapter: TransportAdapter;
-  private readonly messageQueue: SwarmToSocketRpcResponse[] = [];
+  private readonly messageQueue: Result<SwarmToSocketRpcResponse, SwarmToSocketError>[] = [];
   private readonly lock: Mutex = new Mutex();
   private readonly waitLocks: (() => void)[] = [];
   private watchdogTimer: WatchdogTimer;
@@ -74,7 +75,7 @@ export class WebSocketTransport implements Transport {
       return;
     }
 
-    this.adapter.onIncoming(message);
+    await this.adapter.onIncoming(message);
 
     const parsedResult = parseSwarmToSocketMessage(message);
 
@@ -88,24 +89,25 @@ export class WebSocketTransport implements Transport {
     switch (parsedMessage.kind) {
       case "subscription":
         // Handle subscription message by calling the callback
-        this.adapter.onSubscription(parsedMessage);
+        await this.adapter.onSubscription(parsedMessage);
         break;
       case "rpc-response":
         // Queue the result or resolve a pending promise
-        this.messageQueue.push(parsedMessage);
+        this.messageQueue.push(Result.ok(parsedMessage));
         this.waitLocks.shift()?.();
         break;
       case "error":
-        console.error("ftSwarm error:", parsedMessage.message);
-        this.adapter.onError(
-          new TransportError(
-            `ftSwarm error: ${parsedMessage.message}`,
-            ErrorResolution.FAIL,
-          ),
+        this.messageQueue.push(Result.err(parsedMessage));
+        this.waitLocks.shift()?.();
+        await this.adapter.onError(
+            new TransportError(
+                `ftSwarm error: ${parsedMessage.message}`,
+                ErrorResolution.IGNORE,
+            ),
         );
         break;
       case "state-update":
-        this.adapter.onUpdate(parsedMessage);
+        await this.adapter.onUpdate(parsedMessage);
         break;
       case "log":
         logger.info("ftSwarm log:", parsedMessage.message);
@@ -117,18 +119,20 @@ export class WebSocketTransport implements Transport {
   };
 
   async send(data: string): Promise<void> {
-    this.adapter.onOutgoing(data);
+    await this.adapter.onOutgoing(data);
     this.webSocket.send(data);
   }
 
-  async receiveResult(): Promise<SwarmToSocketRpcResponse> {
+  async receiveResult(): Promise<Result<SwarmToSocketRpcResponse, SwarmToSocketError>> {
     if (this.messageQueue.length > 0) {
+      console.log(this.messageQueue);
       return this.messageQueue.shift()!;
     }
 
-    return new Promise<SwarmToSocketRpcResponse>((resolve) => {
+    return new Promise<Result<SwarmToSocketRpcResponse, SwarmToSocketError>>((resolve) => {
       this.waitLocks.push(() => {
         if (this.messageQueue.length > 0) {
+          console.log(this.messageQueue);
           resolve(this.messageQueue.shift()!);
         } else {
           this.adapter.onError(

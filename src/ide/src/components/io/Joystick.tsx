@@ -14,8 +14,8 @@ export const JoystickInput: IoCardRendererComponent<ApiJoystickInputType> = (pro
             </div>
             <div class="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
                 <div
-                    class="bg-indigo-500 h-full"
-                    style={{width: `${((props.io.valueLR + 255) / 510) * 100}%`}}
+                    class="bg-indigo-500 h-full transition-all"
+                    style={{width: `${((props.io.valueLR + 100) / 200) * 100}%`}}
                 ></div>
             </div>
         </div>
@@ -26,8 +26,8 @@ export const JoystickInput: IoCardRendererComponent<ApiJoystickInputType> = (pro
             </div>
             <div class="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
                 <div
-                    class="bg-indigo-500 h-full"
-                    style={{width: `${((props.io.valueFB + 255) / 510) * 100}%`}}
+                    class="bg-indigo-500 h-full transition-all"
+                    style={{width: `${((props.io.valueFB + 100) / 200) * 100}%`}}
                 ></div>
             </div>
         </div>

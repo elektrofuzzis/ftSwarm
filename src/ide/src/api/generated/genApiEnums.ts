@@ -155,12 +155,26 @@ export enum FtSwarmOperand {
   FTSWARM_MAXOPERAND = 3
 };
 
-export enum FtSwarmColor {
-  Red = 16711680,
-  Green = 8421504,
-  Blue = 255,
-  Yellow = 16776960,
-  Cyan = 65535,
-  Aquamarine = 8388564,
-  Black = 0
+export enum FtSwarmOledFill {
+  FTSWARM_OLED_NOFILL = 0,
+  FTSWARM_OLED_FILLBLACK = 1,
+  FTSWARM_OLED_FILLWHITE = 2
+};
+
+export enum FtSwarmOledScreen {
+  FTSWARM_OLED_UPPERSCREEN = 0,
+  FTSWARM_OLED_MAINSCREEN = 1,
+  FTSWARM_OLED_BUTTONSCREEN = 2,
+  FTSWARM_OLED_NOSCREEN = 3,
+  FTSWARM_OLED_MAXSCREEN = NaN,
+  TSWARM_OLED_NOSCREEN = NaN
+};
+
+export enum FtSwarmQuickConfig {
+  FTSWARM_CFG_INDIVIDUAL = 0,
+  FTSWARM_CFG_CAR = 1,
+  FTSWARM_CFG_CATAPILLAR = 2,
+  FTSWARM_CFG_TRAILER = 3,
+  FTSWARM_CFG_CRANE1 = 4,
+  FTSWARM_CFG_CRANE2 = 5
 };

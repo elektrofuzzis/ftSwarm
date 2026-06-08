@@ -13,9 +13,17 @@ import {
 import {OptimisticRegistry, type RegistryKey} from "./optimisticRegistry.ts";
 import type {OptimisticStore, OptimisticStoreOptions} from "./optimistic.ts";
 
+export type SequencedDatum<T> = {
+    seq?: number;
+    data: T;
+}
+
+export type Sequence = number | undefined;
+
 export class RootObjectModel {
     public readonly localName: Accessor<String>;
     public readonly isKelda: Accessor<boolean>;
+    public readonly lastSequence: Accessor<number>;
 
     // Stored by serial number
     public readonly controllers: Store<Record<number, ApiController>>;
@@ -37,9 +45,13 @@ export class RootObjectModel {
         const [isKelda, setIsKelda] = createSignal<boolean>(false);
         this.isKelda = isKelda;
 
+        const [lastSequence, setLastSequence] = createSignal<number>(0);
+        this.lastSequence = lastSequence;
+
         this._update = (toProcess: ApiGetSwarmResponse) => {
             setLocalName(toProcess.name);
             setIsKelda(toProcess.kelda == 1);
+            setLastSequence(toProcess.sync);
             this.mergeControllers(toProcess.controllers, setControllers);
         };
     }
@@ -67,9 +79,31 @@ export class RootObjectModel {
         return () => this.controllers[serial];
     }
 
-    useBoundStore<T>(key: RegistryKey, source: () => T, mutator: (val: T) => Promise<void>, options?: OptimisticStoreOptions): OptimisticStore<T> {
-        const store = this.optimisticRegistry.useBoundStore(key, source(), mutator, options);
-        createEffect(() => store[2](source()));
+    useBoundStore<T>(key: RegistryKey, source: () => SequencedDatum<T>, mutator: (val: T) => Promise<Sequence>, options?: OptimisticStoreOptions): OptimisticStore<T> {
+        let sourceVal = source();
+        const [lastSeenSeq, setLastSeenSeq] = createSignal(sourceVal.seq ?? 1000);
+        const store = this.optimisticRegistry.useBoundStore(
+            key,
+            sourceVal.data,
+            async (v) => {
+                let seq = await mutator(v)
+                if (!seq) return
+                setLastSeenSeq(seq)
+            },
+            options
+        );
+        let storeValue = store[2];
+        createEffect(() => {
+            // sequences are counting up per transaction & mod 255. Assume that when we got a value more than 10 less
+            // of our last seen sequence, we just witnessed an overflow
+            let updatedSourceValue = source();
+            if (updatedSourceValue.seq && updatedSourceValue.seq < lastSeenSeq() - 10) {
+                setLastSeenSeq(updatedSourceValue.seq)
+                storeValue(updatedSourceValue.data)
+            } else if (!updatedSourceValue.seq) {
+                storeValue(updatedSourceValue.data)
+            }
+        });
         return store;
     }
 }

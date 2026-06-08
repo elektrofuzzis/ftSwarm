@@ -1,8 +1,6 @@
 import {
   For,
   type Component,
-  Switch,
-  Match,
   Show,
   createEffect,
   createRenderEffect,
@@ -13,9 +11,6 @@ import {
 import { useDebug } from "../contexts/DebugContext";
 import { Surface1 } from "./Surface";
 import X from "lucide-solid/icons/x";
-import PanelRight from "lucide-solid/icons/panel-right";
-import PanelBottom from "lucide-solid/icons/panel-bottom";
-import SquareArrowOutUpRight from "lucide-solid/icons/square-arrow-out-up-right";
 import ArrowDown from "lucide-solid/icons/arrow-down";
 import Trash2 from "lucide-solid/icons/trash-2";
 import Play from "lucide-solid/icons/play";
@@ -25,7 +20,6 @@ import {
   LogChannel,
   channelColors,
   type LogMessage,
-  DebugMode,
 } from "../contexts/logtypes";
 
 const LogEntry = (props: { log: LogMessage }) => {
@@ -55,8 +49,6 @@ export const DebugMenu: Component = () => {
     visibleChannels,
     toggleChannel,
     isChannelVisible,
-    mode,
-    setMode,
     forceScroll,
     searchTerm,
     setSearchTerm,
@@ -104,8 +96,7 @@ export const DebugMenu: Component = () => {
     if (!logContainerRef) return;
     const ref = logContainerRef as HTMLDivElement;
     const isAtBottom = ref.scrollHeight - ref.scrollTop - ref.clientHeight < 20;
-    const isOverlayMode = mode() === DebugMode.SCREEN_RIGHT;
-    setShowToLatest(isOverlayMode && !isAtBottom);
+    setShowToLatest(!isAtBottom);
     setIsScrolledToBottom(isAtBottom);
   };
 
@@ -152,42 +143,6 @@ export const DebugMenu: Component = () => {
           </div>
 
           <div class="flex items-center gap-1 p-1 bg-thm-surface-2 rounded-md">
-            <button
-              onClick={() => setMode(DebugMode.SCREEN_RIGHT)}
-              class={`p-1.5 rounded cursor-pointer transition-all ${
-                mode() === DebugMode.SCREEN_RIGHT
-                  ? "bg-thm-primary hover:brightness-110"
-                  : "hover:bg-thm-surface-3"
-              }`}
-              title={DebugMode.SCREEN_RIGHT}
-            >
-              <SquareArrowOutUpRight class="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setMode(DebugMode.ATTACHED_RIGHT)}
-              class={`p-1.5 rounded cursor-pointer transition-all ${
-                mode() === DebugMode.ATTACHED_RIGHT
-                  ? "bg-thm-primary hover:brightness-110"
-                  : "hover:bg-thm-surface-3"
-              }`}
-              title={DebugMode.ATTACHED_RIGHT}
-            >
-              <PanelRight class="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setMode(DebugMode.ATTACHED_BOTTOM)}
-              class={`p-1.5 rounded cursor-pointer transition-all ${
-                mode() === DebugMode.ATTACHED_BOTTOM
-                  ? "bg-thm-primary hover:brightness-110"
-                  : "hover:bg-thm-surface-3"
-              }`}
-              title={DebugMode.ATTACHED_BOTTOM}
-            >
-              <PanelBottom class="w-5 h-5" />
-            </button>
-
-            <div class="border-l border-thm-surface-border-3 h-5 mx-1"></div>
-
             <button
               onClick={toggleSearch}
               class={`p-1.5 rounded cursor-pointer transition-all ${isSearchVisible() ? "bg-thm-primary hover:brightness-110" : "hover:bg-thm-surface-3"}`}
@@ -256,23 +211,14 @@ export const DebugMenu: Component = () => {
   );
 
   return (
-    <Switch>
-      <Match when={mode() === DebugMode.SCREEN_RIGHT}>
-        <Show when={isOpen()}>
-          <div class="fixed inset-0 bg-[#00000080] z-40" />
-          <div class="fixed top-0 right-0 h-full w-2/3 z-50 shadow-lg p-4 flex flex-col gap-4">
-            {menuContent}
-          </div>
-        </Show>
-      </Match>
-      <Match
-        when={
-          mode() === DebugMode.ATTACHED_RIGHT ||
-          mode() === DebugMode.ATTACHED_BOTTOM
-        }
-      >
+    <Show when={isOpen()}>
+      <div
+        class="fixed inset-0 bg-[#00000080] z-40"
+        onClick={toggleMenu}
+      />
+      <div class="fixed top-0 right-0 h-full w-2/3 z-50 shadow-lg p-4 flex flex-col gap-4">
         {menuContent}
-      </Match>
-    </Switch>
+      </div>
+    </Show>
   );
 };

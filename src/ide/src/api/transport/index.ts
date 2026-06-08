@@ -1,7 +1,9 @@
 import type {
+  SwarmToSocketError,
   SwarmToSocketRpcResponse,
   SwarmToSocketSubscription,
 } from "./swarm2socket";
+import type {Result} from "../../util/result.ts";
 
 export enum ErrorResolution {
   FAIL,
@@ -32,7 +34,7 @@ export class TransportError implements CommunicationError {
 export interface Transport {
   applySync<T>(func: () => Promise<T>): Promise<T>;
   send(data: string): Promise<void>;
-  receiveResult(): Promise<SwarmToSocketRpcResponse>;
+  receiveResult(): Promise<Result<SwarmToSocketRpcResponse, SwarmToSocketError>>;
 }
 
 export interface TransportAdapter {
@@ -52,7 +54,7 @@ export type TransportFactory = (
 export async function transactMessage(
   transport: Transport,
   message: string,
-): Promise<SwarmToSocketRpcResponse> {
+): Promise<Result<SwarmToSocketRpcResponse, SwarmToSocketError>> {
   return transport.applySync(async () => {
     await transport.send(message);
     return await transport.receiveResult();
