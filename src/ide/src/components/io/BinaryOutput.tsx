@@ -30,13 +30,6 @@ export const BinaryOutput: IoCardRendererComponent<ApiOutputIoType> = (props) =>
 
     const isOn = () => optimisticSpeed() !== 0
 
-    const toggle = () => {
-        if (login.interactiveDisabled()) return
-        setSpeedEditing(true)
-        setOptimisticSpeed(isOn() ? 0 : 100)
-        setSpeedEditing(false)
-    }
-
     return (
         <div class="flex items-center justify-between pt-2">
             <div class="flex items-center gap-2">

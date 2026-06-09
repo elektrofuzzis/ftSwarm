@@ -1,6 +1,6 @@
 import { type Accessor, type Component, createMemo, For } from "solid-js";
 import { useParams } from "@solidjs/router";
-import { useOMContext } from "../contexts/transport/context.ts";
+import { useOMContext, useTransportContext } from "../contexts/transport/context.ts";
 import { SwOSState } from "../api/generated/genApiEnums.ts";
 import {
   IOTypeClasses,
@@ -12,6 +12,10 @@ import { getControllerIcon } from "../api/icons.ts";
 import { Dynamic } from "solid-js/web";
 import { EditableLabel } from "../components/EditableLabel.tsx";
 import { IoCard } from "../components/io";
+import { transactMessage } from "../api/transport";
+import { rpcResponseToSeq } from "../api/util.ts";
+import { useLoginContext } from "../contexts/LoginContext.tsx";
+import { Loader } from "../components/io/Loader.tsx";
 
 const INVALID_STATES: SwOSState[] = [
   SwOSState.OFFLINE,
@@ -78,6 +82,25 @@ const Divider: Component<{ name: string }> = ({ name }) => (
 );
 
 const ControllerDetail: SwarmStatusRenderComponent = ({ controller, seq }) => {
+  const transport = useTransportContext();
+  const om = useOMContext();
+  const login = useLoginContext();
+
+  const [optimisticName, setOptimisticName, _, {
+    setEditing: setNameEditing,
+    isMutating: isNameMutating,
+    isThrottled: isNameThrottled,
+    isEditing: isNameEditing
+  }] = om.useBoundStore(
+    `ctrl:${controller().serialNumber}:name`,
+    () => ({ data: controller().name, seq: seq() }),
+    async (newName) => {
+      let res = await transactMessage(transport, `${controller().name}.setAlias("${newName}")`)
+        .then((v) => v.unwrapOr(null));
+      return rpcResponseToSeq(res);
+    }
+  );
+
   const ios = () => controller().io;
   const inputs = () =>
     ios().filter((io) => IOTypeClasses[io.IOType] == "input");
@@ -97,10 +120,24 @@ const ControllerDetail: SwarmStatusRenderComponent = ({ controller, seq }) => {
 
   return (
     <div class="p-4 w-full">
-      <h2 class="text-thm-font-muted tracking-tight">Controller Detail</h2>
+      <div class="flex items-center gap-2 mb-1">
+        <h2 class="text-thm-font-muted tracking-tight">Controller Detail</h2>
+        <Loader
+          isMutating={isNameMutating()}
+          isThrottled={isNameThrottled()}
+          isEditing={isNameEditing()}
+        />
+      </div>
 
       <h2 class="text-2xl font-bold text-thm-font tracking-tight">
-        <EditableLabel>{controller().name}</EditableLabel>
+        <EditableLabel
+          allowEdit={!login.interactiveDisabled()}
+          onEdit={setOptimisticName}
+          isEditing={isNameEditing()}
+          setEditing={setNameEditing}
+        >
+          {optimisticName()}
+        </EditableLabel>
       </h2>
 
       <For each={categories()}>
