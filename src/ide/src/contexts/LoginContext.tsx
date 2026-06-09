@@ -1,6 +1,6 @@
 import {createContext, createSignal, useContext, type Accessor, type ParentComponent} from "solid-js";
 
-export enum LoginState {
+export const enum LoginState {
     LOGGED_OUT,
     LOGGING_IN,
     LOGGED_IN,

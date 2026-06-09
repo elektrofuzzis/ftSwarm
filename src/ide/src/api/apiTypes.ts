@@ -69,7 +69,6 @@ export interface ApiGeneralIoType {
 
 export interface ApiOutputIoType extends ApiGeneralIoType {
   speed: number;
-  highResolution: boolean;
 }
 
 export interface ApiServoOutputType extends ApiGeneralIoType {

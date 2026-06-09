@@ -1,4 +1,5 @@
 import {createSignal, onCleanup} from "solid-js";
+import logger from "../../util/logger";
 
 export type AsyncMutator<T> = (newValue: T) => Promise<void>;
 
@@ -222,6 +223,8 @@ export function createOptimisticStore<T>(
         setSourceOfTruth(() => newValueFromSocket);
         if (!isMutating() && !isEditing()) {
             setOptimisticValue(() => newValueFromSocket);
+        } else {
+            logger.debug(`Optimistic update discarded. isMutating: ${isMutating()}, isEditing: ${isEditing()}. New value:`, newValueFromSocket);
         }
     };
 

@@ -4,7 +4,7 @@
     "target": "ES2022",
     "useDefineForClassFields": true,
     "module": "ESNext",
-    "lib": ["ES2022", "DOM", "DOM.Iterable", "esnext"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
 
     /* Bundler mode */
@@ -16,13 +16,14 @@
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
 
-    /* Linting */
+    /* Linting / Optimization Safeguards */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": false,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+    "forceConsistentCasingInFileNames": true
   },
   "include": ["src"]
 }

@@ -5,7 +5,7 @@ import type {
 } from "./swarm2socket";
 import type {Result} from "../../util/result.ts";
 
-export enum ErrorResolution {
+export const enum ErrorResolution {
   FAIL,
   RECONNECT,
   IGNORE,

@@ -1,13 +1,10 @@
 import { useIsRouting } from "@solidjs/router";
 import { Sidebar } from "./Sidebar";
 import { Surface1 } from "./Surface";
-import { type ParentComponent, lazy } from "solid-js";
+import { type ParentComponent } from "solid-js";
 import { DebugToggle } from "./DebugToggle";
 import { LoginOverlay } from "./LoginOverlay";
-
-const DebugMenu = lazy(() =>
-  import("./DebugMenu").then((m) => ({ default: m.DebugMenu })),
-);
+import {DebugMenu} from "./DebugMenu.tsx";
 
 const Content: ParentComponent = (props) => {
   const isRouting = useIsRouting();

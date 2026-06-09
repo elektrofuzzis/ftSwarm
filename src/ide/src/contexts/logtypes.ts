@@ -1,4 +1,4 @@
-export enum LogChannel {
+export const enum LogChannel {
   RAW_IN = "Raw In",
   RAW_OUT = "Raw Out",
   UPDATES = "Updates",

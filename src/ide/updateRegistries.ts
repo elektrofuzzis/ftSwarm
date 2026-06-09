@@ -28,9 +28,10 @@ class CEnumeration {
   ) {}
 
   toString(): string {
-    return `export enum ${this.name} {\n${Object.entries(this.values)
+    return `export const enum ${this.name} {\n${Object.entries(this.values)
+        .filter(([_, value]) => !isNaN(value))
       .map(([key, value]) => `  ${key} = ${value}`)
-      .join(",\n")}\n};`;
+      .join(",\n")}\n}`;
   }
 }
 

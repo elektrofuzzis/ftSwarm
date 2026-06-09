@@ -1,25 +1,30 @@
 import {Show, type ParentComponent} from "solid-js";
 import {type IoCardProps, registryKeyOfProps, sequencedDatumFactory} from "./index.tsx";
-import {useOMContext} from "../../contexts/transport/context.ts";
-import logger from "../../util/logger.ts";
+import {useOMContext, useTransportContext} from "../../contexts/transport/context.ts";
 import {Dynamic} from "solid-js/web";
 import {getIoIcon} from "../../api/icons.ts";
 import ChevronDown from "lucide-solid/icons/chevron-down";
 import Link2 from "lucide-solid/icons/link-2";
+import {useLoginContext} from "../../contexts/LoginContext.tsx";
+import {transactMessage} from "../../api/transport";
+import {apiNameOf, rpcResponseToSeq} from "../../api/util.ts";
 
-enum IOFrameOptimisticStores {
+const enum IOFrameOptimisticStores {
     ALIAS
 }
 
 export const IoFrame: ParentComponent<IoCardProps> = (props) => {
     const om = useOMContext()
+    const transport = useTransportContext()
+    const login = useLoginContext()
 
     const [optimisticAlias, setOptimisticAlias, _, {setEditing: setAliasEditing}] = om.useBoundStore(
         registryKeyOfProps(props, {kind: "Frame", val: IOFrameOptimisticStores.ALIAS}),
         sequencedDatumFactory(props, (_) => props.io.alias ?? props.io.name),
         async (newAlias) => {
-            logger.debug(`Setting alias of ${props.io.name} to ${newAlias}`)
-            return undefined
+            const result = await transactMessage(transport, `${apiNameOf(props.io, props.controller)}.setAlias("${newAlias}")`)
+                .then((v) => v.unwrapOr(null))
+            return rpcResponseToSeq(result)
         }
     )
 
@@ -70,6 +75,7 @@ export const IoFrame: ParentComponent<IoCardProps> = (props) => {
                     value={optimisticAlias()}
                     class="bg-transparent text-sm font-semibold text-thm-font transition-colors border-b border-transparent hover:border-thm-surface-border-2 focus:border-thm-primary focus:outline-none px-1 w-full"
                     placeholder="Name"
+                    disabled={login.interactiveDisabled()}
                     onInput={(e) => setOptimisticAlias(e.currentTarget.value)}
                     onFocus={() => setAliasEditing(true)}
                     onBlur={() => setAliasEditing(false)}

@@ -18,7 +18,7 @@ const styles = {
   reset: "color: unset;",
 };
 
-enum LogLevel {
+const enum LogLevel {
   ERROR = 0,
   WARN,
   SUCCESS,

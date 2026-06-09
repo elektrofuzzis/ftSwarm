@@ -81,7 +81,7 @@ export class RootObjectModel {
 
     useBoundStore<T>(key: RegistryKey, source: () => SequencedDatum<T>, mutator: (val: T) => Promise<Sequence>, options?: OptimisticStoreOptions): OptimisticStore<T> {
         let sourceVal = source();
-        const [lastSeenSeq, setLastSeenSeq] = createSignal(sourceVal.seq ?? 1000);
+        const [lastSeenSeq, setLastSeenSeq] = createSignal(sourceVal.seq ?? 0);
         const store = this.optimisticRegistry.useBoundStore(
             key,
             sourceVal.data,
@@ -95,9 +95,13 @@ export class RootObjectModel {
         let storeValue = store[2];
         createEffect(() => {
             // sequences are counting up per transaction & mod 255. Assume that when we got a value more than 10 less
-            // of our last seen sequence, we just witnessed an overflow
+            // of our last seen sequence, we just witnessed an overflow.
+            // also allow if the sequence is exactly the same as last seen, as we might get multiple updates with the same sequence
             let updatedSourceValue = source();
-            if (updatedSourceValue.seq && updatedSourceValue.seq < lastSeenSeq() - 10) {
+            if (updatedSourceValue.seq && (updatedSourceValue.seq >= lastSeenSeq() || updatedSourceValue.seq < lastSeenSeq() - 10)) {
+                if (updatedSourceValue.seq < lastSeenSeq() - 10) {
+                    logger.debug(`Sequence overflow detected or forced update. lastSeenSeq: ${lastSeenSeq()}, updatedSourceValue.seq: ${updatedSourceValue.seq}`)
+                }
                 setLastSeenSeq(updatedSourceValue.seq)
                 storeValue(updatedSourceValue.data)
             } else if (!updatedSourceValue.seq) {

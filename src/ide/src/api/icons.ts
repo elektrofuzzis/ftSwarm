@@ -81,7 +81,7 @@ const ioTypeIconMap: Record<SwOSIOType, IconComponent> = {
     [SwOSIOType.SWOSIO_MAXIOTYPE]: Cog
 };
 
-enum FtSwarmController {
+const enum FtSwarmController {
     FTSWARM_NOCTRL,
     FTSWARM,
     FTSWARMCONTROL,

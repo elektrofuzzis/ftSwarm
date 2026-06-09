@@ -3,7 +3,7 @@ import { Surface1 } from "./Surface";
 import { ReadTheDocs } from "./ReadTheDocs";
 import PatternedBackground from "./PatternedBackground";
 
-export enum LoadingStep {
+export const enum LoadingStep {
   CONNECTING,
   LOADING,
 }

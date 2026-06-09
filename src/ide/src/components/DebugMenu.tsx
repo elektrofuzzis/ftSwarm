@@ -1,26 +1,13 @@
-import {
-  For,
-  type Component,
-  Show,
-  createEffect,
-  createRenderEffect,
-  on,
-  createSignal,
-  createMemo,
-} from "solid-js";
-import { useDebug } from "../contexts/DebugContext";
-import { Surface1 } from "./Surface";
+import {type Component, createEffect, createMemo, createRenderEffect, createSignal, For, on, Show,} from "solid-js";
+import {useDebug} from "../contexts/DebugContext";
+import {Surface1} from "./Surface";
 import X from "lucide-solid/icons/x";
 import ArrowDown from "lucide-solid/icons/arrow-down";
 import Trash2 from "lucide-solid/icons/trash-2";
 import Play from "lucide-solid/icons/play";
 import Pause from "lucide-solid/icons/pause";
 import Search from "lucide-solid/icons/search";
-import {
-  LogChannel,
-  channelColors,
-  type LogMessage,
-} from "../contexts/logtypes";
+import {channelColors, LogChannel, type LogMessage,} from "../contexts/logtypes";
 
 const LogEntry = (props: { log: LogMessage }) => {
   const colorInfo = channelColors[props.log.channel];
@@ -115,6 +102,14 @@ export const DebugMenu: Component = () => {
     );
   });
 
+  const channels: LogChannel[] = [
+      LogChannel.RAW_IN,
+      LogChannel.RAW_OUT,
+      LogChannel.UPDATES,
+      LogChannel.RPC,
+      LogChannel.APP
+  ]
+
   const menuContent = (
     <Surface1 class="p-4 flex-grow flex flex-col gap-2 h-full">
       <div class="flex justify-between items-center mb-2">
@@ -122,7 +117,7 @@ export const DebugMenu: Component = () => {
 
         <div class="flex gap-2 items-center">
           <div class="flex rounded overflow-hidden">
-            <For each={Object.values(LogChannel)}>
+            <For each={channels}>
               {(channel) => {
                 const colorInfo = channelColors[channel];
                 const isVisible = () => visibleChannels().includes(channel);

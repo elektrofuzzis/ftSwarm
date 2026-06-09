@@ -9,7 +9,7 @@ export type Authenticator = {
     logout: () => void;
 }
 
-export enum AuthenticatorError {
+export const enum AuthenticatorError {
     INVALID_CODE = "Invalid Code",
     UNKNOWN_ERROR = "Unknown Error",
 }
