@@ -81,7 +81,6 @@ const componentMapper: Record<SwOSIOType, IoCardRendererComponent<any>> = {
     [SwOSIOType.SWOSIO_RCMOTOR]: Unimplemented,
     [SwOSIOType.SWOSIO_RCSERVO]: Unimplemented,
     [SwOSIOType.SWOSIO_RCPOTI]: Unimplemented,
-    [SwOSIOType.SWOSIO_MAXIOTYPE]: Unimplemented
 }
 
 export const IoCard: Component<IoCardProps> = (props) => (

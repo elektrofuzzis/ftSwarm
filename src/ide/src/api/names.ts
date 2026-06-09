@@ -46,5 +46,4 @@ export const FtSwarmIoTypeNames: Record<SwOSIOType, string> = {
   [SwOSIOType.SWOSIO_RCMOTOR]: "RC Motor",
   [SwOSIOType.SWOSIO_RCSERVO]: "RC Servo",
   [SwOSIOType.SWOSIO_RCPOTI]: "RC Potentiometer",
-  [SwOSIOType.SWOSIO_MAXIOTYPE]: "",
 };

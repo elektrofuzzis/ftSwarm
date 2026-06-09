@@ -78,7 +78,6 @@ const ioTypeIconMap: Record<SwOSIOType, IconComponent> = {
     [SwOSIOType.SWOSIO_RCMOTOR]: RotateCw,
     [SwOSIOType.SWOSIO_RCSERVO]: Settings2,
     [SwOSIOType.SWOSIO_RCPOTI]: RefreshCCWDot,
-    [SwOSIOType.SWOSIO_MAXIOTYPE]: Cog
 };
 
 const enum FtSwarmController {
@@ -114,7 +113,6 @@ const versionToControllerMap: Record<FtSwarmVersion, FtSwarmController> = {
     [FtSwarmVersion.FTSWARMXL_1V00]: FtSwarmController.FTSWARM,
     [FtSwarmVersion.FTSWARMCONTROL_1V3UC]: FtSwarmController.FTSWARMCONTROL,
     [FtSwarmVersion.FTSWARMRC_1V141]: FtSwarmController.FTSWARMRC,
-    [FtSwarmVersion.FTSWARMMAXVERSION]: FtSwarmController.FTSWARM_MAXCONTROLLERTYPE,
 };
 
 export function getIoIcon(ioType: SwOSIOType): IconComponent {

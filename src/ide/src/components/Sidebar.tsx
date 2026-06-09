@@ -102,7 +102,6 @@ const state2Bg: Record<SwOSState, string> = {
   [SwOSState.WAITING]: "bg-thm-primary",
   [SwOSState.IDENTIFY]: "bg-thm-primary",
   [SwOSState.FATAL]: "bg-thm-error",
-  [SwOSState.MAXSTATE]: "bg-thm-error",
   [SwOSState.FACTORY1]: "bg-thm-error",
   [SwOSState.FACTORY2]: "bg-thm-error",
 };

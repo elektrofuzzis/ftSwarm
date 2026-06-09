@@ -55,7 +55,6 @@ export const IOTypeClasses: IOTypeMapping = {
   [SwOSIOType.SWOSIO_RCMOTOR]: "output",
   [SwOSIOType.SWOSIO_RCSERVO]: "output",
   [SwOSIOType.SWOSIO_RCPOTI]: "input",
-  [SwOSIOType.SWOSIO_MAXIOTYPE]: "special"
 }
 
 export interface ApiGeneralIoType {

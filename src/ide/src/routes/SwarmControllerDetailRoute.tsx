@@ -19,7 +19,6 @@ const INVALID_STATES: SwOSState[] = [
   SwOSState.STARTWIFI,
   SwOSState.ERROR,
   SwOSState.FATAL,
-  SwOSState.MAXSTATE,
 ];
 
 const isInvalidState = (state: SwOSState) => INVALID_STATES.includes(state);

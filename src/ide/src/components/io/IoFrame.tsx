@@ -1,4 +1,4 @@
-import {Show, type ParentComponent} from "solid-js";
+import {Show, type ParentComponent, For} from "solid-js";
 import {type IoCardProps, registryKeyOfProps, sequencedDatumFactory} from "./index.tsx";
 import {useOMContext, useTransportContext} from "../../contexts/transport/context.ts";
 import {Dynamic} from "solid-js/web";
@@ -8,6 +8,9 @@ import Link2 from "lucide-solid/icons/link-2";
 import {useLoginContext} from "../../contexts/LoginContext.tsx";
 import {transactMessage} from "../../api/transport";
 import {apiNameOf, rpcResponseToSeq} from "../../api/util.ts";
+import {ioTypeInfos} from "../../api/generated/genIoMappings.ts";
+import {SwOSIOClass, SwOSIOType} from "../../api/generated/genApiEnums.ts";
+import {Loader} from "./Loader.tsx";
 
 const enum IOFrameOptimisticStores {
     ALIAS
@@ -18,7 +21,12 @@ export const IoFrame: ParentComponent<IoCardProps> = (props) => {
     const transport = useTransportContext()
     const login = useLoginContext()
 
-    const [optimisticAlias, setOptimisticAlias, _, {setEditing: setAliasEditing}] = om.useBoundStore(
+    const [optimisticAlias, setOptimisticAlias, _, {
+        setEditing: setAliasEditing,
+        isMutating: isAliasMutating,
+        isThrottled: isAliasThrottled,
+        isEditing: isAliasEditing
+    }] = om.useBoundStore(
         registryKeyOfProps(props, {kind: "Frame", val: IOFrameOptimisticStores.ALIAS}),
         sequencedDatumFactory(props, (_) => props.io.alias ?? props.io.name),
         async (newAlias) => {
@@ -28,9 +36,31 @@ export const IoFrame: ParentComponent<IoCardProps> = (props) => {
         }
     )
 
+    const currentInfo = () => ioTypeInfos[props.io.IOType];
+    const availableTypes = () => {
+        const info = currentInfo();
+        if (!info) return [];
+        return Object.values(ioTypeInfos).filter(i => i.ioClass === info.ioClass && i.showInApi);
+    };
+
+    const onTypeChange = async (e: Event) => {
+        const newType = parseInt((e.target as HTMLSelectElement).value) as SwOSIOType;
+        const info = ioTypeInfos[newType];
+        
+        let params = `${newType}`;
+        // The setIOType command expects a second parameter (normallyOpen) for INPUT class IOs.
+        // It does NOT support setIOType for SINGULAR types (Joystick, Stepper, etc.) in their specialized handlers.
+        // However, it IS supported in executeActorCmd for MOTOR class types with only 1 parameter.
+        if (info && info.ioClass === SwOSIOClass.SWOSIOCLASS_INPUT) {
+            params += ',1'; // Default normallyOpen to true
+        }
+
+        await transactMessage(transport, `${apiNameOf(props.io, props.controller)}.setIOType(${params})`)
+    };
+
     return (
         <div
-            class="border bg-thm-surface-2 border-thm-surface-border-2 rounded-lg p-3 flex flex-col transition-all">
+            class="border bg-thm-surface-2 border-thm-surface-border-2 rounded-lg p-3 flex flex-col transition-all group">
             <div class="flex items-center justify-between mb-1">
                 <div class="relative flex items-center justify-between w-full">
                     <span
@@ -38,20 +68,23 @@ export const IoFrame: ParentComponent<IoCardProps> = (props) => {
                     <select
                         value={props.io.IOType}
                         class="appearance-none bg-transparent text-[10px] w-full font-bold uppercase tracking-wider text-thm-font-muted hover:text-thm-font pr-4 transition-colors outline-none cursor-pointer z-10"
-                        disabled={true}
+                        disabled={login.interactiveDisabled()}
+                        onChange={onTypeChange}
                     >
-                        <option value={0}>Digital Input</option>
-                        <option value={4}>Button</option>
-                        <option value={5}>Analog</option>
-                        <option value={10}>Joystick</option>
-                        <option value={11}>Motor</option>
-                        <option value={25}>Camera</option>
-                        <option value={26}>Servo</option>
-                        <option value={30}>Gyro</option>
+                        <For each={availableTypes()}>
+                            {(type) => <option value={type.type}>{type.name}</option>}
+                        </For>
                     </select>
                     <ChevronDown
                         size={12}
                         class="absolute right-0 text-thm-font-muted pointer-events-none"
+                    />
+                </div>
+                <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Loader
+                        isMutating={isAliasMutating()}
+                        isThrottled={isAliasThrottled()}
+                        isEditing={isAliasEditing()}
                     />
                 </div>
                 <Show when={false}>
