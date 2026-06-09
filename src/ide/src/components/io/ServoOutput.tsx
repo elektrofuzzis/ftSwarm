@@ -27,7 +27,8 @@ export const ServoOutput: IoCardRendererComponent<ApiServoOutputType> = (props) 
             const result = await transactMessage(transport, `${apiNameOf(props.io, props.controller)}.setPosition(${newPosition})`)
                 .then((v) => v.unwrapOr(null))
             return rpcResponseToSeq(result)
-        }
+        },
+        { needsSave: false }
     )
 
     const [optimisticOffset, setOptimisticOffset, __, {
@@ -42,7 +43,8 @@ export const ServoOutput: IoCardRendererComponent<ApiServoOutputType> = (props) 
             const result = await transactMessage(transport, `${apiNameOf(props.io, props.controller)}.setOffset(${newOffset})`)
                 .then((v) => v.unwrapOr(null))
             return rpcResponseToSeq(result)
-        }
+        },
+        { needsSave: false }
     )
 
     return (

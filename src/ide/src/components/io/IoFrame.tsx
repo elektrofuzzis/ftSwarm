@@ -57,6 +57,7 @@ export const IoFrame: ParentComponent<IoCardProps> = (props) => {
         }
 
         await transactMessage(transport, `${apiNameOf(props.io, props.controller)}.setIOType(${params})`)
+        om.markNeedsSave()
     };
 
     return (

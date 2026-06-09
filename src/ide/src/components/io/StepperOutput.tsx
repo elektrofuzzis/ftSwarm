@@ -25,7 +25,8 @@ export const StepperOutput: IoCardRendererComponent<ApiStepperOutputType> = (pro
             const result = await transactMessage(transport, `${apiNameOf(props.io, props.controller)}.setSpeed(${newSpeed})`)
                 .then((v) => v.unwrapOr(null))
             return rpcResponseToSeq(result)
-        }
+        },
+        { needsSave: false }
     )
 
     const [optimisticPosition, setOptimisticPosition, __, {
@@ -40,7 +41,8 @@ export const StepperOutput: IoCardRendererComponent<ApiStepperOutputType> = (pro
             const result = await transactMessage(transport, `${apiNameOf(props.io, props.controller)}.setPosition(${newPosition})`)
                 .then((v) => v.unwrapOr(null))
             return rpcResponseToSeq(result)
-        }
+        },
+        { needsSave: false }
     )
 
     return (

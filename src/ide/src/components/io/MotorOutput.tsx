@@ -31,7 +31,8 @@ export const MotorOutput: IoCardRendererComponent<ApiOutputIoType> = (props) => 
                 .then((v) => v.unwrapOr(null))
 
             return rpcResponseToSeq(result)
-        }
+        },
+        { needsSave: false }
     )
 
     createEffect(on(max, (newMax, oldMax) => {

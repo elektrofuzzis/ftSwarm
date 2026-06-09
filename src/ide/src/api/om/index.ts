@@ -42,6 +42,10 @@ export class RootObjectModel {
         this.needsSaveSignal[1](false);
     }
 
+    public markNeedsSave() {
+        this.needsSaveSignal[1](true);
+    }
+
     constructor() {
         logger.info("RootObjectModel created");
         const [controllers, setControllers] = createStore<
@@ -89,14 +93,16 @@ export class RootObjectModel {
         return () => this.controllers[serial];
     }
 
-    useBoundStore<T>(key: RegistryKey, source: () => SequencedDatum<T>, mutator: (val: T) => Promise<Sequence>, options?: OptimisticStoreOptions): OptimisticStore<T> {
+    useBoundStore<T>(key: RegistryKey, source: () => SequencedDatum<T>, mutator: (val: T) => Promise<Sequence>, options?: OptimisticStoreOptions & { needsSave?: boolean }): OptimisticStore<T> {
         let sourceVal = source();
         const [lastSeenSeq, setLastSeenSeq] = createSignal(sourceVal.seq ?? 0);
         const store = this.optimisticRegistry.useBoundStore(
             key,
             sourceVal.data,
             async (v) => {
-                this.needsSaveSignal[1](true);
+                if (options?.needsSave !== false) {
+                    this.needsSaveSignal[1](true);
+                }
                 let seq = await mutator(v)
                 if (!seq) return
                 setLastSeenSeq(seq)

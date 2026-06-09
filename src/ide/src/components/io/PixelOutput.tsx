@@ -24,7 +24,8 @@ export const PixelOutput: IoCardRendererComponent<ApiPixelOutputType> = (props) 
             const result = await transactMessage(transport, `${apiNameOf(props.io, props.controller)}.setBrightness(${newBrightness})`)
                 .then((v) => v.unwrapOr(null))
             return rpcResponseToSeq(result)
-        }
+        },
+        { needsSave: false }
     )
 
     const [optimisticColor, setOptimisticColor, __, {
@@ -43,7 +44,8 @@ export const PixelOutput: IoCardRendererComponent<ApiPixelOutputType> = (props) 
             const result = await transactMessage(transport, `${apiNameOf(props.io, props.controller)}.setColor(${r},${g},${b})`)
                 .then((v) => v.unwrapOr(null))
             return rpcResponseToSeq(result)
-        }
+        },
+        { needsSave: false }
     )
 
     return (

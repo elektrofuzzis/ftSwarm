@@ -24,7 +24,8 @@ export const BinaryOutput: IoCardRendererComponent<ApiOutputIoType> = (props) =>
             let res = await transactMessage(transport, `${apiNameOf(props.io, props.controller)}.setSpeed(${newSpeed})`)
                 .then((v) => v.unwrapOr(null))
             return rpcResponseToSeq(res)
-        }
+        },
+        { needsSave: false }
     )
 
     const isOn = () => optimisticSpeed() !== 0
@@ -46,17 +47,40 @@ export const BinaryOutput: IoCardRendererComponent<ApiOutputIoType> = (props) =>
                     isEditing={isSpeedEditing()}
                 />
             </div>
-            <button
-                onClick={toggle}
-                disabled={login.interactiveDisabled()}
-                class={`px-4 py-1 rounded-full text-xs font-bold tracking-wide border transition-colors ${
-                    isOn()
-                        ? "bg-thm-primary/20 text-thm-primary border-thm-primary/30"
-                        : "bg-zinc-800 text-zinc-500 border-zinc-700"
-                } ${login.interactiveDisabled() ? "opacity-50 cursor-not-allowed" : "hover:brightness-110 cursor-pointer"}`}
-            >
-                {isOn() ? "ON" : "OFF"}
-            </button>
+            <div class="flex p-0.5 bg-zinc-800 rounded-lg border border-zinc-700">
+                <button
+                    onClick={() => {
+                        if (login.interactiveDisabled()) return
+                        setSpeedEditing(true)
+                        setOptimisticSpeed(0)
+                        setSpeedEditing(false)
+                    }}
+                    disabled={login.interactiveDisabled()}
+                    class={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${
+                        !isOn()
+                            ? "bg-zinc-700 text-zinc-200 shadow-sm"
+                            : "text-zinc-500 hover:text-zinc-400"
+                    } ${login.interactiveDisabled() ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                >
+                    OFF
+                </button>
+                <button
+                    onClick={() => {
+                        if (login.interactiveDisabled()) return
+                        setSpeedEditing(true)
+                        setOptimisticSpeed(100)
+                        setSpeedEditing(false)
+                    }}
+                    disabled={login.interactiveDisabled()}
+                    class={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${
+                        isOn()
+                            ? "bg-thm-primary text-white shadow-sm"
+                            : "text-zinc-500 hover:text-zinc-400"
+                    } ${login.interactiveDisabled() ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                >
+                    ON
+                </button>
+            </div>
         </div>
     )
 }
