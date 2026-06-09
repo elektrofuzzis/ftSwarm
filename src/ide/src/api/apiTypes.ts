@@ -75,16 +75,24 @@ export interface ApiServoOutputType extends ApiGeneralIoType {
   position: number;
 }
 
+export interface ApiStepperOutputType extends ApiGeneralIoType {
+  speed: number;
+  position: number;
+  distance: number;
+  homing: boolean;
+  running: boolean;
+}
+
 export interface ApiDigitalInputType extends ApiGeneralIoType {
   value: boolean;
 }
 
 export interface ApiAnalogInputType extends ApiGeneralIoType {
-  value: number;
+  value: string | [string, string];
 }
 
 export interface ApiFormattedValueInputType extends ApiGeneralIoType {
-  value: string;
+  value: string | [string, string];
 }
 
 export interface ApiJoystickInputType extends ApiGeneralIoType {
@@ -109,8 +117,7 @@ export interface ApiPixelOutputType extends ApiGeneralIoType {
 }
 
 export interface ApiGyroInputType extends ApiGeneralIoType {
-  quaternion: number[];
-  acceleration: number[];
+  YawPitchRoll: number[];
 }
 
 export type FtSwarmInput =
@@ -124,6 +131,7 @@ export type FtSwarmInput =
 export type FtSwarmOutput =
   | ApiOutputIoType
   | ApiServoOutputType
+  | ApiStepperOutputType
   | ApiPixelOutputType;
 
 export type FtSwarmIo = FtSwarmInput | FtSwarmOutput;

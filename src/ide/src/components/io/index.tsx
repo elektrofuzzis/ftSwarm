@@ -8,6 +8,13 @@ import {DigitalInput} from "./DigitalInput.tsx";
 import {JoystickInput} from "./Joystick.tsx";
 import {MotorOutput} from "./MotorOutput.tsx";
 import type {Sequence, SequencedDatum} from "../../api/om";
+import {AnalogInput} from "./AnalogInput.tsx";
+import {FormattedValueInput} from "./FormattedValueInput.tsx";
+import {BinaryOutput} from "./BinaryOutput.tsx";
+import {ServoOutput} from "./ServoOutput.tsx";
+import {StepperOutput} from "./StepperOutput.tsx";
+import {PixelOutput} from "./PixelOutput.tsx";
+import {GyroInput} from "./GyroInput.tsx";
 
 export type IoCardProps<Io extends ApiGeneralIoType = ApiGeneralIoType> = {
     io: Io,
@@ -42,45 +49,45 @@ const componentMapper: Record<SwOSIOType, IoCardRendererComponent<any>> = {
     [SwOSIOType.SWOSIO_REEDSWITCH]: DigitalInput,
     [SwOSIOType.SWOSIO_LIGHTBARRIER]: DigitalInput,
     [SwOSIOType.SWOSIO_BUTTON]: DigitalInput,
-    [SwOSIOType.SWOSIO_ANALOG]: Unimplemented,
-    [SwOSIOType.SWOSIO_VOLTMETER]: Unimplemented,
-    [SwOSIOType.SWOSIO_OHMMETER]: Unimplemented,
-    [SwOSIOType.SWOSIO_THERMOMETER]: Unimplemented,
-    [SwOSIOType.SWOSIO_LDR]: Unimplemented,
+    [SwOSIOType.SWOSIO_ANALOG]: AnalogInput,
+    [SwOSIOType.SWOSIO_VOLTMETER]: AnalogInput,
+    [SwOSIOType.SWOSIO_OHMMETER]: AnalogInput,
+    [SwOSIOType.SWOSIO_THERMOMETER]: AnalogInput,
+    [SwOSIOType.SWOSIO_LDR]: AnalogInput,
     [SwOSIOType.SWOSIO_JOYSTICK]: JoystickInput,
     [SwOSIOType.SWOSIO_MOTOR]: MotorOutput,
     [SwOSIOType.SWOSIO_XSMOTOR]: MotorOutput,
     [SwOSIOType.SWOSIO_XMMOTOR]: MotorOutput,
     [SwOSIOType.SWOSIO_TRACTOR]: MotorOutput,
-    [SwOSIOType.SWOSIO_ENCODER]: Unimplemented,
-    [SwOSIOType.SWOSIO_LAMP]: Unimplemented,
-    [SwOSIOType.SWOSIO_VALVE]: Unimplemented,
-    [SwOSIOType.SWOSIO_COMPRESSOR]: Unimplemented,
-    [SwOSIOType.SWOSIO_BUZZER]: Unimplemented,
-    [SwOSIOType.SWOSIO_STEPPER]: Unimplemented,
-    [SwOSIOType.SWOSIO_COUNTER]: Unimplemented,
-    [SwOSIOType.SWOSIO_ROTARYENCODER]: Unimplemented,
-    [SwOSIOType.SWOSIO_FREQUENCYMETER]: Unimplemented,
-    [SwOSIOType.SWOSIO_LIDAR]: Unimplemented,
+    [SwOSIOType.SWOSIO_ENCODER]: MotorOutput,
+    [SwOSIOType.SWOSIO_LAMP]: BinaryOutput,
+    [SwOSIOType.SWOSIO_VALVE]: BinaryOutput,
+    [SwOSIOType.SWOSIO_COMPRESSOR]: BinaryOutput,
+    [SwOSIOType.SWOSIO_BUZZER]: BinaryOutput,
+    [SwOSIOType.SWOSIO_STEPPER]: StepperOutput,
+    [SwOSIOType.SWOSIO_COUNTER]: FormattedValueInput,
+    [SwOSIOType.SWOSIO_ROTARYENCODER]: FormattedValueInput,
+    [SwOSIOType.SWOSIO_FREQUENCYMETER]: FormattedValueInput,
+    [SwOSIOType.SWOSIO_LIDAR]: FormattedValueInput,
     [SwOSIOType.SWOSIO_CAM]: Unimplemented,
-    [SwOSIOType.SWOSIO_SERVO]: Unimplemented,
-    [SwOSIOType.SWOSIO_PIXEL]: Unimplemented,
+    [SwOSIOType.SWOSIO_SERVO]: ServoOutput,
+    [SwOSIOType.SWOSIO_PIXEL]: PixelOutput,
     [SwOSIOType.SWOSIO_OLED]: Unimplemented,
     [SwOSIOType.SWOSIO_I2C]: Unimplemented,
-    [SwOSIOType.SWOSIO_GYRO]: Unimplemented,
+    [SwOSIOType.SWOSIO_GYRO]: GyroInput,
     [SwOSIOType.SWOSIO_POWER]: Unimplemented,
     [SwOSIOType.SWOSIO_COLORSENSOR]: Unimplemented,
     [SwOSIOType.SWOSIO_TRAILSENSOR]: Unimplemented,
-    [SwOSIOType.SWOSIO_ULTRASONIC]: Unimplemented,
-    [SwOSIOType.SWOSIO_JOYSTICK_POTI]: Unimplemented,
-    [SwOSIOType.SWOSIO_WHEELDRIVE]: Unimplemented,
-    [SwOSIOType.SWOSIO_MINIMOTOR]: Unimplemented,
-    [SwOSIOType.SWOSIO_SMOTOR]: Unimplemented,
-    [SwOSIOType.SWOSIO_POWERMOTOR]: Unimplemented,
-    [SwOSIOType.SWOSIO_MMOTOR]: Unimplemented,
-    [SwOSIOType.SWOSIO_RCMOTOR]: Unimplemented,
-    [SwOSIOType.SWOSIO_RCSERVO]: Unimplemented,
-    [SwOSIOType.SWOSIO_RCPOTI]: Unimplemented,
+    [SwOSIOType.SWOSIO_ULTRASONIC]: FormattedValueInput,
+    [SwOSIOType.SWOSIO_JOYSTICK_POTI]: AnalogInput,
+    [SwOSIOType.SWOSIO_WHEELDRIVE]: MotorOutput,
+    [SwOSIOType.SWOSIO_MINIMOTOR]: MotorOutput,
+    [SwOSIOType.SWOSIO_SMOTOR]: MotorOutput,
+    [SwOSIOType.SWOSIO_POWERMOTOR]: MotorOutput,
+    [SwOSIOType.SWOSIO_MMOTOR]: MotorOutput,
+    [SwOSIOType.SWOSIO_RCMOTOR]: MotorOutput,
+    [SwOSIOType.SWOSIO_RCSERVO]: ServoOutput,
+    [SwOSIOType.SWOSIO_RCPOTI]: AnalogInput,
 }
 
 export const IoCard: Component<IoCardProps> = (props) => (

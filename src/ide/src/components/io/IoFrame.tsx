@@ -1,4 +1,4 @@
-import {Show, type ParentComponent, For} from "solid-js";
+import {For, type ParentComponent, Show} from "solid-js";
 import {type IoCardProps, registryKeyOfProps, sequencedDatumFactory} from "./index.tsx";
 import {useOMContext, useTransportContext} from "../../contexts/transport/context.ts";
 import {Dynamic} from "solid-js/web";
@@ -40,6 +40,7 @@ export const IoFrame: ParentComponent<IoCardProps> = (props) => {
     const availableTypes = () => {
         const info = currentInfo();
         if (!info) return [];
+        if (info.ioClass == SwOSIOClass.SWOSIOCLASS_SINGULAR) return [info]
         return Object.values(ioTypeInfos).filter(i => i.ioClass === info.ioClass && i.showInApi);
     };
 
