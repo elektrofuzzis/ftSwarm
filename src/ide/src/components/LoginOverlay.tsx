@@ -6,12 +6,14 @@ export const LoginOverlay: Component = () => {
     const loginState = useLoginContext();
     const authenticator = useAuthenticator();
     let dialogRef: HTMLDialogElement | undefined;
+    let inputRef: HTMLInputElement | undefined;
 
     createEffect(() => {
         const isLoggingIn = loginState.status() === LoginState.LOGGING_IN;
 
         if (isLoggingIn && !dialogRef?.open) {
             dialogRef?.showModal();
+            inputRef?.focus();
         } else if (!isLoggingIn && dialogRef?.open) {
             dialogRef?.close();
         }
@@ -61,10 +63,16 @@ export const LoginOverlay: Component = () => {
                 <p class="text-thm-font-muted my-2">Please enter the swarm pin below</p>
 
                 <input
+                    ref={inputRef}
                     type="text"
                     class="w-full px-3 py-2 border border-thm-surface-border-2 rounded transition-colors text-thm-font min-w-80"
                     placeholder="Enter swarm pin"
                     onInput={(e) => setSwarmPin(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && error() == null) {
+                            performLogin();
+                        }
+                    }}
                 />
 
                 <Show when={error() != null}>

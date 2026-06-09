@@ -3,7 +3,6 @@ import type {SwarmToSocketRpcResponse} from "./transport/swarm2socket";
 import type {Sequence} from "./om";
 
 export function apiNameOf(io: ApiGeneralIoType, controller: ApiController): string {
-    if (io.alias) return io.alias;
     return `${controller.name}.${io.name}`;
 }
 

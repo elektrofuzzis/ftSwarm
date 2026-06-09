@@ -5,6 +5,7 @@ import { type ParentComponent } from "solid-js";
 import { DebugToggle } from "./DebugToggle";
 import { LoginOverlay } from "./LoginOverlay";
 import {DebugMenu} from "./DebugMenu.tsx";
+import {SaveFab} from "./SaveFab.tsx";
 
 const Content: ParentComponent = (props) => {
   const isRouting = useIsRouting();
@@ -30,6 +31,7 @@ export const Layout: ParentComponent = (props) => {
 
       <DebugMenu />
       <DebugToggle />
+      <SaveFab />
     </>
   );
 };

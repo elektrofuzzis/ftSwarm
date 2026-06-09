@@ -32,6 +32,16 @@ export class RootObjectModel {
 
     private readonly optimisticRegistry = new OptimisticRegistry();
 
+    private readonly needsSaveSignal = createSignal(false);
+
+    public get needsSave() {
+        return this.needsSaveSignal[0]();
+    }
+
+    public markSaved() {
+        this.needsSaveSignal[1](false);
+    }
+
     constructor() {
         logger.info("RootObjectModel created");
         const [controllers, setControllers] = createStore<
@@ -86,6 +96,7 @@ export class RootObjectModel {
             key,
             sourceVal.data,
             async (v) => {
+                this.needsSaveSignal[1](true);
                 let seq = await mutator(v)
                 if (!seq) return
                 setLastSeenSeq(seq)
