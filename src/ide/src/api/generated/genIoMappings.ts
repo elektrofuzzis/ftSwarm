@@ -1,4 +1,4 @@
-// GENERATED IO MAPPINGS FROM ftSwarm/src/ftswarm-core/include/SwOS.h
+// GENERATED IO MAPPINGS FROM src/ftswarm-core/include/SwOS.h
 import { SwOSIOClass, SwOSIOType } from "./genApiEnums";
 
 export interface IoTypeInfo {

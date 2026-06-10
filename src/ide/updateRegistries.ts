@@ -37,7 +37,7 @@ class CEnumeration {
 
 async function generateEnums() {
   const includePath =
-    process.cwd() + "/ftSwarm/src/ftswarm-core/include/SwOS.h";
+    process.cwd() + "/../ftswarm-core/include/SwOS.h";
   const content = (await readFile(includePath)).toString();
 
   let enums: CEnumeration[] = [];
@@ -46,7 +46,7 @@ async function generateEnums() {
   for (const match of enumMatches) {
     const enumName = match[2];
     if (enumName == "SwOSLabel" || enumName == "FtSwarmController") continue;
-    
+
     // Remove comments within the enum block
     const enumValueString = match[1].replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
     const constantMatches = enumValueString.matchAll(ENUM_CONSTANT_REGEX) || [];
@@ -56,17 +56,17 @@ async function generateEnums() {
 
     for (const constantMatch of constantMatches) {
       const constantName = constantMatch[1];
-      if (constantName.endsWith("_MAX") || 
-          constantName.endsWith("MAXIOTYPE") || 
-          constantName.endsWith("MAXSTATE") || 
-          constantName.endsWith("MAXVERSION") || 
-          constantName.endsWith("MAXMOTION") || 
-          constantName.endsWith("MAXTRIGGER") || 
-          constantName.endsWith("MAXOPERATOR") || 
-          constantName.endsWith("MAXOPERAND") || 
+      if (constantName.endsWith("_MAX") ||
+          constantName.endsWith("MAXIOTYPE") ||
+          constantName.endsWith("MAXSTATE") ||
+          constantName.endsWith("MAXVERSION") ||
+          constantName.endsWith("MAXMOTION") ||
+          constantName.endsWith("MAXTRIGGER") ||
+          constantName.endsWith("MAXOPERATOR") ||
+          constantName.endsWith("MAXOPERAND") ||
           constantName.endsWith("MAXSCREEN") ||
           constantName === "FTSWARM_MAXCONTROLLERTYPE") continue;
-          
+
       let constantValue: number;
       if (constantMatch[2]) {
         const valStr = constantMatch[2].trim();
@@ -81,7 +81,7 @@ async function generateEnums() {
       } else {
         constantValue = lastValue + 1;
       }
-      
+
       values[constantName] = constantValue;
       lastValue = constantValue;
     }
@@ -92,7 +92,7 @@ async function generateEnums() {
   }
 
   const targetFileContent =
-    "// GENERATED ENUMERATIONS FROM ftSwarm/src/ftswarm-core/include/SwOS.h\n" +
+    "// GENERATED ENUMERATIONS FROM /src/ftswarm-core/include/SwOS.h\n" +
     enums.map((enumObj) => enumObj.toString()).join("\n\n");
 
   await writeFile("src/api/generated/genApiEnums.ts", targetFileContent);
@@ -100,7 +100,7 @@ async function generateEnums() {
 
 async function generateTranslations() {
   const includePath =
-    process.cwd() + "/ftSwarm/src/ftswarm-core/src/serialize.cpp";
+    process.cwd() + "/../ftswarm-core/src/serialize.cpp";
   const content = (await readFile(includePath)).toString();
   const [literalBlockMatch] = content.matchAll(
     TRANSLATION_LITERAL_SEPARATOR_REGEX,
@@ -120,7 +120,7 @@ async function generateTranslations() {
   }
 
   const targetFileContent =
-    "// GENERATED TRANSLATIONS FROM ftSwarm/src/ftswarm-core/src/serialize.cpp\n" +
+    "// GENERATED TRANSLATIONS FROM src/ftswarm-core/src/serialize.cpp\n" +
     `export const ftSwarmReplacements: Record<string, string> = {\n${translations.join(",\n")}\n};`;
 
   await writeFile("src/api/generated/genApiTranslations.ts", targetFileContent);
@@ -128,7 +128,7 @@ async function generateTranslations() {
 
 async function generateIoMappings() {
   const includePath =
-    process.cwd() + "/ftSwarm/src/ftswarm-core/include/SwOS.h";
+    process.cwd() + "/../ftswarm-core/include/SwOS.h";
   const content = (await readFile(includePath)).toString();
 
   const classMatch = content.match(/const\s+SwOSIOClass_t\s+SWOSIOCLASS\[SWOSIO_MAXIOTYPE\s*\]\s*=\s*{([\s\S]*?)}\s*;/);
@@ -148,7 +148,7 @@ async function generateIoMappings() {
     let current = "";
     let depth = 0;
     let inQuotes = false;
-    
+
     for (let i = 0; i < cleanStr.length; i++) {
       const char = cleanStr[i];
       if (char === '"' && cleanStr[i-1] !== '\\') inQuotes = !inQuotes;
@@ -178,7 +178,7 @@ async function generateIoMappings() {
   for (let i = 0; i < maxIOType; i++) {
     const rawClass = classes[i] || "SWOSIOCLASS_INPUT";
     const cleanClass = rawClass.replace("SWOSIOCLASS_", "");
-    
+
     ioMappings.push({
       name: names[i],
       enumMember: enumMembers[i],
@@ -188,7 +188,7 @@ async function generateIoMappings() {
   }
 
   const targetFileContent =
-    "// GENERATED IO MAPPINGS FROM ftSwarm/src/ftswarm-core/include/SwOS.h\n" +
+    "// GENERATED IO MAPPINGS FROM src/ftswarm-core/include/SwOS.h\n" +
     "import { SwOSIOClass, SwOSIOType } from \"./genApiEnums\";\n\n" +
     "export interface IoTypeInfo {\n" +
     "  type: SwOSIOType;\n" +

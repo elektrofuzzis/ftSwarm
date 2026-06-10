@@ -1,4 +1,4 @@
-// GENERATED TRANSLATIONS FROM ftSwarm/src/ftswarm-core/src/serialize.cpp
+// GENERATED TRANSLATIONS FROM src/ftswarm-core/src/serialize.cpp
 export const ftSwarmReplacements: Record<string, string> = {
   128: '"":',
   129: '"controllers":',

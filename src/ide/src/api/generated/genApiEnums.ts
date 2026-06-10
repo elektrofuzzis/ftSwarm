@@ -1,4 +1,4 @@
-// GENERATED ENUMERATIONS FROM ftSwarm/src/ftswarm-core/include/SwOS.h
+// GENERATED ENUMERATIONS FROM /src/ftswarm-core/include/SwOS.h
 export const enum SwOSError {
   SWOS_OK = 0,
   SWOS_TIMEOUT = 1,
