@@ -9,6 +9,7 @@
 
 #include "esp_netif.h"
 
+
 #include "SwOSFirmware.h"
 #include "SwOS.h"
 #include "SwOSSwarm.h"
@@ -43,7 +44,7 @@ void FirmwareIOMenu::save( void ) {
   // any changes?
   for ( i=0; i<MAXCTRL; i++ ) { if (anythingChanged[i]) changes = true; }
 
-  if ( ( changes ) && yesNo( "Save changes? (Y/N)?" ) ) {
+  if ( ( changes ) && yesNo( TRANSLATE( "Save changes? (Y/N)?", "Änderungen speichern? (J/N)?" ) ) ) {
 
     // local changes
     if ( anythingChanged[0] ) {
@@ -91,14 +92,14 @@ class MenuLocalSettings : private Menu {
 
   public:
 
-    MenuLocalSettings( char *basePrompt = NULL ) : Menu(  basePrompt, "wifi", "Wifi & Local Settings", 14 ) {};
+    MenuLocalSettings( char *basePrompt = NULL ) : Menu(  basePrompt, TRANSLATE( "wifi", "WLAN" ), TRANSLATE( "Wifi & Local Settings", "WLAN & Lokale Einstellungen" ), 14 ) {};
     void run( void );
 
 };
 
 void MenuLocalSettings::wifiMode( void ) {
 
-  FtSwarmWifi_t wifiMode = (FtSwarmWifi_t) enterNumber( "enter wifi mode [ 0-off , 1-AP-Mode, 2-Client-Mode]: ", nvs.wifi.mode, 0, 2 );
+  FtSwarmWifi_t wifiMode = (FtSwarmWifi_t) enterNumber( TRANSLATE( "enter wifi mode [ 0-off , 1-AP-Mode, 2-Client-Mode]: ", "WLAN-Modus [ 0-aus , 1-AP-Modus, 2-Client-Modus]: " ), nvs.wifi.mode, 0, 2 );
 
   if ( nvs.wifi.mode != wifiMode ) {
     
@@ -116,14 +117,14 @@ bool MenuLocalSettings::setPassword( void ) {
 
   while (1) {
 
-    enterString("Please enter new Password - 8-64 chars: ", pwd, 64, true);
+    enterString( TRANSLATE( "Please enter new Password - 8-64 chars: ", "Bitte geben Sie ein neues Passwort ein - 8-64 Zeichen: " ), pwd, 64, true );
 
     if ( strlen( pwd ) == 0) {
-      printf("Keep old password.\n");
+      printf( TRANSLATE( "Keep old password.\n", "Altes Passwort wird beibehalten.\n" ) );
       return false;
 
     } else if ( strlen( pwd ) < 8 ) {
-      printf("Please use at minimum 8 chars.\n");
+      printf( TRANSLATE( "Please use at minimum 8 chars.\n", "Bitte verwenden Sie mindestens 8 Zeichen.\n" ) );
 
     } else {
       strcpy( nvs.wifi.Password, pwd );
@@ -161,12 +162,12 @@ void MenuLocalSettings::run( void ) {
     // build menu
     start( );
     printf(info);
-    add( "wifi mode", WIFI[nvs.wifi.mode], MENU_WIFI, 'w');
+    add( TRANSLATE( "wifi mode", "WLAN-Modus" ), WIFI[nvs.wifi.mode], MENU_WIFI, 'w');
 
     if (nvs.wifi.mode != wifiOFF ) {
       
       add( "SSID", nvs.wifi.SSID, MENU_SSID, 's');
-      add( "Password", "*****", MENU_PASSWORD, 'p' );
+      add( TRANSLATE( "Password", "Passwort" ), "*****", MENU_PASSWORD, 'p' );
       
       if (nvs.wifi.mode == wifiAP) {
         add( "channel", nvs.wifi.channel, MENU_CHANNEL, 'c' );
@@ -174,21 +175,21 @@ void MenuLocalSettings::run( void ) {
       
       add( "Web UI", ONOFF[nvs.wifi.webUI], MENU_WEBUI, 'u' );
       
-      if ( ( nvs.wifi.webUI ) && ( FTSWARM_HAL_PIXELS ) ) add( "ftPixels in UI", nvs.pixels, MENU_PIXELS, 'f' );
+      if ( ( nvs.wifi.webUI ) && ( FTSWARM_HAL_PIXELS ) ) add( TRANSLATE( "ftPixels in UI", "ftPixel in UI" ), nvs.pixels, MENU_PIXELS, 'f' );
 
     }
      
     if ( FTSWARM_HAL_EXT_PORT ) { 
-      add("Extension Port", EXTMODE[ nvs.extensionPort.mode] , MENU_EXT, 'e' ); 
+      add( TRANSLATE( "Extension Port", "Erweiterungsport" ), EXTMODE[ nvs.extensionPort.mode] , MENU_EXT, 'e' ); 
     }
 
     // I2C Slave Mode. Options I2C Slave Address and Interrupt Line
     if ( nvs.extensionPort.mode == FTSWARM_EXT_I2C_SLAVE ) {
-      add("I2C Slave Address", nvs.extensionPort.I2CAddr, MENU_I2CADDR, 'a');
-      add("Interrupt Line", OFFM1M2[nvs.extensionPort.interruptLine], MENU_I2CINT, 'i' );
-      add("Interrupt Low Value",  nvs.extensionPort.interruptOnOff[0], MENU_I2CLOW, 'l' );
-      add("Interrupt High Value", nvs.extensionPort.interruptOnOff[1], MENU_I2CHIGH, 'h' );
-      add("I2C Registers", nvs.extensionPort.I2CRegisters, MENU_I2CREGS, 'r' );
+      add( TRANSLATE( "I2C Slave Address", "I2C-Slave-Adresse" ), nvs.extensionPort.I2CAddr, MENU_I2CADDR, 'a');
+      add( TRANSLATE( "Interrupt Line", "Interrupt-Ausgang" ), OFFM1M2[nvs.extensionPort.interruptLine], MENU_I2CINT, 'i' );
+      add( TRANSLATE( "Interrupt Low Value", "Interrupt Wert für 0" ), nvs.extensionPort.interruptOnOff[0], MENU_I2CLOW, 'l' );
+      add( TRANSLATE( "Interrupt High Value", "Interrupt Wert für 1" ), nvs.extensionPort.interruptOnOff[1], MENU_I2CHIGH, 'h' );
+      add( TRANSLATE( "I2C Registers", "I2C-Register" ), nvs.extensionPort.I2CRegisters, MENU_I2CREGS, 'r' );
     }
 
     // gyro if available
@@ -198,13 +199,13 @@ void MenuLocalSettings::run( void ) {
 
     addExit();
 
-    if ( ( nvs.wifi.mode == wifiOFF ) && ( nvs.swarm.communication.wifi ) ) printf("\nHINT: Check wifi settings vs. swarm communication settings\n");
+    if ( ( nvs.wifi.mode == wifiOFF ) && ( nvs.swarm.communication.wifi ) ) printf( TRANSLATE( "\nHINT: Check wifi settings vs. swarm communication settings\n", "\nHINWEIS: Überprüfen Sie die WLAN- und Swarm-Kommunikationseinstellungen\n" ) );
 
     char line[100];
 
     switch ( userChoice(  ) ) {
 
-      case MENU_EXIT:       if ( ( anythingChanged) && ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) ) {
+      case MENU_EXIT:       if ( ( anythingChanged) && ( yesNo( TRANSLATE( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?", "Um Ihre Änderungen anzuwenden, muss das Gerät neu gestartet werden.\nEinstellungen speichern und neu starten (J/N)?" ) ) ) ) {
                               // save config
                               nvs.saveAndRestart( (FtSwarmNVSScope_t) scope );
                             } else {
@@ -216,7 +217,7 @@ void MenuLocalSettings::run( void ) {
                             break;
         
       case MENU_SSID:       anythingChanged = true;
-                            sprintf( line, "Please enter new SSID [%s]: ", nvs.wifi.SSID );
+                            sprintf( line, TRANSLATE( "Please enter new SSID [%s]: ", "Bitte neue SSID eingeben [%s]: " ), nvs.wifi.SSID );
                             enterString( line, nvs.wifi.SSID, nvs.wifi.SSID, 64);
                             scope = scope | FTSWARM_NVSSCOPE_WIFI;
                             break;
@@ -226,7 +227,7 @@ void MenuLocalSettings::run( void ) {
                             break;
 
       case MENU_CHANNEL:    anythingChanged = true;
-                            nvs.wifi.channel = enterNumber( "enter channel [1..13] - use 1,6 or 11 if possible: ", nvs.wifi.channel, 1, 13 );
+                            nvs.wifi.channel = enterNumber( TRANSLATE( "enter channel [1..13] - use 1,6 or 11 if possible: ", "Bitte Kanal eingeben [1..13] - wenn möglich 1, 6 oder 11 verwenden: " ), nvs.wifi.channel, 1, 13 );
                             scope = scope | FTSWARM_NVSSCOPE_WIFI;
                             break;
 
@@ -236,12 +237,12 @@ void MenuLocalSettings::run( void ) {
                             break;
         
       case MENU_PIXELS:     anythingChanged = true;
-                            nvs.pixels = enterNumber( "enter number of ftPixel in WebUI [2..18]: ", nvs.pixels, 2, MAXLEDS );
+                            nvs.pixels = enterNumber( TRANSLATE( "enter number of ftPixel in WebUI [2..18]: ", "Bitte Anzahl der ftPixel in der WebUI eingeben [2..18]: " ), nvs.pixels, 2, MAXLEDS );
                             scope = scope | FTSWARM_NVSSCOPE_PIXEL;
                             break;
 
       case MENU_GYRO:       anythingChanged = true;
-                            nvs.extensionPort.gyro = (FtSwarmGyroMode_t) enterNumber( "(0) off (1) on: ", nvs.extensionPort.gyro, 0, 1 );
+                            nvs.extensionPort.gyro = !nvs.extensionPort.gyro;
                             if ( ( nvs.extensionPort.gyro ) && ( nvs.CPU != FTSWARMRS_2V1 ) ) nvs.extensionPort.mode = FTSWARM_EXT_I2C_MASTER;
                             scope = scope | FTSWARM_NVSSCOPE_EXTPORT;
                             break;
@@ -252,22 +253,22 @@ void MenuLocalSettings::run( void ) {
                             break;
 
       case MENU_I2CHIGH:    anythingChanged = true;
-                            nvs.extensionPort.interruptOnOff[1] = (int16_t) enterNumber( "High Value [-255..255]", nvs.extensionPort.interruptOnOff[1], -255, 255 );
+                            nvs.extensionPort.interruptOnOff[1] = (int16_t) enterNumber( TRANSLATE( "High Value [-255..255]", "Wert für 1 [-255..255]" ), nvs.extensionPort.interruptOnOff[1], -255, 255 );
                             scope = scope | FTSWARM_NVSSCOPE_EXTPORT;
                             break;
 
       case MENU_I2CLOW:     anythingChanged = true;
-                            nvs.extensionPort.interruptOnOff[1] = (int16_t) enterNumber( "High Value [-255..255]", nvs.extensionPort.interruptOnOff[1], -255, 255 );
+                            nvs.extensionPort.interruptOnOff[0] = (int16_t) enterNumber( TRANSLATE( "Low Value [-255..255]", "Wert für 0 [-255..255]" ), nvs.extensionPort.interruptOnOff[0], -255, 255 );
                             scope = scope | FTSWARM_NVSSCOPE_EXTPORT;
                             break;
 
       case MENU_I2CINT:     anythingChanged = true;
-                            nvs.extensionPort.interruptLine = (uint8_t) enterNumber( "motor (1 for M1, 2 for M2, ...) or 0 to skip: ", nvs.extensionPort.interruptLine, 0, FTSWARM_HAL_MOTORS );
+                            nvs.extensionPort.interruptLine = (uint8_t) enterNumber( TRANSLATE( "motor (1 for M1, 2 for M2, ...) or 0 to skip: ", "Motor (1 für M1, 2 für M2, ...) oder 0 zum Überspringen: " ), nvs.extensionPort.interruptLine, 0, FTSWARM_HAL_MOTORS );
                             scope = scope | FTSWARM_NVSSCOPE_EXTPORT;
                             break;
 
       case MENU_I2CREGS:    anythingChanged = true;
-                            nvs.extensionPort.I2CRegisters = (uint8_t) enterNumber( "I2C Registers [1..8]", nvs.extensionPort.I2CRegisters, 1, MAXI2CREGISTERS);
+                            nvs.extensionPort.I2CRegisters = (uint8_t) enterNumber( TRANSLATE( "I2C Registers [1..8]", "I2C-Register [1..8]" ), nvs.extensionPort.I2CRegisters, 1, MAXI2CREGISTERS);
                             scope = scope | FTSWARM_NVSSCOPE_EXTPORT;
                             break;
 
@@ -290,6 +291,7 @@ class MenuIOConfig : protected FirmwareIOMenu {
     static const int8_t MENU_PREVIOUS = -7;
     static const int8_t MENU_NEXT     = -8;
     static const int8_t MENU_OFFSET   = -9;
+    static const int8_t MENU_CALIBRATE = -10;
 
     SwOSIO* io;
     bool    selfSave = false;
@@ -337,7 +339,7 @@ MenuIOConfig::MenuIOConfig( char *basePrompt, bool *anythingChanged, SwOSIO* io 
   }
 
   if (io) begin( basePrompt, io->getAliasOrName(),    io->getAliasOrName(),  10, ':' );
-  else    begin( basePrompt, "Remote Configuration", "Remote Configuration", 10, ':' );
+  else    begin( basePrompt, TRANSLATE( "Remote Configuration", "Remote Konfiguration" ), TRANSLATE( "Remote Configuration", "Remote Konfiguration" ), 10, ':' );
 
 }
 
@@ -380,7 +382,7 @@ void MenuIOConfig::changeLabel( void ) {
   SwOSLabel_t label = io->getLabel();
   
   // ask user for new label
-  sprintf( prompt, "Please enter new label [%s]: ", nvs.events.oledLabel[nvs.events.activeConfig][label] );
+  sprintf( prompt, TRANSLATE( "Please enter new label [%s]: ", "Neues Label [%s]: " ), nvs.events.oledLabel[nvs.events.activeConfig][label] );
   if ( ( label == SWOSLABEL_J1 ) || ( label == SWOSLABEL_J2 ) ) enterString( prompt, text, 3 );
   else enterString( prompt, text, 4 );
 
@@ -401,7 +403,7 @@ void MenuIOConfig::changeAlias( void ) {
   char alias[MAXIDENTIFIER];
   
   // ask user for new alias
-  sprintf( prompt, "%s - please enter new alias: ", io->getAliasOrName() );
+  sprintf( prompt, TRANSLATE( "%s - please enter new alias: ", "%s - Aliasname: " ), io->getAliasOrName() );
   enterIdentifier( prompt, alias, MAXIDENTIFIER );
 
   // nothing changed
@@ -410,7 +412,7 @@ void MenuIOConfig::changeAlias( void ) {
   // test on duplicates
   SwOSIO *testIO = myOSSwarm.getIO( alias );
   if ( (testIO) && ( testIO != io ) ) {
-    printf("\e[0;31mERROR: This alias is already used in the swarm.\n\e[0m");
+    printf( TRANSLATE( "ERROR: This alias is already used in the swarm.\n", "FEHLER: Dieser Alias wird bereits im Schwarm verwendet.\n" ) );
     return;
   }
 
@@ -430,7 +432,7 @@ void MenuIOConfig::changeType( void ) {
 
   // singular class -> done
   if ( SWOSIOCLASS[ioType] == SWOSIOCLASS_SINGULAR ) {
-    printf( "ERROR: IO type %s could not be changed to another IO type.\n\n", SWOSIOTYPE[ioType] );
+    printf( TRANSLATE( "ERROR: IO type %s could not be changed to another IO type.\n\n", "FEHLER: IO-Typ %s kann nicht in einen anderen IO-Typ geändert werden.\n\n" ), SWOSIOTYPE[ioType] );
     return;
   }
   
@@ -458,7 +460,7 @@ void MenuIOConfig::changeType( void ) {
 
   }
 
-  sprintf( prompt, "Choose new IO Type [%s]:", SWOSIOTYPE[defaultValue]);
+  sprintf( prompt, TRANSLATE( "Choose new IO Type [%s]:", "Neuer IO-Typ [%s]: " ), SWOSIOTYPE[defaultValue] );
   SwOSIOType_t newIOType = type[enterNumber( prompt, defaultValue, 0, maxType )];
 
   // change type?
@@ -503,9 +505,9 @@ bool MenuIOConfig::enterIO( const char* prompt, SwOSIOUID *uio, bool input ) {
 
     // error handling;
     if      ( alias[0] == '\0' )                 return false; // no entry
-    else if (!io)                                printf("Error: %s doesn't exists.\n", alias); 
-    else if ( ( input  ) && ( !io->isInput() ) ) printf("Error: %s is not a sensor\n", alias);
-    else if ( ( !input ) && ( !io->isActor() ) ) printf("Error: %s is not a actor\n", alias);
+    else if (!io)                                printf( TRANSLATE( "Error: %s doesn't exists.\n", "Fehler: %s existiert nicht.\n" ), alias ); 
+    else if ( ( input  ) && ( !io->isInput() ) ) printf( TRANSLATE( "Error: %s is not a sensor\n", "Fehler: %s ist kein Sensor\n" ), alias );
+    else if ( ( !input ) && ( !io->isActor() ) ) printf( TRANSLATE( "Error: %s is not a actor\n", "Fehler: %s ist kein Aktor\n" ), alias );
     else break; // all good
     
   }
@@ -533,8 +535,8 @@ bool MenuIOConfig::enterEvent( SwOSNVSEvent *event ) {
 
     eventIO = myOSSwarm.getIO( event->sensor );
     
-    if (eventIO) sprintf( prompt, "Enter sensor's name [%s]: ", eventIO->getAliasOrName() );
-    else         sprintf( prompt, "Enter sensor's name: " );
+    if (eventIO) sprintf( prompt, TRANSLATE( "Enter sensor's name [%s]: ", "Geben Sie den Namen des Sensors ein [%s]: " ), eventIO->getAliasOrName() );
+    else         sprintf( prompt, TRANSLATE( "Enter sensor's name: ", "Geben Sie den Namen des Sensors ein: " ) );
     
     if (!enterIO( prompt, &event->sensor, true ) ) return false;
 
@@ -542,12 +544,12 @@ bool MenuIOConfig::enterEvent( SwOSNVSEvent *event ) {
 
   // trigger
   if ( !myOSSwarm.getIO( event->sensor )->isDigitalInput() ) {
-    printf( "Enter trigger event: change value.\n");
+    printf( TRANSLATE( "Enter trigger event: change value.\n", "Geben Sie das Trigger Event ein: change value.\n" ) );
     event->triggerMath.bits.trigger = FTSWARM_TRIGGERVALUE;
   
   } else {
     FtSwarmTrigger_t trigger = event->triggerMath.bits.trigger;
-    sprintf( prompt, "Enter trigger event - (0) trigger down  (1) trigger up  (2) change value [%d]: ", trigger );
+    sprintf( prompt, TRANSLATE( "Enter trigger event - (0) trigger down  (1) trigger up  (2) change value [%d]: ", "Geben Sie das Trigger Event ein - (0) Trigger down  (1) Trigger up  (2) Change Value [%d]: " ), trigger );
     event->triggerMath.bits.trigger = (FtSwarmTrigger_t) enterNumber( prompt, trigger, 0, 2 );
     printEvent( *event, 1 );
   }
@@ -556,15 +558,15 @@ bool MenuIOConfig::enterEvent( SwOSNVSEvent *event ) {
   // actor
   if ( (io) && ( io->isActor() ) ) {
 
-    printf("actors's name: %s\n", io->getAliasOrName() );
+    printf( TRANSLATE( "actors's name: %s\n", "Geben Sie den Namen des Aktors ein: %s\n" ), io->getAliasOrName() );
     io->getUID( &event->actor );
 
   } else {
 
     eventIO = myOSSwarm.getIO( event->actor );
     
-    if (eventIO) sprintf( prompt, "Enter actor's name [%s]: ", eventIO->getAliasOrName() );
-    else         sprintf( prompt, "Enter actor's name: " );
+    if (eventIO) sprintf( prompt, TRANSLATE( "Enter actor's name [%s]: ", "Geben Sie den Namen des Aktors ein [%s]: " ), eventIO->getAliasOrName() );
+    else         sprintf( prompt, TRANSLATE( "Enter actor's name: ", "Geben Sie den Namen des Aktors ein: " ) );
   
     if (!enterIO( prompt,  &event->actor,  false ) ) return false;
 
@@ -573,19 +575,19 @@ bool MenuIOConfig::enterEvent( SwOSNVSEvent *event ) {
   printEvent( *event, 2 );
 
   // V1
-  sprintf( prompt, "Use - (0) fixed value  (1) sensor's value  (2) actor's value [%d]: ", event->triggerMath.bits.v1 );
+  sprintf( prompt, TRANSLATE( "Use - (0) fixed value  (1) sensor's value  (2) actor's value [%d]: ", "(0) Konstante  (1) Sensor (2) Aktor [%d]: " ), event->triggerMath.bits.v1 );
   event->triggerMath.bits.v1 = (FtSwarmOperand_t) enterNumber( prompt, event->triggerMath.bits.v1, 0, 2 );
 
   // constant?
   if ( event->triggerMath.bits.v1 == FTSWARM_CONSTANT ) {
-    sprintf( prompt, "Enter fixed value [%d]: ", event->parameter );
+    sprintf( prompt, TRANSLATE( "Enter fixed value [%d]: ", "Geben Sie die Konstante ein [%d]: " ), event->parameter );
     event->parameter = enterNumber( prompt, event->parameter, -4096, 0xFFFFFF );
   }
 
   printEvent( *event, 3 );
 
   // operator
-  sprintf( prompt, "(1) add or  (2) muliply another value - (0) done [%d]: ", event->triggerMath.bits.op );
+  sprintf( prompt, TRANSLATE( "(1) add or  (2) muliply another value - (0) done [%d]: ", "(1) Addieren oder  (2) Multiplizieren mit einem anderen Wert - (0) Fertig [%d]: " ), event->triggerMath.bits.op );
   event->triggerMath.bits.op = (FtSwarmOperator_t) enterNumber( prompt, event->triggerMath.bits.op, 0, 2 );
   
   printEvent( *event, 4 );
@@ -597,19 +599,19 @@ bool MenuIOConfig::enterEvent( SwOSNVSEvent *event ) {
       
       if ( event->triggerMath.bits.v2 == FTSWARM_CONSTANT ) event->triggerMath.bits.v2 = FTSWARM_SENSORVALUE;
       
-      sprintf( prompt, "Use - (1) sensor's value  (2) actor's value [%d]: ", event->triggerMath.bits.v2 );
+      sprintf( prompt, TRANSLATE( "Use - (1) sensor's value  (2) actor's value [%d]: ", "Geben Sie den Wert ein - (1) Sensor (2) Aktor [%d]: " ), event->triggerMath.bits.v2 );
       event->triggerMath.bits.v2 = (FtSwarmOperand_t) enterNumber( prompt, event->triggerMath.bits.v2, 1, 2 );
 
     } else {
       
-      sprintf( prompt, "Use - (0) fixed value  (1) sensor's value  (2) actor's value [%d]: ", event->triggerMath.bits.v2 );
+      sprintf( prompt, TRANSLATE( "Use - (0) fixed value  (1) sensor's value  (2) actor's value [%d]: ", "(0) Konstante (1) Sensor (2) Aktor [%d]: " ), event->triggerMath.bits.v2 );
       event->triggerMath.bits.v2 = (FtSwarmOperand_t) enterNumber( prompt, event->triggerMath.bits.v2, 0, 2 );
 
     }
 
     // constant?
     if ( event->triggerMath.bits.v2 == FTSWARM_CONSTANT ) {
-      sprintf( prompt, "Enter fixed value [%d]: ", event->parameter );
+      sprintf( prompt, TRANSLATE( "Enter fixed value [%d]: ", "Geben Sie die Konstante ein [%d]: " ), event->parameter );
       event->parameter = enterNumber( prompt, event->parameter, -4096, 0xFFFFFF );
     
     }
@@ -629,8 +631,8 @@ bool MenuIOConfig::changeEvent( SwOSNVSEvent *event ) {
     SwOSIO *sensor = dynamic_cast<SwOSIO*>( myOSSwarm.getIO( event->sensor ) );
     SwOSIO *actor  = dynamic_cast<SwOSIO*>( myOSSwarm.getIO( event->actor ) );
 
-    if (!sensor) { printf("Error: ftSwarm%d is offline.\n", event->sensor.serialNumber); return false; }
-    if (!actor)  { printf("Error: ftSwarm%d is offline.\n", event->actor.serialNumber);  return false; }
+    if (!sensor) { printf( TRANSLATE( "Error: ftSwarm%d is offline.\n", "Fehler: ftSwarm%d ist offline.\n" ), event->sensor.serialNumber); return false; }
+    if (!actor)  { printf( TRANSLATE( "Error: ftSwarm%d is offline.\n", "Fehler: ftSwarm%d ist offline.\n" ), event->actor.serialNumber);  return false; }
 
   }
 
@@ -644,7 +646,7 @@ bool MenuIOConfig::changeEvent( SwOSNVSEvent *event ) {
   if ( newEvent.cmp( event ) ) return false;
 
   // duplicates?
-  if ( nvs.exists( &newEvent ) ) { printf("ERROR: This event already exists."); return false; }
+  if ( nvs.exists( &newEvent ) ) { printf( TRANSLATE( "ERROR: This event already exists.", "FEHLER: Dieses Event gibt es bereits." ) ); return false; }
 
   // change event
   myOSSwarm.deleteEvent( event );
@@ -678,7 +680,7 @@ void MenuIOConfig::addEvent( void ) {
 void MenuIOConfig::deleteEvent( void ) {
 
   char prompt[255];
-  sprintf( prompt, "Which event should be deleted? [0 - abort, 1..%d]:", maxEvent+1 );
+  sprintf( prompt, TRANSLATE( "Which event should be deleted? [0 - abort, 1..%d]:", "Welches Event soll gelöscht werden? [0 - Abbruch, 1..%d]:" ), maxEvent+1 );
   uint8_t selected = enterNumber( prompt, 0, 0, maxEvent+1 );
 
   // abort
@@ -772,7 +774,7 @@ void MenuIOConfig::changeConfig( void ) {
   char line[80];
   uint8_t newConfig;
 
-  sprintf( line, "Switch to configuration [1..%d]", MAXEVENTCONFIGS );
+  sprintf( line, TRANSLATE( "Switch to configuration [1..%d]", "Neue Konfiguration [1..%d]" ), MAXEVENTCONFIGS );
   newConfig = enterNumber( line, nvs.events.activeConfig+1, 1, MAXEVENTCONFIGS ) -1;
   
   if ( newConfig != nvs.events.activeConfig ) {
@@ -793,17 +795,20 @@ void MenuIOConfig::run( void ) {
 
     if (io) {
     
-      add( "name", io->getName(), MENU_DEACTIVATED, MENU_NOKEY );
-      add( "IO type", SWOSIOTYPE[ io->getIOType() ], MENU_TYPE, 't' );
-      add( "alias",   io->getAlias(), MENU_ALIAS, 'a' );
+      add( TRANSLATE("name", "Name"), io->getName(), MENU_DEACTIVATED, MENU_NOKEY );
+      add( TRANSLATE("IO type", "IO-Typ"), SWOSIOTYPE[ io->getIOType() ], MENU_TYPE, 't' );
+      add( TRANSLATE("alias", "Alias"),   io->getAlias(), MENU_ALIAS, 'a' );
 
       if ( io->isServo() ) {
-        add( "offset", ((SwOSServo *)io)->getOffset(), MENU_OFFSET, 'o' );
+        add( TRANSLATE("offset", "Offset"), ((SwOSServo *)io)->getOffset(), MENU_OFFSET, 'o' );
       }
 
+      if ( io->getIOType() == SWOSIO_RCSERVO ) {
+        add( TRANSLATE("calibrate", "Kalibrieren"), "", MENU_CALIBRATE, 'c' );
+      }
       // test on label
       SwOSLabel_t label = io->getLabel();
-      if ( (label != SWOSLABEL_UNDEF ) && ( label < SWOSLABEL_MAX ) ) add( "label", nvs.events.oledLabel[nvs.events.activeConfig][label], MENU_LABEL, 'l' );
+      if ( (label != SWOSLABEL_UNDEF ) && ( label < SWOSLABEL_MAX ) ) add( TRANSLATE("label", "Label"), nvs.events.oledLabel[nvs.events.activeConfig][label], MENU_LABEL, 'l' );
 
       if ( maxEvent >= 0 ) printf("\n     Events:\n");
 
@@ -820,13 +825,13 @@ void MenuIOConfig::run( void ) {
 
     printf("\n");
 
-    if (morePages)      add( "next page", "", MENU_NEXT, '>' );
-    if (pageOffset > 0) add( "previous page", "", MENU_PREVIOUS, '<' );
+    if (morePages)      add( TRANSLATE("next page", "Nächste Seite"), "", MENU_NEXT, '>' );
+    if (pageOffset > 0) add( TRANSLATE("previous page", "Vorherige Seite"), "", MENU_PREVIOUS, '<' );
     if ( ( morePages ) || (pageOffset > 0) ) printf("\n");
 
-    if ( maxEvent < MAXNVSEVENTS ) add( "add event", "", MENU_ADD, '+' );
-    if ( maxEvent >= 0           ) add( "delete event", "", MENU_DEL, '-' );
-    add( "switch configuration", "", MENU_CFG, 's' );
+    if ( maxEvent < MAXNVSEVENTS ) add( TRANSLATE("add event", "neues Event"), "", MENU_ADD, '+' );
+    if ( maxEvent >= 0           ) add( TRANSLATE("delete event", "Event löschen"), "", MENU_DEL, '-' );
+    add( TRANSLATE( "switch configuration", "Konfiguration wechseln"), "", MENU_CFG, 's' );
     
     addExit();
 
@@ -846,8 +851,11 @@ void MenuIOConfig::run( void ) {
       case MENU_LABEL:    changeLabel( );
                           break;
 
-      case MENU_OFFSET:   ((SwOSServo*)io)->setOffset( enterNumber( "new offset [0..90]>", ((SwOSServo*)io)->getOffset(), 0, 90 ) );
+      case MENU_OFFSET:   ((SwOSServo*)io)->setOffset( enterNumber( TRANSLATE( "new offset [0..90]", "neuer Offset [0..90]" ), ((SwOSServo*)io)->getOffset(), 0, 90 ) );
                           anythingChanged[0] = true;
+                          break;
+
+      case MENU_CALIBRATE: ((SwOSRCServo*)io)->calibrate( 100 );
                           break;
 
       case MENU_ADD:      printf("\n" ); 
@@ -919,7 +927,7 @@ MenuIOList::MenuIOList( char *basePrompt, SwOSCtrl *controller ):FirmwareIOMenu(
 
   anythingChanged = (bool*) calloc( sizeof( bool ), MAXCTRL );
 
-  const char ioconfig[] = "IO configuration";
+  const char ioconfig[] = TRANSLATE("IO configuration", "IO-Konfiguration");
 
   // if <0 show all controllers, if >=0 show this one only
   this->controller = controller;
@@ -978,7 +986,7 @@ void MenuIOList::run( void ) {
 
     fillIOList();
   
-    printf("     Name               Type            Events Alias\n");
+    printf(TRANSLATE("     Name               Type            Events Alias\n", "     Name               Typ             Events Alias\n"));
 
     // list IOs
     char data[80];
@@ -1014,13 +1022,13 @@ void MenuIOList::run( void ) {
 
     printf("\n");
 
-    if (morePages)      add( "next page", "", MENU_NEXT, '>' );
-    if (pageOffset > 0) add( "previous page", "", MENU_PREVIOUS, '<' );
+    if (morePages)      add( TRANSLATE("next page", "Nächste Seite"), "", MENU_NEXT, '>' );
+    if (pageOffset > 0) add( TRANSLATE("previous page", "Vorherige Seite"), "", MENU_PREVIOUS, '<' );
     if ( ( morePages ) || (pageOffset > 0) ) printf("\n");
 
-    if (!listInputs) add( "show inputs", "", MENU_INPUT, 'i' );
-    if (!listActors) add( "show actors", "", MENU_ACTOR, 'a' );
-    if (!listPixels) add( "show pixels", "", MENU_PIXEL, 'p' );
+    if (!listInputs) add( TRANSLATE("show inputs", "Eingänge"), "", MENU_INPUT, 'i' );
+    if (!listActors) add( TRANSLATE("show actors", "Aktoren"), "", MENU_ACTOR, 'a' );
+    if (!listPixels) add( TRANSLATE("show pixels", "Pixel/LEDs"), "", MENU_PIXEL, 'p' );
 
     addExit();
   
@@ -1097,7 +1105,7 @@ class MenuSwarmConfig : Menu {
     void run( void );
 };
 
-MenuSwarmConfig::MenuSwarmConfig( char *basePrompt ):Menu( basePrompt, "Swarm Configuration", "Swarm Configuration", MAXCTRL + 10 ) {
+MenuSwarmConfig::MenuSwarmConfig( char *basePrompt ):Menu( basePrompt, TRANSLATE("Swarm Configuration", "Swarm-Konfiguration"), TRANSLATE("Swarm Configuration", "Swarm-Konfiguration"), MAXCTRL + 10 ) {
 };
 
 
@@ -1116,7 +1124,7 @@ void MenuSwarmConfig::changeAlias(void ) {
   char alias[MAXIDENTIFIER];
 
   // Which one to change?
-  sprintf( prompt, "Please select the controller to be changed [1..%d]:", maxCtrl+1 );
+  sprintf( prompt, TRANSLATE("Please select the controller to be changed [1..%d]:", "Controller [1..%d]:"), maxCtrl+1 );
   int8_t selected = enterNumber( prompt, 0, 1, maxCtrl+1 ) -1;
 
   // nothing selected
@@ -1124,12 +1132,12 @@ void MenuSwarmConfig::changeAlias(void ) {
 
   // controlle isn't online
   if (ctrl[selected]->getComState() != COMSTATE_ONLINE ) {
-    printf("\e[0;31mERROR: %s is not online.\n\e[0m\n", ctrl[selected]->getAliasOrName() );
+    printf( TRANSLATE("ERROR: %s is not online.\n", "FEHLER: %s ist nicht online.\n"), ctrl[selected]->getAliasOrName() );
     return;
   }
   
   // ask user for new alias
-  sprintf( prompt, "%s - please enter new alias: ", ctrl[selected]->getAliasOrName() );
+  sprintf( prompt, TRANSLATE("%s - please enter new alias: ", "%s - bitte geben Sie den neuen Alias Namen ein: "), ctrl[selected]->getAliasOrName() );
   enterIdentifier( prompt, alias, MAXIDENTIFIER );
 
   // no changes
@@ -1138,7 +1146,7 @@ void MenuSwarmConfig::changeAlias(void ) {
   // test on duplicates
   SwOSCtrl *testCtrl = (SwOSCtrl *)myOSSwarm.getController( alias );
   if ( (testCtrl) && ( testCtrl != ctrl[selected] ) ) {
-    printf("\e[0;31mERROR: This alias is already used in the swarm.\n\e[0m");
+    printf( TRANSLATE("ERROR: This alias is already used in the swarm.\n", "FEHLER: Dieser Alias wird bereits im Schwarm verwendet.\n") );
     return;
   }
 
@@ -1152,13 +1160,13 @@ void MenuSwarmConfig::newSwarm( void ) {
 
   char name[MAXIDENTIFIER];
   name[0] = '\0';
-  while (strlen(name) < 5) enterString("New Swarm Name [min. 5 chars]: ", name, MAXIDENTIFIER );
-  uint16_t pin = enterNumber("New Swarm Pin [1..9999]: ", -1, 1, 9999 );
+  while (strlen(name) < 5) enterString( TRANSLATE("New Swarm Name [min. 5 chars]: ", "Neuer Swarm Name [min. 5 Zeichen]: "), name, MAXIDENTIFIER );
+  uint16_t pin = enterNumber( TRANSLATE("New Swarm Pin [1..9999]: ", "Neuer Swarm Pin [1..9999]: "), -1, 1, 9999 );
 
   if ( myOSSwarm.Ctrl[0]->IAmKelda ) {
-    if (!yesNo( "Destroy the existing swarm and create a new one? [Y/N] " ) ) return;
+    if (!yesNo( TRANSLATE("Destroy the existing swarm and create a new one? [Y/N] ", "Bestehenden Schwarm löschen und einen neuen erstellen? [J/N] ") ) ) return;
   } else {
-    if (!yesNo( "Leave the existing swarm and create a new one? [Y/N] " ) ) return;
+    if (!yesNo( TRANSLATE("Leave the existing swarm and create a new one? [Y/N] ", "Bestehenden Schwarm verlassen und einen neuen erstellen? [J/N] ") ) ) return;
   }
 
   strcpy( nvs.swarm.name, name );
@@ -1172,17 +1180,17 @@ void MenuSwarmConfig::newSwarm( void ) {
 
 void MenuSwarmConfig::addController( void ) {
 
-  FtSwarmSerialNumber_t serialNumber = (FtSwarmSerialNumber_t) enterNumber("Enter new swarm members serial number [1..9999]: ", -1, 1, 9999 );
+  FtSwarmSerialNumber_t serialNumber = (FtSwarmSerialNumber_t) enterNumber( TRANSLATE( "Enter new swarm members serial number [1..9999]: ", "Seriennummer des neuen Controllers [1..9999]: " ), -1, 1, 9999 );
 
-  if ( myOSSwarm.isMember( serialNumber ) ) { printf("\e[0;31mERROR: This controller is already part of this swarm.\e[0m\n"); return; }
+  if ( myOSSwarm.isMember( serialNumber ) ) { printf( TRANSLATE("ERROR: This controller is already part of this swarm.\n", "FEHLER: Dieser Controller ist bereits im Swarm.\n") ); return; }
   
   if ( !myOSSwarm.addController( serialNumber ) ) {
     // no space left
-    printf("\e[0;31mERROR: No space left in swarm. Controller #%d was declined.\e[0m\n", serialNumber );
+    printf( TRANSLATE("ERROR: No space left in swarm. Controller #%d was declined.\n", "FEHLER: Der Controller #%d kann nicht hinzugenommen werden, da die maximale Controlleranzahl erreicht ist.\n"), serialNumber );
     return;
   }
 
-  printf("Controller SN %d was added to the swarm.\n", serialNumber );
+  printf( TRANSLATE("Controller SN %d was added to the swarm.\n", "Controller SN %d wurde dem Swarm hinzugefügt.\n"), serialNumber );
 
   // wait max 1.5 minutes to get the controller connected
   uint8_t i=0;
@@ -1192,7 +1200,7 @@ void MenuSwarmConfig::addController( void ) {
     if (i > 15 ) break;
   }
   
-  if ( !myOSSwarm.isOnline( serialNumber ) ) printf("\e[0;31mWARNING: Please switch controller #%d on.\e[0m\n", serialNumber);
+  if ( !myOSSwarm.isOnline( serialNumber ) ) printf( TRANSLATE("WARNING: Please switch controller #%d on.\n", "WARNUNG: Bitte schalten Sie den Controller #%d ein.\n"), serialNumber );
 
   nvs.save( FTSWARM_NVSSCOPE_SWARM );
 
@@ -1200,17 +1208,17 @@ void MenuSwarmConfig::addController( void ) {
 
 void MenuSwarmConfig::deleteController( void ) {
 
-  FtSwarmSerialNumber_t serialNumber = (FtSwarmSerialNumber_t) enterNumber("Enter serial number to be revoked [1..9999]: ", -1, 1, 9999 );
+  FtSwarmSerialNumber_t serialNumber = (FtSwarmSerialNumber_t) enterNumber( TRANSLATE( "Enter serial number to be revoked [1..9999]: ", "Seriennummer des zu löschenden Controllers [1..9999]: " ), -1, 1, 9999 );
 
-  if ( !myOSSwarm.isMember( serialNumber ) ) { printf("\e[0;31mERROR: This controller isn't part of this swarm.\e[0m\n"); return; }
+  if ( !myOSSwarm.isMember( serialNumber ) ) { printf( TRANSLATE("ERROR: This controller isn't part of this swarm.\n", "FEHLER: Dieser Controller ist nicht im Swarm.\n") ); return; }
   
   if ( !myOSSwarm.deleteController( serialNumber ) ) {
     // not found
-    printf("\e[0;31mERROR: This controller isn't part of this swarm.\e[0m\n");
+    printf( TRANSLATE("ERROR: This controller isn't part of this swarm.\n", "FEHLER: Dieser Controller ist nicht im Swarm.\n") );
     return;
   }
 
-  printf("Controller SN %d was revoked from the swarm.\n", serialNumber );
+  printf( TRANSLATE("Controller SN %d was revoked from the swarm.\n", "Controller SN %d wurde aus dem Swarm gelöscht.\n"), serialNumber );
 
   nvs.save( FTSWARM_NVSSCOPE_SWARM );
 
@@ -1230,13 +1238,13 @@ void MenuSwarmConfig::run( void ) {
     if ( myOSSwarm.Kelda ) add("Kelda", myOSSwarm.Kelda->getAliasOrName(), MENU_DEACTIVATED, MENU_NOKEY );
 
     // wifi
-    if ( nvs.wifi.mode != wifiOFF ) add( "Communication WIFI", ONOFF[swarmCommunication.wifi], MENU_COM_WIFI, 'w' );
+    if ( nvs.wifi.mode != wifiOFF ) add( TRANSLATE("Communication WIFI", "WLAN-Kommunikation"), ONOFF[swarmCommunication.wifi], MENU_COM_WIFI, 'w' );
 
     // rs485
     if ( FTSWARM_HAL_RS485 ) {    
-      add( "Communication RS485", ONOFF[swarmCommunication.rs485], MENU_COM_RS485, 'r' );
+      add( TRANSLATE("Communication RS485", "RS485-Kommunikation"), ONOFF[swarmCommunication.rs485], MENU_COM_RS485, 'r' );
       if ( swarmCommunication.rs485 ) {
-        add( "Swarm speed", swarmSpeed, MENU_SPEED, 's' );
+        add( TRANSLATE("Swarm speed", "Swarm-Geschwindigkeit"), swarmSpeed, MENU_SPEED, 's' );
       }
     }
 
@@ -1244,13 +1252,13 @@ void MenuSwarmConfig::run( void ) {
     if ( !( ( ( nvs.wifi.mode != wifiOFF ) && ( swarmCommunication.wifi ) ) || ( swarmCommunication.rs485 ) ) ) {
 
       addExit();
-      printf("\n*** You need to invoke a communication method. Maybe you need to setup wifi first. ***\n");
+      printf(TRANSLATE("\n*** You need to invoke a communication method. Maybe you need to setup wifi first. ***\n", "\n*** Sie müssen eine Kommunikationsmethode aktivieren. Kontrollieren Sie die WLAN-Einstellungen. ***\n") );
 
     // need to apply some communication changes before applying swarm operations?
     } else if ( communicationChanges ) {
 
       addExit();
-      printf("\n*** to apply your changes you need to save & restart the device first. ***\n");
+      printf(TRANSLATE("\n*** to apply your changes you need to save & restart the device first. ***\n", "\n*** Um Ihre Änderungen anzuwenden, müssen Sie das Gerät neu starten. ***\n") );
 
     } else {
 
@@ -1274,14 +1282,14 @@ void MenuSwarmConfig::run( void ) {
       }
 
       printf("\n\n");
-      add( "create new swarm", "", MENU_NEW,    'n' );
+      add( TRANSLATE("create new swarm", "neuen Swarm erstellen"), "", MENU_NEW,    'n' );
 
       if (myOSSwarm.Ctrl[0]->IAmKelda) {
-        add( "add a controller to my swarm", "", MENU_ADD,    '+' );
-        if (myOSSwarm.maxCtrl > 0) add( "revoke a controller from my swarm", "", MENU_DELETE, '-' );
+        add( TRANSLATE("add a controller to my swarm", "Controller hinzufügen"), "", MENU_ADD,    '+' );
+        if (myOSSwarm.maxCtrl > 0) add( TRANSLATE("revoke a controller from my swarm", "Controller löschen"), "", MENU_DELETE, '-' );
       }
 
-      add( "set alias name", "", MENU_ALIAS,  'a' );
+      add( TRANSLATE("set alias name", "Alias-Name"), "", MENU_ALIAS,  'a' );
 
       addExit();
     }
@@ -1290,7 +1298,7 @@ void MenuSwarmConfig::run( void ) {
 
     switch( choice ) {
       case MENU_EXIT:       if ( communicationChanges ) {
-                              if ( yesNo( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?") ) {
+                              if ( yesNo( TRANSLATE( "To apply your changes, the device needs to be restarted.\nSave settings and restart now (Y/N)?", "Um Ihre Änderungen anzuwenden, muss das Gerät neu gestartet werden.\nEinstellungen speichern und jetzt neu starten (J/N)?") ) ) {
                                 nvs.swarm.speed = swarmSpeed;
                                 nvs.swarm.communication = swarmCommunication;
                                 nvs.saveAndRestart( FTSWARM_NVSSCOPE_SWARM );
@@ -1304,7 +1312,7 @@ void MenuSwarmConfig::run( void ) {
                             communicationChanges = true;
                             break;
 
-      case MENU_SPEED:      swarmSpeed = enterNumber( "(0) low ... (4) highspeed (max. 50m)>", nvs.swarm.speed, 0, 4 );
+      case MENU_SPEED:      swarmSpeed = enterNumber( TRANSLATE("(0) low ... (4) highspeed (max. 50m)", "(0) niedrig ... (4) Maximalgeschwindigkeit (max. 50m)"), nvs.swarm.speed, 0, 4 );
                             communicationChanges = true;
                             break;
 
@@ -1321,7 +1329,7 @@ void MenuSwarmConfig::run( void ) {
                             break;
 
       default:              if (ctrl[choice]->getComState() != COMSTATE_ONLINE ) {
-                              printf("\e[0;31mERROR: %s is not online.\n\e[0m\n", ctrl[choice]->getAliasOrName() );
+                              printf( TRANSLATE( "ERROR: %s is not online.\n\n", "FEHLER: %s ist nicht online.\n\n" ), ctrl[choice]->getAliasOrName() );
                             } else {
                               MenuIOList MenuIOList( prompt, ctrl[choice] );
                               MenuIOList.run();
@@ -1344,7 +1352,7 @@ class MainMenu : private Menu {
     static const int8_t MENU_REMOTE   = -5;
 
   public:
-    MainMenu( ):Menu( NULL, "setup", "Main Menu", 14) {};
+    MainMenu( ):Menu( NULL, TRANSLATE("setup", "Setup"), TRANSLATE("Main Menu", "Hauptmenü"), 14) {};
     void factorySettings( void );
     void run( void );
 
@@ -1353,7 +1361,7 @@ class MainMenu : private Menu {
 void MainMenu::factorySettings( void ) {
   // reset controller to factory settings
 
-  if (yesNo("Do you want to reset this device to it's factory settings and reboot (Y/N)?" ) ) {
+  if (yesNo( TRANSLATE( "Do you want to reset this device to it's factory settings and reboot (Y/N)?", "Möchten Sie dieses Gerät auf die Werkseinstellungen zurücksetzen und neu starten (J/N)?" ) ) ) {
 
     delay(2000);
 
@@ -1368,17 +1376,17 @@ void MainMenu::run( void ) {
   while (1) {
 
     start( );
-    add("Wifi & Local Settings", "", MENU_WEB, 'w' );
+    add( TRANSLATE( "Wifi & Local Settings", "WLAN & Lokale Einstellungen" ), "", MENU_WEB, 'w' );
     if ( ( myOSSwarm.wifiConnected ) || ( nvs.wifi.mode == wifiAP ) || ( FTSWARM_HAL_RS485 ) ) {
-      add("Swarm Configuration", "", MENU_SWARM, 's' );
+      add( TRANSLATE( "Swarm Configuration", "Swarm-Konfiguration" ), "", MENU_SWARM, 's' );
     } else {
-      add("Swarm Configuration - activate WiFi", "", MENU_DEACTIVATED );
+      add( TRANSLATE( "Swarm Configuration - activate WiFi", "Swarm-Konfiguration - WLAN aktivieren" ), "", MENU_DEACTIVATED );
     }
 
-    add("IO Configuration", "", MENU_IOCONFIG, 'i' );
-    add("Remote/Event Configuration", "", MENU_REMOTE, 'r' );
+    add( TRANSLATE( "IO Configuration", "IO-Konfiguration" ), "", MENU_IOCONFIG, 'i' );
+    add( TRANSLATE( "Remote/Event Configuration", "Remote/Event-Konfiguration" ), "", MENU_REMOTE, 'r' );
 
-    add("Factory Reset", "", MENU_FACTORY, 'f' );
+    add( TRANSLATE( "Factory Reset", "Werkseinstellungen" ), "", MENU_FACTORY, 'f' );
     addExit();
 
     MenuLocalSettings *menuLocalSettings;

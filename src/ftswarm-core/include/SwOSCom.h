@@ -59,6 +59,7 @@ typedef enum {
   CMD_SETMICROSTEPMODE,       // set Microstepmode
   CMD_USEREVENT,              // send data from user exit back to Kelda
   CMD_RESETCOUNTER,           // Reset counter
+  CMD_CALIBRATE,              // Calibrate a RC Servo
   CMD_MAX
 } SwOSCommand_t;
 
@@ -207,6 +208,11 @@ struct saveCmd_t {
   uint8_t port;
 } __attribute__((packed));
 
+struct calibrateCmd_t {
+  uint8_t index;
+  uint8_t speed;
+} __attribute__((packed));
+
 struct SwOSDatagram_t {
   uint8_t               size;
   uint8_t               version;
@@ -234,6 +240,7 @@ struct SwOSDatagram_t {
     parameterCmd_t parameterCmd;
     wifiCmd_t wifiCmd;
     saveCmd_t saveCmd;
+    calibrateCmd_t calibrateCmd;
   };
 } __attribute__((packed));
 

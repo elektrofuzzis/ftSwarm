@@ -242,10 +242,15 @@ class SwOSDigitalServo : public SwOSServo {
  class SwOSRCServo : public SwOSServo {
   protected:
 
-    SwOSAnalogInput *poti   = NULL;
+    int16_t         minValue = 490;             // poti's value at min position
+    int16_t         maxValue = 910;             // poti's value at max position  
+
+    SwOSAnalogInput *poti   = NULL;     
     SwOSMotor       *motor  = NULL;
     SwOSPID         *pid    = NULL;
-    int16_t         target  = FILTER_INVALID; // FILTER_INVALID -> don't regulate
+    
+    int16_t         target  = FILTER_INVALID;   // FILTER_INVALID -> don't regulate
+    bool            calibration = false;        // calibration ongoing? Stop regulation during calibration
     
     // local HW procedures
 
@@ -258,6 +263,12 @@ class SwOSDigitalServo : public SwOSServo {
     // get position from poti
     virtual void poti2position();           
 
+    // calibrate local HW by setting a speed and measuring poti values
+    virtual void calibrateLocal( uint8_t speed ); 
+
+    // calibrate remote HW by sending a command to the controller
+    virtual void calibrateRemote( uint8_t speed ); 
+
   public:
     // constructor
 	  SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, uint8_t flags );
@@ -266,5 +277,7 @@ class SwOSDigitalServo : public SwOSServo {
     virtual int16_t getMaxPosition( void );
 
     virtual void operate( void ) override;
+
+    virtual void calibrate( uint8_t speed );
 
 };

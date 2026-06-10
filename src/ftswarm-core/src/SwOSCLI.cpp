@@ -184,30 +184,30 @@ void SwOSCLI::Error( Error_t error, int expected, int found ) {
   // calc error postion
   if ( (start) && (in) && ( start > in ) ) pos = start - in; 
 
-  const char err[] = "^ Error: ";
+  const char err[] = TRANSLATE( "^ Error: ", "^ Fehler: " );
 
   // print error
   switch ( error ) {
-    case ERROR_SYNTAXERROR:             sprintf( response, "%*ssyntax error.", pos, err); break;
-    case ERROR_DOTEXPECTED:             sprintf( response, "%*s\".\" expected.", pos, err); break;  
-    case ERROR_LITERALEXPECTED:         sprintf( response, "%*sliteral expected.", pos, err); break; 
-    case ERROR_IOEXPECTED:              sprintf( response, "%*snot a valid IO port or IO port is offline.", pos, err); break;
-    case ERROR_NUMBEREXPECTED:          sprintf( response, "%*snumber expected.", pos, err); break;
-    case ERROR_LPARANTHESISEXPECTED:    sprintf( response, "%*s\"(\" expected.", pos, err); break;
-    case ERROR_RPARANTHESISEXPECTED:    sprintf( response, "%*s\")\" expected.", pos, err); break;
-    case ERROR_UNKOWNCMD:               sprintf( response, "%*sunkown command", pos, err); break;
-    case ERROR_WRONGNUMBEROFARGUMENTS:  sprintf( response, "%*s%d parameters expected, %d found.", pos, err, expected, found ); break;
-    case ERROR_NOTAUTHENTICATED:        sprintf( response, "%*snot authenticated.", pos, err); break;
-    case ERROR_WRONGIOTYPE:             sprintf( response, "%*s%d wrong io-type.", pos, err, found); break;
-    case ERROR_INVALIDCMD:              sprintf( response, "%*sinvalid command.", pos, err); break;
-    case ERROR_WRONGPIN:                sprintf( response, "%*swrong pin.", pos, err); break;
-    case ERROR_STRINGEXPECTED:          sprintf( response, "%*sstring expected.", pos, err); break;
-    case ERROR_ALIASNOTNUNIQUE:         sprintf( response, "%*salias name must be unique.", pos, err); break;
-    case ERROR_PARAMETEREXPECTED:       sprintf( response, "%*sparameter expected.", pos, err); break;
-    case ERROR_SSIDEXPECTED:            sprintf( response, "%*sSSID expected.", pos, err); break;
-    case ERROR_PSKEXPECTED:             sprintf( response, "%*sPSK expected.", pos, err); break;
-    case ERROR_NOTIMPLEMENTEDYET:       sprintf( response, "not implemnted yet." ); break;
-    default:                            sprintf( response, "%*sSyntax error.", pos, err); break;
+    case ERROR_SYNTAXERROR:             sprintf( response, TRANSLATE("%*ssyntax error.", "%*sSyntaxfehler."), pos, err); break;
+    case ERROR_DOTEXPECTED:             sprintf( response, TRANSLATE("%*s\".\" expected.", "%*s\".\" erwartet."), pos, err); break;  
+    case ERROR_LITERALEXPECTED:         sprintf( response, TRANSLATE("%*sliteral expected.", "%*sLiteral erwartet."), pos, err); break; 
+    case ERROR_IOEXPECTED:              sprintf( response, TRANSLATE("%*snot a valid IO port or IO port is offline.", "%*skein gueltiger IO-Port oder IO-Port ist offline."), pos, err); break;
+    case ERROR_NUMBEREXPECTED:          sprintf( response, TRANSLATE("%*snumber expected.", "%*szahl erwartet."), pos, err); break;
+    case ERROR_LPARANTHESISEXPECTED:    sprintf( response, TRANSLATE("%*s\"(\" expected.", "%*s\"(\" erwartet."), pos, err); break;
+    case ERROR_RPARANTHESISEXPECTED:    sprintf( response, TRANSLATE("%*s\")\" expected.", "%*s\")\" erwartet."), pos, err); break;
+    case ERROR_UNKOWNCMD:               sprintf( response, TRANSLATE("%*sunkown command", "%*sunbekannter Befehl"), pos, err); break;
+    case ERROR_WRONGNUMBEROFARGUMENTS:  sprintf( response, TRANSLATE("%*s%d parameters expected, %d found.", "%*s%d Parameter erwartet, %d gefunden."), pos, err, expected, found ); break;
+    case ERROR_NOTAUTHENTICATED:        sprintf( response, TRANSLATE("%*snot authenticated.", "%*snicht authentifiziert."), pos, err); break;
+    case ERROR_WRONGIOTYPE:             sprintf( response, TRANSLATE("%*s%d wrong io-type.", "%*s%d falscher io-Typ."), pos, err, found); break;
+    case ERROR_INVALIDCMD:              sprintf( response, TRANSLATE("%*sinvalid command.", "%*sungültiger Befehl."), pos, err); break;
+    case ERROR_WRONGPIN:                sprintf( response, TRANSLATE("%*swrong pin.", "%*sfalscher Pin."), pos, err); break;
+    case ERROR_STRINGEXPECTED:          sprintf( response, TRANSLATE("%*sstring expected.", "%*sString erwartet."), pos, err); break;
+    case ERROR_ALIASNOTNUNIQUE:         sprintf( response, TRANSLATE("%*salias name must be unique.", "%*snalias-Name muss eindeutig sein."), pos, err); break;
+    case ERROR_PARAMETEREXPECTED:       sprintf( response, TRANSLATE("%*sparameter expected.", "%*sParameter erwartet."), pos, err); break;
+    case ERROR_SSIDEXPECTED:            sprintf( response, TRANSLATE("%*sSSID expected.", "%*sSSID erwartet."), pos, err); break;
+    case ERROR_PSKEXPECTED:             sprintf( response, TRANSLATE("%*sPSK expected.", "%*sPSK erwartet."), pos, err); break;
+    case ERROR_NOTIMPLEMENTEDYET:       sprintf( response, TRANSLATE("not implemnted yet.", "nicht implementiert yet.") ); break;
+    default:                            sprintf( response, TRANSLATE("%*sSyntax error.", "%*sSyntaxfehler."), pos, err); break;
   }
   
 }
@@ -499,7 +499,7 @@ void SwOSCLI::executeControllerCmd(void ) {
                                     // send event
                                     if ( ctrl->isLocal()) {
 
-                                      if ( xQueueSend( myOSNetwork.userEvent, userEvent, ESPNOW_MAXDELAY ) != pdTRUE )SWARM_LOG_ERROR( "Can't send data to user event." );
+                                      if ( xQueueSend( myOSNetwork.userEvent, userEvent, ESPNOW_MAXDELAY ) != pdTRUE ) SWARM_LOG_ERROR( TRANSLATE("Can't send data to user event.", "Empfangene Daten nicht weiter verarbeitet werden.")  );
       
                                     } else {
                                       userEvent->data.userEventCmd.trigger = true;
@@ -1372,7 +1372,7 @@ void SwOSCLI::run( void ) {
   char *out;
   bool loggedIn = true;
 
-  printf("\n\nsetup - starts configuration menu\nexit - end CLI mode\nhelp - show commands\n\n");
+  printf( TRANSLATE( "\n\nsetup - starts configuration menu\nexit - end CLI mode\nhelp - show commands\n\n", "\n\nsetup - startet das Konfigurationsmenü\nexit - beendet den CLI-Modus\nhelp - Hilfe\n\n" ) );
   
   interactive = true;
   startCLI( false );

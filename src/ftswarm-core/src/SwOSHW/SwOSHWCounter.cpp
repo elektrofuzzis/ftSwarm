@@ -83,8 +83,6 @@ SwOSCounter::~SwOSCounter( ) {
 void SwOSCounter::setupLocal() {
   // initialize local HW
 
-  printf("setupLocal %d %d\n", getPort(), portControl);
-
   // setup _GPIO / Counter Input
   SwOSInput::setupLocal( );
 
@@ -124,7 +122,7 @@ void SwOSCounter::setupLocal() {
   }
 
   // if no unit could be assigned, stop it.
-  if ( unit == PCNT_UNIT_MAX ) SWARM_LOG_FATAL( "Counter/Rotaryencoder: all pct_unit are in use.\n");
+  if ( unit == PCNT_UNIT_MAX ) SWARM_LOG_FATAL( TRANSLATE( "Counter/Rotaryencoder: all pct_unit are in use.\n", "Counter/Rotaryencoder: alle pct_unit sind belegt.\n" ) );
 
   // configure Channel 0
   pcnt_config_t pcnt_config = {

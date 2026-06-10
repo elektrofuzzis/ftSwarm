@@ -39,7 +39,7 @@ uint8_t SwOSCtrl::setupLocalInputs( uint8_t maxIO ) {
     case FTSWARM_HAL_IO_RCP:          io[ maxIO++ ] =          new SwOSAnalogInput(  INPUT_NAME[i], i, this, SWOSIO_RCPOTI,        INPUT_FLAGS[i] ); break;
     case FTSWARM_HAL_IO_JOYSTICKPOTI: io[ maxIO++ ] =          new SwOSAnalogInput(  INPUT_NAME[i], i, this, SWOSIO_JOYSTICK_POTI, INPUT_FLAGS[i] ); break;
     case FTSWARM_HAL_IO_PWRCTL:       io[ maxIO++ ] = pwrctl = new SwOSAnalogInput(  INPUT_NAME[i], i, this, SWOSIO_POWER,         INPUT_FLAGS[i] ); break;
-    default:                          SWARM_LOG_FATAL( "SwOSCtrl::setupLocalInputs: unkown IO Type" ); break;
+    default:                          SWARM_LOG_FATAL( TRANSLATE( "SwOSCtrl::setupLocalInputs: unkown IO Type", "SwOSCtrl::setupLocalInputs: Unbekannter IO-Typ" ) ); break;
     }
 
   }
@@ -80,7 +80,7 @@ uint8_t SwOSCtrl::setupLocalMotors( uint8_t maxIO, uint8_t motors ) {
     case FTSWARM_HAL_IO_STEPPER:    io[ maxIO++ ] = new SwOSStepper( MOTOR_NAME[i], i, this,                    FTSWARM_HAL_FLAG_NONE ); break;
     case FTSWARM_HAL_IO_RCSERVO:    io[ maxIO++ ] = new SwOSRCServo( MOTOR_NAME[i], i, this,                    FTSWARM_HAL_FLAG_NONE ); break;
     case FTSWARM_HAL_IO_WHEELDRIVE: io[ maxIO++ ] = new SwOSDCMotor( MOTOR_NAME[i], i, this, SWOSIO_WHEELDRIVE, FTSWARM_HAL_FLAG_NONE ); break;
-    default:                        SWARM_LOG_FATAL( "SwOSCtrl::setupLocalInputs: unkown IO Type" ); break;
+    default:                        SWARM_LOG_FATAL( TRANSLATE( "SwOSCtrl::setupLocalInputs: unkown IO Type", "SwOSCtrl::setupLocalInputs: Unbekannter IO-Typ" ) ); break;
     }
 
   }
@@ -164,13 +164,13 @@ uint8_t SwOSCtrl::setupLocalJoysticks( uint8_t maxIO, SwOSCtrlConfig_t ctrlConfi
   for ( uint8_t i=0; i < FTSWARM_HAL_JOYSTICKS; i++) {
     
     button = (SwOSDigitalInput *) getIO( JOYSTICK_BUTTON[i] );
-    if (!button) SWARM_LOG_FATAL( "%s not found.", JOYSTICK_BUTTON[i] );
+    if (!button) SWARM_LOG_FATAL( TRANSLATE( "%s not found.", "%s nicht gefunden." ), JOYSTICK_BUTTON[i] );
 
     lr     = (SwOSAnalogInput *) getIO( JOYSTICK_LR[i] );
-    if (!lr) SWARM_LOG_FATAL( "%s not found.", JOYSTICK_LR[i] );
+    if (!lr) SWARM_LOG_FATAL( TRANSLATE( "%s not found.", "%s nicht gefunden." ), JOYSTICK_LR[i] );
 
     fb     = (SwOSAnalogInput *) getIO( JOYSTICK_FB[i] );
-    if (!fb) SWARM_LOG_FATAL( "%s not found.", JOYSTICK_FB[i] );
+    if (!fb) SWARM_LOG_FATAL( TRANSLATE( "%s not found.", "%s nicht gefunden." ), JOYSTICK_FB[i] );
 
     // create joystick
     io[ maxIO++ ] = new SwOSJoystick( JOYSTICK_NAME[i], i, this, button, lr, fb, FTSWARM_HAL_FLAG_NONE );
@@ -430,7 +430,7 @@ void SwOSCtrl::operate() {
     ftDuino->operate( );
     
     // errors during I2C communication?
-    if ( ftDuino->getError() != 0 ) SWARM_LOG_ERROR( "ftDuino I2C connection broken." );
+    if ( ftDuino->getError() != 0 ) SWARM_LOG_ERROR( TRANSLATE( "ftDuino I2C connection broken.", "ftDuino I2C Verbindung unterbrochen." ) );
 
   }
 
@@ -440,7 +440,7 @@ void SwOSCtrl::operate() {
     ftPwrDrive->operate( );
     
     // errors during I2C communication?
-    if ( ftPwrDrive->getError() != 0 ) SWARM_LOG_ERROR( "ftPwrDrive I2C error %d.", ftPwrDrive->getError() );
+    if ( ftPwrDrive->getError() != 0 ) SWARM_LOG_ERROR( TRANSLATE( "ftPwrDrive I2C error %d.", "ftPwrDrive I2C Fehler %d." ), ftPwrDrive->getError() );
 
   }
 
@@ -496,19 +496,19 @@ bool SwOSCtrl::changeIOType( uint8_t index, SwOSIOType_t newIOType, uint8_t flag
 
   // in use?
   if ( io[index]->isInUse() ) {
-    SWARM_LOG_ERROR( "Can't change IO Type. %s.%s is in use.", getName(), io[index]->getName() );
+    SWARM_LOG_ERROR( TRANSLATE( "Can't change IO Type. %s.%s is in use.", "Kann den IO-Typ nicht ändern, da %s.%s verwendet wird." ), getName(), io[index]->getName() );
     return false;
   }
 
   // able to change?
   if ( ( SWOSIOCLASS[oldIOType] != SWOSIOCLASS[newIOType] ) || ( SWOSIOCLASS[oldIOType] == SWOSIOCLASS_SINGULAR ) ) {
-    SWARM_LOG_ERROR("Can't change IO type of %s.%s  from %d to %d due to incompatible io types.", getName(), io[index]->getName(), oldIOType, newIOType );
+    SWARM_LOG_ERROR( TRANSLATE( "Can't change IO type of %s.%s  from %d to %d due to incompatible io types.", "Kann den IO-Typ von %s.%s nicht von %d auf %d ändern, die IO-Typen passen nicht zueinander." ), getName(), io[index]->getName(), oldIOType, newIOType );
     return false;
   }
 
   // want to cvhange to SWOSIO_RCSERVO?
   if ( ( newIOType == SWOSIO_RCSERVO ) && ( FTSWARM_HAL_RCSERVOS < 1 ) ) {
-    SWARM_LOG_ERROR( "(%s) does not support RC servos.", getName() );
+    SWARM_LOG_ERROR( TRANSLATE( "(%s) does not support RC servos.", "(%s) unterstützt keine RC-Servos." ), getName() );
     return false;
   }
 
@@ -706,7 +706,7 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, const char *name,
                                   break;
 
     default:                      // This should newer happen
-                                  SWARM_LOG_FATAL( "SwOSCtrl::createIO: Unkown ioType %d", ioType );
+                                  SWARM_LOG_FATAL( TRANSLATE( "SwOSCtrl::createIO: Unkown ioType %d", "SwOSCtrl::createIO: Unbekannter IO Typ %d" ), ioType );
     }
   
   if (alias) io->setAlias( alias );
@@ -977,34 +977,7 @@ void SwOSCtrl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
   screenManager.setState( state,OLEDMSG[state], members, SSID );
   #endif
   
-  /*
-
-  int16_t w = oled.getScreenWidth();
-
-  // clear status bar
-  oled.cls( FTSWARM_OLED_UPPERSCREEN );
-
-  // status message
-  if ( ( state == RUNNING ) && (SSID) ) oled.drawStr( FTSWARM_OLED_UPPERSCREEN, w/2, 0, SSID,           FTSWARM_ALIGNCENTER );
-  else                                  oled.drawStr( FTSWARM_OLED_UPPERSCREEN, w/2, 0, OLEDMSG[state], FTSWARM_ALIGNCENTER );
-
-  // members
-  if ( members > 0) {
-    char m[10];
-    sprintf( m, "%d", members );
-    oled.drawStr( FTSWARM_OLED_UPPERSCREEN, w-1, 0, m, FTSWARM_ALIGNRIGHT );
-  }
-
-  // Kelda
-  if (IAmKelda) oled.drawStr( FTSWARM_OLED_UPPERSCREEN, 0, 0, "K", FTSWARM_ALIGNLEFT );
-
-  // cool line
-  oled.drawLine( FTSWARM_OLED_UPPERSCREEN, 0, 11, w, 11 );
-
-  */
-
-
-  
+    
 }
 
 void SwOSCtrl::identify( void ) {
@@ -1121,7 +1094,7 @@ bool SwOSCtrl::userEvent( SwOSCom *com ) {
 
     // send trigger event to local procedure
     if ( xQueueSend( myOSNetwork.userEvent, com, ESPNOW_MAXDELAY ) != pdTRUE ) {
-      SWARM_LOG_ERROR( "Can't send data to user event." );
+      SWARM_LOG_ERROR( TRANSLATE( "Can't send data to user event.", "Das Event kann nicht verarbeitet werden." ) );
     }
 
   } else {
@@ -1193,7 +1166,7 @@ bool SwOSCtrl::ioConfig( SwOSCom *com ) {
       setComState( COMSTATE_ONLINE );
 
     } else if ( index >= IOs ) {
-      SWARM_LOG_ERROR( "SwOSCtrl::ioConfig: index out of range %X", index );
+      SWARM_LOG_ERROR( TRANSLATE( "SwOSCtrl::ioConfig: index out of range %X", "SwOSCtrl::ioConfig: Index außerhalb des gültigen Bereichs %X" ), index );
 
     } else if ( io[index] ) {
       // set IOType + alias name as transmitted
@@ -1267,14 +1240,14 @@ SwOSCom *SwOSCtrl::state2Com( MacAddr destination ) {
       // add IO's index to payload buffer
       com->data.stateCmd.payload[ptr] = i;
 
-      // write io's payload to buffer, return 0 if I'm don't have a state
+      // write io's payload to buffer, return 0 if I don't have a state
       len = io[i]->pushState( &com->data.stateCmd.payload[ptr+1] );
 
       // move ptr to next io
       if (len>0) {
 
         // shouldn't happen at all
-        if ( ptr + len + 3 > MAXSTATECMDPAYLOAD ) SWARM_LOG_FATAL( "STATE2COM PAYLOAD excceded." );
+        if ( ptr + len + 3 > MAXSTATECMDPAYLOAD ) SWARM_LOG_FATAL( TRANSLATE( "STATE2COM PAYLOAD excceded.", "STATE2COM maximaler Payload überschritten." ) );
 
         // move ptr
         ptr = ptr + len + 1;

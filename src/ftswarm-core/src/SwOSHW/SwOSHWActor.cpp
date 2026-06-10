@@ -664,7 +664,7 @@ uint8_t *SwOSServo::getNVSParameter( uint8_t *size ) {
 
 void SwOSServo::setNVSParameter( uint8_t parameter[], uint8_t *size ) {
 
-  if ( sizeof( SwOSServoParameter_t ) != *size ) SWARM_LOG_FATAL( "SwOSServo::setNVSParameter size does not match." );
+  if ( sizeof( SwOSServoParameter_t ) != *size ) SWARM_LOG_FATAL( TRANSLATE( "SwOSServo::setNVSParameter size does not match.", "SwOSServo::setNVSParameter ungültige Größe." ) );
 
   setOffset( ((SwOSServoParameter_t*)parameter)->offset );
 
@@ -759,8 +759,8 @@ void SwOSDigitalServo::setLocal(void ) {
 
  // min/max positions
 
-#define RCSERVO_LOW  490 // 510 // 1600   // 1700.0
-#define RCSERVO_HIGH 910 // 890 // 870 // 3300   // 3750.0
+// #define RCSERVO_LOW  490 // 510 // 1600   // 1700.0
+// #define RCSERVO_HIGH 910 // 890 // 870 // 3300   // 3750.0
 #define RCSERVO_RESOLUTION 90
 #define RCMAXDELTA   2
 
@@ -775,7 +775,10 @@ SwOSRCServo::SwOSRCServo(const char *name, uint8_t port, SwOSCtrl *ctrl, uint8_t
 
 void SwOSRCServo::setupLocal( void ) {
 
+  // use nvs values for offset and min/max position
   offset = nvs.servo[port].offset;
+  minValue = nvs.servo[port].minValue;
+  maxValue = nvs.servo[port].maxValue;
 
   #if FTSWARM_HAL_RCSERVOS > 0
 
@@ -811,10 +814,13 @@ SwOSRCServo::~SwOSRCServo() {
 
 void SwOSRCServo::poti2position( ) {
   // printf("poti->getValueI32() %d\n", poti->getValueI32());
-  position = ( ( (float) poti->getValueI32() - RCSERVO_LOW ) / ( RCSERVO_HIGH - RCSERVO_LOW ) * RCSERVO_RESOLUTION ) - offset;
+  position = ( ( (float) poti->getValueI32() - minValue ) / ( maxValue - minValue ) * RCSERVO_RESOLUTION ) - offset;
 }
 
 void SwOSRCServo::operate(void) {
+
+  // calibration ongoing?
+  if ( calibration ) return;
 
   #if FTSWARM_HAL_RCSERVOS > 0
 
@@ -849,8 +855,128 @@ void SwOSRCServo::operate(void) {
 void SwOSRCServo::setLocal( void ) {
 
   // calc poti's new target value
-  target = ( position + offset ) / (float) RCSERVO_RESOLUTION * ( RCSERVO_HIGH - RCSERVO_LOW ) + RCSERVO_LOW;
-  if ( target > RCSERVO_HIGH ) target = RCSERVO_HIGH;
-  if ( target < RCSERVO_LOW )  target = RCSERVO_LOW;
+  target = ( position + offset ) / (float) RCSERVO_RESOLUTION * ( maxValue - minValue ) + minValue;
+  if ( target > maxValue ) target = maxValue;
+  if ( target < minValue ) target = minValue;
 
+}
+
+void SwOSRCServo::calibrateLocal( uint8_t speed ) {
+
+  if ( (!poti) || (!motor) ) { 
+    SWARM_LOG_ERROR( TRANSLATE( "Calibration failed, no poti or motor.", "Kalibrierung fehlgeschlagen, kein Poti oder Motor." ) );
+    return;
+  }
+
+  int16_t test = poti->getValueI32();
+  if ( ( test < 300 ) || ( test > 3800 ) ) {
+    SWARM_LOG_ERROR( TRANSLATE( "No RCServo found.", "Kein RCServo gefunden." ) );
+    return;
+  }
+
+  if ( ctrl->pwrctl->getVoltage() < 4.5 ) {
+    SWARM_LOG_ERROR( TRANSLATE( "Calibration failed, no motor power.", "Kalibrierung fehlgeschlagen, Stromversorgung prüfen." ) );
+    return;    
+  }
+
+  // block other cmds during calibration
+  calibration = true;
+
+
+  // test direction
+  poti->operate();
+  int16_t t1 = poti->getValueI32();
+  motor->setSpeed( -speed );
+  motor->apply();
+  delay( 1000 );
+  motor->setSpeed( 0 );
+  motor->apply();
+  
+  delay(100);
+
+  poti->operate();
+  int16_t t2 = poti->getValueI32();
+  motor->setSpeed( speed );
+  motor->apply();
+  delay( 1000 );
+  motor->setSpeed( 0 );
+  motor->apply();
+  
+  delay(100);
+  poti->operate();
+  int16_t t3 = poti->getValueI32();
+
+  printf("t1 %d t2 %d t3 %d\n", t1, t2, t3);
+  while(1) delay(1000);
+  
+
+
+
+  // min position
+  motor->setSpeed( -speed );
+  motor->apply();
+  delay( 1000 );
+  motor->setSpeed( 0 );
+  motor->apply();
+
+  poti->operate();
+  int16_t v1 = poti->getValueI32();
+  printf("v1 %d\n", v1);
+  delay(100);
+  poti->operate();
+  v1 = poti->getValueI32();
+  printf("v1 %d\n", v1);
+  
+  // max position
+  motor->setSpeed( speed );
+  motor->apply();
+  delay( 1000 );
+  motor->setSpeed( 0 );
+  motor->apply();
+
+  poti->operate();
+  int16_t v2 = poti->getValueI32();
+  printf("v2 %d\n", v2);
+  delay(100);
+  poti->operate();
+  v2 = poti->getValueI32();
+  printf("v2 %d\n", v2);
+
+  // switch values?
+  if ( v1 > v2 ) {
+    int16_t temp = v1;
+    v1 = v2;
+    v2 = temp;
+  }
+
+  if ( v2-v1 < 250 ) SWARM_LOG_ERROR( TRANSLATE( "Calibration failed.", "Kalibrierung fehlgeschlagen." ) );
+
+  // save values
+  nvs.servo[port].minValue = v1;
+  nvs.servo[port].maxValue = v2;
+  nvs.servo[port].offset   = 45;
+  nvs.save( FTSWARM_NVSSCOPE_SERVO );
+
+  // back to work, go to mid position
+  target  = FILTER_INVALID; 
+  calibration = false;
+  setPosition(0);
+
+}
+
+void SwOSRCServo::calibrateRemote( uint8_t speed ) {
+
+  // send remote
+  SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_CALIBRATE );
+  cmd.data.calibrateCmd.index = ctrl->getIndex(this);
+  cmd.data.calibrateCmd.speed = speed;
+  cmd.send( );
+  return;
+ 
+}
+
+void SwOSRCServo::calibrate( uint8_t speed ) {
+
+  if (ctrl->isLocal()) calibrateLocal( speed );
+  else calibrateRemote( speed );
 }

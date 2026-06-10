@@ -357,7 +357,7 @@ const char FTSWARMOPERATOR[ FTSWARM_MAXOPERATOR][2] = { "=", "+", "*" };
 
 // trigger operands
 typedef enum { FTSWARM_CONSTANT, FTSWARM_SENSORVALUE, FTSWARM_ACTORVALUE, FTSWARM_MAXOPERAND } FtSwarmOperand_t;
-const char FTSWARMOPERAND[ FTSWARM_MAXOPERAND][15] = { "constant", "sensor's value", "actor's value" };
+const char FTSWARMOPERAND[ FTSWARM_MAXOPERAND][15] = { TRANSLATE("constant", "Konstante"), TRANSLATE("sensor's value", "Sensorwert"), TRANSLATE("actor's value", "Aktorwert") };
 
 #define MAXSPEED256  255 
 #define MAXSPEED4096 4095 
@@ -457,11 +457,11 @@ typedef enum { FTSWARM_OLED_NOFILL, FTSWARM_OLED_FILLBLACK, FTSWARM_OLED_FILLWHI
 
 typedef enum { FTSWARM_OLED_UPPERSCREEN, FTSWARM_OLED_MAINSCREEN, FTSWARM_OLED_BUTTONSCREEN, FTSWARM_OLED_NOSCREEN, FTSWARM_OLED_MAXSCREEN = FTSWARM_OLED_NOSCREEN, } FtSwarmOledScreen_t;
 
-const char EXTMODE[7][14] = { "off", "I2C-Master", "I2C-Slave", "Outputs", "Servos", "Lidar", "" }; // "" just to avoid seg faults
-const char GYRO[3][8]     = { "off", "LSM6", "MPU6050"};
-const char ONOFF[2][5]    = { "off", "on" };
-const char OFFM1M2[3][5]  = { "off", "M1", "M2" };
-const char WIFI[3][12]    = { "off", "AP-Mode", "Client-Mode"};
+const char EXTMODE[7][14] = { TRANSLATE( "off", "aus"), "I2C-Master", "I2C-Slave", "Outputs", "Servos", "Lidar", "" }; // "" just to avoid seg faults
+const char GYRO[3][8]     = { TRANSLATE( "off", "aus"), "LSM6", "MPU6050"};
+const char ONOFF[2][5]    = { TRANSLATE( "off", "aus"), TRANSLATE( "on", "an" ) };
+const char OFFM1M2[3][5]  = { TRANSLATE( "off", "aus"), "M1", "M2" };
+const char WIFI[3][12]    = { TRANSLATE( "off", "aus"), "AP-Mode", "Client-Mode"};
 
 // Quick Config Type
 typedef enum {
@@ -475,7 +475,7 @@ typedef enum {
 
 #define MAXEVENTCONFIGS 4
 
-const char FTSWARMQUICKCONFIG[MAXEVENTCONFIGS][6][11] = {"Individual", "Car", "Catapillar", "Trailer", "Crane1", "Crane2" };
+const char FTSWARMQUICKCONFIG[MAXEVENTCONFIGS][6][15] = {TRANSLATE("Individual", "Individuell"), TRANSLATE("Car", "Auto"), TRANSLATE("Catapillar", "Kettenfahrzeug"), TRANSLATE("Trailer", "Anhänger"), TRANSLATE("Crane1", "Kran1"), TRANSLATE("Crane2", "Kran2")};
 
 // **** some internal types & classes, don't use them at all ****
 

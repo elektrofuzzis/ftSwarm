@@ -366,6 +366,6 @@ bool yesNo( const char *prompt, bool defaultValue ) {
   char str[2];
   if ( (!enterSomething( prompt, str, 2, false, YN, NULL ) ) || ( strlen( str ) == 0 ) ) return defaultValue;
 
-  return ( str[0] == 'y' ) || ( str[0] == 'Y' ) ;
+  return ( str[0] == 'y' ) || ( str[0] == 'Y' ) || ( str[0] == 'j' ) || ( str[0] == 'J' );
 
 }

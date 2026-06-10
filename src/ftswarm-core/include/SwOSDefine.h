@@ -16,6 +16,12 @@
 // #define DEBUG_COMMUNICATION_SWARM
 // #define DEBUG_READTASK
 
+#ifdef LANGUAGEDE
+    #define TRANSLATE(enStr, deStr) (deStr)
+#else
+    #define TRANSLATE(enStr, deStr) (enStr)
+#endif
+
 #ifndef FTSWARM_HAL_OLEDS
   #define FTSWARM_HAL_OLEDS 0
 #endif

@@ -933,6 +933,8 @@ bool FtSwarmScreenChooseOption::eventHandler( FtSwarmScreenEvent_t event, uint8_
     return true;
   }
 
+  return false;
+
 }
 
 /***************************************************
@@ -1224,7 +1226,7 @@ bool FtSwarmScreenInput::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
 #define FTSWARMSCREENWIFI_CB_PASSWD ( FTSWARMSCREEN_BASEID + 5 )
 #define FTSWARMSCREENWIFI_CB_SAVE   ( FTSWARMSCREEN_BASEID + 6 )
 
-FtSwarmScreenWifi::FtSwarmScreenWifi( FtSwarmScreen *parent  ) : FtSwarmScreen( parent, "Wifi Settings", "" ) {
+FtSwarmScreenWifi::FtSwarmScreenWifi( FtSwarmScreen *parent  ) : FtSwarmScreen( parent, TRANSLATE( "Wifi Settings", "WLAN-Einstellungen" ), "" ) {
 
   strcpy( wifiSSID, nvs.wifi.SSID );
   strcpy( wifiPwd,  nvs.wifi.Password );
@@ -1265,7 +1267,7 @@ bool FtSwarmScreenWifi::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, in
 
     switch (id) {
 
-      case FTSWARMSCREENWIFI_MODE:      screenManager.activate( new FtSwarmScreenChooseOption( this, "wifi mode", "Choose wifi mode.", FTSWARMSCREENWIFI_CB_MODE, wifiOFF, "off", wifiAP, "AP", wifiClient, "client" ) );
+      case FTSWARMSCREENWIFI_MODE:      screenManager.activate( new FtSwarmScreenChooseOption( this, TRANSLATE( "wifi mode", "WLAN-Modus" ), TRANSLATE( "Choose wifi mode", "Waehlen Sie den WLAN-Modus" ), FTSWARMSCREENWIFI_CB_MODE, wifiOFF, TRANSLATE( "off", "aus" ), wifiAP, TRANSLATE( "AP", "AP" ), wifiClient, TRANSLATE( "client", "Client" ) ) );
                                         break;
 
       case FTSWARMSCREENWIFI_CB_MODE:   newWifiMode = (FtSwarmWifi_t) nParam;
@@ -1292,11 +1294,11 @@ bool FtSwarmScreenWifi::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, in
                                         }
                                         break;
 
-      case FTSWARMSCREENWIFI_PASSWD:    screenManager.activate( new FtSwarmScreenInput( this, "Password", FTSWARMSCREENWIFI_CB_PASSWD, "", 63 ) );
+      case FTSWARMSCREENWIFI_PASSWD:    screenManager.activate( new FtSwarmScreenInput( this, TRANSLATE( "Password", "Passwort" ), FTSWARMSCREENWIFI_CB_PASSWD, "", 63 ) );
                                         break;
 
       case FTSWARMSCREENWIFI_CB_PASSWD: if ( sParam) {
-                                          if ( ( strlen(sParam) > 0 ) && ( strlen(sParam) < 8 ) ) screenManager.activate( new FtSwarmScreenError( this, "wifi passwords needs at minimum 8 chars" ) );
+                                          if ( ( strlen(sParam) > 0 ) && ( strlen(sParam) < 8 ) ) screenManager.activate( new FtSwarmScreenError( this, TRANSLATE( "wifi passwords needs at minimum 8 chars", "WLAN-Passwoerter muessen mindestens 8 Zeichen lang sein" ) ) );
                                           else {
                                             strcpy( wifiPwd, sParam);
                                             changes = true;
@@ -1326,7 +1328,7 @@ bool FtSwarmScreenWifi::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, in
   
   if ( event == FTSWARM_SCREENEVENT_DOWN ) {
 
-    if ( ( id == FTSWARM_S4 ) && ( anythingChanged ) )  screenManager.activate( new FtSwarmScreenYesNo( this, "wifi", "Save new settings and reboot?", FTSWARMSCREENWIFI_CB_SAVE ) );
+    if ( ( id == FTSWARM_S4 ) && ( anythingChanged ) )  screenManager.activate( new FtSwarmScreenYesNo( this, TRANSLATE( "wifi", "WLAN" ), TRANSLATE( "Save new settings and reboot?", "Einstellungen speichern und neu starten?" ), FTSWARMSCREENWIFI_CB_SAVE ) );
     return true;
 
   }
@@ -1362,7 +1364,7 @@ void FtSwarmScreenWifiSSID::draw( void ) {
   
   FtSwarmScreen::draw();
 
-  if ( wifiHandler->scanActive ) oled.drawStr( FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2, 32,  "scanning...", FTSWARM_ALIGNCENTER );
+  if ( wifiHandler->scanActive ) oled.drawStr( FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2, 32,  TRANSLATE( "scanning...", "scanne..." ), FTSWARM_ALIGNCENTER );
 
 }
 
@@ -1407,11 +1409,11 @@ void FtSwarmScreenWifiSSID::operate( void ) {
  #define FTSWARMSCREENSWARM_CB_DEL  ( FTSWARMSCREEN_BASEID + 2 )
  #define FTSWARMSCREENSWARM_CB_SEL  ( FTSWARMSCREEN_BASEID + 3 )
 
- FtSwarmScreenSwarm::FtSwarmScreenSwarm( FtSwarmScreen *parent  ) : FtSwarmScreen( parent, "Swarm Config", "" ) {
+ FtSwarmScreenSwarm::FtSwarmScreenSwarm( FtSwarmScreen *parent  ) : FtSwarmScreen( parent, TRANSLATE( "Swarm Config", "Swarm-Konfiguration" ), "" ) {
 
-  addS1( "add" );
-  S2 = addS2( "del" );
-  addS4( "pin" );
+  addS1( TRANSLATE( "add", "+" ) );
+  S2 = addS2( TRANSLATE( "del", "-" ) );
+  addS4( TRANSLATE( "pin", "Pin" ) );
 
   addMembers();
 
@@ -1449,18 +1451,18 @@ bool FtSwarmScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
     switch ( id ) {
 
       case FTSWARM_S1:  // ask for new device, call FTSWARMSCREENSWARM_CB_ADD afterwards
-                        screenManager.activate( new FtSwarmScreenInput( this, "SN to add", FTSWARMSCREENSWARM_CB_ADD, FTSWARM_NANI32, 4 ) );
+                        screenManager.activate( new FtSwarmScreenInput( this, TRANSLATE( "SN to add", "Neue SN" ), FTSWARMSCREENSWARM_CB_ADD, FTSWARM_NANI32, 4 ) );
                         return true;
-
+      
       case FTSWARM_S2:  // ask to delete the selected device, call FTSWARMSCREENSWARM_CB_DEL afterwards
                         if ( objects.getSelected() ) {
                           i = objects.getSelected()->getID() - FTSWARMSCREENSWARM_CB_SEL;
-                          if ( ( i < MAXCTRL ) && ( myOSSwarm.Ctrl[i] ) ) screenManager.activate( new FtSwarmScreenYesNo( this, objects.getSelected()->getText(), "Revoke controller?", FTSWARMSCREENSWARM_CB_DEL, myOSSwarm.Ctrl[i]->serialNumber ) );
+                          if ( ( i < MAXCTRL ) && ( myOSSwarm.Ctrl[i] ) ) screenManager.activate( new FtSwarmScreenYesNo( this, objects.getSelected()->getText(), TRANSLATE( "Revoke controller?", "Controller loechen?" ), FTSWARMSCREENSWARM_CB_DEL, myOSSwarm.Ctrl[i]->serialNumber ) );
                         }
                         return true;
 
       case FTSWARM_S4:  // ask for a new swarm pin, call FTSWARMSCREENSWARM_CB_PIN afterwards
-                        screenManager.activate( new FtSwarmScreenInput( this, "Swarm Pin", FTSWARMSCREENSWARM_CB_PIN, nvs.swarm.pin, 4 ) );
+                        screenManager.activate( new FtSwarmScreenInput( this, TRANSLATE( "Swarm Pin", "Swarm-Pin" ), FTSWARMSCREENSWARM_CB_PIN, nvs.swarm.pin, 4 ) );
                         return true;
 
     }
@@ -1492,7 +1494,7 @@ bool FtSwarmScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
                                         
                                         } else {
 
-                                          sprintf( error, "Could not add ftSwarm%d to swarm.", nParam);
+                                          sprintf( error, TRANSLATE( "Could not add ftSwarm%d to swarm.", "ftSwarm%d kann nicht zum Swarm hinzugefuegt werden." ), nParam );
                                           screenManager.activate( new FtSwarmScreenError( this, error) );
 
                                         }
@@ -1514,7 +1516,7 @@ bool FtSwarmScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
 
                                         } else {
 
-                                          sprintf( error, "Couldn't revoke % from swarm.", objects.getSelected()->getText() );
+                                          sprintf( error, TRANSLATE( "Couldn't revoke % from swarm.", "% kann nicht geloescht werden." ), objects.getSelected()->getText() );
                                           screenManager.activate( new FtSwarmScreenError( this, error) );
                                         }
 
@@ -1539,14 +1541,14 @@ bool FtSwarmScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
 #define FTSWARMSCREENREMOTE_CB_CHOOSECTRL ( FTSWARMSCREEN_BASEID + 30 )
 
 
-FtSwarmScreenRemote::FtSwarmScreenRemote( FtSwarmScreen *parent  ) : FtSwarmScreen( parent, "Remote Control" ) {
+FtSwarmScreenRemote::FtSwarmScreenRemote( FtSwarmScreen *parent  ) : FtSwarmScreen( parent, TRANSLATE( "Remote Control", "Fernbedienung" ) ) {
 
   char text[50];
 
-  sprintf( text, "config type:  %s", FTSWARMQUICKCONFIG[ nvs.events.quickConfig[nvs.events.activeConfig] ] );
+  sprintf( text, TRANSLATE( "config type:  %s", "Config-Typ:  %s" ), FTSWARMQUICKCONFIG[ nvs.events.quickConfig[nvs.events.activeConfig] ] );
   addText( FTSWARM_OLED_MAINSCREEN, 0, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNLEFT, text );
-  
-  sprintf( text, "active config: %d", nvs.events.activeConfig );
+
+  sprintf( text, TRANSLATE( "active config: %d", "Aktive Config: %d" ), nvs.events.activeConfig );
   addText( FTSWARM_OLED_MAINSCREEN, 0, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNLEFT, text );
 
   for ( uint8_t i=0; i<MAXNVSEVENTS; i++ ) {
@@ -1788,7 +1790,7 @@ bool FtSwarmScreenRemote::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, 
                           }
                         }
 
-                        screenManager.activate( new FtSwarmScreenSelectList( this, "Select Controller", nullptr, items, callbackID, str ) );
+                        screenManager.activate( new FtSwarmScreenSelectList( this, TRANSLATE( "Select Controller", "Welcher Controller?" ), nullptr, items, callbackID, str ) );
       
                         return true;
 
@@ -1811,11 +1813,11 @@ bool FtSwarmScreenRemote::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, 
                                                                                                     sParam, 
                                                                                                     nullptr, 
                                                                                                     FTSWARMSCREENREMOTE_CB_CHOOSECFG, 
-                                                                                                    FTSWARM_CFG_CAR,     "Car", 
-                                                                                                    FTSWARM_CFG_CAR,     "Catapillar", 
-                                                                                                    FTSWARM_CFG_CRANE1,  "Crane Type 1", 
-                                                                                                    FTSWARM_CFG_CRANE2,  "Crane Type 2", 
-                                                                                                    FTSWARM_CFG_TRAILER, "Trailer" ) );
+                                                                                                    FTSWARM_CFG_CAR,     TRANSLATE( "Car", "Auto" ), 
+                                                                                                    FTSWARM_CFG_CAR,     TRANSLATE( "Catapillar", "Raupenfahrzeug" ), 
+                                                                                                    FTSWARM_CFG_CRANE1,  TRANSLATE( "Crane Type 1", "Kran Typ 1" ), 
+                                                                                                    FTSWARM_CFG_CRANE2,  TRANSLATE( "Crane Type 2", "Kran Typ 2" ), 
+                                                                                                    FTSWARM_CFG_TRAILER, TRANSLATE( "Trailer", "Anhaenger" ) ) );
       
     }
 
@@ -1853,17 +1855,17 @@ class FtSwarmScreenSetup:public FtSwarmScreen {
 
 };
 
- FtSwarmScreenSetup::FtSwarmScreenSetup( FtSwarmScreen *parent ):FtSwarmScreen( parent, "Setup", "" ) {
+ FtSwarmScreenSetup::FtSwarmScreenSetup( FtSwarmScreen *parent ):FtSwarmScreen( parent, TRANSLATE( "Setup", "Einstellungen" ), "" ) {
   
   blockEvents = true;
 
-  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_CONFIG,      this, "Select Config") );
-  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_CALIBRATION, this, "Calibration") );
-  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_SERVOOFFSET, this, "Servo Offset") );
-  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_REMOTE,      this, "Remote Control") );
-  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_WIFI,        this, "Wifi Settings") );
-  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_SWARM,       this, "Swarm Config") );
-  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_RESET,       this, "Factory Reset") );
+  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_CONFIG,      this, TRANSLATE( "Select Config", "Konfiguration" ) ) );
+  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_CALIBRATION, this, TRANSLATE( "Calibration", "Kalibratieren" ) ) );
+  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_SERVOOFFSET, this, TRANSLATE( "Servo Offset", "Servo Offset" ) ) );
+  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_REMOTE,      this, TRANSLATE( "Remote Control", "Fernsteuerung" ) ) );
+  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_WIFI,        this, TRANSLATE( "Wifi Settings", "WLAN Einstellungen" ) ) );
+  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_SWARM,       this, TRANSLATE( "Swarm Config", "Swarm Konfiguration" ) ) );
+  add( new FtSwarmScreenSelectable( FTSWARMSCREENSETUP_RESET,       this, TRANSLATE( "Factory Reset", "Werkseinstellung" ) ) );
   
 }
 
@@ -1875,7 +1877,7 @@ bool FtSwarmScreenSetup::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
 
     switch (id) {
 
-      case FTSWARMSCREENSETUP_CONFIG:       screenManager.activate( new FtSwarmScreenChooseOption( this, "Select Config", "Choose acive configuration", FTSWARMSCREENSETUP_CONFIG_CB, 0, "#1", 1, "#2", 2, "#3", 3, "#4" ) );
+      case FTSWARMSCREENSETUP_CONFIG:       screenManager.activate( new FtSwarmScreenChooseOption( this, TRANSLATE( "Select Config", "Konfiguration" ), TRANSLATE( "Choose active configuration", "Aktive Konfiguration auswaehlen" ), FTSWARMSCREENSETUP_CONFIG_CB, 0, "#1", 1, "#2", 2, "#3", 3, "#4" ) );
                                             break;
 
       case FTSWARMSCREENSETUP_CONFIG_CB:    nvs.events.activeConfig = nParam;
@@ -1899,7 +1901,7 @@ bool FtSwarmScreenSetup::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
       case FTSWARMSCREENSETUP_REMOTE:       screenManager.activate( new FtSwarmScreenRemote( this ) );
                                             break;
 
-      case FTSWARMSCREENSETUP_RESET:        screenManager.activate( new FtSwarmScreenYesNo( this, "Factory Reset", "Reset to factory settings and reboot?", FTSWARMSCREENSETUP_RESET_CB ) );
+      case FTSWARMSCREENSETUP_RESET:        screenManager.activate( new FtSwarmScreenYesNo( this, TRANSLATE( "Factory Reset", "Werkseinstellung" ), TRANSLATE( "Reset to factory settings and reboot?", "Auf Werkseinstellungen zuruecksetzen und neu starten?" ), FTSWARMSCREENSETUP_RESET_CB ) );
                                             break;
 
       case FTSWARMSCREENSETUP_RESET_CB:     if (nParam) myOSSwarm.factoryReset();
@@ -1961,7 +1963,7 @@ void FtSwarmScreenSelectIO::addIO( SwOSIOType_t ioType, bool localOnly ) {
  *
  ***************************************************/
 
-FtSwarmScreenCalibrateList::FtSwarmScreenCalibrateList( FtSwarmScreen *parent ) : FtSwarmScreenSelectIO( parent, "Calibrate" ) {
+FtSwarmScreenCalibrateList::FtSwarmScreenCalibrateList( FtSwarmScreen *parent ) : FtSwarmScreenSelectIO( parent, TRANSLATE( "Calibrate", "Kalibrieren" ) ) {
 
   addIO( SWOSIO_JOYSTICK, true );
   addIO( SWOSIO_RCSERVO, false );
@@ -2020,8 +2022,8 @@ FtSwarmScreenCalibrateJoystick::FtSwarmScreenCalibrateJoystick( FtSwarmScreen *p
   
   // add text on oled
   int16_t textOffset = ( joystick->getPort() ? 0 : 4*size + 10 );
-  text[0] = addText( FTSWARM_OLED_MAINSCREEN, textOffset, 10, FTSWARM_ALIGNLEFT, "Rotate to fill" );
-  text[1] = addText( FTSWARM_OLED_MAINSCREEN, textOffset, 20, FTSWARM_ALIGNLEFT, "all triangles" );
+  text[0] = addText( FTSWARM_OLED_MAINSCREEN, textOffset, 10, FTSWARM_ALIGNLEFT, TRANSLATE( "Rotate to fill", "Joystick" ) );
+  text[1] = addText( FTSWARM_OLED_MAINSCREEN, textOffset, 20, FTSWARM_ALIGNLEFT, TRANSLATE( "all triangles", "bewegen" ) );
 
 }
 
@@ -2084,8 +2086,8 @@ void FtSwarmScreenCalibrateJoystick::operate( void ) {
 
     // switch to 2nd step?
     if ( status >= 0x0F ) {
-      text[0]->setText("Release to");
-      text[1]->setText("get mid pos");
+      text[0]->setText( TRANSLATE( "Release to",  "Joystick" ) );
+      text[1]->setText( TRANSLATE( "get mid pos", "loslassen" ) );
       this->draw();
     }
 
@@ -2111,8 +2113,8 @@ void FtSwarmScreenCalibrateJoystick::operate( void ) {
       calibration[0].midValue = value[0]<<1;
       calibration[1].midValue = value[1]<<1;
 
-      text[0]->setText( "Save new" );
-      text[1]->setText( "calibration?" );
+      text[0]->setText( TRANSLATE( "Save new",     "Kalibrierung" ) );
+      text[1]->setText( TRANSLATE( "calibration?", "speichern?" ) );
 
       addS4( "save" )->activate();
 
@@ -2332,7 +2334,7 @@ bool SwOSMainScreen::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32
  *
  ***************************************************/
 
- SwOSSplashScreen::SwOSSplashScreen( void ):FtSwarmScreen( nullptr, "Booting..." ) {
+ SwOSSplashScreen::SwOSSplashScreen( void ):FtSwarmScreen( nullptr, TRANSLATE( "Booting...", "Starte..." ) ) {
   
   blockEvents = false;
   addText( FTSWARM_OLED_MAINSCREEN, oled.getScreenWidth()/2, 16, FTSWARM_ALIGNCENTER, "ftSwarm" );
@@ -2532,10 +2534,10 @@ void FtSwarmScreenManager::setState( SwOSState_t state, const char *text, uint8_
     case FATAL:     activate( new FtSwarmScreen( active, "Fatal Error", text ) );
                     break;
 
-    case FACTORY1:  if ( (splashScreen) && ( splashScreen->info )  ) splashScreen->info->setText( "Factory Reset?" );
+    case FACTORY1:  if ( (splashScreen) && ( splashScreen->info )  ) splashScreen->info->setText( TRANSLATE( "Factory Reset?", "Werkseinstellung?" ) );
                     break;
 
-    case FACTORY2:  if ( (splashScreen) && ( splashScreen->info )  ) splashScreen->info->setText( "Factory Reset!" );
+    case FACTORY2:  if ( (splashScreen) && ( splashScreen->info )  ) splashScreen->info->setText( TRANSLATE( "Factory Reset!", "Werkseinstellung!" ) );
                     break;
   }
 

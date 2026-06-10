@@ -15,6 +15,7 @@
 
 #include "easyKey.h"
 #include "easyMenu.h"
+#include "SwOSDefine.h"
 
 int Menu::isValid( char *str ) {
 
@@ -165,7 +166,7 @@ bool Menu::add( int8_t id, char key ) {
 bool Menu::addExit( void ) {
 
   printf("\n");
-  return add( "Exit", "", MENU_EXIT, 'x' );
+  return add( TRANSLATE("Exit", "Beenden"), "", MENU_EXIT, 'x' );
 
 }
 

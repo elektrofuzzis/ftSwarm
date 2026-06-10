@@ -68,14 +68,14 @@ long SwOSCLIParameter::getNumber( void ) {
 bool SwOSCLIParameter::inRange( const char *name, int minValue, int maxValue, char *error ) {
 
   if ( !num ) {
-    if (error) sprintf( error, "Error: parameter %s is not a number.\n", name);
+    if (error) sprintf( error, TRANSLATE( "Error: parameter %s is not a number.\n", "Fehler: Parameter %s ist keine Zahl.\n" ), name);
     return false;
   }
 
   int v = getNumber();
 
   if ( ( v<minValue ) || ( v>maxValue ) ) {
-    if (error) sprintf( error, "Error: parameter %s needs to be between %d and %d, but %d found.\n", name, minValue, maxValue, v );
+    if (error) sprintf( error, TRANSLATE( "Error: parameter %s needs to be between %d and %d, but %d found.\n", "Fehler: Parameter %s muss zwischen %d und %d sein, er hat aber den Wert %d.\n" ), name, minValue, maxValue, v );
     return false;
   }
 

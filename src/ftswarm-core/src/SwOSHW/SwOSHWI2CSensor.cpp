@@ -195,12 +195,11 @@ void SwOSGyroMPU::setupLocal() {
     mpu = new MPU6050();
 
     /*Initialize device*/
-    printf("Initializing MPU6050\n");
     mpu->initialize();
 
     /*Verify connection*/
     if(mpu->testConnection() == false){
-      SWARM_LOG_ERROR( "Gyro/MPU6050 connection failed.");
+      SWARM_LOG_ERROR( TRANSLATE( "Gyro/MPU6050 connection failed.", "Verbindung zum Gyro/MPU6050 fehlgeschlagen." ) );
       delete mpu;
       mpu = NULL;      
     }
@@ -225,7 +224,7 @@ void SwOSGyroMPU::setupLocal() {
     } else {
       // 1 = initial memory load failed
       // 2 = DMP configuration updates failed
-      SWARM_LOG_ERROR( "Gyro/MPU6050: DMP initialisation error %d.", devStatus);
+      SWARM_LOG_ERROR( TRANSLATE( "Gyro/MPU6050: DMP initialisation error %d.", "Gyro/MPU6050: DMP Initialisierungsfehler %d." ), devStatus);
       delete mpu;
       mpu = NULL;      
     } 

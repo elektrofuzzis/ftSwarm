@@ -353,7 +353,7 @@ void SwOSIO::serialize( Serialize *serialize ) {
 }
 
 void SwOSIO::onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t parameter ) {
-  SWARM_LOG_ERROR( "IO is unable to handle trigger events." );
+  SWARM_LOG_ERROR( TRANSLATE( "IO is unable to handle trigger events.", "IO kann Trigger-Events nicht verarbeiten." ) );
 }
 
 char *SwOSIO::subscribe( const char *IOName, uint32_t hysteresis ) {

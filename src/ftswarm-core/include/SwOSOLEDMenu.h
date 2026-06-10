@@ -612,7 +612,7 @@ class FtSwarmScreenConfirm : public FtSwarmScreenChooseOption {
 class FtSwarmScreenYesNo : public FtSwarmScreenChooseOption {
 
   public: 
-    FtSwarmScreenYesNo( FtSwarmScreen *parent, const char *title, const char *text, uint8_t callbackID, int32_t yes = 1 ) : FtSwarmScreenChooseOption( parent, title, text, callbackID, 0, nullptr, yes, "YES", 0, "NO" ) {};
+    FtSwarmScreenYesNo( FtSwarmScreen *parent, const char *title, const char *text, uint8_t callbackID, int32_t yes = 1 ) : FtSwarmScreenChooseOption( parent, title, text, callbackID, 0, nullptr, yes, TRANSLATE("YES", "JA"), 0, TRANSLATE("NO", "NEIN") ) {};
 
 };
 
@@ -914,7 +914,7 @@ class SwOS404Screen : public FtSwarmScreen {
   public:
 
     // constructor
-    SwOS404Screen( void ):FtSwarmScreen( nullptr, "Page not found", "Internal error - the requested page is not available." ) {};
+    SwOS404Screen( void ):FtSwarmScreen( nullptr, "Page not found", TRANSLATE("Internal error - the requested page is not available.", "Interner Fehler - die angeforderte Seite ist nicht verfuegbar.") ) {};
 
 };
 

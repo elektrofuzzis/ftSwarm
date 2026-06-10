@@ -54,7 +54,7 @@ FtSwarmIO::FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, Sw
     
     // no success, wait 25 ms
     if ( (!me) && ( firstTry ) ) {
-      SWARM_LOG_WAIT("Waiting for device - SN controller: %d port: %d ioType: %d\n", serialNumber, port, ioType );
+      SWARM_LOG_WAIT( TRANSLATE( "Waiting for device - SN controller: %d port: %d ioType: %d\n", "Warte auf Gerät - SN Controller: %d Port: %d ioType: %d\n" ), serialNumber, port, ioType );
       firstTry = false;
     }
     
@@ -62,7 +62,7 @@ FtSwarmIO::FtSwarmIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, Sw
   }
 
   // block, if port is not available
-  if ( static_cast<SwOSIO *>(me)->testFlag( FTSWARM_HAL_FLAG_HIDDEN ) ) SWARM_LOG_FATAL( "ftSwarm%d ioType %d port %d is blocked by another IO\n", serialNumber, ioType, port );
+  if ( static_cast<SwOSIO *>(me)->testFlag( FTSWARM_HAL_FLAG_HIDDEN ) ) SWARM_LOG_FATAL( TRANSLATE( "ftSwarm%d ioType %d port %d is blocked by another IO\n", "ftSwarm%d ioType %d port %d ist von einem anderen IO blockiert\n" ), serialNumber, ioType, port );
 
   // register myself
   static_cast<SwOSIO *>(me)->lock();
@@ -86,7 +86,7 @@ FtSwarmIO::FtSwarmIO( const char *name, SwOSIOType_t ioType ) {
 
     // no success, wait 25 ms
     if ( (!me) && ( firstTry ) ) {
-      SWARM_LOG_WAIT("Waiting for device %s ioType: %d\n", name, ioType );
+      SWARM_LOG_WAIT( TRANSLATE( "Waiting for device %s ioType: %d\n", "Warte auf Gerät %s ioType: %d\n" ), name, ioType );
       firstTry = false;
     }
     
@@ -95,8 +95,7 @@ FtSwarmIO::FtSwarmIO( const char *name, SwOSIOType_t ioType ) {
   }
 
   // block, if port is not available
-  if ( static_cast<SwOSIO *>(me)->testFlag( FTSWARM_HAL_FLAG_HIDDEN ) ) SWARM_LOG_FATAL( "IO %s ioType %s is blocked by another IO\n", name );
-
+  if ( static_cast<SwOSIO *>(me)->testFlag( FTSWARM_HAL_FLAG_HIDDEN ) ) SWARM_LOG_FATAL( TRANSLATE( "IO %s ioType %s is blocked by another IO\n", "IO %s ioType %s ist von einem anderen IO blockiert\n" ), name, ioType );
   // register myself
   static_cast<SwOSIO *>(me)->lock(); 
   static_cast<SwOSIO *>(me)->take();
@@ -1177,7 +1176,7 @@ FtSwarmSerialNumber_t FtSwarm::begin( bool verbose, bool waitOnControllers ) {
   FtSwarmSerialNumber_t result = myOSSwarm.begin( verbose );
 
   if (!nvs.swarm.IAmKelda) {
-    SWARM_LOG_ERROR("Please configure this controller as Kelda.");
+    SWARM_LOG_ERROR( TRANSLATE( "Please configure this controller as Kelda.", "Bitte konfigurieren Sie diesen Controller als Kelda." ) );
     firmware();
     ESP.restart();
   }

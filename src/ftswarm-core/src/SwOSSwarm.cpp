@@ -189,7 +189,7 @@ SwOSIO *SwOSSwarm::waitFor( char *alias ) {
 
     // no success, wait 25 ms
     if ( (!me) && ( firstTry ) ) {
-      SWARM_LOG_WAIT("Waiting for device %s. Press anykey to enter setup and change remote control settings.\n", alias );
+      SWARM_LOG_WAIT( TRANSLATE( "Waiting for device %s. Press anykey to enter setup and change remote control settings.\n", "Warte auf IO %s. Drücken Sie eine beliebige Taste, um das Setup zu starten.\n" ), alias );
       firstTry = false;
     }
     
@@ -267,7 +267,7 @@ void SwOSSwarm::startWifi( void ) {
     // set config
     ESP_ERROR_CHECK( esp_wifi_set_config( WIFI_IF_STA, &sta_config ) );
 
-    if (verbose) printf( "Connecting to SSID: %s ", nvs.wifi.SSID );
+    if (verbose) printf( TRANSLATE( "Connecting to SSID: %s ", "Verbinde mit SSID: %s " ), nvs.wifi.SSID );
 
     wifiHandler = new WifiHandler();
     
@@ -286,13 +286,13 @@ void SwOSSwarm::startWifi( void ) {
       esp_netif_ip_info_t ip_info;
       if (esp_netif_get_ip_info( sta_netif, &ip_info ) == ESP_OK && ip_info.ip.addr != 0) {
         wifiConnected = true;
-        if ( verbose ) printf( " Connected!\n" );
+        if ( verbose ) printf(TRANSLATE( " Connected!\n", " Verbunden!\n" ) );
         break;
       }
 
       // user interrupt?
       if ( anyKey() ) { 
-        printf( "\nStarting setup..\n" );
+        printf( TRANSLATE( "\nStarting setup..\n", "\nStarte Setup..\n" ) );
         mainMenu();
         ESP.restart();
       }
@@ -306,7 +306,7 @@ void SwOSSwarm::startWifi( void ) {
     // connection failed?
     if ( !wifiConnected ) {
       
-      SWARM_LOG_ERROR( "Can't connect to SSID %s", nvs.wifi.SSID );
+      SWARM_LOG_ERROR( TRANSLATE( "Can't connect to SSID %s", "Kann SSID %s nicht verbinden" ), nvs.wifi.SSID );
 
       #if FTSWARM_HAL_OLEDS > 0
         // start local operate/read task & show wifi dialog
@@ -314,7 +314,7 @@ void SwOSSwarm::startWifi( void ) {
         screenManager.wifiMenu();
       #endif
 
-      printf( "\nStarting setup..\n" );
+      printf( TRANSLATE( "\nStarting setup..\n", "\nStarte Setup..\n" ) );
       mainMenu();
       ESP.restart();
     }
@@ -325,7 +325,7 @@ void SwOSSwarm::startWifi( void ) {
   esp_err_t err = mdns_init();
 
   if (err != ESP_OK) {
-    SWARM_LOG_ERROR( "MDNS init failed: %s", err );
+    SWARM_LOG_ERROR( TRANSLATE( "MDNS init failed: %s", "MDNS Initialisierung fehlgeschlagen: %s" ), err );
   } else {
     ESP_ERROR_CHECK( mdns_hostname_set( Ctrl[0]->getHostname() ) );
     mdns_service_add( nullptr, "_http", "_tcp", 80, nullptr, 0 );
@@ -346,7 +346,7 @@ void SwOSSwarm::startWifi( void ) {
     else                         netif = sta_netif;
 
     if ( esp_netif_get_ip_info( netif, &ip_info ) == ESP_OK ) 
-      SWARM_LOG_INFO( "hostname: %s ip-address: %d.%d.%d.%d MAC: %02X:%02X:%02X:%02X:%02X:%02X", 
+      SWARM_LOG_INFO( TRANSLATE( "hostname: %s ip-address: %d.%d.%d.%d MAC: %02X:%02X:%02X:%02X:%02X:%02X", "Hostname: %s IP-Adresse: %d.%d.%d.%d MAC: %02X:%02X:%02X:%02X:%02X:%02X" ), 
                       Ctrl[0]->getHostname(), 
                       IP2STR( &ip_info.ip ),
                       mac[0], mac[1], mac[2], mac[3], mac[4], mac[5] );
@@ -357,6 +357,8 @@ void SwOSSwarm::startWifi( void ) {
 
 FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
+  Serial.begin(115200);
+
   if (initialized) return Ctrl[0]->serialNumber;
 
   // redirect IO to feed the web console
@@ -366,7 +368,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
   printf("\n\nftSwarmOS " ); 
   printf(SWOSVERSION);
-  printf("\n\n(C) Christian Bergschneider & Stefan Fuss\n\nPress any key to enter bios settings.\n");
+  printf(TRANSLATE( "\n\n(C) Christian Bergschneider & Stefan Fuss\n\nPress any key to enter bios settings.\n", "\n\n(C) Christian Bergschneider & Stefan Fuss\n\nDrücken Sie eine Taste, um das Setup zu starten.\n" ));
 
   // set watchdog to 30s
   esp_task_wdt_init(30, false);
@@ -379,15 +381,15 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
   // Who I am?
   if (this->verbose) {
-    printf("Boot %s (SN:%d).\n", nvs.swarm.name, nvs.serialNumber );
-    if ( nvs.swarm.IAmKelda )  { printf( "I am KELDA!\n"); }
+    printf( TRANSLATE( "Boot %s (SN:%d).\n", "Starte %s (SN:%d).\n" ), nvs.swarm.name, nvs.serialNumber );
+    if ( nvs.swarm.IAmKelda )  { printf( TRANSLATE( "I am KELDA!\n", "Ich bin KELDA!\n" ) ); }
 
     // PSRAM
     uint32_t totalPsram = ESP.getPsramSize();
-    printf("PSRAM: %u Bytes (%.2f MB)\n", totalPsram, totalPsram / 1024.0 / 1024.0);
+    printf( "PSRAM: %u Bytes (%.2f MB)\n", totalPsram, totalPsram / 1024.0 / 1024.0);
 
     // cores
-    printf("User space is running on core #%d.\nFirmware is running on core #%d.\n", ARDUINO_RUNNING_CORE, ARDUINO_EVENT_RUNNING_CORE);
+    printf( TRANSLATE( "User space is running on core #%d.\nFirmware is running on core #%d.\n", "Programm läuft auf Kern #%d.\nFirmware läuft auf Kern #%d.\n" ), ARDUINO_RUNNING_CORE, ARDUINO_EVENT_RUNNING_CORE);
   }
 
   SwOSCtrlConfig_t localCtrlConfig = {
@@ -429,7 +431,7 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   // factory reset cycle?
   if ( nvs.factoryReset ) {
 
-    if (verbose) printf("finalizing factoryReset\n");
+    if (verbose) printf( TRANSLATE( "finalizing factoryReset\n", "Setze auf Werkseinstellung zurück.\n" ) );
 
     // reset flag, don't load IO settings and save
     nvs.factoryReset = false;
@@ -464,8 +466,8 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   addEvents( nvs.events.activeConfig, myOSSwarm.Ctrl[0]->serialNumber );
 
   if ( nvs.wifi.mode == wifiAP ) {
-    if ( verbose )           SWARM_LOG_INFO( "Wifi ap mode is limited to %d network clients.", MAX_AP_CONNECTIONS );
-    if ( nvs.swarm.IAmKelda) SWARM_LOG_WARN( "A swarm using wifi ap mode provided by the Kelda isn't stable. Best practice is to use your local wifi or to provide the AP via a swarm member.");
+    if ( verbose )           SWARM_LOG_INFO( TRANSLATE( "Wifi ap mode is limited to %d network clients.", "WLAN im AP-Modus ist auf %d Netzwerk-Clients begrenzt." ), MAX_AP_CONNECTIONS );
+    if ( nvs.swarm.IAmKelda) SWARM_LOG_WARN( TRANSLATE( "A swarm using wifi ap mode provided by the Kelda isn't stable. Best practice is to use your local wifi or to provide the AP via a swarm member.", "Der AP-Modus auf der Kelda ist nicht evtl. stabil. Verwenden Sie einen anderen Controller um den AP bereitzustellen." ));
 
   }
 
@@ -830,14 +832,14 @@ void SwOSSwarm::replaceCtrl( SwOSCom *com, uint8_t source, uint8_t affected ) {
   SwOSCtrl *oldCtrl = Ctrl[source];
   
   if ( com->data.registerCmd.ctrlConfig.CPU >= FTSWARMMAXVERSION ) {
-    SWARM_LOG_ERROR( "Unknown controller type while adding a new controller to my swarm." ); return;
+    SWARM_LOG_ERROR( TRANSLATE( "Unknown controller type while adding a new controller to my swarm.", "Unbekannter Controller-Typ möchte dem Swarm beitreten." ) ); return;
 
   } else {
     
     newCtrl = new SwOSCtrl( com->data.sourceSN , com->macAddr, false, com->data.registerCmd.ctrlConfig );
     
     if (verbose) { 
-      SWARM_LOG_INFO("ftSwarm%d joined the swarm.", com->data.sourceSN ); 
+      SWARM_LOG_INFO( TRANSLATE( "ftSwarm%d joined the swarm.", "ftSwarm%d ist dem Swarm beigetreten." ), com->data.sourceSN ); 
     }
 
   }
@@ -861,7 +863,7 @@ void SwOSSwarm::cmdJoinMySwarm( SwOSCom *com, uint8_t source, uint8_t affected )
   // I'm a Kelda with at leat a member: decline
   if ( ( Ctrl[0]->IAmKelda ) && ( members() > 1 ) ) {
 
-    printf("[ERROR] Declining to join swarm %s. I'm a Kelda with %d swarm members.\n", com->data.joinCmd.swarmName, members() );
+    SWARM_LOG_ERROR( TRANSLATE( "Declining to join swarm %s. I'm a Kelda with %d swarm members.", "Kann dem Swarm %s nicht beitreten. Ich bin eine Kelda mit %d Controllern im Swarm." ), com->data.joinCmd.swarmName, members() );
     SwOSCom reply( com->macAddr, com->data.sourceSN, CMD_JOINNACK );
     Ctrl[0]->registerMe( &reply );
     reply.send();
@@ -928,7 +930,7 @@ void SwOSSwarm::cmdRevokeFromSwarm( SwOSCom *com, uint8_t source, uint8_t affect
   if ( ( com->data.affectedSN != Ctrl[0]->serialNumber ) || (com->data.joinCmd.pin == nvs.swarm.pin) || strcmp( com->data.registerCmd.swarmName, nvs.swarm.name ) ) return;
 
   // User info
-  printf("\n\n[INFO] leaving swarm %s and reboot.\n\n", com->data.registerCmd.swarmName );
+  SWARM_LOG_INFO( TRANSLATE( "Leaving swarm %s and rebooting.", "Verlasse Swarm %s und starte neu." ), com->data.registerCmd.swarmName );
 
   // just reboot
   ESP.restart();

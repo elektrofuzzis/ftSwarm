@@ -53,7 +53,7 @@ void SwOSNVS::initialSetup( void ) {
   pixels = FTSWARM_HAL_PIXELS;
   extensionPort.mode = ( FTSWARM_HAL_EXT_PORT ) ? FTSWARM_EXT_OFF : FTSWARM_EXT_I2C_MASTER; 
 
-  serialNumber = enterNumber("Serial number [1..65535]>", 0, 1, 65535 );
+  serialNumber = enterNumber( TRANSLATE("Serial number [1..9999]>", "Seriennummer [1..9999]"), 0, 1, 9999 );
 
   sprintf( wifi.SSID, "ftSwarm%d", serialNumber );
   strcpy( wifi.Password, wifi.SSID );
@@ -72,7 +72,7 @@ void SwOSNVS::initialSetup( void ) {
     spiGyro = (Wire.endTransmission(true) != 0);
   }
 
-  if ( yesNo("Save configuration (Y/N)?>") ) {
+  if ( yesNo( TRANSLATE( "Save configuration (Y/N)?>", "Konfiguration speichern (J/N)?" ) ) ) {
     save( FTSWARM_NVSSCOPE_INITAL );
     printf( "saving");
     for (uint8_t i=0; i<3; i++ ) {
@@ -101,7 +101,7 @@ void SwOSNVS::begin() {
   if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
       // NVS partition was truncated and needs to be erased
       // Retry nvs_flash_init
-      SWARM_LOG_ERROR( "Invalid NVS found. Erasing NVS.");
+      SWARM_LOG_ERROR( TRANSLATE( "Invalid NVS found. Erasing NVS.", "Ungültige NVS Daten gefunden. Lösche NVS-Partition." ) );
       nvs_flash_erase();
       err = nvs_flash_init();
   }
@@ -111,7 +111,7 @@ void SwOSNVS::begin() {
   }
 
   if (nvs.CPU != CPUFirmware ) {
-    printf("\n\nFATAL: Incompatible firmware hardware settings.\n");
+    printf( TRANSLATE( "\n\nFATAL: Incompatible firmware hardware settings.\n", "\n\nFEHLER: Die Firmware passt nicht zur Hardware.\n" ) );
     printf("       Firmware %s\n", FTSWARMVERSION[CPUFirmware] );
     printf("       Board    %s\n", FTSWARMVERSION[CPU] );
     while (1) delay(1000);
@@ -514,7 +514,7 @@ bool SwOSNVS::addController( FtSwarmSerialNumber_t serialNumber ) {
   }
 
   // no free space? error
-  printf("no space\n");
+  printf( TRANSLATE( "no space\n", "kein Platz\n" ) );
   return false;
 
 }
@@ -629,13 +629,13 @@ bool SwOSNVS::upgrade( void ) {
 
   if ( version != NVSVERSION ) {
 
-    printf("[INFO] upgrading NVS setting from version %d to %d\n", version, NVSVERSION );
-   
+    SWARM_LOG_INFO( TRANSLATE( "NVS-Upgrade: Old NVS version %d found. Upgrading to version %d.", "NVS-Upgrade: Alte NVS-Version %d gefunden. Aktualisiere auf Version %d." ), version, NVSVERSION );
+
     // erase all
     nvs_handle_t my_handle;
-    if ( nvs_open(NVSNAMESPACE, NVS_READWRITE, &my_handle) != ESP_OK ) SWARM_LOG_FATAL("NVS-Upgrade failed: Can't open NVS.");
-    if ( nvs_erase_all( my_handle ) != ESP_OK ) SWARM_LOG_FATAL("NVS-Upgrade failed: Can't earase NVS.");
-    if ( nvs_commit( my_handle ) != ESP_OK ) SWARM_LOG_FATAL("NVS-Upgrade failed: Can't commit NVS.");
+    if ( nvs_open(NVSNAMESPACE, NVS_READWRITE, &my_handle) != ESP_OK ) SWARM_LOG_FATAL( TRANSLATE( "NVS-Upgrade failed: Can't open NVS.", "NVS-Upgrade fehlgeschlagen: Kann NVS nicht öffnen." ) );
+    if ( nvs_erase_all( my_handle ) != ESP_OK ) SWARM_LOG_FATAL( TRANSLATE( "NVS-Upgrade failed: Can't erase NVS.", "NVS-Upgrade fehlgeschlagen: Kann NVS nicht löschen." ) );
+    if ( nvs_commit( my_handle ) != ESP_OK ) SWARM_LOG_FATAL( TRANSLATE( "NVS-Upgrade failed: Can't commit NVS.", "NVS-Upgrade fehlgeschlagen: Kann NVS nicht speichern." ) );
     nvs_close( my_handle );
     
     // save again

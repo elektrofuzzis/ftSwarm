@@ -59,7 +59,7 @@ void WifiHandler::eventHandler( void* arg, esp_event_base_t event_base, int32_t 
                                           break;
 
       case WIFI_EVENT_AP_STACONNECTED:    connectedDevices++;
-                                          if ( connectedDevices >= MAX_AP_CONNECTIONS ) SWARM_LOG_WARN( "Maximum number of clients (%d) in AP mode reached.",MAX_AP_CONNECTIONS);
+                                          if ( connectedDevices >= MAX_AP_CONNECTIONS ) SWARM_LOG_WARN( TRANSLATE( "Maximum number of clients (%d) in AP mode reached.", "Maximale Anzahl an Clients (%d) im AP-Modus erreicht." ), MAX_AP_CONNECTIONS );
                                           break;
 
       case WIFI_EVENT_AP_STADISCONNECTED: if (connectedDevices) connectedDevices--;
@@ -99,26 +99,21 @@ void WifiHandler::uniqueScanResult( void ) {
 
   while ( i < aps ) {
 
-    // printf("uniqueScanResult %d %d %s %s %d\n", i, aps, (char*) ap[i-1].ssid, (char*) ap[i].ssid, ap[i].rssi );
-
     int8_t cmp = strcmp( (char*) ap[i-1].ssid, (char*) ap[i].ssid );
 
     if ( ap[i].rssi <= -80 ) {
       // poor signal: kill item
-      // printf("poor signal %s\n", ap[i].ssid );
       aps--;
       if ( i < aps ) memmove( &ap[i], &ap[i+1], ( aps - i ) * sizeof( wifi_ap_record_t ) );
 
     } else if ( cmp == 0 ) {
       // deduplicate, take the strongest
-      // printf("duplicate %s\n", ap[i].ssid );
       if ( ap[i-1].rssi < ap[i].rssi ) memcpy( &ap[i-1], &ap[i],   sizeof( wifi_ap_record_t ) );
       aps--;
       if ( i < aps ) memmove( &ap[i], &ap[i+1], ( aps - i ) * sizeof( wifi_ap_record_t ) );      
 
     } else if ( cmp > 0 ) {
       // wrong order, change i-1 and i
-      // printf("order %s\n", ap[i].ssid );
       memcpy( &temp,    &ap[i-1], sizeof( wifi_ap_record_t ) );
       memcpy( &ap[i-1], &ap[i],   sizeof( wifi_ap_record_t ) );
       memcpy( &ap[i],   &temp,    sizeof( wifi_ap_record_t ) );
@@ -132,10 +127,6 @@ void WifiHandler::uniqueScanResult( void ) {
     }
 
   }
-
-  // printf("---\n");
-  // for ( int16_t x=0; x<aps; x++ ) printf("%d %s %d\n", i, (char*) ap[x].ssid, ap[x].rssi );
-
 
 }
 
@@ -235,7 +226,7 @@ void OLED::begin( void ) {
   if (initialized) return;
   
   // startup hardware
-  if (!U8G2_SSD1306_128X64_NONAME_F_HW_I2C::begin() ) SWARM_LOG_ERROR( "OLED::begin failed.");
+  if (!U8G2_SSD1306_128X64_NONAME_F_HW_I2C::begin() ) SWARM_LOG_ERROR( TRANSLATE( "OLED::begin failed.", "OLED::begin fehlgeschlagen." ) );
 
   // Font
   U8G2_SSD1306_128X64_NONAME_F_HW_I2C::setFont(u8g2_font_6x10_tr);
