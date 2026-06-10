@@ -1,0 +1,31 @@
+{
+  "name": "ftswarmide",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "regen-registries": "node --experimental-transform-types updateRegistries.ts",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "dist": "pnpm build && node --experimental-transform-types dist.ts"
+  },
+  "dependencies": {
+    "@solid-primitives/timer": "^1.4.3",
+    "@solidjs/router": "^0.15.3",
+    "@tailwindcss/vite": "^4.1.11",
+    "lucide-solid": "^0.534.0",
+    "solid-js": "^1.9.7",
+    "tailwindcss": "^4.1.11"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.2",
+    "rollup-plugin-visualizer": "^7.0.1",
+    "terser": "^5.48.0",
+    "typescript": "~5.8.3",
+    "vite": "^8.0.5",
+    "vite-plugin-compression2": "^2.5.3",
+    "vite-plugin-singlefile": "^2.3.3",
+    "vite-plugin-solid": "^2.11.7"
+  }
+}

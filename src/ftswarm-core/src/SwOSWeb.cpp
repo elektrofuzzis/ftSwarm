@@ -35,46 +35,6 @@ httpd_handle_t UIServer = NULL;
 httpd_handle_t streamServer = NULL;
 int authenticatedSession = -1;
 
-#define CHECK_FILE_EXTENSION(filename, ext) (strcasecmp(&filename[strlen(filename) - strlen(ext)], ext) == 0)
-
-/* Set HTTP response content type according to file extension */
-esp_err_t set_content_type_from_file(httpd_req_t *req, const char *filepath)  {
-
-  const char *type = "text/plain";
-  if (CHECK_FILE_EXTENSION(filepath, ".html")) {
-      type = "text/html";
-  } else if (CHECK_FILE_EXTENSION(filepath, ".js")) {
-      type = "application/javascript";
-  } else if (CHECK_FILE_EXTENSION(filepath, ".css")) {
-      type = "text/css";
-  } else if (CHECK_FILE_EXTENSION(filepath, ".png")) {
-      type = "image/png";
-  } else if (CHECK_FILE_EXTENSION(filepath, ".ico")) {
-      type = "image/x-icon";
-  } else if (CHECK_FILE_EXTENSION(filepath, ".svg")) {
-      type = "image/svg+xml";
-  }
-    
-  return httpd_resp_set_type(req, type);
-
-}
-
-char *findlast( char *str, char ch) {
-
-  char *result = str;
-  char *test   = result;
-
-  while ( *test != '\0' ) {
-    if ( *test == ch ) result = test;
-      test++;
-    }
-
-  if ( *result == ch )  result++;
-
-  return result;
-
-}
-
 bool getAuthorization( httpd_req_t *req, uint16_t *token ) {
   // needs to be called before start building a request's response
 
@@ -102,36 +62,14 @@ bool getAuthorization( httpd_req_t *req, uint16_t *token ) {
 esp_err_t indexHandler(httpd_req_t *req ) {
   // reply on /index.html
 
-  httpd_resp_set_hdr( req, "Content-Encoding", "gzip" );
+  httpd_resp_set_hdr( req, "Content-Encoding", "br" );
   httpd_resp_set_type( req, "text/html" ); 
 
-  httpd_resp_send_chunk(req, sfs_index_html, SFS_index_html_len);
+  httpd_resp_send_chunk(req, sfs_index_html_br, sfs_index_html_br_len);
 
   httpd_resp_sendstr_chunk(req, NULL);
 
   return ESP_OK;
-}
-
-esp_err_t fileHandler(httpd_req_t *req ) {
-  // reply on /assets/* or /js/* or /css/*
-  
-  char *file = findlast( (char *) req->uri, '/' );
-  set_content_type_from_file( req, file);
-  httpd_resp_set_hdr( req, "Content-Encoding", "gzip" );
-  
-  uint32_t len;
-  const char * x = sfs_get_file( (char *) req->uri, &len);
-
-  // file found?
-  if ( x[0] != '\0' ) {
-    httpd_resp_send_chunk(req, x, len);
-  } else {
-    httpd_resp_set_status( req, HTTPD_404 );
-  }
-  
-  httpd_resp_sendstr_chunk(req, NULL);
-  return ESP_OK;
-
 }
 
 #define PART_BOUNDARY "123456789000000000000987654321"
@@ -402,19 +340,7 @@ bool SwOSStartWebServer( void ) {
   // /
   httpd_uri_t index = { .uri = "/", .method = HTTP_GET, .handler = &indexHandler, .user_ctx = NULL };
   httpd_register_uri_handler(UIServer, &index);
-    
-  // css
-  httpd_uri_t cssGet = { .uri = "/css/*", .method = HTTP_GET, .handler = &fileHandler, .user_ctx = NULL };
-  httpd_register_uri_handler(UIServer, &cssGet);
-
-  // js
-  httpd_uri_t jsGet = { .uri = "/js/*", .method = HTTP_GET, .handler = &fileHandler, .user_ctx = NULL };
-  httpd_register_uri_handler(UIServer, &jsGet);
-
-  // assets
-  httpd_uri_t assetsGet = { .uri = "/assets/*", .method = HTTP_GET, .handler = &fileHandler, .user_ctx = NULL };
-  httpd_register_uri_handler(UIServer, &assetsGet);
-
+  
   // log
   httpd_uri_t getLog = { .uri = "/api/getLog", .method = HTTP_GET, .handler = &apiGetLogHandler, .user_ctx = NULL };
   httpd_register_uri_handler(UIServer, &getLog);
