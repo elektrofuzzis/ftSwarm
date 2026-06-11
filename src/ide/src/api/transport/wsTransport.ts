@@ -9,14 +9,20 @@ import { Mutex } from "../../util/lock";
 import logger from "../../util/logger";
 import { decompressBlob } from "../rawTranslator";
 import { WatchdogTimer } from "../watchdog";
-import type {SwarmToSocketError, SwarmToSocketRpcResponse} from "./swarm2socket";
+import type {
+  SwarmToSocketError,
+  SwarmToSocketRpcResponse,
+} from "./swarm2socket";
 import { parseSwarmToSocketMessage } from "./swarm2socket";
-import {Result} from "../../util/result.ts";
+import { Result } from "../../util/result.ts";
 
 export class WebSocketTransport implements Transport {
   private readonly webSocket: WebSocket;
   private readonly adapter: TransportAdapter;
-  private readonly messageQueue: Result<SwarmToSocketRpcResponse, SwarmToSocketError>[] = [];
+  private readonly messageQueue: Result<
+    SwarmToSocketRpcResponse,
+    SwarmToSocketError
+  >[] = [];
   private readonly lock: Mutex = new Mutex();
   private readonly waitLocks: (() => void)[] = [];
   private watchdogTimer: WatchdogTimer;
@@ -100,10 +106,10 @@ export class WebSocketTransport implements Transport {
         this.messageQueue.push(Result.err(parsedMessage));
         this.waitLocks.shift()?.();
         await this.adapter.onError(
-            new TransportError(
-                `ftSwarm error: ${parsedMessage.message}`,
-                ErrorResolution.IGNORE,
-            ),
+          new TransportError(
+            `ftSwarm error: ${parsedMessage.message}`,
+            ErrorResolution.IGNORE,
+          ),
         );
         break;
       case "state-update":
@@ -123,25 +129,29 @@ export class WebSocketTransport implements Transport {
     this.webSocket.send(data);
   }
 
-  async receiveResult(): Promise<Result<SwarmToSocketRpcResponse, SwarmToSocketError>> {
+  async receiveResult(): Promise<
+    Result<SwarmToSocketRpcResponse, SwarmToSocketError>
+  > {
     if (this.messageQueue.length > 0) {
       return this.messageQueue.shift()!;
     }
 
-    return new Promise<Result<SwarmToSocketRpcResponse, SwarmToSocketError>>((resolve) => {
-      this.waitLocks.push(() => {
-        if (this.messageQueue.length > 0) {
-          resolve(this.messageQueue.shift()!);
-        } else {
-          this.adapter.onError(
-            new TransportError(
-              "No message available when expected",
-              ErrorResolution.FAIL,
-            ),
-          );
-        }
-      });
-    });
+    return new Promise<Result<SwarmToSocketRpcResponse, SwarmToSocketError>>(
+      (resolve) => {
+        this.waitLocks.push(() => {
+          if (this.messageQueue.length > 0) {
+            resolve(this.messageQueue.shift()!);
+          } else {
+            this.adapter.onError(
+              new TransportError(
+                "No message available when expected",
+                ErrorResolution.FAIL,
+              ),
+            );
+          }
+        });
+      },
+    );
   }
 }
 

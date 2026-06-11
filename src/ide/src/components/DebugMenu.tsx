@@ -1,13 +1,25 @@
-import {type Component, createEffect, createMemo, createRenderEffect, createSignal, For, on, Show,} from "solid-js";
-import {useDebug} from "../contexts/DebugContext";
-import {Surface1} from "./Surface";
-import X from "lucide-solid/icons/x";
+import {
+  type Component,
+  createEffect,
+  createMemo,
+  createRenderEffect,
+  createSignal,
+  For,
+  on,
+  Show,
+} from "solid-js";
+import { useDebug } from "../contexts/DebugContext";
+import { Surface1 } from "./Surface";
 import ArrowDown from "lucide-solid/icons/arrow-down";
 import Trash2 from "lucide-solid/icons/trash-2";
-import Play from "lucide-solid/icons/play";
-import Pause from "lucide-solid/icons/pause";
-import Search from "lucide-solid/icons/search";
-import {channelColors, LogChannel, type LogMessage,} from "../contexts/logtypes";
+import ToggleRight from "lucide-solid/icons/toggle-right";
+import ToggleLeft from "lucide-solid/icons/toggle-left";
+import Compass from "lucide-solid/icons/compass";
+import {
+  channelColors,
+  LogChannel,
+  type LogMessage,
+} from "../contexts/logtypes";
 
 const LogEntry = (props: { log: LogMessage }) => {
   const colorInfo = channelColors[props.log.channel];
@@ -103,12 +115,12 @@ export const DebugMenu: Component = () => {
   });
 
   const channels: LogChannel[] = [
-      LogChannel.RAW_IN,
-      LogChannel.RAW_OUT,
-      LogChannel.UPDATES,
-      LogChannel.RPC,
-      LogChannel.APP
-  ]
+    LogChannel.RAW_IN,
+    LogChannel.RAW_OUT,
+    LogChannel.UPDATES,
+    LogChannel.RPC,
+    LogChannel.APP,
+  ];
 
   const menuContent = (
     <Surface1 class="p-4 flex-grow flex flex-col gap-2 h-full">
@@ -143,15 +155,15 @@ export const DebugMenu: Component = () => {
               class={`p-1.5 rounded cursor-pointer transition-all ${isSearchVisible() ? "bg-thm-primary hover:brightness-110" : "hover:bg-thm-surface-3"}`}
               title="Filter Logs"
             >
-              <Search class="w-5 h-5" />
+              <Compass class="w-5 h-5" />
             </button>
             <button
               onClick={togglePause}
               class="p-1.5 rounded cursor-pointer transition-colors hover:bg-thm-surface-3"
               title={isPaused() ? "Resume" : "Pause"}
             >
-              <Show when={isPaused()} fallback={<Pause class="w-5 h-5" />}>
-                <Play class="w-5 h-5" />
+              <Show when={isPaused()} fallback={<ToggleLeft class="w-5 h-5" />}>
+                <ToggleRight class="w-5 h-5" />
               </Show>
             </button>
             <button
@@ -169,7 +181,9 @@ export const DebugMenu: Component = () => {
               class="p-1.5 rounded hover:bg-thm-error cursor-pointer transition-colors"
               title="Close Menu"
             >
-              <X class="w-5 h-5" />
+              <span class="size-5 flex items-center justify-center">
+                &times;
+              </span>
             </button>
           </div>
         </div>
@@ -207,10 +221,7 @@ export const DebugMenu: Component = () => {
 
   return (
     <Show when={isOpen()}>
-      <div
-        class="fixed inset-0 bg-[#00000080] z-40"
-        onClick={toggleMenu}
-      />
+      <div class="fixed inset-0 bg-[#00000080] z-40" onClick={toggleMenu} />
       <div class="fixed top-0 right-0 h-full w-2/3 z-50 shadow-lg p-4 flex flex-col gap-4">
         {menuContent}
       </div>

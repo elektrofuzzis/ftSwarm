@@ -1,5 +1,5 @@
-import { Navigate } from "@solidjs/router";
+import { Navigate } from "../util/router";
 
-export const HomeRedirectorRoute = () => {
-  return <Navigate href="/controller/overview" />;
-};
+export const HomeRedirectorRoute = () => (
+  <Navigate href="/controller/overview" />
+);

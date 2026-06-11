@@ -2,13 +2,13 @@
 export const enum SwOSError {
   SWOS_OK = 0,
   SWOS_TIMEOUT = 1,
-  SWOS_DENY = 2
+  SWOS_DENY = 2,
 }
 
 export const enum FtSwarmCommunication {
   SWARMCOM_WIFI = 1,
   SWARMCOM_RS485 = 2,
-  SWARMCOM_BOTH = 3
+  SWARMCOM_BOTH = 3,
 }
 
 export const enum SwOSState {
@@ -21,7 +21,7 @@ export const enum SwOSState {
   IDENTIFY = 6,
   FATAL = 7,
   FACTORY1 = 8,
-  FACTORY2 = 9
+  FACTORY2 = 9,
 }
 
 export const enum SwOSIOClass {
@@ -29,7 +29,7 @@ export const enum SwOSIOClass {
   SWOSIOCLASS_BUTTON = 1,
   SWOSIOCLASS_JOYSTICK = 2,
   SWOSIOCLASS_MOTOR = 3,
-  SWOSIOCLASS_SINGULAR = 4
+  SWOSIOCLASS_SINGULAR = 4,
 }
 
 export const enum SwOSIOType {
@@ -77,7 +77,7 @@ export const enum SwOSIOType {
   SWOSIO_MMOTOR = 40,
   SWOSIO_RCMOTOR = 41,
   SWOSIO_RCSERVO = 42,
-  SWOSIO_RCPOTI = 43
+  SWOSIO_RCPOTI = 43,
 }
 
 export const enum FtSwarmVersion {
@@ -90,31 +90,31 @@ export const enum FtSwarmVersion {
   FTSWARMCAM_3V12 = 5,
   FTSWARMDUINO_1V141 = 6,
   FTSWARMPWRDRIVE_1V141 = 7,
-  FTSWARMXL_1V00 = 8
+  FTSWARMXL_1V00 = 8,
 }
 
 export const enum FtSwarmMotion {
   FTSWARM_COAST = 0,
   FTSWARM_BRAKE = 1,
-  FTSWARM_ON = 2
+  FTSWARM_ON = 2,
 }
 
 export const enum FtSwarmToggle {
   FTSWARM_NOTOGGLE = 0,
   FTSWARM_TOGGLEUP = 1,
-  FTSWARM_TOGGLEDOWN = 2
+  FTSWARM_TOGGLEDOWN = 2,
 }
 
 export const enum FtSwarmAlign {
   FTSWARM_ALIGNLEFT = 0,
   FTSWARM_ALIGNCENTER = 1,
-  FTSWARM_ALIGNRIGHT = 2
+  FTSWARM_ALIGNRIGHT = 2,
 }
 
 export const enum FtSwarmGyroMode {
   FTSWARM_GYRO_OFF = 0,
   FTSWARM_GYRO_LSM = 1,
-  FTSWARM_GYRO_MPU = 2
+  FTSWARM_GYRO_MPU = 2,
 }
 
 export const enum FtSwarmExtMode {
@@ -123,7 +123,7 @@ export const enum FtSwarmExtMode {
   FTSWARM_EXT_I2C_SLAVE = 2,
   FTSWARM_EXT_OUTPUT = 3,
   FTSWARM_EXT_SERVO = 4,
-  FTSWARM_EXT_LIDAR = 5
+  FTSWARM_EXT_LIDAR = 5,
 }
 
 export const enum FtSwarmTrigger {
@@ -132,25 +132,25 @@ export const enum FtSwarmTrigger {
   FTSWARM_TRIGGERUP = 1,
   FTSWARM_TRIGGERVALUE = 2,
   FTSWARM_TRIGGERI2CREAD = 3,
-  FTSWARM_TRIGGERI2CWRITE = 4
+  FTSWARM_TRIGGERI2CWRITE = 4,
 }
 
 export const enum FtSwarmOperator {
   FTSWARM_ASSIGN = 0,
   FTSWARM_ADD = 1,
-  FTSWARM_MULTIPLY = 2
+  FTSWARM_MULTIPLY = 2,
 }
 
 export const enum FtSwarmOperand {
   FTSWARM_CONSTANT = 0,
   FTSWARM_SENSORVALUE = 1,
-  FTSWARM_ACTORVALUE = 2
+  FTSWARM_ACTORVALUE = 2,
 }
 
 export const enum FtSwarmOledFill {
   FTSWARM_OLED_NOFILL = 0,
   FTSWARM_OLED_FILLBLACK = 1,
-  FTSWARM_OLED_FILLWHITE = 2
+  FTSWARM_OLED_FILLWHITE = 2,
 }
 
 export const enum FtSwarmOledScreen {
@@ -158,7 +158,7 @@ export const enum FtSwarmOledScreen {
   FTSWARM_OLED_MAINSCREEN = 1,
   FTSWARM_OLED_BUTTONSCREEN = 2,
   FTSWARM_OLED_NOSCREEN = 3,
-  TSWARM_OLED_NOSCREEN = 4
+  TSWARM_OLED_NOSCREEN = 4,
 }
 
 export const enum FtSwarmQuickConfig {
@@ -167,5 +167,5 @@ export const enum FtSwarmQuickConfig {
   FTSWARM_CFG_CATAPILLAR = 2,
   FTSWARM_CFG_TRAILER = 3,
   FTSWARM_CFG_CRANE1 = 4,
-  FTSWARM_CFG_CRANE2 = 5
+  FTSWARM_CFG_CRANE2 = 5,
 }

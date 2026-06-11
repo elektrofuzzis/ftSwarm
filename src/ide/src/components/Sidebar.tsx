@@ -8,13 +8,12 @@ import Settings from "lucide-solid/icons/settings";
 import Rss from "lucide-solid/icons/rss";
 import Cable from "lucide-solid/icons/cable";
 import Update from "lucide-solid/icons/circle-fading-arrow-up";
-import { Dynamic } from "solid-js/web";
 import { Surface1 } from "./Surface";
 import { useDebug } from "../contexts/DebugContext";
 import { useOMContext } from "../contexts/transport/context";
 import { For } from "solid-js/web";
 import { SwOSState } from "../api/generated/genApiEnums";
-import { useLocation } from "@solidjs/router";
+import { useLocation, A } from "../util/router";
 import { getControllerIcon } from "../api/icons.ts";
 import { Button } from "./Button.tsx";
 import { LoginState, useLoginContext } from "../contexts/LoginContext.tsx";
@@ -47,7 +46,7 @@ const Category: ParentComponent<{
       class="flex pt-4 gap-1 items-center"
       classList={{ "opacity-50": !!props.disabled }}
     >
-      <Dynamic component={props.icon} />
+      {props.icon({})}
       <span class="flex-1">{props.title}</span>
       {props.children}
     </div>
@@ -78,33 +77,33 @@ const MenuEntry: ParentComponent<{
     >
       <Activity active={props.active} />
       {/*@ts-ignore*/}
-      <Dynamic component={props.icon} class="size-5" />
+      {props.icon({ class: "size-5" })}
       <span class="flex-1">{props.text}</span>
       {props.children}
     </button>
   );
 };
 
-const StatusCircle: Component<{ class: String }> = (props) => {
-  return <div class={"size-3.5 rounded-full " + props.class} />;
+const StatusCircle: Component<{ class: string }> = (props) => {
+  return <div class={`size-3.5 rounded-full ${props.class}`} />;
 };
 
 const BottomRowIndicator: ParentComponent = (props) => {
   return <div class="flex items-center p-3 gap-3">{props.children}</div>;
 };
 
-const state2Bg: Record<SwOSState, string> = {
-  [SwOSState.OFFLINE]: "bg-thm-error",
-  [SwOSState.BOOTING]: "bg-thm-primary",
-  [SwOSState.STARTWIFI]: "bg-thm-primary",
-  [SwOSState.RUNNING]: "bg-thm-ok animate-pulse",
-  [SwOSState.ERROR]: "bg-thm-error animate-pulse",
-  [SwOSState.WAITING]: "bg-thm-primary",
-  [SwOSState.IDENTIFY]: "bg-thm-primary",
-  [SwOSState.FATAL]: "bg-thm-error",
-  [SwOSState.FACTORY1]: "bg-thm-error",
-  [SwOSState.FACTORY2]: "bg-thm-error",
-};
+const state2Bg = [
+  "bg-thm-error", // 0: OFFLINE
+  "bg-thm-primary", // 1: BOOTING
+  "bg-thm-primary", // 2: STARTWIFI
+  "bg-thm-ok animate-pulse", // 3: RUNNING
+  "bg-thm-error animate-pulse", // 4: ERROR
+  "bg-thm-primary", // 5: WAITING
+  "bg-thm-primary", // 6: IDENTIFY
+  "bg-thm-error", // 7: FATAL
+  "bg-thm-error", // 8: FACTORY1
+  "bg-thm-error", // 9: FACTORY2
+];
 
 export const Sidebar: Component = () => {
   const swarm = useOMContext();
@@ -113,8 +112,7 @@ export const Sidebar: Component = () => {
   const onlineControllers = () =>
     controllers().filter((it) => it.state === SwOSState.RUNNING).length;
 
-  const location = useLocation();
-  const route = () => location.pathname;
+  const route = useLocation();
 
   const loginState = useLoginContext();
 
@@ -129,16 +127,16 @@ export const Sidebar: Component = () => {
           </Surface1>
         </Category>
 
-        <a href="/controller/overview" class="w-full flex flex-col">
+        <A href="/controller/overview" class="w-full flex flex-col">
           <MenuEntry
             icon={FolderPen}
             text="My Swarm"
             active={route() === "/controller/overview"}
           />
-        </a>
+        </A>
         <For each={controllers()}>
           {(it, _) => (
-            <a
+            <A
               href={`/controller/${it.serialNumber}`}
               class="w-full flex flex-col"
             >
@@ -149,7 +147,7 @@ export const Sidebar: Component = () => {
               >
                 <StatusCircle class={state2Bg[it.state]} />
               </MenuEntry>
-            </a>
+            </A>
           )}
         </For>
 

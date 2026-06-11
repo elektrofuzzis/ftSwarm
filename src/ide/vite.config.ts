@@ -17,20 +17,19 @@ export default defineConfig({
         tailwindcss(),
         compression({
             algorithms: [
-                defineAlgorithm('brotliCompress', {
-                    params: {
-                        [constants.BROTLI_PARAM_QUALITY]: 11,
-                    },
+                defineAlgorithm('gzip', {
+                    level: constants.Z_BEST_COMPRESSION,
+                    windowBits: 15,
+                    memLevel: 9
                 }),
             ],
-            exclude: [/\.(br)$/],
-            // deleteOriginalAssets: true,
+            exclude: [/\.(gz)$/],
         }),
         viteSingleFile(),
         visualizer(),
     ],
     build: {
-        target: ["es2022", "edge100", "firefox100", "chrome100", "safari15"],
+        target: ["es2022", "chrome100"],
         minify: "terser",
         terserOptions: {
             compress: {
@@ -47,7 +46,8 @@ export default defineConfig({
                 unsafe_arrows: true,
                 unsafe_comps: true,
                 unsafe_math: true,
-                unsafe_proto: true
+                unsafe_proto: true,
+                toplevel: true
             },
             mangle: {
                 toplevel: true,

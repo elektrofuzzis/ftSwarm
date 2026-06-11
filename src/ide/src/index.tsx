@@ -2,7 +2,7 @@
 import { render } from "solid-js/web";
 import "./index.css";
 import { App } from "./app";
-import { HashRouter, Route } from "@solidjs/router";
+import { Router } from "./util/router";
 import { SwarmOverviewRoute } from "./routes/SwarmOverviewRoute";
 import logger from "./util/logger";
 import { websocketTransportFactory } from "./api/transport/wsTransport";
@@ -12,7 +12,7 @@ import { HomeRedirectorRoute } from "./routes/HomeRedirectorRoute";
 import { SwarmControllerDetailRoute } from "./routes/SwarmControllerDetailRoute.tsx";
 import { LoggedInContextProvider } from "./contexts/LoginContext.tsx";
 
-function getSourceIp() {
+function getSourceIp(): string {
   if (import.meta.env.DEV && import.meta.env.VITE_SOURCE_IP) {
     return import.meta.env.VITE_SOURCE_IP;
   } else {
@@ -32,14 +32,17 @@ render(
     <DebugContextProvider>
       <LoggedInContextProvider>
         <TransportContextProvider sourceIp={sourceIp} factory={factory}>
-          <HashRouter root={App}>
-            <Route path="/" component={HomeRedirectorRoute} />
-            <Route path="/controller/overview" component={SwarmOverviewRoute} />
-            <Route
-              path="/controller/:id"
-              component={SwarmControllerDetailRoute}
-            />
-          </HashRouter>
+          <Router
+            root={App}
+            routes={[
+              { path: "/", component: HomeRedirectorRoute },
+              { path: "/controller/overview", component: SwarmOverviewRoute },
+              {
+                path: "/controller/:id",
+                component: SwarmControllerDetailRoute,
+              },
+            ]}
+          />
         </TransportContextProvider>
       </LoggedInContextProvider>
     </DebugContextProvider>

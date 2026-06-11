@@ -35,57 +35,32 @@ httpd_handle_t UIServer = NULL;
 httpd_handle_t streamServer = NULL;
 int authenticatedSession = -1;
 
-bool getAuthorization( httpd_req_t *req, uint16_t *token ) {
-  // needs to be called before start building a request's response
-
-  bool result = false;
-  char *authBuffer;
-
-  // get the value of Authorisation, expected value is "Bearer <number>"
-  size_t len = httpd_req_get_hdr_value_len(req, "Authorization" )+1;
-  authBuffer = (char *) malloc( len );
-  result = httpd_req_get_hdr_value_str(req, "Authorization", authBuffer, len) == ESP_OK;
-
-  // Authorisation found, check on token
-  if ( result && ( strlen( authBuffer ) > 7 ) ) {
-    char *tokenStr = authBuffer + 7; // sizeof("Bearer ") == 7
-    *token = (uint16_t) atol(tokenStr);
-  }
-
-  // cleanup
-  free(authBuffer);
-
-  return result;
-  
-}
-
-esp_err_t indexHandler(httpd_req_t *req ) {
-
-  httpd_resp_set_hdr(req, "Content-Encoding", "br");
+esp_err_t indexHandler(httpd_req_t *req, httpd_err_code_t err) {
+  httpd_resp_set_hdr(req, "Content-Encoding", "gzip");
   httpd_resp_set_type(req, "text/html"); 
 
-  #define CHUNK_SIZE 4096  // 4KB blocks keep browsers happy
-  size_t remaining = 41920;
-  const char *data_ptr = sfs_index_html_br;
+  #define CHUNK_SIZE 4096
+  size_t remaining = sfs_index_html_gz_len;
+  const char *data_ptr = sfs_index_html_gz;
 
-  // 1. Send the data in controlled chunks
   while (remaining > 0) {
-    size_t to_send = (remaining > CHUNK_SIZE) ? CHUNK_SIZE : remaining;
-    esp_err_t err = httpd_resp_send_chunk(req, data_ptr, to_send);
-    
-    if (err != ESP_OK) {
-        printf("Failed to send chunk, error: %d %d\n", err, remaining);
-        return err; 
-    }
-    
-    data_ptr += to_send;
-    remaining -= to_send;
+      size_t to_send = (remaining > CHUNK_SIZE) ? CHUNK_SIZE : remaining;
+      
+      esp_err_t err = httpd_resp_send_chunk(req, data_ptr, to_send);
+      if (err != ESP_OK) {
+          printf("Failed to send chunk, error: %d\n", err);
+          return err; 
+      }
+      
+      data_ptr += to_send;
+      remaining -= to_send;
   }
 
-  // 2. CORRECT TERMINATION: Tells the browser "we are officially done"
-  // Note the use of httpd_resp_send_chunk, NOT httpd_resp_sendstr_chunk
   esp_err_t final_err = httpd_resp_send_chunk(req, NULL, 0);
-  printf("Final chunk termination status: %d\n", final_err);
+  if (final_err != ESP_OK) {
+      printf("Final chunk termination failed: %d\n", final_err);
+      return final_err;
+  }
 
   return ESP_OK;
 }
@@ -307,12 +282,10 @@ static esp_err_t wsHandler(httpd_req_t *req) {
 }
 
 static esp_err_t apiGetLogHandler(httpd_req_t *req ) {
-  // reply on /api/getToken
-
   char buffer[STDIO_BUFFER_SIZE];
   dumpStdIO(buffer, STDIO_BUFFER_SIZE);
 
-  httpd_resp_set_type( req, "application/json; charset=utf-8" );
+  httpd_resp_set_type( req, "text/plain; charset=utf-8" );
   httpd_resp_set_status( req, HTTPD_200 );
 
   httpd_resp_sendstr_chunk( req, buffer);
@@ -355,10 +328,6 @@ bool SwOSStartWebServer( void ) {
 
   }
 
-  // /
-  httpd_uri_t index = { .uri = "/", .method = HTTP_GET, .handler = &indexHandler, .user_ctx = NULL };
-  httpd_register_uri_handler(UIServer, &index);
-  
   // log
   httpd_uri_t getLog = { .uri = "/api/getLog", .method = HTTP_GET, .handler = &apiGetLogHandler, .user_ctx = NULL };
   httpd_register_uri_handler(UIServer, &getLog);
@@ -366,6 +335,9 @@ bool SwOSStartWebServer( void ) {
   // ws
   httpd_uri_t ws = { .uri = "/ws", .method = HTTP_GET, .handler = &wsHandler, .user_ctx = NULL, .is_websocket  = true };
   httpd_register_uri_handler(UIServer, &ws);
+
+  // everything else
+  httpd_register_err_handler(UIServer, httpd_err_code_t::HTTPD_404_NOT_FOUND, &indexHandler);
 
   xTaskCreatePinnedToCore( wsTask, "wsTask", 10000, NULL, 1, NULL, ARDUINO_EVENT_RUNNING_CORE );
 

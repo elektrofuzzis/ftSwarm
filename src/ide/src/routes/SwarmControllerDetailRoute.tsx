@@ -1,6 +1,9 @@
 import { type Accessor, type Component, createMemo, For } from "solid-js";
-import { useParams } from "@solidjs/router";
-import { useOMContext, useTransportContext } from "../contexts/transport/context.ts";
+import { useParams } from "../util/router";
+import {
+  useOMContext,
+  useTransportContext,
+} from "../contexts/transport/context.ts";
 import { SwOSState } from "../api/generated/genApiEnums.ts";
 import {
   IOTypeClasses,
@@ -9,7 +12,6 @@ import {
 } from "../api/apiTypes.ts";
 import Unplug from "lucide-solid/icons/unplug";
 import { getControllerIcon } from "../api/icons.ts";
-import { Dynamic } from "solid-js/web";
 import { EditableLabel } from "../components/EditableLabel.tsx";
 import { IoCard } from "../components/io";
 import { transactMessage } from "../api/transport";
@@ -42,7 +44,7 @@ const InvalidState: SwarmStatusRenderComponent = ({ controller, seq: _ }) => {
           <div class="absolute inset-0 bg-thm-error/7 radial-gradient blur-2xl" />
           <div class="relative z-10 flex items-center gap-8 text-thm-font-muted">
             <div class="p-3 bg-thm-surface-3 rounded-full border border-thm-surface-border-2 shadow-sm transition-colors">
-              <Dynamic component={icon()} class="w-8 h-8" />
+              {icon()({ class: "w-8 h-8" })}
             </div>
 
             <div class="flex items-center gap-1">
@@ -86,19 +88,26 @@ const ControllerDetail: SwarmStatusRenderComponent = ({ controller, seq }) => {
   const om = useOMContext();
   const login = useLoginContext();
 
-  const [optimisticName, setOptimisticName, _, {
-    setEditing: setNameEditing,
-    isMutating: isNameMutating,
-    isThrottled: isNameThrottled,
-    isEditing: isNameEditing
-  }] = om.useBoundStore(
+  const [
+    optimisticName,
+    setOptimisticName,
+    _,
+    {
+      setEditing: setNameEditing,
+      isMutating: isNameMutating,
+      isThrottled: isNameThrottled,
+      isEditing: isNameEditing,
+    },
+  ] = om.useBoundStore(
     `ctrl:${controller().serialNumber}:name`,
     () => ({ data: controller().name, seq: seq() }),
     async (newName) => {
-      let res = await transactMessage(transport, `${controller().name}.setAlias("${newName}")`)
-        .then((v) => v.unwrapOr(null));
+      let res = await transactMessage(
+        transport,
+        `${controller().name}.setAlias("${newName}")`,
+      ).then((v) => v.unwrapOr(null));
       return rpcResponseToSeq(res);
-    }
+    },
   );
 
   const ios = () => controller().io;
@@ -146,7 +155,9 @@ const ControllerDetail: SwarmStatusRenderComponent = ({ controller, seq }) => {
             <Divider name={name} />
             <div class="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-4">
               <For each={iosFn()}>
-                {(value) => <IoCard io={value} controller={controller()} seq={seq} />}
+                {(value) => (
+                  <IoCard io={value} controller={controller()} seq={seq} />
+                )}
               </For>
             </div>
           </>

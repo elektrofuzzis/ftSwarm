@@ -1,7 +1,11 @@
 import Edit from "lucide-solid/icons/edit";
 import Check from "lucide-solid/icons/check";
-import X from "lucide-solid/icons/x";
-import { Show, type ParentComponent, createSignal, createEffect } from "solid-js";
+import {
+  Show,
+  type ParentComponent,
+  createSignal,
+  createEffect,
+} from "solid-js";
 
 export const EditableLabel: ParentComponent<{
   allowEdit?: boolean;
@@ -12,7 +16,8 @@ export const EditableLabel: ParentComponent<{
 }> = (props) => {
   const [localEditing, setLocalEditing] = createSignal(false);
   const isEditing = () => props.isEditing ?? localEditing();
-  const setEditing = (val: boolean) => (props.setEditing ? props.setEditing(val) : setLocalEditing(val));
+  const setEditing = (val: boolean) =>
+    props.setEditing ? props.setEditing(val) : setLocalEditing(val);
 
   const [value, setValue] = createSignal("");
   let inputRef: HTMLInputElement | undefined;
@@ -41,13 +46,16 @@ export const EditableLabel: ParentComponent<{
       <Show
         when={isEditing()}
         fallback={
-          <div 
+          <div
             class="flex items-center gap-2 cursor-pointer"
             onClick={() => props.allowEdit !== false && setEditing(true)}
           >
             <span>{props.children}</span>
             <Show when={props.allowEdit ?? true}>
-              <Edit size={18} class="text-thm-font-muted group-hover:text-white transition-colors opacity-0 group-hover:opacity-100" />
+              <Edit
+                size={18}
+                class="text-thm-font-muted group-hover:text-white transition-colors opacity-0 group-hover:opacity-100"
+              />
             </Show>
           </div>
         }
@@ -74,7 +82,7 @@ export const EditableLabel: ParentComponent<{
             onClick={handleCancel}
             class="p-1 hover:bg-thm-surface-border-2 rounded transition-colors text-thm-error"
           >
-            <X size={18} />
+            <span class="size-5 flex items-center justify-center">&times;</span>
           </button>
         </div>
       </Show>

@@ -6,7 +6,7 @@ import {
 } from "./generated/genApiEnums";
 
 type IOTypeMapping = {
-  [K in SwOSIOType]: 'input' | 'output' | 'special';
+  [K in SwOSIOType]: "input" | "output" | "special";
 };
 
 export const IOTypeClasses: IOTypeMapping = {
@@ -55,7 +55,7 @@ export const IOTypeClasses: IOTypeMapping = {
   [SwOSIOType.SWOSIO_RCMOTOR]: "output",
   [SwOSIOType.SWOSIO_RCSERVO]: "output",
   [SwOSIOType.SWOSIO_RCPOTI]: "input",
-}
+};
 
 export interface ApiGeneralIoType {
   name: string;
