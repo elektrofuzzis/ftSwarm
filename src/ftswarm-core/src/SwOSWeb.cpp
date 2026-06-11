@@ -60,14 +60,32 @@ bool getAuthorization( httpd_req_t *req, uint16_t *token ) {
 }
 
 esp_err_t indexHandler(httpd_req_t *req ) {
-  // reply on /index.html
 
-  httpd_resp_set_hdr( req, "Content-Encoding", "br" );
-  httpd_resp_set_type( req, "text/html" ); 
+  httpd_resp_set_hdr(req, "Content-Encoding", "br");
+  httpd_resp_set_type(req, "text/html"); 
 
-  httpd_resp_send_chunk(req, sfs_index_html_br, sfs_index_html_br_len);
+  #define CHUNK_SIZE 4096  // 4KB blocks keep browsers happy
+  size_t remaining = 41920;
+  const char *data_ptr = sfs_index_html_br;
 
-  httpd_resp_sendstr_chunk(req, NULL);
+  // 1. Send the data in controlled chunks
+  while (remaining > 0) {
+    size_t to_send = (remaining > CHUNK_SIZE) ? CHUNK_SIZE : remaining;
+    esp_err_t err = httpd_resp_send_chunk(req, data_ptr, to_send);
+    
+    if (err != ESP_OK) {
+        printf("Failed to send chunk, error: %d %d\n", err, remaining);
+        return err; 
+    }
+    
+    data_ptr += to_send;
+    remaining -= to_send;
+  }
+
+  // 2. CORRECT TERMINATION: Tells the browser "we are officially done"
+  // Note the use of httpd_resp_send_chunk, NOT httpd_resp_sendstr_chunk
+  esp_err_t final_err = httpd_resp_send_chunk(req, NULL, 0);
+  printf("Final chunk termination status: %d\n", final_err);
 
   return ESP_OK;
 }
