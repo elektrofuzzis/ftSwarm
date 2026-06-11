@@ -1,12 +1,12 @@
 /*
  * SwOSHWBaseIO.h
  *
- * Basic classes for IO hardware impelmentation
+ * Basic classes for IO hardware implementation
  * 
  * (C) 2021-25 Christian Bergschneider & Stefan Fuss
  * 
  */
- 
+
 #pragma once
 
 #include <nvs.h>

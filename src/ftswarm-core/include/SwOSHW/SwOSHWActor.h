@@ -26,7 +26,7 @@ class SwOSAnalogInput;
  *
  ***************************************************/
 
- class SwOSMotor : public SwOSIO {
+class SwOSMotor : public SwOSIO {
   protected:
 
     // generics
@@ -66,7 +66,7 @@ class SwOSAnalogInput;
     virtual void    setAcceleration( uint32_t rampUpT,  uint32_t rampUpY ) {};
     virtual void    getAcceleration( uint32_t *rampUpT, uint32_t *rampUpY ) {};
 
- };
+};
 
 /***************************************************
  *

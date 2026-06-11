@@ -329,6 +329,7 @@ local.properties
 !.vscode/launch.json
 !.vscode/extensions.json
 *.code-workspace
+!project.code-workspace
 .history/
 ~$*.doc*
 Backup of *.doc*

@@ -1,0 +1,27 @@
+{
+    "folders": [
+        {
+            "name": "ftswarm-core",
+            "path": "src/ftswarm-core"
+        },
+        {
+            "name": "firmware",
+            "path": "src/firmware"
+        },
+        {
+            "name": "ide",
+            "path": "src/ide"
+        },
+        {
+            "name": "Repository",
+            "path": "."
+        }
+    ],
+    "settings": {
+        "C_Cpp.default.includePath": [
+            "${workspaceFolder:ftswarm-core}/include",
+            "${workspaceFolder:firmware}/include",
+            "${default}"
+        ],
+    }
+}
