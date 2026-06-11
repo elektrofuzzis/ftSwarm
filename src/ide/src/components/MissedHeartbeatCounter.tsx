@@ -15,13 +15,13 @@ export function MissedHeartbeatCounter({ count }: { count: Accessor<number> }) {
   });
   return (
     <Show when={isShown()}>
-      <div class="fixed bottom-4 right-0 z-30 rounded-tl-xl rounded-bl-xl shadow-lg text-thm-font bg-thm-surface-3 border-thm-surface-border-3">
-        <div class="relative w-full h-full py-2 px-4 ">
+      <div class="text-thm-font bg-thm-surface-3 border-thm-surface-border-3 fixed right-0 bottom-4 z-30 rounded-tl-xl rounded-bl-xl shadow-lg">
+        <div class="relative h-full w-full px-4 py-2">
           <div
-            class="absolute top-0 left-0 h-full z-40 bg-thm-error rounded-tl-xl rounded-bl-xl transition-all duration-300"
+            class="bg-thm-error absolute top-0 left-0 z-40 h-full rounded-tl-xl rounded-bl-xl transition-all duration-300"
             style={{ width: `${bgWidthPercentTimeoutProgressBar()}%` }}
           />
-          <div class="z-50 relative">
+          <div class="relative z-50">
             Missed Heartbeats: <span class="font-mono">{count()}/5</span>
           </div>
         </div>

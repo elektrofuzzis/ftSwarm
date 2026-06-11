@@ -9,6 +9,6 @@
 #pragma once
 #include <stdint.h>
 
-// /index.html.gz  SHA1:c50a77863e683711be54705d3707f0c9fae6a42c
+// /index.html.gz  SHA1:2acec8a49db4e36df3a1baf83f31494c4820a762
 extern const char sfs_index_html_gz[];
-#define sfs_index_html_gz_len 44103
+#define sfs_index_html_gz_len 44983

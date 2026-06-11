@@ -44,11 +44,11 @@ export const LoginOverlay: Component = () => {
       onClose={() => {
         if (loginState.status() === LoginState.LOGGING_IN) loginState.logout();
       }}
-      class="bg-thm-surface-1 border m-auto border-thm-surface-border-1 p-6 rounded-lg shadow-xl backdrop:bg-black/60 backdrop:backdrop-blur-sm focus:outline-none"
+      class="bg-thm-surface-1 border-thm-surface-border-1 m-auto rounded-lg border p-6 shadow-xl backdrop:bg-black/60 backdrop:backdrop-blur-sm focus:outline-none"
     >
       <div class="flex flex-col">
         <div class="flex justify-between">
-          <h2 class="text-xl font-bold text-thm-font">Logging In</h2>
+          <h2 class="text-thm-font text-xl font-bold">Logging In</h2>
 
           <button
             onClick={loginState.logout}
@@ -63,7 +63,7 @@ export const LoginOverlay: Component = () => {
         <input
           ref={inputRef}
           type="text"
-          class="w-full px-3 py-2 border border-thm-surface-border-2 rounded transition-colors text-thm-font min-w-80"
+          class="border-thm-surface-border-2 text-thm-font w-full min-w-80 rounded border px-3 py-2 transition-colors"
           placeholder="Enter swarm pin"
           onInput={(e) => setSwarmPin(e.target.value)}
           onKeyDown={(e) => {
@@ -79,7 +79,7 @@ export const LoginOverlay: Component = () => {
 
         <button
           onClick={performLogin}
-          class="mt-6 px-4 py-2 bg-thm-surface-2 hover:bg-thm-surface-3 border border-thm-surface-border-2 rounded transition-colors text-thm-font disabled:opacity-50"
+          class="bg-thm-surface-2 hover:bg-thm-surface-3 border-thm-surface-border-2 text-thm-font mt-6 rounded border px-4 py-2 transition-colors disabled:opacity-50"
           disabled={error() != null}
         >
           Login

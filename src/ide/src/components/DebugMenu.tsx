@@ -24,13 +24,13 @@ import {
 const LogEntry = (props: { log: LogMessage }) => {
   const colorInfo = channelColors[props.log.channel];
   return (
-    <div class="font-mono text-sm flex items-start">
-      <span class="text-gray-500 mr-2">
+    <div class="flex items-start font-mono text-sm">
+      <span class="mr-2 text-gray-500">
         {new Date(props.log.timestamp).toLocaleTimeString()}
       </span>
       <span class="w-[10ch]">
         <span
-          class={`font-bold rounded px-1.5 py-0.5 text-xs mr-2 ${colorInfo.bg} ${colorInfo.text}`}
+          class={`mr-2 rounded px-1.5 py-0.5 text-xs font-bold ${colorInfo.bg} ${colorInfo.text}`}
         >
           {props.log.channel}
         </span>
@@ -123,12 +123,12 @@ export const DebugMenu: Component = () => {
   ];
 
   const menuContent = (
-    <Surface1 class="p-4 flex-grow flex flex-col gap-2 h-full">
-      <div class="flex justify-between items-center mb-2">
+    <Surface1 class="flex h-full flex-grow flex-col gap-2 p-4">
+      <div class="mb-2 flex items-center justify-between">
         <h2 class="text-xl font-bold">Debug Communication</h2>
 
-        <div class="flex gap-2 items-center">
-          <div class="flex rounded overflow-hidden">
+        <div class="flex items-center gap-2">
+          <div class="flex overflow-hidden rounded">
             <For each={channels}>
               {(channel) => {
                 const colorInfo = channelColors[channel];
@@ -136,7 +136,7 @@ export const DebugMenu: Component = () => {
                 return (
                   <button
                     onClick={() => toggleChannel(channel)}
-                    class={`p-2 text-sm transition-all cursor-pointer ${
+                    class={`cursor-pointer p-2 text-sm transition-all ${
                       isVisible()
                         ? `${colorInfo.bg} ${colorInfo.text}`
                         : "bg-thm-surface-2 text-thm-font-muted"
@@ -149,39 +149,39 @@ export const DebugMenu: Component = () => {
             </For>
           </div>
 
-          <div class="flex items-center gap-1 p-1 bg-thm-surface-2 rounded-md">
+          <div class="bg-thm-surface-2 flex items-center gap-1 rounded-md p-1">
             <button
               onClick={toggleSearch}
-              class={`p-1.5 rounded cursor-pointer transition-all ${isSearchVisible() ? "bg-thm-primary hover:brightness-110" : "hover:bg-thm-surface-3"}`}
+              class={`cursor-pointer rounded p-1.5 transition-all ${isSearchVisible() ? "bg-thm-primary hover:brightness-110" : "hover:bg-thm-surface-3"}`}
               title="Filter Logs"
             >
-              <Compass class="w-5 h-5" />
+              <Compass class="h-5 w-5" />
             </button>
             <button
               onClick={togglePause}
-              class="p-1.5 rounded cursor-pointer transition-colors hover:bg-thm-surface-3"
+              class="hover:bg-thm-surface-3 cursor-pointer rounded p-1.5 transition-colors"
               title={isPaused() ? "Resume" : "Pause"}
             >
-              <Show when={isPaused()} fallback={<ToggleLeft class="w-5 h-5" />}>
-                <ToggleRight class="w-5 h-5" />
+              <Show when={isPaused()} fallback={<ToggleLeft class="h-5 w-5" />}>
+                <ToggleRight class="h-5 w-5" />
               </Show>
             </button>
             <button
               onClick={clearLogs}
-              class="p-1.5 rounded hover:bg-thm-error cursor-pointer transition-colors"
+              class="hover:bg-thm-error cursor-pointer rounded p-1.5 transition-colors"
               title="Clear Logs"
             >
-              <Trash2 class="w-5 h-5" />
+              <Trash2 class="h-5 w-5" />
             </button>
 
-            <div class="border-l border-thm-surface-border-3 h-5 mx-1"></div>
+            <div class="border-thm-surface-border-3 mx-1 h-5 border-l"></div>
 
             <button
               onClick={toggleMenu}
-              class="p-1.5 rounded hover:bg-thm-error cursor-pointer transition-colors"
+              class="hover:bg-thm-error cursor-pointer rounded p-1.5 transition-colors"
               title="Close Menu"
             >
-              <span class="size-5 flex items-center justify-center">
+              <span class="flex size-5 items-center justify-center">
                 &times;
               </span>
             </button>
@@ -192,27 +192,27 @@ export const DebugMenu: Component = () => {
         <input
           type="text"
           placeholder="Filter logs..."
-          class="w-full bg-thm-surface-2 border border-thm-surface-border-2 rounded-md p-2 text-sm"
+          class="bg-thm-surface-2 border-thm-surface-border-2 w-full rounded-md border p-2 text-sm"
           value={searchTerm()}
           onInput={(e) => setSearchTerm(e.currentTarget.value)}
         />
       </Show>
 
-      <div class="flex-1 flex flex-col relative min-h-0">
+      <div class="relative flex min-h-0 flex-1 flex-col">
         <div
           ref={logContainerRef!}
           onScroll={handleScroll}
-          class="flex flex-col gap-1 p-2 rounded bg-thm-surface-2 flex-grow overflow-y-scroll"
+          class="bg-thm-surface-2 flex flex-grow flex-col gap-1 overflow-y-scroll rounded p-2"
         >
           <For each={displayedLogs()}>{(log) => <LogEntry log={log} />}</For>
         </div>
         <Show when={showToLatest()}>
           <button
             onClick={scrollToBottom}
-            class="absolute bottom-2 right-2 p-2 rounded-full bg-thm-primary hover:bg-thm-accent shadow-lg"
+            class="bg-thm-primary hover:bg-thm-accent absolute right-2 bottom-2 rounded-full p-2 shadow-lg"
             title="Scroll to latest"
           >
-            <ArrowDown class="w-5 h-5" />
+            <ArrowDown class="h-5 w-5" />
           </button>
         </Show>
       </div>
@@ -221,8 +221,8 @@ export const DebugMenu: Component = () => {
 
   return (
     <Show when={isOpen()}>
-      <div class="fixed inset-0 bg-[#00000080] z-40" onClick={toggleMenu} />
-      <div class="fixed top-0 right-0 h-full w-2/3 z-50 shadow-lg p-4 flex flex-col gap-4">
+      <div class="fixed inset-0 z-40 bg-[#00000080]" onClick={toggleMenu} />
+      <div class="fixed top-0 right-0 z-50 flex h-full w-2/3 flex-col gap-4 p-4 shadow-lg">
         {menuContent}
       </div>
     </Show>

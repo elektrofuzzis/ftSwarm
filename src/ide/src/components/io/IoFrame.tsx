@@ -84,15 +84,15 @@ export const IoFrame: ParentComponent<IoCardProps> = (props) => {
   };
 
   return (
-    <div class="border bg-thm-surface-2 border-thm-surface-border-2 rounded-lg p-3 flex flex-col transition-all group">
-      <div class="flex items-center justify-between mb-1">
-        <div class="relative flex items-center justify-between w-full">
-          <span class="text-[10px] font-bold uppercase text-thm-primary tracking-wider pr-2">
+    <div class="bg-thm-surface-2 border-thm-surface-border-2 group flex flex-col rounded-lg border p-3 transition-all">
+      <div class="mb-1 flex items-center justify-between">
+        <div class="relative flex w-full items-center justify-between">
+          <span class="text-thm-primary pr-2 text-[10px] font-bold tracking-wider uppercase">
             {props.io.name}
           </span>
           <select
             value={props.io.IOType}
-            class="appearance-none bg-transparent text-[10px] w-full font-bold uppercase tracking-wider text-thm-font-muted hover:text-thm-font pr-4 transition-colors outline-none cursor-pointer z-10"
+            class="text-thm-font-muted hover:text-thm-font z-10 w-full cursor-pointer appearance-none bg-transparent pr-4 text-[10px] font-bold tracking-wider uppercase transition-colors outline-none"
             disabled={login.interactiveDisabled()}
             onChange={onTypeChange}
           >
@@ -102,10 +102,10 @@ export const IoFrame: ParentComponent<IoCardProps> = (props) => {
           </select>
           <ChevronDown
             size={12}
-            class="absolute right-0 text-thm-font-muted pointer-events-none"
+            class="text-thm-font-muted pointer-events-none absolute right-0"
           />
         </div>
-        <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+        <div class="opacity-0 transition-opacity group-hover:opacity-100">
           <Loader
             isMutating={isAliasMutating()}
             isThrottled={isAliasThrottled()}
@@ -114,7 +114,7 @@ export const IoFrame: ParentComponent<IoCardProps> = (props) => {
         </div>
         <Show when={false}>
           <div
-            class="flex items-center gap-1 px-1 bg-indigo-500/10 text-indigo-400 rounded-full text-[10px] font-medium border border-indigo-500/20"
+            class="flex items-center gap-1 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-1 text-[10px] font-medium text-indigo-400"
             title="Used in Event Programming"
           >
             <Link2 size={10} />
@@ -123,14 +123,14 @@ export const IoFrame: ParentComponent<IoCardProps> = (props) => {
         </Show>
       </div>
 
-      <div class="flex items-center gap-2 mb-2">
-        <span class="text-xs font-mono font-bold text-thm-font-muted py-0.5">
+      <div class="mb-2 flex items-center gap-2">
+        <span class="text-thm-font-muted py-0.5 font-mono text-xs font-bold">
           {getIoIcon(props.io.IOType)({ class: "w-5 h-5" })}
         </span>
         <input
           type="text"
           value={optimisticAlias()}
-          class="bg-transparent text-sm font-semibold text-thm-font transition-colors border-b border-transparent hover:border-thm-surface-border-2 focus:border-thm-primary focus:outline-none px-1 w-full"
+          class="text-thm-font hover:border-thm-surface-border-2 focus:border-thm-primary w-full border-b border-transparent bg-transparent px-1 text-sm font-semibold transition-colors focus:outline-none"
           placeholder="Name"
           disabled={login.interactiveDisabled()}
           onInput={(e) => setOptimisticAlias(e.currentTarget.value)}

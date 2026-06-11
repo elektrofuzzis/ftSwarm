@@ -42,19 +42,19 @@ export const EditableLabel: ParentComponent<{
   };
 
   return (
-    <div class="inline-flex gap-2 items-center group relative min-h-[1.5em]">
+    <div class="group relative inline-flex min-h-[1.5em] items-center gap-2">
       <Show
         when={isEditing()}
         fallback={
           <div
-            class="flex items-center gap-2 cursor-pointer"
+            class="flex cursor-pointer items-center gap-2"
             onClick={() => props.allowEdit !== false && setEditing(true)}
           >
             <span>{props.children}</span>
             <Show when={props.allowEdit ?? true}>
               <Edit
                 size={18}
-                class="text-thm-font-muted group-hover:text-white transition-colors opacity-0 group-hover:opacity-100"
+                class="text-thm-font-muted opacity-0 transition-colors group-hover:text-white group-hover:opacity-100"
               />
             </Show>
           </div>
@@ -70,19 +70,19 @@ export const EditableLabel: ParentComponent<{
               if (e.key === "Enter") handleSave();
               if (e.key === "Escape") handleCancel();
             }}
-            class="bg-thm-surface-3 border border-thm-primary rounded px-2 py-0.5 text-thm-font focus:outline-none focus:ring-1 focus:ring-thm-primary min-w-[150px]"
+            class="bg-thm-surface-3 border-thm-primary text-thm-font focus:ring-thm-primary min-w-[150px] rounded border px-2 py-0.5 focus:ring-1 focus:outline-none"
           />
           <button
             onClick={handleSave}
-            class="p-1 hover:bg-thm-surface-border-2 rounded transition-colors text-emerald-500"
+            class="hover:bg-thm-surface-border-2 rounded p-1 text-emerald-500 transition-colors"
           >
             <Check size={18} />
           </button>
           <button
             onClick={handleCancel}
-            class="p-1 hover:bg-thm-surface-border-2 rounded transition-colors text-thm-error"
+            class="hover:bg-thm-surface-border-2 text-thm-error rounded p-1 transition-colors"
           >
-            <span class="size-5 flex items-center justify-center">&times;</span>
+            <span class="flex size-5 items-center justify-center">&times;</span>
           </button>
         </div>
       </Show>

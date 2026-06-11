@@ -27,5 +27,6 @@
             "${workspaceFolder:firmware}/include",
             "${default}"
         ],
+        "tailwindCSS.experimental.configFile": "src/ide/src/index.css"
     }
 }

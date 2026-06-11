@@ -19,11 +19,11 @@ export const SaveFab = () => {
     <Show when={om.needsSave}>
       <button
         onClick={onSave}
-        class="fixed bottom-8 right-8 w-14 h-14 bg-thm-primary text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 group"
+        class="bg-thm-primary group fixed right-8 bottom-8 z-50 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-2xl transition-all hover:scale-110 active:scale-95"
         title="Save changes to NVS"
       >
-        <Save class="w-6 h-6" />
-        <span class="absolute right-full mr-4 px-2 py-1 bg-zinc-800 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-zinc-700">
+        <Save class="h-6 w-6" />
+        <span class="pointer-events-none absolute right-full mr-4 rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs whitespace-nowrap opacity-0 transition-opacity group-hover:opacity-100">
           Save to NVS
         </span>
       </button>

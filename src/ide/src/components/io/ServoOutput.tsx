@@ -90,7 +90,7 @@ export const ServoOutput: IoCardRendererComponent<ApiServoOutputType> = (
         }}
         onChange={() => setPositionEditing(false)}
         disabled={login.interactiveDisabled()}
-        class={`w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-thm-primary ${login.interactiveDisabled() ? "opacity-50 cursor-not-allowed" : ""}`}
+        class={`accent-thm-primary h-2 w-full cursor-pointer appearance-none rounded-lg bg-zinc-700 ${login.interactiveDisabled() ? "cursor-not-allowed opacity-50" : ""}`}
       />
 
       <div class="flex justify-between text-sm">
@@ -115,7 +115,7 @@ export const ServoOutput: IoCardRendererComponent<ApiServoOutputType> = (
         }}
         onChange={() => setOffsetEditing(false)}
         disabled={login.interactiveDisabled()}
-        class={`w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-thm-primary ${login.interactiveDisabled() ? "opacity-50 cursor-not-allowed" : ""}`}
+        class={`accent-thm-primary h-2 w-full cursor-pointer appearance-none rounded-lg bg-zinc-700 ${login.interactiveDisabled() ? "cursor-not-allowed opacity-50" : ""}`}
       />
     </div>
   );

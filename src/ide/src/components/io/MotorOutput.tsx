@@ -80,7 +80,7 @@ export const MotorOutput: IoCardRendererComponent<ApiOutputIoType> = (
         onInput={(e) => setOptimisticSpeed(Number(e.currentTarget.value))}
         onFocus={() => setSpeedEditing(true)}
         onBlur={() => setSpeedEditing(false)}
-        class="w-full accent-thm-primary"
+        class="accent-thm-primary w-full"
       />
     </div>
   );

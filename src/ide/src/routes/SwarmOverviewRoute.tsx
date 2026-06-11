@@ -4,6 +4,7 @@ import { IoCard } from "../components/io";
 import { type ApiController, type FtSwarmIo } from "../api/apiTypes.ts";
 import { getControllerIcon } from "../api/icons.ts";
 import { SwOSState } from "../api/generated/genApiEnums.ts";
+import { A } from "../util/router.tsx";
 
 const state2Bg: Record<SwOSState, string> = {
   [SwOSState.OFFLINE]: "bg-thm-error",
@@ -38,32 +39,31 @@ export const SwarmOverviewRoute: Component = () => {
   });
 
   return (
-    <div class="p-4 w-full">
-      <div class="flex items-center gap-2 mb-1">
-        <h2 class="text-thm-font-muted tracking-tight pb-2">My Swarm</h2>
+    <div class="w-full p-4">
+      <div class="mb-1 flex items-center gap-2">
+        <h2 class="text-thm-font-muted pb-2 tracking-tight">My Swarm</h2>
       </div>
 
       <Show
         when={activeIos().length > 0}
         fallback={
           <div class="flex flex-col gap-8">
-            <div class="p-8 text-center max-w-2xl mx-auto">
-              <div class="bg-thm-surface-3 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-thm-surface-border-2">
+            <div class="mx-auto max-w-2xl p-8 text-center">
+              <div class="bg-thm-surface-3 border-thm-surface-border-2 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border">
                 <div class="text-thm-primary text-2xl">★</div>
               </div>
-              <h3 class="text-xl font-semibold text-thm-font mb-2">
+              <h3 class="text-thm-font mb-2 text-xl font-semibold">
                 No Active IOs
               </h3>
               <p class="text-thm-font-muted mb-6">
-                You haven't marked any IOs as active yet. Go to a controller's
-                detail page and activate some IOs to see them here for quick
-                monitoring.
+                You haven't marked any IOs as active yet. Once you've used or
+                named some IOs, they'll show up here.
               </p>
             </div>
           </div>
         }
       >
-        <div class="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div class="grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <For each={activeIos()}>
             {({ io, controller }) => (
               <IoCard io={io} controller={controller} seq={om.lastSequence} />
@@ -72,27 +72,27 @@ export const SwarmOverviewRoute: Component = () => {
         </div>
       </Show>
       <div>
-        <h2 class="text-thm-font-muted tracking-tight pb-2 mt-8">
+        <h2 class="text-thm-font-muted mt-8 pb-2 tracking-tight">
           Controller Overview
         </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <For each={controllers()}>
             {(controller) => (
-              <a
+              <A
                 href={`/controller/${controller.serialNumber}`}
-                class="bg-thm-surface-2 border border-thm-surface-border-2 rounded-lg p-4 hover:border-thm-primary/50 transition-all group"
+                class="bg-thm-surface-2 border-thm-surface-border-2 hover:border-thm-primary/50 group rounded-lg border p-4 transition-all"
               >
                 <div class="flex items-center gap-4">
-                  <div class="p-3 bg-thm-surface-3 rounded-lg border border-thm-surface-border-2 group-hover:border-thm-primary/30 transition-colors">
+                  <div class="bg-thm-surface-3 border-thm-surface-border-2 group-hover:border-thm-primary/30 rounded-lg border p-3 transition-colors">
                     {getControllerIcon(controller.CtrlVersion)({
                       class:
                         "w-6 h-6 text-thm-font-muted group-hover:text-thm-primary transition-colors",
                     })}
                   </div>
-                  <div class="flex-1 min-w-0">
+                  <div class="min-w-0 flex-1">
                     <div class="flex items-center justify-between gap-2">
-                      <div class="flex items-center gap-2 min-w-0">
-                        <h4 class="font-bold text-thm-font truncate">
+                      <div class="flex min-w-0 items-center gap-2">
+                        <h4 class="text-thm-font truncate font-bold">
                           {controller.name}
                         </h4>
                         <Show
@@ -101,27 +101,27 @@ export const SwarmOverviewRoute: Component = () => {
                             controllers().indexOf(controller) === 0
                           }
                         >
-                          <span class="px-1.5 py-0.5 rounded bg-thm-primary/10 border border-thm-primary/20 text-[10px] font-bold text-thm-primary leading-none uppercase tracking-wider">
+                          <span class="bg-thm-primary/10 border-thm-primary/20 text-thm-primary rounded border px-1.5 py-0.5 text-[10px] leading-none font-bold tracking-wider uppercase">
                             Kelda
                           </span>
                         </Show>
                       </div>
                       <div
-                        class={`w-2 h-2 rounded-full ${state2Bg[controller.state] || "bg-thm-surface-border-2"}`}
+                        class={`h-2 w-2 rounded-full ${state2Bg[controller.state] || "bg-thm-surface-border-2"}`}
                       />
                     </div>
-                    <p class="text-[10px] text-thm-font-muted font-mono uppercase tracking-wider">
+                    <p class="text-thm-font-muted font-mono text-[10px] tracking-wider uppercase">
                       SN: {controller.serialNumber}
                     </p>
                   </div>
                 </div>
-                <div class="mt-4 pt-3 border-t border-thm-surface-border-2/50 flex items-center justify-between text-xs text-thm-font-muted">
+                <div class="border-thm-surface-border-2/50 text-thm-font-muted mt-4 flex items-center justify-between border-t pt-3 text-xs">
                   <span>{controller.io.length} IO Ports</span>
-                  <span class="text-thm-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                    View Detail →
+                  <span class="text-thm-primary opacity-0 transition-opacity group-hover:opacity-100">
+                    View Detail →{/* no icon here for better binary size */}
                   </span>
                 </div>
-              </a>
+              </A>
             )}
           </For>
         </div>

@@ -43,7 +43,7 @@ const Category: ParentComponent<{
 }> = (props) => {
   return (
     <div
-      class="flex pt-4 gap-1 items-center"
+      class="flex items-center gap-1 pt-4"
       classList={{ "opacity-50": !!props.disabled }}
     >
       {props.icon({})}
@@ -57,7 +57,7 @@ const Activity: Component<{ active: boolean }> = (props) => {
   return (
     <div class="inline-flex w-3 items-center">
       <div
-        class="w-1 rounded-r h-4"
+        class="h-4 w-1 rounded-r"
         classList={{ "bg-thm-primary": props.active }}
       ></div>
     </div>
@@ -72,7 +72,7 @@ const MenuEntry: ParentComponent<{
 }> = (props) => {
   return (
     <button
-      class="flex gap-1 items-center text-left cursor-pointer transition-colors text-thm-font-muted hover:text-thm-font"
+      class="text-thm-font-muted hover:text-thm-font flex cursor-pointer items-center gap-1 text-left transition-colors"
       classList={{ "opacity-50": !!props.disabled }}
     >
       <Activity active={props.active} />
@@ -84,12 +84,12 @@ const MenuEntry: ParentComponent<{
   );
 };
 
-const StatusCircle: Component<{ class: string }> = (props) => {
+export const StatusCircle: Component<{ class: string }> = (props) => {
   return <div class={`size-3.5 rounded-full ${props.class}`} />;
 };
 
 const BottomRowIndicator: ParentComponent = (props) => {
-  return <div class="flex items-center p-3 gap-3">{props.children}</div>;
+  return <div class="flex items-center gap-3 p-3">{props.children}</div>;
 };
 
 const state2Bg = [
@@ -105,7 +105,10 @@ const state2Bg = [
   "bg-thm-error", // 9: FACTORY2
 ];
 
-export const Sidebar: Component = () => {
+export const Sidebar: Component<{
+  open?: boolean;
+  onToggle?: () => void;
+}> = (props) => {
   const swarm = useOMContext();
   const controllers = () => Object.values(swarm.controllers);
   const totalControllers = () => controllers().length;
@@ -117,37 +120,52 @@ export const Sidebar: Component = () => {
   const loginState = useLoginContext();
 
   return (
-    <aside class="flex flex-col gap-3 h-full">
-      <div class="flex flex-col gap-3 flex-1 overflow-scroll">
-        <Title />
+    <aside class="flex h-full flex-col gap-3">
+      <div class="flex flex-1 flex-col gap-3 overflow-scroll">
+        <div class="flex items-center pt-2 pr-2 lg:hidden">
+          <Title />
+          <button
+            class="text-thm-font-muted hover:text-thm-font ml-auto rounded-md p-1 text-2xl"
+            onClick={props.onToggle}
+          >
+            &times;
+          </button>
+        </div>
+        <div class="hidden lg:block">
+          <Title />
+        </div>
 
         <Category icon={Telescope} title="Monitor Swarm">
-          <Surface1 class="px-1 py-px ml-4">
+          <Surface1 class="ml-4 px-1 py-px">
             {onlineControllers()}/{totalControllers()}
           </Surface1>
         </Category>
 
-        <A href="/controller/overview" class="w-full flex flex-col">
-          <MenuEntry
-            icon={FolderPen}
-            text="My Swarm"
-            active={route() === "/controller/overview"}
-          />
-        </A>
+        <div onClick={() => props.onToggle?.()}>
+          <A href="/controller/overview" class="flex w-full flex-col">
+            <MenuEntry
+              icon={FolderPen}
+              text="My Swarm"
+              active={route() === "/controller/overview"}
+            />
+          </A>
+        </div>
         <For each={controllers()}>
           {(it, _) => (
-            <A
-              href={`/controller/${it.serialNumber}`}
-              class="w-full flex flex-col"
-            >
-              <MenuEntry
-                icon={getControllerIcon(it.CtrlVersion)}
-                text={it.name}
-                active={route() === `/controller/${it.serialNumber}`}
+            <div onClick={() => props.onToggle?.()}>
+              <A
+                href={`/controller/${it.serialNumber}`}
+                class="flex w-full flex-col"
               >
-                <StatusCircle class={state2Bg[it.state]} />
-              </MenuEntry>
-            </A>
+                <MenuEntry
+                  icon={getControllerIcon(it.CtrlVersion)}
+                  text={it.name}
+                  active={route() === `/controller/${it.serialNumber}`}
+                >
+                  <StatusCircle class={state2Bg[it.state]} />
+                </MenuEntry>
+              </A>
+            </div>
           )}
         </For>
 

@@ -27,18 +27,18 @@ export const LoadingScreen: Component<{ currentStep: LoadingStep }> = (
   props,
 ) => {
   return (
-    <div class="flex w-full h-full items-center justify-center">
+    <div class="flex h-full w-full items-center justify-center">
       <style>{style}</style>
       <Surface1 class="p-4">
-        <h1 class="text-2xl mb text-thm-font">Loading ftSwarm Dashboard</h1>
-        <p class="text-lg mb-4 text-thm-font-muted">
+        <h1 class="mb text-thm-font text-2xl">Loading ftSwarm Dashboard</h1>
+        <p class="text-thm-font-muted mb-4 text-lg">
           {props.currentStep === LoadingStep.CONNECTING
             ? "Connecting to ftSwarm..."
             : "Loading data..."}
         </p>
-        <div class="w-full h-4 rounded bg-thm-surface-2 border border-thm-surface-border-2 overflow-hidden relative">
+        <div class="bg-thm-surface-2 border-thm-surface-border-2 relative h-4 w-full overflow-hidden rounded border">
           <div
-            class={`h-full transition-all duration-500 loading-bar-animated`}
+            class={`loading-bar-animated h-full transition-all duration-500`}
             style={{
               width:
                 props.currentStep === LoadingStep.CONNECTING
@@ -52,7 +52,7 @@ export const LoadingScreen: Component<{ currentStep: LoadingStep }> = (
             }}
           />
           <div
-            class="absolute inset-0 rounded pointer-events-none"
+            class="pointer-events-none absolute inset-0 rounded"
             style={{
               border: "1px solid var(--thm-surface-border-2)",
               "box-sizing": "border-box",
@@ -60,7 +60,7 @@ export const LoadingScreen: Component<{ currentStep: LoadingStep }> = (
           />
         </div>
       </Surface1>
-      <div class="fixed bottom-0 left-0 right-0">
+      <div class="fixed right-0 bottom-0 left-0">
         <ReadTheDocs />
       </div>
       <PatternedBackground />

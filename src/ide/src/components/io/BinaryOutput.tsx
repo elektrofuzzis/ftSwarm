@@ -52,7 +52,7 @@ export const BinaryOutput: IoCardRendererComponent<ApiOutputIoType> = (
           isEditing={isSpeedEditing()}
         />
       </div>
-      <div class="flex p-0.5 bg-zinc-800 rounded-lg border border-zinc-700">
+      <div class="flex rounded-lg border border-zinc-700 bg-zinc-800 p-0.5">
         <button
           onClick={() => {
             if (login.interactiveDisabled()) return;
@@ -61,11 +61,11 @@ export const BinaryOutput: IoCardRendererComponent<ApiOutputIoType> = (
             setSpeedEditing(false);
           }}
           disabled={login.interactiveDisabled()}
-          class={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${
+          class={`rounded-md px-3 py-1 text-[10px] font-bold transition-all ${
             !isOn()
               ? "bg-zinc-700 text-zinc-200 shadow-sm"
               : "text-zinc-500 hover:text-zinc-400"
-          } ${login.interactiveDisabled() ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+          } ${login.interactiveDisabled() ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
         >
           OFF
         </button>
@@ -77,11 +77,11 @@ export const BinaryOutput: IoCardRendererComponent<ApiOutputIoType> = (
             setSpeedEditing(false);
           }}
           disabled={login.interactiveDisabled()}
-          class={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${
+          class={`rounded-md px-3 py-1 text-[10px] font-bold transition-all ${
             isOn()
               ? "bg-thm-primary text-white shadow-sm"
               : "text-zinc-500 hover:text-zinc-400"
-          } ${login.interactiveDisabled() ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+          } ${login.interactiveDisabled() ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
         >
           ON
         </button>

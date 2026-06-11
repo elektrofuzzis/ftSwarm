@@ -38,32 +38,32 @@ const InvalidState: SwarmStatusRenderComponent = ({ controller, seq: _ }) => {
   const icon = () => getControllerIcon(controller().CtrlVersion);
 
   return (
-    <div class="w-full h-full flex items-center justify-center">
-      <div class="max-w-md w-full mx-auto p-6 bg-thm-surface-2 border border-thm-surface-border-2 rounded-xl shadow-2xl backdrop-blur-sm">
-        <div class="relative flex items-center justify-center h-32 mb-6 bg-thm-surface-1 rounded-lg border border-thm-surface-border-1 overflow-hidden">
-          <div class="absolute inset-0 bg-thm-error/7 radial-gradient blur-2xl" />
-          <div class="relative z-10 flex items-center gap-8 text-thm-font-muted">
-            <div class="p-3 bg-thm-surface-3 rounded-full border border-thm-surface-border-2 shadow-sm transition-colors">
+    <div class="flex h-full w-full items-center justify-center">
+      <div class="bg-thm-surface-2 border-thm-surface-border-2 mx-auto w-full max-w-md rounded-xl border p-6 shadow-2xl backdrop-blur-sm">
+        <div class="bg-thm-surface-1 border-thm-surface-border-1 relative mb-6 flex h-32 items-center justify-center overflow-hidden rounded-lg border">
+          <div class="bg-thm-error/7 radial-gradient absolute inset-0 blur-2xl" />
+          <div class="text-thm-font-muted relative z-10 flex items-center gap-8">
+            <div class="bg-thm-surface-3 border-thm-surface-border-2 rounded-full border p-3 shadow-sm transition-colors">
               {icon()({ class: "w-8 h-8" })}
             </div>
 
             <div class="flex items-center gap-1">
-              <div class="w-1.5 h-1.5 rounded-full bg-thm-error" />
-              <div class="w-16 h-[2px] animate-dash text-thm-error" />
-              <div class="w-1.5 h-1.5 rounded-full bg-thm-error" />
+              <div class="bg-thm-error h-1.5 w-1.5 rounded-full" />
+              <div class="animate-dash text-thm-error h-[2px] w-16" />
+              <div class="bg-thm-error h-1.5 w-1.5 rounded-full" />
             </div>
 
-            <div class="p-3 bg-thm-surface-3 rounded-full border border-thm-surface-border-2 shadow-sm text-thm-error">
-              <Unplug class="w-8 h-8" />
+            <div class="bg-thm-surface-3 border-thm-surface-border-2 text-thm-error rounded-full border p-3 shadow-sm">
+              <Unplug class="h-8 w-8" />
             </div>
           </div>
         </div>
 
-        <div class="text-center space-y-2">
-          <h2 class="text-xl font-bold text-thm-font tracking-tight">
+        <div class="space-y-2 text-center">
+          <h2 class="text-thm-font text-xl font-bold tracking-tight">
             Controller Disconnected
           </h2>
-          <p class="text-sm text-thm-font-muted leading-relaxed">
+          <p class="text-thm-font-muted text-sm leading-relaxed">
             Communication with the device could not be established. The
             controller is not responding to polling requests.
           </p>
@@ -74,12 +74,12 @@ const InvalidState: SwarmStatusRenderComponent = ({ controller, seq: _ }) => {
 };
 
 const Divider: Component<{ name: string }> = ({ name }) => (
-  <div class="mb-2 mt-3 flex items-center gap-2">
-    <div class="h-px bg-thm-surface-border-2 flex-1"></div>
-    <span class="text-xs font-semibold text-thm-font-muted uppercase tracking-wider">
+  <div class="mt-3 mb-2 flex items-center gap-2">
+    <div class="bg-thm-surface-border-2 h-px flex-1"></div>
+    <span class="text-thm-font-muted text-xs font-semibold tracking-wider uppercase">
       {name}
     </span>
-    <div class="h-px bg-thm-surface-border-2 flex-1"></div>
+    <div class="bg-thm-surface-border-2 h-px flex-1"></div>
   </div>
 );
 
@@ -128,8 +128,8 @@ const ControllerDetail: SwarmStatusRenderComponent = ({ controller, seq }) => {
     ).filter(([_, fn]) => fn().length > 0);
 
   return (
-    <div class="p-4 w-full">
-      <div class="flex items-center gap-2 mb-1">
+    <div class="w-full p-4">
+      <div class="mb-1 flex items-center gap-2">
         <h2 class="text-thm-font-muted tracking-tight">Controller Detail</h2>
         <Loader
           isMutating={isNameMutating()}
@@ -138,7 +138,7 @@ const ControllerDetail: SwarmStatusRenderComponent = ({ controller, seq }) => {
         />
       </div>
 
-      <h2 class="text-2xl font-bold text-thm-font tracking-tight">
+      <h2 class="text-thm-font text-2xl font-bold tracking-tight">
         <EditableLabel
           allowEdit={!login.interactiveDisabled()}
           onEdit={setOptimisticName}
@@ -153,7 +153,7 @@ const ControllerDetail: SwarmStatusRenderComponent = ({ controller, seq }) => {
         {([name, iosFn]) => (
           <>
             <Divider name={name} />
-            <div class="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-4">
+            <div class="mb-4 grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               <For each={iosFn()}>
                 {(value) => (
                   <IoCard io={value} controller={controller()} seq={seq} />

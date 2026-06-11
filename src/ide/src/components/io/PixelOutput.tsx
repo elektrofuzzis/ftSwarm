@@ -91,7 +91,7 @@ export const PixelOutput: IoCardRendererComponent<ApiPixelOutputType> = (
         }}
         onChange={() => setBrightnessEditing(false)}
         disabled={login.interactiveDisabled()}
-        class={`w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-thm-primary ${login.interactiveDisabled() ? "opacity-50 cursor-not-allowed" : ""}`}
+        class={`accent-thm-primary h-2 w-full cursor-pointer appearance-none rounded-lg bg-zinc-700 ${login.interactiveDisabled() ? "cursor-not-allowed opacity-50" : ""}`}
       />
 
       <div class="flex justify-between text-sm">
@@ -104,7 +104,7 @@ export const PixelOutput: IoCardRendererComponent<ApiPixelOutputType> = (
           />
         </div>
         <div class="flex items-center gap-2">
-          <span class="text-xs font-mono text-zinc-500">
+          <span class="font-mono text-xs text-zinc-500">
             #{optimisticColor()}
           </span>
           <input
@@ -116,7 +116,7 @@ export const PixelOutput: IoCardRendererComponent<ApiPixelOutputType> = (
             }}
             onChange={() => setColorEditing(false)}
             disabled={login.interactiveDisabled()}
-            class="w-6 h-6 rounded border-0 bg-transparent cursor-pointer disabled:cursor-not-allowed"
+            class="h-6 w-6 cursor-pointer rounded border-0 bg-transparent disabled:cursor-not-allowed"
           />
         </div>
       </div>

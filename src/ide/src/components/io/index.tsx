@@ -50,7 +50,7 @@ export function registryKeyOfProps<T>(props: IoCardProps, id: T): RegistryKey {
 
 const Unimplemented: IoCardRendererComponent = (_props) => {
   return (
-    <span class="text-red-200 bg-red-600/10 rounded-full text-xs uppercase px-2 py-1 border border-red-600/75">
+    <span class="rounded-full border border-red-600/75 bg-red-600/10 px-2 py-1 text-xs text-red-200 uppercase">
       Not yet implemented
     </span>
   );

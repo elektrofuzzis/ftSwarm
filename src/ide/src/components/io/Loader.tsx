@@ -10,7 +10,7 @@ export interface LoaderProps {
 
 export const Loader = (props: LoaderProps) => {
   return (
-    <div class="flex items-center gap-1 h-4 min-w-4">
+    <div class="flex h-4 min-w-4 items-center gap-1">
       <Show when={props.isMutating}>
         <RefreshCw size={12} class="text-thm-primary animate-spin" />
       </Show>
@@ -19,7 +19,7 @@ export const Loader = (props: LoaderProps) => {
       </Show>
       <Show when={!props.isMutating && !props.isThrottled && props.isEditing}>
         <div
-          class="w-1.5 h-1.5 rounded-full bg-thm-primary animate-pulse"
+          class="bg-thm-primary h-1.5 w-1.5 animate-pulse rounded-full"
           title="Editing..."
         />
       </Show>

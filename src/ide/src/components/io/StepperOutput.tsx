@@ -89,7 +89,7 @@ export const StepperOutput: IoCardRendererComponent<ApiStepperOutputType> = (
           }}
           onChange={() => setSpeedEditing(false)}
           disabled={login.interactiveDisabled()}
-          class={`w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-thm-primary ${login.interactiveDisabled() ? "opacity-50 cursor-not-allowed" : ""}`}
+          class={`accent-thm-primary h-2 w-full cursor-pointer appearance-none rounded-lg bg-zinc-700 ${login.interactiveDisabled() ? "cursor-not-allowed opacity-50" : ""}`}
         />
       </div>
 
@@ -114,25 +114,25 @@ export const StepperOutput: IoCardRendererComponent<ApiStepperOutputType> = (
           }}
           onChange={() => setPositionEditing(false)}
           disabled={login.interactiveDisabled()}
-          class="w-full px-2 py-1 bg-zinc-800 border border-zinc-700 rounded text-sm text-zinc-100 focus:outline-none focus:border-thm-primary transition-colors"
+          class="focus:border-thm-primary w-full rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-sm text-zinc-100 transition-colors focus:outline-none"
         />
       </div>
 
       <div class="grid grid-cols-2 gap-2">
-        <div class="bg-zinc-800/50 p-2 rounded border border-zinc-700/50">
-          <div class="text-[10px] text-zinc-500 uppercase font-bold mb-1">
+        <div class="rounded border border-zinc-700/50 bg-zinc-800/50 p-2">
+          <div class="mb-1 text-[10px] font-bold text-zinc-500 uppercase">
             Distance
           </div>
-          <div class="text-sm font-mono text-zinc-200">{props.io.distance}</div>
+          <div class="font-mono text-sm text-zinc-200">{props.io.distance}</div>
         </div>
         <div class="flex flex-col gap-1">
           <Show when={props.io.homing}>
-            <div class="bg-thm-primary/10 text-thm-primary text-[10px] font-bold px-2 py-1 rounded border border-thm-primary/20 text-center animate-pulse">
+            <div class="bg-thm-primary/10 text-thm-primary border-thm-primary/20 animate-pulse rounded border px-2 py-1 text-center text-[10px] font-bold">
               HOMING
             </div>
           </Show>
           <Show when={props.io.running}>
-            <div class="bg-emerald-500/10 text-emerald-500 text-[10px] font-bold px-2 py-1 rounded border border-emerald-500/20 text-center">
+            <div class="rounded border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-center text-[10px] font-bold text-emerald-500">
               RUNNING
             </div>
           </Show>

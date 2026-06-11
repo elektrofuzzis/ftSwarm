@@ -3,7 +3,7 @@ import type { Component } from "solid-js";
 const PatternedBackground: Component = () => {
   return (
     <div
-      class="fixed inset-0 w-full h-full -z-10 pointer-events-none"
+      class="pointer-events-none fixed inset-0 -z-10 h-full w-full"
       style={{
         "background-image": `
           linear-gradient(to right, var(--thm-surface-1) 1px, transparent 1px),
