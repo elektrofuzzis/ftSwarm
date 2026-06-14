@@ -65,8 +65,12 @@ export const SwarmOverviewRoute: Component = () => {
       >
         <div class="grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <For each={activeIos()}>
-            {({ io, controller }) => (
-              <IoCard io={io} controller={controller} seq={om.lastSequence} />
+            {(item) => (
+              <IoCard
+                io={item.io}
+                controller={item.controller}
+                seq={om.lastSequence}
+              />
             )}
           </For>
         </div>

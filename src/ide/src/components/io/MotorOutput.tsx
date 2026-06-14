@@ -13,6 +13,7 @@ import { transactMessage } from "../../api/transport";
 import { apiNameOf, rpcResponseToSeq } from "../../api/util.ts";
 import { useLoginContext } from "../../contexts/LoginContext.tsx";
 import { SwOSIOType } from "../../api/generated/genApiEnums.ts";
+import RotateCcw from "lucide-solid/icons/rotate-ccw";
 import { Loader } from "./Loader.tsx";
 
 const enum MotorOptimisticStores {
@@ -69,7 +70,17 @@ export const MotorOutput: IoCardRendererComponent<ApiOutputIoType> = (
             isEditing={isSpeedEditing()}
           />
         </div>
-        <span class="text-zinc-100">{props.io.speed}</span>
+        <div class="flex items-center gap-2">
+          <span class="text-zinc-100">{props.io.speed}</span>
+          <button
+            type="button"
+            disabled={login.interactiveDisabled()}
+            onClick={() => setOptimisticSpeed(0)}
+            class="border-thm-surface-border-2 text-thm-font-muted hover:border-thm-primary/50 hover:text-thm-primary rounded border px-2 py-0.5 text-[10px] font-bold uppercase transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <RotateCcw class="size-4" />
+          </button>
+        </div>
       </div>
       <input
         type="range"
@@ -80,7 +91,7 @@ export const MotorOutput: IoCardRendererComponent<ApiOutputIoType> = (
         onInput={(e) => setOptimisticSpeed(Number(e.currentTarget.value))}
         onFocus={() => setSpeedEditing(true)}
         onBlur={() => setSpeedEditing(false)}
-        class="accent-thm-primary w-full"
+        class={`accent-thm-primary h-2 w-full cursor-pointer appearance-none rounded-lg bg-zinc-700 ${login.interactiveDisabled() ? "cursor-not-allowed opacity-50" : ""}`}
       />
     </div>
   );

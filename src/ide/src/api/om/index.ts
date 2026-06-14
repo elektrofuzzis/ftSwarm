@@ -83,7 +83,7 @@ export class RootObjectModel {
       {} as Record<number, ApiController>,
     );
 
-    setControllers(reconcile(newControllersRecord));
+    setControllers(reconcile(newControllersRecord, { key: "serialNumber" }));
   }
 
   useController(serial: number) {
