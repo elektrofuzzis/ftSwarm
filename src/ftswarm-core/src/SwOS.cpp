@@ -11,6 +11,7 @@
 #include "SwOSSwarm.h"
 #include "easyKey.h"
 #include "SwOSLog.h"
+#include "SwOSColor.h"
 
 #include <MPU6050_6Axis_MotionApps20.h>
 
@@ -757,18 +758,18 @@ void FtSwarmPixel::setBrightness(uint8_t brightness) {
   static_cast<SwOSPixel*>(me)->unlock();
 }
 
-RgbColor FtSwarmPixel::getColor() {
+CRGB FtSwarmPixel::getColor() {
 
-  if (!me) return 0;
+  if (!me) return CRGB::Black;
   
   static_cast<SwOSPixel*>(me)->lock();
-  RgbColor xReturn = (static_cast<SwOSPixel *>(me)->getColor());
+  CRGB xReturn = (static_cast<SwOSPixel *>(me)->getColor());
   static_cast<SwOSPixel*>(me)->unlock();
 
   return xReturn;
 };
 
-void FtSwarmPixel::setColor(RgbColor color) {
+void FtSwarmPixel::setColor(CRGB color) {
 
   if (!me) return;
 

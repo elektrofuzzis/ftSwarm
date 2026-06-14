@@ -287,9 +287,6 @@ void SwOSNVS::saveAndRestart( FtSwarmNVSScope_t scope ) {
   // save settings
   save( scope );
 
-  // Arduino + S3-Bug
-  esp_task_wdt_delete(NULL);
-
   // reboot
   ESP.restart();
 

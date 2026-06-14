@@ -48,7 +48,7 @@ esp_err_t indexHandler(httpd_req_t *req, httpd_err_code_t err) {
       
       esp_err_t err = httpd_resp_send_chunk(req, data_ptr, to_send);
       if (err != ESP_OK) {
-          printf("Failed to send chunk, error: %d\n", err);
+          SWARM_LOG_ERROR("Failed to send chunk, error: %d", err);
           return err; 
       }
       
@@ -58,8 +58,8 @@ esp_err_t indexHandler(httpd_req_t *req, httpd_err_code_t err) {
 
   esp_err_t final_err = httpd_resp_send_chunk(req, NULL, 0);
   if (final_err != ESP_OK) {
-      printf("Final chunk termination failed: %d\n", final_err);
-      return final_err;
+    SWARM_LOG_ERROR("Final chunk termination failed: %d", final_err);
+    return final_err;
   }
 
   return ESP_OK;
@@ -222,6 +222,8 @@ static void wsAsyncHandler( void *varg )
     char *response;
     SwOSCLI cli;
     bool loggedIn = ( arg->fd == authenticatedSession );
+
+    printf("Received WS message: %s\n", arg->message);
 
     response = cli.eval( (char*) arg->message, &loggedIn );
 

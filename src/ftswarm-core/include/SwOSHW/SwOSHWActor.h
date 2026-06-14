@@ -9,8 +9,6 @@
  
 #pragma once
 
-#include <esp_adc_cal.h>
-
 #include "SwOS.h"
 #include "SwOSHW/SwOSHWBaseIO.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"

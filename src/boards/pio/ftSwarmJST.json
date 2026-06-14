@@ -1,7 +1,8 @@
 {
   "build": {
     "arduino":{
-      "ldscript": "esp32_out.ld"
+      "ldscript": "esp32_out.ld",
+      "partitions": "huge_app.csv"
     },
     "core": "esp32",
     "extra_flags": "-DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue -DARDUINO_EVENT_RUNNING_CORE=0 -DARDUINO_RUNNING_CORE=1",
@@ -27,9 +28,9 @@
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 4194304,
+    "maximum_size": 3145728,
     "require_upload_port": true,
-    "speed": 460800
+    "speed": 921600
   },
   "url": "https://elektrofuzzis.github.io",
   "vendor": "Elektrofuzzis"

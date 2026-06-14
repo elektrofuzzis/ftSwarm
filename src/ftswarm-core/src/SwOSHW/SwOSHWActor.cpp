@@ -704,18 +704,8 @@ void SwOSDigitalServo::setupLocal() {
   // ledc channels
   channelSERVO = (ledc_channel_t) (4 + port);
 
-  // use Timer 1
-    ledc_timer_config_t ledc_timer = {
-      .speed_mode       = LEDC_LOW_SPEED_MODE,
-      .duty_resolution  = LEDC_TIMER_10_BIT,
-      .timer_num        = LEDC_TIMER_1,
-      .freq_hz          = 50,  // Set output frequency to 40Hz
-      .clk_cfg          = LEDC_AUTO_CLK
-    };
-    ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
-
-    // register channel
-    ledc_channel_config_t ledc_channel = {
+  // register channel
+  ledc_channel_config_t ledc_channel = {
       .gpio_num       = SERVO,
       .speed_mode     = LEDC_LOW_SPEED_MODE,
       .channel        = channelSERVO,
@@ -723,13 +713,13 @@ void SwOSDigitalServo::setupLocal() {
       .timer_sel      = LEDC_TIMER_1,
       .duty           = 0, // Set duty to 0%
       .hpoint         = 0
-    };
-    ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel));
+  };
+  ledc_channel_config(&ledc_channel);
 
-    // set coast
-    setLocal();
+  // set coast
+  setLocal();
 
-    #endif
+  #endif
 
 }
 
@@ -740,11 +730,11 @@ void SwOSDigitalServo::setLocal(void ) {
   if (p <   0 ) p =   0;
   if (p > 255 ) p = 255;
 
-  // 1 .. 2 ms pulse
-  float ticks = 0.2*p+51;
+  // 1 .. 2 ms pulse mapped to 14-Bit Ticks (819 to 1638)
+  float ticks = (3.21255f * p) + 819.2f;
 
   // set duty
-  ESP_ERROR_CHECK(ledc_set_duty(LEDC_LOW_SPEED_MODE, channelSERVO, (uint16_t)ticks));
+  ESP_ERROR_CHECK(ledc_set_duty(LEDC_LOW_SPEED_MODE, channelSERVO, (uint32_t)ticks));
 
   // update duty
   ESP_ERROR_CHECK(ledc_update_duty(LEDC_LOW_SPEED_MODE, channelSERVO));

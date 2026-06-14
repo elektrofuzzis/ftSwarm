@@ -33,8 +33,8 @@ class SwOSCounter;
 class SwOSStepper;
 class SwOSAnalogInput;
 
-const RgbColor LEDCOLOR0[MAXSTATE] = { COLOR::Black, COLOR::Blue, COLOR::Yellow, COLOR::Green, COLOR::Red, COLOR::Cyan, COLOR::Aquamarine, COLOR::DeepPink, COLOR::Purple, COLOR::Black };
-const RgbColor LEDCOLOR1[MAXSTATE] = { COLOR::Black, COLOR::Blue, COLOR::Yellow, COLOR::Green, COLOR::Red, COLOR::Cyan, COLOR::Aquamarine, COLOR::DeepPink, COLOR::Purple, COLOR::Black };
+const CRGB LEDCOLOR0[MAXSTATE] = {CRGB::Black,CRGB::Blue,CRGB::Yellow,CRGB::Green,CRGB::Red,CRGB::Cyan,CRGB::Aquamarine,CRGB::DeepPink,CRGB::Purple,CRGB::Black };
+const CRGB LEDCOLOR1[MAXSTATE] = {CRGB::Black,CRGB::Blue,CRGB::Yellow,CRGB::Green,CRGB::Red,CRGB::Cyan,CRGB::Aquamarine,CRGB::DeepPink,CRGB::Purple,CRGB::Black };
 
 const char     OLEDMSG[MAXSTATE][20] = { "offline", "booting", "connecting wifi", "online", "ERROR - check logs", "waiting on HW", "It's me!", "FATAL - check logs", "FactoryReset?", "" };
 

@@ -16,9 +16,13 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
-#include <esp32/rom/crc.h>
 #include <soc/uart_struct.h>
 #include <driver/uart.h>
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+#include <rom/crc.h>
+#else
+#include <esp32/rom/crc.h>
+#endif
 
 #include "SwOSCom.h"
 #include "SwOSNVS.h"
@@ -364,7 +368,13 @@ void SwOSCom::send( void ) {
  * 
  *****************************************************************************/
 
-static void _OnDataSent(const uint8_t *macAddr, esp_now_send_status_t status) { 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+static void _OnDataSent(const wifi_tx_info_t *tx_info, esp_now_send_status_t status) {
+  const uint8_t* mac_addr = tx_info->des_addr;
+#else
+static void _OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+#endif
+
   // works on transmitted packets
 
   // stop on uninitialized
@@ -374,7 +384,7 @@ static void _OnDataSent(const uint8_t *macAddr, esp_now_send_status_t status) {
   // store event
   sendNotificationEvent_t event;
   event.status = status;
-  memcpy( &event.macAddr, macAddr, ESP_NOW_ETH_ALEN );
+  memcpy( &event.macAddr, mac_addr, ESP_NOW_ETH_ALEN );
 
   // and send it back
   if ( xQueueSend( myOSNetwork.sendNotificationWifi, &event, ESPNOW_MAXDELAY ) != pdTRUE ) {
@@ -428,12 +438,25 @@ bool _OnDataRecv( SwOSCom *payload ) {
 
 }
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+
+void _OnDataRecvWifi(const esp_now_recv_info_t *recv_info, const uint8_t *incomingData, int len) {
+
+  SwOSCom payload( MacAddr( recv_info->src_addr ), incomingData, len );
+  _OnDataRecv( &payload );
+
+} 
+
+#else
+
 void _OnDataRecvWifi(const uint8_t *macAddr, const uint8_t *incomingData, int len ) {
 
   SwOSCom payload( MacAddr( macAddr ), incomingData, len );
   _OnDataRecv( &payload );
 
 } 
+
+#endif
 
 
 static void logBuffer( uint8_t *buffer, int bufPtr ) {

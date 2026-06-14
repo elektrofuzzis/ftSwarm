@@ -9,8 +9,10 @@
 
 #include "SwOS.h"
 
-// #include <WiFi.h>
-// #include <ESPmDNS.h>
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+#include "esp_mac.h"
+#endif
+
 #include <esp_now.h>
 #include "esp_wifi.h"
 #include "esp_event.h"
@@ -370,8 +372,22 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   printf(SWOSVERSION);
   printf(TRANSLATE( "\n\n(C) Christian Bergschneider & Stefan Fuss\n\nPress any key to enter bios settings.\n", "\n\n(C) Christian Bergschneider & Stefan Fuss\n\nDrücken Sie eine Taste, um das Setup zu starten.\n" ));
 
+  /*
   // set watchdog to 30s
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+  // New API for ESP-IDF v5.x / Arduino Core 3.x
+  esp_task_wdt_config_t wdt_config = {
+    .timeout_ms = 30000,          // 30 seconds converted to milliseconds
+    .idle_core_mask = 0,          // Automatically monitor idle tasks on all cores
+    .trigger_panic = false        // Equivalent to your old 'false' parameter
+  };
+  esp_task_wdt_init(&wdt_config);
+#else
+  // Old API for ESP-IDF v4.x / Arduino Core 2.x
   esp_task_wdt_init(30, false);
+#endif
+*/
+  esp_task_wdt_deinit();
   
   // initialize random
   srand( time( NULL ) );

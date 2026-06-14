@@ -920,8 +920,8 @@ class FtSwarmPixel : public FtSwarmIO {
     void setBrightness(uint8_t brightness);
 
     // color
-    RgbColor getColor();
-    void setColor(RgbColor color);
+    CRGB getColor();
+    void setColor(CRGB color);
 };
 
 class FtSwarmI2C : public FtSwarmIO {

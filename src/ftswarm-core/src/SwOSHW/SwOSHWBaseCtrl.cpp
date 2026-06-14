@@ -241,18 +241,28 @@ void SwOSCtrl::setupLocalCommonHardware( void ) {
 
   // Setup local common hardwrae like TIMER0
 
-  // Timer0 to be used with PWM outputs
-  ledc_timer_config_t ledc_timer = {
+  // Timer0 to be used with Motor PWM outputs
+  ledc_timer_config_t ledc_timer0 = {
     .speed_mode       = LEDC_LOW_SPEED_MODE,
     .duty_resolution  = LEDC_TIMER_12_BIT,
     .timer_num        = LEDC_TIMER_0,
     .freq_hz          = 15000,
-    .clk_cfg          = LEDC_AUTO_CLK,
+    .clk_cfg          = LEDC_AUTO_CLK
   };
-  ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
+  ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer0));
 
   // Enable complex fading
   ESP_ERROR_CHECK( ledc_fade_func_install( 0 ) );
+
+  // Timer3 to be used with Servo PWM outputs
+  ledc_timer_config_t ledc_timer1 = {
+    .speed_mode       = LEDC_LOW_SPEED_MODE,
+    .duty_resolution  = LEDC_TIMER_14_BIT,
+    .timer_num        = LEDC_TIMER_1,
+    .freq_hz          = 50,  // Set output frequency to 40Hz
+    .clk_cfg          = LEDC_AUTO_CLK
+  };
+  ledc_timer_config(&ledc_timer1);
 
 }
 
@@ -1008,7 +1018,7 @@ bool SwOSCtrl::setPixel( SwOSCom *com ) {
 
   SwOSPixel *pixel = (SwOSPixel *)io[com->data.pixelCmd.index];
   pixel->setBrightness( com->data.pixelCmd.brightness );
-  pixel->setColor( RgbColor( com->data.pixelCmd.R, com->data.pixelCmd.G, com->data.pixelCmd.B ) );
+  pixel->setColor( CRGB( com->data.pixelCmd.R, com->data.pixelCmd.G, com->data.pixelCmd.B ) );
 
   return true;
 

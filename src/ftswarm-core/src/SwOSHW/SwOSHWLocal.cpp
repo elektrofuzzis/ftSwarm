@@ -598,16 +598,19 @@ OLED oled;
 RGBLed::RGBLed() {
   
   // initialize local HW
-  ledc_channel_config_t ledc;
-  ledc.speed_mode     = LEDC_LOW_SPEED_MODE;
-  ledc.intr_type      = LEDC_INTR_DISABLE;
-  ledc.timer_sel      = LEDC_TIMER_0;
-  ledc.duty           = 0; 
-  ledc.hpoint         = 0;
-  ledc.flags.output_invert = 1;
+  ledc_channel_config_t ledc = {
+    .gpio_num       = DISCRETE_RGB_RED,
+    .speed_mode     = LEDC_LOW_SPEED_MODE,
+    .channel        = (ledc_channel_t) DISCRETE_RGB_BASE_CHANNEL,
+    .intr_type      = LEDC_INTR_DISABLE,
+    .timer_sel      = LEDC_TIMER_0,
+    .duty           = 0,
+    .hpoint         = 0,
+    .flags = {
+      .output_invert = 1
+    }
+  };
 
-  ledc.gpio_num       = DISCRETE_RGB_RED;
-  ledc.channel        = (ledc_channel_t) DISCRETE_RGB_BASE_CHANNEL;
   ESP_ERROR_CHECK( ledc_channel_config( &ledc ) );
 
   ledc.gpio_num       = DISCRETE_RGB_GREEN;
@@ -629,7 +632,7 @@ void RGBLed::setPWM( uint8_t c, uint32_t duty ) {
 
 }
 
-void RGBLed::setColor( RgbColor color ) {
+void RGBLed::setColor( CRGB color ) {
 
   this->color = color;
 
@@ -646,10 +649,9 @@ void RGBLed::setBrightness( uint8_t brightness ) {
 
 void RGBLed::set( void ) {
 
-  RgbColor c = color.Dim( brightness );
-  setPWM( 0, c.R );
-  setPWM( 1, c.G );
-  setPWM( 2, c.B );
+  setPWM( 0, scale8_video( color.r, brightness ) );
+  setPWM( 1, scale8_video( color.g, brightness ) );
+  setPWM( 2, scale8_video( color.b, brightness ) );
   
 }
 

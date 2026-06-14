@@ -86,7 +86,7 @@ protected:
 
   void write( SerialLiteral_t literal );
   void write( int value );
-  void write( RgbColor value );
+  void write( CRGB value );
   void writeBinary( uint8_t v );
 
 public:
@@ -112,7 +112,7 @@ public:
   // items
   void item( SerialLiteral_t literal, const char *value );
   void item( SerialLiteral_t literal, int value);
-  void item( SerialLiteral_t literal, RgbColor value);
+  void item( SerialLiteral_t literal, CRGB value);
   void item( SerialLiteral_t literal, float value, uint8_t decimalPlaces, const char *unit = NULL );
   void item( SerialLiteral_t literal, float v1, float v2, float v3, float v4 );
   void item( SerialLiteral_t literal, float v1, float v2, float v3 );

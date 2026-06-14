@@ -2,7 +2,7 @@
   "build": {
     "arduino":{
       "ldscript": "esp32s3_out.ld",
-      "partitions": "ftSwarm_4MB.csv",
+      "partitions": "huge_app.csv",
       "memory_type": "qio_opi"
     },
     "core": "esp32",
@@ -38,9 +38,9 @@
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 4194304,
+    "maximum_size": 3145728,
     "require_upload_port": true,
-    "speed": 460800
+    "speed": 921600
   },
   "url": "https://elektrofuzzis.github.io",
   "vendor": "Elektrofuzzis"

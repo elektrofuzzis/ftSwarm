@@ -12,6 +12,13 @@
 #include "SwOSFilter.h"
 #include "SwOSHW/SwOSHWDigital.h"
 
+// to work on both arduino core versions 2.x and 3.x
+#if ESP_ARDUINO_VERSION >= ESP_ARDUINO_VERSION_VAL(3, 0, 0)
+  #ifndef ADC_WIDTH_12Bit
+    #define ADC_WIDTH_12Bit ADC_WIDTH_BIT_12
+  #endif
+#endif
+
 /***************************************************
  *
  *   SwOSAnalogInput

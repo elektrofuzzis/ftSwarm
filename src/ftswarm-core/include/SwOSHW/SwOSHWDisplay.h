@@ -22,12 +22,9 @@ class OLEDMenu;
  *
  ***************************************************/
 
- extern "C" RgbColor castUI32ToColor(uint32_t color);
- extern "C" uint32_t castColorToUI32(RgbColor color);
-
  class SwOSPixel : public SwOSIO {
   protected:
-    RgbColor color = 0;
+    CRGB color = CRGB::Black;
     uint8_t  brightness = BRIGHTNESSDEFAULT;
     bool     dynamic = false;
   
@@ -49,12 +46,12 @@ class OLEDMenu;
     virtual bool isActor( void ) { return true; };
   
     // commands
-    virtual RgbColor getColor()      { return color; };
+    virtual CRGB getColor()      { return color; };
     virtual uint8_t  getBrightness() { return this->brightness; };
-    virtual void     setColor( RgbColor color );
+    virtual void     setColor( CRGB color );
     virtual void     setColor( uint32_t color );
     virtual void     setBrightness(uint8_t brightness);
-    virtual void     setValue( uint8_t brightness, RgbColor color ) { this->brightness = brightness; this->color = color; };
+    virtual void     setValue( uint8_t brightness, CRGB color ) { this->brightness = brightness; this->color = color; };
   };
 
 /***************************************************

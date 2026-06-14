@@ -15,6 +15,7 @@
 #include "SwOSOLEDMenu.h"
 #include "SwOSLog.h"
 
+#include <FastLED.h>
 
 /***************************************************
  *
@@ -22,8 +23,19 @@
  *
  ***************************************************/
 
+CRGB castUI32ToColor(uint32_t color) {
+    uint8_t r = (uint8_t)((color >> 16) & 0xFF);
+    uint8_t g = (uint8_t)((color >> 8) & 0xFF);
+    uint8_t b = (uint8_t)(color & 0xFF);
+    return CRGB(r, g, b);
+}
+
+uint32_t castColorToUI32(CRGB color) {
+    return ((uint32_t)color.r << 16) | ((uint32_t)color.g << 8) | (uint32_t)color.b;
+}
+
 #ifdef RGB_BUILTIN
-NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> neoPixel(MAXLEDS, RGB_BUILTIN);
+CRGB leds[MAXLEDS];
 #endif
 
 uint8_t usedPixels = 0;
@@ -46,7 +58,7 @@ void SwOSPixel::setupLocal() {
     #endif
 
     #ifdef RGB_BUILTIN
-    neoPixel.Begin();
+    FastLED.addLeds<WS2812B, RGB_BUILTIN, GRB>(leds, MAXLEDS);
     #endif
 
     ledsInitialized = true;
@@ -55,7 +67,7 @@ void SwOSPixel::setupLocal() {
 
   // initialize pixel
   if ( port < MAXLEDS ) {
-    setColor( COLOR::Black );
+    setColor(CRGB::Black );
   }
 
 }
@@ -66,7 +78,7 @@ void SwOSPixel::setColor( uint32_t color ) {
 
 }
 
-void SwOSPixel::setColor( RgbColor color ) {
+void SwOSPixel::setColor( CRGB color ) {
 
   // store new color
   this->color = color;
@@ -80,9 +92,9 @@ void SwOSPixel::setRemote() {
   
   SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETPIXEL );
   cmd.data.pixelCmd.index = ctrl->getIndex(this);
-  cmd.data.pixelCmd.R = color.R;
-  cmd.data.pixelCmd.G = color.G;
-  cmd.data.pixelCmd.B = color.B;
+  cmd.data.pixelCmd.R = color.r;
+  cmd.data.pixelCmd.G = color.g;
+  cmd.data.pixelCmd.B = color.b;
   cmd.data.pixelCmd.brightness = brightness;
   cmd.send( );
 }
@@ -102,8 +114,12 @@ void SwOSPixel::setLocal() {
   #endif
 
   #ifdef RGB_BUILTIN
-  neoPixel.SetPixelColor((FTSWARM_HAL_DISCRETE_RGBS)?port-1:port, color.Dim( brightness) );
-  neoPixel.Show();
+  
+    uint8_t index = (FTSWARM_HAL_DISCRETE_RGBS)?port-1:port;
+    leds[index] = CRGB(color.r, color.g, color.b);
+    leds[index].nscale8_video( brightness ); 
+    FastLED.show();
+
   #endif
 
 }
@@ -132,17 +148,6 @@ void SwOSPixel::onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t 
 
   setColor( castColorToUI32( evalTriggerMath( triggerMath, sensor, castColorToUI32( getColor() ), parameter, 0, 0xFFFFFF ) ) );
 
-}
-
-RgbColor castUI32ToColor(uint32_t color) {
-    uint8_t r = (uint8_t)((color >> 16) & 0xFF);
-    uint8_t g = (uint8_t)((color >> 8) & 0xFF);
-    uint8_t b = (uint8_t)(color & 0xFF);
-    return RgbColor(r, g, b);
-}
-
-uint32_t castColorToUI32(RgbColor color) {
-    return ((uint32_t)color.R << 16) | ((uint32_t)color.G << 8) | (uint32_t)color.B;
 }
 
 /***************************************************
