@@ -8,7 +8,6 @@ import { registryKeyOfProps, sequencedDatumFactory } from "./index.tsx";
 import { apiNameOf, rpcResponseToSeq } from "../../api/util.ts";
 import { useLoginContext } from "../../contexts/LoginContext.tsx";
 import { Loader } from "./Loader.tsx";
-import { SwOSIOType } from "../../api/generated/genApiEnums.ts";
 import { transactMessage } from "../../api/transport";
 
 export const ServoOutput: IoCardRendererComponent<ApiServoOutputType> = (
@@ -17,8 +16,6 @@ export const ServoOutput: IoCardRendererComponent<ApiServoOutputType> = (
   const transport = useTransportContext();
   const login = useLoginContext();
   const om = useOMContext();
-
-  const max = () => (props.io.IOType === SwOSIOType.SWOSIO_SERVO ? 255 : 90); // RCSERVO_RESOLUTION is 90
 
   const [
     optimisticPosition,
@@ -81,8 +78,8 @@ export const ServoOutput: IoCardRendererComponent<ApiServoOutputType> = (
       </div>
       <input
         type="range"
-        min="0"
-        max={max()}
+        min="-45"
+        max="45"
         value={optimisticPosition()}
         onInput={(e) => {
           setPositionEditing(true);
@@ -106,8 +103,8 @@ export const ServoOutput: IoCardRendererComponent<ApiServoOutputType> = (
       </div>
       <input
         type="range"
-        min="0"
-        max={max()}
+        min="-45"
+        max="45"
         value={optimisticOffset()}
         onInput={(e) => {
           setOffsetEditing(true);

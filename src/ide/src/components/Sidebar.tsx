@@ -127,7 +127,7 @@ export const Sidebar: Component<{
 
   return (
     <aside class="flex h-full flex-col gap-3 lg:w-64">
-      <div class="flex flex-1 flex-col gap-3 overflow-scroll">
+      <div class="flex flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto">
         <div class="flex items-center pt-2 pr-2 lg:hidden">
           <Title />
           <button
