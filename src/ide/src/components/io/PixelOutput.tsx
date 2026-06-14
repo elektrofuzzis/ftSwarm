@@ -9,6 +9,7 @@ import { apiNameOf, rpcResponseToSeq } from "../../api/util.ts";
 import { useLoginContext } from "../../contexts/LoginContext.tsx";
 import { Loader } from "./Loader.tsx";
 import { transactMessage } from "../../api/transport";
+import { ColorInput } from "../ColorInput.tsx";
 
 export const PixelOutput: IoCardRendererComponent<ApiPixelOutputType> = (
   props,
@@ -54,13 +55,9 @@ export const PixelOutput: IoCardRendererComponent<ApiPixelOutputType> = (
     registryKeyOfProps(props, "color"),
     sequencedDatumFactory(props, (_) => props.io.color),
     async (newColor) => {
-      // newColor is hex string like "RRGGBB"
-      const r = parseInt(newColor.substring(0, 2), 16);
-      const g = parseInt(newColor.substring(2, 4), 16);
-      const b = parseInt(newColor.substring(4, 6), 16);
       const result = await transactMessage(
         transport,
-        `${apiNameOf(props.io, props.controller)}.setColor(${r},${g},${b})`,
+        `${apiNameOf(props.io, props.controller)}.setColor(#${newColor})`,
       ).then((v) => v.unwrapOr(null));
       return rpcResponseToSeq(result);
     },
@@ -94,32 +91,15 @@ export const PixelOutput: IoCardRendererComponent<ApiPixelOutputType> = (
         class={`accent-thm-primary h-2 w-full cursor-pointer appearance-none rounded-lg bg-zinc-700 ${login.interactiveDisabled() ? "cursor-not-allowed opacity-50" : ""}`}
       />
 
-      <div class="flex justify-between text-sm">
-        <div class="flex items-center gap-2">
-          <span class="text-zinc-400">Color</span>
-          <Loader
-            isMutating={isColorMutating()}
-            isThrottled={isColorThrottled()}
-            isEditing={isColorEditing()}
-          />
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="font-mono text-xs text-zinc-500">
-            #{optimisticColor()}
-          </span>
-          <input
-            type="color"
-            value={`#${optimisticColor()}`}
-            onInput={(e) => {
-              setColorEditing(true);
-              setOptimisticColor(e.target.value.substring(1).toUpperCase());
-            }}
-            onChange={() => setColorEditing(false)}
-            disabled={login.interactiveDisabled()}
-            class="h-6 w-6 cursor-pointer rounded border-0 bg-transparent disabled:cursor-not-allowed"
-          />
-        </div>
-      </div>
+      <ColorInput
+        value={optimisticColor()}
+        isMutating={isColorMutating()}
+        isThrottled={isColorThrottled()}
+        isEditing={isColorEditing()}
+        setEditing={setColorEditing}
+        setValue={setOptimisticColor}
+        disabled={login.interactiveDisabled()}
+      />
     </div>
   );
 };

@@ -2,21 +2,19 @@ import { Show, type Component, type ParentComponent } from "solid-js";
 import TitleImage from "../assets/ftswarm.svg";
 import Telescope from "lucide-solid/icons/telescope";
 import FolderPen from "lucide-solid/icons/folder-pen";
-import Workflow from "lucide-solid/icons/workflow";
-import Box from "lucide-solid/icons/box";
-import Settings from "lucide-solid/icons/settings";
-import Rss from "lucide-solid/icons/rss";
-import Cable from "lucide-solid/icons/cable";
-import Update from "lucide-solid/icons/circle-fading-arrow-up";
 import { Surface1 } from "./Surface";
 import { useDebug } from "../contexts/DebugContext";
-import { useOMContext } from "../contexts/transport/context";
+import {
+  useOMContext,
+  useTransportContext,
+} from "../contexts/transport/context";
 import { For } from "solid-js/web";
 import { SwOSState } from "../api/generated/genApiEnums";
 import { useLocation, A } from "../util/router";
 import { getControllerIcon } from "../api/icons.ts";
 import { Button } from "./Button.tsx";
 import { LoginState, useLoginContext } from "../contexts/LoginContext.tsx";
+import { transactMessage } from "../api/transport";
 
 export const Title = () => {
   const { toggleMenu } = useDebug();
@@ -115,13 +113,21 @@ export const Sidebar: Component<{
   const onlineControllers = () =>
     controllers().filter((it) => it.state === SwOSState.RUNNING).length;
 
+  const transport = useTransportContext();
+
   const route = useLocation();
 
   const loginState = useLoginContext();
 
+  const halt = () => {
+    const confirmed = confirm("Are you sure you want to halt the swarm?");
+    if (!confirmed) return;
+    transactMessage(transport, "halt").then((_) => _);
+  };
+
   return (
-    <aside class="flex h-full flex-col gap-3">
-      <div class="flex flex-1 flex-col gap-3 overflow-scroll">
+    <aside class="flex h-full flex-col gap-3 lg:w-64">
+      <div class="flex flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto">
         <div class="flex items-center pt-2 pr-2 lg:hidden">
           <Title />
           <button
@@ -169,59 +175,59 @@ export const Sidebar: Component<{
           )}
         </For>
 
-        <Category icon={Workflow} title="Event Configuration" disabled={true} />
-        <MenuEntry
-          icon={Box}
-          text="Configuration 1"
-          active={false}
-          disabled={true}
-        >
-          <StatusCircle class="bg-thm-primary" />
-        </MenuEntry>
-        <MenuEntry
-          icon={Box}
-          text="Configuration 2"
-          active={false}
-          disabled={true}
-        />
-        <MenuEntry
-          icon={Box}
-          text="Configuration 3"
-          active={false}
-          disabled={true}
-        />
-        <MenuEntry
-          icon={Box}
-          text="Configuration 4"
-          active={false}
-          disabled={true}
-        />
+        {/*<Category icon={Workflow} title="Event Configuration" disabled={true} />*/}
+        {/*<MenuEntry*/}
+        {/*  icon={Box}*/}
+        {/*  text="Configuration 1"*/}
+        {/*  active={false}*/}
+        {/*  disabled={true}*/}
+        {/*>*/}
+        {/*  <StatusCircle class="bg-thm-primary" />*/}
+        {/*</MenuEntry>*/}
+        {/*<MenuEntry*/}
+        {/*  icon={Box}*/}
+        {/*  text="Configuration 2"*/}
+        {/*  active={false}*/}
+        {/*  disabled={true}*/}
+        {/*/>*/}
+        {/*<MenuEntry*/}
+        {/*  icon={Box}*/}
+        {/*  text="Configuration 3"*/}
+        {/*  active={false}*/}
+        {/*  disabled={true}*/}
+        {/*/>*/}
+        {/*<MenuEntry*/}
+        {/*  icon={Box}*/}
+        {/*  text="Configuration 4"*/}
+        {/*  active={false}*/}
+        {/*  disabled={true}*/}
+        {/*/>*/}
 
-        <Category icon={Settings} title="Swarm Settings" disabled={true} />
-        <MenuEntry
-          icon={Rss}
-          text="WiFi & Web"
-          active={false}
-          disabled={true}
-        />
-        <MenuEntry
-          icon={Cable}
-          text="Swarm Configuration"
-          active={false}
-          disabled={true}
-        />
-        <MenuEntry
-          icon={Settings}
-          text="Miscellaneous"
-          active={false}
-          disabled={true}
-        />
-        <MenuEntry
-          icon={Update}
-          text="Firmware Update"
-          active={false}
-          disabled={true}
-        />
+        {/*<Category icon={Settings} title="Swarm Settings" disabled={true} />*/}
+        {/*<MenuEntry*/}
+        {/*  icon={Rss}*/}
+        {/*  text="WiFi & Web"*/}
+        {/*  active={false}*/}
+        {/*  disabled={true}*/}
+        {/*/>*/}
+        {/*<MenuEntry*/}
+        {/*  icon={Cable}*/}
+        {/*  text="Swarm Configuration"*/}
+        {/*  active={false}*/}
+        {/*  disabled={true}*/}
+        {/*/>*/}
+        {/*<MenuEntry*/}
+        {/*  icon={Settings}*/}
+        {/*  text="Miscellaneous"*/}
+        {/*  active={false}*/}
+        {/*  disabled={true}*/}
+        {/*/>*/}
+        {/*<MenuEntry*/}
+        {/*  icon={Update}*/}
+        {/*  text="Firmware Update"*/}
+        {/*  active={false}*/}
+        {/*  disabled={true}*/}
+        {/*/>*/}
       </div>
       <div class="flex flex-col gap-3">
         <Show when={loginState.status() == LoginState.LOGGED_OUT}>
@@ -230,6 +236,9 @@ export const Sidebar: Component<{
           </Button>
         </Show>
         <Show when={loginState.status() == LoginState.LOGGED_IN}>
+          <Button class="w-full" variant="danger" on:click={halt}>
+            Halt
+          </Button>
           <Button class="w-full" variant="outline" on:click={loginState.logout}>
             Log out
           </Button>

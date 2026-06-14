@@ -37,7 +37,7 @@ export const IOTypeClasses: IOTypeMapping = {
   [SwOSIOType.SWOSIO_FREQUENCYMETER]: "input",
   [SwOSIOType.SWOSIO_LIDAR]: "input",
   [SwOSIOType.SWOSIO_CAM]: "special",
-  [SwOSIOType.SWOSIO_SERVO]: "input",
+  [SwOSIOType.SWOSIO_SERVO]: "output",
   [SwOSIOType.SWOSIO_PIXEL]: "output",
   [SwOSIOType.SWOSIO_OLED]: "special",
   [SwOSIOType.SWOSIO_I2C]: "special",
@@ -93,6 +93,10 @@ export interface ApiAnalogInputType extends ApiGeneralIoType {
 
 export interface ApiFormattedValueInputType extends ApiGeneralIoType {
   value: string | [string, string];
+}
+
+export interface ApiPowerInputType extends ApiGeneralIoType {
+  value: [number, string];
 }
 
 export interface ApiJoystickInputType extends ApiGeneralIoType {

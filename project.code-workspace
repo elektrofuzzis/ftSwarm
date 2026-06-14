@@ -1,10 +1,6 @@
 {
     "folders": [
         {
-            "name": "🔍Decompiler!",
-            "uri": "decompileFs:/"
-        },
-        {
             "name": "ftswarm-core",
             "path": "src/ftswarm-core"
         },

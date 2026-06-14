@@ -1,4 +1,5 @@
-import type { Accessor, Component } from "solid-js";
+import { type Accessor, type Component } from "solid-js";
+import { Dynamic } from "solid-js/web";
 import { SwOSIOType } from "../../api/generated/genApiEnums";
 import type { ApiController, ApiGeneralIoType } from "../../api/apiTypes";
 import { IoFrame } from "./IoFrame";
@@ -17,6 +18,7 @@ import { ServoOutput } from "./ServoOutput.tsx";
 import { StepperOutput } from "./StepperOutput.tsx";
 import { PixelOutput } from "./PixelOutput.tsx";
 import { GyroInput } from "./GyroInput.tsx";
+import { PowerInput } from "./PowerInput.tsx";
 
 export type IoCardProps<Io extends ApiGeneralIoType = ApiGeneralIoType> = {
   io: Io;
@@ -89,7 +91,7 @@ const componentMapper: Record<SwOSIOType, IoCardRendererComponent<any>> = {
   [SwOSIOType.SWOSIO_OLED]: Unimplemented,
   [SwOSIOType.SWOSIO_I2C]: Unimplemented,
   [SwOSIOType.SWOSIO_GYRO]: GyroInput,
-  [SwOSIOType.SWOSIO_POWER]: Unimplemented,
+  [SwOSIOType.SWOSIO_POWER]: PowerInput,
   [SwOSIOType.SWOSIO_COLORSENSOR]: Unimplemented,
   [SwOSIOType.SWOSIO_TRAILSENSOR]: Unimplemented,
   [SwOSIOType.SWOSIO_ULTRASONIC]: FormattedValueInput,
@@ -105,5 +107,7 @@ const componentMapper: Record<SwOSIOType, IoCardRendererComponent<any>> = {
 };
 
 export const IoCard: Component<IoCardProps> = (props) => (
-  <IoFrame {...props}>{componentMapper[props.io.IOType](props)}</IoFrame>
+  <IoFrame {...props}>
+    <Dynamic component={componentMapper[props.io.IOType]} {...props} />
+  </IoFrame>
 );
