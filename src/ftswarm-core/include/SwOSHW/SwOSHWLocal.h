@@ -184,6 +184,12 @@ class OLED : protected U8G2_SSD1306_128X64_NONAME_F_HW_I2C {
     /** @return Total physical width of the OLED display in pixels. */
     int16_t getScreenWidth(void);
 
+    /** @brief Gets the physical height of the OLED display in pixels. */
+    int16_t getDisplayHeight(void) { return U8G2_SSD1306_128X64_NONAME_F_HW_I2C::getDisplayHeight(); };
+
+    /** @brief Access raw display buffer data for screenshot generation. */
+    uint8_t *getDisplayBuffer(void) { return U8G2_SSD1306_128X64_NONAME_F_HW_I2C::getBufferPtr(); };
+
     /** @brief Gets the height of a virtual screen. @param screen Screen index. @return Height in pixels. */
     int16_t getScreenHeight( FtSwarmOledScreen_t screen = FTSWARM_OLED_MAINSCREEN );
 

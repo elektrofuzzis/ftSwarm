@@ -342,13 +342,13 @@ Cmd_t SwOSCLI::evalSimpleCommand( char *token ) {
   Cmd_t cmd = CMD_UNKONWN;
 
    // did I found a command?
-  if      ( strcmp( token, "help"  ) == 0 )    cmd = CMD_HELP;
-  else if ( strcmp( token, "whoami" ) == 0 )   cmd = CMD_WHOAMI;
-  else if ( strcmp( token, "uptime" ) == 0 )   cmd = CMD_UPTIME;
-  else if ( strcmp( token, "setup" ) == 0 )    cmd = CMD_SETUP;
-  else if ( strcmp( token, "startCLI" ) == 0 ) cmd = CMD_STARTCLI;
-  else if ( strcmp( token, "halt" ) == 0 )     cmd = CMD_HALT;
-  else if ( strcmp( token, "exit" ) == 0 )     cmd = CMD_EXIT;
+  if      ( strcmp( token, "help"  ) == 0 )      cmd = CMD_HELP;
+  else if ( strcmp( token, "whoami" ) == 0 )     cmd = CMD_WHOAMI;
+  else if ( strcmp( token, "uptime" ) == 0 )     cmd = CMD_UPTIME;
+  else if ( strcmp( token, "setup" ) == 0 )      cmd = CMD_SETUP;
+  else if ( strcmp( token, "startCLI" ) == 0 )   cmd = CMD_STARTCLI;
+  else if ( strcmp( token, "halt" ) == 0 )       cmd = CMD_HALT;
+  else if ( strcmp( token, "exit" ) == 0 )       cmd = CMD_EXIT;
   
   // command found?
   if ( cmd >= 0 ) {
@@ -363,32 +363,32 @@ Cmd_t SwOSCLI::evalSimpleCommand( char *token ) {
 
     // execute 
     switch (cmd) {
-      case CMD_HELP:      free(response);
-                          response = (char *) calloc( 1, sizeof( help ) );
-                          strcpy(response, help);
-                          break;
+      case CMD_HELP:        free(response);
+                            response = (char *) calloc( 1, sizeof( help ) );
+                            strcpy(response, help);
+                            break;
 
-      case CMD_WHOAMI:    myOSSwarm.Ctrl[0]->lock();
-                          sprintf( response, "%s/%s", myOSSwarm.Ctrl[0]->getName(), myOSSwarm.Ctrl[0]->getAlias() );  
-                          myOSSwarm.Ctrl[0]->identify();  
-                          myOSSwarm.Ctrl[0]->unlock();
-                          break;
+      case CMD_WHOAMI:      myOSSwarm.Ctrl[0]->lock();
+                            sprintf( response, "%s/%s", myOSSwarm.Ctrl[0]->getName(), myOSSwarm.Ctrl[0]->getAlias() );  
+                            myOSSwarm.Ctrl[0]->identify();  
+                            myOSSwarm.Ctrl[0]->unlock();
+                            break;
 
-      case CMD_UPTIME:    uptime = millis()/1000;
-                          sprintf( response, "uptime: %.3f s", uptime);
-                          break;
+      case CMD_UPTIME:      uptime = millis()/1000;
+                            sprintf( response, "uptime: %.3f s", uptime);
+                            break;
 
-      case CMD_SETUP:     if (interactive) mainMenu();
-                          else Error( ERROR_INVALIDCMD );              
-                          break;
+      case CMD_SETUP:       if (interactive) mainMenu();
+                            else Error( ERROR_INVALIDCMD );              
+                            break;
 
-      case CMD_STARTCLI:  if (interactive) startCLI( true ); 
-                          else Error( ERROR_INVALIDCMD );              
-                          break;
+      case CMD_STARTCLI:    if (interactive) startCLI( true ); 
+                            else Error( ERROR_INVALIDCMD );              
+                            break;
 
-      case CMD_HALT:      halt();
-                          break;
-    
+      case CMD_HALT:        halt();
+                            break;
+                            
     }
 
   }
@@ -424,13 +424,13 @@ char *SwOSCLI::eval( char* in, bool *loggedIn ) {
   // interpret as a simple command?
   switch ( evalSimpleCommand( token ) ) {
 
-    case CMD_EXIT:    exit = true;
-                      if (interactive) return response;   // exit: stop CLI
-                      else Error( ERROR_INVALIDCMD );
+    case CMD_EXIT:        exit = true;
+                          if (interactive) return response;   // exit: stop CLI
+                          else Error( ERROR_INVALIDCMD );
 
-    case CMD_UNKONWN: break;           // not a simple command: continue
+    case CMD_UNKONWN:     break;           // not a simple command: continue
 
-    default:          return response; // error, setup, help, startcli, halt: stop evaluation
+    default:              return response; // error, setup, help, startcli, halt: stop evaluation
 
   }
 

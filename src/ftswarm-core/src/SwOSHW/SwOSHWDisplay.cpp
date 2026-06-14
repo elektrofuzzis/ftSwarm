@@ -276,3 +276,4 @@ void SwOSOLED::drawTriangle( FtSwarmOledScreen_t screen, int16_t x0, int16_t y0,
   oled.drawTriangle( screen, x0, y0, x1, y1, x2, y2, fill );
 
 }
+

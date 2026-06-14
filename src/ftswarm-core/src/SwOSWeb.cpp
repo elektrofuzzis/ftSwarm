@@ -11,10 +11,12 @@
 #include <esp_http_server.h>
 
 #include <freertos/task.h>
+#include <cstring>
 
 #include "serialize.h"
 #include "SwOSNVS.h"
 #include "SwOSHW.h"
+#include "SwOSHW/SwOSHWLocal.h"
 #include "SwOSSwarm.h"
 #include "SwOSWeb.h"
 #include "sfs_files.h"
@@ -64,6 +66,174 @@ esp_err_t indexHandler(httpd_req_t *req, httpd_err_code_t err) {
 
   return ESP_OK;
 }
+
+#if FTSWARM_HAL_OLEDS > 0
+
+static void pngWriteUint32(uint8_t *buf, uint32_t value) {
+    buf[0] = (value >> 24) & 0xff;
+    buf[1] = (value >> 16) & 0xff;
+    buf[2] = (value >> 8) & 0xff;
+    buf[3] = value & 0xff;
+}
+
+static uint32_t pngCrc32(const uint8_t *data, size_t len) {
+    static uint32_t table[256];
+    static bool tableReady = false;
+
+    if (!tableReady) {
+        for (uint32_t i = 0; i < 256; i++) {
+            uint32_t c = i;
+            for (uint32_t j = 0; j < 8; j++) {
+                if (c & 1) c = 0xedb88320UL ^ (c >> 1);
+                else c >>= 1;
+            }
+            table[i] = c;
+        }
+        tableReady = true;
+    }
+
+    uint32_t crc = 0xffffffffUL;
+    for (size_t i = 0; i < len; i++) {
+        crc = table[(crc ^ data[i]) & 0xff] ^ (crc >> 8);
+    }
+    return crc ^ 0xffffffffUL;
+}
+
+static uint8_t *pngAppendChunk(uint8_t *dst, const char *type, const uint8_t *data, size_t data_len) {
+    pngWriteUint32(dst, data_len);
+    dst += 4;
+    uint8_t *chunkStart = dst;
+    memcpy(dst, type, 4);
+    dst += 4;
+    if (data && data_len) {
+        memcpy(dst, data, data_len);
+        dst += data_len;
+    }
+    uint32_t crc = pngCrc32(chunkStart, 4 + data_len);
+    pngWriteUint32(dst, crc);
+    dst += 4;
+    return dst;
+}
+
+static esp_err_t sendOledScreenshot(httpd_req_t *req) {
+    uint8_t *fb = oled.getDisplayBuffer();
+    if (!fb) return ESP_FAIL;
+
+    const uint32_t width = oled.getScreenWidth();
+    const uint32_t height = oled.getDisplayHeight();
+    const uint32_t outWidth = width + 4;
+    const uint32_t outHeight = height + 4;
+    const size_t bytes_per_row = outWidth * 3;
+    const size_t raw_size = outHeight * (1 + bytes_per_row);
+    const size_t zlib_size = 2 + 5 + raw_size + 4;
+    const size_t png_size = 8 + 25 + 12 + zlib_size + 12;
+
+    uint8_t *png = (uint8_t *)calloc(1, png_size);
+    if (!png) return ESP_ERR_NO_MEM;
+
+    uint8_t *p = png;
+    static const uint8_t pngSignature[8] = {0x89, 'P', 'N', 'G', 0x0d, 0x0a, 0x1a, 0x0a};
+    memcpy(p, pngSignature, sizeof(pngSignature));
+    p += sizeof(pngSignature);
+
+    uint8_t ihdr[13];
+    pngWriteUint32(ihdr + 0, outWidth);
+    pngWriteUint32(ihdr + 4, outHeight);
+    ihdr[8] = 8;    // bit depth
+    ihdr[9] = 2;    // color type: truecolor RGB
+    ihdr[10] = 0;   // compression method
+    ihdr[11] = 0;   // filter method
+    ihdr[12] = 0;   // interlace method
+    p = pngAppendChunk(p, "IHDR", ihdr, sizeof(ihdr));
+
+    uint8_t *zlib = (uint8_t *)calloc(1, zlib_size);
+    if (!zlib) { free(png); return ESP_ERR_NO_MEM; }
+
+    uint8_t *q = zlib;
+    *q++ = 0x78; // zlib CMF
+    *q++ = 0x01; // zlib FLG (no compression, fastest)
+
+    *q++ = 0x01; // DEFLATE block header: final block, no compression
+
+    uint16_t len = (uint16_t)raw_size;
+    *q++ = len & 0xff;
+    *q++ = (len >> 8) & 0xff;
+    *q++ = (~len) & 0xff;
+    *q++ = ((~len) >> 8) & 0xff;
+
+    uint32_t a = 1;
+    uint32_t b = 0;
+
+    for (uint32_t y = 0; y < outHeight; y++) {
+        *q++ = 0;
+        a += 0;
+        if (a >= 65521) a -= 65521;
+        b += a;
+        if (b >= 65521) b -= 65521;
+
+        for (uint32_t x = 0; x < outWidth; x++) {
+            uint8_t r = 0;
+            uint8_t g = 0;
+            uint8_t bcol = 0;
+            if (x >= 2 && x < width + 2 && y >= 2 && y < height + 2) {
+                uint32_t srcX = x - 2;
+                uint32_t srcY = y - 2;
+                uint32_t index = srcX + (srcY / 8) * width;
+                uint8_t pixel = (fb[index] >> (srcY & 7)) & 1;
+                if (pixel) {
+                    if (srcY < 16) {
+                        r = 255; g = 215; bcol = 0; // gold
+                    } else {
+                        r = 0; g = 255; bcol = 255; // cyan
+                    }
+                }
+            }
+            *q++ = r;
+            *q++ = g;
+            *q++ = bcol;
+            a += r;
+            if (a >= 65521) a -= 65521;
+            b += a;
+            if (b >= 65521) b -= 65521;
+            a += g;
+            if (a >= 65521) a -= 65521;
+            b += a;
+            if (b >= 65521) b -= 65521;
+            a += bcol;
+            if (a >= 65521) a -= 65521;
+            b += a;
+            if (b >= 65521) b -= 65521;
+        }
+    }
+
+    uint32_t adler = (b << 16) | a;
+    *q++ = (adler >> 24) & 0xff;
+    *q++ = (adler >> 16) & 0xff;
+    *q++ = (adler >> 8) & 0xff;
+    *q++ = adler & 0xff;
+
+    size_t actual_zlib_len = q - zlib;
+    p = pngAppendChunk(p, "IDAT", zlib, actual_zlib_len);
+    free(zlib);
+
+    p = pngAppendChunk(p, "IEND", NULL, 0);
+    size_t total_size = p - png;
+
+    httpd_resp_set_type(req, "image/png");
+    httpd_resp_set_hdr(req, "Content-Disposition", "inline; filename=\"oled_screenshot.png\"");
+    httpd_resp_set_hdr(req, "Cache-Control", "no-cache, no-store, must-revalidate");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+
+    esp_err_t err = httpd_resp_send(req, (const char *)png, total_size);
+    free(png);
+    return err;
+}
+
+static esp_err_t screenshotUriHandler(httpd_req_t *req) {
+    return sendOledScreenshot(req);
+}
+
+#endif
 
 #define PART_BOUNDARY "123456789000000000000987654321"
 static const char *_STREAM_CONTENT_TYPE = "multipart/x-mixed-replace;boundary=" PART_BOUNDARY;
@@ -223,8 +393,6 @@ static void wsAsyncHandler( void *varg )
     SwOSCLI cli;
     bool loggedIn = ( arg->fd == authenticatedSession );
 
-    printf("Received WS message: %s\n", arg->message);
-
     response = cli.eval( (char*) arg->message, &loggedIn );
 
     if ( loggedIn ) authenticatedSession = arg->fd;
@@ -333,6 +501,11 @@ bool SwOSStartWebServer( void ) {
   // log
   httpd_uri_t getLog = { .uri = "/api/getLog", .method = HTTP_GET, .handler = &apiGetLogHandler, .user_ctx = NULL };
   httpd_register_uri_handler(UIServer, &getLog);
+
+  #if FTSWARM_HAL_OLEDS > 0
+  httpd_uri_t getScreenshot = { .uri = "/api/screenshot", .method = HTTP_GET, .handler = &screenshotUriHandler, .user_ctx = NULL };
+  httpd_register_uri_handler(UIServer, &getScreenshot);
+  #endif
 
   // ws
   httpd_uri_t ws = { .uri = "/ws", .method = HTTP_GET, .handler = &wsHandler, .user_ctx = NULL, .is_websocket  = true };
