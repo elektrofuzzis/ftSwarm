@@ -1,4 +1,4 @@
-// MotorSwitch
+// MotorSwitchSwarm
 //
 // Simple ftSwarm starter application using multiple controllers. Details at https://elektrofuzzis.github.io/ftSwarm.
 //
@@ -10,7 +10,7 @@
 #define REMOTE 2
 
 FtSwarmSwitch *sw;
-FtSwarmMiniMotor *mot;
+FtSwarmMotor  *mot;
 
 void setup( ) {
 
@@ -18,8 +18,8 @@ void setup( ) {
   FtSwarmSerialNumber_t local = ftSwarm.begin( );
 	
   // get switch and motor instances
-  sw  = new FtSwarmSwitch( RMEOTE, FTSWARM_A1 );
-  mot = new FtSwarmMiniMotor( local, FTSWARM_M1 );
+  sw  = new FtSwarmSwitch( REMOTE, FTSWARM_A1 );
+  mot = new FtSwarmMotor( local, FTSWARM_M1 );
 
 }
 

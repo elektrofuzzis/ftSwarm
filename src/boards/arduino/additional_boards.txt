@@ -1,11 +1,8 @@
+menu.Language=Language
+
 ##############################################################
 
 ftSwarmRS.name=ftSwarmRS
-
-ftSwarmRS.menu.PartitionScheme=Partition Scheme
-ftSwarmRS.menu.DebugLevel=Core Debug Level
-ftSwarmRS.menu.EraseFlash=Erase All Flash Before Sketch Upload
-ftSwarmRS.menu.Language=Language
 
 ftSwarmRS.bootloader.tool=esptool_py
 ftSwarmRS.bootloader.tool.default=esptool_py
@@ -30,7 +27,7 @@ ftSwarmRS.build.bootloader_addr=0x0
 ftSwarmRS.build.target=esp32s3
 ftSwarmRS.build.mcu=esp32s3
 ftSwarmRS.build.core=esp32
-ftSwarmRS.build.variant=ftSwarmRS
+ftSwarmRS.build.variant=ftswarmrs
 ftSwarmRS.build.board=FTSWARMRS
 
 ftSwarmRS.build.copy_jtag_files=0
@@ -86,11 +83,6 @@ ftSwarmRS.menu.Language.de.build.language_define=-DLANGUAGEDE
 
 ftSwarmXL.name=ftSwarmXL
 
-ftSwarmXL.menu.PartitionScheme=Partition Scheme
-ftSwarmXL.menu.DebugLevel=Core Debug Level
-ftSwarmXL.menu.EraseFlash=Erase All Flash Before Sketch Upload
-ftSwarmXL.menu.Language=Language
-
 ftSwarmXL.bootloader.tool=esptool_py
 ftSwarmXL.bootloader.tool.default=esptool_py
 
@@ -114,7 +106,7 @@ ftSwarmXL.build.bootloader_addr=0x0
 ftSwarmXL.build.target=esp32s3
 ftSwarmXL.build.mcu=esp32s3
 ftSwarmXL.build.core=esp32
-ftSwarmXL.build.variant=ftSwarmXL
+ftSwarmXL.build.variant=ftswarmxl
 ftSwarmXL.build.board=FTSWARMXL
 
 ftSwarmXL.build.copy_jtag_files=0
@@ -170,11 +162,6 @@ ftSwarmXL.menu.Language.de.build.language_define=-DLANGUAGEDE
 
 ftSwarmPwrDrive.name=ftSwarmPwrDrive
 
-ftSwarmPwrDrive.menu.PartitionScheme=Partition Scheme
-ftSwarmPwrDrive.menu.DebugLevel=Core Debug Level
-ftSwarmPwrDrive.menu.EraseFlash=Erase All Flash Before Sketch Upload
-ftSwarmPwrDrive.menu.Language=Language
-
 ftSwarmPwrDrive.bootloader.tool=esptool_py
 ftSwarmPwrDrive.bootloader.tool.default=esptool_py
 
@@ -198,7 +185,7 @@ ftSwarmPwrDrive.build.bootloader_addr=0x0
 ftSwarmPwrDrive.build.target=esp32s3
 ftSwarmPwrDrive.build.mcu=esp32s3
 ftSwarmPwrDrive.build.core=esp32
-ftSwarmPwrDrive.build.variant=ftSwarmPwrDrive
+ftSwarmPwrDrive.build.variant=ftswarmpwrdrive
 ftSwarmPwrDrive.build.board=FTSWARMPWRDRIVE
 
 ftSwarmPwrDrive.build.copy_jtag_files=0
@@ -254,11 +241,6 @@ ftSwarmPwrDrive.menu.Language.de.build.language_define=-DLANGUAGEDE
 
 ftSwarmDuino.name=ftSwarmDuino
 
-ftSwarmDuino.menu.PartitionScheme=Partition Scheme
-ftSwarmDuino.menu.DebugLevel=Core Debug Level
-ftSwarmDuino.menu.EraseFlash=Erase All Flash Before Sketch Upload
-ftSwarmDuino.menu.Language=Language
-
 ftSwarmDuino.bootloader.tool=esptool_py
 ftSwarmDuino.bootloader.tool.default=esptool_py
 
@@ -282,7 +264,7 @@ ftSwarmDuino.build.bootloader_addr=0x0
 ftSwarmDuino.build.target=esp32s3
 ftSwarmDuino.build.mcu=esp32s3
 ftSwarmDuino.build.core=esp32
-ftSwarmDuino.build.variant=ftSwarmDuino
+ftSwarmDuino.build.variant=ftswarmduino
 ftSwarmDuino.build.board=FTSWARMDUINO
 
 ftSwarmDuino.build.copy_jtag_files=0
@@ -338,11 +320,6 @@ ftSwarmDuino.menu.Language.de.build.language_define=-DLANGUAGEDE
 
 ftSwarmRC.name=ftSwarmRC
 
-ftSwarmRC.menu.PartitionScheme=Partition Scheme
-ftSwarmRC.menu.DebugLevel=Core Debug Level
-ftSwarmRC.menu.EraseFlash=Erase All Flash Before Sketch Upload
-ftSwarmRC.menu.Language=Language
-
 ftSwarmRC.bootloader.tool=esptool_py
 ftSwarmRC.bootloader.tool.default=esptool_py
 
@@ -366,7 +343,7 @@ ftSwarmRC.build.bootloader_addr=0x0
 ftSwarmRC.build.target=esp32s3
 ftSwarmRC.build.mcu=esp32s3
 ftSwarmRC.build.core=esp32
-ftSwarmRC.build.variant=ftSwarmRC
+ftSwarmRC.build.variant=ftswarmrc
 ftSwarmRC.build.board=FTSWARMRC
 
 ftSwarmRC.build.copy_jtag_files=0
@@ -420,11 +397,6 @@ ftSwarmRC.menu.Language.de.build.language_define=-DLANGUAGEDE
 
 ftSwarmControlUSBC.name=ftSwarmControlUSBC
 
-ftSwarmControlUSBC.menu.PartitionScheme=Partition Scheme
-ftSwarmControlUSBC.menu.DebugLevel=Core Debug Level
-ftSwarmControlUSBC.menu.EraseFlash=Erase All Flash Before Sketch Upload
-ftSwarmControlUSBC.menu.Language=Language
-
 ftSwarmControlUSBC.bootloader.tool=esptool_py
 ftSwarmControlUSBC.bootloader.tool.default=esptool_py
 
@@ -448,7 +420,7 @@ ftSwarmControlUSBC.build.bootloader_addr=0x0
 ftSwarmControlUSBC.build.target=esp32s3
 ftSwarmControlUSBC.build.mcu=esp32s3
 ftSwarmControlUSBC.build.core=esp32
-ftSwarmControlUSBC.build.variant=ftSwarmControlUSBC
+ftSwarmControlUSBC.build.variant=ftswarmcontrolusbc
 ftSwarmControlUSBC.build.board=FTSWARMCONTROLUSBC
 
 ftSwarmControlUSBC.build.copy_jtag_files=0
@@ -502,11 +474,6 @@ ftSwarmControlUSBC.menu.Language.de.build.language_define=-DLANGUAGEDE
 
 ftSwarmControlUSBMicro.name=ftSwarmControlUSBMicro
 
-ftSwarmControlUSBMicro.menu.PartitionScheme=Partition Scheme
-ftSwarmControlUSBMicro.menu.DebugLevel=Core Debug Level
-ftSwarmControlUSBMicro.menu.EraseFlash=Erase All Flash Before Sketch Upload
-ftSwarmControlUSBMicro.menu.Language=Language
-
 ftSwarmControlUSBMicro.bootloader.tool=esptool_py
 ftSwarmControlUSBMicro.bootloader.tool.default=esptool_py
 
@@ -530,7 +497,7 @@ ftSwarmControlUSBMicro.build.bootloader_addr=0x1000
 ftSwarmControlUSBMicro.build.target=esp32
 ftSwarmControlUSBMicro.build.mcu=esp32
 ftSwarmControlUSBMicro.build.core=esp32
-ftSwarmControlUSBMicro.build.variant=ftSwarmControlUSBMicro
+ftSwarmControlUSBMicro.build.variant=ftSwarmcontrolusbmicro
 ftSwarmControlUSBMicro.build.board=FTSWARMCONTROLUSBMICRO
 
 ftSwarmControlUSBMicro.build.f_cpu=240000000L
@@ -579,11 +546,6 @@ ftSwarmControlUSBMicro.menu.Language.de.build.language_define=-DLANGUAGEDE
 
 ftSwarmJST.name=ftSwarmJST
 
-ftSwarmJST.menu.PartitionScheme=Partition Scheme
-ftSwarmJST.menu.DebugLevel=Core Debug Level
-ftSwarmJST.menu.EraseFlash=Erase All Flash Before Sketch Upload
-ftSwarmJST.menu.Language=Language
-
 ftSwarmJST.bootloader.tool=esptool_py
 ftSwarmJST.bootloader.tool.default=esptool_py
 
@@ -607,7 +569,7 @@ ftSwarmJST.build.bootloader_addr=0x1000
 ftSwarmJST.build.target=esp32
 ftSwarmJST.build.mcu=esp32
 ftSwarmJST.build.core=esp32
-ftSwarmJST.build.variant=ftSwarmJST
+ftSwarmJST.build.variant=ftswarmjst
 ftSwarmJST.build.board=FTSWARMJST
 
 ftSwarmJST.build.f_cpu=240000000L

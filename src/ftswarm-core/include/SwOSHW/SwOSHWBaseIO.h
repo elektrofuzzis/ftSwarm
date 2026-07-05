@@ -152,8 +152,8 @@ protected:
 
   // local HW 
   virtual void setupLocal() {};
-  static int32_t evalOperand( FtSwarmOperand_t v, int32_t sensor, int32_t actor, int32_t parameter );
-  static int32_t evalTriggerMath( SwOSTriggerMath triggerMath, int32_t sensor, int32_t actor, int32_t parameter, int32_t minValue, int32_t maxValue );
+  static int32_t evalOperand( FtSwarmOperand_t v, int32_t sensor, int32_t delta, int32_t actor, int32_t parameter );
+  static int32_t evalTriggerMath( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, int32_t actor, int32_t parameter, int32_t minValue, int32_t maxValue );
 
 public:
   // Constructor
@@ -264,7 +264,7 @@ public:
   virtual bool isStepper( void )      { return false; };
 
   virtual void operate( void ) { };
-  virtual void onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t parameter );
+  virtual void onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, int32_t parameter );
 
   // get my raw value
   virtual int32_t getValueI32( void ) { return FTSWARM_NANI32; };
@@ -296,7 +296,7 @@ class SwOSEventInput {
     bool deleteEvent( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, SwOSIO *actor );
     void deleteEvents( void );
     bool addEvent( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, SwOSIO *actor, int32_t parameter );
-    void trigger( FtSwarmTrigger_t triggerEvent, int32_t sensor );
+    void trigger( FtSwarmTrigger_t triggerEvent, int32_t sensor, int32_t delta );
 };
 
 /***************************************************

@@ -358,7 +358,7 @@ float enterNumberF( const char *prompt, float defaultValue, float minValue, floa
 }
 
 int YN( int ch ) {
-  return ( ch == 'Y' ) || ( ch == 'y' ) || ( ch == 'N' ) || ( ch == 'n' ) ;
+  return ( ch == 'Y' ) || ( ch == 'y' ) || ( ch == 'J' ) || ( ch == 'j' ) || ( ch == 'N' ) || ( ch == 'n' ) ;
 }
 
 bool yesNo( const char *prompt, bool defaultValue ) {

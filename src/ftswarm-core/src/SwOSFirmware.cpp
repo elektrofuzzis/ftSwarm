@@ -202,6 +202,7 @@ void MenuLocalSettings::run( void ) {
     if ( ( nvs.wifi.mode == wifiOFF ) && ( nvs.swarm.communication.wifi ) ) printf( TRANSLATE( "\nHINT: Check wifi settings vs. swarm communication settings\n", "\nHINWEIS: Überprüfen Sie die WLAN- und Swarm-Kommunikationseinstellungen\n" ) );
 
     char line[100];
+    FtSwarmVersion_t cpu;
 
     switch ( userChoice(  ) ) {
 
@@ -258,7 +259,7 @@ void MenuLocalSettings::run( void ) {
                             break;
 
       case MENU_I2CLOW:     anythingChanged = true;
-                            nvs.extensionPort.interruptOnOff[0] = (int16_t) enterNumber( TRANSLATE( "Low Value [-255..255]", "Wert für 0 [-255..255]" ), nvs.extensionPort.interruptOnOff[0], -255, 255 );
+                            nvs.extensionPort.interruptOnOff[0] = (int16_t) enterNumber( TRANSLATE( "Low Value [-255..255]: ", "Wert für 0 [-255..255]: " ), nvs.extensionPort.interruptOnOff[0], -255, 255 );
                             scope = scope | FTSWARM_NVSSCOPE_EXTPORT;
                             break;
 
@@ -268,8 +269,28 @@ void MenuLocalSettings::run( void ) {
                             break;
 
       case MENU_I2CREGS:    anythingChanged = true;
-                            nvs.extensionPort.I2CRegisters = (uint8_t) enterNumber( TRANSLATE( "I2C Registers [1..8]", "I2C-Register [1..8]" ), nvs.extensionPort.I2CRegisters, 1, MAXI2CREGISTERS);
+                            nvs.extensionPort.I2CRegisters = (uint8_t) enterNumber( TRANSLATE( "I2C Registers [1..8]:", "I2C-Register [1..8]: " ), nvs.extensionPort.I2CRegisters, 1, MAXI2CREGISTERS);
                             scope = scope | FTSWARM_NVSSCOPE_EXTPORT;
+                            break;
+
+      case MENU_EXT:        anythingChanged = true;
+                            
+                            cpu = myOSSwarm.Ctrl[0]->getCPU();
+
+                            if ( ( cpu == FTSWARMCONTROL_1V3 ) || ( cpu == FTSWARMCONTROL_1V3UC ) ) {
+
+                              if ( nvs.extensionPort.mode == FTSWARM_EXT_OFF ) 
+                                nvs.extensionPort.mode = FTSWARM_EXT_I2C_MASTER;
+                              else 
+                                nvs.extensionPort.mode = FTSWARM_EXT_OFF;
+
+                            } else if ( ( cpu == FTSWARMJST_1V15 ) || ( cpu == FTSWARMRS_2V1 ) || ( cpu == FTSWARMXL_1V00 ) ) {
+                              nvs.extensionPort.mode = (FtSwarmExtMode_t) enterNumber( TRANSLATE( "Extension Port Mode: OFF (0), I2C-MASTER (1), I2C-SLAVE (2), OUTPUT (3), SERVO (4), LIDA (5): ", "Modus Extension Port: aus (0), I2C_MASTER (1), I2C_SLAVE (2), OUTPUT (3), SERVO (4), LIDA (5): "), nvs.extensionPort.mode, 0, FTSWARM_EXT_LIDAR );
+                            
+                            }
+                            
+                            scope = scope | FTSWARM_NVSSCOPE_EXTPORT;
+                            
                             break;
 
     }
@@ -575,8 +596,8 @@ bool MenuIOConfig::enterEvent( SwOSNVSEvent *event ) {
   printEvent( *event, 2 );
 
   // V1
-  sprintf( prompt, TRANSLATE( "Use - (0) fixed value  (1) sensor's value  (2) actor's value [%d]: ", "(0) Konstante  (1) Sensor (2) Aktor [%d]: " ), event->triggerMath.bits.v1 );
-  event->triggerMath.bits.v1 = (FtSwarmOperand_t) enterNumber( prompt, event->triggerMath.bits.v1, 0, 2 );
+  sprintf( prompt, TRANSLATE( "Use - (0) fixed value  (1) sensor's value (2) sensor's delta (3) actor's value [%d]: ", "(0) Konstante  (1) Sensor (2) Sensor Delta (3) Aktor [%d]: " ), event->triggerMath.bits.v1 );
+  event->triggerMath.bits.v1 = (FtSwarmOperand_t) enterNumber( prompt, event->triggerMath.bits.v1, 0, 3 );
 
   // constant?
   if ( event->triggerMath.bits.v1 == FTSWARM_CONSTANT ) {
@@ -587,8 +608,8 @@ bool MenuIOConfig::enterEvent( SwOSNVSEvent *event ) {
   printEvent( *event, 3 );
 
   // operator
-  sprintf( prompt, TRANSLATE( "(1) add or  (2) muliply another value - (0) done [%d]: ", "(1) Addieren oder  (2) Multiplizieren mit einem anderen Wert - (0) Fertig [%d]: " ), event->triggerMath.bits.op );
-  event->triggerMath.bits.op = (FtSwarmOperator_t) enterNumber( prompt, event->triggerMath.bits.op, 0, 2 );
+  sprintf( prompt, TRANSLATE( "(1) add (2) subtract (3) multiply another value - (0) done [%d]: ", "(1) Addieren oder  (2) Subtrahieren oder (3) Multiplizieren mit einem anderen Wert - (0) Fertig [%d]: " ), event->triggerMath.bits.op );
+  event->triggerMath.bits.op = (FtSwarmOperator_t) enterNumber( prompt, event->triggerMath.bits.op, 0, 3 );
   
   printEvent( *event, 4 );
 
@@ -599,13 +620,13 @@ bool MenuIOConfig::enterEvent( SwOSNVSEvent *event ) {
       
       if ( event->triggerMath.bits.v2 == FTSWARM_CONSTANT ) event->triggerMath.bits.v2 = FTSWARM_SENSORVALUE;
       
-      sprintf( prompt, TRANSLATE( "Use - (1) sensor's value  (2) actor's value [%d]: ", "Geben Sie den Wert ein - (1) Sensor (2) Aktor [%d]: " ), event->triggerMath.bits.v2 );
-      event->triggerMath.bits.v2 = (FtSwarmOperand_t) enterNumber( prompt, event->triggerMath.bits.v2, 1, 2 );
+      sprintf( prompt, TRANSLATE( "Use - (1) sensor's value (2) sensor's delta (3) actor's value [%d]: ", "Geben Sie den Wert ein - (1) Sensor (2) Sensor Delta (3) Aktor [%d]: " ), event->triggerMath.bits.v2 );
+      event->triggerMath.bits.v2 = (FtSwarmOperand_t) enterNumber( prompt, event->triggerMath.bits.v2, 1, 3 );
 
     } else {
       
-      sprintf( prompt, TRANSLATE( "Use - (0) fixed value  (1) sensor's value  (2) actor's value [%d]: ", "(0) Konstante (1) Sensor (2) Aktor [%d]: " ), event->triggerMath.bits.v2 );
-      event->triggerMath.bits.v2 = (FtSwarmOperand_t) enterNumber( prompt, event->triggerMath.bits.v2, 0, 2 );
+      sprintf( prompt, TRANSLATE( "Use - (0) fixed value  (1) sensor's value (2) sensor's delta (3) actor's value [%d]: ", "(0) Konstante (1) Sensor (2) Sensor Delta (3) Aktor [%d]: " ), event->triggerMath.bits.v2 );
+      event->triggerMath.bits.v2 = (FtSwarmOperand_t) enterNumber( prompt, event->triggerMath.bits.v2, 0, 3 );
 
     }
 
@@ -616,9 +637,9 @@ bool MenuIOConfig::enterEvent( SwOSNVSEvent *event ) {
     
     }
 
-  }
+    printEvent( *event );
 
-  printEvent( *event );
+  }
 
   return true;
 
@@ -710,6 +731,10 @@ void MenuIOConfig::printEventParameter( FtSwarmOperand_t op, SwOSIO *sensor, SwO
 
     case FTSWARM_SENSORVALUE: sensor->getUniqueName( uniqueName );
                               printf( "%s.getValue()", uniqueName ); 
+                              break;
+
+    case FTSWARM_SENSORDELTA: sensor->getUniqueName( uniqueName );
+                              printf( "%s.getDelta()", uniqueName ); 
                               break;
 
     case FTSWARM_ACTORVALUE:  actor->getUniqueName( uniqueName );
@@ -878,7 +903,7 @@ void MenuIOConfig::run( void ) {
                           break;
 
       default:            printf("\n"); 
-                          changeEvent( &nvs.events.events[nvs.events.activeConfig][event[choice-1]] );
+                          changeEvent( &nvs.events.events[nvs.events.activeConfig][event[choice]] );
                           break;
 
     }

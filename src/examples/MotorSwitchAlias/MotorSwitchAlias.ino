@@ -1,16 +1,13 @@
-// MotorSwitch
+// MotorSwitchAlias
 //
-// Simple ftSwarm starter application using multiple controllers. Details at https://elektrofuzzis.github.io/ftSwarm.
+// Simple ftSwarm starter application using alias names. Details at https://elektrofuzzis.github.io/ftSwarm.
 //
 // (C) 2022-2026 Christian Bergschneider, Stefan Fuss
 
-#include <ftSwarm.h>
-
-// serial number of the second controller - change it to your 2nd device serial number
-#define REMOTE 2
+#include <ftSwam.h>
 
 FtSwarmSwitch *sw;
-FtSwarmMiniMotor *mot;
+FtSwarmMotor  *mot;
 
 void setup( ) {
 
@@ -18,8 +15,8 @@ void setup( ) {
   FtSwarmSerialNumber_t local = ftSwarm.begin( );
 	
   // get switch and motor instances
-  sw  = new FtSwarmSwitch( RMEOTE, FTSWARM_A1 );
-  mot = new FtSwarmMiniMotor( local, FTSWARM_M1 );
+  sw  = new FtSwarmSwitch( "switch" );
+  mot = new FtSwarmMotor( "motor" );
 
 }
 

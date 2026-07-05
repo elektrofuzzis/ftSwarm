@@ -352,12 +352,12 @@ typedef enum { FTSWARM_NOTRIGGER = -1, FTSWARM_TRIGGERDOWN, FTSWARM_TRIGGERUP, F
 const char FTSWARMTRIGGER[FTSWARM_MAXTRIGGER][12] = { "TriggerDown", "TriggerUp", "ChangeValue", "I2CRead", "I2CWrite" };
 
 // trigger operators
-typedef enum { FTSWARM_ASSIGN, FTSWARM_ADD, FTSWARM_MULTIPLY, FTSWARM_MAXOPERATOR } FtSwarmOperator_t;
-const char FTSWARMOPERATOR[ FTSWARM_MAXOPERATOR][2] = { "=", "+", "*" };
+typedef enum { FTSWARM_ASSIGN, FTSWARM_ADD, FTSWARM_SUBTRACT, FTSWARM_MULTIPLY, FTSWARM_MAXOPERATOR } FtSwarmOperator_t;
+const char FTSWARMOPERATOR[ FTSWARM_MAXOPERATOR][2] = { "=", "+", "-", "*" };
 
 // trigger operands
-typedef enum { FTSWARM_CONSTANT, FTSWARM_SENSORVALUE, FTSWARM_ACTORVALUE, FTSWARM_MAXOPERAND } FtSwarmOperand_t;
-const char FTSWARMOPERAND[ FTSWARM_MAXOPERAND][15] = { TRANSLATE("constant", "Konstante"), TRANSLATE("sensor's value", "Sensorwert"), TRANSLATE("actor's value", "Aktorwert") };
+typedef enum { FTSWARM_CONSTANT, FTSWARM_SENSORVALUE, FTSWARM_SENSORDELTA, FTSWARM_ACTORVALUE, FTSWARM_MAXOPERAND } FtSwarmOperand_t;
+const char FTSWARMOPERAND[ FTSWARM_MAXOPERAND][15] = { TRANSLATE("constant", "Konstante"), TRANSLATE("sensor's value", "Sensorwert"), TRANSLATE("sensor's delta", "Sensor Delta"), TRANSLATE("actor's value", "Aktorwert") };
 
 #define MAXSPEED256  255 
 #define MAXSPEED4096 4095 
@@ -469,8 +469,8 @@ typedef enum {
   FTSWARM_CFG_CAR,
   FTSWARM_CFG_CATAPILLAR,
   FTSWARM_CFG_TRAILER,
-  FTSWARM_CFG_CRANE1,
-  FTSWARM_CFG_CRANE2
+  FTSWARM_CFG_CRANE,
+  FTSWARM_CFG_MAX
 } FtSwarmQuickConfig_t;
 
 #define MAXEVENTCONFIGS 4

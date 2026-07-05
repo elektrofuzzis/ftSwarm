@@ -226,11 +226,12 @@ SwOSLabel_t SwOSIO::getLabel( void ) {
 
 }
 
-int32_t SwOSIO::evalOperand( FtSwarmOperand_t v, int32_t sensor, int32_t actor, int32_t parameter ) {
+int32_t SwOSIO::evalOperand( FtSwarmOperand_t v, int32_t sensor, int32_t delta, int32_t actor, int32_t parameter ) {
 
   switch (v) {
     case FTSWARM_CONSTANT:    return parameter;
     case FTSWARM_SENSORVALUE: return sensor;
+    case FTSWARM_SENSORDELTA: return delta;
     case FTSWARM_ACTORVALUE:  return actor;
   }
 
@@ -239,17 +240,18 @@ int32_t SwOSIO::evalOperand( FtSwarmOperand_t v, int32_t sensor, int32_t actor, 
 
 }
 
-int32_t SwOSIO::evalTriggerMath( SwOSTriggerMath triggerMath, int32_t sensor, int32_t actor, int32_t parameter, int32_t minValue, int32_t maxValue ) {
+int32_t SwOSIO::evalTriggerMath( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, int32_t actor, int32_t parameter, int32_t minValue, int32_t maxValue ) {
 
   // get operands
-  int32_t v1 = evalOperand( triggerMath.bits.v1, sensor, actor, parameter );
-  int32_t v2 = evalOperand( triggerMath.bits.v1, sensor, actor, parameter );
+  int32_t v1 = evalOperand( triggerMath.bits.v1, sensor, delta, actor, parameter );
+  int32_t v2 = evalOperand( triggerMath.bits.v2, sensor, delta, actor, parameter );
 
   // calculate
   int32_t r = 0;
   switch (triggerMath.bits.op) {
-    case FTSWARM_ADD:      r = v1;    break;
-    case FTSWARM_ASSIGN:   r = v1+v2; break;
+    case FTSWARM_ASSIGN:   r = v1;    break;
+    case FTSWARM_ADD:      r = v1+v2; break;
+    case FTSWARM_SUBTRACT: r = v1-v2; break;
     case FTSWARM_MULTIPLY: r = v1*v2; break;
   }
   
@@ -352,7 +354,7 @@ void SwOSIO::serialize( Serialize *serialize ) {
   serialize->item( SERIALIZE_LITERAL_ACTIVE, ( _alias != NULL ) || isInUse() );
 }
 
-void SwOSIO::onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t parameter ) {
+void SwOSIO::onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, int32_t parameter ) {
   SWARM_LOG_ERROR( TRANSLATE( "IO is unable to handle trigger events.", "IO kann Trigger-Events nicht verarbeiten." ) );
 }
 
@@ -525,7 +527,7 @@ bool SwOSEventInput::deleteEvent( FtSwarmTrigger_t triggerEvent, FtSwarmOperator
   
 }
 
-void SwOSEventInput::trigger( FtSwarmTrigger_t triggerEvent, int32_t sensor ) {
+void SwOSEventInput::trigger( FtSwarmTrigger_t triggerEvent, int32_t sensor, int32_t delta ) {
 
   SwOSEventHandler *e = eventList;
 
@@ -534,7 +536,7 @@ void SwOSEventInput::trigger( FtSwarmTrigger_t triggerEvent, int32_t sensor ) {
     // same trigger type & actor?
     if ( ( e->actor ) && ( e->triggerMath.bits.trigger == triggerEvent ) ) {
 
-      e->actor->onTrigger( e->triggerMath, sensor, e->parameter );
+      e->actor->onTrigger( e->triggerMath, sensor, delta, e->parameter );
 
     }
     
@@ -664,7 +666,8 @@ void SwOSInput::setReading( int32_t newValue, FtSwarmTrigger_t secondTriggerEven
   bool changes = (lastRawValue != newValue);
 
   // store new data
-  lastRawValue = newValue;  
+  int32_t delta = newValue - lastRawValue;
+  lastRawValue  = newValue;  
 
   if (changes) {
 
@@ -675,8 +678,8 @@ void SwOSInput::setReading( int32_t newValue, FtSwarmTrigger_t secondTriggerEven
     if ( !screenManager.blockEvents ) {
     #endif
       // printf("trigger %s\n", getName() );
-      this->trigger( FTSWARM_TRIGGERVALUE, newValue ); 
-      if ( secondTriggerEvent != FTSWARM_NOTRIGGER ) this->trigger( secondTriggerEvent, newValue ); 
+      this->trigger( FTSWARM_TRIGGERVALUE, newValue, delta ); 
+      if ( secondTriggerEvent != FTSWARM_NOTRIGGER ) this->trigger( secondTriggerEvent, newValue, delta ); 
     #if FTSWARM_HAL_OLEDS > 0
     }
     #endif

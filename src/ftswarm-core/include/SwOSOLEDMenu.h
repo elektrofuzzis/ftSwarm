@@ -18,7 +18,7 @@
 class SwOSJoystick;
 class SwOSServo;
 
-// #define FTSWARM_HAL_OLEDS 1
+#define FTSWARM_HAL_OLEDS 1
 
 #if FTSWARM_HAL_OLEDS > 0
 
@@ -494,7 +494,7 @@ class FtSwarmScreen {
   public:
 
     // same with a two arrays callbackID and str
-    FtSwarmScreenSelectList( FtSwarmScreen *parent, const char *title, const char *text, uint8_t items, uint8_t callbackID[], char *str[] );
+    FtSwarmScreenSelectList( FtSwarmScreen *parent, const char *title, const char *text, uint8_t callbackID, uint8_t items, uint8_t nparam[], char *str[] );
 
     // eval external events like pressing buttons
     virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );
@@ -732,7 +732,21 @@ class FtSwarmScreenSwarm : public FtSwarmScreen {
 class FtSwarmScreenRemote : public FtSwarmScreen {
 
   protected:
-    // void configureSelected( uint8_t config );
+    
+    void configurePixel( SwOSCtrl *ctrl, FtSwarmSerialNumber_t localSN, FtSwarmSerialNumber_t remoteSN, FtSwarmVersion_t cpu, bool trailer );
+    void configureLamp( SwOSCtrl *ctrl, FtSwarmSerialNumber_t localSN, FtSwarmSerialNumber_t remoteSN, FtSwarmVersion_t cpu, bool trailer );
+    void configureLights( SwOSCtrl *ctrl, FtSwarmSerialNumber_t localSN, FtSwarmSerialNumber_t remoteSN, FtSwarmVersion_t cpu, bool trailer );
+
+    void configureFunction( SwOSCtrl *ctrl, FtSwarmSerialNumber_t localSN, FtSwarmSerialNumber_t remoteSN, FtSwarmVersion_t cpu );
+    void configureGear( SwOSCtrl *ctrl, FtSwarmSerialNumber_t localSN, FtSwarmSerialNumber_t remoteSN, FtSwarmVersion_t cpu );
+
+    void configureCar( SwOSCtrl *ctrl, FtSwarmSerialNumber_t localSN, FtSwarmSerialNumber_t remoteSN, FtSwarmVersion_t cpu );
+    void configureCatapillar( SwOSCtrl *ctrl, FtSwarmSerialNumber_t localSN, FtSwarmSerialNumber_t remoteSN, FtSwarmVersion_t cpu );
+    void configureCrane( SwOSCtrl *ctrl, FtSwarmSerialNumber_t localSN, FtSwarmSerialNumber_t remoteSN, FtSwarmVersion_t cpu );
+    void configureTrailer( SwOSCtrl *ctrl, FtSwarmSerialNumber_t localSN, FtSwarmSerialNumber_t remoteSN, FtSwarmVersion_t cpu );
+    
+    void configure(  int8_t selectedCtrl, FtSwarmQuickConfig_t quickConfig );
+
     int8_t selectedCtrl = -1; // index of selected controller
 
   public:

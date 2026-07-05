@@ -1,29 +1,26 @@
 /*
- * RGBLed.ino
+ * ftPixel.ino
  *
  * ftSwarm example using the onboard RGB leds
  * 
- * (C) 2021/22 Christian Bergschneider & Stefan Fuss
+ * (C) 2021-2026 Christian Bergschneider & Stefan Fuss
  * 
  */
 
-#include <Arduino.h>
 #include <ftSwarm.h>
 #include <FastLED.h>
 
-FtSwarmLED *led1;
-FtSwarmLED *led2;
+FtSwarmPixel *led1;
+FtSwarmPixel *led2;
 
 void setup( ) {
-
-  Serial.begin(115200);
-
+  
   // start the swarm
   FtSwarmSerialNumber_t local = ftSwarm.begin( );
   
   // get led instances
-  led1 = new FtSwarmLED( local, FTSWARM_LED1 );
-  led2 = new FtSwarmLED( local, FTSWARM_LED2 );
+  led1 = new FtSwarmPixel( local, FTSWARM_LED1 );
+  led2 = new FtSwarmPixel( local, FTSWARM_LED2 );
   
 }
 

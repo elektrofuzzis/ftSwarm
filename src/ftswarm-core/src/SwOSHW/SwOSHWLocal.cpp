@@ -278,8 +278,8 @@ void OLED::buttonScreen( bool activate ) {
 
   if ( ( activate ) && ( screenHeight[ FTSWARM_OLED_BUTTONSCREEN ] == 0 ) ) {
     screenHeight[ FTSWARM_OLED_BUTTONSCREEN ] = getTextHeight() + 1;
-    screenHeight[ FTSWARM_OLED_MAINSCREEN   ] = getDisplayHeight() - screenHeight[ FTSWARM_OLED_UPPERSCREEN ] - screenHeight[ FTSWARM_OLED_BUTTONSCREEN ] ;
-    screenOffset[ FTSWARM_OLED_BUTTONSCREEN ] = screenOffset[ FTSWARM_OLED_MAINSCREEN ] +screenHeight[ FTSWARM_OLED_MAINSCREEN ];
+    screenHeight[ FTSWARM_OLED_MAINSCREEN   ] = getDisplayHeight() - screenHeight[ FTSWARM_OLED_UPPERSCREEN ] - screenHeight[ FTSWARM_OLED_BUTTONSCREEN ] -2 ;
+    screenOffset[ FTSWARM_OLED_BUTTONSCREEN ] = screenOffset[ FTSWARM_OLED_MAINSCREEN ] +screenHeight[ FTSWARM_OLED_MAINSCREEN ] + 2;
   } 
   
   if ( ( !activate ) && ( screenHeight[ FTSWARM_OLED_BUTTONSCREEN ] != 0 ) ) {

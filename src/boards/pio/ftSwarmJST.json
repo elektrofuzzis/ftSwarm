@@ -24,7 +24,7 @@
     "espidf"
   ],
   "default_framework": "arduino",
-  "name": "ftSwarmJST",
+  "name": "ftswarmjst",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,

@@ -609,12 +609,12 @@ void SwOSNVS::printNVS() {
       for ( uint8_t i=0; i<MAXNVSEVENTS; i++ ) {
 
         if ( events.events[c][i].sensor.serialNumber != 0 ) {
-          printf( "#%d input %d.%d.%d actor %d.%d.%d trigger %d parameter %d\n", 
+          printf( "#%d input %d.%d.%d actor %d.%d.%d trigger %d op %d v1 %d v2 %d parameter %d\n", 
                   i, 
                   events.events[c][i].sensor.serialNumber, events.events[c][i].sensor.ioType, events.events[c][i].sensor.port,
                   events.events[c][i].actor.serialNumber,  events.events[c][i].actor.ioType,  events.events[c][i].actor.port,
-                  events.events[c][i].parameter,
-                  events.events[c][i].triggerMath.raw
+                  events.events[c][i].triggerMath.bits.trigger, events.events[c][i].triggerMath.bits.op, events.events[c][i].triggerMath.bits.v1, events.events[c][i].triggerMath.bits.v2,
+                  events.events[c][i].parameter
                 );
         }
       }

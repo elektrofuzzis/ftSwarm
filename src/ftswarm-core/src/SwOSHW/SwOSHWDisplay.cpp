@@ -143,10 +143,9 @@ void SwOSPixel::serialize( Serialize *serialize ) {
   serialize->endObject();
 }
 
-void SwOSPixel::onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t parameter ) {
-  
+void SwOSPixel::onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, int32_t parameter ) {
 
-  setColor( castColorToUI32( evalTriggerMath( triggerMath, sensor, castColorToUI32( getColor() ), parameter, 0, 0xFFFFFF ) ) );
+  setColor( castColorToUI32( evalTriggerMath( triggerMath, sensor, delta, castColorToUI32( getColor() ), parameter, INT32_MIN, INT32_MAX ) ) );
 
 }
 

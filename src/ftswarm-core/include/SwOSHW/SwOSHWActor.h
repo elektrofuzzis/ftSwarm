@@ -46,7 +46,7 @@ class SwOSMotor : public SwOSIO {
     virtual void            setMotionType( FtSwarmMotion_t motionType );
     virtual FtSwarmMotion_t getMotionType() { return motionType; }; 
     virtual void            serialize( Serialize *serialize ); // serialize object to JSON
-    virtual void            onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t parameter );
+    virtual void            onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, int32_t parameter );
     virtual void            operate( void );
     virtual bool            isMotor( void ) { return true; };
     virtual bool            isActor( void ) { return true; };
@@ -187,7 +187,7 @@ class SwOSDCMotor : public SwOSMotor {
     
     // administrative stuff
     virtual void serialize( Serialize *serialize );
-    virtual void onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t parameter );
+    virtual void onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, int32_t parameter );
     virtual void adjust( void ) {};
     virtual bool isServo( void ) override { return true; };
     virtual bool isActor( void ) override { return true; };

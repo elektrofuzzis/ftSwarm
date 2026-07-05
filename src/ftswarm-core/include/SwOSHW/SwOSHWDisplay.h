@@ -41,7 +41,7 @@ class OLEDMenu;
   
     // administrative stuff
     virtual void serialize( Serialize *serialize );
-    virtual void onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t parameter );
+    virtual void onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta,int32_t parameter );
     virtual bool isPixel( void ) { return true; };
     virtual bool isActor( void ) { return true; };
   

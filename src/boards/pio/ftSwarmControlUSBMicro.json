@@ -11,7 +11,7 @@
     "flash_mode": "dio",
     "hwids": [ ["0x10C4", "0xEA60"] ],
     "mcu": "esp32",
-    "variant": "ftSwarmControlUSBMicro"
+    "variant": "ftswarmcontrolusbmicro"
   },
   "connectivity": [
     "wifi",
