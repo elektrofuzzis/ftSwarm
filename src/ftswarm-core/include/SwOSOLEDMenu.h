@@ -444,6 +444,7 @@ class FtSwarmScreen {
 
     // Simple Text
     FtSwarmScreenText *addText( FtSwarmOledScreen_t screen, int16_t x, int16_t y, FtSwarmAlign_t align, const char *text );
+    FtSwarmScreenText *addText( FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t width, FtSwarmAlign_t align, const char *text );
     
     // joysticks
     void addJoystick( FtSwarmOledScreen_t screen, const char *text, uint8_t joystick );
@@ -662,8 +663,8 @@ class FtSwarmScreenWifi : public FtSwarmScreen {
   public:
     FtSwarmScreenWifi( FtSwarmScreen *parent  );
 
-  // eval external events like pressing buttons
-  virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );
+    // eval external events like pressing buttons
+    virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );
 
 };
 
@@ -746,6 +747,8 @@ class FtSwarmScreenRemote : public FtSwarmScreen {
     void configureTrailer( SwOSCtrl *ctrl, FtSwarmSerialNumber_t localSN, FtSwarmSerialNumber_t remoteSN, FtSwarmVersion_t cpu );
     
     void configure(  int8_t selectedCtrl, FtSwarmQuickConfig_t quickConfig );
+
+    void addMembers( void );
 
     int8_t selectedCtrl = -1; // index of selected controller
 

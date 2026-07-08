@@ -865,6 +865,14 @@ FtSwarmScreenText *FtSwarmScreen::addText( FtSwarmOledScreen_t screen, int16_t x
 
 }
 
+FtSwarmScreenText *FtSwarmScreen::addText( FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t width,FtSwarmAlign_t align, const char *text ) {
+
+  if ( y + oled.getTextHeight() > oled.getScreenHeight( screen ) ) addNavigation();
+
+  return (FtSwarmScreenText*) add( new FtSwarmScreenText( FTSWARMSCREEN_NOID, this, screen, x, y, width, align, text ) );
+
+}
+
 FtSwarmScreenLine *FtSwarmScreen::addLine( FtSwarmOledScreen_t screen, int16_t x1, int16_t y1, int16_t x2, int16_t y2 ) {
 
   if ( ( y1 > oled.getScreenHeight( screen ) ) || ( y2 > oled.getScreenHeight( screen ) ) ) addNavigation();
@@ -1537,19 +1545,39 @@ bool FtSwarmScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
  *
  ***************************************************/
 
-#define FTSWARMSCREENREMOTE_CB_CHOOSECFG  ( FTSWARMSCREEN_BASEID + 0 )
-#define FTSWARMSCREENREMOTE_CB_CHOOSECTRL ( FTSWARMSCREEN_BASEID + 1 )
+#define FTSWARMSCREENREMOTE_CB_SET_CFG  ( FTSWARMSCREEN_BASEID + 0 )
+#define FTSWARMSCREENREMOTE_CB_SET_CTRL ( FTSWARMSCREEN_BASEID + 1 )
+#define FTSWARMSCREENREMOTE_CB_CONFIG   ( FTSWARMSCREEN_BASEID + 2 )
 
 FtSwarmScreenRemote::FtSwarmScreenRemote( FtSwarmScreen *parent  ) : FtSwarmScreen( parent, TRANSLATE( "Remote Control", "Fernbedienung" ) ) {
 
+  addMembers();
+
+  addS1( "SET" );
+  addS4( "CFG" );
+
+}
+
+void FtSwarmScreenRemote::addMembers( void ) {
+
   char text[50];
 
-  sprintf( text, TRANSLATE( "config type:  %s", "Config-Typ:  %s" ), FTSWARMQUICKCONFIG[ nvs.events.quickConfig[nvs.events.activeConfig] ] );
+  sprintf( text, TRANSLATE( "Type: %s", "Typ:  %s" ), FTSWARMQUICKCONFIG[ nvs.events.quickConfig[nvs.events.activeConfig] ] );
   addText( FTSWARM_OLED_MAINSCREEN, 0, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNLEFT, text );
 
-  sprintf( text, TRANSLATE( "active config: %d", "Aktive Config: %d" ), nvs.events.activeConfig );
+  sprintf( text, "Cfg:  %d", nvs.events.activeConfig );
   addText( FTSWARM_OLED_MAINSCREEN, 0, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNLEFT, text );
 
+  // show connected controller
+  if ( ( nvs.events.events[ nvs.events.activeConfig ][0].sensor.serialNumber != 0 ) &&
+       ( nvs.events.quickConfig[nvs.events.activeConfig] != FTSWARM_CFG_INDIVIDUAL ) ) {
+
+    SwOSIO *actor = myOSSwarm.getIO( nvs.events.events[ nvs.events.activeConfig ][0].actor );
+    sprintf( text, "Ctrl: %s", actor->getCtrl()->getAliasOrName() );
+    addText( FTSWARM_OLED_MAINSCREEN, 0, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNLEFT, text );
+  }
+
+  /*
   for ( uint8_t i=0; i<MAXNVSEVENTS; i++ ) {
 
     if ( nvs.events.events[ nvs.events.activeConfig ][i].sensor.serialNumber == 0 ) break;
@@ -1565,75 +1593,9 @@ FtSwarmScreenRemote::FtSwarmScreenRemote( FtSwarmScreen *parent  ) : FtSwarmScre
     }
 
   }
-
-  addS1( "Quick" );
+  */
 
 }
-
- 
-/* Standard configuration types
-
-  Type        Controller    Function    Key      Settings
-
-  Car         ftSwarmRC     drive       JOY1FB - Wheeldrive M4
-                            steer       JOY2LR - RCServo M1
-                            gear        S1/S2  - RCServo M2
-                            light       S3     - LED4/4 white, LED7/8 forward: red backward: white
-
-                            - option "Car + turn signal" -
-                            turn signal F1     - LED2/6 blink orange
-                                        F2     - LED5/9 blink orange
-
-                            - option "Car" -
-                            addon       F1/F2  - XSMotor M3
-
-              ftSwarmJST    drive       JOY1FB - XSMotor M1
-              ftSwarmRS     steer       JOY2LR - Servo Servo1 
-              ftSwarmXL     gear        S1/S2  - maxspeed M1
-                            light       S3     - LED4/5 white, LED8/9 forward: red backward: white
-
-                            -- option "Car + turn signal" -
-                            turn signal F1     - LED3/7 blink orange
-                                        F2     - LED6/10 blink orange
-
-                            -- option "Car" -
-                            addon       F1/F2  - XSMotor M2
-
-  Catapillar  ftSwarmJST    drive       JOY1FB - XSMotor M1+M2
-              ftSwarmRS     steer       JOY2LR - XSMotor M1+M2
-                            gear        S1/S2  - maxspeed M1+M2
-                            light       S3     - LED4/5 white, LED8/9 forward: red backward: white
-                            turn signal F1     - LED3/7 blink orange
-                                        F2     - LED6/10 blink orange
-
-              ftSwarmRC     drive       JOY1FB - XSMotor M1+M2
-              ftSwarmXL     steer       JOY2LR - XSMotor M1+M2
-                            gear        S1/S2  - maxspeed M1+M2
-                            light       S3     - LED4/5 white, LED8/9 forward: red backward: white
-
-                            -- option "Catapillar + turn signal" -
-                            turn signal F1     - LED3/7 blink orange
-                                        F2     - LED6/10 blink orange
-
-                            -- option "Catapillar" -
-                            addon       F1/F2  - XSMotor M3
-
-  Crane       ftSwarmJST    turn        JOY1LR - XSMotor M1
-              fTSwarmRS     up and down JOY2FB - XSMotor M2
-                            light       S3     - LED3 white
-
-              ftSwarmRC     turn        JOY1LR - XSMotor M1
-              ftSwarmXL     up and down JOY2FB - XSMotor M2
-                            boom        F1/F2  - XSMotor M3
-                            angle       S1/S2  - XSMotor M4
-                            light       S3     - LED3 white
-
-  Trailer                   addon       JOY1FB - XSMotor M1
-                            light       S3     - LED4/5 white, LED8/9 forward: red backward: white
-                            turn signal F1     - LED3/7 blink orange
-                                        F2     - LED6/10 blink orange
-
-*/
 
 void FtSwarmScreenRemote::configurePixel( SwOSCtrl *ctrl, FtSwarmSerialNumber_t localSN, FtSwarmSerialNumber_t remoteSN, FtSwarmVersion_t cpu, bool trailer ) {
 
@@ -1959,116 +1921,16 @@ void FtSwarmScreenRemote::configure( int8_t selectedCtrl, FtSwarmQuickConfig_t q
 
   }
 
-}
+  nvs.events.quickConfig[nvs.events.activeConfig] = quickConfig;
 
-/*
+  // Load events into the swarm 
+  myOSSwarm.deleteEvents();
+  myOSSwarm.addEvents( nvs.events.activeConfig );
 
-  if ( config  == FTSWARM_CFG_CAR ) {
-
-    // Drive: JOY1.FB RC     M4 (WHEELDRIVE)
-    //                others M1 (XS)
-    nvs.addEvent( new SwOSNVSEvent( SwOSIOUID( localSN, SWOSIO_JOYSTICK_POTI, FTSWARM_JOY1FB ), 
-                                    ( ctrl->getCPU() == FTSWARMRC_1V141 ) ? SwOSIOUID( remoteSN, SWOSIO_WHEELDRIVE, FTSWARM_M4 ) : 
-                                                                            SwOSIOUID( remoteSN, SWOSIO_SMOTOR,     FTSWARM_M1 ), 
-                                    SwOSTriggerMath( FTSWARM_TRIGGERVALUE, FTSWARM_ASSIGN, FTSWARM_SENSORVALUE, FTSWARM_MAXOPERAND ),
-                                    0 
-                                  )
-                );
-    strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_JOY1FB ], "FB" );
-
-    // Steer: JOY2.LR RC     M1 (RCSERVO)
-    //                others SERVO1
-    nvs.addEvent( new SwOSNVSEvent( SwOSIOUID( localSN, SWOSIO_JOYSTICK_POTI, FTSWARM_JOY2LR ), 
-                                    ( ctrl->getCPU() == FTSWARMRC_1V141 ) ? SwOSIOUID( remoteSN, SWOSIO_RCSERVO, FTSWARM_M1 ) : 
-                                                                            SwOSIOUID( remoteSN, SWOSIO_SERVO,   FTSWARM_SERVO1 ), 
-                                    SwOSTriggerMath( FTSWARM_TRIGGERVALUE, FTSWARM_ASSIGN, FTSWARM_SENSORVALUE, FTSWARM_MAXOPERAND ),
-                                    0 
-                                  )
-                );
-    strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_JOY2LR ], "LR" );
-
-    // Gear: S1/S2 RS M2 (RCServo)
-    if ( ctrl->getCPU() == FTSWARMRC_1V141 ) {
-      nvs.addEvent( new SwOSNVSEvent( SwOSIOUID( localSN, SWOSIO_BUTTON, FTSWARM_S1 ), 
-                                      SwOSIOUID( remoteSN, SWOSIO_RCSERVO, FTSWARM_M2 ), 
-                                      SwOSTriggerMath( FTSWARM_TRIGGERUP, FTSWARM_ADD, FTSWARM_CONSTANT, FTSWARM_MAXOPERAND ),
-                                      45
-                                    )
-                  );
-      strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_S1 ], "G+" );
-      nvs.addEvent( new SwOSNVSEvent( SwOSIOUID( localSN, SWOSIO_BUTTON, FTSWARM_S2 ), 
-                                      SwOSIOUID( remoteSN, SWOSIO_RCSERVO, FTSWARM_M2 ), 
-                                      SwOSTriggerMath( FTSWARM_TRIGGERUP, FTSWARM_ADD, FTSWARM_CONSTANT, FTSWARM_MAXOPERAND ),
-                                      -45
-                                    )
-                  );
-      strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_S2 ], "G-" );
-    }
-
-    // Function: F1/F2 RC     M3 XSMOTOR
-    //                 others M2 XSMOTOR
-    nvs.addEvent( new SwOSNVSEvent( SwOSIOUID( localSN, SWOSIO_BUTTON, FTSWARM_F1 ), 
-                                    ( ctrl->getCPU() == FTSWARMRC_1V141 ) ? SwOSIOUID( remoteSN, SWOSIO_XSMOTOR, FTSWARM_M3 ) : 
-                                                                            SwOSIOUID( remoteSN, SWOSIO_XSMOTOR, FTSWARM_M2 ), 
-                                    SwOSTriggerMath( FTSWARM_TRIGGERUP, FTSWARM_ASSIGN, FTSWARM_CONSTANT, FTSWARM_MAXOPERAND ),
-                                    50 
-                                  )
-                );
-    nvs.addEvent( new SwOSNVSEvent( SwOSIOUID( localSN, SWOSIO_BUTTON, FTSWARM_F1 ), 
-                                    ( ctrl->getCPU() == FTSWARMRC_1V141 ) ? SwOSIOUID( remoteSN, SWOSIO_XSMOTOR, FTSWARM_M3 ) : 
-                                                                            SwOSIOUID( remoteSN, SWOSIO_XSMOTOR, FTSWARM_M2 ), 
-                                    SwOSTriggerMath( FTSWARM_TRIGGERDOWN, FTSWARM_ASSIGN, FTSWARM_CONSTANT, FTSWARM_MAXOPERAND ),
-                                    0 
-                                  )
-                );
-    strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_F1 ], "F+" );
-    nvs.addEvent( new SwOSNVSEvent( SwOSIOUID( localSN, SWOSIO_BUTTON, FTSWARM_F2 ), 
-                                    ( ctrl->getCPU() == FTSWARMRC_1V141 ) ? SwOSIOUID( remoteSN, SWOSIO_XSMOTOR, FTSWARM_M3 ) : 
-                                                                            SwOSIOUID( remoteSN, SWOSIO_XSMOTOR, FTSWARM_M2 ), 
-                                    SwOSTriggerMath( FTSWARM_TRIGGERUP, FTSWARM_ASSIGN, FTSWARM_CONSTANT, FTSWARM_MAXOPERAND ),
-                                    -50 
-                                  )
-                );
-    nvs.addEvent( new SwOSNVSEvent( SwOSIOUID( localSN, SWOSIO_BUTTON, FTSWARM_F2 ), 
-                                    ( ctrl->getCPU() == FTSWARMRC_1V141 ) ? SwOSIOUID( remoteSN, SWOSIO_XSMOTOR, FTSWARM_M3 ) : 
-                                                                            SwOSIOUID( remoteSN, SWOSIO_XSMOTOR, FTSWARM_M2 ), 
-                                    SwOSTriggerMath( FTSWARM_TRIGGERDOWN, FTSWARM_ASSIGN, FTSWARM_CONSTANT, FTSWARM_MAXOPERAND ),
-                                    0 
-                                  )
-                );
-    strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_F2 ], "F-" );
-
-  } else if ( config == FTSWARM_CFG_CATAPILLAR ) {
-
-    // Drive: JOY1.FB RC     M4 (WHEELDRIVE)
-    //                others M1 (XS)
-    nvs.addEvent( new SwOSNVSEvent( SwOSIOUID( localSN, SWOSIO_JOYSTICK_POTI, FTSWARM_JOY1FB ), 
-                                    ( ctrl->getCPU() == FTSWARMRC_1V141 ) ? SwOSIOUID( remoteSN, SWOSIO_WHEELDRIVE, FTSWARM_M4 ) : 
-                                                                            SwOSIOUID( remoteSN, SWOSIO_SMOTOR,     FTSWARM_M1 ), 
-                                    SwOSTriggerMath( FTSWARM_TRIGGERVALUE, FTSWARM_ASSIGN, FTSWARM_SENSORVALUE, FTSWARM_MAXOPERAND ),
-                                    0 
-                                  )
-                );
-    strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_JOY1FB ], "FB" );
-
-    // Steer: JOY2.LR RC     M1 (RCSERVO)
-    //                others SERVO1
-    nvs.addEvent( new SwOSNVSEvent( SwOSIOUID( localSN, SWOSIO_JOYSTICK_POTI, FTSWARM_JOY2LR ), 
-                                    ( ctrl->getCPU() == FTSWARMRC_1V141 ) ? SwOSIOUID( remoteSN, SWOSIO_RCSERVO, FTSWARM_M1 ) : 
-                                                                            SwOSIOUID( remoteSN, SWOSIO_SERVO,   FTSWARM_SERVO1 ), 
-                                    SwOSTriggerMath( FTSWARM_TRIGGERVALUE, FTSWARM_ASSIGN, FTSWARM_SENSORVALUE, FTSWARM_MAXOPERAND ),
-                                    0 
-                                  )
-                );
-    strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_JOY2LR ], "LR" );
-
-  }
-
+  // save new config in nvs
   nvs.saveEvents();
-  myOSSwarm.Ctrl[0]->loadFromNVS( );
 
 }
-*/
 
 bool FtSwarmScreenRemote::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
 
@@ -2105,8 +1967,12 @@ bool FtSwarmScreenRemote::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, 
                           }
                         }
 
-                        screenManager.activate( new FtSwarmScreenSelectList( this, "Controller?", nullptr, FTSWARMSCREENREMOTE_CB_CHOOSECTRL, items, xnParam, str ) );
+                        screenManager.activate( new FtSwarmScreenSelectList( this, "Controller?", nullptr, FTSWARMSCREENREMOTE_CB_SET_CTRL, items, xnParam, str ) );
       
+                        return true;
+
+      case FTSWARM_S4:  // Select new active configuration
+                        screenManager.activate( new FtSwarmScreenChooseOption( this, TRANSLATE( "Select Config", "Konfiguration" ), TRANSLATE( "Choose active configuration", "Aktive Konfiguration auswaehlen" ), FTSWARMSCREENREMOTE_CB_CONFIG, 0, "#1", 1, "#2", 2, "#3", 3, "#4" ) );
                         return true;
 
     }
@@ -2124,18 +1990,30 @@ bool FtSwarmScreenRemote::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, 
 
     switch ( id )  {
 
-      case FTSWARMSCREENREMOTE_CB_CHOOSECTRL: selectedCtrl = nParam;
+      case FTSWARMSCREENREMOTE_CB_SET_CTRL:   selectedCtrl = nParam;
                                               items = 0;
                                               cpu = myOSSwarm.Ctrl[selectedCtrl]->getCPU();
                                               if ( controllerSupport[cpu][FTSWARM_CFG_CAR] )        { xnParam[items] = FTSWARM_CFG_CAR;        str[items] = (char *) TRANSLATE( "Car", "Auto" );                  items++; }
                                               if ( controllerSupport[cpu][FTSWARM_CFG_CATAPILLAR] ) { xnParam[items] = FTSWARM_CFG_CATAPILLAR; str[items] = (char *) TRANSLATE( "Catapillar", "Raupenfahrzeug" ); items++; }
                                               if ( controllerSupport[cpu][FTSWARM_CFG_CRANE] )      { xnParam[items] = FTSWARM_CFG_CRANE;      str[items] = (char *) TRANSLATE( "Crane", "Kran" );                items++; }
                                               if ( controllerSupport[cpu][FTSWARM_CFG_TRAILER] )    { xnParam[items] = FTSWARM_CFG_TRAILER;    str[items] = (char *) TRANSLATE( "Trailer", "Anhaenger" );         items++; }
-                                              screenManager.activate( new FtSwarmScreenSelectList( this, sParam, nullptr, FTSWARMSCREENREMOTE_CB_CHOOSECFG, items, xnParam, str ) );
+                                              screenManager.activate( new FtSwarmScreenSelectList( this, sParam, nullptr, FTSWARMSCREENREMOTE_CB_SET_CFG, items, xnParam, str ) );
                                               return true;
       
-      case FTSWARMSCREENREMOTE_CB_CHOOSECFG:  configure( selectedCtrl, (FtSwarmQuickConfig_t) nParam ); 
+      case FTSWARMSCREENREMOTE_CB_SET_CFG:    configure( selectedCtrl, (FtSwarmQuickConfig_t) nParam ); 
+                                              objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_TEXT );
+                                              addMembers();
+                                              draw();
                                               return true;
+
+      case FTSWARMSCREENREMOTE_CB_CONFIG:    nvs.events.activeConfig = nParam;
+                                              nvs.save( FTSWARM_NVSSCOPE_EVENTS );
+                                              myOSSwarm.deleteEvents();
+                                              myOSSwarm.addEvents( nParam );
+                                              objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_TEXT );
+                                              addMembers();
+                                              draw();
+                                              break;
 
     }
 
@@ -2326,7 +2204,7 @@ FtSwarmScreenCalibrateJoystick::FtSwarmScreenCalibrateJoystick( FtSwarmScreen *p
   calibration[1] = { 1000, 2000, 3000 };
 
   // calculate oled joystick visualize position
-  int16_t size   = 8;
+  int16_t size   = 7;
   int16_t midX   = ( joystick->getPort() ? oled.getScreenWidth() - 3 * size : 2 * size + 2 );
   int16_t midY   = 2 * size + 2;
   int16_t space  = 2;
@@ -2340,8 +2218,8 @@ FtSwarmScreenCalibrateJoystick::FtSwarmScreenCalibrateJoystick( FtSwarmScreen *p
   
   // add text on oled
   int16_t textOffset = ( joystick->getPort() ? 0 : 4*size + 10 );
-  text[0] = addText( FTSWARM_OLED_MAINSCREEN, textOffset, 10, FTSWARM_ALIGNLEFT, TRANSLATE( "Rotate to fill", "Joystick" ) );
-  text[1] = addText( FTSWARM_OLED_MAINSCREEN, textOffset, 20, FTSWARM_ALIGNLEFT, TRANSLATE( "all triangles", "bewegen" ) );
+  text[0] = addText( FTSWARM_OLED_MAINSCREEN, textOffset, 8, 100, FTSWARM_ALIGNLEFT, TRANSLATE( "Rotate to fill", "Bewege den" ) );
+  text[1] = addText( FTSWARM_OLED_MAINSCREEN, textOffset, 18, 100, FTSWARM_ALIGNLEFT, TRANSLATE( "all triangles",  "Joystick" ) );
 
 }
 
@@ -2404,8 +2282,8 @@ void FtSwarmScreenCalibrateJoystick::operate( void ) {
 
     // switch to 2nd step?
     if ( status >= 0x0F ) {
-      text[0]->setText( TRANSLATE( "Release to",  "Joystick" ) );
-      text[1]->setText( TRANSLATE( "get mid pos", "loslassen" ) );
+      text[0]->setText( TRANSLATE( "Release to",  "lasse den" ) );
+      text[1]->setText( TRANSLATE( "get mid pos", "Joystick los" ) );
       this->draw();
     }
 

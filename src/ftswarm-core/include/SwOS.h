@@ -475,7 +475,7 @@ typedef enum {
 
 #define MAXEVENTCONFIGS 4
 
-const char FTSWARMQUICKCONFIG[MAXEVENTCONFIGS][6][15] = {TRANSLATE("Individual", "Individuell"), TRANSLATE("Car", "Auto"), TRANSLATE("Catapillar", "Kettenfahrzeug"), TRANSLATE("Trailer", "Anhänger"), TRANSLATE("Crane1", "Kran1"), TRANSLATE("Crane2", "Kran2")};
+const char FTSWARMQUICKCONFIG[FTSWARM_CFG_MAX][15] = {TRANSLATE("Individual", "Individuell"), TRANSLATE("Car", "Auto"), TRANSLATE("Catapillar", "Kettenfahrzeug"), TRANSLATE("Trailer", "Anhänger"), TRANSLATE("Crane", "Kran") };
 
 // **** some internal types & classes, don't use them at all ****
 

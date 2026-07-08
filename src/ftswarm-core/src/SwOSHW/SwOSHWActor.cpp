@@ -73,8 +73,6 @@ void SwOSMotor::serialize( Serialize *serialize ) {
 
 void SwOSMotor::onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, int32_t parameter ) {
 
-  printf("Motor: %s sensor: %d delta: %d, parameter: %d evalTriggerMath: %d\n", getName(), sensor, delta, parameter, evalTriggerMath( triggerMath, sensor, delta, getSpeed(), parameter, -getMaxSpeed(), getMaxSpeed() ) );
-
   setSpeed( evalTriggerMath( triggerMath, sensor, delta, getSpeed(), parameter, -getMaxSpeed(), getMaxSpeed() ) );
   apply();
 
@@ -874,7 +872,6 @@ void SwOSRCServo::calibrateLocal( uint8_t speed ) {
   // block other cmds during calibration
   calibration = true;
 
-
   // test direction
   poti->operate();
   int16_t t1 = poti->getValueI32();
@@ -898,12 +895,6 @@ void SwOSRCServo::calibrateLocal( uint8_t speed ) {
   poti->operate();
   int16_t t3 = poti->getValueI32();
 
-  printf("t1 %d t2 %d t3 %d\n", t1, t2, t3);
-  while(1) delay(1000);
-  
-
-
-
   // min position
   motor->setSpeed( -speed );
   motor->apply();
@@ -913,11 +904,8 @@ void SwOSRCServo::calibrateLocal( uint8_t speed ) {
 
   poti->operate();
   int16_t v1 = poti->getValueI32();
-  printf("v1 %d\n", v1);
-  delay(100);
   poti->operate();
   v1 = poti->getValueI32();
-  printf("v1 %d\n", v1);
   
   // max position
   motor->setSpeed( speed );
@@ -928,11 +916,8 @@ void SwOSRCServo::calibrateLocal( uint8_t speed ) {
 
   poti->operate();
   int16_t v2 = poti->getValueI32();
-  printf("v2 %d\n", v2);
-  delay(100);
   poti->operate();
   v2 = poti->getValueI32();
-  printf("v2 %d\n", v2);
 
   // switch values?
   if ( v1 > v2 ) {
