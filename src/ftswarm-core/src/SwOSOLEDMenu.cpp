@@ -1417,7 +1417,7 @@ void FtSwarmScreenWifiSSID::operate( void ) {
  #define FTSWARMSCREENSWARM_CB_DEL  ( FTSWARMSCREEN_BASEID + 2 )
  #define FTSWARMSCREENSWARM_CB_SEL  ( FTSWARMSCREEN_BASEID + 3 )
 
- FtSwarmScreenSwarm::FtSwarmScreenSwarm( FtSwarmScreen *parent  ) : FtSwarmScreen( parent, TRANSLATE( "Swarm Config", "Swarm-Konfiguration" ), "" ) {
+ FtSwarmScreenSwarm::FtSwarmScreenSwarm( FtSwarmScreen *parent  ) : FtSwarmScreen( parent, TRANSLATE( "Swarm Config", "Swarm-Konfig" ), "" ) {
 
   addS1( TRANSLATE( "add", "+" ) );
   S2 = addS2( TRANSLATE( "del", "-" ) );
@@ -2097,7 +2097,7 @@ bool FtSwarmScreenSetup::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
       case FTSWARMSCREENSETUP_REMOTE:       screenManager.activate( new FtSwarmScreenRemote( this ) );
                                             break;
 
-      case FTSWARMSCREENSETUP_RESET:        screenManager.activate( new FtSwarmScreenYesNo( this, TRANSLATE( "Factory Reset", "Werkseinstellung" ), TRANSLATE( "Reset to factory settings and reboot?", "Auf Werkseinstellungen zuruecksetzen und neu starten?" ), FTSWARMSCREENSETUP_RESET_CB ) );
+      case FTSWARMSCREENSETUP_RESET:        screenManager.activate( new FtSwarmScreenYesNo( this, TRANSLATE( "Factory Reset", "Werkseinstellung" ), TRANSLATE( "Reset to factory settings and reboot?", "Auf Werkseinstellungen zuruecksetzen?" ), FTSWARMSCREENSETUP_RESET_CB ) );
                                             break;
 
       case FTSWARMSCREENSETUP_RESET_CB:     if (nParam) myOSSwarm.factoryReset();
@@ -2223,7 +2223,6 @@ FtSwarmScreenCalibrateJoystick::FtSwarmScreenCalibrateJoystick( FtSwarmScreen *p
 
 }
 
-
 bool FtSwarmScreenCalibrateJoystick::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
 
   // don't call the parent class' event handler since we need to work on ESC
@@ -2312,7 +2311,7 @@ void FtSwarmScreenCalibrateJoystick::operate( void ) {
       text[0]->setText( TRANSLATE( "Save new",     "Kalibrierung" ) );
       text[1]->setText( TRANSLATE( "calibration?", "speichern?" ) );
 
-      addS4( "save" )->activate();
+      addS4( "Save" )->activate();
 
       this->draw();
 

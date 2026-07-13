@@ -10,3 +10,4 @@
 #pragma once
 
 #include "SwOS.h"
+#include "SwOSLog.h"
