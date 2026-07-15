@@ -1213,7 +1213,7 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
 
     case CMD_SAVE:                    save( com->data.saveCmd.scope, com->data.saveCmd.port ); return true;
     case CMD_REBOOT:                  ESP.restart();
-    case CMD_SETWIFI:                 setWifi( com->data.wifiCmd.mode, com->data.wifiCmd.SSID, com->data.wifiCmd.PSK ); return true;
+    case CMD_SETWIFI:                 setWifi( com->data.wifiCmd.mode, com->data.wifiCmd.SSID, com->data.wifiCmd.PSK, com->data.wifiCmd.reboot ); return true;
     case CMD_STATE:                   return recvState( com );
     case CMD_SETPIXEL:                return setPixel( com );
     case CMD_SETACTORSPEED:           return setActorSpeed( com );
@@ -1439,18 +1439,24 @@ void SwOSCtrl::deleteEvents( void ) {
 
 }
 
-void SwOSCtrl::setWifi( FtSwarmWifi_t mode, char *SSID, char*PSK ) {
+void SwOSCtrl::setWifi( FtSwarmWifi_t mode, char *SSID, char*PSK, bool reboot ) {
 
   if (isLocal()) {
     nvs.wifi.mode = mode;
     strcpy( nvs.wifi.SSID, SSID );
     strcpy( nvs.wifi.Password, PSK );
+    nvs.save( FTSWARM_NVSSCOPE_WIFI );
+    if (reboot) {
+      vTaskDelay( 5000 / portTICK_PERIOD_MS );
+      ESP.restart();
+    }
 
   } else {
-    SwOSCom cmd( macAddr, serialNumber, CMD_SETMICROSTEPMODE );
+    SwOSCom cmd( macAddr, serialNumber, CMD_SETWIFI );
     cmd.data.wifiCmd.mode = mode;
     strcpy( cmd.data.wifiCmd.SSID, SSID );
     strcpy( cmd.data.wifiCmd.PSK, PSK );
+    cmd.data.wifiCmd.reboot = reboot;
     cmd.send();
   }
 

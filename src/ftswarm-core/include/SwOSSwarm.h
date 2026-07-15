@@ -74,10 +74,10 @@ public:
   void unsubscribe( void ); 
 
   // Get a controller in the swarm using his name/alias. Returns the controller's pointer or NULL if it doesn't exist.
-	void *getController(char *name);
+	SwOSCtrl* getController(char *name);
 
   // Get a controller in the swarm using his serial number. Returns the controller's pointer or NULL if it doesn't exist.
-  void *getController( FtSwarmSerialNumber_t SN );
+  SwOSCtrl* getController( FtSwarmSerialNumber_t SN );
 
   // return index of controller with this s/n or are free slot if not found
   uint8_t  getIndex( FtSwarmSerialNumber_t serialNumber );

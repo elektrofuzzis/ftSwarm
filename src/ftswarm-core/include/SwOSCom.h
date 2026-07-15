@@ -201,6 +201,7 @@ struct wifiCmd_t {
   FtSwarmWifi_t mode;
   char          SSID[64];
   char          PSK[128];
+  bool          reboot;
 } __attribute__((packed));
 
 struct saveCmd_t {

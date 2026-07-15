@@ -8,7 +8,7 @@
  */
 
 #include "esp_netif.h"
-
+#include "esp_wifi.h"
 
 #include "SwOSFirmware.h"
 #include "SwOS.h"
@@ -1169,7 +1169,7 @@ void MenuSwarmConfig::changeAlias(void ) {
   if ( strcmp( alias, ctrl[selected]->getAliasOrName() ) == 0 ) return;
                 
   // test on duplicates
-  SwOSCtrl *testCtrl = (SwOSCtrl *)myOSSwarm.getController( alias );
+  SwOSCtrl *testCtrl = myOSSwarm.getController( alias );
   if ( (testCtrl) && ( testCtrl != ctrl[selected] ) ) {
     printf( TRANSLATE("ERROR: This alias is already used in the swarm.\n", "FEHLER: Dieser Alias wird bereits im Schwarm verwendet.\n") );
     return;
@@ -1217,17 +1217,59 @@ void MenuSwarmConfig::addController( void ) {
 
   printf( TRANSLATE("Controller SN %d was added to the swarm.\n", "Controller SN %d wurde dem Swarm hinzugefügt.\n"), serialNumber );
 
-  // wait max 1.5 minutes to get the controller connected
+  // wait max 1.5 seconds to get the controller connected
   uint8_t i=0;
-  while ( !myOSSwarm.isOnline( serialNumber ) ) {
+  while ( !myOSSwarm.getController( serialNumber )->isOnline( ) ) {
     i++;
-    delay(100);
+    vTaskDelay( 100 / portTICK_PERIOD_MS );
     if (i > 15 ) break;
   }
-  
-  if ( !myOSSwarm.isOnline( serialNumber ) ) printf( TRANSLATE("WARNING: Please switch controller #%d on.\n", "WARNUNG: Bitte schalten Sie den Controller #%d ein.\n"), serialNumber );
 
   nvs.save( FTSWARM_NVSSCOPE_SWARM );
+  
+  if ( !myOSSwarm.getController( serialNumber )->isOnline( ) ) {
+
+    if ( nvs.wifi.mode == wifiOFF ) {
+      printf( TRANSLATE("WARNING: Controller #%d is offline. Turn it on.\n", "WARNUNG: Der Controller #%d ist offline. Schalten Sie ihn ein.\n"), serialNumber );
+    
+    } else {
+
+      printf( TRANSLATE("WARNING: Controller #%d is offline.\na) Turn it on.\nb) Correct wifi it's settings\n", "WARNUNG: Der Controller #%d ist offline.\na)Schalten Sie ihn ein.\nb) Korrigieren Sie seine WLAN Einstellungen\n"), serialNumber );
+
+      if ( yesNo( TRANSLATE( "Shall I try to send wifi settings and reboot? [Y/N]", "Soll ich versuchen die WLAN-Einstellungen zu korrigieren und neu starten [J/N]?" ) ) ) {
+
+        char SSID[64];
+        sprintf( SSID, "ftSwarm%d", serialNumber );
+        wifiHandler->change_wifi_network( SSID, SSID );
+
+        printf("Connecting to %s", SSID ); flushStdIO();
+
+        // wait max 5 seconds to get the controller connected
+        uint8_t i=0;
+        while ( !wifiHandler->STAConnected ) {
+          i++;
+          vTaskDelay( 100 / portTICK_PERIOD_MS );
+          printf("."); flushStdIO();
+          if (i > 20 ) {
+            printf( TRANSLATE( "\nCan't connect to controller. Rebooting.\n", "\nKonnte den Controller nicht erreichen. Starte neu.\n") );
+            vTaskDelay( 250 / portTICK_PERIOD_MS );
+            esp_restart();
+          }
+        }
+
+        // best choice
+        vTaskDelay( 2000 / portTICK_PERIOD_MS );
+
+        myOSSwarm.getController( serialNumber )->setWifi( wifiClient, nvs.wifi.SSID, nvs.wifi.Password, true );
+        printf( TRANSLATE( "\nWifi settings have been corrected.\nBoth controllers will restart.\n", "\nDie WLAN Einstellungen wurden korrkigiert.\nBeide Controller starten neu.\n") );
+        vTaskDelay( 2000 / portTICK_PERIOD_MS );
+        esp_restart();
+
+      }
+
+    }
+
+  }
 
 }
 

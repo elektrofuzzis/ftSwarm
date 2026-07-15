@@ -65,6 +65,12 @@ void WifiHandler::eventHandler( void* arg, esp_event_base_t event_base, int32_t 
       case WIFI_EVENT_AP_STADISCONNECTED: if (connectedDevices) connectedDevices--;
                                           break;
 
+      case WIFI_EVENT_STA_DISCONNECTED:   STAConnected = false;
+                                          break;
+
+      case WIFI_EVENT_STA_CONNECTED:      STAConnected = true;
+                                          break;
+
     }
 
   }
@@ -128,6 +134,34 @@ void WifiHandler::uniqueScanResult( void ) {
 
   }
 
+}
+
+void WifiHandler::change_wifi_network(const char* new_ssid, const char* new_password) {
+
+    esp_wifi_disconnect();
+
+    wifi_mode_t current_mode;
+    esp_wifi_get_mode(&current_mode);
+
+    if (current_mode == WIFI_MODE_AP) {
+        esp_wifi_set_mode(WIFI_MODE_APSTA);
+    } 
+    else if (current_mode != WIFI_MODE_STA && current_mode != WIFI_MODE_APSTA) {
+        esp_wifi_set_mode(WIFI_MODE_STA);
+    }
+
+    wifi_config_t wifi_config;
+    esp_wifi_get_config(WIFI_IF_STA, &wifi_config);
+    
+    memset(wifi_config.sta.ssid, 0, sizeof(wifi_config.sta.ssid));
+    memset(wifi_config.sta.password, 0, sizeof(wifi_config.sta.password));
+    
+    strncpy((char*)wifi_config.sta.ssid, new_ssid, sizeof(wifi_config.sta.ssid) - 1);
+    strncpy((char*)wifi_config.sta.password, new_password, sizeof(wifi_config.sta.password) - 1);
+
+    esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
+    esp_wifi_connect();
+    
 }
 
 /***************************************************

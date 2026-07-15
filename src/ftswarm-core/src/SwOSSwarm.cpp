@@ -62,9 +62,7 @@ static void recvTask( void *parameter ) {
 
       #ifdef DEBUG_COMMUNICATION_SWARM
         if ( event.data.cmd != CMD_STATE ) {
-          printf("\n\n-----------------------------\nmy friend sends some data...\n" );
-          event.macAddr.print();
-          printf("cmd %d valid %d\n", event.data.cmd, event.isValid() );
+          printf("\n\n-----------------------------\nmy friend sends some data...\n" ); 
           event.print();
         }
       #endif
@@ -214,7 +212,7 @@ void SwOSSwarm::startWifi( void ) {
   // 2. Create default event loop if not already running
   if ( esp_event_loop_create_default() != ESP_OK ) {
   // Handle error or assume it's already created
-    }
+  }
 
   // 3. Create Netif instances for Station & AP
   esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
@@ -653,7 +651,7 @@ SwOSIO* SwOSSwarm::getIO( const char *name, SwOSIOType_t ioType ) {
     ioName[0] = '\0';
     ioName++;
 
-    SwOSCtrl* ctrl = (SwOSCtrl *) myOSSwarm.getController( ctrlName );
+    SwOSCtrl* ctrl = myOSSwarm.getController( ctrlName );
     if ( ctrl ) io = ctrl->getIO( ioName );
 
   } else {
@@ -695,31 +693,31 @@ SwOSIO* SwOSSwarm::getIO( const char *name, SwOSIOType_t ioType ) {
   
 }
 
-void *SwOSSwarm::getController(char *name) {
+SwOSCtrl* SwOSSwarm::getController(char *name) {
 
 	// search controller
 	for (uint8_t i=0;i<=maxCtrl;i++) {
 		if ( ( Ctrl[i] ) && ( Ctrl[i]->equals(name) ) ) {
-			return (void *) Ctrl[i];
+			return Ctrl[i];
 		}
 	}
 
 	// no hit
-	return NULL;
+	return nullptr;
 
 }
 
-void *SwOSSwarm::getController( FtSwarmSerialNumber_t SN ) {
+SwOSCtrl* SwOSSwarm::getController( FtSwarmSerialNumber_t SN ) {
 
 	// search controller
 	for (uint8_t i=0;i<=maxCtrl;i++) {
 		if ( ( Ctrl[i] ) && ( Ctrl[i]->serialNumber == SN ) ) {
-			return (void *) Ctrl[i];
+			return Ctrl[i];
 		}
 	}
 
 	// no hit
-	return NULL;
+	return nullptr;
 
 }
 

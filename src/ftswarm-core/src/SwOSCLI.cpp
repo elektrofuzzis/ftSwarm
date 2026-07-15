@@ -539,7 +539,7 @@ void SwOSCLI::executeControllerCmd(void ) {
                                     break;
 
     case CLICMD_setWifi:            // wifi mode in range from 0 to 2?
-                                    if ( !parameter[0].inRange( "mode", 0, 2, response ) ) {}
+                                    if ( !parameter[0].inRange( "mode", 0, 3, response ) ) {}
                                     // wifi is on, a SSID is needed
                                     else if ( ( parameter[0].getNumber() != wifiOFF ) && ( !parameter[1].isString() ) ) Error( ERROR_SSIDEXPECTED );
                                     // wifi is in client mode, a PSK is needed
@@ -547,7 +547,7 @@ void SwOSCLI::executeControllerCmd(void ) {
                                     // everything is fine
                                     else {
                                       OK( );
-                                      ctrl->setWifi( (FtSwarmWifi_t) parameter[0].getNumber(), parameter[1].getString(), parameter[2].getString() );
+                                      ctrl->setWifi( (FtSwarmWifi_t) parameter[0].getNumber(), parameter[1].getString(), parameter[2].getString(), parameter[3].getNumber() );
                                     }
                                     break;
 
@@ -1167,7 +1167,7 @@ bool  SwOSCLI::getIO( char *token, char *IOName, SwOSCtrl **ctrl, SwOSIO **io ) 
   SwOSIO   *xio   = NULL;
   char     *xrollback;
 
-  xctrl = (SwOSCtrl *)myOSSwarm.getController( token );
+  xctrl = myOSSwarm.getController( token );
   if (xctrl) { 
     // it's a controller, now we need the io port
 

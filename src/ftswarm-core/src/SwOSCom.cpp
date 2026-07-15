@@ -302,7 +302,7 @@ bool SwOSCom::popIO( uint8_t *index, SwOSIOType_t *ioType, uint8_t *port, char *
 void SwOSCom::print() {
 
   macAddr.print();
-  printf("size: %d\n", size() );
+  printf("\nsize: %d\n", size() );
   printf("source: %d\n", data.sourceSN);
   printf("affected: %d\n", data.affectedSN);
   printf("command: %d\n", data.cmd);

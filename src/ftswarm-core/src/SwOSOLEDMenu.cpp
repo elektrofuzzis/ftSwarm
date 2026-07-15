@@ -704,6 +704,25 @@ void FtSwarmScreen::draw( void ) {
   // vertical slider?
   oled.drawVSlider( FTSWARM_OLED_MAINSCREEN, objects.getNextY( FTSWARM_OLED_MAINSCREEN ) );
 
+  // hourclass ?
+  if (hourclass) {
+
+    int16_t x = oled.getScreenWidth()/2;
+    int16_t y = oled.getScreenHeight( FTSWARM_OLED_MAINSCREEN ) / 2;
+    int16_t s = 8;
+    int16_t d = 12;
+
+    // draw a circle
+    oled.drawCircle( FTSWARM_OLED_MAINSCREEN, x, y, d+3, FTSWARM_OLED_FILLBLACK );
+    oled.drawCircle( FTSWARM_OLED_MAINSCREEN, x, y, d,   FTSWARM_OLED_NOFILL );
+
+    // draw hourclass outline
+    y=y+1;
+    oled.drawTriangle( FTSWARM_OLED_MAINSCREEN, x, y, x-s/2, y-s, x+s/2, y-s, FTSWARM_OLED_FILLWHITE );
+    oled.drawTriangle( FTSWARM_OLED_MAINSCREEN, x, y, x-s/2, y+s, x+s/2, y+s, FTSWARM_OLED_FILLWHITE );
+
+  }
+
 }
 
 void FtSwarmScreen::activate( void ) {
@@ -731,6 +750,9 @@ void FtSwarmScreen::close( FtSwarmScreenEvent_t event, uint8_t id, uint8_t nPara
 };
 
 bool FtSwarmScreen::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
+
+  // hourclass: block all user io
+  if (hourclass) return true;
 
   // explizit no handling?
   if ( id == FTSWARMSCREEN_NOID ) return true;
@@ -895,6 +917,20 @@ void FtSwarmScreen::addJoystick( FtSwarmOledScreen_t screen, const char *text, u
             break;
   }
   
+}
+
+void FtSwarmScreen::setHourclass( void ) {
+
+  hourclass = true;
+  draw();
+
+}
+
+void FtSwarmScreen::releaseHourclass( void ) {
+
+  hourclass = false;
+  draw();
+
 }
 
 /***************************************************
@@ -1414,14 +1450,15 @@ void FtSwarmScreenWifiSSID::operate( void ) {
 
  #define FTSWARMSCREENSWARM_CB_PIN  ( FTSWARMSCREEN_BASEID + 0 )
  #define FTSWARMSCREENSWARM_CB_ADD  ( FTSWARMSCREEN_BASEID + 1 )
- #define FTSWARMSCREENSWARM_CB_DEL  ( FTSWARMSCREEN_BASEID + 2 )
- #define FTSWARMSCREENSWARM_CB_SEL  ( FTSWARMSCREEN_BASEID + 3 )
+ #define FTSWARMSCREENSWARM_CB_ADD1 ( FTSWARMSCREEN_BASEID + 2 )
+ #define FTSWARMSCREENSWARM_CB_DEL  ( FTSWARMSCREEN_BASEID + 3 )
+ #define FTSWARMSCREENSWARM_CB_SEL  ( FTSWARMSCREEN_BASEID + 4 )
 
  FtSwarmScreenSwarm::FtSwarmScreenSwarm( FtSwarmScreen *parent  ) : FtSwarmScreen( parent, TRANSLATE( "Swarm Config", "Swarm-Konfig" ), "" ) {
 
-  addS1( TRANSLATE( "add", "+" ) );
-  S2 = addS2( TRANSLATE( "del", "-" ) );
-  addS4( TRANSLATE( "pin", "Pin" ) );
+  addS1( TRANSLATE( "Add", "+" ) );
+  S2 = addS2( TRANSLATE( "Del", "-" ) );
+  addS4( "Pin" );
 
   addMembers();
 
@@ -1429,10 +1466,7 @@ void FtSwarmScreenWifiSSID::operate( void ) {
 
 void FtSwarmScreenSwarm::addMembers( void ) {
 
-  uint8_t members = myOSSwarm.members();
-  uint8_t item    = 0;
-
-  for (uint8_t i=1; i<members ; i++ ) {
+  for (uint8_t i=1; i<MAXCTRL ; i++ ) {
     
     if ( myOSSwarm.Ctrl[i] )  {
 
@@ -1444,7 +1478,7 @@ void FtSwarmScreenSwarm::addMembers( void ) {
 
   }
 
-  S2->setVisible( members>1 );
+  S2->setVisible( myOSSwarm.members() > 1 );
   
 }
 
@@ -1491,25 +1525,20 @@ bool FtSwarmScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
 
       case FTSWARMSCREENSWARM_CB_ADD: // nParam is the sn to be added to the swarm
                                       if (nParam) {
-
-                                        if ( myOSSwarm.addController( nParam ) ) {
-
-                                          nvs.save( FTSWARM_NVSSCOPE_SWARM );
-                                          objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_SELECTABLE );
-                                          objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_TEXT );
-                                          addMembers();
-                                          draw();
                                         
-                                        } else {
-
-                                          sprintf( error, TRANSLATE( "Could not add ftSwarm%d to swarm.", "ftSwarm%d kann nicht zum Swarm hinzugefuegt werden." ), nParam );
-                                          screenManager.activate( new FtSwarmScreenError( this, error) );
-
-                                        }
+                                        serialNumber = nParam;
+                                        addControllerPart1();
 
                                       }
 
                                       return true;
+
+      case FTSWARMSCREENSWARM_CB_ADD1:  if (nParam) addControllerPart2();
+                                        else {
+                                          releaseHourclass();
+                                          updateScreenList();
+                                        }
+                                        return true;
 
       case FTSWARMSCREENSWARM_CB_DEL: // delete selected controller, nParam is sn
                                       if (nParam) { 
@@ -1517,10 +1546,7 @@ bool FtSwarmScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
                                         if ( myOSSwarm.deleteController( nParam ) ) {
 
                                           nvs.save( FTSWARM_NVSSCOPE_SWARM );
-                                          objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_SELECTABLE ); 
-                                          objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_TEXT );
-                                          addMembers();
-                                          draw(); 
+                                          updateScreenList();
 
                                         } else {
 
@@ -1536,6 +1562,98 @@ bool FtSwarmScreenSwarm::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
   }
 
   return false;
+
+}
+
+void FtSwarmScreenSwarm::updateScreenList( void ) {
+
+  objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_SELECTABLE ); 
+  objects.deleteAll( FTSWARM_OLED_MAINSCREEN, FTSWARMSCREEN_TEXT );
+  addMembers();
+  draw(); 
+
+}
+
+void FtSwarmScreenSwarm::addControllerPart1( void ) {
+
+  char error[255];
+
+  // already a member?
+  if ( myOSSwarm.isMember( serialNumber ) ) { 
+    sprintf( error, TRANSLATE("ERROR: This controller is already part of this swarm.\n", "FEHLER: Dieser Controller ist bereits im Swarm.\n") ); 
+    screenManager.activate( new FtSwarmScreenError( this, error) );
+    return;
+  }
+  
+  // add controller
+  if ( !myOSSwarm.addController( serialNumber ) ) {
+    // no space left
+    sprintf( error, TRANSLATE("ERROR: No space left in swarm. Controller #%d was declined.\n", "FEHLER: Der Controller #%d kann nicht hinzugenommen werden, da die maximale Controlleranzahl erreicht ist.\n"), serialNumber );
+    screenManager.activate( new FtSwarmScreenError( this, error) );
+    return;
+  }
+
+  // save settings
+  nvs.save( FTSWARM_NVSSCOPE_SWARM );
+
+  setHourclass();
+
+  // wait max 1.5 seconds to get the controller connected
+  for ( uint8_t i=0; i<=15; i++ ) {
+
+    vTaskDelay( 100 / portTICK_PERIOD_MS );
+
+    if ( myOSSwarm.getController( serialNumber )->isOnline( ) ) {
+      // controller is online, all done
+      releaseHourclass();
+      updateScreenList();
+      return;
+    }
+
+  }
+
+  releaseHourclass();
+
+  // controller is offline
+  char controller[MAXIDENTIFIER];
+  sprintf( controller, "ftSwarm%d", serialNumber );
+  screenManager.activate( new FtSwarmScreenYesNo( this, controller, TRANSLATE( "Couldn't connect. Send unencrypted wifi settings and reboot?", "Keine Verbindung. WLAN-Einstellungen unverschlüsselt senden und neu starten?"), FTSWARMSCREENSWARM_CB_ADD1 ) );
+
+}
+
+void FtSwarmScreenSwarm::addControllerPart2( void ) {
+
+  setHourclass();
+
+  // try to connect to the new controllers default wifi
+  char SSID[64];
+  sprintf( SSID, "ftSwarm%d", serialNumber );
+  wifiHandler->change_wifi_network( SSID, SSID );
+
+  // wait max 5 seconds to get the controller connected
+  uint8_t i=0;
+
+  while ( !wifiHandler->STAConnected ) {
+
+    i++;
+    vTaskDelay( 100 / portTICK_PERIOD_MS );
+
+    if (i > 20 ) {
+      screenManager.activate( new FtSwarmScreenError ( this, TRANSLATE( "Can't connect to controller. Reboot in 2s.\n", "Konnte den Controller nicht erreichen. Starte in 2s neu.\n") ) );
+      vTaskDelay( 2000 / portTICK_PERIOD_MS );
+      esp_restart();
+    }
+
+  }
+
+  // best choice
+  vTaskDelay( 2000 / portTICK_PERIOD_MS );
+
+  // send wifi data and restart
+  myOSSwarm.getController( serialNumber )->setWifi( wifiClient, nvs.wifi.SSID, nvs.wifi.Password, true );
+  screenManager.activate( new FtSwarmScreenError ( this, TRANSLATE( "Wifi settings have been corrected.\nBoth controllers will restart in 2s.\n", "Die WLAN Einstellungen wurden korrkigiert.\nBeide Controller starten in 2s neu.\n") ) );
+  vTaskDelay( 2000 / portTICK_PERIOD_MS );
+  esp_restart();
 
 }
 

@@ -35,6 +35,8 @@ class WifiHandler {
     wifi_ap_record_t *ap = nullptr;
     uint8_t connectedDevices = 0;
 
+    bool STAConnected = false;
+
     // constructor
     WifiHandler();
 
@@ -52,6 +54,9 @@ class WifiHandler {
 
     // deduplicate ap list
     void uniqueScanResult( void );
+
+    // connect to new wifi
+    void change_wifi_network( const char* new_ssid, const char* new_password );
 
 };
 

@@ -377,6 +377,7 @@ class FtSwarmScreen {
     bool          navigation   = false;
     bool          ESC          = false;
     bool          buttonScreen = false;
+    bool          hourclass    = false;
 
     FtSwarmScreenObjList objects;
 
@@ -451,6 +452,12 @@ class FtSwarmScreen {
 
     // Line
     FtSwarmScreenLine *addLine( FtSwarmOledScreen_t screen, int16_t x1, int16_t y1, int16_t x2, int16_t y2 );
+
+    // draw hourclass and block all user io
+    void setHourclass( void );
+    
+    // revoke hourclass and unblock all user io
+    void releaseHourclass( void );
 
 };
 
@@ -630,6 +637,12 @@ class FtSwarmScreenError : public FtSwarmScreenChooseOption {
 
 };
 
+/***************************************************
+ *
+ * FtSwarmScreenInfo
+ *
+ ***************************************************/
+
 class FtSwarmScreenInfo : public FtSwarmScreenChooseOption {
 
   public: 
@@ -711,8 +724,12 @@ class FtSwarmScreenSwarm : public FtSwarmScreen {
   protected:
 
     FtSwarmScreenButton *S2 = nullptr;
+    FtSwarmSerialNumber_t serialNumber = 0;
 
     void addMembers( void );
+    void addControllerPart1( void );
+    void addControllerPart2( void );
+    void updateScreenList( void );
 
   public:
 

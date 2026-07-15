@@ -11,6 +11,7 @@
 #include <nvs_flash.h>
 #include <esp_err.h>
 #include <esp_task_wdt.h>
+#include <esp_system.h>
 
 #include "SwOS.h"
 #include "SwOSNVS.h"
@@ -288,7 +289,7 @@ void SwOSNVS::saveAndRestart( FtSwarmNVSScope_t scope ) {
   save( scope );
 
   // reboot
-  ESP.restart();
+  esp_restart();
 
 }
 

@@ -139,7 +139,7 @@ public:
   bool    isOnline( void ) { return getComState() == COMSTATE_ONLINE; };
 
   // set wifi
-  void setWifi( FtSwarmWifi_t mode, char *SSID, char*PSK );
+  void setWifi( FtSwarmWifi_t mode, char *SSID, char*PSK, bool reboot );
 
   // reboot
   void reboot( void );
