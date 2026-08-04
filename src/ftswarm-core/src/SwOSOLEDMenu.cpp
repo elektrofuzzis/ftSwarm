@@ -1737,22 +1737,28 @@ void FtSwarmScreenRemote::configurePixel( SwOSCtrl *ctrl, FtSwarmSerialNumber_t 
   SwOSTriggerMath set( FTSWARM_TRIGGERUP, FTSWARM_ASSIGN, FTSWARM_CONSTANT, FTSWARM_MAXOPERAND );
   SwOSTriggerMath reset( FTSWARM_TRIGGERDOWN, FTSWARM_ASSIGN, FTSWARM_CONSTANT, FTSWARM_MAXOPERAND );
 
+  FtSwarmTriggerParameter blink;
+  blink.setBlink( 3000, 1, 1, 0, 5, 0, 0 );
+
+  FtSwarmTriggerParameter revokeBlink;
+  revokeBlink.setNone( 0 );
+
   // blink left
   if (!trailer) {
-    nvs.addEvent( new SwOSNVSEvent( S1UID, blinkLeftFrontUID, set,   CRGB::Orange ) );
-    nvs.addEvent( new SwOSNVSEvent( S1UID, blinkLeftFrontUID, reset, CRGB::Black  ) );
+    nvs.addEvent( new SwOSNVSEvent( S1UID, blinkLeftFrontUID, set,   blink ) );
+    nvs.addEvent( new SwOSNVSEvent( S1UID, blinkLeftFrontUID, reset, revokeBlink  ) );
   }
-  nvs.addEvent( new SwOSNVSEvent( S1UID, blinkLeftBackUID,  set,   CRGB::Orange ) );
-  nvs.addEvent( new SwOSNVSEvent( S1UID, blinkLeftBackUID,  reset, CRGB::Black  ) );
+  nvs.addEvent( new SwOSNVSEvent( S1UID, blinkLeftBackUID,  set,   blink ) );
+  nvs.addEvent( new SwOSNVSEvent( S1UID, blinkLeftBackUID,  reset, revokeBlink  ) );
   strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_S1 ], "BL" );
 
   // blink right
   if (!trailer) {
-    nvs.addEvent( new SwOSNVSEvent( S2UID, blinkRightFrontUID, set,   CRGB::Orange ) );
-    nvs.addEvent( new SwOSNVSEvent( S2UID, blinkRightFrontUID, reset, CRGB::Black  ) );
+    nvs.addEvent( new SwOSNVSEvent( S2UID, blinkRightFrontUID, set,   blink ) );
+    nvs.addEvent( new SwOSNVSEvent( S2UID, blinkRightFrontUID, reset, revokeBlink  ) );
   }
-  nvs.addEvent( new SwOSNVSEvent( S2UID, blinkRightBackUID,  set,   CRGB::Orange ) );
-  nvs.addEvent( new SwOSNVSEvent( S2UID, blinkRightBackUID,  reset, CRGB::Black  ) );
+  nvs.addEvent( new SwOSNVSEvent( S2UID, blinkRightBackUID,  set,   blink ) );
+  nvs.addEvent( new SwOSNVSEvent( S2UID, blinkRightBackUID,  reset, revokeBlink  ) );
   strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_S2 ], "BR" );
 
   // lights
@@ -1782,16 +1788,22 @@ void FtSwarmScreenRemote::configureLamp( SwOSCtrl *ctrl, FtSwarmSerialNumber_t l
   SwOSIOUID S3UID = SwOSIOUID( localSN, SWOSIO_BUTTON, FTSWARM_S3 );
 
   SwOSTriggerMath set( FTSWARM_TRIGGERUP, FTSWARM_ASSIGN, FTSWARM_CONSTANT, FTSWARM_MAXOPERAND );
-  SwOSTriggerMath reset( FTSWARM_TRIGGERDOWN, FTSWARM_ASSIGN, FTSWARM_CONSTANT, FTSWARM_MAXOPERAND );  
+  SwOSTriggerMath reset( FTSWARM_TRIGGERDOWN, FTSWARM_ASSIGN, FTSWARM_CONSTANT, FTSWARM_MAXOPERAND );
+
+  FtSwarmTriggerParameter blink;
+  blink.setBlink( 3000, 1, 1, 0, 100, 0, 0 );
+
+  FtSwarmTriggerParameter revokeBlink;
+  revokeBlink.setNone( 0 );
 
   // blink left
-  nvs.addEvent( new SwOSNVSEvent( S1UID, blinkLeftUID, set,   100 ) );
-  nvs.addEvent( new SwOSNVSEvent( S1UID, blinkLeftUID, reset, 0   ) );
+  nvs.addEvent( new SwOSNVSEvent( S1UID, blinkLeftUID, set,   blink ) );
+  nvs.addEvent( new SwOSNVSEvent( S1UID, blinkLeftUID, reset, revokeBlink ) );
   strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_S1 ], "BL" );
 
   // blink right
-  nvs.addEvent( new SwOSNVSEvent( S2UID, blinkRightUID, set,   100 ) );
-  nvs.addEvent( new SwOSNVSEvent( S2UID, blinkRightUID, reset, 0   ) );
+  nvs.addEvent( new SwOSNVSEvent( S2UID, blinkRightUID, set,   blink ) );
+  nvs.addEvent( new SwOSNVSEvent( S2UID, blinkRightUID, reset, revokeBlink ) );
   strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_S2 ], "BR" );
 
   // lights

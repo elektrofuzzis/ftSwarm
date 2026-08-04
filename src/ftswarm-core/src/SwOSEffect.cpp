@@ -96,7 +96,7 @@ bool SwOSBlink::operate( uint8_t *p ) {
  * 
  ***************************/
 
-static CRGB FTSWARM_EFFECT_COLOR[FTSWARM_EFFECT_COLOR_MAX] = { CRGB::Black, CRGB::Red, CRGB::Green, CRGB::Blue, CRGB::Yellow, CRGB::Orange, CRGB::Cyan, CRGB::Pink, CRGB::Magenta, CRGB::White };
+static CRGB FTSWARM_EFFECT_COLOR[FTSWARM_EFFECT_COLOR_MAX] = { CRGB::Black, CRGB::Red, CRGB::Green, CRGB::Blue, CRGB::Yellow, CRGB::DarkOrange, CRGB::Cyan, CRGB::Pink, CRGB::Magenta, CRGB::White };
 
 SwOSPixelBlink::SwOSPixelBlink( FtSwarmTriggerParameter parameter ) : SwOSBlink( parameter ) {
 
