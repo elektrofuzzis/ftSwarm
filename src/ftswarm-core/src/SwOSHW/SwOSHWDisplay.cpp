@@ -7,8 +7,6 @@
  * 
  */
 
-#include <SwOSColor.h>
- 
 #include "SwOSHW/SwOSHWDisplay.h"
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWLocal.h"
@@ -22,17 +20,6 @@
  *   SwOSPixel
  *
  ***************************************************/
-
-CRGB castUI32ToColor(uint32_t color) {
-    uint8_t r = (uint8_t)((color >> 16) & 0xFF);
-    uint8_t g = (uint8_t)((color >> 8) & 0xFF);
-    uint8_t b = (uint8_t)(color & 0xFF);
-    return CRGB(r, g, b);
-}
-
-uint32_t castColorToUI32(CRGB color) {
-    return ((uint32_t)color.r << 16) | ((uint32_t)color.g << 8) | (uint32_t)color.b;
-}
 
 #ifdef RGB_BUILTIN
 CRGB leds[MAXLEDS];
@@ -97,6 +84,7 @@ void SwOSPixel::setRemote() {
   cmd.data.pixelCmd.B = color.b;
   cmd.data.pixelCmd.brightness = brightness;
   cmd.send( );
+
 }
 
 void SwOSPixel::setLocal() {
@@ -140,12 +128,47 @@ void SwOSPixel::serialize( Serialize *serialize ) {
   SwOSIO::serialize( serialize );
   serialize->item( SERIALIZE_LITERAL_BRIGHTNESS, brightness);
   serialize->item( SERIALIZE_LITERAL_COLOR,      color);
+  // TODO serialize->item( SERIALIZE_LITERAL_BLINK,      blink);
   serialize->endObject();
 }
 
-void SwOSPixel::onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, int32_t parameter ) {
+void SwOSPixel::setEffect( FtSwarmTriggerParameter effect ) {
 
-  setColor( castColorToUI32( evalTriggerMath( triggerMath, sensor, delta, castColorToUI32( getColor() ), parameter, INT32_MIN, INT32_MAX ) ) );
+  // kill old blink
+  if ( blink ) { SwOSBlink *old = blink; blink = nullptr; delete old; }
+
+  switch ( effect.getEffectType() ) {
+
+    case FTSWARM_EFFECT_BLINK:  // keep effect on both sides, kelda & member
+                                blink = new SwOSPixelBlink( effect ); 
+
+                                // need to send to remote?
+                                if ( !ctrl->isLocal() ) sendEffect( effect );
+
+                                break;
+
+    case FTSWARM_EFFECT_NONE:   // it's just a color, not an effect
+                                if ( !ctrl->isLocal() ) sendEffect( effect );
+                                else                    setColor( effect.getValue() );
+                                break;
+
+  } 
+  
+}
+
+void SwOSPixel::onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, FtSwarmTriggerParameter parameter ) {
+
+  FtSwarmTriggerParameter p = evalTriggerMath( triggerMath, sensor, delta, castColorToUI32( getColor() ), parameter, 0x0, 0xFFFFFF );
+
+  setEffect( p );
+
+}
+
+void SwOSPixel::operate( void ) {
+
+  CRGB color;
+
+  if ( ( blink ) && ( blink->operate( &color ) ) ) setColor( color );
 
 }
 

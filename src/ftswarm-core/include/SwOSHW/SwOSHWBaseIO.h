@@ -19,7 +19,6 @@
 #include "serialize.h"
 #include "SwOSFilter.h"
 
-
 #define BRIGHTNESSDEFAULT 48
 
 // reference to local ftPwrDrive
@@ -139,135 +138,144 @@ class SwOSObj {
  ***************************************************/
 
 class SwOSIO : public SwOSObj {
-protected:
-	uint8_t       port;  // local port
-  SwOSCtrl      *ctrl; // pointer to my Controller
-  FtSwarmScreenIO *subscribedScreenIO = NULL;
-  SwOSIOType_t  ioType               = SWOSIO_UNDEF;
-  bool          isSubscribed         = false;
-  int32_t       lastsubscribedValue  = 0;
-  int32_t       hysteresis           = 0;
-  char          *subscribedIOName    = NULL;
-  int16_t       useCounter           = 0;
 
-  // local HW 
-  virtual void setupLocal() {};
-  static int32_t evalOperand( FtSwarmOperand_t v, int32_t sensor, int32_t delta, int32_t actor, int32_t parameter );
-  static int32_t evalTriggerMath( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, int32_t actor, int32_t parameter, int32_t minValue, int32_t maxValue );
+  protected:
+  
+	  uint8_t       port;  // local port
+    SwOSCtrl      *ctrl; // pointer to my Controller
+    FtSwarmScreenIO *subscribedScreenIO = NULL;
+    SwOSIOType_t  ioType               = SWOSIO_UNDEF;
+    bool          isSubscribed         = false;
+    int32_t       lastsubscribedValue  = 0;
+    int32_t       hysteresis           = 0;
+    char          *subscribedIOName    = NULL;
+    int16_t       useCounter           = 0;
 
-public:
-  // Constructor
-	SwOSIO(const char *name, SwOSCtrl *ctrl, SwOSIOType_t ioType, uint8_t flags ) : SwOSIO( name, SWOS_NOPORT, ctrl, ioType, flags ) {};
+    // send effect to member
+    virtual void sendEffect( FtSwarmTriggerParameter effect );
+
+    // local HW 
+    virtual void setupLocal() {};
+    static FtSwarmTriggerParameter evalOperand( FtSwarmOperand_t v, int32_t sensor, int32_t delta, int32_t actor, FtSwarmTriggerParameter parameter );
+    static FtSwarmTriggerParameter evalTriggerMath( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, int32_t actor, FtSwarmTriggerParameter parameter, int32_t minValue, int32_t maxValue );
+
+  public:
+    // Constructor
+  	SwOSIO(const char *name, SwOSCtrl *ctrl, SwOSIOType_t ioType, uint8_t flags ) : SwOSIO( name, SWOS_NOPORT, ctrl, ioType, flags ) {};
 	
-  // Constructor
-	SwOSIO(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, uint8_t flags );   
+    // Constructor
+  	SwOSIO(const char *name, uint8_t port, SwOSCtrl *ctrl, SwOSIOType_t ioType, uint8_t flags );   
 
-  // Destructor
-  ~SwOSIO();
+    // Destructor
+    ~SwOSIO();
 
-  // load my port & alias settings from NVS
-  virtual void loadFromNVS( nvs_handle_t my_handle );
+    // load my port & alias settings from NVS
+    virtual void loadFromNVS( nvs_handle_t my_handle );
 
-  // save my port & alias settings from NVS
-  virtual void saveToNVS( nvs_handle_t my_handle );
+    // save my port & alias settings from NVS
+    virtual void saveToNVS( nvs_handle_t my_handle );
   
-  // print my nvs settings
-  virtual void printNVS( nvs_handle_t my_handle );
+    // print my nvs settings
+    virtual void printNVS( nvs_handle_t my_handle );
 
-  // lock io
-  virtual void lock(void);
+    // lock io
+    virtual void lock(void);
 
-  // unlock io
-  virtual void unlock(void);
+    // unlock io
+    virtual void unlock(void);
 
-  // subscribe io to display value changes as console outputs 
-  virtual char* subscribe( const char *IOName, uint32_t hysteresis ); 
+    // subscribe io to display value changes as console outputs 
+    virtual char* subscribe( const char *IOName, uint32_t hysteresis ); 
 
-  // subscribe io to send status information to a Screen
-  virtual void subscribe( FtSwarmScreenIO *screenIO );
+    // subscribe io to send status information to a Screen
+    virtual void subscribe( FtSwarmScreenIO *screenIO );
 
-  // clear subscription
-	virtual void unsubscribe();
+    // clear subscription
+	  virtual void unsubscribe();
 
-  // clear subscription of a screen object
-  virtual void unsubscribe(  FtSwarmScreenIO *screenIO );
+    // clear subscription of a screen object
+    virtual void unsubscribe(  FtSwarmScreenIO *screenIO );
 
-  // get my port
-  virtual uint8_t getPort() { return port; };
+    // get my port
+    virtual uint8_t getPort() { return port; };
 
-  // get my controller
-  virtual SwOSCtrl* getCtrl() { return ctrl; };
+    // get my controller
+    virtual SwOSCtrl* getCtrl() { return ctrl; };
 
-  // get my ioType
-	virtual SwOSIOType_t getIOType() { return ioType; };
+    // get my ioType
+	  virtual SwOSIOType_t getIOType() { return ioType; };
 
-  // get my UIClass
-  virtual SwOSUIClass_t getUIClass();
+    // get my UIClass
+    virtual SwOSUIClass_t getUIClass();
 
-  // get my unique ID UID
-  virtual void getUID( SwOSIOUID *uid );
+    // get my unique ID UID
+    virtual void getUID( SwOSIOUID *uid );
 
-  // return controller.ioname or alias in name. Name needs to be 2*MAXIDENTIFIER+2
-  virtual void getUniqueName( char *name );
+    // return controller.ioname or alias in name. Name needs to be 2*MAXIDENTIFIER+2
+    virtual void getUniqueName( char *name );
 
-  // show my settings
-	virtual void serialize( Serialize *serialize ) override;
+    // show my settings
+	  virtual void serialize( Serialize *serialize ) override;
 
-  // register an instance using this IO
-  virtual void take( void ) { useCounter++; };
+    // register an instance using this IO
+    virtual void take( void ) { useCounter++; };
 
-  // unregister an instance using this IO
-  virtual void give( void ) { if (useCounter>0) useCounter--; };   
+    // unregister an instance using this IO
+    virtual void give( void ) { if (useCounter>0) useCounter--; };   
 
-  // test, if an IO is used by some user elements
-  virtual bool isInUse( void ) { return useCounter > 0; };
+    // test, if an IO is used by some user elements
+    virtual bool isInUse( void ) { return useCounter > 0; };
 
-  // test, if IO shall be shown in the API
-  virtual bool showInApi( void ) { return ( (!testFlag( FTSWARM_HAL_FLAG_HIDDEN ) ) && ( SHOWIOINAPI[ ioType ]) );  };
+    // test, if IO shall be shown in the API
+    virtual bool showInApi( void ) { return ( (!testFlag( FTSWARM_HAL_FLAG_HIDDEN ) ) && ( SHOWIOINAPI[ ioType ]) );  };
 
-  // halt all motors
-  virtual void halt( void ) {};
+    // halt all motors
+    virtual void halt( void ) {};
 
-  // push my state to a buffer
-  virtual uint8_t pushState( uint8_t *buffer ) { return 0; };
+    // push my state to a buffer
+    virtual uint8_t pushState( uint8_t *buffer ) { return 0; };
 
-  // pop my state from a buffer
-  virtual uint8_t popState( uint8_t *buffer )  { return 0; };
+    // pop my state from a buffer
+    virtual uint8_t popState( uint8_t *buffer )  { return 0; };
 
-  // set parameter from remote 
-  virtual void setParameter( int32_t parameter ) {};
+    // set parameter from remote 
+    virtual void setParameter( int32_t parameter ) {};
 
-  // is the io online?
-  virtual bool isOnline( void );
+    // is the io online?
+    virtual bool isOnline( void );
 
-  // set my OLED label text
-  virtual void setLabelText( char *text );
+    // set my OLED label text
+    virtual void setLabelText( char *text );
 
-  // get my OLED label type
-  virtual SwOSLabel_t  getLabel( void );
+    // get my OLED label type
+    virtual SwOSLabel_t  getLabel( void );
   
-  // Test, if I'm an ...
-  virtual bool isMotor( void )        { return false; };  
-  virtual bool isActor( void )        { return false; }; // actor to be used with triggers
-  virtual bool isInput( void )        { return false; }; 
-  virtual bool isEventInput( void )   { return false; }; // input to be used with triggers
-  virtual bool isGPIOInput( void )    { return false; };  
-  virtual bool isDigitalInput( void ) { return false; };  
-  virtual bool isAnalogInput( void )  { return false; };  
-  virtual bool isServo( void )        { return false; };  
-  virtual bool isGyro( void )         { return false; };
-  virtual bool isI2C( void )          { return false; };
-  virtual bool isOLED( void )         { return false; };
-  virtual bool isPixel( void )        { return false; };
-  virtual bool isCAM( void )          { return false; };
-  virtual bool isCounter( void )      { return false; };
-  virtual bool isStepper( void )      { return false; };
+    // Test, if I'm an ...
+    virtual bool isMotor( void )        { return false; };  
+    virtual bool isLamp( void )         { return false; };  
+    virtual bool isActor( void )        { return false; }; // actor to be used with triggers
+    virtual bool isInput( void )        { return false; }; 
+    virtual bool isEventInput( void )   { return false; }; // input to be used with triggers
+    virtual bool isGPIOInput( void )    { return false; };  
+    virtual bool isDigitalInput( void ) { return false; };  
+    virtual bool isAnalogInput( void )  { return false; };  
+    virtual bool isServo( void )        { return false; };  
+    virtual bool isGyro( void )         { return false; };
+    virtual bool isI2C( void )          { return false; };
+    virtual bool isOLED( void )         { return false; };
+    virtual bool isPixel( void )        { return false; };
+    virtual bool isCAM( void )          { return false; };
+    virtual bool isCounter( void )      { return false; };
+    virtual bool isStepper( void )      { return false; };
 
-  virtual void operate( void ) { };
-  virtual void onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, int32_t parameter );
+    virtual void operate( void ) { };
+    virtual void onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, FtSwarmTriggerParameter parameter );
 
-  // get my raw value
-  virtual int32_t getValueI32( void ) { return FTSWARM_NANI32; };
+    // get my raw value
+    virtual int32_t getValueI32( void ) { return FTSWARM_NANI32; };
+
+    // set an effect, but I don't know effects
+    virtual void setEffect( FtSwarmTriggerParameter effect ) { };
 
 };
 
@@ -278,13 +286,15 @@ public:
  ***************************************************/
 
 class SwOSEventHandler {
-  public:
-    SwOSTriggerMath   triggerMath;
-    SwOSIO            *actor         = NULL;
-    int32_t           parameter      = 0;
-    SwOSEventHandler  *next          = NULL;
 
-    SwOSEventHandler( SwOSTriggerMath triggerMath, SwOSIO *actor, int32_t parameter );
+  public:
+
+    SwOSTriggerMath      triggerMath;
+    SwOSIO               *actor    = NULL;
+    FtSwarmTriggerParameter parameter = { 0 };
+    SwOSEventHandler     *next     = NULL;
+
+    SwOSEventHandler( SwOSTriggerMath triggerMath, SwOSIO *actor, FtSwarmTriggerParameter parameter );
     ~SwOSEventHandler( );
 };
 
@@ -295,7 +305,7 @@ class SwOSEventInput {
    ~SwOSEventInput();
     bool deleteEvent( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, SwOSIO *actor );
     void deleteEvents( void );
-    bool addEvent( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, SwOSIO *actor, int32_t parameter );
+    bool addEvent( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, SwOSIO *actor, FtSwarmTriggerParameter parameter );
     void trigger( FtSwarmTrigger_t triggerEvent, int32_t sensor, int32_t delta );
 };
 

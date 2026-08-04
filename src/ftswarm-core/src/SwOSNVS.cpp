@@ -28,7 +28,7 @@ bool SwOSNVSEvent::cmp(  SwOSNVSEvent *otherEvent ) {
        ( triggerMath.bits.trigger == otherEvent->triggerMath.bits.trigger ) &&
        ( triggerMath.bits.op      == otherEvent->triggerMath.bits.op  ) ) {
 
-    if ( (triggerMath.raw == otherEvent->triggerMath.raw) && ( parameter == otherEvent->parameter ) ) return 2;
+    if ( (triggerMath.raw == otherEvent->triggerMath.raw) && ( parameter.raw == otherEvent->parameter.raw ) ) return 2;
     else return 1;
 
   } else return 0;
@@ -361,6 +361,7 @@ void SwOSNVS::deleteAllEvents( uint8_t configuration ) {
 
   // set all events to "NULL"
   bzero( events.events[configuration], MAXNVSEVENTS * sizeof( SwOSNVSEvent ) );
+  bzero( events.oledLabel[configuration], sizeof( events.oledLabel[configuration] ) );
   events.quickConfig[configuration] = FTSWARM_CFG_INDIVIDUAL;
 
 }
@@ -610,7 +611,7 @@ void SwOSNVS::printNVS() {
       for ( uint8_t i=0; i<MAXNVSEVENTS; i++ ) {
 
         if ( events.events[c][i].sensor.serialNumber != 0 ) {
-          printf( "#%d input %d.%d.%d actor %d.%d.%d trigger %d op %d v1 %d v2 %d parameter %d\n", 
+          printf( "#%d input %d.%d.%d actor %d.%d.%d trigger %d op %d v1 %d v2 %d parameter %08X\n", 
                   i, 
                   events.events[c][i].sensor.serialNumber, events.events[c][i].sensor.ioType, events.events[c][i].sensor.port,
                   events.events[c][i].actor.serialNumber,  events.events[c][i].actor.ioType,  events.events[c][i].actor.port,

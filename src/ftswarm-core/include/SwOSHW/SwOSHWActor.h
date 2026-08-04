@@ -14,6 +14,7 @@
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWAnalog.h"
 #include "SwOSFilter.h"
+#include "SwOSEffect.h"
 
 // only to feed that silly compiler
 class SwOSAnalogInput;
@@ -25,6 +26,7 @@ class SwOSAnalogInput;
  ***************************************************/
 
 class SwOSMotor : public SwOSIO {
+
   protected:
 
     // generics
@@ -46,7 +48,7 @@ class SwOSMotor : public SwOSIO {
     virtual void            setMotionType( FtSwarmMotion_t motionType );
     virtual FtSwarmMotion_t getMotionType() { return motionType; }; 
     virtual void            serialize( Serialize *serialize ); // serialize object to JSON
-    virtual void            onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, int32_t parameter );
+    virtual void            onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, FtSwarmTriggerParameter parameter );
     virtual void            operate( void );
     virtual bool            isMotor( void ) { return true; };
     virtual bool            isActor( void ) { return true; };
@@ -103,7 +105,32 @@ class SwOSDCMotor : public SwOSMotor {
     virtual void setAcceleration( uint32_t rampUpT,  uint32_t rampUpY );    // set acceleration ramp
     virtual void getAcceleration( uint32_t *rampUpT, uint32_t *rampUpY );   // get acceleration ramp
     
-  };
+};
+
+/***************************************************
+ *
+ *   SwOSLamp
+ *
+ ***************************************************/
+
+class SwOSLamp : public SwOSDCMotor {
+
+  protected:
+
+    SwOSLampBlink *blink = nullptr;
+
+  public:
+
+    SwOSLamp(const char *name, uint8_t port, SwOSCtrl *ctrl, uint8_t flags ):SwOSDCMotor(name, port, ctrl, SWOSIO_LAMP, flags ) {};
+
+    virtual void onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, FtSwarmTriggerParameter parameter );
+    virtual void operate( void );
+    virtual void serialize( Serialize *serialize );
+    virtual bool isLamp( void ) { return true; }; 
+
+    virtual void setEffect( FtSwarmTriggerParameter effect );
+
+};
 
 /***************************************************
  *
@@ -187,7 +214,7 @@ class SwOSDCMotor : public SwOSMotor {
     
     // administrative stuff
     virtual void serialize( Serialize *serialize );
-    virtual void onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, int32_t parameter );
+    virtual void onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, FtSwarmTriggerParameter parameter );
     virtual void adjust( void ) {};
     virtual bool isServo( void ) override { return true; };
     virtual bool isActor( void ) override { return true; };

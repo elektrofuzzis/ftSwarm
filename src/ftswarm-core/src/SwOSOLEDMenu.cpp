@@ -1766,7 +1766,7 @@ void FtSwarmScreenRemote::configurePixel( SwOSCtrl *ctrl, FtSwarmSerialNumber_t 
   nvs.addEvent( new SwOSNVSEvent( S3UID, brakelightLeftBackUID,  reset, CRGB::Black ) );
   nvs.addEvent( new SwOSNVSEvent( S3UID, brakelightRightBackUID, set,   CRGB::Red ) );
   nvs.addEvent( new SwOSNVSEvent( S3UID, brakelightRightBackUID, reset, CRGB::Black ) );
-  strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_S3 ], "LIGHT" );
+  strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_S3 ], "LGT" );
 
 }
 
@@ -1868,7 +1868,7 @@ void FtSwarmScreenRemote::configureCar( SwOSCtrl *ctrl, FtSwarmSerialNumber_t lo
                                   ( ctrl->getCPU() == FTSWARMRC_1V141 ) ? SwOSIOUID( remoteSN, SWOSIO_WHEELDRIVE, FTSWARM_M4 ) : 
                                                                           SwOSIOUID( remoteSN, SWOSIO_SMOTOR,     FTSWARM_M1 ), 
                                   SwOSTriggerMath( FTSWARM_TRIGGERVALUE, FTSWARM_ASSIGN, FTSWARM_SENSORVALUE, FTSWARM_MAXOPERAND ),
-                                  0 
+                                  0
                                 )
               );
   strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_JOY1FB ], "FB" );
@@ -1879,7 +1879,7 @@ void FtSwarmScreenRemote::configureCar( SwOSCtrl *ctrl, FtSwarmSerialNumber_t lo
                                   ( ctrl->getCPU() == FTSWARMRC_1V141 ) ? SwOSIOUID( remoteSN, SWOSIO_RCSERVO, FTSWARM_M1 ) : 
                                                                           SwOSIOUID( remoteSN, SWOSIO_SERVO,   FTSWARM_SERVO1 ), 
                                   SwOSTriggerMath( FTSWARM_TRIGGERVALUE, FTSWARM_ASSIGN, FTSWARM_SENSORVALUE, FTSWARM_MAXOPERAND ),
-                                  0 
+                                  0
                                 )
               );
   strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_JOY2LR ], "LR" );
@@ -2589,47 +2589,25 @@ void SwOSMainScreen::draw( void ) {
 
   FtSwarmScreen::draw();
 
-  /*
-  // Members
-  uint8_t members = myOSSwarm.members();
-  if ( members > 0) {
-    char m[3];
-    sprintf( m, "%d", members );
-    oled.drawStr( FTSWARM_OLED_UPPERSCREEN, oled.getScreenWidth()-1, 0, m, FTSWARM_ALIGNRIGHT );
-  }
-
-  // Kelda
-  if (myOSSwarm.Ctrl[0]->IAmKelda) oled.drawStr( FTSWARM_OLED_UPPERSCREEN, 0, 0, "K", FTSWARM_ALIGNLEFT );
-  */
-
   joystick( nvs.events.oledLabel[nvs.events.activeConfig][SWOSLABEL_JOY1LR], nvs.events.oledLabel[nvs.events.activeConfig][SWOSLABEL_JOY1FB], 48,     20, true );
   joystick( nvs.events.oledLabel[nvs.events.activeConfig][SWOSLABEL_JOY2LR], nvs.events.oledLabel[nvs.events.activeConfig][SWOSLABEL_JOY2FB], 128-48, 20, false );
 
   char cfg[5];
-  sprintf( cfg, "#%d", nvs.events.activeConfig+1 );
-  oled.drawStr( FTSWARM_OLED_BUTTONSCREEN, oled.getScreenWidth()/2, 0, cfg, FTSWARM_ALIGNCENTER );
+  sprintf( cfg, "%d", nvs.events.activeConfig+1 );
+  oled.drawStr( FTSWARM_OLED_BUTTONSCREEN, oled.getScreenWidth()/2, 1, cfg, FTSWARM_ALIGNCENTER );
 
 }
 
 bool SwOSMainScreen::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam, const char *sParam ) {
+
+  if ( FtSwarmScreen::eventHandler( event, id, nParam, sParam ) ) return true;
 
   if ( id == FTSWARM_S4 ) {
 
       // set new screen and all done
       if ( event == FTSWARM_SCREENEVENT_DOWN ) {
 
-        FtSwarmScreen *config = ( FtSwarmScreen * ) new FtSwarmScreenSetup( this );
-
-        // FtSwarmScreen *config = ( FtSwarmScreen * ) new FtSwarmScreenChooseConfig( this, nullptr );
-
-        /*
-        FtSwarmScreen *config = ( FtSwarmScreen * ) new FtSwarmScreenChooseConfig( this,          
-                                                      new FtSwarmScreenSwarm( this, 
-                                                        new FtSwarmScreenWifi( this, 
-                                                          // new FtSwarmScreenFactoryReset( this, 
-                                                            nullptr ) ) );
-        */
-        screenManager.activate( (FtSwarmScreen *) config );
+        screenManager.activate( (FtSwarmScreen *) new FtSwarmScreenSetup( this ) );
 
         return true;
       }

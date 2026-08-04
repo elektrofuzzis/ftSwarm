@@ -75,7 +75,9 @@ const IOCmdList_t IOCmdList [CLICMD_MAX] = {
   { "isHoming", true, 0, 0},
   { "setHomingOffset", true, 1, 1},
   { "testPixels", true, 1, 1},
-  { "print", true, 0, 0 }
+  { "print", true, 0, 0 },
+  { "setBlink", true, 7, 7 },
+  { "revokeEffect", true, 1, 1 }
 };
 
 const char help[] = R"(help   - list all commands
@@ -138,6 +140,16 @@ DC-Motor commands (M1..M8):
   setMotionType( motionType )
   getMotionType()
 
+Lamp commands (M1..M8)
+  getIOType()
+  setIOType( actorType )
+  setSpeed( speed )
+  getSpeed()
+  setMotionType( motionType )
+  getMotionType()
+  setBlink( period, signal, duty, pause, b1, b2, b3 )    
+  revokeEffect( brightness )
+
 Stepper commands (M1..M4):
   setIOType( Stepper )
   getIOType()
@@ -167,7 +179,9 @@ ftPixel commands (LED1..LED18):
   setColor( color )
   getColor()
   setBrightness( brightness )
-  getBrightness()    
+  getBrightness()
+  setBlink( period, signal, duty, pause, c1, c2, c3 )    
+  revokeEffect( color )
 
 I2C commands:
   setRegister( register, value )
@@ -567,6 +581,8 @@ void SwOSCLI::executeInputCmd( void ) {
   SwOSCtrl     *ctrl = io->getCtrl();
   uint8_t      index = ctrl->getIndex( io );
 
+  FtSwarmTriggerParameter p = { 0 };
+
   switch ( cmd ) {
 
     case CLICMD_getIOType:      io->lock();
@@ -655,12 +671,13 @@ void SwOSCLI::executeInputCmd( void ) {
                                      ( parameter[4].isIO() ) &&
                                      ( parameter[5].isNumber() ) ) {
                                   io->lock();
+                                  p.setValue( parameter[5].getNumber() );
                                   ((SwOSInput *)io)->addEvent(  (FtSwarmTrigger_t)parameter[0].getNumber(), 
                                                                 (FtSwarmOperator_t)parameter[1].getNumber(), 
                                                                 (FtSwarmOperand_t)parameter[2].getNumber(), 
                                                                 (FtSwarmOperand_t)parameter[3].getNumber(), 
                                                                 parameter[4].getIO(), 
-                                                                parameter[5].getNumber() );
+                                                                p );
                                   io->unlock();
                                   OK( );
                                 }
@@ -675,12 +692,14 @@ void SwOSCLI::executeInputCmd( void ) {
 void SwOSCLI::executeActorCmd( void ) {
 
   SwOSMotor    *motor   = (SwOSMotor *)io;
+  SwOSLamp     *lamp    = (SwOSLamp *)io;
   SwOSStepper  *stepper = (SwOSStepper *)io;
   int          maxspeed;
   bool         ok = true;
   SwOSCtrl     *ctrl = io->getCtrl();
   uint8_t      index = ctrl->getIndex( io );
   SwOSIOType_t newIOType;
+  FtSwarmTriggerParameter p;
   
   switch ( cmd ) {
 
@@ -817,6 +836,24 @@ void SwOSCLI::executeActorCmd( void ) {
                                 } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
                                 break;
 
+    case CLICMD_setBlink:       if ( lamp->getIOType() == SWOSIO_LAMP ) {
+                                  p.setBlink( parameter[0].getNumber(), parameter[1].getNumber(), parameter[2].getNumber(), parameter[3].getNumber(), parameter[4].getNumber(), parameter[5].getNumber(), parameter[6].getNumber() );
+                                  lamp->lock();
+                                  lamp->setEffect( p );
+                                  lamp->unlock();
+                                  OK( );
+                                } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
+                                break;
+
+    case CLICMD_revokeEffect:   if ( lamp->getIOType() == SWOSIO_LAMP ) {
+                                  p.setNone( parameter[0].getNumber() );
+                                  lamp->lock();
+                                  lamp->setEffect( p );
+                                  lamp->unlock();
+                                  OK( );
+                                } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
+                                break;
+
     default:                    Error( ERROR_INVALIDCMD );
                                 break;
   }
@@ -824,6 +861,8 @@ void SwOSCLI::executeActorCmd( void ) {
 }
 
 void SwOSCLI::executeJoystickCmd( void ) {
+
+  FtSwarmTriggerParameter p = { 0 };
 
   switch ( cmd ) {
 
@@ -841,12 +880,13 @@ void SwOSCLI::executeJoystickCmd( void ) {
                                    ( parameter[4].isIO() ) &&
                                    ( parameter[5].isNumber() ) ) {
                                 io->lock();
+                                p.setValue( parameter[5].getNumber() );
                                 ((SwOSJoystick *)io)->lr->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), 
                                                                     (FtSwarmOperator_t)parameter[1].getNumber(), 
                                                                     (FtSwarmOperand_t)parameter[2].getNumber(), 
                                                                     (FtSwarmOperand_t)parameter[3].getNumber(), 
                                                                     parameter[4].getIO(), 
-                                                                    parameter[5].getNumber() );
+                                                                    p );
                                 io->unlock();
                                 OK( );
                               }
@@ -859,12 +899,13 @@ void SwOSCLI::executeJoystickCmd( void ) {
                                    ( parameter[4].isIO() ) &&
                                    ( parameter[5].isNumber() ) ) {
                                 io->lock();
+                                p.setValue( parameter[5].getNumber() );
                                 ((SwOSJoystick *)io)->fb->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), 
                                                                     (FtSwarmOperator_t)parameter[1].getNumber(), 
                                                                     (FtSwarmOperand_t)parameter[2].getNumber(), 
                                                                     (FtSwarmOperand_t)parameter[3].getNumber(), 
                                                                     parameter[4].getIO(), 
-                                                                    parameter[5].getNumber() );
+                                                                    p );
                                 io->unlock();
                                 OK( );
                               }
@@ -915,30 +956,47 @@ void SwOSCLI::executePixelCmd( void ) {
 
   CRGB color;
 
+  SwOSPixel *pixel = (SwOSPixel *)io;
+  FtSwarmTriggerParameter p;
+
   switch ( cmd ) {
-    case CLICMD_setBrightness:   if (parameter[0].inRange( "brightness", 0, 255, response ) ) { 
-                                  io->lock(); 
-                                  ((SwOSPixel *)io)->setBrightness( (uint8_t) parameter[0].getNumber() );
-                                  io->unlock();
+    case CLICMD_setBrightness:  if (parameter[0].inRange( "brightness", 0, 255, response ) ) { 
+                                  pixel->lock(); 
+                                  pixel->setBrightness( (uint8_t) parameter[0].getNumber() );
+                                  pixel->unlock();
                                   OK( );
                                 }
                                 break;
 
-    case CLICMD_getBrightness:  io->lock();
-                                sprintf( response, "R: %d", ((SwOSPixel *)io)->getBrightness() ); 
-                                io->unlock();
+    case CLICMD_getBrightness:  pixel->lock();
+                                sprintf( response, "R: %d", pixel->getBrightness() ); 
+                                pixel->unlock();
                                 break;
 
-    case CLICMD_setColor:       io->lock(); 
-                                ((SwOSPixel *)io)->setColor( (uint32_t) parameter[0].getNumber() );
-                                io->unlock();
+    case CLICMD_setColor:       pixel->lock(); 
+                                pixel->setColor( (uint32_t) parameter[0].getNumber() );
+                                pixel->unlock();
                                 OK( );
                                 break;
 
-    case CLICMD_getColor:       io->lock();
-                                color = ((SwOSPixel *)io)->getColor();
+    case CLICMD_getColor:       pixel->lock();
+                                color = pixel->getColor();
+                                pixel->unlock();
                                 sprintf( response, "R: #%02X%02X%02X", color.r, color.g, color.b ); 
-                                io->unlock();
+                                break;
+
+    case CLICMD_setBlink:       p.setBlink( parameter[0].getNumber(), parameter[1].getNumber(), parameter[2].getNumber(), parameter[3].getNumber(), parameter[4].getNumber(), parameter[5].getNumber(), parameter[6].getNumber() );
+                                pixel->lock();
+                                pixel->setEffect( p );
+                                pixel->unlock();
+                                OK( );
+                                break;
+
+    case CLICMD_revokeEffect:   p.setNone( parameter[0].getNumber() );
+                                pixel->lock();
+                                pixel->setEffect( p );
+                                pixel->unlock();
+                                OK( );
                                 break;
 
     default:                    Error( ERROR_INVALIDCMD );
@@ -948,6 +1006,8 @@ void SwOSCLI::executePixelCmd( void ) {
 }
 
 void SwOSCLI::executeI2CCmd( void ) {
+
+  FtSwarmTriggerParameter p = { 0 };
 
   switch ( cmd ) {
     case CLICMD_setRegister:    if ( (parameter[0].inRange( "register", 0, MAXI2CREGISTERS-1, response ) ) &&
@@ -972,12 +1032,13 @@ void SwOSCLI::executeI2CCmd( void ) {
                                      ( parameter[4].isIO() ) &&
                                      ( parameter[5].isNumber() ) ) {
                                   io->lock();
+                                  p.setValue( parameter[5].getNumber() );
                                   ((SwOSI2C *)io)->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), 
                                                              (FtSwarmOperator_t)parameter[1].getNumber(), 
                                                              (FtSwarmOperand_t)parameter[2].getNumber(), 
                                                              (FtSwarmOperand_t)parameter[3].getNumber(), 
                                                              parameter[4].getIO(), 
-                                                             parameter[5].getNumber() );
+                                                             p );
                                   io->unlock();
                                   OK( );
                                 }

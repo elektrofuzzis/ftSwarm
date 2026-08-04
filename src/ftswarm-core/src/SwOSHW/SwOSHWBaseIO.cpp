@@ -226,38 +226,39 @@ SwOSLabel_t SwOSIO::getLabel( void ) {
 
 }
 
-int32_t SwOSIO::evalOperand( FtSwarmOperand_t v, int32_t sensor, int32_t delta, int32_t actor, int32_t parameter ) {
+FtSwarmTriggerParameter SwOSIO::evalOperand( FtSwarmOperand_t v, int32_t sensor, int32_t delta, int32_t actor, FtSwarmTriggerParameter parameter ) {
+
+  FtSwarmTriggerParameter result = { 0 };
 
   switch (v) {
-    case FTSWARM_CONSTANT:    return parameter;
-    case FTSWARM_SENSORVALUE: return sensor;
-    case FTSWARM_SENSORDELTA: return delta;
-    case FTSWARM_ACTORVALUE:  return actor;
+    case FTSWARM_CONSTANT:    result = parameter;        break;
+    case FTSWARM_SENSORVALUE: result.setValue( sensor ); break;
+    case FTSWARM_SENSORDELTA: result.setValue( delta );  break;
+    case FTSWARM_ACTORVALUE:  result.setValue( actor );  break;
   }
 
-  // dead code to feed the compiler
-  return 0;
+  return result;
 
 }
 
-int32_t SwOSIO::evalTriggerMath( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, int32_t actor, int32_t parameter, int32_t minValue, int32_t maxValue ) {
+FtSwarmTriggerParameter SwOSIO::evalTriggerMath( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, int32_t actor, FtSwarmTriggerParameter parameter, int32_t minValue, int32_t maxValue ) {
 
   // get operands
-  int32_t v1 = evalOperand( triggerMath.bits.v1, sensor, delta, actor, parameter );
-  int32_t v2 = evalOperand( triggerMath.bits.v2, sensor, delta, actor, parameter );
+  FtSwarmTriggerParameter v1 = evalOperand( triggerMath.bits.v1, sensor, delta, actor, parameter );
+  FtSwarmTriggerParameter v2 = evalOperand( triggerMath.bits.v2, sensor, delta, actor, parameter );
 
   // calculate
-  int32_t r = 0;
+  FtSwarmTriggerParameter r = { 0 };
   switch (triggerMath.bits.op) {
-    case FTSWARM_ASSIGN:   r = v1;    break;
-    case FTSWARM_ADD:      r = v1+v2; break;
-    case FTSWARM_SUBTRACT: r = v1-v2; break;
-    case FTSWARM_MULTIPLY: r = v1*v2; break;
+    case FTSWARM_ASSIGN:   r = v1; break;
+    case FTSWARM_ADD:      r.setValue( v1.getValue() + v2.getValue() ); break;
+    case FTSWARM_SUBTRACT: r.setValue( v1.getValue() - v2.getValue() ); break;
+    case FTSWARM_MULTIPLY: r.setValue( v1.getValue() * v2.getValue() ); break;
   }
-  
+ 
   // check on bounderies
-  if ( r < minValue ) r = minValue;
-  if ( r > maxValue ) r = maxValue;
+  if ( r.getValue() < minValue ) r.setValue( minValue );
+  if ( r.getValue() > maxValue ) r.setValue( maxValue );
 
   // done
   return r;
@@ -354,7 +355,7 @@ void SwOSIO::serialize( Serialize *serialize ) {
   serialize->item( SERIALIZE_LITERAL_ACTIVE, ( _alias != NULL ) || isInUse() );
 }
 
-void SwOSIO::onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, int32_t parameter ) {
+void SwOSIO::onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, FtSwarmTriggerParameter parameter ) {
   SWARM_LOG_ERROR( TRANSLATE( "IO is unable to handle trigger events.", "IO kann Trigger-Events nicht verarbeiten." ) );
 }
 
@@ -398,6 +399,14 @@ void SwOSIO::setLabelText( char *text ) {
 
 }
 
+void SwOSIO::sendEffect( FtSwarmTriggerParameter effect ) {
+
+  SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_SETEFFECT );
+  cmd.data.effectCmd.index = ctrl->getIndex(this);
+  cmd.data.effectCmd.effect = effect;
+  cmd.send( );
+
+}
 
 /***************************************************
  *
@@ -412,7 +421,7 @@ SwOSEventHandler::~SwOSEventHandler( ) {
   
 }
 
-SwOSEventHandler::SwOSEventHandler( SwOSTriggerMath triggerMath, SwOSIO *actor, int32_t parameter  ) {
+SwOSEventHandler::SwOSEventHandler( SwOSTriggerMath triggerMath, SwOSIO *actor, FtSwarmTriggerParameter parameter  ) {
   this->triggerMath = triggerMath;
   this->actor       = actor;
   this->parameter   = parameter;
@@ -445,7 +454,7 @@ SwOSTriggerMath genTriggerMath( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t
 
 }
 
-bool SwOSEventInput::addEvent( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, SwOSIO *actor, int32_t parameter ) {
+bool SwOSEventInput::addEvent( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, SwOSIO *actor, FtSwarmTriggerParameter parameter ) {
 
   // first event?
   if (!eventList) {
@@ -711,13 +720,13 @@ void SwOSInput::serializeEvents( Serialize *serialize ) {
       if (!actor) sprintf(actor, "%s.%s", e->actor->getCtrl()->getName(), e->actor->getName() );
 
       serialize->startObject( );
-      serialize->item( SERIALIZE_LITERAL_SENSOR, sensor );
-      serialize->item( SERIALIZE_LITERAL_ACTOR,  actor );
-      serialize->item( SERIALIZE_LITERAL_TRIGGER, e->triggerMath.bits.trigger );
+      serialize->item( SERIALIZE_LITERAL_SENSOR,   sensor );
+      serialize->item( SERIALIZE_LITERAL_ACTOR,    actor );
+      serialize->item( SERIALIZE_LITERAL_TRIGGER,  e->triggerMath.bits.trigger );
       serialize->item( SERIALIZE_LITERAL_OPERATOR, e->triggerMath.bits.op );
       serialize->item( SERIALIZE_LITERAL_OPERAND1, e->triggerMath.bits.v1 );
       serialize->item( SERIALIZE_LITERAL_OPERAND2, e->triggerMath.bits.v2 );
-      serialize->item( SERIALIZE_LITERAL_VALUE,   e->parameter );
+      serialize->item( SERIALIZE_LITERAL_VALUE,    e->parameter.raw );
       serialize->endObject( );
 
       e = e->next;

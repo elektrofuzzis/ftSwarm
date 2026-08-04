@@ -10,7 +10,7 @@
 #pragma once
 
 #include <esp_http_server.h>
-#include "SwOSColor.h"
+#include <FastLed.h>
 
 typedef enum {
   SERIALIZE_RAW,
@@ -69,6 +69,7 @@ typedef enum {
   SERIALIZE_LITERAL_OPERAND2,
   SERIALIZE_LITERAL_YAWPITCHROLL,
   SERIALIZE_LITERAL_SYNC,
+  SERIALIZE_LITERAL_BLINK,
   SERIALIZE_LITERAL_MAX
 } SerialLiteral_t; 
 

@@ -634,6 +634,7 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, const char *name,
   SwOSAnalogInput*  fb;
   
   switch ( ioType ) {
+
     case SWOSIO_SWITCH:
     case SWOSIO_REEDSWITCH:
     case SWOSIO_LIGHTBARRIER:
@@ -649,7 +650,9 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, const char *name,
     case SWOSIO_ANALOG:           io = new SwOSAnalogInput( name, port, this, ioType, flags );  
                                   break;
 
-    case SWOSIO_LAMP:
+    case SWOSIO_LAMP:             io = new SwOSLamp( name, port, this, flags );
+                                  break; 
+
     case SWOSIO_VALVE:
     case SWOSIO_COMPRESSOR:
     case SWOSIO_BUZZER:
@@ -824,156 +827,6 @@ SwOSStepper* SwOSCtrl::getStepper( uint8_t index ) {
 
 }
 
-bool SwOSCtrl::apiActorCmd( char *id, int cmd ) {
-  // send a actor command (from api)
-
-  SwOSMotor *io = getMotor( id );
-
-  if (!io) return false;
-  
-  io->setMotionType( (FtSwarmMotion_t) cmd );
-  return true;
-
-}
-
-bool SwOSCtrl::apiActorSpeed( char *id, int speed ) {
-  // send a actor command (from api)
-
-  SwOSMotor *io = getMotor( id );
-
-  if (!io) return false;
-  
-  io->setSpeed( speed );
-  io->apply();
-  return true;
-
-}
-
-bool SwOSCtrl::apiLEDBrightness( char *id, int brightness ) {
-  // send a LED command (from api)
-
-  SwOSPixel *io = getPixel( id );
-  if (!io) return false;
-  
-  io->setBrightness( brightness );
-  return true;
-
-}
-
-bool SwOSCtrl::apiLEDColor( char *id, int color ) {
-  // send a LED command (from api)
-
-  SwOSPixel *io = getPixel( id );
-  if (!io) return false;
-  
-  io->setColor( color );
-  return true;
-
-}
-
-bool SwOSCtrl::apiServoOffset( char * id, int offset ) {
-  // send a Servo command (from api)
-
-  SwOSServo *io = getServo( id );
-
-  if (!io) return false;
-  
-  io->setOffset( offset );
-  return true;
-
-}
-
-bool SwOSCtrl::apiServoPosition( char * id, int position ) {
-  // send a Servo command (from api)
-
-  SwOSServo *io = getServo( id );
-  if (!io) return false;
-  
-  io->setPosition( position );
-  return true;
-  
-}
-
-bool SwOSCtrl::apiCAMStreaming( char *id, bool onOff ) {
-  // set CAM framzesize / resolution
-
-  // will be implemented in SwOSSwarmCAM
-  return false;
-
-}
-
-bool SwOSCtrl::apiCAMFramesize( char *id, int framesize ) {
-  // set CAM framzesize / resolution
-
-  // will be implemented in SwOSSwarmCAM
-  return false;
-
-}
-
-bool SwOSCtrl::apiCAMQuality( char *id, int quality ) { 
-  // set CAM quality
-
-  // will be implemented in SwOSSwarmCAM
-  return false;
-
-}
-
-bool SwOSCtrl::apiCAMBrightness( char *id, int brightness ) { 
-  // set CAM brightness
-
-  // will be implemented in SwOSSwarmCAM
-  return false;
-
-}
-
-bool SwOSCtrl::apiCAMContrast( char *id, int contrast ) { 
-  // set CAM contrast
-
-  // will be implemented in SwOSSwarmCAM
-  return false;
-
-}
-
-bool SwOSCtrl::apiCAMSaturation( char *id, int saturation ) { 
-  // set CAM saturation
-
-  // will be implemented in SwOSSwarmCAM
-  return false;
-
-}
-
-bool SwOSCtrl::apiCAMSpecialEffect( char *id, int effect ) { 
-  // set CAM special effect
-
-  // will be implemented in SwOSSwarmCAM
-  return false;
-
-}
-
-bool SwOSCtrl::apiCAMWbMode( char *id, int wbMode ) { 
-  // set CAM wbMode
-
-  // will be implemented in SwOSSwarmCAM
-  return false;
-
-}
-
-bool SwOSCtrl::apiCAMVFlip( char *id,bool vFlip ) { 
-  // set CAM V-Flip 
-
-  // will be implemented in SwOSSwarmCAM
-  return false;
-
-}
-
-bool SwOSCtrl::apiCAMHMirror( char *id,bool hMirror ) { 
-  // set CAM hMirror
-
-  // will be implemented in SwOSSwarmCAM
-  return false;
-
-}
-
 void SwOSCtrl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
   // visualizes controller's state like booting, error,...
 
@@ -1019,6 +872,16 @@ bool SwOSCtrl::setPixel( SwOSCom *com ) {
   SwOSPixel *pixel = (SwOSPixel *)io[com->data.pixelCmd.index];
   pixel->setBrightness( com->data.pixelCmd.brightness );
   pixel->setColor( CRGB( com->data.pixelCmd.R, com->data.pixelCmd.G, com->data.pixelCmd.B ) );
+
+  return true;
+
+}
+
+bool SwOSCtrl::setEffect( SwOSCom *com ) {
+
+  if (!io[com->data.effectCmd.index]) return false;
+
+  io[com->data.effectCmd.index]->setEffect( com->data.effectCmd.effect );
 
   return true;
 
@@ -1216,6 +1079,7 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
     case CMD_SETWIFI:                 setWifi( com->data.wifiCmd.mode, com->data.wifiCmd.SSID, com->data.wifiCmd.PSK, com->data.wifiCmd.reboot ); return true;
     case CMD_STATE:                   return recvState( com );
     case CMD_SETPIXEL:                return setPixel( com );
+    case CMD_SETEFFECT:               return setEffect( com );
     case CMD_SETACTORSPEED:           return setActorSpeed( com );
     case CMD_RESETCOUNTER:            return resetCounter( com );
     case CMD_SETSTEPPERDISTANCE:      return setStepperDistance( com );

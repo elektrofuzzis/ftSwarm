@@ -71,9 +71,10 @@ void SwOSMotor::serialize( Serialize *serialize ) {
   serialize->endObject();
 }
 
-void SwOSMotor::onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, int32_t parameter ) {
+void SwOSMotor::onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, FtSwarmTriggerParameter parameter ) {
 
-  setSpeed( evalTriggerMath( triggerMath, sensor, delta, getSpeed(), parameter, -getMaxSpeed(), getMaxSpeed() ) );
+  FtSwarmTriggerParameter p = evalTriggerMath( triggerMath, sensor, delta, getSpeed(), parameter, -getMaxSpeed(), getMaxSpeed() );
+  setSpeed( p.getValue() );
   apply();
 
 }
@@ -371,6 +372,61 @@ void SwOSDCMotor::setRemote() {
 
 /***************************************************
  *
+ *   SwOSLamp
+ *
+ ***************************************************/
+
+ void SwOSLamp::setEffect( FtSwarmTriggerParameter effect ) {
+
+  // kill old blink
+  if ( blink ) { SwOSBlink *old = blink; blink = nullptr; delete old; }
+
+  switch ( effect.getEffectType() ) {
+
+    case FTSWARM_EFFECT_BLINK:  // keep effect on both sides, kelda & member
+                                blink = new SwOSLampBlink( effect ); 
+
+                                // need to send to remote?
+                                if ( !ctrl->isLocal() ) sendEffect( effect );
+
+                                break;
+
+    case FTSWARM_EFFECT_NONE:   // it's just a brightness, not an effect
+                                setSpeed( effect.getValue() );
+                                break;
+
+  } 
+  
+}
+
+void SwOSLamp::onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, FtSwarmTriggerParameter parameter ) {
+
+  FtSwarmTriggerParameter p = evalTriggerMath( triggerMath, sensor, delta, getSpeed(), parameter, -getMaxSpeed(), getMaxSpeed() );
+
+  setEffect( parameter );
+
+}
+
+void SwOSLamp::serialize( Serialize *serialize ) {
+
+  serialize->startObject( );
+  SwOSIO::serialize( serialize );
+  serialize->item( SERIALIZE_LITERAL_SPEED, getSpeed() );
+  // TODO serialize->item( SERIALIZE_LITERAL_BLINK, blink );
+  serialize->endObject();
+
+}
+
+void SwOSLamp::operate( void ) {
+
+  int16_t brightness;
+
+  if ( ( blink ) && ( blink->operate( &brightness ) ) ) setSpeed( brightness );
+
+}
+
+/***************************************************
+ *
  *   SwOSStepper
  *
  ***************************************************/
@@ -638,9 +694,10 @@ void SwOSServo::setOffset( int16_t offset ) {
 
 }
 
-void SwOSServo::onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, int32_t parameter ) {
+void SwOSServo::onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, FtSwarmTriggerParameter parameter ) {
 
-  setPosition( evalTriggerMath( triggerMath, sensor, delta, getPosition(), parameter, getMinPosition(), getMaxPosition() ) );
+  FtSwarmTriggerParameter p = evalTriggerMath( triggerMath, sensor, delta, getPosition(), parameter, getMinPosition(), getMaxPosition() );
+  setPosition( p.getValue() );
 
 }
 

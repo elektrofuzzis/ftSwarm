@@ -13,16 +13,16 @@
 #include "SwOSDefine.h"
 
 #define MAXIDENTIFIER 32
-#define MAXACTORS 8
-#define MAXINPUTS 12
-#define SWOSVERSION "0.7.0"
+#define MAXACTORS     8
+#define MAXINPUTS     12
+#define SWOSVERSION   "0.7.0"
 
-#define SWOS_NOPORT 255
+#define SWOS_NOPORT   255
 
 #include <stdint.h>
 #include <cstddef>
 
-#include "SwOSColor.h"
+#include <FastLed.h>
 #include "ftPwrDrive/ftPwrDrive.h"
 #include "esp_camera.h"
 
@@ -131,7 +131,8 @@ typedef enum { SWOSIO_UNDEF = -1,
                SWOSIO_RCMOTOR,
                SWOSIO_RCSERVO,
                SWOSIO_RCPOTI,
-               SWOSIO_MAXIOTYPE } SwOSIOType_t;
+               SWOSIO_MAXIOTYPE 
+} SwOSIOType_t;
 
 // technologies to change IO type
 const SwOSIOClass_t SWOSIOCLASS[SWOSIO_MAXIOTYPE ] = {
@@ -359,8 +360,65 @@ const char FTSWARMOPERATOR[ FTSWARM_MAXOPERATOR][2] = { "=", "+", "-", "*" };
 typedef enum { FTSWARM_CONSTANT, FTSWARM_SENSORVALUE, FTSWARM_SENSORDELTA, FTSWARM_ACTORVALUE, FTSWARM_MAXOPERAND } FtSwarmOperand_t;
 const char FTSWARMOPERAND[ FTSWARM_MAXOPERAND][15] = { TRANSLATE("constant", "Konstante"), TRANSLATE("sensor's value", "Sensorwert"), TRANSLATE("sensor's delta", "Sensor Delta"), TRANSLATE("actor's value", "Aktorwert") };
 
-#define MAXSPEED256  255 
-#define MAXSPEED4096 4095 
+typedef enum { FTSWARM_EFFECT_NONE, FTSWARM_EFFECT_BLINK } FtSwarmEffect_t;
+
+struct FtSwarmTriggerParameter {
+  
+  union {
+
+    uint32_t raw;
+    
+    struct {
+      uint32_t value      : 24; // Bits 0..23  (Mask: 0x00FFFFFFU)
+      uint32_t sign       : 1;  // Bit  24     (Mask: 0x01000000U)
+      uint32_t fill       : 2;  // Bits 25..26 (Mask: 0x06000000U)
+      uint32_t effectType : 5;  // Bits 27..31 (Mask: 0xF8000000U)
+    } base;
+
+    struct {
+      uint32_t p1         : 4;  // Bits 0..3   (Mask: 0x0000000FU)  pixel: color1, lamp: brightness1
+      uint32_t p2         : 4;  // Bits 4..7   (Mask: 0x000000F0U)  pixel: color2, lamp: brightness2
+      uint32_t p3         : 4;  // Bits 8..11  (Mask: 0x00000F00U)  pixel: color3, lamp: brightness3
+      uint32_t signal     : 4;  // Bits 12..15 (Mask: 0x0000F000U)
+      uint32_t pause      : 4;  // Bits 16..19 (Mask: 0x000F0000U)
+      uint32_t duty       : 2;  // Bits 20..21 (Mask: 0x00300000U)
+      uint32_t period     : 5;  // Bits 22..26 (Mask: 0x07C00000U)
+      uint32_t effectType : 5;  // Bits 27..31 (Mask: 0xF8000000U)
+    } blink;
+
+  };
+
+  void print();
+
+  // set value, in case of effects the value is discarded
+  void    setValue( int32_t value );
+
+  // get value, in case of effects value is 0
+  int32_t getValue( void );
+
+  // get effecttype
+  FtSwarmEffect_t getEffectType( void ) { return (FtSwarmEffect_t) base.effectType; };
+
+  // period value in ms
+  uint32_t getPeriod( void );
+
+  // set period in ms
+  void setPeriod( uint32_t period );
+
+  // set Blink
+  void setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, uint8_t p1, uint8_t p2, uint8_t p3 );
+
+  // get Blink
+  bool getBlink( uint32_t *periodMS, uint8_t *signal, uint8_t *duty, uint8_t *pause, uint8_t *p1, uint8_t *p2, uint8_t *p3 );
+
+  // set no Blink
+  void setNone( int32_t value ) { base.effectType = FTSWARM_EFFECT_NONE; base.value = value; };
+
+};
+
+extern "C" CRGB castUI32ToColor(uint32_t color);
+
+extern "C" uint32_t castColorToUI32(CRGB color);
 
 // **** port definitions ****
 
@@ -593,7 +651,7 @@ class FtSwarmSensor : public FtSwarmIO {
     FtSwarmSensor( const char *name, SwOSIOType_t ioType );
 
   public:
-    void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, FtSwarmIO *actor, int32_t p1 = 0 ); 
+    void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, FtSwarmIO *actor, FtSwarmTriggerParameter p1 = {0} ); 
 };
 
 // **** input / actor classes to use in your sketch ****
@@ -751,7 +809,7 @@ class FtSwarmMotor : public FtSwarmIO {
 };
 
 class FtSwarmMiniMotor : public FtSwarmMotor {
-  // Mini Motor 31062 & 75245
+  // Mini Motor 31062
   public:
     FtSwarmMiniMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port ):FtSwarmMotor( serialNumber, port, SWOSIO_MINIMOTOR ) {};
     FtSwarmMiniMotor( const char *name ):FtSwarmMotor( name, SWOSIO_MINIMOTOR ) {};  
@@ -769,6 +827,13 @@ class FtSwarmSMotor : public FtSwarmMotor {
   public:
     FtSwarmSMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port ):FtSwarmMotor( serialNumber, port, SWOSIO_SMOTOR ) {};
     FtSwarmSMotor( const char *name ):FtSwarmMotor( name, SWOSIO_SMOTOR ) {};  
+};
+
+class FtSwarmRCMotor : public FtSwarmMotor {
+  // RC-Servo as Motor 31495
+  public:
+    FtSwarmRCMotor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port ):FtSwarmMotor( serialNumber, port, SWOSIO_RCMOTOR ) {};
+    FtSwarmRCMotor( const char *name ):FtSwarmMotor( name, SWOSIO_RCMOTOR ) {};  
 };
 
 class FtSwarmWheelDrive : public FtSwarmMotor {
@@ -850,7 +915,7 @@ class FtSwarmOnOffActor : public FtSwarmMotor {
     FtSwarmOnOffActor( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType );
     FtSwarmOnOffActor( const char *name, SwOSIOType_t ioType );
     
-    void on( int16_t power = MAXSPEED256 );
+    void on( int16_t power = 100 );
     void off( void );
 };
 
@@ -861,6 +926,12 @@ class FtSwarmLamp : public FtSwarmOnOffActor {
   public:
     FtSwarmLamp( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
     FtSwarmLamp( const char *name );
+
+    // set blink effect
+    void setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, uint8_t b1, uint8_t b2, uint8_t b3 );
+
+    // revoke blink effect and set brightness
+    void revokeEffect( uint8_t brightness );
 
 };
 
@@ -903,8 +974,8 @@ class FtSwarmJoystick : public FtSwarmIO {
     int16_t getLR();         // left/right position
     bool getButtonState();   // button pressed/released
     void getValue( int16_t *FB, int16_t *LR, bool *buttonState );
-    void onTriggerLR( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, FtSwarmIO *actor, int32_t p1 = 0 ); 
-    void onTriggerFB( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, FtSwarmIO *actor, int32_t p1 = 0 ); 
+    void onTriggerLR( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, FtSwarmIO *actor, FtSwarmTriggerParameter p1 = { 0 } ); 
+    void onTriggerFB( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, FtSwarmIO *actor, FtSwarmTriggerParameter p1 = { 0 } ); 
 
 };
 
@@ -921,7 +992,14 @@ class FtSwarmPixel : public FtSwarmIO {
 
     // color
     CRGB getColor();
-    void setColor(CRGB color);
+    void setColor( CRGB color );
+
+    // set blink effect
+    void setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, uint8_t c1, uint8_t c2, uint8_t c3 );
+
+    // revoke blink effect and set color
+    void revokeEffect( CRGB color );
+
 };
 
 class FtSwarmI2C : public FtSwarmIO {
@@ -933,7 +1011,7 @@ class FtSwarmI2C : public FtSwarmIO {
     uint8_t getRegister(uint8_t reg);
     void    setRegister(uint8_t reg, uint8_t value);
 
-    void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, FtSwarmIO *actor, int32_t p1 = 0 ); 
+    void onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, FtSwarmIO *actor, FtSwarmTriggerParameter p1 = {0} ); 
 
 };
 
@@ -950,6 +1028,8 @@ class FtSwarmGyro : public FtSwarmIO {
 class FtSwarmServo : public FtSwarmIO {
   // Servo, ftSwarm only
   // A servo has 150mA typically, higher values with load. Keep power budget in mind!
+  protected:
+    FtSwarmServo( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType );
   public:
     FtSwarmServo( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
     FtSwarmServo( const char *name );
@@ -961,6 +1041,14 @@ class FtSwarmServo : public FtSwarmIO {
     // offset
     int16_t getOffset();
     void setOffset( int16_t position );
+
+};
+
+class FtSwarmRCServo : public FtSwarmServo {
+  // RCServo, ftSwarmRC only
+  public:
+    FtSwarmRCServo( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port);
+    FtSwarmRCServo( const char *name );
 
 };
 

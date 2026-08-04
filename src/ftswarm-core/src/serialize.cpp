@@ -52,7 +52,8 @@ const char SLITERAL[ SERIALIZE_LITERAL_MAX ][24] = {
   "operand1",           // SERIALIZE_LITERAL_OPERAND1
   "operand2",           // SERIALIZE_LITERAL_OPERAND2
   "YawPitchRoll",       // SERIALIZE_LITERAL_YAWPITCHROLL
-  "sync"                // SERIALIZE_LITERAL_SYNC
+  "sync",               // SERIALIZE_LITERAL_SYNC
+  "blink"               // SERIALIZE_LITERAL_BLINK
 };
 
 Serialize::Serialize( char *buffer, size_t bufSize, SerialFormat_t format ) {

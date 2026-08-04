@@ -18,7 +18,7 @@
 
 #include "SwOS.h"
 #include "SwOSNVS.h"
-#include "SwOSColor.h"
+#include <FastLed.h>
 
 #define ESPNOW_MAXDELAY     128
 #define DEFAULTSECRET       0x2506
@@ -47,7 +47,7 @@ typedef enum {
   
   CMD_IDENTIFY,               // show myself
   
-  CMD_SETPIXEL,               // set LED color & brightness
+  CMD_SETPIXEL,               // set LED color, brightness & blink
   CMD_SETACTORSPEED,          // set actors motionType & speed
   CMD_SETSERVO,               // set servo position
   CMD_I2CREGISTER,            // set an I2C register
@@ -60,6 +60,7 @@ typedef enum {
   CMD_USEREVENT,              // send data from user exit back to Kelda
   CMD_RESETCOUNTER,           // Reset counter
   CMD_CALIBRATE,              // Calibrate a RC Servo
+  CMD_SETEFFECT,              // set effect
   CMD_MAX
 } SwOSCommand_t;
 
@@ -159,6 +160,12 @@ struct pixelCmd_t {
   uint8_t R;
   uint8_t G;
   uint8_t B;
+  uint8_t blink;
+} __attribute__((packed));
+
+struct effectCmd_t { 
+  uint8_t index; 
+  FtSwarmTriggerParameter effect; 
 } __attribute__((packed));
 
 struct ioConfigCmd_t { 
@@ -232,6 +239,7 @@ struct SwOSDatagram_t {
     actorStepperCmd_t actorStepperCmd;
     actorTypeCmd_t actorTypeCmd;
     pixelCmd_t pixelCmd;
+    effectCmd_t effectCmd;
     ioConfigCmd_t ioConfigCmd;
     I2CRegisterCmd_t I2CRegisterCmd;
     ctrlCmd_t ctrlCmd;

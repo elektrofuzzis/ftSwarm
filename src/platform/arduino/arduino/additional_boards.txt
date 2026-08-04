@@ -14,6 +14,7 @@ ftSwarmRS.upload.tool.network=esp_ota
 ftSwarmRS.upload.maximum_size=3342336
 ftSwarmRS.upload.maximum_data_size=327680
 ftSwarmRS.upload.flags=
+ftSwarmRS.upload.erase_cmd=
 ftSwarmRS.upload.extra_flags=
 ftSwarmRS.upload.use_1200bps_touch=false
 ftSwarmRS.upload.wait_for_upload_port=false
@@ -70,7 +71,6 @@ ftSwarmRS.menu.DebugLevel.verbose=Verbose
 ftSwarmRS.menu.DebugLevel.verbose.build.code_debug=5
 
 ftSwarmRS.menu.EraseFlash.none=Disabled
-ftSwarmRS.menu.EraseFlash.none.upload.erase_cmd=
 ftSwarmRS.menu.EraseFlash.all=Enabled
 ftSwarmRS.menu.EraseFlash.all.upload.erase_cmd=-e
 
@@ -93,6 +93,7 @@ ftSwarmXL.upload.tool.network=esp_ota
 ftSwarmXL.upload.maximum_size=3145728
 ftSwarmXL.upload.maximum_data_size=327680
 ftSwarmXL.upload.flags=
+ftSwarmXL.upload.erase_cmd=
 ftSwarmXL.upload.extra_flags=
 ftSwarmXL.upload.use_1200bps_touch=false
 ftSwarmXL.upload.wait_for_upload_port=false
@@ -149,7 +150,6 @@ ftSwarmXL.menu.DebugLevel.verbose=Verbose
 ftSwarmXL.menu.DebugLevel.verbose.build.code_debug=5
 
 ftSwarmXL.menu.EraseFlash.none=Disabled
-ftSwarmXL.menu.EraseFlash.none.upload.erase_cmd=
 ftSwarmXL.menu.EraseFlash.all=Enabled
 ftSwarmXL.menu.EraseFlash.all.upload.erase_cmd=-e
 
@@ -172,6 +172,7 @@ ftSwarmPwrDrive.upload.tool.network=esp_ota
 ftSwarmPwrDrive.upload.maximum_size=3145728
 ftSwarmPwrDrive.upload.maximum_data_size=327680
 ftSwarmPwrDrive.upload.flags=
+ftSwarmPwrDrive.upload.erase_cmd=
 ftSwarmPwrDrive.upload.extra_flags=
 ftSwarmPwrDrive.upload.use_1200bps_touch=false
 ftSwarmPwrDrive.upload.wait_for_upload_port=false
@@ -228,7 +229,6 @@ ftSwarmPwrDrive.menu.DebugLevel.verbose=Verbose
 ftSwarmPwrDrive.menu.DebugLevel.verbose.build.code_debug=5
 
 ftSwarmPwrDrive.menu.EraseFlash.none=Disabled
-ftSwarmPwrDrive.menu.EraseFlash.none.upload.erase_cmd=
 ftSwarmPwrDrive.menu.EraseFlash.all=Enabled
 ftSwarmPwrDrive.menu.EraseFlash.all.upload.erase_cmd=-e
 
@@ -251,6 +251,7 @@ ftSwarmDuino.upload.tool.network=esp_ota
 ftSwarmDuino.upload.maximum_size=3145728
 ftSwarmDuino.upload.maximum_data_size=327680
 ftSwarmDuino.upload.flags=
+ftSwarmDuino.upload.erase_cmd=
 ftSwarmDuino.upload.extra_flags=
 ftSwarmDuino.upload.use_1200bps_touch=false
 ftSwarmDuino.upload.wait_for_upload_port=false
@@ -307,7 +308,6 @@ ftSwarmDuino.menu.DebugLevel.verbose=Verbose
 ftSwarmDuino.menu.DebugLevel.verbose.build.code_debug=5
 
 ftSwarmDuino.menu.EraseFlash.none=Disabled
-ftSwarmDuino.menu.EraseFlash.none.upload.erase_cmd=
 ftSwarmDuino.menu.EraseFlash.all=Enabled
 ftSwarmDuino.menu.EraseFlash.all.upload.erase_cmd=-e
 
@@ -330,6 +330,7 @@ ftSwarmRC.upload.tool.network=esp_ota
 ftSwarmRC.upload.maximum_size=3145728
 ftSwarmRC.upload.maximum_data_size=327680
 ftSwarmRC.upload.flags=
+ftSwarmRC.upload.erase_cmd=
 ftSwarmRC.upload.extra_flags=
 ftSwarmRC.upload.use_1200bps_touch=false
 ftSwarmRC.upload.wait_for_upload_port=false
@@ -384,7 +385,6 @@ ftSwarmRC.menu.DebugLevel.verbose=Verbose
 ftSwarmRC.menu.DebugLevel.verbose.build.code_debug=5
 
 ftSwarmRC.menu.EraseFlash.none=Disabled
-ftSwarmRC.menu.EraseFlash.none.upload.erase_cmd=
 ftSwarmRC.menu.EraseFlash.all=Enabled
 ftSwarmRC.menu.EraseFlash.all.upload.erase_cmd=-e
 
@@ -407,6 +407,7 @@ ftSwarmControlUSBC.upload.tool.network=esp_ota
 ftSwarmControlUSBC.upload.maximum_size=3145728
 ftSwarmControlUSBC.upload.maximum_data_size=327680
 ftSwarmControlUSBC.upload.flags=
+ftSwarmControlUSBC.upload.erase_cmd=
 ftSwarmControlUSBC.upload.extra_flags=
 ftSwarmControlUSBC.upload.use_1200bps_touch=false
 ftSwarmControlUSBC.upload.wait_for_upload_port=false
@@ -461,7 +462,6 @@ ftSwarmControlUSBC.menu.DebugLevel.verbose=Verbose
 ftSwarmControlUSBC.menu.DebugLevel.verbose.build.code_debug=5
 
 ftSwarmControlUSBC.menu.EraseFlash.none=Disabled
-ftSwarmControlUSBC.menu.EraseFlash.none.upload.erase_cmd=
 ftSwarmControlUSBC.menu.EraseFlash.all=Enabled
 ftSwarmControlUSBC.menu.EraseFlash.all.upload.erase_cmd=-e
 
@@ -484,6 +484,7 @@ ftSwarmControlUSBMicro.upload.tool.network=esp_ota
 ftSwarmControlUSBMicro.upload.maximum_size=3145728
 ftSwarmControlUSBMicro.upload.maximum_data_size=327680
 ftSwarmControlUSBMicro.upload.flags=
+ftSwarmControlUSBMicro.upload.erase_cmd=
 ftSwarmControlUSBMicro.upload.extra_flags=
 ftSwarmControlUSBMicro.upload.use_1200bps_touch=false
 ftSwarmControlUSBMicro.upload.wait_for_upload_port=false
@@ -497,7 +498,7 @@ ftSwarmControlUSBMicro.build.bootloader_addr=0x1000
 ftSwarmControlUSBMicro.build.target=esp32
 ftSwarmControlUSBMicro.build.mcu=esp32
 ftSwarmControlUSBMicro.build.core=esp32
-ftSwarmControlUSBMicro.build.variant=ftSwarmcontrolusbmicro
+ftSwarmControlUSBMicro.build.variant=ftswarmcontrolusbmicro
 ftSwarmControlUSBMicro.build.board=FTSWARMCONTROLUSBMICRO
 
 ftSwarmControlUSBMicro.build.f_cpu=240000000L
@@ -533,7 +534,6 @@ ftSwarmControlUSBMicro.menu.DebugLevel.verbose=Verbose
 ftSwarmControlUSBMicro.menu.DebugLevel.verbose.build.code_debug=5
 
 ftSwarmControlUSBMicro.menu.EraseFlash.none=Disabled
-ftSwarmControlUSBMicro.menu.EraseFlash.none.upload.erase_cmd=
 ftSwarmControlUSBMicro.menu.EraseFlash.all=Enabled
 ftSwarmControlUSBMicro.menu.EraseFlash.all.upload.erase_cmd=-e
 
@@ -556,6 +556,7 @@ ftSwarmJST.upload.tool.network=esp_ota
 ftSwarmJST.upload.maximum_size=3145728
 ftSwarmJST.upload.maximum_data_size=327680
 ftSwarmJST.upload.flags=
+ftSwarmJST.upload.erase_cmd=
 ftSwarmJST.upload.extra_flags=
 ftSwarmJST.upload.use_1200bps_touch=false
 ftSwarmJST.upload.wait_for_upload_port=false
@@ -605,7 +606,6 @@ ftSwarmJST.menu.DebugLevel.verbose=Verbose
 ftSwarmJST.menu.DebugLevel.verbose.build.code_debug=5
 
 ftSwarmJST.menu.EraseFlash.none=Disabled
-ftSwarmJST.menu.EraseFlash.none.upload.erase_cmd=
 ftSwarmJST.menu.EraseFlash.all=Enabled
 ftSwarmJST.menu.EraseFlash.all.upload.erase_cmd=-e
 

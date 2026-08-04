@@ -9,9 +9,11 @@
  
 #pragma once
 
+#include <FastLed.h>
+
 #include "SwOSHWBaseIO.h"
 #include "SwOSOLEDMenu.h"
-#include "SwOSColor.h"
+#include "SwOSEffect.h"
 
 // only to feed that silly compiler
 class OLEDMenu;
@@ -23,36 +25,43 @@ class OLEDMenu;
  ***************************************************/
 
  class SwOSPixel : public SwOSIO {
+
   protected:
-    CRGB color = CRGB::Black;
+
+    CRGB     color = CRGB::Black;
     uint8_t  brightness = BRIGHTNESSDEFAULT;
-    bool     dynamic = false;
-  
+
+    SwOSPixelBlink *blink = nullptr;
+ 
     // local HW procedures
     virtual void setupLocal(); 
     virtual void setLocal();
   
     // remote HW procedures
     virtual void setRemote();
-    
+
   public:
     // constructor
     SwOSPixel(const char *name, uint8_t port, SwOSCtrl *ctrl, uint8_t flags );
   
     // administrative stuff
     virtual void serialize( Serialize *serialize );
-    virtual void onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta,int32_t parameter );
+    virtual void onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, FtSwarmTriggerParameter parameter );
     virtual bool isPixel( void ) { return true; };
     virtual bool isActor( void ) { return true; };
+    virtual void operate( void );
   
     // commands
-    virtual CRGB getColor()      { return color; };
+    virtual CRGB     getColor() { return color; };
     virtual uint8_t  getBrightness() { return this->brightness; };
     virtual void     setColor( CRGB color );
     virtual void     setColor( uint32_t color );
     virtual void     setBrightness(uint8_t brightness);
     virtual void     setValue( uint8_t brightness, CRGB color ) { this->brightness = brightness; this->color = color; };
-  };
+
+    virtual void setEffect( FtSwarmTriggerParameter effect );
+
+};
 
 /***************************************************
  *

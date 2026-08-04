@@ -72,10 +72,11 @@ class SwOSNVSEvent {
     SwOSIOUID sensor;
     SwOSIOUID actor;
     SwOSTriggerMath triggerMath;
-    int32_t parameter = 0;
+    FtSwarmTriggerParameter parameter = { 0 };
 
     SwOSNVSEvent() { sensor.serialNumber = 0; };
-    SwOSNVSEvent( SwOSIOUID sensor, SwOSIOUID actor, SwOSTriggerMath triggerMath, int32_t parameter = 0 ) { this->sensor = sensor; this->actor = actor; this->triggerMath = triggerMath; this->parameter = parameter; };
+    SwOSNVSEvent( SwOSIOUID sensor, SwOSIOUID actor, SwOSTriggerMath triggerMath, FtSwarmTriggerParameter parameter ) { this->sensor = sensor; this->actor = actor; this->triggerMath = triggerMath; this->parameter = parameter; };
+    SwOSNVSEvent( SwOSIOUID sensor, SwOSIOUID actor, SwOSTriggerMath triggerMath, int32_t parameter ) { this->sensor = sensor; this->actor = actor; this->triggerMath = triggerMath; this->parameter.raw = parameter; };
 
     // checks, if this event is "NULL"
     bool isNull( void ) { return sensor.isNull( ); };

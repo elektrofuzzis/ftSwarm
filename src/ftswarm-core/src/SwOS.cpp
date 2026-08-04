@@ -11,9 +11,106 @@
 #include "SwOSSwarm.h"
 #include "easyKey.h"
 #include "SwOSLog.h"
-#include "SwOSColor.h"
+#include <FastLed.h>
 
 #include <MPU6050_6Axis_MotionApps20.h>
+
+CRGB castUI32ToColor(uint32_t color) {
+    uint8_t r = (uint8_t)((color >> 16) & 0xFF);
+    uint8_t g = (uint8_t)((color >> 8) & 0xFF);
+    uint8_t b = (uint8_t)(color & 0xFF);
+    return CRGB(r, g, b);
+}
+
+uint32_t castColorToUI32(CRGB color) {
+    return ((uint32_t)color.r << 16) | ((uint32_t)color.g << 8) | (uint32_t)color.b;
+}
+
+void FtSwarmTriggerParameter::setValue( int32_t value ) {
+
+  // don't set values, if effect is set, because effect has no value, only parameters
+  if ( (FtSwarmEffect_t) base.effectType != FTSWARM_EFFECT_NONE ) return;
+
+  base.value = abs(value);
+  base.sign  = ( value < 0 );
+
+}
+
+int32_t FtSwarmTriggerParameter::getValue( void ) {
+
+  // don't set values, if effect is set, because effect has no value, only parameters
+  if ( (FtSwarmEffect_t) base.effectType != FTSWARM_EFFECT_NONE ) return 0;
+
+  if ( base.sign ) return - base.value;
+  else             return   base.value;
+
+}
+
+void FtSwarmTriggerParameter::print( void ) {
+
+  printf("raw: %08X\n", raw );
+
+  switch ( getEffectType() ) {
+
+    case FTSWARM_EFFECT_BLINK:  printf( "FTSWARM_EFFECT_BLINK period %d, signal beats: %d, duty: %d, pause beats: %d, p3: %d, P2: %d, P1: %d\n", 
+                                        blink.period, blink.signal, blink.duty, blink.pause, blink.p3, blink.p2, blink.p1 );
+                                break;
+    case FTSWARM_EFFECT_NONE:   printf( "FTSWARM_EFFECT_NONE sign: %d, value: %06X, getValue %06X\n",
+                                        base.sign, base.value, getValue() );
+                                break;
+
+    default:                    printf( "unkown effect type %d\n", base.effectType ) ;
+                                break;
+
+    }
+  
+}
+
+uint32_t FtSwarmTriggerParameter::getPeriod( void ) {
+
+  return ( blink.period + 1 ) * 250;
+
+}
+
+void FtSwarmTriggerParameter::setPeriod( uint32_t period ) {
+
+  if      ( period <  500 ) blink.period = 0;
+  else if ( period > 7000 ) blink.period = 31;
+  else                      blink.period = period / 250 - 1;
+
+}
+
+void FtSwarmTriggerParameter::setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, uint8_t p1, uint8_t p2, uint8_t p3 ) {
+
+  blink.effectType = FTSWARM_EFFECT_BLINK;
+  
+  setPeriod( periodMS);
+
+  blink.signal     = signal;
+  blink.duty       = duty;
+  blink.pause      = pause;
+  blink.p1         = p1;
+  blink.p2         = p2;
+  blink.p3         = p3;
+
+}
+
+bool FtSwarmTriggerParameter::getBlink( uint32_t *periodMS, uint8_t *signal, uint8_t *duty, uint8_t *pause, uint8_t *p1, uint8_t *p2, uint8_t *p3 ) {
+
+  if ( getEffectType() != FTSWARM_EFFECT_BLINK ) return false;
+
+  *periodMS = getPeriod();
+  *signal   = blink.signal;
+  *duty     = blink.duty;
+  *pause    = blink.pause;
+  *p1       = blink.p1;
+  *p2       = blink.p2;
+  *p3       = blink.p3;
+  
+  return true;
+  
+}
+
 
 SwOSPID::SwOSPID( float kp, float ki, float kd, float min_integral, float max_integral, float min_output, float max_output ) {
   this->kp = kp;
@@ -130,7 +227,7 @@ FtSwarmSensor::FtSwarmSensor( const char *name, SwOSIOType_t ioType ):FtSwarmIO(
 
 };
 
-void FtSwarmSensor::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, FtSwarmIO *actor, int32_t p1 ) {
+void FtSwarmSensor::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, FtSwarmIO *actor, FtSwarmTriggerParameter p1 ) {
 
   // set trigger using static values
   if ( (me) && (actor) ) {
@@ -637,6 +734,36 @@ void FtSwarmOnOffActor::off( void ) {
 FtSwarmLamp::FtSwarmLamp( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmOnOffActor( serialNumber, port, SWOSIO_LAMP ) {};
 FtSwarmLamp::FtSwarmLamp( const char *name ):FtSwarmOnOffActor( name, SWOSIO_LAMP ) {};
 
+void FtSwarmLamp::setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, uint8_t b1, uint8_t b2, uint8_t b3 ) {
+
+  if (!me) return;
+
+  SwOSLamp *lamp = static_cast<SwOSLamp*>(me);
+  
+  FtSwarmTriggerParameter p;
+  p.setBlink( periodMS, signal, duty, pause, b1, b2, b3 );
+
+  lamp->lock();
+  lamp->setEffect( p );
+  lamp->unlock();
+
+}
+
+void FtSwarmLamp::revokeEffect( uint8_t brightness ) {
+
+  if (!me) return;
+
+  SwOSLamp *lamp = static_cast<SwOSLamp*>(me);
+  
+  FtSwarmTriggerParameter p;
+  p.setNone( brightness );
+
+  lamp->lock();
+  lamp->setEffect( p );
+  lamp->unlock();
+
+}
+
 // **** FtSwarmValve ****
 
 FtSwarmValve::FtSwarmValve( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmOnOffActor( serialNumber, port, SWOSIO_VALVE ) {};
@@ -710,7 +837,7 @@ void FtSwarmJoystick::getValue( int16_t *FB, int16_t *LR, boolean *buttonState )
   static_cast<SwOSJoystick *>(me)->unlock();
 }
 
-void FtSwarmJoystick::onTriggerLR( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, FtSwarmIO *actor, int32_t p1 ) {
+void FtSwarmJoystick::onTriggerLR( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, FtSwarmIO *actor, FtSwarmTriggerParameter p1 ) {
 
   // set trigger using static values
   if ( (me) && (actor) ) {
@@ -721,7 +848,7 @@ void FtSwarmJoystick::onTriggerLR( FtSwarmTrigger_t triggerEvent, FtSwarmOperato
 
 };
 
-void FtSwarmJoystick::onTriggerFB( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, FtSwarmIO *actor, int32_t p1 ) {
+void FtSwarmJoystick::onTriggerFB( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, FtSwarmIO *actor, FtSwarmTriggerParameter p1 ) {
 
   // set trigger using static values
   if ( (me) && (actor) ) {
@@ -778,6 +905,36 @@ void FtSwarmPixel::setColor(CRGB color) {
   static_cast<SwOSPixel*>(me)->unlock();
 }
 
+void FtSwarmPixel::setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, uint8_t c1, uint8_t c2, uint8_t c3 ) {
+
+  if (!me) return;
+
+  SwOSPixel *pixel = static_cast<SwOSPixel*>(me);
+  
+  FtSwarmTriggerParameter p;
+  p.setBlink( periodMS, signal, duty, pause, c1, c2, c3 );
+
+  pixel->lock();
+  pixel->setEffect( p );
+  pixel->unlock();
+
+}
+
+void FtSwarmPixel::revokeEffect( CRGB color ) {
+
+  if (!me) return;
+
+  SwOSPixel *pixel = static_cast<SwOSPixel*>(me);
+  
+  FtSwarmTriggerParameter p;
+  p.setNone( castColorToUI32( color ) );
+
+  pixel->lock();
+  pixel->setEffect( p );
+  pixel->unlock();
+
+}
+
 // **** FtSwarmI2C   ****
 
 FtSwarmI2C::FtSwarmI2C( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port ) : FtSwarmIO( serialNumber, port, SWOSIO_I2C ) {
@@ -806,7 +963,7 @@ void  FtSwarmI2C::setRegister(uint8_t reg, uint8_t value) {
   static_cast<SwOSI2C*>(me)->unlock();
 }
 
-void FtSwarmI2C::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, FtSwarmIO *actor, int32_t p1 ) {
+void FtSwarmI2C::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op, FtSwarmOperand_t v1, FtSwarmOperand_t v2, FtSwarmIO *actor, FtSwarmTriggerParameter p1 ) {
 
   // set trigger using static values
   if ( (me) && (actor) ) {
@@ -837,6 +994,7 @@ void FtSwarmGyro::getYawPitchRoll(float *yaw, float *pitch, float *roll, bool ra
 
 // **** FtSwarmServo ****
 
+FtSwarmServo::FtSwarmServo( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType ):FtSwarmIO( serialNumber, port, ioType ) {};
 FtSwarmServo::FtSwarmServo( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmIO( serialNumber, port, SWOSIO_SERVO) {};
 FtSwarmServo::FtSwarmServo( const char *name ):FtSwarmIO( name, SWOSIO_SERVO ) {};
 
@@ -879,6 +1037,11 @@ void FtSwarmServo::setOffset(int16_t offset) {
   static_cast<SwOSServo*>(me)->setOffset( offset );
   static_cast<SwOSServo*>(me)->unlock();
 }
+
+// **** FtSwarRCServo ****
+
+FtSwarmRCServo::FtSwarmRCServo( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port):FtSwarmServo( serialNumber, port, SWOSIO_RCMOTOR) {};
+FtSwarmRCServo::FtSwarmRCServo( const char *name ):FtSwarmServo( name ) {};
 
 // **** FtSwarmOLED ****
 

@@ -99,7 +99,7 @@ class MenuLocalSettings : private Menu {
 
 void MenuLocalSettings::wifiMode( void ) {
 
-  FtSwarmWifi_t wifiMode = (FtSwarmWifi_t) enterNumber( TRANSLATE( "enter wifi mode [ 0-off , 1-AP-Mode, 2-Client-Mode]: ", "WLAN-Modus [ 0-aus , 1-AP-Modus, 2-Client-Modus]: " ), nvs.wifi.mode, 0, 2 );
+  FtSwarmWifi_t wifiMode = (FtSwarmWifi_t) enterNumber( TRANSLATE( "Enter wifi mode [ 0-off , 1-AP-Mode, 2-Client-Mode]: ", "WLAN-Modus [ 0-aus , 1-AP-Modus, 2-Client-Modus]: " ), nvs.wifi.mode, 0, 2 );
 
   if ( nvs.wifi.mode != wifiMode ) {
     
@@ -228,7 +228,7 @@ void MenuLocalSettings::run( void ) {
                             break;
 
       case MENU_CHANNEL:    anythingChanged = true;
-                            nvs.wifi.channel = enterNumber( TRANSLATE( "enter channel [1..13] - use 1,6 or 11 if possible: ", "Bitte Kanal eingeben [1..13] - wenn möglich 1, 6 oder 11 verwenden: " ), nvs.wifi.channel, 1, 13 );
+                            nvs.wifi.channel = enterNumber( TRANSLATE( "Enter channel [1..13] - use 1,6 or 11 if possible: ", "Bitte Kanal eingeben [1..13] - wenn möglich 1, 6 oder 11 verwenden: " ), nvs.wifi.channel, 1, 13 );
                             scope = scope | FTSWARM_NVSSCOPE_WIFI;
                             break;
 
@@ -238,7 +238,7 @@ void MenuLocalSettings::run( void ) {
                             break;
         
       case MENU_PIXELS:     anythingChanged = true;
-                            nvs.pixels = enterNumber( TRANSLATE( "enter number of ftPixel in WebUI [2..18]: ", "Bitte Anzahl der ftPixel in der WebUI eingeben [2..18]: " ), nvs.pixels, 2, MAXLEDS );
+                            nvs.pixels = enterNumber( TRANSLATE( "Enter number of ftPixel in WebUI [2..18]: ", "Bitte Anzahl der ftPixel in der WebUI eingeben [2..18]: " ), nvs.pixels, 2, MAXLEDS );
                             scope = scope | FTSWARM_NVSSCOPE_PIXEL;
                             break;
 
@@ -308,11 +308,12 @@ class MenuIOConfig : protected FirmwareIOMenu {
     static const int8_t MENU_LABEL    = -3;
     static const int8_t MENU_ADD      = -4;
     static const int8_t MENU_DEL      = -5;
-    static const int8_t MENU_CFG      = -6;
-    static const int8_t MENU_PREVIOUS = -7;
-    static const int8_t MENU_NEXT     = -8;
-    static const int8_t MENU_OFFSET   = -9;
-    static const int8_t MENU_CALIBRATE = -10;
+    static const int8_t MENU_DELALL   = -6;
+    static const int8_t MENU_CFG      = -7;
+    static const int8_t MENU_PREVIOUS = -8;
+    static const int8_t MENU_NEXT     = -9;
+    static const int8_t MENU_OFFSET   = -10;
+    static const int8_t MENU_CALIBRATE = -11;
 
     SwOSIO* io;
     bool    selfSave = false;
@@ -328,14 +329,21 @@ class MenuIOConfig : protected FirmwareIOMenu {
 
     void fillEventList( void );
     bool enterIO( const char* prompt, SwOSIOUID *uio, bool input );
+
+    uint8_t enterBlinkColor( const char *text, uint8_t color );
+    void enterBlinkEffect( SwOSIO* actor, FtSwarmTriggerParameter *parameter );
+    
+    void enterConstant( SwOSIO* actor, FtSwarmTriggerParameter *parameter );
     bool enterEvent( SwOSNVSEvent *event );
 
     bool changeEvent( SwOSNVSEvent *event );
 
     void addEvent( void );
     void deleteEvent( void );
+    void deleteAllEvents( void );
 
-    void printEventParameter( FtSwarmOperand_t op, SwOSIO *sensor, SwOSIO *actor, char *doing, int32_t parameter );
+    void printConstant( SwOSIO *actor, FtSwarmTriggerParameter parameter );
+    void printEventParameter( FtSwarmOperand_t op, SwOSIO *sensor, SwOSIO *actor, char *doing, FtSwarmTriggerParameter parameter );
     void printEvent( SwOSNVSEvent event, uint8_t details = 0 );
 
     void changeConfig( void );
@@ -368,6 +376,7 @@ void MenuIOConfig::fillEventList( void ) {
 
   uint8_t item = 0;
   maxEvent = -1;
+  morePages = false;
 
   for (uint8_t i=0; i<MAXNVSEVENTS; i++) {
 
@@ -541,12 +550,109 @@ bool MenuIOConfig::enterIO( const char* prompt, SwOSIOUID *uio, bool input ) {
 
 }
 
+static char FTSWARM_EFFECT_COLOR[FTSWARM_EFFECT_COLOR_MAX][8] = { "Black", "Red", "Green", "Blue", "Yellow", "Orange", "Cyan", "Pink", "Magenta", "White" };
+
+uint8_t MenuIOConfig::enterBlinkColor( const char *text, uint8_t c ) {
+
+  char prompt[250];
+
+  strcpy( prompt, text );
+  
+  for (uint8_t i=0; i<FTSWARM_EFFECT_COLOR_MAX; i++ ) sprintf( prompt, "%s (%d) %s ", prompt, i, FTSWARM_EFFECT_COLOR[i] );
+
+  sprintf( prompt, "%s [%s]: ", prompt, FTSWARM_EFFECT_COLOR[c] );
+  return enterNumber( prompt, c, 0, FTSWARM_EFFECT_COLOR_MAX-1 );
+
+}
+
+void MenuIOConfig::enterBlinkEffect( SwOSIO* actor, FtSwarmTriggerParameter *parameter ) {
+
+  char prompt[250];
+
+  // let's blink
+  parameter->base.effectType = FTSWARM_EFFECT_BLINK;
+                            
+  sprintf( prompt, TRANSLATE( "Enter the duration of one beat (0.25s .. 7.00s in 0.25 steps) [%d]: ", "Takt in 1/10s (0..31) [%0.2f]: "), parameter->getPeriod() / 1000 );
+  parameter->setPeriod( enterNumberF( prompt, parameter->blink.period, 0, 31 ) * 1000 );
+
+  sprintf( prompt, TRANSLATE( "Enter number of signal beats (0..15) [%d]: ", "Anzahl Signaltakte (0..15) [%d]: "), parameter->blink.signal );
+  parameter->blink.signal = enterNumber( prompt, parameter->blink.signal, 0, 15 );
+
+  sprintf( prompt, TRANSLATE( "Enter signal duty (0) 25/75 (1) 50/50 (2) 75/25 [%d]: ", "Pulsbreite (0) 25/75 (1) 50/50 (2) 75/25 [%d]: "), parameter->blink.duty );
+  parameter->blink.duty = enterNumber( prompt, parameter->blink.duty, 0, 2 );
+
+  sprintf( prompt, TRANSLATE( "Enter number of pause beats (0..15) [%d]: ", "Anzahl der Pausentakte (0..15) [%d]: "), parameter->blink.pause );
+  parameter->blink.pause = enterNumber( prompt, parameter->blink.pause, 0, 15 );
+
+  if ( actor->isPixel() ) {
+
+    parameter->blink.p1 = enterBlinkColor( TRANSLATE( "Enter signal color","Signalfarbe"),  parameter->blink.p1 );
+    parameter->blink.p2 = enterBlinkColor( TRANSLATE( "Enter signal pause color","Signal Pausenfarbe"), parameter->blink.p2 );
+    parameter->blink.p3 = enterBlinkColor( TRANSLATE( "Enter pause color","Pausenfarbe"),             parameter->blink.p3 );
+
+  } else if ( actor->isLamp() ) {
+
+    parameter->blink.p1 = enterBlinkColor( TRANSLATE( "Enter signal brightness","Signal Brightness"),  parameter->blink.p1 );
+    parameter->blink.p2 = enterBlinkColor( TRANSLATE( "Enter signal pause brightness","Signalpause Brightness"), parameter->blink.p2 );
+    parameter->blink.p3 = enterBlinkColor( TRANSLATE( "Enter pause brightness","Pause Brightness"),             parameter->blink.p3 );
+
+  } else SWARM_LOG_FATAL( "Please report bug: not a pixel nor a lamp." );
+
+}
+
+void MenuIOConfig::enterConstant( SwOSIO *actor, FtSwarmTriggerParameter *parameter ) {
+
+  char prompt[250];
+  
+  if ( actor->isPixel() ) {
+
+    // just enter a fixed color?
+    sprintf( prompt, TRANSLATE( "Enter RGB value (0..#FFFFFF) [#%06X]: ", "RGB-Wert (0..#FFFFFF) [#%06X]: "), parameter->getValue() );
+    parameter->setValue( enterNumber( prompt, parameter->getValue(), 0, 0xFFFFFF ) );
+    return;
+
+  }
+
+  if ( actor->isServo() ) {
+    sprintf( prompt, TRANSLATE( "Enter position (-45..45) [%d]: ", "Servo Position (-45..45) [%d]: "), parameter->getValue() );
+    parameter->setValue( enterNumber( prompt, parameter->getValue(), -45, 45 ) );
+    return;
+  }
+
+  if ( actor->isStepper() ) {
+    sprintf( prompt, TRANSLATE( "Enter speed (-4096..4096) [%d]: ", "Geschwindigkeit (-4096..4096) [%d]: "), parameter->getValue() );
+    parameter->setValue( enterNumber( prompt, parameter->getValue(), -4096, 4096 ) );
+    return;
+  }
+
+  if ( actor->isMotor() ) {
+    sprintf( prompt, TRANSLATE( "Enter speed (-100..100) [%d]: ", "Geschwindigkeit (-100..100) [%d]: "), parameter->getValue() );
+    parameter->setValue( enterNumber( prompt, parameter->getValue(), -100, 100 ) );
+    return;
+  }
+
+  if ( actor->isLamp() ) {
+
+    // just enter a fixed brightness?
+    sprintf( prompt, TRANSLATE( "Enter brightness (0..100) [%d]: ", "Helligkeit (0..100) [%d]: "), parameter->getValue() );
+    parameter->setValue( enterNumber( prompt, parameter->getValue(), 0, 100 ) );
+    return;
+    
+  }
+
+  // catchup all other
+  sprintf( prompt, TRANSLATE( "Enter constant value [%d]: ", "Geben Sie die Konstante ein [%d]: "), parameter->getValue() );
+  parameter->setValue( enterNumber( prompt, parameter->getValue(), -1 * 0xFFFFF, 0xFFFFF ) );
+  
+}
+
 bool MenuIOConfig::enterEvent( SwOSNVSEvent *event ) {
 
-  char   prompt[128];
+  char prompt[250];
   SwOSIO *eventIO;
 
-  // sensor
+  // *** sensor ***
+
   if ( (io) && ( io->isInput() ) ) {
 
     printf("sensor's name: %s\n", io->getAliasOrName() );
@@ -556,38 +662,39 @@ bool MenuIOConfig::enterEvent( SwOSNVSEvent *event ) {
 
     eventIO = myOSSwarm.getIO( event->sensor );
     
-    if (eventIO) sprintf( prompt, TRANSLATE( "Enter sensor's name [%s]: ", "Geben Sie den Namen des Sensors ein [%s]: " ), eventIO->getAliasOrName() );
-    else         sprintf( prompt, TRANSLATE( "Enter sensor's name: ", "Geben Sie den Namen des Sensors ein: " ) );
+    if (eventIO) sprintf( prompt, TRANSLATE( "Enter sensor's name [%s]: ", "Namen des Sensors [%s]: " ), eventIO->getAliasOrName() );
+    else         sprintf( prompt, TRANSLATE( "Enter sensor's name: ", "Namen des Sensors: " ) );
     
     if (!enterIO( prompt, &event->sensor, true ) ) return false;
 
   }
 
-  // trigger
+  // *** trigger ***
+
   if ( !myOSSwarm.getIO( event->sensor )->isDigitalInput() ) {
-    printf( TRANSLATE( "Enter trigger event: change value.\n", "Geben Sie das Trigger Event ein: change value.\n" ) );
+    printf( TRANSLATE( "Enter trigger event: change value.\n", "Trigger Event: change value.\n" ) );
     event->triggerMath.bits.trigger = FTSWARM_TRIGGERVALUE;
   
   } else {
     FtSwarmTrigger_t trigger = event->triggerMath.bits.trigger;
-    sprintf( prompt, TRANSLATE( "Enter trigger event - (0) trigger down  (1) trigger up  (2) change value [%d]: ", "Geben Sie das Trigger Event ein - (0) Trigger down  (1) Trigger up  (2) Change Value [%d]: " ), trigger );
+    sprintf( prompt, TRANSLATE( "Enter trigger event - (0) trigger down  (1) trigger up  (2) change value [%d]: ", "Trigger Event - (0) Trigger down  (1) Trigger up  (2) Change Value [%d]: " ), trigger );
     event->triggerMath.bits.trigger = (FtSwarmTrigger_t) enterNumber( prompt, trigger, 0, 2 );
     printEvent( *event, 1 );
   }
 
+  // *** actor ***
 
-  // actor
   if ( (io) && ( io->isActor() ) ) {
 
-    printf( TRANSLATE( "actors's name: %s\n", "Geben Sie den Namen des Aktors ein: %s\n" ), io->getAliasOrName() );
+    printf( TRANSLATE( "actors's name: %s\n", "Name des Aktors: %s\n" ), io->getAliasOrName() );
     io->getUID( &event->actor );
 
   } else {
 
     eventIO = myOSSwarm.getIO( event->actor );
     
-    if (eventIO) sprintf( prompt, TRANSLATE( "Enter actor's name [%s]: ", "Geben Sie den Namen des Aktors ein [%s]: " ), eventIO->getAliasOrName() );
-    else         sprintf( prompt, TRANSLATE( "Enter actor's name: ", "Geben Sie den Namen des Aktors ein: " ) );
+    if (eventIO) sprintf( prompt, TRANSLATE( "Enter actor's name [%s]: ", "Namen des Aktors [%s]: " ), eventIO->getAliasOrName() );
+    else         sprintf( prompt, TRANSLATE( "Enter actor's name: ", "Name des Aktors: " ) );
   
     if (!enterIO( prompt,  &event->actor,  false ) ) return false;
 
@@ -595,14 +702,41 @@ bool MenuIOConfig::enterEvent( SwOSNVSEvent *event ) {
 
   printEvent( *event, 2 );
 
-  // V1
-  sprintf( prompt, TRANSLATE( "Use - (0) fixed value  (1) sensor's value (2) sensor's delta (3) actor's value [%d]: ", "(0) Konstante  (1) Sensor (2) Sensor Delta (3) Aktor [%d]: " ), event->triggerMath.bits.v1 );
-  event->triggerMath.bits.v1 = (FtSwarmOperand_t) enterNumber( prompt, event->triggerMath.bits.v1, 0, 3 );
+  // **** operand v1 ****
+
+  SwOSIO *actor = myOSSwarm.getIO(event->actor);
+  
+  uint8_t v1 = event->triggerMath.bits.v1;
+  uint8_t maxVal = 3;
+  
+  strcpy( prompt, TRANSLATE( "Use - (0) fixed value  (1) sensor's value (2) sensor's delta (3) actor's value", "(0) Konstante (1) Sensor Messwert (2) Sensor Delta (3) Aktor Stellwert" ) );
+
+  // add blink effect?
+  if ( ( actor->isPixel() ) || ( actor->isLamp() ) ) { 
+
+    // add option to prompt
+    sprintf( prompt, "%s %s", prompt, TRANSLATE( "(4) blink effect", "(4) Blinkeffekt") );
+    maxVal = 4;
+
+    // blink effect was already chosen
+    if ( event->parameter.getEffectType() == FTSWARM_EFFECT_BLINK ) v1 = 4;
+  }
+  
+  sprintf( prompt, "%s [%d]: ", prompt, v1 );
+  event->triggerMath.bits.v1 = (FtSwarmOperand_t) enterNumber( prompt, v1, 0, maxVal );
 
   // constant?
-  if ( event->triggerMath.bits.v1 == FTSWARM_CONSTANT ) {
-    sprintf( prompt, TRANSLATE( "Enter fixed value [%d]: ", "Geben Sie die Konstante ein [%d]: " ), event->parameter );
-    event->parameter = enterNumber( prompt, event->parameter, -4096, 0xFFFFFF );
+  switch ( event->triggerMath.bits.v1 ) {
+
+    case FTSWARM_CONSTANT:  enterConstant( actor, &event->parameter ); 
+                            break;
+
+    case 4:                 // additional option blink effect
+                            event->triggerMath.bits.v1 = FTSWARM_CONSTANT;
+                            enterBlinkEffect( actor, &event->parameter ); 
+                            printEvent( *event );
+                            return true;
+
   }
 
   printEvent( *event, 3 );
@@ -631,11 +765,7 @@ bool MenuIOConfig::enterEvent( SwOSNVSEvent *event ) {
     }
 
     // constant?
-    if ( event->triggerMath.bits.v2 == FTSWARM_CONSTANT ) {
-      sprintf( prompt, TRANSLATE( "Enter fixed value [%d]: ", "Geben Sie die Konstante ein [%d]: " ), event->parameter );
-      event->parameter = enterNumber( prompt, event->parameter, -4096, 0xFFFFFF );
-    
-    }
+    if ( event->triggerMath.bits.v2 == FTSWARM_CONSTANT ) enterConstant( actor, &event->parameter );
 
     printEvent( *event );
 
@@ -671,9 +801,9 @@ bool MenuIOConfig::changeEvent( SwOSNVSEvent *event ) {
 
   // change event
   myOSSwarm.deleteEvent( event );
-  *event = newEvent;
-  myOSSwarm.addEvent( event );
-
+  myOSSwarm.addEvent( &newEvent );
+  memcpy( event, &newEvent, sizeof(SwOSNVSEvent) );
+  
   // events are stored locally only
   anythingChanged[0] = true;
 
@@ -719,14 +849,59 @@ void MenuIOConfig::deleteEvent( void ) {
 
 }
 
+void MenuIOConfig::deleteAllEvents( void ) {
 
-void MenuIOConfig::printEventParameter( FtSwarmOperand_t op, SwOSIO *sensor, SwOSIO *actor, char *doing, int32_t parameter ) {
+  // security question
+  if (!yesNo( TRANSLATE( "Do you want to clear all events [Y/N]?", "Möchten Sie alle Events löschen? [J/N]" ), false ) ) return;
+
+  // delete all events
+  myOSSwarm.deleteEvents();
+  nvs.deleteAllEvents( nvs.events.activeConfig );
+
+  // events are stored locally only
+  anythingChanged[0] = true;
+
+}
+
+void MenuIOConfig::printConstant( SwOSIO *actor, FtSwarmTriggerParameter parameter ) {
+
+  switch ( parameter.base.effectType ) {
+
+    case FTSWARM_EFFECT_BLINK:  printf( TRANSLATE( "Blink( period: %d ms, signal beats: %d, duty: %d, pause beats: %d, ", 
+                                                   "Blink( period: %d ms, Signaltakte: %d, Pulsbreite: %d, Pausentakte: %d, "), 
+                                        parameter.getPeriod(), 
+                                        parameter.blink.signal,
+                                        parameter.blink.duty,
+                                        parameter.blink.pause 
+                                      );
+    
+                                if ( actor->isPixel() ) printf( TRANSLATE( "signal color %s, signal pause color: %s, pause color: %s )", 
+                                                                          "Signalfarbe %s, Signal Pausenfarbe %s, Pausenfarbe %s )" ),
+                                                                FTSWARM_EFFECT_COLOR[parameter.blink.p1],
+                                                                FTSWARM_EFFECT_COLOR[parameter.blink.p2],
+                                                                FTSWARM_EFFECT_COLOR[parameter.blink.p3]
+                                                              );
+                                if ( actor->isLamp() )  printf( TRANSLATE( "signal brightness %d, signal pause brightness %d, pause brightness %d )", 
+                                                                           "Signal Brightness %d, Signal Pause Brightness %d, Pause Brightness %d )" ),
+                                                                parameter.blink.p1,
+                                                                parameter.blink.p2,
+                                                                parameter.blink.p3
+                                                              );
+                                break;
+
+    case FTSWARM_EFFECT_NONE:   if ( actor->isPixel() ) printf( "#%06X", parameter.getValue() ); 
+                                else                    printf( "%d", parameter.getValue() ); 
+
+  }
+
+}
+
+void MenuIOConfig::printEventParameter( FtSwarmOperand_t op, SwOSIO *sensor, SwOSIO *actor, char *doing, FtSwarmTriggerParameter parameter ) {
 
   char uniqueName[2*MAXIDENTIFIER+1];
   
   switch ( op ) {
-    case FTSWARM_CONSTANT:    if ( actor->isPixel() ) printf( "#%06X", parameter );
-                              else                    printf( "%d", parameter ); 
+    case FTSWARM_CONSTANT:    printConstant( actor, parameter );
                               break;
 
     case FTSWARM_SENSORVALUE: sensor->getUniqueName( uniqueName );
@@ -855,7 +1030,11 @@ void MenuIOConfig::run( void ) {
     if ( ( morePages ) || (pageOffset > 0) ) printf("\n");
 
     if ( maxEvent < MAXNVSEVENTS ) add( TRANSLATE("add event", "neues Event"), "", MENU_ADD, '+' );
-    if ( maxEvent >= 0           ) add( TRANSLATE("delete event", "Event löschen"), "", MENU_DEL, '-' );
+    if ( maxEvent >= 0           ) {
+      add( TRANSLATE("delete one event", "Event löschen"), "", MENU_DEL,   '-' );
+      add( TRANSLATE("delete all events", "alle Events löschen"), "", MENU_DELALL, '*' );
+    }
+
     add( TRANSLATE( "switch configuration", "Konfiguration wechseln"), "", MENU_CFG, 's' );
     
     addExit();
@@ -889,6 +1068,10 @@ void MenuIOConfig::run( void ) {
 
       case MENU_DEL:      printf("\n");
                           deleteEvent( );
+                          break;
+
+      case MENU_DELALL:   printf("\n");
+                          deleteAllEvents( );
                           break;
 
       case MENU_CFG:      printf("\n");
@@ -970,6 +1153,7 @@ void MenuIOList::fillIOList( void ) {
   int item  = -1;
   maxItem   = -1;
   morePages = false;
+  pageOffset = 0;
 
   // all controllers
   for ( int8_t c=0; c<=myOSSwarm.maxCtrl; c++ ) {
