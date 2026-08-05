@@ -208,10 +208,7 @@ class SwOSNVS {
     bool addEvent( SwOSNVSEvent *event ) { return addEvent( events.activeConfig, event ); };
 
     // check on dublicates
-    bool exists( uint8_t configuration, SwOSNVSEvent *event );
-
-    // check on dublicates
-    bool exists( SwOSNVSEvent *event ) { return exists ( events.activeConfig, event ); };
+    bool exists( uint8_t configuration, SwOSNVSEvent *event, SwOSNVSEvent *exclude );
 
     // create a new swarm
     void createSwarm( char *name, uint16_t pin );

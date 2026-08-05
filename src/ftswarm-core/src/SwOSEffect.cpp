@@ -23,9 +23,13 @@ SwOSBlink::SwOSBlink( FtSwarmTriggerParameter parameter ) {
 
   signal = parameter.blink.signal;
 
-  duty1 = uint16_t ( ( (float) parameter.blink.period ) * ( 0.25 * ( parameter.blink.duty + 1 ) ) ) * 4;
-  duty2 = parameter.blink.period *4 - duty1;
-  duty3 = parameter.blink.pause * parameter.blink.period * 4;
+  uint16_t beat = parameter.getPeriod() / 25;
+
+  duty1 = uint16_t ( beat * ( 0.25 * ( parameter.blink.duty + 1 ) ) );
+  duty2 = beat - duty1;
+  duty3 = parameter.blink.pause * beat;
+
+  // printf("period %d beat %d duty1 %d duty2 %d duty3 %d\n", parameter.getPeriod(), beat, duty1, duty2, duty3);
 
   tickCounter = 0;
   signalCounter = 0;

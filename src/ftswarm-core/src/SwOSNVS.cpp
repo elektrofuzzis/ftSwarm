@@ -397,12 +397,11 @@ void SwOSNVS::deleteEvent( uint8_t configuration, uint8_t eventIndex ) {
 
 }
 
-bool SwOSNVS::exists( uint8_t configuration, SwOSNVSEvent *event ) {
+bool SwOSNVS::exists( uint8_t configuration, SwOSNVSEvent *event, SwOSNVSEvent *exclude ) {
 
   for (uint8_t i=0; i<MAXNVSEVENTS; i++ ) {
-    if ( events.events[configuration][i].cmp( event )) return true;
+    if ( ( events.events[configuration][i].cmp( event ) ) && ( &events.events[configuration][i] != exclude ) ) return true;
   }
-
 
   return false;
 

@@ -572,7 +572,7 @@ void MenuIOConfig::enterBlinkEffect( SwOSIO* actor, FtSwarmTriggerParameter *par
   // let's blink
   parameter->base.effectType = FTSWARM_EFFECT_BLINK;
                             
-  sprintf( prompt, TRANSLATE( "Enter the duration of one beat (0.25s .. 7.00s in 0.25 steps) [%d]: ", "Takt in 1/10s (0..31) [%0.2f]: "), parameter->getPeriod() / 1000 );
+  sprintf( prompt, TRANSLATE( "Enter the duration of one beat (0.25s .. 7.00s in 0.25 steps) [%d]: ", "Takt (0.25s .. 7.00s in 0.25 Schritten) [%0.2f]: "), parameter->getPeriod() / 1000 );
   parameter->setPeriod( enterNumberF( prompt, parameter->blink.period, 0, 31 ) * 1000 );
 
   sprintf( prompt, TRANSLATE( "Enter number of signal beats (0..15) [%d]: ", "Anzahl Signaltakte (0..15) [%d]: "), parameter->blink.signal );
@@ -662,8 +662,8 @@ bool MenuIOConfig::enterEvent( SwOSNVSEvent *event ) {
 
     eventIO = myOSSwarm.getIO( event->sensor );
     
-    if (eventIO) sprintf( prompt, TRANSLATE( "Enter sensor's name [%s]: ", "Namen des Sensors [%s]: " ), eventIO->getAliasOrName() );
-    else         sprintf( prompt, TRANSLATE( "Enter sensor's name: ", "Namen des Sensors: " ) );
+    if (eventIO) sprintf( prompt, TRANSLATE( "Enter sensor's name [%s]: ", "Name des Sensors [%s]: " ), eventIO->getAliasOrName() );
+    else         sprintf( prompt, TRANSLATE( "Enter sensor's name: ", "Name des Sensors: " ) );
     
     if (!enterIO( prompt, &event->sensor, true ) ) return false;
 
@@ -794,16 +794,19 @@ bool MenuIOConfig::changeEvent( SwOSNVSEvent *event ) {
   if ( !enterEvent( &newEvent ) ) return false;
 
   // nothing changed?
-  if ( newEvent.cmp( event ) ) return false;
+  if ( newEvent.cmp( event ) == 2 ) return false;
 
   // duplicates?
-  if ( nvs.exists( &newEvent ) ) { printf( TRANSLATE( "ERROR: This event already exists.", "FEHLER: Dieses Event gibt es bereits." ) ); return false; }
+  if ( nvs.exists( nvs.events.activeConfig, &newEvent, event ) ) { 
+    printf( TRANSLATE( "ERROR: This event already exists.", "FEHLER: Dieses Event gibt es bereits." ) ); 
+    return false; 
+  }
 
   // change event
   myOSSwarm.deleteEvent( event );
   myOSSwarm.addEvent( &newEvent );
-  memcpy( event, &newEvent, sizeof(SwOSNVSEvent) );
-  
+  *event = newEvent;
+
   // events are stored locally only
   anythingChanged[0] = true;
 
