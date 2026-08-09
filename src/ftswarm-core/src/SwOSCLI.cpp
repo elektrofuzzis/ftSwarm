@@ -1384,10 +1384,14 @@ void SwOSCLI::evalComplexCommand( char *token, bool *loggedIn ) {
 
   } else if ( cmd==CLICMD_unsubscribe ) {
 
+    // swarm
+    if ( swarm )
+      myOSSwarm.unsubscribe();
+
     // controller?
-    if ( (!io) && (ctrl ) ) {
+    else if ( (!io) && (ctrl ) ) {
       ctrl->lock();
-      ctrl->unsubscribe( IOName );
+      ctrl->unsubscribe( true );
       ctrl->unlock();
     
     // IO?
