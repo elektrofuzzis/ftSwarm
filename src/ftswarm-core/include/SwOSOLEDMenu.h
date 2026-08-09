@@ -18,13 +18,15 @@
 class SwOSJoystick;
 class SwOSServo;
 
-// #define FTSWARM_HAL_OLEDS 1
+#define FTSWARM_HAL_OLEDS 1
 
 #if FTSWARM_HAL_OLEDS > 0
 
 #include "SwOSHW/SwOSHWLocal.h"
 
 typedef enum { FTSWARM_SCREENEVENT_NONE = -1, FTSWARM_SCREENEVENT_DOWN, FTSWARM_SCREENEVENT_UP, FTSWARM_SCREENEVENT_OK } FtSwarmScreenEvent_t;
+
+typedef enum { SWOS_SCREENTYPE_APP, SWOS_SCREENTYPE_ERROR } SwOSScreenType_t;
 
 #define FTSWARMSCREEN_JOY1LR 26
 #define FTSWARMSCREEN_JOY1FB 27
@@ -392,6 +394,9 @@ class FtSwarmScreen {
     // constructor
     FtSwarmScreen( FtSwarmScreen *parent, const char *title, const char *text = nullptr );
 
+    // screen type to check on Error-Screens
+    virtual SwOSScreenType_t getScreenType( void ) { return SWOS_SCREENTYPE_APP; };
+
     // add a screen object
     virtual FtSwarmScreenObj *add( FtSwarmScreenObj *newObject );
 
@@ -446,6 +451,9 @@ class FtSwarmScreen {
     // Simple Text
     FtSwarmScreenText *addText( FtSwarmOledScreen_t screen, int16_t x, int16_t y, FtSwarmAlign_t align, const char *text );
     FtSwarmScreenText *addText( FtSwarmOledScreen_t screen, int16_t x, int16_t y, int16_t width, FtSwarmAlign_t align, const char *text );
+
+    // add simple text and the end of the screen. X-position dependend on alignment 0 w/2 w
+    FtSwarmScreenText *addText( FtSwarmOledScreen_t screen, FtSwarmAlign_t align, const char *text );
     
     // joysticks
     void addJoystick( FtSwarmOledScreen_t screen, const char *text, uint8_t joystick );
@@ -633,7 +641,13 @@ class FtSwarmScreenYesNo : public FtSwarmScreenChooseOption {
 class FtSwarmScreenError : public FtSwarmScreenChooseOption {
 
   public: 
-    FtSwarmScreenError( FtSwarmScreen *parent, const char *text ) : FtSwarmScreenChooseOption( parent, "Error", text, FTSWARMSCREEN_NOID,  0, nullptr, 0, nullptr, 0, nullptr, 1, "OK" ) {};
+    FtSwarmScreenError( FtSwarmScreen *parent, const char *text );
+
+    // add text to the screen
+    virtual void addError( const char *errorText );
+
+    // screen type to check on Error-Screens
+    virtual SwOSScreenType_t getScreenType( void ) { return SWOS_SCREENTYPE_ERROR; };
 
 };
 
@@ -1010,7 +1024,7 @@ class FtSwarmScreenManager {
     void activate( FtSwarmScreen *screen );
 
     // display swarm Status
-    void setState( SwOSState_t state, const char *text, uint8_t members, const char *SSID );
+    void setState( SwOSState_t state, const char *errorText );
 
     void wifiMenu( void ) { activate( new FtSwarmScreenWifi( active ) ); };
 

@@ -114,7 +114,7 @@ public:
 	void serialize( Serialize *serialize );                                                        // transfer my swarm to a JSON structure
   void serializeEvents( Serialize *serialize );
 
-  void setState( SwOSState_t state ); 
+  void setState( SwOSState_t state, const char *errorText = nullptr ); 
 
   // receiving data from other controllers
   void OnDataRecv( SwOSCom *buffer );

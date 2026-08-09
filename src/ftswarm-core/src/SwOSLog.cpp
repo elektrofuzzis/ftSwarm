@@ -116,7 +116,7 @@ void swarm_log(uint8_t loglevel, const char *file, int line, const char *fmt, ..
                       break;
 
       case LOG_ERROR: printf("[ERROR]: %s\n", msg);
-                      myOSSwarm.setState( ERROR ); 
+                      myOSSwarm.setState( ERROR, msg ); 
                       break;
 
       case LOG_WAIT:  printf("[WAITING]: %s\n", msg); 

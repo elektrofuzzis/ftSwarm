@@ -37,8 +37,6 @@ class SwOSAnalogInput;
 const CRGB LEDCOLOR0[MAXSTATE] = {CRGB::Black,CRGB::Blue,CRGB::Yellow,CRGB::Green,CRGB::Red,CRGB::Cyan,CRGB::Aquamarine,CRGB::DeepPink,CRGB::Purple,CRGB::Black };
 const CRGB LEDCOLOR1[MAXSTATE] = {CRGB::Black,CRGB::Blue,CRGB::Yellow,CRGB::Green,CRGB::Red,CRGB::Cyan,CRGB::Aquamarine,CRGB::DeepPink,CRGB::Purple,CRGB::Black };
 
-const char     OLEDMSG[MAXSTATE][20] = { "offline", "booting", "connecting wifi", "online", "ERROR - check logs", "waiting on HW", "It's me!", "FATAL - check logs", "FactoryReset?", "" };
-
 /***************************************************
  *
  *   SwOSCtrl - Base class for controllers.
@@ -178,7 +176,7 @@ class SwOSCtrl : public SwOSObj {
     // save settings to nvs
     void save( FtSwarmNVSScope_t scope, uint8_t port );
 
-    void setState( SwOSState_t state, uint8_t members = 0, char *SSID = NULL ); // visualizes controller's state like booting, error,...
+    void setState( SwOSState_t state, const char *text = nullptr ); // visualizes controller's state like booting, error,...
     SwOSState_t getState( void ) { return isOnline()?state:OFFLINE; };
 
     // change port's IO Type if possible

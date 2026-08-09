@@ -898,6 +898,20 @@ FtSwarmScreenText *FtSwarmScreen::addText( FtSwarmOledScreen_t screen, int16_t x
 
 }
 
+FtSwarmScreenText *FtSwarmScreen::addText( FtSwarmOledScreen_t screen, FtSwarmAlign_t align, const char *text ) {
+
+  int16_t x = 0;
+
+  switch ( align ) {
+    case FTSWARM_ALIGNLEFT:   x = 0;                         break;
+    case FTSWARM_ALIGNCENTER: x = oled.getScreenWidth() / 2; break;
+    case FTSWARM_ALIGNRIGHT:  x = oled.getScreenWidth();     break;
+  }
+  
+  return addText( screen, x, getNextY( screen ), align, text );
+
+}
+
 FtSwarmScreenLine *FtSwarmScreen::addLine( FtSwarmOledScreen_t screen, int16_t x1, int16_t y1, int16_t x2, int16_t y2 ) {
 
   if ( ( y1 > oled.getScreenHeight( screen ) ) || ( y2 > oled.getScreenHeight( screen ) ) ) addNavigation();
@@ -1254,6 +1268,25 @@ bool FtSwarmScreenInput::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
   }
 
   return false;
+
+}
+
+/***************************************************
+ *
+ *   FtSwarmScreenError
+ *
+ ***************************************************/
+
+FtSwarmScreenError::FtSwarmScreenError( FtSwarmScreen *parent, const char *text ) : FtSwarmScreenChooseOption( parent, "Error", nullptr, FTSWARMSCREEN_NOID,  0, nullptr, 0, nullptr, 0, nullptr, 1, "OK" ) {
+  
+  addError( text );
+
+}
+
+void FtSwarmScreenError::addError( const char *errorText ) {
+
+  addText( FTSWARM_OLED_MAINSCREEN, FTSWARM_ALIGNLEFT, errorText );
+  draw();
 
 }
 
@@ -1684,10 +1717,10 @@ void FtSwarmScreenRemote::addMembers( void ) {
   char text[50];
 
   sprintf( text, TRANSLATE( "Type: %s", "Typ:  %s" ), FTSWARMQUICKCONFIG[ nvs.events.quickConfig[nvs.events.activeConfig] ] );
-  addText( FTSWARM_OLED_MAINSCREEN, 0, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNLEFT, text );
+  addText( FTSWARM_OLED_MAINSCREEN, FTSWARM_ALIGNLEFT, text );
 
   sprintf( text, "Cfg:  %d", nvs.events.activeConfig );
-  addText( FTSWARM_OLED_MAINSCREEN, 0, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNLEFT, text );
+  addText( FTSWARM_OLED_MAINSCREEN, FTSWARM_ALIGNLEFT, text );
 
   // show connected controller
   if ( ( nvs.events.events[ nvs.events.activeConfig ][0].sensor.serialNumber != 0 ) &&
@@ -1695,26 +1728,8 @@ void FtSwarmScreenRemote::addMembers( void ) {
 
     SwOSIO *actor = myOSSwarm.getIO( nvs.events.events[ nvs.events.activeConfig ][0].actor );
     sprintf( text, "Ctrl: %s", actor->getCtrl()->getAliasOrName() );
-    addText( FTSWARM_OLED_MAINSCREEN, 0, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNLEFT, text );
+    addText( FTSWARM_OLED_MAINSCREEN, FTSWARM_ALIGNLEFT, text );
   }
-
-  /*
-  for ( uint8_t i=0; i<MAXNVSEVENTS; i++ ) {
-
-    if ( nvs.events.events[ nvs.events.activeConfig ][i].sensor.serialNumber == 0 ) break;
-
-    SwOSIO *sensor = myOSSwarm.getIO( nvs.events.events[ nvs.events.activeConfig ][i].sensor );
-    SwOSIO *actor  = myOSSwarm.getIO( nvs.events.events[ nvs.events.activeConfig ][i].actor );
-      
-    if ( ( sensor ) && ( actor ) ) {
-
-      sprintf( text, "%s -> %s", sensor->getAliasOrName(), actor->getAliasOrName() );
-      addText( FTSWARM_OLED_MAINSCREEN, 0, getNextY( FTSWARM_OLED_MAINSCREEN ), FTSWARM_ALIGNLEFT, text );
-
-    }
-
-  }
-  */
 
 }
 
@@ -2813,31 +2828,38 @@ void FtSwarmScreenManager::activate( FtSwarmScreen *screen ) {
 
 }
 
-void FtSwarmScreenManager::setState( SwOSState_t state, const char *text, uint8_t members, const char *SSID ) {
-
+void FtSwarmScreenManager::setState( SwOSState_t state, const char *errorText ) {
+  
   switch (state) {
 
     case BOOTING:   if (!splashScreen) splashScreen = new SwOSSplashScreen( );
                     activate( splashScreen );
                     break;
 
-    case STARTWIFI: if ( (splashScreen) && ( splashScreen->info )  ) splashScreen->info->setText( text );
+    case STARTWIFI: if ( (splashScreen) && ( splashScreen->info )  ) splashScreen->info->setText( "connecting wifi" );
                     break;
 
     case RUNNING:   activate( new SwOSMainScreen( ) );
                     // if (splashScreen) splashScreen->close();
                     break;
 
-    case ERROR:     activate( new FtSwarmScreenError( active, text ) );
+    case ERROR:     if ( active ) {
+
+                        if ( active->getScreenType() != SWOS_SCREENTYPE_ERROR ) 
+                          activate( new FtSwarmScreenError( active, errorText ) );
+
+                        else 
+                          ( (FtSwarmScreenError *) active )->addError( errorText );
+                    } 
                     break;
 
-    case WAITING:   activate( new FtSwarmScreenInfo( active, text ) );
+    case WAITING:   activate( new FtSwarmScreenInfo( active, "waiting on HW" ) );
                     break;
 
-    case IDENTIFY:  activate( new FtSwarmScreenInfo( active, text ) );
+    case IDENTIFY:  activate( new FtSwarmScreenInfo( active, "It's me!" ) );
                     break;
 
-    case FATAL:     activate( new FtSwarmScreen( active, "Fatal Error", text ) );
+    case FATAL:     activate( new FtSwarmScreen( active, "Fatal Error", errorText ) );
                     break;
 
     case FACTORY1:  if ( (splashScreen) && ( splashScreen->info )  ) splashScreen->info->setText( TRANSLATE( "Factory Reset?", "Werkseinstellung?" ) );

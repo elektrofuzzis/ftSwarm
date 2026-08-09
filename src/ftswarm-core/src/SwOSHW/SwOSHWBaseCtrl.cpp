@@ -827,7 +827,7 @@ SwOSStepper* SwOSCtrl::getStepper( uint8_t index ) {
 
 }
 
-void SwOSCtrl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
+void SwOSCtrl::setState( SwOSState_t state, const char *text ) {
   // visualizes controller's state like booting, error,...
 
   this->state = state;
@@ -837,7 +837,7 @@ void SwOSCtrl::setState( SwOSState_t state, uint8_t members, char *SSID ) {
   if (pixel1) pixel1->setColor( LEDCOLOR1[state] );
   
   #if FTSWARM_HAL_OLEDS > 0
-  screenManager.setState( state,OLEDMSG[state], members, SSID );
+  screenManager.setState( state, text );
   #endif
   
     

@@ -306,13 +306,13 @@ void SwOSSwarm::startWifi( void ) {
     // connection failed?
     if ( !wifiConnected ) {
       
-      SWARM_LOG_ERROR( TRANSLATE( "Can't connect to SSID %s", "Kann SSID %s nicht verbinden" ), nvs.wifi.SSID );
-
       #if FTSWARM_HAL_OLEDS > 0
         // start local operate/read task & show wifi dialog
         xTaskCreatePinnedToCore( readTask,    "ReadTask",    20000, NULL, 1, NULL, ARDUINO_EVENT_RUNNING_CORE );
         screenManager.wifiMenu();
       #endif
+
+      SWARM_LOG_ERROR( TRANSLATE( "Can't connect to SSID %s", "Kann SSID %s nicht verbinden" ), nvs.wifi.SSID );
 
       printf( TRANSLATE( "\nStarting setup..\n", "\nStarte Setup..\n" ) );
       mainMenu();
@@ -813,11 +813,11 @@ bool SwOSSwarm::splitID( char *id, uint8_t *index, char *io, size_t sizeIO) {
 	return true;
 } 
 
-void SwOSSwarm::setState( SwOSState_t state ) {
+void SwOSSwarm::setState( SwOSState_t state, const char *errorText ) {
 
   if (Ctrl[0]) {
     Ctrl[0]->lock();
-    Ctrl[0]->setState( state, members(), nvs.wifi.SSID );
+    Ctrl[0]->setState( state, errorText );
     Ctrl[0]->unlock();
   }
 
