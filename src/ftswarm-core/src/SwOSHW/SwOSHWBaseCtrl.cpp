@@ -517,7 +517,7 @@ bool SwOSCtrl::changeIOType( uint8_t index, SwOSIOType_t newIOType, uint8_t flag
   }
 
   // want to cvhange to SWOSIO_RCSERVO?
-  if ( ( newIOType == SWOSIO_RCSERVO ) && ( FTSWARM_HAL_RCSERVOS < 1 ) ) {
+  if ( ( newIOType == SWOSIO_RCSERVO ) && ( io[index]->getCtrl()->getCPU() != FTSWARMRC_1V141 ) ) {
     SWARM_LOG_ERROR( TRANSLATE( "(%s) does not support RC servos.", "(%s) unterstützt keine RC-Servos." ), getName() );
     return false;
   }

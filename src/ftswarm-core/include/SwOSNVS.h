@@ -45,7 +45,14 @@ class SwOSIOUID {
 
     SwOSIOUID( FtSwarmSerialNumber_t serialNumber, SwOSIOType_t ioType, uint8_t port ) { this->serialNumber = serialNumber; this->ioType = ioType; this->port = port; };
 
+    // a UID is null, if the serialNumber is 0
     bool isNull( void) { return ( serialNumber == 0 ); };
+
+    // Equality Operator
+    bool operator==(const SwOSIOUID& other) const { return ( serialNumber == other.serialNumber ) && ( ioType == other.ioType ) && ( port == other.port ); }
+
+    // Inequality Operator
+    bool operator!=(const SwOSIOUID& other) const { return !( *this == other ); }
 
 } __attribute__((packed));
 

@@ -340,7 +340,7 @@ class MenuIOConfig : protected FirmwareIOMenu {
 
     void addEvent( void );
     void deleteEvent( void );
-    void deleteAllEvents( void );
+    void deleteEvents( SwOSIO *io );
 
     void printConstant( SwOSIO *actor, FtSwarmTriggerParameter parameter );
     void printEventParameter( FtSwarmOperand_t op, SwOSIO *sensor, SwOSIO *actor, char *doing, FtSwarmTriggerParameter parameter );
@@ -469,13 +469,15 @@ void MenuIOConfig::changeType( void ) {
   // list compatible types and ask user
   int8_t       maxType = -1;
   SwOSIOType_t defaultValue, type[SWOSIO_MAXIOTYPE];
+  bool         ctrlCanRCServo = io->getCtrl()->getCPU() == FTSWARMRC_1V141;
 
   for (uint8_t i=0; i<SWOSIO_MAXIOTYPE; i++) {
 
-    // compatible type?
-    if ( ( SWOSIOCLASS[ioType] == SWOSIOCLASS[i] ) &&
-         ( ! ( ( FTSWARM_HAL_RCSERVOS == 0 ) && ( (SwOSIOType_t)i == SWOSIO_RCSERVO ) ) )
-       ) {
+    // RCServo ftSwarmRC only
+    if ( ( (SwOSIOType_t)i == SWOSIO_RCSERVO ) && (!ctrlCanRCServo ) ) continue;
+
+    // compatible IO types?
+    if ( SWOSIOCLASS[ioType] == SWOSIOCLASS[i] ) {
 
       maxType++;
 
@@ -501,6 +503,9 @@ void MenuIOConfig::changeType( void ) {
 
     // my index within the io list
     uint8_t index = ctrl->getIndex(io);
+
+    // delete my events
+    deleteEvents( io );
 
     // change it
     if ( ctrl->changeIOType( ctrl->getIndex(io), newIOType, io->getFlags() ) ) {
@@ -852,14 +857,28 @@ void MenuIOConfig::deleteEvent( void ) {
 
 }
 
-void MenuIOConfig::deleteAllEvents( void ) {
+void MenuIOConfig::deleteEvents( SwOSIO *io ) {
 
-  // security question
-  if (!yesNo( TRANSLATE( "Do you want to clear all events [Y/N]?", "Möchten Sie alle Events löschen? [J/N]" ), false ) ) return;
+  SwOSIOUID uid;
+  
+  // get uid if possible
+  if (io) io->getUID( &uid );
 
-  // delete all events
-  myOSSwarm.deleteEvents();
-  nvs.deleteAllEvents( nvs.events.activeConfig );
+  // check all events
+  uint8_t i=0; 
+
+  while ( ( i<MAXNVSEVENTS ) && ( !nvs.events.events[nvs.events.activeConfig][i].isNull() ) ) {
+
+    if ( ( !io ) ||                                                          // wildcard
+         ( nvs.events.events[nvs.events.activeConfig][i].sensor == uid ) ||  // sensor fits
+         ( nvs.events.events[nvs.events.activeConfig][i].actor  == uid ) ) { // actor fits
+
+      myOSSwarm.deleteEvent( &nvs.events.events[nvs.events.activeConfig][i] );
+      nvs.deleteEvent( nvs.events.activeConfig, i );
+
+    } else i++;
+
+  }
 
   // events are stored locally only
   anythingChanged[0] = true;
@@ -1035,7 +1054,7 @@ void MenuIOConfig::run( void ) {
     if ( maxEvent < MAXNVSEVENTS ) add( TRANSLATE("add event", "neues Event"), "", MENU_ADD, '+' );
     if ( maxEvent >= 0           ) {
       add( TRANSLATE("delete one event", "Event löschen"), "", MENU_DEL,   '-' );
-      if (!io) add( TRANSLATE("delete all events", "alle Events löschen"), "", MENU_DELALL, '*' );
+      add( TRANSLATE("delete all events", "alle Events löschen"), "", MENU_DELALL, '*' );
     }
 
     add( TRANSLATE( "switch configuration", "Konfiguration wechseln"), "", MENU_CFG, 's' );
@@ -1073,8 +1092,7 @@ void MenuIOConfig::run( void ) {
                           deleteEvent( );
                           break;
 
-      case MENU_DELALL:   printf("\n");
-                          deleteAllEvents( );
+      case MENU_DELALL:   if (yesNo( TRANSLATE( "Do you want to clear all events [Y/N]?", "Möchten Sie alle Events löschen? [J/N]" ), false ) ) deleteEvents( io );
                           break;
 
       case MENU_CFG:      printf("\n");
