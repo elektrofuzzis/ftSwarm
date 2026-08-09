@@ -687,8 +687,10 @@ class FtSwarmScreenWifi : public FtSwarmScreen {
     char wifiSSID[64];
     FtSwarmWifi_t wifiMode;
 
+    bool fromBoot;
+
   public:
-    FtSwarmScreenWifi( FtSwarmScreen *parent  );
+    FtSwarmScreenWifi( FtSwarmScreen *parent, bool fromBoot );
 
     // eval external events like pressing buttons
     virtual bool eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam = FTSWARM_NANI32, const char *sParam = nullptr );
@@ -1026,7 +1028,7 @@ class FtSwarmScreenManager {
     // display swarm Status
     void setState( SwOSState_t state, const char *errorText );
 
-    void wifiMenu( void ) { activate( new FtSwarmScreenWifi( active ) ); };
+    void wifiMenu( bool fromBoot ) { activate( new FtSwarmScreenWifi( active, fromBoot ) ); };
 
 };
 

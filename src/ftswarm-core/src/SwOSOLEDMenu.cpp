@@ -1306,7 +1306,9 @@ void FtSwarmScreenError::addError( const char *errorText ) {
 #define FTSWARMSCREENWIFI_CB_PASSWD ( FTSWARMSCREEN_BASEID + 5 )
 #define FTSWARMSCREENWIFI_CB_SAVE   ( FTSWARMSCREEN_BASEID + 6 )
 
-FtSwarmScreenWifi::FtSwarmScreenWifi( FtSwarmScreen *parent  ) : FtSwarmScreen( parent, TRANSLATE( "Wifi Settings", "WLAN-Einstellungen" ), "" ) {
+FtSwarmScreenWifi::FtSwarmScreenWifi( FtSwarmScreen *parent, bool fromBoot ) : FtSwarmScreen( parent, TRANSLATE( "Wifi Settings", "WLAN-Einstellungen" ), "" ) {
+
+  this->fromBoot = fromBoot;
 
   strcpy( wifiSSID, nvs.wifi.SSID );
   strcpy( wifiPwd,  nvs.wifi.Password );
@@ -1337,6 +1339,8 @@ FtSwarmScreenWifi::FtSwarmScreenWifi( FtSwarmScreen *parent  ) : FtSwarmScreen( 
 }
 
 bool FtSwarmScreenWifi::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, int32_t nParam , const char *sParam ) {
+
+  if ( ( fromBoot) && ( id == FTSWARM_F2 ) && ( event == FTSWARM_SCREENEVENT_DOWN ) ) esp_restart();
 
   if ( FtSwarmScreen::eventHandler( event, id, nParam, sParam ) ) return true;
 
@@ -2236,7 +2240,7 @@ bool FtSwarmScreenSetup::eventHandler( FtSwarmScreenEvent_t event, uint8_t id, i
       case FTSWARMSCREENSETUP_SERVOOFFSET:  screenManager.activate( new FtSwarmScreenServoOffsetList( this ) );
                                             break;
 
-      case FTSWARMSCREENSETUP_WIFI:         screenManager.activate( new FtSwarmScreenWifi( this ) );
+      case FTSWARMSCREENSETUP_WIFI:         screenManager.activate( new FtSwarmScreenWifi( this, false ) );
                                             break;
 
       case FTSWARMSCREENSETUP_SWARM:        screenManager.activate( new FtSwarmScreenSwarm( this ) );
