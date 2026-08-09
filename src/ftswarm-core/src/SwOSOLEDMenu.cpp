@@ -625,6 +625,9 @@ void FtSwarmScreen::splitText( const char *text ) {
   uint8_t diff = maxCharsPerRow - optLength;
   if ( diff > 4 ) optLength += 4;
   else            optLength += diff;
+
+  // ensure to clip latest at char #29
+  if ( optLength > 29 ) optLength = 29;
   
   // start splitting
   uint16_t cut;
