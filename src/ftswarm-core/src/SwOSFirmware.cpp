@@ -1035,7 +1035,7 @@ void MenuIOConfig::run( void ) {
     if ( maxEvent < MAXNVSEVENTS ) add( TRANSLATE("add event", "neues Event"), "", MENU_ADD, '+' );
     if ( maxEvent >= 0           ) {
       add( TRANSLATE("delete one event", "Event löschen"), "", MENU_DEL,   '-' );
-      add( TRANSLATE("delete all events", "alle Events löschen"), "", MENU_DELALL, '*' );
+      if (!io) add( TRANSLATE("delete all events", "alle Events löschen"), "", MENU_DELALL, '*' );
     }
 
     add( TRANSLATE( "switch configuration", "Konfiguration wechseln"), "", MENU_CFG, 's' );
