@@ -905,7 +905,7 @@ void FtSwarmPixel::setColor(CRGB color) {
   static_cast<SwOSPixel*>(me)->unlock();
 }
 
-void FtSwarmPixel::setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, uint8_t c1, uint8_t c2, uint8_t c3 ) {
+void FtSwarmPixel::setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, FtSwarmEffectColor_t c1, FtSwarmEffectColor_t c2, FtSwarmEffectColor_t c3 ) {
 
   if (!me) return;
 

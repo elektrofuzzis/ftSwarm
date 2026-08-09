@@ -920,8 +920,9 @@ void SwOSCLI::executeJoystickCmd( void ) {
 void SwOSCLI::executeServoCmd( void ) {
   
   switch ( cmd ) {
-    case CLICMD_setPosition:    if (parameter[0].inRange( "position", -255, 255, response ) ) { 
+    case CLICMD_setPosition:    if (parameter[0].inRange( "position", -45, 45, response ) ) { 
                                   io->lock(); 
+                                  printf("iotype %d\n", io->getIOType() );
                                   ((SwOSServo*) io)->setPosition( (int16_t) parameter[0].getNumber() );
                                   io->unlock();
                                   OK( );
@@ -1195,6 +1196,7 @@ void SwOSCLI::executeIOCommand( void ) {
 
       case SWOSIO_JOYSTICK:       executeJoystickCmd(); break;
 
+      case SWOSIO_RCSERVO:
       case SWOSIO_SERVO:          executeServoCmd(); break;
 
       case SWOSIO_PIXEL:          executePixelCmd(); break;

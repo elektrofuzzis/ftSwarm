@@ -2363,7 +2363,7 @@ bool FtSwarmScreenCalibrateJoystick::eventHandler( FtSwarmScreenEvent_t event, u
 
     if ( id == FTSWARM_S4 ) {
       // save new settings
-      memcpy( &nvs.joystick[i], joystick, 2 * sizeof( SwOSJoyCalibration_t ) );
+      memcpy( &nvs.joystick[i], calibration, 2 * sizeof( SwOSJoyCalibration_t ) );
       nvs.save( FTSWARM_NVSSCOPE_JOYSTICK );
     }
 

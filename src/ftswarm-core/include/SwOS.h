@@ -361,6 +361,7 @@ typedef enum { FTSWARM_CONSTANT, FTSWARM_SENSORVALUE, FTSWARM_SENSORDELTA, FTSWA
 const char FTSWARMOPERAND[ FTSWARM_MAXOPERAND][15] = { TRANSLATE("constant", "Konstante"), TRANSLATE("sensor's value", "Sensorwert"), TRANSLATE("sensor's delta", "Sensor Delta"), TRANSLATE("actor's value", "Aktorwert") };
 
 typedef enum { FTSWARM_EFFECT_NONE, FTSWARM_EFFECT_BLINK } FtSwarmEffect_t;
+typedef enum { FTSWARM_EFFECT_COLOR_BLACK, FTSWARM_EFFECT_COLOR_RED, FTSWARM_EFFECT_COLOR_GREEN, FTSWARM_EFFECT_COLOR_BLUE, FTSWARM_EFFECT_COLOR_YELLOW, FTSWARM_EFFECT_COLOR_ORANGE, FTSWARM_EFFECT_COLOR_CYAN, FTSWARM_EFFECT_COLOR_PINK, FTSWARM_EFFECT_COLOR_MAGENTA, FTSWARM_EFFECT_COLOR_WHITE, FTSWARM_EFFECT_COLOR_MAX } FtSwarmEffectColor_t;
 
 struct FtSwarmTriggerParameter {
   
@@ -995,7 +996,7 @@ class FtSwarmPixel : public FtSwarmIO {
     void setColor( CRGB color );
 
     // set blink effect
-    void setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, uint8_t c1, uint8_t c2, uint8_t c3 );
+    void setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, FtSwarmEffectColor_t c1, FtSwarmEffectColor_t c2, FtSwarmEffectColor_t c3 );
 
     // revoke blink effect and set color
     void revokeEffect( CRGB color );

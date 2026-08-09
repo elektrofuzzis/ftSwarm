@@ -156,10 +156,16 @@ bool SwOSNVS::load() {
   // ftSwarmControl / joystick calibration
   dummy = sizeof( joystick );
   nvs_get_blob( my_handle, "joystick", &joystick, &dummy );
+  // invalid values?
+  for ( uint8_t i=0; i<4; i++ ) {
+    if ( ( joystick[i].minValue <    0) || ( joystick[i].minValue > 1000 ) ) joystick[i].minValue =  200;
+    if ( ( joystick[i].midValue < 1000) || ( joystick[i].midValue > 2500 ) ) joystick[i].midValue = 1000;
+    if ( ( joystick[i].maxValue < 2500) || ( joystick[i].maxValue > 4095 ) ) joystick[i].maxValue = 3700;
+  }
 
   // servoOffsets
   dummy = sizeof( servo );
-  nvs_get_blob( my_handle, "servo", &servo, &dummy );
+  // nvs_get_blob( my_handle, "servo", &servo, &dummy );
 
   // RGBLeds
   nvs_get_u8( my_handle, "RGBLeds", &pixels );
@@ -445,8 +451,8 @@ void SwOSNVS::reset( bool factoryReset ) {
   // servo offset
   for ( uint8_t j=0; j<4; j++ ) {
     servo[j].offset = 45;
-    servo[j].minValue = -1;
-    servo[j].maxValue = -1;
+    servo[j].minValue = 510;
+    servo[j].maxValue = 890;
   }
 
   pixels = FTSWARM_HAL_PIXELS;
