@@ -1851,7 +1851,7 @@ void FtSwarmScreenRemote::configureLights( SwOSCtrl *ctrl, FtSwarmSerialNumber_t
 
 void FtSwarmScreenRemote::configureFunction( SwOSCtrl *ctrl, FtSwarmSerialNumber_t localSN, FtSwarmSerialNumber_t remoteSN, FtSwarmVersion_t cpu ) {
     
-  if ( ( cpu == FTSWARMRS_2V1 ) || ( cpu == FTSWARMJST_1V15 ) || ( cpu == FTSWARMXL_1V00 ) || ( cpu == FTSWARMRC_1V141 ) || ( cpu == FTSWARMDUINO_1V141 ) ) {
+  if ( ( cpu == FTSWARMRS_2V1 ) || ( cpu == FTSWARMJST_1V15 ) || ( cpu == FTSWARMRC_1V141 ) || ( cpu == FTSWARMXL_1V00 ) || ( cpu == FTSWARMDUINO_1V141 ) ) {
 
     SwOSIOUID F1UID    = SwOSIOUID( localSN, SWOSIO_BUTTON,  FTSWARM_F1 );
     SwOSIOUID F2UID    = SwOSIOUID( localSN, SWOSIO_BUTTON,  FTSWARM_F2 );
@@ -1879,8 +1879,8 @@ void FtSwarmScreenRemote::configureGear( SwOSCtrl *ctrl, FtSwarmSerialNumber_t l
     SwOSIOUID F2UID = SwOSIOUID( localSN, SWOSIO_BUTTON,  FTSWARM_F2 );
     SwOSIOUID M2UID = SwOSIOUID( remoteSN, SWOSIO_RCSERVO, FTSWARM_M2 );
 
-    SwOSTriggerMath add( FTSWARM_TRIGGERUP, FTSWARM_ADD, FTSWARM_CONSTANT, FTSWARM_MAXOPERAND );
-    SwOSTriggerMath subtract( FTSWARM_TRIGGERUP, FTSWARM_SUBTRACT, FTSWARM_CONSTANT, FTSWARM_MAXOPERAND );
+    SwOSTriggerMath add( FTSWARM_TRIGGERUP, FTSWARM_ADD, FTSWARM_ACTORVALUE, FTSWARM_CONSTANT );
+    SwOSTriggerMath subtract( FTSWARM_TRIGGERUP, FTSWARM_SUBTRACT, FTSWARM_ACTORVALUE, FTSWARM_CONSTANT );
 
     nvs.addEvent( new SwOSNVSEvent( F1UID, M2UID, add,  45 ) );
     nvs.addEvent( new SwOSNVSEvent( F2UID, M2UID, subtract,  45 ) );

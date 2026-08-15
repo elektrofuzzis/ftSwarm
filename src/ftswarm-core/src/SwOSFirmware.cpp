@@ -937,6 +937,7 @@ void MenuIOConfig::printEventParameter( FtSwarmOperand_t op, SwOSIO *sensor, SwO
     case FTSWARM_ACTORVALUE:  actor->getUniqueName( uniqueName );
                               printf( "%s.get%s()", uniqueName, doing );
                               break;
+
   }
 
 }
@@ -978,7 +979,7 @@ void MenuIOConfig::printEvent( SwOSNVSEvent event, uint8_t details ) {
     printEventParameter( event.triggerMath.bits.v1, sensor, actor, doing, event.parameter );
     if (details == 3 ) { printf("\n"); return; }
 
-    if ( event.triggerMath.bits.op != FTSWARM_ASSIGN ) {
+    if ( ( event.triggerMath.bits.op != FTSWARM_ASSIGN ) && (event.triggerMath.bits.v2 != FTSWARM_MAXOPERAND ) ) {
   
       printf(" %s ", FTSWARMOPERATOR[event.triggerMath.bits.op] );
       if (details == 4 ) { printf("\n"); return; }
