@@ -843,6 +843,15 @@ void SwOSCtrl::setState( SwOSState_t state, const char *text ) {
     
 }
 
+SwOSState_t SwOSCtrl::getState( void ) { 
+
+  if ( isLocal() )        return state;
+  else if ( isOnline() )  return RUNNING;
+  else                    return OFFLINE; 
+
+};
+
+
 void SwOSCtrl::identify( void ) {
   
   if (local) {
@@ -1109,32 +1118,32 @@ SwOSCom *SwOSCtrl::state2Com( MacAddr destination ) {
 
   for ( uint8_t i=0; i<IOs; i++ ) {
 
-    if ( io[i] ) {
+    if ( ( io[i] ) && ( io[i]->isDirty() ) ) {
 
-      // add IO's index to payload buffer
-      com->data.stateCmd.payload[ptr] = i;
+        // add IO's index to payload buffer
+        com->data.stateCmd.payload[ptr] = i;
 
-      // write io's payload to buffer, return 0 if I don't have a state
-      len = io[i]->pushState( &com->data.stateCmd.payload[ptr+1] );
+        // write io's payload to buffer, return 0 if I don't have a state
+        len = io[i]->pushState( &com->data.stateCmd.payload[ptr+1] );
 
-      // move ptr to next io
-      if (len>0) {
+        // move ptr to next io
+        if (len>0) {
 
-        // shouldn't happen at all
-        if ( ptr + len + 3 > MAXSTATECMDPAYLOAD ) SWARM_LOG_FATAL( TRANSLATE( "STATE2COM PAYLOAD excceded.", "STATE2COM maximaler Payload überschritten." ) );
+          // shouldn't happen at all
+          if ( ptr + len + 3 > MAXSTATECMDPAYLOAD ) SWARM_LOG_FATAL( TRANSLATE( "STATE2COM PAYLOAD excceded.", "STATE2COM maximaler Payload überschritten." ) );
 
-        // move ptr
-        ptr = ptr + len + 1;
-        index++;
+          // move ptr
+          ptr = ptr + len + 1;
+          index++;
 
-      }
+        }
 
     }
 
   }
 
   // mark end of list
-  com->data.stateCmd.items = index + 1;
+  com->data.stateCmd.items = index;
 
   return com;
 
@@ -1145,9 +1154,13 @@ bool SwOSCtrl::recvState( SwOSCom *com ) {
   uint8_t ptr = 0;  // ptr in payload buffer
   uint8_t index;    // index of io
 
-  for ( uint8_t i=0; i<com->data.stateCmd.items; i++ ) {
+ //  com->print();
+
+  for ( uint8_t i=0; i < com->data.stateCmd.items; i++ ) {
     index = com->data.stateCmd.payload[ptr++];
-    if ( (index < IOs) && (io[index]) ) ptr += io[index]->popState( &(com->data.stateCmd.payload[ptr]) );
+    if ( (index < IOs) && (io[index]) ) {
+      ptr += io[index]->popState( &(com->data.stateCmd.payload[ptr]) );
+    }
   }
 
   return true;
@@ -1159,7 +1172,6 @@ void SwOSCtrl::registerMe( SwOSCom *com ){
   if (!com) return;
 
   // controller data
-  // com->data.registerCmd.ctrlConfig.ctrlType      = getType();
   com->data.registerCmd.ctrlConfig.CPU           = getCPU();
   com->data.registerCmd.ctrlConfig.IAmKelda      = IAmKelda;
   com->data.registerCmd.ctrlConfig.extensionPort = extensionPort;
@@ -1221,6 +1233,10 @@ void SwOSCtrl::sendIOConfig( MacAddr destination ) {
       uint8_t size = 0;
       uint8_t *parameter = io[i]->getNVSParameter( &size );
       
+      // once I send my config, I need to send my state as well
+      io[i]->setDirty();
+
+      // send IO config
       ioConfig.pushIO( i, io[i]->getIOType(), io[i]->getPort(), io[i]->getName(), io[i]->getAlias(), io[i]->getFlags(), parameter, size ); 
 
       if (parameter) free( parameter );

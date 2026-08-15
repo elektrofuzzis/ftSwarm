@@ -157,7 +157,7 @@ void SwOSSwarm::connect( void ) {
 
     if ( Ctrl[i] ) { 
 
-      //if controller was not seen for a longer time or is new: try to reconnect
+      // if controller was not seen for a longer time or is new: try to reconnect
       if ( ( Ctrl[i]->getComState() == COMSTATE_UNDEFINED ) ||
            ( ( Ctrl[i]->networkAge() > 1000L ) && ( Ctrl[i]->getComState() != COMSTATE_ERROR ) ) ) {
       

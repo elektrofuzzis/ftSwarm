@@ -232,6 +232,12 @@ class SwOSIO : public SwOSObj {
     // halt all motors
     virtual void halt( void ) {};
 
+    // check, if state has changed to send by data to kelda
+    virtual bool isDirty( void ) { return false; };
+
+    // set myself dirty
+    virtual void setDirty( void ) { };
+
     // push my state to a buffer
     virtual uint8_t pushState( uint8_t *buffer ) { return 0; };
 
@@ -320,6 +326,7 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
   protected:
     gpio_num_t GPIO = GPIO_NUM_NC;
 	  int32_t    lastRawValue = 0;
+    int8_t    dirty = 0;
 	
     virtual void setupLocal();
     virtual void subscription();
@@ -340,6 +347,12 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
     // administrative stuff
 	  virtual void serialize( Serialize *serialize ) {};
 	  void serializeEvents( Serialize *serialize );
+
+    // check, if state has changed to send by data to kelda
+    virtual bool isDirty( void );
+
+    // set myself dirty
+    virtual void setDirty( void ) { dirty = 0; };
 
     // push my state to a buffer
     virtual uint8_t pushState( uint8_t *buffer ) { return pushState32( buffer ); };

@@ -162,6 +162,10 @@ class SwOSLamp : public SwOSDCMotor {
     virtual bool isStepper( void ) { return true; };
     virtual void operate();
     virtual void serialize( Serialize *serialize );
+
+    // check, if state has changed to send by data to kelda
+    virtual bool isDirty( void ) { return true; };
+
     virtual uint8_t  pushState( uint8_t *buffer );
     virtual uint8_t  popState( uint8_t *buffer );
    

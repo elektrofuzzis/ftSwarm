@@ -617,23 +617,29 @@ float SwOSInput::getValueF() {
 }
 
 uint8_t SwOSInput::pushState8( uint8_t *buffer ) { 
+
+  int8_t value = lastRawValue;
   
-  memcpy( buffer, &lastRawValue + 3, 1 );
-  return 1;
+  memcpy( buffer, &value, sizeof( value ) );
+  return sizeof( value );
 
 };
 
 uint8_t SwOSInput::pushState16( uint8_t *buffer ) { 
   
-  memcpy( buffer, &lastRawValue + 2, 2 );
-  return 2;
+  int16_t value = lastRawValue;
+  
+  memcpy( buffer, &value, sizeof( value ) );
+  return sizeof( value );
 
 };
 
 uint8_t SwOSInput::pushState32( uint8_t *buffer ) { 
   
-  memcpy( buffer, &lastRawValue, sizeof( lastRawValue ) );
-  return sizeof( lastRawValue );
+  int32_t value = lastRawValue;
+  
+  memcpy( buffer, &value, sizeof( value ) );
+  return sizeof( value );
 
 };
 
@@ -670,9 +676,25 @@ uint8_t SwOSInput::popState32( uint8_t *buffer ) {
   
 };
 
+bool SwOSInput::isDirty( void ) {
+
+  dirty--;
+
+  if ( dirty <= 0 ) {
+    dirty = 10;
+    return true;
+  }
+
+  return false;
+
+}
+
 void SwOSInput::setReading( int32_t newValue, FtSwarmTrigger_t secondTriggerEvent ) {
 
   bool changes = (lastRawValue != newValue);
+
+  // set dirty flag
+  if ( changes ) dirty = 0;
 
   // store new data
   int32_t delta = newValue - lastRawValue;

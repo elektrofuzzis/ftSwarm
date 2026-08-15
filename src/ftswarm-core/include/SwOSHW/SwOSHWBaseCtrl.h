@@ -176,8 +176,11 @@ class SwOSCtrl : public SwOSObj {
     // save settings to nvs
     void save( FtSwarmNVSScope_t scope, uint8_t port );
 
-    void setState( SwOSState_t state, const char *text = nullptr ); // visualizes controller's state like booting, error,...
-    SwOSState_t getState( void ) { return isOnline()?state:OFFLINE; };
+    // visualizes controller's state like booting, error,...
+    void setState( SwOSState_t state, const char *text = nullptr ); 
+
+    // get local state or - if remote RUNNING/OFFLINE
+    SwOSState_t getState( void );
 
     // change port's IO Type if possible
     bool changeIOType( uint8_t index, SwOSIOType_t newIOType, uint8_t flags );

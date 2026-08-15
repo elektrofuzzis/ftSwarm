@@ -137,7 +137,12 @@ class SwOSMotor;
 
     uint8_t myRegister[MAXI2CREGISTERS];
     SwOSI2C( const char *name, SwOSCtrl *ctrl, uint8_t flags, uint8_t I2CAddress);
+    
     virtual bool isI2C( void ) { return true; };
+
+    // check, if state has changed to send by data to kelda
+    virtual bool isDirty( void ) { return true; };
+
     virtual uint8_t pushState( uint8_t *buffer );
     virtual uint8_t popState( uint8_t *buffer );
 
