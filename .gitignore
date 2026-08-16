@@ -329,6 +329,7 @@ local.properties
 !.vscode/launch.json
 !.vscode/extensions.json
 *.code-workspace
+!project.code-workspace
 .history/
 ~$*.doc*
 Backup of *.doc*
@@ -339,18 +340,5 @@ Backup of *.doc*
 
 
 # my ignores
-*.bin
-Tests.txt
-test.sh
-*.old
-old/
-3D
-release/
-arduino-cpp-library/src/src.ino
-arduino-cpp-library/src/debug.cfg
-src/core-develop
-
-# Build Files
-deployment/
-src/ftswarm-*/examples/
 *.gz
+build/

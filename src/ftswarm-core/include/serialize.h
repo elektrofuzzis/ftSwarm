@@ -1,0 +1,121 @@
+/*
+ * serialize.h
+ *
+ * simple framework to build a json reply for a REST based service
+ * 
+ * (C) 2021-26 Christian Bergschneider & Stefan Fuss
+ * 
+ */
+
+#pragma once
+
+#include <esp_http_server.h>
+#include <FastLed.h>
+
+typedef enum {
+  SERIALIZE_RAW,
+  SERIALIZE_JSON
+} SerialFormat_t;
+
+typedef enum {
+	SERIALIZE_None,
+	SERIALIZE_Object,
+	SERIALIZE_Array,
+	SERIALIZE_Item
+} SerialObject_t;
+
+typedef enum {
+  SERIALIZE_LITERAL_NULL,
+  SERIALIZE_LITERAL_CTRLS,
+  SERIALIZE_LITERAL_IO,
+  SERIALIZE_LITERAL_KELDA,
+  SERIALIZE_LITERAL_SENSOR,
+  SERIALIZE_LITERAL_ACTOR,
+  SERIALIZE_LITERAL_TRIGGER,
+  SERIALIZE_LITERAL_STATE,
+  SERIALIZE_LITERAL_SPEED,
+  SERIALIZE_LITERAL_UICLASS,
+  SERIALIZE_LITERAL_OFFSET,
+  SERIALIZE_LITERAL_POSITION,
+  SERIALIZE_LITERAL_VALUE,
+  SERIALIZE_LITERAL_VALUELR,
+  SERIALIZE_LITERAL_VALUEFB,
+  SERIALIZE_LITERAL_NAME,
+  SERIALIZE_LITERAL_ALIAS,
+  SERIALIZE_LITERAL_ID,
+  SERIALIZE_LITERAL_SERIALNUMBER,
+  SERIALIZE_LITERAL_CTRLVERSION,
+  SERIALIZE_LITERAL_IOTYPE,
+  SERIALIZE_LITERAL_ACTIVE,
+  SERIALIZE_LITERAL_BRIGHTNESS,
+  SERIALIZE_LITERAL_COLOR,
+  SERIALIZE_LITERAL_QUATERNION,
+  SERIALIZE_LITERAL_ACCELERATION,
+  // cam only
+  SERIALIZE_LITERAL_URL,
+  SERIALIZE_LITERAL_FRAMESIZE,
+  SERIALIZE_LITERAL_QUALITY,
+  SERIALIZE_LITERAL_CONTRAST,
+  SERIALIZE_LITERAL_SATURATION,
+  SERIALIZE_LITERAL_HMIRROR,
+  SERIALIZE_LITERAL_VFLIP,
+  SERIALIZE_LITERAL_ACTIVECONFIG,
+  SERIALIZE_LITERAL_EVENTS,
+  SERIALIZE_LITERAL_DISTANCE,
+  SERIALIZE_LITERAL_HOMING,
+  SERIALIZE_LITERAL_RUNNING,
+  SERIALIZE_LITERAL_OPERATOR,
+  SERIALIZE_LITERAL_OPERAND1,
+  SERIALIZE_LITERAL_OPERAND2,
+  SERIALIZE_LITERAL_YAWPITCHROLL,
+  SERIALIZE_LITERAL_SYNC,
+  SERIALIZE_LITERAL_BLINK,
+  SERIALIZE_LITERAL_MAX
+} SerialLiteral_t; 
+
+// IMPORTANT: °-char ist \176 - in case of additional literals enum #48 needs to be left unused.
+
+// simple class to build a json string and send it immediately
+class Serialize {
+  
+protected:
+	SerialObject_t lastObject = SERIALIZE_None;  // which type I'm processing
+  bool           noSpacer   = true;            // supress first ,
+  uint32_t       ptr        = 0;
+  SerialFormat_t format     = SERIALIZE_RAW;
+  size_t         bufSize    = 0;
+
+  void write( SerialLiteral_t literal );
+  void write( int value );
+  void write( CRGB value );
+  void writeBinary( uint8_t v );
+
+public:
+
+  char *buffer;
+
+	Serialize( char *buffer, size_t bufSize, SerialFormat_t format );
+
+  // reset the buffer
+  void reset( void );
+
+  void write( const char *str );
+
+  // start and end a new object
+  void startObject( SerialLiteral_t literal = SERIALIZE_LITERAL_NULL );
+  void newObject( SerialObject_t object );  // start a new object and decide to write a "," 
+  void endObject();
+
+  // start and end a new array
+	void startArray( SerialLiteral_t literal = SERIALIZE_LITERAL_NULL );
+	void endArray();
+
+  // items
+  void item( SerialLiteral_t literal, const char *value );
+  void item( SerialLiteral_t literal, int value);
+  void item( SerialLiteral_t literal, CRGB value);
+  void item( SerialLiteral_t literal, float value, uint8_t decimalPlaces, const char *unit = NULL );
+  void item( SerialLiteral_t literal, float v1, float v2, float v3, float v4 );
+  void item( SerialLiteral_t literal, float v1, float v2, float v3 );
+    
+};

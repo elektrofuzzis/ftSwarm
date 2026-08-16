@@ -17,26 +17,39 @@
 #include <freertos/semphr.h>
 
 #include "SwOS.h"
+#include "SwOSNVS.h"
+#include <FastLed.h>
 
 #define ESPNOW_MAXDELAY     128
 #define DEFAULTSECRET       0x2506
-#define VERSIONDATA         7
-#define MAXALIAS            5
+#define VERSIONDATA         9
+#define MAXIOCONFIG         5
 #define MAXUSEREVENTPAYLOAD 128
+#define MAXCONFIGPAYLOAD    200
 
 typedef enum {
-  CMD_SWARMJOIN,              // I want to join a swarm
-  CMD_ACK,                    // Acknowledge a cmd
-  CMD_SWARMLEAVE,             // leave swarm
-  CMD_ANYBODYOUTTHERE,        // Broadcast to get known by everybody 
+  
+  CMD_JOINMYSWARM,            // Kelda to member: Please join my Swarm 
+  CMD_JOINACK,                // Member to Kelda: yes, I want to join your Swarm
+  CMD_JOINNACK,               // Member to Kelda: no, I don't want to join your swarm
+  CMD_REVOKEFROMSWARM,        // Kelda to member: Please leave my swarm
+
+  CMD_SAVE,                   // Kelda to Member: save settings to NVS
+  CMD_SETWIFI,                // set wifi settings
+  CMD_REBOOT,                 // reboot controller
+
   CMD_GOTYOU,                 // anybody's reply on ANYBODYOUTTHERE
-  CMD_SETLED,                 // set LED color & brightness
+  CMD_STATE,                  // send my input's readings
+  CMD_IOCONFIG,               // send my io config to kelda
+  CMD_SETIOTYPE,              // change a port's IO Type
+  CMD_SETPARAMETER,           // send a parameter to the IO, e.g. normallyOpen
+  CMD_HARTBEAT,               // Kelda to Member: I'm still out there
+  
+  CMD_IDENTIFY,               // show myself
+  
+  CMD_SETPIXEL,               // set LED color, brightness & blink
   CMD_SETACTORSPEED,          // set actors motionType & speed
   CMD_SETSERVO,               // set servo position
-  CMD_STATE,                  // send my input's readings
-  CMD_SETSENSORTYPE,          // set an input's sensor type
-  CMD_SETACTORTYPE,           // set an actors's actor type
-  CMD_ALIAS,                  // send some alias names
   CMD_I2CREGISTER,            // set an I2C register
   CMD_SETSTEPPERDISTANCE,     // set distance to go
   CMD_STEPPERSTARTSTOP,       // start/stop
@@ -45,10 +58,9 @@ typedef enum {
   CMD_SETSTEPPERHOMINGOFFSET, // set homing offset
   CMD_SETMICROSTEPMODE,       // set Microstepmode
   CMD_USEREVENT,              // send data from user exit back to Kelda
-  CMD_IDENTIFY,               // show myself
-  CMD_CHANGEIOTYPE,           // change a port's IO Type
   CMD_RESETCOUNTER,           // Reset counter
-  CMD_STARTFREQUENCYMETER,    // start frequency meter
+  CMD_CALIBRATE,              // Calibrate a RC Servo
+  CMD_SETEFFECT,              // set effect
   CMD_MAX
 } SwOSCommand_t;
 
@@ -59,58 +71,185 @@ extern QueueHandle_t sendNotificationWifi;
 extern QueueHandle_t sendNotificationRS485;
 extern QueueHandle_t recvNotification;
 
-struct Input_t { FtSwarmSensor_t sensorType; int32_t rawValue; } __attribute__((packed));
-struct Actor_t { FtSwarmActor_t actorType; FtSwarmMotion_t motionType; int16_t speed; uint32_t rampUpT; uint32_t rampUpY; } __attribute__((packed));
+// struct Input_t { FtSwarmSensor_t sensorType; int32_t rawValue; } __attribute__((packed));
+// struct Actor_t { FtSwarmActor_t actorType; FtSwarmMotion_t motionType; int16_t speed; uint32_t rampUpT; uint32_t rampUpY; } __attribute__((packed));
 struct LED_t   { uint8_t brightness; uint32_t color; } __attribute__((packed));
 struct Servo_t { int16_t offset; int16_t position; } __attribute__((packed));
 struct Joystick_t { int16_t LR; int16_t FB; } __attribute__((packed));
-struct Alias_t { char name[10]; char alias[MAXIDENTIFIER]; } __attribute__((packed));
+struct IOConfig_t { SwOSIOType_t ioType; uint8_t port; char name[10]; char alias[MAXIDENTIFIER]; } __attribute__((packed));
 
-struct registerJST_t {
-  uint8_t leds;
-  LED_t   led[MAXLEDS];
-  Servo_t servo[MAXSERVOS];
-} __attribute__((packed));
-
-struct registerControl_t {
-  Joystick_t joystick[2];
-  uint8_t    hc165;
+struct SwOSCtrlConfig_t { 
+  // FtSwarmController_t   ctrlType; 
+  FtSwarmVersion_t      CPU; 
+  bool                  IAmKelda;
+  FtSwarmExtMode_t      extensionPort;
+  uint8_t               IOs;
+  uint8_t               pixels;
+  bool                  gyro;
 } __attribute__((packed));
 
 struct registerCmd_t { 
-  FtSwarmController_t ctrlType; 
-  FtSwarmVersion_t versionCPU; 
-  bool IAmKelda; 
-  FtSwarmExtMode_t extensionPort;
-  uint8_t leds;
+  char                swarmName[MAXIDENTIFIER];
+  uint16_t            swarmPIN;
+  SwOSCtrlConfig_t    ctrlConfig;
 } __attribute__((packed));
 
+struct joinCmd_t { 
+  uint16_t pin; 
+  uint16_t swarmSecret; 
+  char swarmName[MAXIDENTIFIER]; 
+  bool IAmKelda; 
+} __attribute__((packed));
+
+struct ackCmd_t { 
+  SwOSCommand_t cmd; 
+  SwOSError_t error; 
+  uint16_t secret;
+} __attribute__((packed));
+
+#define MAXSTATECMDPAYLOAD 128
+
+struct stateCmd_t {
+  uint8_t items;
+  uint8_t payload[MAXSTATECMDPAYLOAD];
+
+} __attribute__((packed));
+
+struct stepperStateCmd_t{ 
+  bool isHoming[4]; 
+  bool isRunning[4]; 
+  uint32_t inputValue[5]; 
+  int32_t distance[4]; 
+  int32_t position[4];
+} __attribute__((packed));
+
+struct sensorCmd_t { 
+  uint8_t index; 
+  SwOSIOType_t ioType; 
+  bool normallyOpen;
+} __attribute__((packed));
+
+struct servoCmd_t{ 
+  uint8_t index; 
+  int16_t offset; 
+  int16_t position;
+} __attribute__((packed));
+
+struct actorSpeedCmd_t{ 
+  uint8_t index; 
+  FtSwarmMotion_t motionType; 
+  int16_t speed;  
+  uint32_t rampUpT; 
+  uint32_t rampUpY;
+} __attribute__((packed));
+
+struct actorStepperCmd_t{ 
+  uint8_t index; 
+  int32_t paraml; 
+  int32_t paramb;
+} __attribute__((packed));
+
+struct actorTypeCmd_t{ 
+  uint8_t index; 
+  SwOSIOType_t actorType; 
+} __attribute__((packed));
+
+struct pixelCmd_t { 
+  uint8_t index; 
+  uint8_t brightness; 
+  uint8_t R;
+  uint8_t G;
+  uint8_t B;
+  uint8_t blink;
+} __attribute__((packed));
+
+struct effectCmd_t { 
+  uint8_t index; 
+  FtSwarmTriggerParameter effect; 
+} __attribute__((packed));
+
+struct ioConfigCmd_t { 
+  uint8_t payload[MAXCONFIGPAYLOAD];
+} __attribute__((packed));
+
+struct I2CRegisterCmd_t { 
+  uint8_t index;
+  uint8_t reg; 
+  uint8_t value;
+} __attribute__((packed));
+
+struct ctrlCmd_t{ 
+  uint8_t microstepMode; 
+} __attribute__((packed));
+
+struct userEventCmd_t { 
+  bool trigger; 
+  uint8_t size; 
+  uint8_t payload[MAXUSEREVENTPAYLOAD];
+} __attribute__((packed));
+
+struct parameterCmd_t { 
+  uint8_t index; 
+  int32_t parameter;
+} __attribute__((packed));
+
+struct setIOTypeCmd_t{ 
+  uint8_t      index; 
+  SwOSIOType_t newIOType;
+  int32_t      payload;
+  bool         flags;
+} __attribute__((packed));
+
+struct counterCmd_t{ 
+  uint8_t index;
+} __attribute__((packed));
+
+struct wifiCmd_t {
+  FtSwarmWifi_t mode;
+  char          SSID[64];
+  char          PSK[128];
+  bool          reboot;
+} __attribute__((packed));
+
+struct saveCmd_t {
+  FtSwarmNVSScope_t scope;
+  uint8_t port;
+} __attribute__((packed));
+
+struct calibrateCmd_t {
+  uint8_t index;
+  uint8_t speed;
+} __attribute__((packed));
 
 struct SwOSDatagram_t {
   uint8_t               size;
-  uint16_t              secret;
   uint8_t               version;
   FtSwarmSerialNumber_t sourceSN;      // who is sending this information?
   FtSwarmSerialNumber_t affectedSN;    // who will receive this information?
   SwOSCommand_t         cmd;
   union {
     registerCmd_t registerCmd;
-    struct { uint16_t pin; uint16_t swarmSecret; char swarmName[MAXIDENTIFIER]; bool IAmKelda; } joinCmd;
-    struct { SwOSCommand_t cmd; SwOSError_t error; uint16_t secret; } ackCmd;
-    struct { uint32_t inputValue[MAXINPUTS]; int16_t LR[2]; int16_t FB[2]; uint8_t hc165; uint8_t i2cValue[MAXI2CREGISTERS]; } stateCmd;
-    struct { bool isHoming[4]; bool isRunning[4]; uint32_t inputValue[5]; long distance[4]; long position[4];} stepperStateCmd;
-    struct { uint8_t index; FtSwarmSensor_t sensorType; bool normallyOpen; } sensorCmd __attribute__((packed));
-    struct { uint8_t index; int16_t offset; int16_t position; } servoCmd;
-    struct { uint8_t index; FtSwarmMotion_t motionType; int16_t speed;  uint32_t rampUpT; uint32_t rampUpY; } actorSpeedCmd;
-    struct { uint8_t index; long paraml; bool paramb; } actorStepperCmd;
-    struct { uint8_t index; FtSwarmActor_t actorType; bool highResolution; } actorTypeCmd;
-    struct { uint8_t index; uint8_t brightness; uint32_t color; } ledCmd;
-    struct { Alias_t alias[MAXALIAS]; } aliasCmd;
-    struct { uint8_t reg; uint8_t value; } I2CRegisterCmd;
-    struct { uint8_t microstepMode; } CtrlCmd;
-    struct { bool trigger; uint8_t size; uint8_t payload[MAXUSEREVENTPAYLOAD]; } userEventCmd;
-    struct { uint8_t index; FtSwarmIOType_t oldIOType; FtSwarmIOType_t newIOType; } changeIOTypeCmd;
-    struct { uint8_t index; } CounterCmd;
+    joinCmd_t joinCmd;
+    ackCmd_t ackCmd;
+    stateCmd_t stateCmd;
+    stepperStateCmd_t stepperStateCmd;
+    sensorCmd_t sensorCmd;
+    servoCmd_t servoCmd;
+    actorSpeedCmd_t actorSpeedCmd;
+    actorStepperCmd_t actorStepperCmd;
+    actorTypeCmd_t actorTypeCmd;
+    pixelCmd_t pixelCmd;
+    effectCmd_t effectCmd;
+    ioConfigCmd_t ioConfigCmd;
+    I2CRegisterCmd_t I2CRegisterCmd;
+    ctrlCmd_t ctrlCmd;
+    userEventCmd_t userEventCmd;
+    setIOTypeCmd_t setIOTypeCmd;
+    counterCmd_t counterCmd;
+    parameterCmd_t parameterCmd;
+    wifiCmd_t wifiCmd;
+    saveCmd_t saveCmd;
+    calibrateCmd_t calibrateCmd;
   };
 } __attribute__((packed));
 
@@ -135,8 +274,10 @@ class MacAddr {
 
 class SwOSCom {
 protected:
-  bool    _isValid;
-  uint8_t bufferIndex;
+  bool    _isValid    = false;
+
+public:
+  uint8_t bufferIndex = 0;
 
 public:
   MacAddr        macAddr;
@@ -148,8 +289,10 @@ public:
   size_t size( void );
 
   // send my alias names buffered
-  void sendBuffered( char *name, char *alias );
-  void flushBuffer( );
+  void pushHostname( const char *name, const char *alias, uint8_t flags ) { pushIO( 254, SWOSIO_MAXIOTYPE, SWOS_NOPORT, name, alias, flags, nullptr, 0 ); };
+  void pushIO( uint8_t index, SwOSIOType_t ioType,  uint8_t port,  const char *name, const char *alias, uint8_t flags, uint8_t *parameter, uint8_t size );
+  bool popIO( uint8_t *index, SwOSIOType_t *ioType, uint8_t *port, char **name, char **alias, uint8_t *flags, uint8_t *parameter, uint8_t *size);
+  void flushBuffer( void );
   
   void send( void );
 
@@ -171,12 +314,14 @@ class SwOSNetwork {
     QueueHandle_t recvNotification = NULL;
     QueueHandle_t userEvent = NULL;
 
-    uint16_t      secret = DEFAULTSECRET;
-    uint16_t      pin    = 0;
-    uint8_t       delayTime;
+    uint16_t               secret = DEFAULTSECRET;
+    uint16_t               pin    = 0;
+    uint8_t                delayTime;
     FtSwarmCommunication_t communication;
+    bool                   active = false;
 
     bool begin( uint16_t swarmSecret, uint16_t swarmPIN, FtSwarmCommunication_t swarmCommunication );
+    void stop( void );
     void setSecret( uint16_t swarmSecret, uint16_t swarmPIN );
     bool hasJoinedASwarm( void );
     void AddPeer( MacAddr macAddr );

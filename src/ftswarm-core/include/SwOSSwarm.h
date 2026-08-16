@@ -18,48 +18,54 @@
 #include <freertos/task.h>
 #include <freertos/semphr.h>
 
-#include "jsonize.h"
+#include "serialize.h"
 #include "SwOSCom.h"
 #include "SwOSHW.h"
 #include "SwOSNVS.h"
 
 class SwOSSwarm {
 protected:
-  uint16_t lastToken = rand();
   uint16_t readDelay = 25;
   bool     verbose = false;
   bool     initialized = false;
 
-  uint8_t  getIndex( FtSwarmSerialNumber_t serialNumber );               // return index of controller with this s/n or are free slot if not found
 	bool     splitID( char *id, uint8_t *index, char *io, size_t sizeIO);  // split identifier
-  uint16_t nextToken( bool rotateToken);
-  SwOSIO  *waitFor( char *alias, FtSwarmIOType_t ioType );
-  bool     startEvents( void );
+  SwOSIO  *waitFor( char *alias );
   void     startWifi( void );
 
-  // internal function to handle CMD_SWARMJOIN
-  void cmdJoin( SwOSCom *com, uint8_t source, uint8_t affected );
+  // replace controller in swarm list
+  void replaceCtrl( SwOSCom *com, uint8_t source, uint8_t affected );
 
-  // internal function to handle CMD_ACK
-  void cmdAck( SwOSCom *com, uint8_t source, uint8_t affected );
+  // process CMD_JOINMYSWARM
+  void cmdJoinMySwarm( SwOSCom *com, uint8_t source, uint8_t affected );
 
-  // internale function to handle CMD_SWARMLEAVE
-  void cmdLeave( SwOSCom *com, uint8_t source, uint8_t affected );
-
-  // send an ack package to destinationSN to inform about command cmd with error error 
-  void sendAck( FtSwarmSerialNumber_t destinationSN, SwOSCommand_t cmd, SwOSError_t error, uint16_t secret );
-
+  // Member to Kelda: I don't want to join your Swarm
+  void cmdJoinNAck( SwOSCom *com, uint8_t source, uint8_t affected );
   
+  // Member to Kelda: I want to join your Swarm
+  void cmdJoinAck( SwOSCom *com, uint8_t source, uint8_t affected );
+
+  // Kelda to Member: get out of my Swarm
+  void cmdRevokeFromSwarm( SwOSCom *com, uint8_t source, uint8_t affected );
+
 public:
-	int8_t   maxCtrl = -1;
+  uint8_t  sync = 0;
+  int8_t   maxCtrl = -1;
   SwOSCtrl *Kelda = NULL;
 	SwOSCtrl *Ctrl[MAXCTRL];
+  bool     wifiConnected = false;
 
   // constructor
   SwOSSwarm( ) { for ( uint8_t i=0; i<MAXCTRL; i++ ) { Ctrl[i] = NULL; } }; 
 
   // Start the swarm. If verbose is set, do some inormational console output
   FtSwarmSerialNumber_t begin( bool verbose );
+
+  // test on factoryReset
+  void testFactoryReset( void );
+
+  // factoryReset & reboot
+  void factoryReset( void );
 
   // Stop all motors within the swarm
   void halt( void );
@@ -68,16 +74,34 @@ public:
   void unsubscribe( void ); 
 
   // Get a controller in the swarm using his name/alias. Returns the controller's pointer or NULL if it doesn't exist.
-	void *getController(char *name);
+	SwOSCtrl* getController(char *name);
 
   // Get a controller in the swarm using his serial number. Returns the controller's pointer or NULL if it doesn't exist.
-  void *getController( FtSwarmSerialNumber_t SN );
+  SwOSCtrl* getController( FtSwarmSerialNumber_t SN );
 
-  // Get an IO in the swarm using controllers serial number, port and ioType. Returns the IO#s pointer or NULL if it doesn't exist.
-  virtual SwOSIO* getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmIOType_t ioType);
+  // return index of controller with this s/n or are free slot if not found
+  uint8_t  getIndex( FtSwarmSerialNumber_t serialNumber );
+
+  // Get an IO in the swarm using controllers serial number, port and ioType. Returns the IO's pointer or NULL if it doesn't exist.
+  virtual SwOSIO* getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType );
+
+  // Get an IO in the swarm using io's uid. Returns the IO's pointer or NULL if it doesn't exist.
+  virtual SwOSIO* getIO( SwOSIOUID uio ) { return getIO( uio.serialNumber, uio.port, uio.ioType ); };
+
+  // Get an IO in the swarm using controllers serial number, port and ioType. Returns the IO's alias name
+  virtual void getAlias( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType, char *alias );
+ 
+  // Get an IO in the swarm using controllers serial number, port and ioType. Returns the IO's alias name
+  virtual void getAliasOrName( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType, char *alias );
+
+  // Get an IO in the swarm using io's uid. Returns the IO's alias name
+  virtual void getAlias( SwOSIOUID uio, char *alias ) { getAlias( uio.serialNumber, uio.port, uio.ioType, alias ); };
+
+  // Get an IO in the swarm using io's uid. Returns the IO's alias name
+  virtual void getAliasOrName( SwOSIOUID uio, char *alias ) { getAliasOrName( uio.serialNumber, uio.port, uio.ioType, alias ); };
 
   // Get an IO in the swarm using his name/alias and ioType. Returns the IO#s pointer or NULL if it doesn't exist.
-  virtual SwOSIO* getIO( const char *name, FtSwarmIOType_t ioType );
+  virtual SwOSIO* getIO( const char *name, SwOSIOType_t ioType = SWOSIO_UNDEF );
 
   // search for offline or unconnected controllers and try to get them
   virtual void connect( void );
@@ -85,58 +109,55 @@ public:
   // get swarm's read delay
   uint16_t getReadDelay( void ) { return readDelay; };
 
-  // **** REST API ****
-	void jsonize( JSONize *json);                                                               // transfer my swarm to a JSON structure
-  void getToken( JSONize *json);                                                              // get a new token
-  uint16_t apiIsAuthorized( uint16_t token, bool rotateToken );                               // check, if it's a correct token
-  bool apiPeekIsAuthorized( uint16_t token );
-  uint16_t apiActorCmd( uint16_t token, char *id, int cmd, bool rotateToken );                // send an actor's command (from api)
-  uint16_t apiActorSpeed( uint16_t token, char *id, int speed, bool rotateToken );            // send an actor's speed (from api)
-	uint16_t apiLEDBrightness( uint16_t token, char *id, int brightness, bool rotateToken );    // send a LED command (from api)
-	uint16_t apiLEDColor( uint16_t token, char *id, int color, bool rotateToken);               // send a LED command (from api)
-  uint16_t apiServoOffset( uint16_t token, char *id, int offset, bool rotateToken );          // send a Servo command (from api)
-  uint16_t apiServoPosition( uint16_t token, char *id, int position, bool rotateToken);       // send a Servo command (from api)
-  uint16_t apiCAMStreaming( uint16_t token, char *id, int onOff, bool rotateToken );             // set CAM streaming on/off
-  uint16_t apiCAMFramesize( uint16_t token, char *id, int framesize, bool rotateToken );         // set CAM framzesize / resolution
-  uint16_t apiCAMQuality( uint16_t token, char *id, int quality, bool rotateToken );             // set CAM quality
-  uint16_t apiCAMBrightness( uint16_t token, char *id, int brightness, bool rotateToken );       // set CAM brightness
-  uint16_t apiCAMContrast( uint16_t token, char *id, int contrast, bool rotateToken );           // set CAM contrast
-  uint16_t apiCAMSaturation( uint16_t token, char *id, int saturation, bool rotateToken );       // set CAM saturation
-  uint16_t apiCAMSpecialEffect( uint16_t token, char *id, int specialEffect, bool rotateTokent ); // set CAM special effect
-  uint16_t apiCAMWbMode( uint16_t token, char *id, int wbMode, bool rotateToken );               // set CAM wbMode
-  uint16_t apiCAMHMirror( uint16_t token, char *id, int hMirror, bool rotateToken );             // set CAM H-Mirror
-  uint16_t apiCAMVFlip( uint16_t token, char *id, int vFlip, bool rotateToken );                 // set CAM V-Flip 
+  // **** API ****
+  size_t approxSerialize( SerialFormat_t format );
+	void serialize( Serialize *serialize );                                                        // transfer my swarm to a JSON structure
+  void serializeEvents( Serialize *serialize );
 
-  void setState( SwOSState_t state ); // visualizes controller's state
+  void setState( SwOSState_t state, const char *errorText = nullptr ); 
 
   // receiving data from other controllers
   void OnDataRecv( SwOSCom *buffer );
 
-  // void registerMe( void );                                                        // register myself in a swarm
+  // As a Kelda send CMD_JOINMYSWARM to a potential member
+  void joinMySwarm( MacAddr destinationMac, FtSwarmSerialNumber_t destinationSN ); 
   
-  // Introduce myself to a specific controller. 
-  void registerMe( MacAddr destinationMac, FtSwarmSerialNumber_t destinationSN );  
-  
-  // The local controller leaves the swarm.
-  SwOSError_t leaveSwarm( void );
-
-  // Kelda rejects/deletes a controller
-  SwOSError_t rejectController( FtSwarmSerialNumber_t serialNumber, bool force );
-
-  // create a new swarm using defaults. Call leaveSwarm before using it.
-  SwOSError_t createSwarm( void );
-
-  // create a new swarm. Call leaveSwarm before using it.
-  SwOSError_t createSwarm( char *name, uint16_t pin );
-
-  // invite a controller to join the swarm
-  SwOSError_t inviteToSwarm( FtSwarmSerialNumber_t serialNumber );
-
-  // I want to join an existing swarm
-  SwOSError_t joinSwarm( char *name, uint16_t pin );
-
   // **** some useful stuff ****
-  uint8_t members( void ); // # of members in swarm
+
+  // # of members in swarm
+  uint8_t members( void ); 
+  
+  // create a new swam based on nvs settings
+  void newSwarm( void );  
+  
+  // Test, if SN is part my my Swarm 
+  bool isMember( FtSwarmSerialNumber_t serialNumber );  
+  
+  // Test, if SN is online
+  bool isOnline( FtSwarmSerialNumber_t serialNumber );  
+  
+  // Test, if complete swarm is online
+  bool isOnline( void );  
+
+  // add Controller SN to the swarm
+  bool addController( FtSwarmSerialNumber_t serialNumber );    
+
+  // delete Controller SN
+  bool deleteController( FtSwarmSerialNumber_t serialNumber ); 
+
+  // delete an event
+  bool deleteEvent( SwOSNVSEvent *event );
+
+  // add an event
+  bool addEvent( SwOSNVSEvent *event );
+
+  // add all events
+  void addEvents( uint8_t config, FtSwarmSerialNumber_t sn = 0 );
+
+  // delete all events
+  void deleteEvents( void );
+
+  void save( FtSwarmNVSScope_t scope );
 
 };
 

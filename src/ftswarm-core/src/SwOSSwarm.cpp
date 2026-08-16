@@ -9,10 +9,15 @@
 
 #include "SwOS.h"
 
-#include <WiFi.h>
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+#include "esp_mac.h"
+#endif
+
 #include <esp_now.h>
-#include <esp_wifi.h>
-#include <ESPmDNS.h>
+#include "esp_wifi.h"
+#include "esp_event.h"
+#include "esp_netif.h"
+#include "mdns.h"
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -25,13 +30,17 @@
 #include "SwOSSwarm.h"
 #include "SwOSWeb.h"
 #include "easyKey.h"
+#include "SwOSLog.h"
+#include "SwOSHW/SwOSHWLocal.h"
 
 // There can only be once!
 SwOSSwarm myOSSwarm;
 
-#include <debug.h>
+// #define DEBUG_COMMUNICATION_SWARM
+// #define DEBUG_READTASK
 
-#define CONNECTDELAY 2500
+// time to wait in Connect-Thread
+#define CONNECTDELAY 500
 
 /***************************************************
  *
@@ -51,11 +60,9 @@ static void recvTask( void *parameter ) {
     // new data available?
     if ( xQueueReceive( myOSNetwork.recvNotification, &event, ESPNOW_MAXDELAY ) == pdTRUE ) {
 
-      #ifdef DEBUG_COMMUNICATION
-        if ( (  event.data.cmd != CMD_STATE ) && ( event.data.cmd != CMD_ALIAS ) ) {
-          printf("\n\n-----------------------------\nmy friend sends some data...\n" );
-          event.macAddr.print();
-          printf("secret %04X cmd %d valid %d\n", event.data.secret, event.data.cmd, event.isValid() );
+      #ifdef DEBUG_COMMUNICATION_SWARM
+        if ( event.data.cmd != CMD_STATE ) {
+          printf("\n\n-----------------------------\nmy friend sends some data...\n" ); 
           event.print();
         }
       #endif
@@ -80,7 +87,10 @@ static void readTask( void *parameter ) {
     myOSSwarm.Ctrl[0]->lock();
     
     // read sensors
-    myOSSwarm.Ctrl[0]->read();
+    myOSSwarm.Ctrl[0]->operate();
+    #if FTSWARM_HAL_OLEDS > 0
+    screenManager.operate();
+    #endif
 
     // Do I know a Kelda and I am not the Kelda, so I need to send my state
     if ( ( myOSSwarm.Kelda ) && ( myOSSwarm.Kelda != myOSSwarm.Ctrl[0] ) ) {
@@ -129,18 +139,38 @@ static void connectTask( void *Parameter ) {
  *
  ***************************************************/
 
+// Start status: OFFLINE
+// if OFFLINE or longer not seen -> CONNECT_PHASE1, send a connect-request
+// if Member denies by sending NAK -> ERROR
+// if Member sends GOTYOU -> CONNECT_PHASE2
+// if Member sends ALIASe -> ONLINE
+
 void SwOSSwarm::connect( void ) {
 
-  if (!nvs.IAmKelda) return;
+  // if I'm not the Kelda, just check if Kelda is online
+  if (!Ctrl[0]->IAmKelda) {
+    if ( ( Kelda ) && ( Kelda->networkAge() > 1000L ) ) Kelda->setComState( COMSTATE_UNDEFINED );
+    return;
+  }
 
   for (uint8_t i=1; i<=maxCtrl; i++) {
 
-    if ( ( Ctrl[i] ) && ( Ctrl[i]->networkAge() > 1000L ) ) Ctrl[i]->comState = ASKFORDETAILS;
+    if ( Ctrl[i] ) { 
 
-    if ( ( Ctrl[i] ) && ( Ctrl[i]->comState == ASKFORDETAILS ) ) {
+      // if controller was not seen for a longer time or is new: try to reconnect
+      if ( ( Ctrl[i]->getComState() == COMSTATE_UNDEFINED ) ||
+           ( ( Ctrl[i]->networkAge() > 1000L ) && ( Ctrl[i]->getComState() != COMSTATE_ERROR ) ) ) {
       
-      registerMe( MacAddr( broadcast ), Ctrl[i]->serialNumber );
-      vTaskDelay( 75 / portTICK_PERIOD_MS );
+        Ctrl[i]->setComState( COMSTATE_CONNECT_PHASE1 );
+        joinMySwarm( MacAddr( broadcast ), Ctrl[i]->serialNumber );
+
+      // if it's online send him an hart beat
+      } else {
+        
+        SwOSCom hartBeat( Ctrl[i]->macAddr, Ctrl[i]->serialNumber, CMD_HARTBEAT );
+        hartBeat.send();
+
+      }
 
     }
 
@@ -148,30 +178,18 @@ void SwOSSwarm::connect( void ) {
 
 }
 
-uint16_t SwOSSwarm::nextToken( bool rotateToken ) {
-
-  uint32_t pin      = nvs.swarmPIN;
-  uint16_t newToken = ( 2 + ( lastToken ^ pin ) ) & 0xFFFF;
-
-  if ( rotateToken ) lastToken = newToken;
-
-  return newToken;
-  
-}
-
-SwOSIO *SwOSSwarm::waitFor( char *alias, FtSwarmIOType_t ioType ) {
+SwOSIO *SwOSSwarm::waitFor( char *alias ) {
 
   SwOSIO *me = NULL;
   bool   firstTry = true;
 
   while (!me) {
 
-    me = getIO( alias, ioType );
+    me = getIO( alias );
 
     // no success, wait 25 ms
     if ( (!me) && ( firstTry ) ) {
-      printf( "Waiting on device %s. Press anykey to enter setup and change remote control settings.\n", alias );
-      setState( WAITING );
+      SWARM_LOG_WAIT( TRANSLATE( "Waiting for device %s. Press anykey to enter setup and change remote control settings.\n", "Warte auf IO %s. Drücken Sie eine beliebige Taste, um das Setup zu starten.\n" ), alias );
       firstTry = false;
     }
     
@@ -186,263 +204,358 @@ SwOSIO *SwOSSwarm::waitFor( char *alias, FtSwarmIOType_t ioType ) {
   
 }
 
-bool SwOSSwarm::startEvents( void ) {
-
-  SwOSIO *sensor;
-  SwOSIO *actor;
-  NVSEvent *event;
-
-  // test if I'm not a Kelda, I won't start the events
-  if ( !Ctrl[0]->IAmKelda ) return true;
-
-  for (uint8_t i=0; i<MAXNVSEVENT; i++ ) {
-
-    event = &nvs.eventList.event[i];
-    
-    if ( ( event->sensor[0] != '\0' ) && ( event->actor[0] != '\0' ) ) {
-
-      // get IOs and stop on error
-      sensor = waitFor( event->sensor, FTSWARM_UNDEF );  
-      if (!sensor) return false;
-      if (!sensor->isSensor()) return false;
-      
-      actor  = waitFor( event->actor,  FTSWARM_UNDEF );  
-      if (!actor)  return false;
-      if (!actor->isActor()) return false;
-
-      switch ( sensor->getIOType() ) {
-    
-        case FTSWARM_INPUT: 
-          static_cast<SwOSInput *>(sensor)->registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter ); 
-          break;
-    
-        case FTSWARM_DIGITALINPUT: 
-          static_cast<SwOSDigitalInput *>(sensor)->registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter ); 
-          break;
-    
-        case FTSWARM_ANALOGINPUT: 
-          static_cast<SwOSAnalogInput *>(sensor)->registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter ); 
-          break;
-    
-        case FTSWARM_BUTTON: 
-          static_cast<SwOSButton *>(sensor)->registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter ); 
-          break;
-    
-        case FTSWARM_JOYSTICK: 
-          if ( event->LR == 1 ) static_cast<SwOSJoystick *>(sensor)->triggerLR.registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter );
-          else                  static_cast<SwOSJoystick *>(sensor)->triggerFB.registerEvent( event->triggerEvent, actor, event->usePortValue, event->parameter );
-          break;
-        
-      }
-    
-    }
-    
-  }
-
-  return true;
-
-}
-
 void SwOSSwarm::startWifi( void ) {
 
-  // no wifi config?
-  if (nvs.wifiSSID[0]=='\0') {
-    if (verbose) printf("Invalid wifi configuration found. Starting AP mode.\n");
-    strcpy( nvs.wifiSSID, Ctrl[0]->getHostname() );
-    nvs.wifiMode = wifiAP;
+  // 1. Initialize TCP/IP stack
+  ESP_ERROR_CHECK( esp_netif_init() );
+
+  // 2. Create default event loop if not already running
+  if ( esp_event_loop_create_default() != ESP_OK ) {
+  // Handle error or assume it's already created
   }
 
-  // Start wifi
-  setState( STARTWIFI  );
+  // 3. Create Netif instances for Station & AP
+  esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
+  esp_netif_t *ap_netif  = esp_netif_create_default_wifi_ap();
 
-  // best practise to throw away anything during a soft reboot
-  WiFi.disconnect();
+  esp_netif_set_hostname(sta_netif, Ctrl[0]->getHostname() );
+  esp_netif_set_hostname(ap_netif,  Ctrl[0]->getHostname() );
 
-  // some common stuff  
-  WiFi.useStaticBuffers(true); 
-  WiFi.mode(WIFI_AP_STA);
+  // 4. Init WiFi with default config
+  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+  ESP_ERROR_CHECK( esp_wifi_init( &cfg ) );
 
-  if ( ( nvs.wifiMode == wifiAP ) || Ctrl[0]->maintenanceMode() ) {
-    // work as AP in standard or maintennace cable was set
-    if (verbose) printf("Create own SSID: %s\n", Ctrl[0]->getHostname());
+  ESP_ERROR_CHECK( esp_wifi_set_mode( (nvs.wifi.mode == wifiAP) ? WIFI_MODE_AP : WIFI_MODE_STA ) );
 
+  // 5. Set Storage to RAM (to avoid flash wear during frequent reboots)
+  ESP_ERROR_CHECK( esp_wifi_set_storage( WIFI_STORAGE_RAM ) );
+
+  // 6. start wifi
+  if ( nvs.wifi.mode == wifiAP ) {
+    // Provide network via SoftAP
+
+    // setup soft ap config
+    wifi_config_t ap_config = {};
+    strlcpy( (char *) ap_config.ap.ssid,     nvs.wifi.SSID, sizeof( ap_config.ap.ssid ) );
+    strlcpy( (char *) ap_config.ap.password, nvs.wifi.Password,  sizeof( ap_config.ap.password ) );
+    ap_config.ap.channel = nvs.wifi.channel;
+    ap_config.ap.max_connection = MAX_AP_CONNECTIONS;
+    ap_config.ap.authmode = ( strlen( nvs.wifi.Password ) == 0) ? WIFI_AUTH_OPEN : WIFI_AUTH_WPA2_PSK;
+
+    // set config
+    ESP_ERROR_CHECK( esp_wifi_set_config( WIFI_IF_AP, &ap_config ) );
+
+    if (verbose) printf("Create own SSID: %s\n", nvs.wifi.SSID );
+    
+    wifiHandler = new WifiHandler();
+
+    ESP_ERROR_CHECK( esp_wifi_start() );
     esp_wifi_set_ps(WIFI_PS_NONE);
-    WiFi.softAPsetHostname(Ctrl[0]->getHostname());
-    WiFi.softAP( nvs.wifiSSID, "", nvs.channel); // passphrase not allowed on ESP32WROOM
+    wifiConnected = true;
     
   } else {
-    // normal operation
-    if (verbose) printf("Attempting to connect to SSID: %s", nvs.wifiSSID);
+    // use infrastructure as client
 
-    WiFi.setHostname(Ctrl[0]->getHostname() );
-    WiFi.begin(nvs.wifiSSID, nvs.wifiPwd);
-
-    bool keyBreak = false;
+    // setup config
+    wifi_config_t sta_config = {};
+    strlcpy( (char *) sta_config.sta.ssid,     nvs.wifi.SSID, sizeof( sta_config.sta.ssid ) );
+    strlcpy( (char *) sta_config.sta.password, nvs.wifi.Password,  sizeof( sta_config.sta.password ) );
+        
+    // Disable PMF (Protected Management Frames) for better compatibility
+    sta_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
     
-    // try 10 seconds to join my wifi
-    for (uint8_t i=0; i<20; i++ ) {
+    // set config
+    ESP_ERROR_CHECK( esp_wifi_set_config( WIFI_IF_STA, &sta_config ) );
 
-      // connected?
-      if (WiFi.status() == WL_CONNECTED) break;
+    if (verbose) printf( TRANSLATE( "Connecting to SSID: %s ", "Verbinde mit SSID: %s " ), nvs.wifi.SSID );
 
-      // any key ?
-      keyBreak = anyKey();
-      if ( keyBreak ) break;
+    wifiHandler = new WifiHandler();
+    
+    // Start WiFi
+    ESP_ERROR_CHECK( esp_wifi_start() );
+    esp_wifi_set_ps(WIFI_PS_NONE);
 
-      // user entertainment
-      if (verbose) { 
-        printf("."); 
-        fflush(stdout);
+    esp_netif_set_hostname(sta_netif, Ctrl[0]->getHostname() );
+  
+    // connect
+    esp_wifi_connect();
+        
+    // Manual polling loop (simulating your 10s wait)
+    for (int i = 0; i < 20; i++) {
+      
+      esp_netif_ip_info_t ip_info;
+      if (esp_netif_get_ip_info( sta_netif, &ip_info ) == ESP_OK && ip_info.ip.addr != 0) {
+        wifiConnected = true;
+        if ( verbose ) printf(TRANSLATE( " Connected!\n", " Verbunden!\n" ) );
+        break;
       }
 
-      // wait
-      delay(500);
+      // user interrupt?
+      if ( anyKey() ) { 
+        printf( TRANSLATE( "\nStarting setup..\n", "\nStarte Setup..\n" ) );
+        mainMenu();
+        ESP.restart();
+      }
       
-    }
+      if (verbose) { printf("."); flushStdIO(); }
+      
+      vTaskDelay(pdMS_TO_TICKS(500));
 
-    // any key?
-    if ( keyBreak ) {
-      printf( "\nStarting setup..\n" );
-      mainMenu();
-      ESP.restart();
     }
 
     // connection failed?
-    if (WiFi.status() != WL_CONNECTED) {
-      printf( "ERROR: Can't connect to SSID %s\n\nstarting setup...\n", nvs.wifiSSID );
-      setState( ERROR );
+    if ( !wifiConnected ) {
+      
+      #if FTSWARM_HAL_OLEDS > 0
+        // start local operate/read task & show wifi dialog
+        xTaskCreatePinnedToCore( readTask,    "ReadTask",    20000, NULL, 1, NULL, ARDUINO_EVENT_RUNNING_CORE );
+        screenManager.wifiMenu( true );
+      #endif
+
+      SWARM_LOG_ERROR( TRANSLATE( "Can't connect to SSID %s", "Kann SSID %s nicht verbinden" ), nvs.wifi.SSID );
+
+      printf( TRANSLATE( "\nStarting setup..\n", "\nStarte Setup..\n" ) );
       mainMenu();
       ESP.restart();
     }
 
-    // register hostname
-    MDNS.begin(Ctrl[0]->getHostname());
-
-    esp_wifi_set_ps(WIFI_PS_NONE);
-    
-    if (verbose) printf("connected!\n");
   }
 
-  // set mac addr of local controller
+  // 7. MDNS
+  esp_err_t err = mdns_init();
+
+  if (err != ESP_OK) {
+    SWARM_LOG_ERROR( TRANSLATE( "MDNS init failed: %s", "MDNS Initialisierung fehlgeschlagen: %s" ), err );
+  } else {
+    ESP_ERROR_CHECK( mdns_hostname_set( Ctrl[0]->getHostname() ) );
+    mdns_service_add( nullptr, "_http", "_tcp", 80, nullptr, 0 );
+  }
+
+  // 8. MAC
   uint8_t mac[ESP_NOW_ETH_ALEN];
-  WiFi.macAddress( mac );
+  esp_read_mac(mac, ESP_MAC_WIFI_STA);
   Ctrl[0]->macAddr.set( mac );
 
-  if (verbose) {
-    if ( nvs.wifiMode == wifiAP )
-      printf("hostname: %s\nip-address: %d.%d.%d.%d\n", Ctrl[0]->getHostname(), WiFi.softAPIP()[0], WiFi.softAPIP()[1], WiFi.softAPIP()[2], WiFi.softAPIP()[3]);
-    else
-      printf("hostname: %s\nip-address: %d.%d.%d.%d\n", Ctrl[0]->getHostname(), WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
+  // 9. some pretty print
+  if ( verbose ) {
+
+    esp_netif_ip_info_t ip_info;
+
+    esp_netif_t* netif;
+    if (nvs.wifi.mode == wifiAP) netif = ap_netif;
+    else                         netif = sta_netif;
+
+    if ( esp_netif_get_ip_info( netif, &ip_info ) == ESP_OK ) 
+      SWARM_LOG_INFO( TRANSLATE( "hostname: %s ip-address: %d.%d.%d.%d MAC: %02X:%02X:%02X:%02X:%02X:%02X", "Hostname: %s IP-Adresse: %d.%d.%d.%d MAC: %02X:%02X:%02X:%02X:%02X:%02X" ), 
+                      Ctrl[0]->getHostname(), 
+                      IP2STR( &ip_info.ip ),
+                      mac[0], mac[1], mac[2], mac[3], mac[4], mac[5] );
+
   }
 
 }
 
 FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
+  Serial.begin(115200);
+
   if (initialized) return Ctrl[0]->serialNumber;
+
+  // redirect IO to feed the web console
+  redirectStdIO();
 
   this->verbose = verbose;
 
   printf("\n\nftSwarmOS " ); 
   printf(SWOSVERSION);
-  printf("\n\n(C) Christian Bergschneider & Stefan Fuss\n\nPress any key to enter bios settings.\n");
+  printf(TRANSLATE( "\n\n(C) Christian Bergschneider & Stefan Fuss\n\nPress any key to enter bios settings.\n", "\n\n(C) Christian Bergschneider & Stefan Fuss\n\nDrücken Sie eine Taste, um das Setup zu starten.\n" ));
 
+  /*
   // set watchdog to 30s
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+  // New API for ESP-IDF v5.x / Arduino Core 3.x
+  esp_task_wdt_config_t wdt_config = {
+    .timeout_ms = 30000,          // 30 seconds converted to milliseconds
+    .idle_core_mask = 0,          // Automatically monitor idle tasks on all cores
+    .trigger_panic = false        // Equivalent to your old 'false' parameter
+  };
+  esp_task_wdt_init(&wdt_config);
+#else
+  // Old API for ESP-IDF v4.x / Arduino Core 2.x
   esp_task_wdt_init(30, false);
+#endif
+*/
+  esp_task_wdt_deinit();
   
   // initialize random
   srand( time( NULL ) );
 
   // initialize nvs
   nvs.begin();
-  if ( ( nvs.IAmKelda ) && ( this->verbose ) ) { printf( "I am KELDA!\n"); }
 
-	// create local controller
-	maxCtrl++;
-  switch (nvs.controllerType) {
-  case FTSWARM:         Ctrl[maxCtrl] = new SwOSSwarmJST( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda, nvs.RGBLeds, nvs.extensionPort );
-                        break;
-	case FTSWARMCONTROL:  Ctrl[maxCtrl] = new SwOSSwarmControl( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda, nvs.joyZero, nvs.displayType );
-                        break;
-	case FTSWARMCAM:      Ctrl[maxCtrl] = new SwOSSwarmCAM( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda );
-                        break;
-	case FTSWARMDUINO:    Ctrl[maxCtrl] = new SwOSSwarmDuino( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda );
-                        break;
-	case FTSWARMPWRDRIVE: Ctrl[maxCtrl] = new SwOSSwarmPwrDrive( nvs.serialNumber, noMac, true, nvs.CPU, nvs.IAmKelda );
-                        break;
-  default:              // wrong setup
-                        nvs.initialSetup();
-                        break;
+  // Who I am?
+  if (this->verbose) {
+    printf( TRANSLATE( "Boot %s (SN:%d).\n", "Starte %s (SN:%d).\n" ), nvs.swarm.name, nvs.serialNumber );
+    if ( nvs.swarm.IAmKelda )  { printf( TRANSLATE( "I am KELDA!\n", "Ich bin KELDA!\n" ) ); }
+
+    // PSRAM
+    uint32_t totalPsram = ESP.getPsramSize();
+    printf( "PSRAM: %u Bytes (%.2f MB)\n", totalPsram, totalPsram / 1024.0 / 1024.0);
+
+    // cores
+    printf( TRANSLATE( "User space is running on core #%d.\nFirmware is running on core #%d.\n", "Programm läuft auf Kern #%d.\nFirmware läuft auf Kern #%d.\n" ), ARDUINO_RUNNING_CORE, ARDUINO_EVENT_RUNNING_CORE);
   }
-  Ctrl[0]->comState = UP;
+
+  SwOSCtrlConfig_t localCtrlConfig = {
+    .CPU           = nvs.CPU,
+    .IAmKelda      = nvs.swarm.IAmKelda,
+    .extensionPort = nvs.extensionPort.mode,
+    .IOs           = 0,
+    .pixels        = nvs.pixels,
+    .gyro          = nvs.extensionPort.gyro
+  };
+
+  // initial setup?
+  if (nvs.CPU >= FTSWARMMAXVERSION ) nvs.initialSetup();
+
+  maxCtrl = 0;
+  Ctrl[0] = new SwOSCtrl( nvs.serialNumber, noMac, true, localCtrlConfig );
+  Ctrl[0]->setComState ( COMSTATE_ONLINE );
+
+  SwOSCtrlConfig_t noCtrlConfig;
+  bzero( &noCtrlConfig, sizeof(noCtrlConfig) );
+  noCtrlConfig.CPU      = FTSWARM_NOVERSION;
 
   // initialize all swarm members from nvs list
   for (uint8_t i=0; i<MAXCTRL; i++) {
     
-    if ( nvs.swarmMember[i] ) {
+    if ( nvs.swarm.member[i] ) {
       maxCtrl++;
-      Ctrl[maxCtrl] = new SwOSCtrl( nvs.swarmMember[i],  MacAddr( broadcast ), false, FTSWARM_NOVERSION, false, FTSWARM_EXT_OFF );
-      Ctrl[maxCtrl]->comState = ASKFORDETAILS;
+      Ctrl[maxCtrl] = new SwOSCtrl( nvs.swarm.member[i],  MacAddr( broadcast ), false, noCtrlConfig );
     }
 
   }
 
   // set Kelda link if i'm the Kelda
-  if ( nvs.IAmKelda ) Kelda = Ctrl[0];
+  if ( nvs.swarm.IAmKelda ) Kelda = Ctrl[0];
 
-  // Who I am?
-  printf("Boot %s (SN:%d).\n", Ctrl[0]->getHostname(), Ctrl[0]->serialNumber );
+  // check on nvs version upgrades
+  if ( nvs.upgrade() ) myOSSwarm.Ctrl[0]->saveToNVS( );
 
-  // Open NVS again & load alias names
-  nvs_handle_t my_handle;
-  ESP_ERROR_CHECK( nvs_open("ftSwarm", NVS_READWRITE, &my_handle) );
-  myOSSwarm.Ctrl[0]->loadAliasFromNVS( my_handle );
+  // factory reset cycle?
+  if ( nvs.factoryReset ) {
+
+    if (verbose) printf( TRANSLATE( "finalizing factoryReset\n", "Setze auf Werkseinstellung zurück.\n" ) );
+
+    // reset flag, don't load IO settings and save
+    nvs.factoryReset = false;
+    myOSSwarm.Ctrl[0]->saveToNVS( );
+    nvs.save( FTSWARM_NVSSCOPE_FACTORYRESET );
+
+  } else {
+
+    // Open NVS again & load alias names
+    myOSSwarm.Ctrl[0]->loadFromNVS( );
+
+  }
 
   // now I can visualize my state
   setState( BOOTING );
-
+  
   // wifi
-  if ( nvs.wifiMode != wifiOFF ) startWifi( );
+  if ( nvs.wifi.mode != wifiOFF ) startWifi( );
 
   // Init Communication
-  if (!myOSNetwork.begin( nvs.swarmSecret, nvs.swarmPIN, nvs.swarmCommunication )) {
-    if (verbose) printf("Error initializing swarm communication.\n");
-    setState( ERROR );
-    return 0;
-  }
+  if (!myOSNetwork.begin( nvs.swarm.secret, nvs.swarm.pin, nvs.swarm.communication )) SWARM_LOG_FATAL("Error initializing swarm communication.");
 
   // start the tasks
-  xTaskCreatePinnedToCore( recvTask,    "RecvTask",    10000, NULL, 1, NULL, 0 );
-  xTaskCreatePinnedToCore( readTask,    "ReadTask",    20000, NULL, 1, NULL, 0 );
-  xTaskCreatePinnedToCore( connectTask, "connectTask", 10000, NULL, 1, NULL, 0 );
+  xTaskCreatePinnedToCore( recvTask,    "RecvTask",    10000, NULL, 1, NULL, ARDUINO_EVENT_RUNNING_CORE );
+  xTaskCreatePinnedToCore( readTask,    "ReadTask",    20000, NULL, 1, NULL, ARDUINO_EVENT_RUNNING_CORE );
+  xTaskCreatePinnedToCore( connectTask, "connectTask", 10000, NULL, 1, NULL, ARDUINO_EVENT_RUNNING_CORE );
 
   // start web server
-  if ( ( nvs.webUI ) && ( nvs.wifiMode != wifiOFF ) ) SwOSStartWebServer();
+  if ( ( nvs.wifi.webUI ) && ( nvs.wifi.mode != wifiOFF ) ) SwOSStartWebServer();
 
   // firmware events?
-  if ( !startEvents( ) ) {
-      printf( "\nStarting setup..\n" );
-      mainMenu();
-      ESP.restart();
-    }
+  addEvents( nvs.events.activeConfig, myOSSwarm.Ctrl[0]->serialNumber );
 
-  delay(1000);
-  setState( RUNNING );
+  if ( nvs.wifi.mode == wifiAP ) {
+    if ( verbose )           SWARM_LOG_INFO( TRANSLATE( "Wifi ap mode is limited to %d network clients.", "WLAN im AP-Modus ist auf %d Netzwerk-Clients begrenzt." ), MAX_AP_CONNECTIONS );
+    if ( nvs.swarm.IAmKelda) SWARM_LOG_WARN( TRANSLATE( "A swarm using wifi ap mode provided by the Kelda isn't stable. Best practice is to use your local wifi or to provide the AP via a swarm member.", "Der AP-Modus auf der Kelda ist nicht evtl. stabil. Verwenden Sie einen anderen Controller um den AP bereitzustellen." ));
 
-  if (verbose) printf("Start normal operation.\n");
-
-  if ( ( nvs.IAmKelda) && ( nvs.wifiMode == wifiAP ) ) 
-    printf("\n\n*** WARNING ***:\nA swarm using wifi ap mode provided by the Kelda isn't stable.\nBest practice is to use your local wifi or to provide the AP via a swarm member.\n\n");
+  }
 
   initialized = true;
+
+  testFactoryReset();
+ 
+  setState( RUNNING );
+
   return Ctrl[0]->serialNumber;
+
+}
+
+void SwOSSwarm::testFactoryReset( void ) {
+
+ // is a factory reset button defined?
+  SwOSDigitalInput *reset = (SwOSDigitalInput *) Ctrl[0]->getIO( FACTORYSETTINGS );
+  if (!reset) return;
+
+  // wait to operate my controller and get button values
+  delay(50);
+
+  // button pressed?
+  if (!reset->getValueI32()) return;
+
+  // Controller has RGB-LEDs
+  #if FTSWARM_HAL_PIXELS > 0 
+  // reset toggle state
+  reset->getToggle();
+  
+  // visualize potential factory reset
+  Ctrl[0]->setState( FACTORY1 );
+
+  // now wait max. 2s to release button
+  bool toggled = false;
+  for (uint8_t i=0; i<20; i++ ) {
+    if (reset->getToggle() == FTSWARM_TOGGLEDOWN ) { toggled = true; break; }
+    delay(100);
+  }
+
+  if (toggled) {
+
+    // visualize going to reset
+    for ( uint8_t i=0; i<4; i++ ) {
+      setState( FACTORY2 );
+      delay(250 );
+      setState( FACTORY1 );
+      delay(250 );
+    }          
+
+    factoryReset();
+
+  }
+  #endif
+  
+}
+
+void SwOSSwarm::factoryReset( void ) {
+    
+  // halt all motors
+  halt();
+
+  // NVS - local controller & swarm settings
+  nvs.reset( true );
+
+  // restart
+  nvs.saveAndRestart( FTSWARM_NVSSCOPE_FACTORYRESET );
 
 }
 
 void SwOSSwarm::halt( void ) {
 
   for (uint8_t i=0; i<=maxCtrl; i++)
-    Ctrl[i]->halt();
+    if (Ctrl[i]) Ctrl[i]->halt();
 }
 
 void SwOSSwarm::unsubscribe( void ) {
@@ -476,127 +589,190 @@ uint8_t SwOSSwarm::getIndex( FtSwarmSerialNumber_t serialNumber ) {
   
  }
 
-SwOSIO* SwOSSwarm::getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, FtSwarmIOType_t ioType ) {
+SwOSIO* SwOSSwarm::getIO( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType ) {
 
-  SwOSIO *IO = NULL;
-  
   // check on valid controller
-  uint8_t i = getIndex( serialNumber );
+  SwOSCtrl *ctrl = Ctrl[ getIndex( serialNumber ) ];
+  if (!ctrl) return NULL;
 
-  if ( Ctrl[i] ) IO = Ctrl[i]->getIO( ioType, port );
+  // get an io candidate
+  SwOSIO *io = ctrl->getIO( ioType, port );
+  if (!io) return NULL;
 
-  if ( IO ) {
+  // if no special type is required, take it as it is
+  if ( ioType == SWOSIO_UNDEF ) return io;
 
-    // everything is fine...
-    if ( ( ioType == FTSWARM_UNDEF ) || ( IO->getIOType() == ioType ) ) return IO;
+  // 100% match?
+  if ( ( io->getIOType() == ioType ) && ( io->getPort() == port ) ) return io;
 
-    // test, if the controller could change the IOType
-    if ( IO->isInUse() ) {
-      printf("ERROR: Can't change IO Type. %s.%s is in use.\n", Ctrl[i]->getName(), IO->getName() );
-      setState( ERROR );
-    }
+  // compatible ioType?
+  uint8_t index = ctrl->getIndex( io );
+  if (!ctrl->changeIOType( index, ioType, io->getFlags() ) ) return NULL;
 
-    if ( Ctrl[i]->changeIOType( port, IO->getIOType(), ioType ) ) return Ctrl[i]->getIO( ioType, port );
+  // return corrected io
+  return ctrl->io[index];
 
-  }
-
-  return IO;
-  
 }
 
-SwOSIO* SwOSSwarm::getIO( const char *name, FtSwarmIOType_t ioType ) {
+void SwOSSwarm::getAlias( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType, char *alias ) {
 
-  SwOSIO *IO;
+  SwOSIO* io=getIO( serialNumber, port, ioType );
+  if (io) 
+    strcpy( alias, io->getAlias() );
+  else
+    // offline?
+    strcpy( alias, "???" );
 
-  for ( uint8_t i=0; i<=maxCtrl; i++ ) {
+}
 
-    if ( Ctrl[i] ) {
+void SwOSSwarm::getAliasOrName( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port, SwOSIOType_t ioType, char *alias ) {
 
-      IO = Ctrl[i]->getIO( name );
-      
-      if ( IO ) {
+  SwOSIO* io=getIO( serialNumber, port, ioType );
+  if (io) 
+    strcpy( alias, io->getAliasOrName() );
+  else
+    // offline?
+    strcpy( alias, "???" );
 
-        // everything is fine...
-        if ( ( ioType == FTSWARM_UNDEF ) || ( IO->getIOType() == ioType ) ) return IO;
+}
 
-        // test, if the controller could change the IOType
-        if ( IO->isInUse() ) {
-          printf("ERROR: Can't change IO Type. %s.%s is in use.\n", Ctrl[i]->getName(), IO->getName() );
-          setState( ERROR );
-          while (1) delay(50);
-        }
+SwOSIO* SwOSSwarm::getIO( const char *name, SwOSIOType_t ioType ) {
 
-        if ( Ctrl[i]->changeIOType( IO->getPort(), IO->getIOType(), ioType ) ) return Ctrl[i]->getIO( name );
-        
-        // not possible at all
-        return NULL;
-        
-      }
+  SwOSIO   *io   = NULL;
+  SwOSCtrl *ctrl = NULL;
+
+  char ctrlName[MAXIDENTIFIER];
+  strcpy( ctrlName, name );
+  char *ioName = strchr( ctrlName, '.' );
+
+  if ( ioName ) {
+
+    // via controller.ioname
+    ioName[0] = '\0';
+    ioName++;
+
+    SwOSCtrl* ctrl = myOSSwarm.getController( ctrlName );
+    if ( ctrl ) io = ctrl->getIO( ioName );
+
+  } else {
+
+    // via alias
+ 
+    // list all controllers and check for the name
+    for ( uint8_t i=0; i<=maxCtrl; i++ ) {
+
+      // check next controller
+      ctrl = Ctrl[i];
+      if ( ctrl ) io = ctrl->getIO( name );
+
+      // io found
+      if (io) break;
 
     }
-    
+
   }
 
+  // nothing found?
+  if (!io) return NULL;
+
+  // if no special type is required, take it as it is
+  if ( ioType == SWOSIO_UNDEF ) return io;
+
+  // 100% match?
+  if ( io->getIOType() == ioType ) return io;
+
+  // compatible ioType?
+  uint8_t index = ctrl->getIndex( io );
+  if (!ctrl->changeIOType( index, ioType, io->getFlags() ) ) return NULL;
+
+  // return corrected io
+  return ctrl->io[index];
+    
   // nothing found
   return NULL;
   
 }
 
-void *SwOSSwarm::getController(char *name) {
+SwOSCtrl* SwOSSwarm::getController(char *name) {
 
 	// search controller
 	for (uint8_t i=0;i<=maxCtrl;i++) {
 		if ( ( Ctrl[i] ) && ( Ctrl[i]->equals(name) ) ) {
-			return (void *) Ctrl[i];
+			return Ctrl[i];
 		}
 	}
 
 	// no hit
-	return NULL;
+	return nullptr;
 
 }
 
-void *SwOSSwarm::getController( FtSwarmSerialNumber_t SN ) {
+SwOSCtrl* SwOSSwarm::getController( FtSwarmSerialNumber_t SN ) {
 
 	// search controller
 	for (uint8_t i=0;i<=maxCtrl;i++) {
 		if ( ( Ctrl[i] ) && ( Ctrl[i]->serialNumber == SN ) ) {
-			return (void *) Ctrl[i];
+			return Ctrl[i];
 		}
 	}
 
 	// no hit
-	return NULL;
+	return nullptr;
 
 }
 
+size_t SwOSSwarm::approxSerialize( SerialFormat_t format ) {
 
-void SwOSSwarm::jsonize( JSONize *json) {
+  size_t size = 0;
 
-	json->startArray( NULL );
+  for (uint8_t i=0; i<=maxCtrl;i++) {
+
+    if ( Ctrl[i] ) size += Ctrl[i]->IOs;
+  
+  }
+
+  if ( format == SERIALIZE_JSON) size = size * ( MAXIDENTIFIER + 100 );
+  else                           size = size * ( MAXIDENTIFIER + 30 );
+
+  return size;
+
+}
+
+void SwOSSwarm::serializeEvents( Serialize *serialize ) {
+
+  serialize->startObject( );
+  serialize->item( SERIALIZE_LITERAL_ACTIVECONFIG, nvs.events.activeConfig );
+  serialize->startArray( SERIALIZE_LITERAL_EVENTS );
+  for (uint8_t i=0; i<=maxCtrl; i++ ) {
+    if ( Ctrl ) Ctrl[i]->serializeEvents( serialize );
+  }
+  serialize->endArray();
+  serialize->endObject();                                  
+
+}
+
+void SwOSSwarm::serialize( Serialize *serialize) {
+
+  serialize->startObject( );
+  serialize->item( SERIALIZE_LITERAL_NAME, nvs.swarm.name );
+  serialize->item( SERIALIZE_LITERAL_KELDA, Ctrl[0]->IAmKelda );
+  serialize->item( SERIALIZE_LITERAL_SYNC , sync++ );
+
+	serialize->startArray( SERIALIZE_LITERAL_CTRLS );
 
 	for (uint8_t i=0; i<=maxCtrl;i++) {
 
     // send data
-    if ( Ctrl[i] ) { Ctrl[i]->lock(); Ctrl[i]->jsonize( json, i ); Ctrl[i]->unlock(); }
+    if ( Ctrl[i] ) { Ctrl[i]->lock(); Ctrl[i]->serialize( serialize ); Ctrl[i]->unlock(); }
 
     // visualize others only if I'm a Kelda
     if ( !Ctrl[0]->IAmKelda ) break;
     
 	}
 
-	json->endArray();
+	serialize->endArray();
+  serialize->endObject();
 
-}
-
-void SwOSSwarm::getToken( JSONize *json) {
-
-  lastToken = rand();
-
-  json->startObject();
-  json->variableUI16( "token", lastToken );
-  json->endObject();
-  
 }
 
 bool SwOSSwarm::splitID( char *id, uint8_t *index, char *io, size_t sizeIO) {
@@ -637,447 +813,11 @@ bool SwOSSwarm::splitID( char *id, uint8_t *index, char *io, size_t sizeIO) {
 	return true;
 } 
 
-uint16_t SwOSSwarm::apiIsAuthorized( uint16_t token, bool rotateToken ) {
-
-  uint16_t n = nextToken(rotateToken);
-
-  if ( token != n ) return 401;
-
-  return 200;
-}
-
-bool SwOSSwarm::apiPeekIsAuthorized( uint16_t token ) {
-  return token == lastToken;
-}
-
-uint16_t SwOSSwarm::apiActorCmd( uint16_t token, char *id, int cmd, bool rotateToken ) {
-// send an actor's command (from api)
-
-	uint8_t i;
-	char    io[20];
-
-  // Token error
-  if ( token != nextToken(rotateToken) ) return 401;
-
-	// split ID to device and nr
-	if (!splitID(id, &i, io, sizeof(io))) return 400;
-
-	// execute cmd
-  if ( Ctrl[i] ) {
-    
-    Ctrl[i]->lock();
-    bool ok = Ctrl[i]->apiActorCmd( io, cmd );
-    Ctrl[i]->unlock();
-     
-    if ( ok ) return 200;
-
-  }
-
-  return 400;
-
-}
-
-uint16_t SwOSSwarm::apiActorSpeed( uint16_t token, char *id, int speed, bool rotateToken ) {
-// send an actor's speed(from api)
-
-  uint8_t i;
-  char    io[20];
-
-  // Token error
-  if ( token != nextToken(rotateToken) ) return 401;
-
-  // split ID to device and nr
-  if (!splitID(id, &i, io, sizeof(io))) return 400;
-
-  // execute cmd
-  if ( Ctrl[i] ) {
-    
-    Ctrl[i]->lock();
-    bool ok = Ctrl[i]->apiActorSpeed( io, speed );
-    Ctrl[i]->unlock();
-     
-    if ( ok ) return 200;
-
-  }
-
-  return 400;
-  
-}
-
-uint16_t SwOSSwarm::apiLEDBrightness( uint16_t token, char *id, int brightness, bool rotateToken ) {
-  // send a LED command (from api)
-
-	uint8_t i;
-	char    io[20];
-
-  // Token error
-  if ( token != nextToken(rotateToken) ) return 401;
-
-	// split ID to device and nr
-	if (!splitID(id, &i, io, sizeof(io))) return 400;
-
-	// execute cmd
-  if ( Ctrl[i] ) {
-    
-    Ctrl[i]->lock();
-    bool ok = Ctrl[i]->apiLEDBrightness( io, brightness) ;
-    Ctrl[i]->unlock();
-     
-    if ( ok ) return 200;
-
-  }
-
-  return 400;
-
-}
-
-uint16_t SwOSSwarm::apiLEDColor( uint16_t token, char *id, int color, bool rotateToken ) {
-  // send a LED command (from api)
-
-  uint8_t i;
-  char    io[20];
-
-  // Token error
-  if ( token != nextToken(rotateToken) ) return 401;
-
-  // split ID to device and nr
-  if (!splitID(id, &i, io, sizeof(io))) return 400;
-
-  // execute cmd
-  if ( Ctrl[i] ) {
-    
-    Ctrl[i]->lock();
-    bool ok = Ctrl[i]->apiLEDColor( io, color );
-    Ctrl[i]->unlock();
-     
-    if ( ok ) return 200;
-
-  }
-  
-  return 400;
-
-}
-
-uint16_t SwOSSwarm::apiServoOffset( uint16_t token, char *id, int offset, bool rotateToken ) {
-  // send a Servo command (from api)
-  
-	uint8_t i;
-	char    io[20];
-
-  // Token error
-  if ( token != nextToken(rotateToken) ) return 401;
-
-	// split ID to device and nr
-	if (!splitID(id, &i, io, sizeof(io))) return 400;
-
-	// execute cmd
-  if ( Ctrl[i] ) {
-    
-    Ctrl[i]->lock();
-    bool ok = Ctrl[i]->apiServoOffset( io, offset  );
-    Ctrl[i]->unlock();
-     
-    if ( ok ) return 200;
-
-  }
-
-  return 400;
-  
-}
-
-uint16_t SwOSSwarm::apiServoPosition( uint16_t token, char *id, int position, bool rotateToken) {
-  // send a Servo command (from api)
-  
-  uint8_t i;
-  char    io[20];
-
-  // Token error
-  if ( token != nextToken(rotateToken) ) return 401;
-
-  // split ID to device and nr
-  if (!splitID(id, &i, io, sizeof(io))) return 400;
-
-  // execute cmd
-  if ( Ctrl[i] ) {
-    
-    Ctrl[i]->lock();
-    bool ok = Ctrl[i]->apiServoPosition( io, position );
-    Ctrl[i]->unlock();
-     
-    if ( ok ) return 200;
-
-  }
-
-  return 400;
-  
-}
-
-uint16_t SwOSSwarm::apiCAMStreaming( uint16_t token, char *id, int onOff, bool rotateToken) {
-  
-  uint8_t i;
-  char    io[20];
-
-  // Token error
-  if ( token != nextToken(rotateToken) ) return 401;
-
-  // split ID to device and nr
-  if (!splitID(id, &i, io, sizeof(io))) return 400;
-
-  // execute cmd
-  if ( Ctrl[i] ) {
-
-    Ctrl[i]->lock();
-    bool ok = Ctrl[i]->apiCAMStreaming( io, onOff > 0 );
-    Ctrl[i]->unlock();
-
-    if (ok) return 200;
-
-  }
-
-  return 400;
-  
-}
-
-uint16_t SwOSSwarm::apiCAMFramesize( uint16_t token, char *id, int framesize, bool rotateToken) {
-  
-  uint8_t i;
-  char    io[20];
-
-  // Token error
-  if ( token != nextToken(rotateToken) ) return 401;
-
-  // split ID to device and nr
-  if (!splitID(id, &i, io, sizeof(io))) return 400;
-
-  // execute cmd
-  if ( Ctrl[i] ) {
-
-    Ctrl[i]->lock();
-    bool ok = Ctrl[i]->apiCAMFramesize( io, framesize );
-    Ctrl[i]->unlock();
-
-    if ( ok ) return 200;
-
-  }
-
-  return 400;
-  
-}
-
-uint16_t SwOSSwarm::apiCAMQuality( uint16_t token, char *id, int quality, bool rotateToken ) {
-  
-  uint8_t i;
-  char    io[20];
-
-  // Token error
-  if ( token != nextToken(rotateToken) ) return 401;
-
-  // split ID to device and nr
-  if (!splitID(id, &i, io, sizeof(io))) return 400;
-
-  // execute cmd
-  if ( Ctrl[i] ) {
-    
-    Ctrl[i]->lock();
-    bool ok = Ctrl[i]->apiCAMQuality( io, quality );
-    Ctrl[i]->unlock();
-     
-    if ( ok ) return 200;
-
-  }
-
-  return 400;
-  
-}
-
-uint16_t SwOSSwarm::apiCAMBrightness( uint16_t token, char *id, int brightness, bool rotateToken ) {
-  
-  uint8_t i;
-  char    io[20];
-
-  // Token error
-  if ( token != nextToken(rotateToken) ) return 401;
-
-  // split ID to device and nr
-  if (!splitID(id, &i, io, sizeof(io))) return 400;
-
-  // execute cmd
-  if ( Ctrl[i] ) {
-    
-    Ctrl[i]->lock();
-    bool ok = Ctrl[i]->apiCAMBrightness( io, brightness );
-    Ctrl[i]->unlock();
-     
-    if ( ok ) return 200;
-
-  }
-
-  return 400;
-  
-}
-
-uint16_t SwOSSwarm::apiCAMContrast( uint16_t token, char *id, int contrast, bool rotateToken ) {
-  
-  uint8_t i;
-  char    io[20];
-
-  // Token error
-  if ( token != nextToken(rotateToken) ) return 401;
-
-  // split ID to device and nr
-  if (!splitID(id, &i, io, sizeof(io))) return 400;
-
-  // execute cmd
-  if ( Ctrl[i] ) {
-    
-    Ctrl[i]->lock();
-    bool ok = Ctrl[i]->apiCAMContrast( io, contrast );
-    Ctrl[i]->unlock();
-     
-    if ( ok ) return 200;
-
-  }
-
-  return 400;
-  
-}
-
-uint16_t SwOSSwarm::apiCAMSaturation( uint16_t token, char *id, int saturation, bool rotateToken ) {
-  
-  uint8_t i;
-  char    io[20];
-
-  // Token error
-  if ( token != nextToken(rotateToken) ) return 401;
-
-  // split ID to device and nr
-  if (!splitID(id, &i, io, sizeof(io))) return 400;
-
-  // execute cmd
-  if ( Ctrl[i] ) {
-    
-    Ctrl[i]->lock();
-    bool ok = Ctrl[i]->apiCAMSaturation( io, saturation );
-    Ctrl[i]->unlock();
-     
-    if ( ok ) return 200;
-
-  }
-
-  return 400;
-  
-}
-
-uint16_t SwOSSwarm::apiCAMSpecialEffect( uint16_t token, char *id, int specialEffect, bool rotateToken ) {
-  
-  uint8_t i;
-  char    io[20];
-
-  // Token error
-  if ( token != nextToken(rotateToken) ) return 401;
-
-  // split ID to device and nr
-  if (!splitID(id, &i, io, sizeof(io))) return 400;
-
-  // execute cmd
-  if ( Ctrl[i] ) {
-    
-    Ctrl[i]->lock();
-    bool ok = Ctrl[i]->apiCAMSpecialEffect( io, specialEffect );
-    Ctrl[i]->unlock();
-     
-    if ( ok ) return 200;
-
-  }
-
-  return 400;
-  
-}
-
-uint16_t SwOSSwarm::apiCAMWbMode( uint16_t token, char *id, int wbMode, bool rotateToken ) {
-  
-  uint8_t i;
-  char    io[20];
-
-  // Token error
-  if ( token != nextToken(rotateToken) ) return 401;
-
-  // split ID to device and nr
-  if (!splitID(id, &i, io, sizeof(io))) return 400;
-
-  // execute cmd
-  if ( Ctrl[i] ) {
-    
-    Ctrl[i]->lock();
-    bool ok = Ctrl[i]->apiCAMWbMode( io, wbMode ) ;
-    Ctrl[i]->unlock();
-     
-    if ( ok ) return 200;
-
-  }
-
-  return 400;
-  
-}
-
-uint16_t SwOSSwarm::apiCAMHMirror( uint16_t token, char *id, int hMirror, bool rotateToken ) {
-  
-  uint8_t i;
-  char    io[20];
-
-  // Token error
-  if ( token != nextToken(rotateToken) ) return 401;
-
-  // split ID to device and nr
-  if (!splitID(id, &i, io, sizeof(io))) return 400;
-
-  // execute cmd
-  if ( Ctrl[i] ) {
-    
-    Ctrl[i]->lock();
-    bool ok = Ctrl[i]->apiCAMHMirror( io, hMirror>0 ) ;
-    Ctrl[i]->unlock();
-     
-    if ( ok ) return 200;
-
-  }
-
-  return 400;
-  
-}
-
-uint16_t SwOSSwarm::apiCAMVFlip( uint16_t token, char *id, int vFlip, bool rotateToken ) {
-  
-  uint8_t i;
-  char    io[20];
-
-  // Token error
-  if ( token != nextToken(rotateToken) ) return 401;
-
-  // split ID to device and nr
-  if (!splitID(id, &i, io, sizeof(io))) return 400;
-
-  // execute cmd
-  if ( Ctrl[i] ) {
-    
-    Ctrl[i]->lock();
-    bool ok = Ctrl[i]->apiCAMVFlip( io, vFlip>0 ) ;
-    Ctrl[i]->unlock();
-     
-    if ( ok ) return 200;
-
-  }
-
-  return 400;
-  
-}
-
-
-void SwOSSwarm::setState( SwOSState_t state ) {
+void SwOSSwarm::setState( SwOSState_t state, const char *errorText ) {
 
   if (Ctrl[0]) {
     Ctrl[0]->lock();
-    Ctrl[0]->setState( state, members(), nvs.wifiSSID );
+    Ctrl[0]->setState( state, errorText );
     Ctrl[0]->unlock();
   }
 
@@ -1089,185 +829,129 @@ void SwOSSwarm::setState( SwOSState_t state ) {
  *
  ***************************************************/
 
-void SwOSSwarm::registerMe( MacAddr destinationMac, FtSwarmSerialNumber_t destinationSN ) {
+void SwOSSwarm::joinMySwarm( MacAddr destinationMac, FtSwarmSerialNumber_t destinationSN ) {
+  // As a Kelda send CMD_JOINMYSWARM to a potential member
 
   // register myself
-  SwOSCom com( destinationMac, destinationSN, CMD_ANYBODYOUTTHERE );
+  SwOSCom com( destinationMac, destinationSN, CMD_JOINMYSWARM );
   Ctrl[0]->registerMe( &com );
   com.send();
 
 }
 
-void SwOSSwarm::cmdJoin( SwOSCom *com, uint8_t source, uint8_t affected ) {
+void SwOSSwarm::replaceCtrl( SwOSCom *com, uint8_t source, uint8_t affected ) {
+  // replace controller in swarm list
+      
+  SwOSCtrl *newCtrl = NULL;
+  SwOSCtrl *oldCtrl = Ctrl[source];
+  
+  if ( com->data.registerCmd.ctrlConfig.CPU >= FTSWARMMAXVERSION ) {
+    SWARM_LOG_ERROR( TRANSLATE( "Unknown controller type while adding a new controller to my swarm.", "Unbekannter Controller-Typ möchte dem Swarm beitreten." ) ); return;
 
-  #ifdef DEBUG_COMMUNICATION
-    printf( "CMD_SWARMJOIN PIN %d swarmName %s\n", com->data.joinCmd.pin, com->data.joinCmd.swarmName );
-  #endif
-
-  // case 1: member asks Kelda: Join, if pin & swarm name are ok
-  // case 2: Kelda asks Kelda:  Join, if I don't have swarm members.
-  // case 3: Kelda asks member: Join, if I'm not connected to a swarm.
-
-  SwOSError_t result = SWOS_OK;
-
-  // case 1: member asks Kelda: Join, if pin & swarm name are ok
-  if  ( (Ctrl[0]->IAmKelda) && (!com->data.joinCmd.IAmKelda ) ) {
-
-    // pin and swarm name ok?
-    result = ( ( nvs.swarmPIN == com->data.joinCmd.pin ) && ( strcmp( com->data.joinCmd.swarmName, nvs.swarmName ) == 0 ) )? SWOS_OK : SWOS_DENY;
-
-    // join?
-    if ( ( result == SWOS_OK )  && ( nvs.addController( com->data.sourceSN ) ) ) {  
-      Ctrl[source] = new SwOSCtrl( com->data.sourceSN, com->macAddr, false, FTSWARM_NOVERSION, false, FTSWARM_EXT_OFF );
-      nvs.save();
-      Ctrl[source]->comState = ASKFORDETAILS;
-    }
-
-  // case 2: Kelda asks Kelda:  Join, if I'm not connected to a swarm.
-  } else if ( (Ctrl[0]->IAmKelda) && (com->data.joinCmd.IAmKelda ) ) {
-
-    result = ( nvs.swarmMembers() > 1 ) ? SWOS_DENY : SWOS_OK;
-
-    // join ?
-    if ( result == SWOS_OK ) {
-
-      // I'm not a Kelda any more
-      nvs.IAmKelda      = false;
-      Ctrl[0]->IAmKelda = false;
-
-      // set new swarm values
-      nvs.swarmPIN       = com->data.joinCmd.pin;
-      nvs.swarmSecret    = com->data.joinCmd.swarmSecret;
-      strcpy( nvs.swarmName, com->data.joinCmd.swarmName );
-      myOSNetwork.setSecret( com->data.joinCmd.swarmSecret, com->data.joinCmd.pin );
-
-      // save
-      nvs.save();
-
-    }
-
-  // case 3: Kelda asks member: Join, if I'm not connected to a swarm.
   } else {
-
-    result = ( Kelda == NULL ) ? SWOS_OK : SWOS_DENY;
-
-    if ( result == SWOS_OK ) {
-
-      // set new swarm values
-      nvs.swarmPIN       = com->data.joinCmd.pin;
-      nvs.swarmSecret    = com->data.joinCmd.swarmSecret;
-      strcpy( nvs.swarmName, com->data.joinCmd.swarmName );
-      myOSNetwork.setSecret( com->data.joinCmd.swarmSecret, com->data.joinCmd.pin );
-
-      // save
-      nvs.save();
-
-    }
-
-  }
     
-  // send acknowledge
-  #ifdef DEBUG_COMMUNICATION
-    printf( "CMD_SWARMJOIN accepted.\n" ); 
+    newCtrl = new SwOSCtrl( com->data.sourceSN , com->macAddr, false, com->data.registerCmd.ctrlConfig );
+    
+    if (verbose) { 
+      SWARM_LOG_INFO( TRANSLATE( "ftSwarm%d joined the swarm.", "ftSwarm%d ist dem Swarm beigetreten." ), com->data.sourceSN ); 
+    }
+
+  }
+
+  // replace the new controller in my list
+  newCtrl->setComState( COMSTATE_ONLINE );
+  Ctrl[source] = newCtrl;
+  if (oldCtrl) delete oldCtrl; 
+  
+}
+
+void SwOSSwarm::cmdJoinMySwarm( SwOSCom *com, uint8_t source, uint8_t affected ) {
+
+  #ifdef DEBUG_COMMUNICATION_SWARM
+    printf( "CMD_JOINMYSWARM %d source: %d affected: %d maxCtrl %d\n", com->data.cmd, source, affected, maxCtrl );
   #endif
 
-  sendAck( com->data.sourceSN, CMD_SWARMJOIN, result, myOSNetwork.secret );
+  // not my SN and not a wildcard: ignore
+  if ( ( com->data.affectedSN != Ctrl[0]->serialNumber ) && ( com->data.affectedSN != 0 ) ) return;
 
-}
+  // I'm a Kelda with at leat a member: decline
+  if ( ( Ctrl[0]->IAmKelda ) && ( members() > 1 ) ) {
 
-void SwOSSwarm::cmdAck( SwOSCom *com, uint8_t source, uint8_t affected ) {
+    SWARM_LOG_ERROR( TRANSLATE( "Declining to join swarm %s. I'm a Kelda with %d swarm members.", "Kann dem Swarm %s nicht beitreten. Ich bin eine Kelda mit %d Controllern im Swarm." ), com->data.joinCmd.swarmName, members() );
+    SwOSCom reply( com->macAddr, com->data.sourceSN, CMD_JOINNACK );
+    Ctrl[0]->registerMe( &reply );
+    reply.send();
 
-  SwOSCtrl *ctrl;
-
-  if (!Ctrl[source]) {
-
-    // member asked kelda without knowing keldas SN and used boradcastSN instead?
-    ctrl = (SwOSCtrl *) getController( broadcastSN );
-
-    // didn't find a broadcast controller
-    if (!ctrl) return;
-
-    // add serial number
-    ctrl->serialNumber = com->data.sourceSN;
-
-  } else {
-
-    // just work with controller found
-    ctrl = Ctrl[source];
+    return;
 
   }
 
-  ctrl->lastAck.cmd    = com->data.ackCmd.cmd;
-  ctrl->lastAck.error  = com->data.ackCmd.error;
-  ctrl->lastAck.secret = com->data.ackCmd.secret;
+  // I'm fine to join the swarm: ack
 
-}
+  // take swarm settings
+  nvs.swarm.pin = com->data.registerCmd.swarmPIN;
+  strcpy( nvs.swarm.name, com->data.registerCmd.swarmName );
 
-void SwOSSwarm::sendAck( FtSwarmSerialNumber_t destinationSN, SwOSCommand_t cmd, SwOSError_t error, uint16_t secret ) {
+  // replace old controller
+  replaceCtrl( com, source, affected );
 
-  SwOSCom ack( MacAddr( broadcast), destinationSN, CMD_ACK );
+  // getting member, knowing my Kelda
+  deleteEvents();
+  Ctrl[0]->IAmKelda = false;
+  nvs.swarm.IAmKelda = false;
+  Kelda = Ctrl[source];
+  
+  // Send my data      
+  SwOSCom reply( com->macAddr, com->data.sourceSN, CMD_JOINACK );
+  Ctrl[0]->registerMe( &reply );
+  reply.send();
 
-  // if a member asks a kelda, the secret isn't known yet
-  if ( cmd == CMD_SWARMJOIN ) ack.data.secret = DEFAULTSECRET;
+  // send my alias names as well
+  if ( com->data.registerCmd.ctrlConfig.IAmKelda ) Ctrl[0]->sendIOConfig( com->macAddr ); 
 
-  // other stuff 
-  ack.data.ackCmd.cmd    = cmd;
-  ack.data.ackCmd.error  = error;
-  ack.data.ackCmd.secret = secret;
-
-  // send it
-  ack.send();
-
-}
-
-void SwOSSwarm::cmdLeave( SwOSCom *com, uint8_t source, uint8_t affected ) {
-
-  // I'm asked to leave the swarm.
-  if ( com->data.affectedSN == Ctrl[0]->serialNumber ) {
-
-    // I'm Kelda, so don't send this command to me 
-    if ( Ctrl[0]->IAmKelda ) {
-      ESP_LOGE( LOGFTSWARM, "%s asked Kelda to leave the swarm.", com->data.sourceSN );
-      sendAck( com->data.sourceSN, CMD_SWARMLEAVE, SWOS_DENY, myOSNetwork.secret );
-      return;
-    }
-
-    // I just accept this command from Kelda
-    if ( ( !Kelda ) && ( Kelda->serialNumber != com->data.sourceSN ) ) {
-      ESP_LOGE( LOGFTSWARM, "%s asked me to leave the swarm, but it's not my Kelda.", com->data.sourceSN );
-      sendAck( com->data.sourceSN, CMD_SWARMLEAVE, SWOS_DENY, myOSNetwork.secret );
-      return;
-    }
-
-    // ack, reset to Default swarm and reboot  
-    sendAck( com->data.sourceSN, CMD_SWARMLEAVE, SWOS_OK, myOSNetwork.secret );
-    shortDelay();
-    nvs.createSwarm( Ctrl[0]->getName(), Ctrl[0]->serialNumber );
-    nvs.save();
-    ESP.restart();
-
-  // someone leaves the swarm
-  } else {
-
-    if ( Ctrl[source] ) { 
-      // I know this controller and kill it
-      nvs.deleteController( Ctrl[source]->serialNumber );
-      nvs.save( );
-
-      SwOSCtrl *old;
-      Ctrl[source]->lock();
-      old = Ctrl[source];
-      Ctrl[source] = NULL;
-      old->unlock();
-      delete old;
-
-    }
-
-  }
-
+  // update status
   setState( RUNNING );
 
 }
+
+void SwOSSwarm::cmdJoinNAck( SwOSCom *com, uint8_t source, uint8_t affected ) {
+  // Member to Kelda: I don't want to join your Swarm
+  
+  if ( Ctrl[source] ) Ctrl[source]->setComState( COMSTATE_ERROR ); 
+
+}
+
+void SwOSSwarm::cmdJoinAck( SwOSCom *com, uint8_t source, uint8_t affected ) {
+  // Member to Kelda: I want to join your Swarm
+  
+  if ( Ctrl[source] )  {
+
+    // if it's an unkown controller, update controller data
+    if ( Ctrl[source]->getCPU() == FTSWARM_NOVERSION ) replaceCtrl( com, source, affected );
+    // ToDo else - send the controller his state
+
+    // wait for alias settings
+    Ctrl[source]->setComState( COMSTATE_CONNECT_PHASE2 ); 
+
+  }
+
+}
+
+void SwOSSwarm::cmdRevokeFromSwarm( SwOSCom *com, uint8_t source, uint8_t affected ) {
+  // Kelda to member: get out of my swarm
+
+  // for me?
+  if ( ( com->data.affectedSN != Ctrl[0]->serialNumber ) || (com->data.joinCmd.pin == nvs.swarm.pin) || strcmp( com->data.registerCmd.swarmName, nvs.swarm.name ) ) return;
+
+  // User info
+  SWARM_LOG_INFO( TRANSLATE( "Leaving swarm %s and rebooting.", "Verlasse Swarm %s und starte neu." ), com->data.registerCmd.swarmName );
+
+  // just reboot
+  ESP.restart();
+
+}
+  
+
 
 void SwOSSwarm::OnDataRecv(SwOSCom *com) {
   // callback function receiving data from other controllers
@@ -1279,280 +963,40 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
   uint8_t source   = getIndex( com->data.sourceSN );
   uint8_t affected = getIndex( com->data.affectedSN );
 
-  // test messages
   switch ( com->data.cmd ) {
-    case CMD_SWARMJOIN:   cmdJoin( com, source, affected );    return;
-    case CMD_ACK:         cmdAck( com, source, affected );     return;
-    case CMD_SWARMLEAVE:  cmdLeave( com, source, affected );   return;
+    case CMD_JOINMYSWARM:     cmdJoinMySwarm( com, source, affected ); 
+                              break;
+
+    case CMD_REVOKEFROMSWARM: cmdRevokeFromSwarm( com, source, affected );
+                              break;
+
+    case CMD_JOINACK:         cmdJoinAck( com, source, affected ); 
+                              break;
+
+    case CMD_JOINNACK:        cmdJoinNAck( com, source, affected ); 
+                              break;
+
+    case CMD_HARTBEAT:        if ( Ctrl[source] ) Ctrl[source]->tick();
+                              break;
+
+    case CMD_IOCONFIG:        // needs to be initiated at swarm level to be able to start events
+                              if ( ( Ctrl[affected]->ioConfig( com ) ) && ( Ctrl[0]->IAmKelda ) ) {
+                                addEvents( nvs.events.activeConfig, Ctrl[affected]->serialNumber );
+                              }
+                              break;
+
+
+    default:                  if ( Ctrl[affected] ) {
+                                // any other type of msg will be processed on controller level
+                                Ctrl[affected]->lock();
+                                Ctrl[affected]->OnDataRecv( com );
+                                Ctrl[affected]->unlock();
+                              }
+                              break;
+  
   }
 
-
-  // check, on welcome messages if I'm a Kelda or a Kelda is asking
-  if ( ( ( com->data.cmd == CMD_ANYBODYOUTTHERE ) || ( com->data.cmd == CMD_GOTYOU ) ) &&
-       ( ( com->data.registerCmd.IAmKelda ) || ( Ctrl[0]->IAmKelda ) ) ) {
-
-    #ifdef DEBUG_COMMUNICATION
-      printf( "register msg %d source: %d affected: %d maxCtrl %d\n", com->data.cmd, source, affected, maxCtrl );
-    #endif
-
-    // check on unkown controller
-    if ( ( !Ctrl[source] ) || 
-         ( ( Ctrl[source]->comState == ASKFORDETAILS ) && nvs.IAmKelda ) ) {
-
-      #ifdef DEBUG_COMMUNICATION
-      printf( "add a new controller type %d at %d\n", com->data.registerCmd.ctrlType, source);
-      #endif
-
-      // test, if the new controller is a Kelda and there is already a Kelda in my swarm
-      if ( ( com->data.registerCmd.IAmKelda ) && ( Ctrl[0]->IAmKelda ) ) {
-        setState( ERROR );
-        printf("ERROR: Multiple Keldas found! %d %d\n", Kelda->serialNumber, com->data.sourceSN );
-        while (1) delay(1000);
-        return;
-      }
-
-      // add or replace controller in swarm list
-      SwOSCtrl *newCtrl = NULL;
-      SwOSCtrl *oldCtrl = Ctrl[source];
-
-      switch (com->data.registerCmd.ctrlType) {
-        case FTSWARM:         newCtrl = new SwOSSwarmJST     ( com ); break;
-        case FTSWARMCONTROL:  newCtrl = new SwOSSwarmControl ( com ); break;
-        case FTSWARMCAM:      newCtrl = new SwOSSwarmCAM     ( com ); break;
-        case FTSWARMPWRDRIVE: newCtrl = new SwOSSwarmPwrDrive( com ); break;
-        case FTSWARMDUINO:    newCtrl = new SwOSSwarmDuino   ( com ); break;
-        default: ESP_LOGW( LOGFTSWARM, "Unknown controller type while adding a new controller to my swarm." ); return;
-      }
-
-      newCtrl->comState = UP;
-      Ctrl[source] = newCtrl;
-      if (oldCtrl) delete oldCtrl; 
-
-      if ( Ctrl[source]->IAmKelda ) {
-        // register Kelda
-        // if (verbose) { printf("Kelda %s with MAC ", Ctrl[source]->getHostname() ); Ctrl[source]->macAddr.print(); printf(" joined the swarm \n"); }
-        Kelda = Ctrl[source];
-      } 
-      
-      if (verbose) { printf("[%s with MAC ", Ctrl[source]->getHostname() ); Ctrl[source]->macAddr.print(); printf(" joined the swarm]\n"); }
-
-      // update oled display
-      setState( RUNNING );
-      
-    }
-
-    // reply GOTYOU, if needed
-    if ( com->data.cmd == CMD_ANYBODYOUTTHERE ) {
-      
-      // frist introduce myself
-      SwOSCom reply( com->macAddr, com->data.sourceSN, CMD_GOTYOU );
-      Ctrl[0]->registerMe( &reply );
-      reply.send();
-    
-    }
-
-    // send my alias names, if the new controller is a Kelda
-    if ( com->data.registerCmd.IAmKelda ) Ctrl[0]->sendAlias( com->macAddr ); 
-
-    return;
-
-  } // end welcome messages
- 
-  if ( Ctrl[affected] ) {
-    // any other type of msg will be processed on controller level
-    Ctrl[affected]->lock();
-    Ctrl[affected]->OnDataRecv( com );
-    Ctrl[affected]->unlock();
-
-  } 
-
 }
-
-SwOSError_t SwOSSwarm::leaveSwarm( void ) {
-
-  // Send a leave message
-  SwOSCom leaveMsg( MacAddr( broadcast ), Ctrl[0]->serialNumber, CMD_SWARMLEAVE );
-  leaveMsg.send();
-
-  // wait for replys
-  longDelay();
-
-  bool ok = true;
-
-  // now I could kill all swarm members
-  for (uint8_t i=1; i<=maxCtrl; i++) {
-
-    if ( Ctrl[i] ) { 
-
-      // check if the controller send an ack message
-      ok = ok && ( Ctrl[i]->lastAck.cmd == CMD_SWARMLEAVE ) && ( Ctrl[i]->lastAck.error == SWOS_OK );
-
-      // delete it 
-      SwOSCtrl *old = Ctrl[i]; 
-      Ctrl[i] = NULL;
-      delete old;
-    
-    }
-
-  }
-
-  // reset mail swarm parameters
-  maxCtrl = 0;
-  Kelda = NULL;
-  Ctrl[0]->IAmKelda = false;
-
-  return (ok) ? SWOS_OK : SWOS_TIMEOUT;
-
-}
-
-SwOSError_t SwOSSwarm::rejectController( FtSwarmSerialNumber_t serialNumber, bool force ) {
-  uint8_t affected = getIndex( serialNumber );
-
-  // do I know the controller?
-  if ( !Ctrl[affected] ) return SWOS_TIMEOUT;
-
-  // In use?
-  if ( Ctrl[affected]->isInUse() ) return SWOS_DENY; 
-
-  // Send a leave message
-  SwOSCom leaveMsg( MacAddr( broadcast ), serialNumber, CMD_SWARMLEAVE );
-  leaveMsg.send();
-
-  // wait for replys
-  longDelay();
-
-  // get controllers response
-  SwOSError_t result = SWOS_TIMEOUT;
-  if ( Ctrl[affected]->lastAck.cmd == CMD_SWARMLEAVE ) result = Ctrl[affected]->lastAck.error;
-
-  // delete him, if possible
-  if ( ( result == SWOS_OK ) || force ) { 
-    Ctrl[affected]->lock();
-    SwOSCtrl *old = Ctrl[affected];
-    Ctrl[affected] = NULL;
-    old->unlock();
-    delete old;
-    result = SWOS_OK;
-  }
-
-  return result;
-
-}
-
-SwOSError_t SwOSSwarm::createSwarm( void ) {
-
-  return createSwarm( Ctrl[0]->getHostname(), Ctrl[0]->serialNumber );
-
-}
-
-SwOSError_t SwOSSwarm::createSwarm( char * newName, uint16_t newPIN ) {
-
-  // need to call leaveSwarm first to cleanup
-  // test on existing clients
-  if (members() > 1 ) return SWOS_DENY;
-
-  // create new swarm
-  nvs.createSwarm( newName, newPIN );
-  myOSNetwork.setSecret( nvs.swarmSecret, nvs.swarmPIN );
-
-  // change myself to Kelda
-  nvs.IAmKelda = true;
-  Ctrl[0]->IAmKelda = true;
-  Kelda = Ctrl[0];
-
-  // done
-  return SWOS_OK;
-
-}
-
-SwOSError_t SwOSSwarm::inviteToSwarm( FtSwarmSerialNumber_t serialNumber ) {
-
-  // already joined?
-  if ( Ctrl[getIndex(serialNumber)] ) return SWOS_OK;
-
-  // I'm not a Kelda?
-  if ( !Ctrl[0]->IAmKelda ) return SWOS_DENY;
-
-  uint8_t newMember = getIndex( serialNumber );
-  Ctrl[newMember] = new SwOSCtrl( serialNumber,  MacAddr( broadcast ), false, FTSWARM_NOVERSION, false, FTSWARM_EXT_OFF );
-
- // invite controller
-  SwOSCom joinMsg( MacAddr( broadcast ), serialNumber, CMD_SWARMJOIN );
-  joinMsg.data.secret = DEFAULTSECRET;
-  joinMsg.data.joinCmd.IAmKelda = true;
-  joinMsg.data.joinCmd.pin = nvs.swarmPIN;
-  strcpy( joinMsg.data.joinCmd.swarmName, nvs.swarmName );
-  joinMsg.data.joinCmd.swarmSecret = nvs.swarmSecret;
-  joinMsg.send();
-
-  // wait for replys
-  longDelay();
-
-  // check result
-  SwOSError_t result = SWOS_TIMEOUT;
-  if (Ctrl[newMember]->lastAck.cmd == CMD_SWARMJOIN) result = Ctrl[newMember]->lastAck.error;
-
-  // delete new Controller in case of any error
-  if ( result != SWOS_OK ) { delete Ctrl[newMember]; Ctrl[newMember] = NULL; return result; }
-
-  // Controller joined the swarm
-  nvs.addController( serialNumber );
-  Ctrl[newMember]->comState = ASKFORDETAILS;
-
-  return result;
-
-}
-
-SwOSError_t SwOSSwarm::joinSwarm( char *name, uint16_t pin ) {
-
-  // bound in a swarm?
-  if ( myOSSwarm.members() > 1) return SWOS_DENY;
-
-  uint8_t newMember = getIndex( broadcastSN );
-  Ctrl[newMember] = new SwOSCtrl( broadcastSN,  MacAddr( broadcast ), false, FTSWARM_NOVERSION, false, FTSWARM_EXT_OFF );
-
-  // ask Kelda to join
-  SwOSCom joinMsg( MacAddr( broadcast ), broadcastSN, CMD_SWARMJOIN );
-  joinMsg.data.joinCmd.IAmKelda = false;
-  joinMsg.data.joinCmd.pin = pin;
-  strcpy( joinMsg.data.joinCmd.swarmName, name );
-  joinMsg.data.joinCmd.swarmSecret = DEFAULTSECRET;
-  joinMsg.data.secret = DEFAULTSECRET;
-  joinMsg.send();
-
-  // wait for replys
-  longDelay();
-
-  // check result
-  SwOSError_t result = SWOS_TIMEOUT;
-  if (Ctrl[newMember]->lastAck.cmd == CMD_SWARMJOIN) result = Ctrl[newMember]->lastAck.error;
-
-  // delete new Controller in case of any error
-  if ( result != SWOS_OK ) {
-    Ctrl[newMember]->lock();
-    SwOSCtrl *temp = Ctrl[newMember];
-    Ctrl[newMember] = NULL;
-    temp->unlock();
-    delete temp; 
-    return result;
-  }
-
-  // setup new swarm
-  nvs.IAmKelda       = false;
-  Ctrl[0]->IAmKelda  = false; 
-  nvs.swarmPIN       = pin;
-  nvs.swarmSecret    = Ctrl[newMember]->lastAck.secret;
-  strcpy( nvs.swarmName, name );
-  myOSNetwork.setSecret( Ctrl[newMember]->lastAck.secret, pin );
-  Kelda              = Ctrl[newMember];
-
-  // continue starting up
-  Ctrl[newMember]->comState = ASKFORDETAILS;
-
-  return result;
-
-}
-
 
 uint8_t SwOSSwarm::members( void ) {
 
@@ -1563,5 +1007,198 @@ uint8_t SwOSSwarm::members( void ) {
   }
 
   return members;
+  
+}
+
+void SwOSSwarm::newSwarm( void ) {
+
+  // block conneting new controllers
+  Ctrl[0]->lock();
+  Ctrl[0]->IAmKelda = false;
+  Ctrl[0]->unlock();
+
+  // delete old swarm members
+  int8_t oldMaxCtrl = maxCtrl;
+  maxCtrl = 0;
+  for (int8_t i=1; i<=oldMaxCtrl; i++) {
+    
+    if ( Ctrl[i] != NULL ) {  
+      nvs.deleteController( Ctrl[i]->serialNumber );
+      SwOSCtrl *oldCtrl = Ctrl[i]; 
+      Ctrl[i] = NULL;
+      oldCtrl->lock();
+      delete oldCtrl;
+    }
+    
+  }
+
+  // delete all nvs events
+  nvs.deleteAllEvents();
+
+  // set new swarm
+  nvs.swarm.IAmKelda = true;
+  Ctrl[0]->lock();
+  Ctrl[0]->IAmKelda = true;
+  Ctrl[0]->unlock(); 
+
+}
+
+bool SwOSSwarm::isMember( FtSwarmSerialNumber_t serialNumber ) { 
+  // Test, if SN is part my my Swarm
+
+  for (uint8_t i=0; i<=maxCtrl; i++) {
+    if ( (Ctrl[i] ) && ( Ctrl[i]->serialNumber == serialNumber ) ) return true;
+  }
+
+  return false;
+
+}
+
+bool SwOSSwarm::isOnline( FtSwarmSerialNumber_t serialNumber ) {
+  // Test, if SN is online
+
+  for (uint8_t i=0; i<=maxCtrl; i++) {
+    if ( ( Ctrl[i] ) && ( Ctrl[i]->serialNumber == serialNumber ) && ( Ctrl[i]->isOnline( ) ) ) return true;
+  }
+
+  return false;
+
+}
+
+bool SwOSSwarm::isOnline( void ) {
+  // Test, if SN is online
+
+  for (uint8_t i=0; i<=maxCtrl; i++) {
+    if ( ( Ctrl[i] ) && ( !Ctrl[i]->isOnline( ) ) ) return false;
+  }
+
+  return true;
+
+}
+
+bool SwOSSwarm::addController( FtSwarmSerialNumber_t serialNumber ) {
+  // add Controller SN to the swarm
+
+  // get a slot in the controller list
+  uint8_t i = getIndex( serialNumber );
+
+  // no slot available?
+  if ( i >= MAXCTRL ) return false;
+  
+  // is SN already added?
+  if ( Ctrl[i] != NULL ) return true;
+
+  // add new Controller to the list
+
+  SwOSCtrlConfig_t noCtrlConfig;
+  bzero( &noCtrlConfig, sizeof(noCtrlConfig) );
+  noCtrlConfig.CPU      = FTSWARM_NOVERSION;
+
+  Ctrl[i] = new SwOSCtrl( serialNumber,  MacAddr( broadcast ), false, noCtrlConfig );
+  nvs.addController( serialNumber );
+
+  delay( CONNECTDELAY );
+
+  return true;
+
+}
+
+bool SwOSSwarm::deleteController( FtSwarmSerialNumber_t serialNumber ) {
+  // delete Controller SN
+
+  // get index in the controller list
+  uint8_t i = getIndex( serialNumber );
+
+  // not found?
+  if ( ( i >= MAXCTRL ) || ( Ctrl[i] == NULL ) ) return false;
+
+  if ( Ctrl[i]->isOnline() ) {
+    // Hoecker, you're out
+    SwOSCom com( Ctrl[i]->macAddr, Ctrl[i]->serialNumber, CMD_REVOKEFROMSWARM );
+    Ctrl[0]->registerMe( &com );
+    com.send();
+  }
+
+  // delete
+  SwOSCtrl *oldCtrl = Ctrl[i]; 
+  Ctrl[i] = NULL;
+  oldCtrl->lock();
+  delete oldCtrl;
+  nvs.deleteController( serialNumber );
+
+  return true;
+
+}
+
+// delete an event
+bool SwOSSwarm::deleteEvent( SwOSNVSEvent *event ) {
+
+  // no event
+  if (!event) return false;
+
+  // get IOs
+  SwOSInput *sensor = (SwOSInput *) getIO( event->sensor );
+  SwOSIO    *actor  = getIO( event->actor );
+
+  // sensor or actor doesn't exist
+  if ( (!sensor) || (!actor) ) return false;
+
+  return sensor->deleteEvent( event->triggerMath.bits.trigger, event->triggerMath.bits.op, actor );
+
+}
+
+// add an event
+bool SwOSSwarm::addEvent( SwOSNVSEvent *event ) {
+
+  // no event
+  if (!event) return false;
+
+  // get IOs
+  SwOSInput *sensor = (SwOSInput *) getIO( event->sensor );
+  SwOSIO    *actor  = getIO( event->actor );
+
+  // sensor or actor doesn't exist
+  if ( (!sensor) || (!actor) ) return false;
+
+  return sensor->addEvent( event->triggerMath.bits.trigger, event->triggerMath.bits.op, event->triggerMath.bits.v1, event->triggerMath.bits.v2, actor, event->parameter );
+
+}
+
+void SwOSSwarm::deleteEvents( void ) {
+
+  for (uint8_t i=0; i<=maxCtrl; i++) {
+
+    if (Ctrl[i]) Ctrl[i]->deleteEvents();
+
+  }
+
+}
+
+void SwOSSwarm::addEvents( uint8_t config, FtSwarmSerialNumber_t sn ) {
+
+  // Kelda only
+  if (!Ctrl[0]->IAmKelda) return;
+
+  // stop old config
+  deleteEvents();
+
+  // start new config
+  for ( uint i=0; i<MAXNVSEVENTS; i++ ) {
+
+    // end of list?
+    if ( nvs.events.events[config][i].sensor.serialNumber == 0 ) return;
+
+    // add event, if sn is fitting
+    if ( ( sn == 0 ) || ( nvs.events.events[config][i].sensor.serialNumber == sn ) || ( nvs.events.events[config][i].actor.serialNumber == sn ) ) addEvent( &nvs.events.events[config][i] );
+
+  }
+
+}
+
+void SwOSSwarm::save( FtSwarmNVSScope_t scope ) {
+ 
+  for (uint8_t i=0; i<=maxCtrl; i++) {
+    if ( Ctrl[i] ) Ctrl[i]->save( scope, SWOS_NOPORT );
+  }
   
 }

@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+:root {
+  --thm-background: #080808;
+  --thm-surface-1: #0f0f11;
+  --thm-surface-border-1: #23252a;
+  --thm-surface-2: #17181b;
+  --thm-surface-border-2: #2d3036;
+  --thm-surface-3: #25272e;
+  --thm-surface-border-3: #33363d;
+  --thm-font: #ffffff;
+  --thm-font-muted: #98999c;
+  --thm-primary: #8298ea;
+  --thm-secondary: #334c84;
+  --thm-accent: #3055d8;
+  --thm-ok: #54cc58;
+  --thm-error: #c93235;
+}
+
+.theme-light {
+  --thm-background: #ffffff;
+  --thm-surface-1: #f3f4f6;
+  --thm-surface-border-1: #e0e1e6;
+  --thm-surface-2: #e5e7eb;
+  --thm-surface-border-2: #d1d5db;
+  --thm-surface-3: #d3dce6;
+  --thm-surface-border-3: #c0c6d0;
+  --thm-font: #212121;
+  --thm-font-muted: #6b7280;
+  --thm-primary: #5c7ee0;
+  --thm-secondary: #6ea4e4;
+  --thm-accent: #1e6cdd;
+  --thm-ok: #34a853;
+  --thm-error: #dc3545;
+}
+
+@theme inline {
+  --color-thm-background: var(--thm-background);
+  --color-thm-surface-1: var(--thm-surface-1);
+  --color-thm-surface-border-1: var(--thm-surface-border-1);
+  --color-thm-surface-2: var(--thm-surface-2);
+  --color-thm-surface-border-2: var(--thm-surface-border-2);
+  --color-thm-surface-3: var(--thm-surface-3);
+  --color-thm-surface-border-3: var(--thm-surface-border-3);
+  --color-thm-font: var(--thm-font);
+  --color-thm-font-muted: var(--thm-font-muted);
+  --color-thm-primary: var(--thm-primary);
+  --color-thm-secondary: var(--thm-secondary);
+  --color-thm-accent: var(--thm-accent);
+  --color-thm-ok: var(--thm-ok);
+  --color-thm-error: var(--thm-error);
+}
+
+html {
+  background-color: var(--thm-background);
+  color: var(--thm-font);
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes slide {
+  to {
+    background-position: 20px 0;
+  }
+}
+
+.animate-dash {
+  background-image: linear-gradient(90deg, currentColor 50%, transparent 0);
+  background-size: 10px 100%;
+  animation: slide 3s linear infinite;
+}

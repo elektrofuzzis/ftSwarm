@@ -12,14 +12,22 @@
 #include <SwOSHW.h>
 
 typedef enum {
+  CLICMD_login,
   CLICMD_triggerUserEvent,
   CLICMD_show,
+  CLICMD_getSwarm,
+  CLICMD_getEvents,
+  CLICMD_save,
+  CLICMD_useConfig,
+  CLICMD_setAlias,
+  CLICMD_setWifi,
+  CLICMD_reboot,
   CLICMD_setMicrostepMode,
   CLICMD_getMicrostepMode,
   CLICMD_subscribe,
+  CLICMD_unsubscribe,
+  CLICMD_setIOType,
   CLICMD_getIOType,
-  CLICMD_getSensorType,
-  CLICMD_setSensorType,
   CLICMD_getValue,
   CLICMD_getVoltage,
   CLICMD_getResistance,
@@ -27,8 +35,6 @@ typedef enum {
   CLICMD_getCelcius,
   CLICMD_getFahrenheit,
   CLICMD_getToggle,
-  CLICMD_setActorType,
-  CLICMD_getActorType,
   CLICMD_setSpeed,
   CLICMD_getSpeed,
   CLICMD_setMotionType,
@@ -54,22 +60,36 @@ typedef enum {
   CLICMD_homing,
   CLICMD_isHoming,
   CLICMD_setHomingOffset,
+  CLICMD_testPixels,
+  CLICMD_print,
+  CLICMD_setBlink,
+  CLICMD_revokeEffect,
   CLICMD_MAX
 } CLICmd_t;
 
 class SwOSCLIParameter {
+
   protected:
-    char *_value = NULL;
-    SwOSIO *_io  = NULL;
+    char   *str = NULL;
+    char   *num = NULL;
+    SwOSIO *io  = NULL;
+
   public:
     ~SwOSCLIParameter();
-    void setValue( char *value );
-    void setValue( SwOSIO *io, char *ioName );
-    int  getValue( void );
-    long  getLongValue( void );
-    SwOSIO *getIO( void ) { return _io; };
-    bool isConstant( void ) { return (_io == NULL); };
-    bool isIO( void ) { return !isConstant(); };
+    void setNumber( char *value );
+    long getNumber( void );
+    
+    void setString( char *value );
+    char *getString( void ) { return str; };
+    
+    void setIO( SwOSIO *io );
+    SwOSIO *getIO( void ) { return io; };
+
+    bool isNumber( void ) { return (num); };
+    bool isIO( void ) { return (io); };
+    bool isString( void ) { return ( (str) && (*str) ); }  // ptr not null and not an empty string
+
     // Test, if an "execute"-parameter is in Range or not
-    bool inRange( const char *name, int minValue, int maxValue );
-} ;
+    bool inRange( const char *name, int minValue, int maxValue, char *error );
+
+};

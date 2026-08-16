@@ -1,4 +1,3 @@
-#include "esp_err.h"
 /*
  * SwOSWEB.h
  *
@@ -8,17 +7,23 @@
  * 
  */
  
+#include <esp_err.h>
 #include <esp_http_server.h>
-#include <esp_log.h>
-#include <cJSON.h>
-//#include "esp_vfs.h"
 
-#include "jsonize.h"
+#include <freertos/task.h>
+#include <cstring>
+
+#include "serialize.h"
 #include "SwOSNVS.h"
 #include "SwOSHW.h"
+#include "SwOSHW/SwOSHWLocal.h"
 #include "SwOSSwarm.h"
 #include "SwOSWeb.h"
 #include "sfs_files.h"
+#include "SwOSLog.h"
+#include "SwOSCLI.h"
+
+#define GETSWARMDELAY 1000
 
 #define SCRATCH_BUFSIZE (10240)
 #define HTTPD_401 "401 Unauthorized"
@@ -28,543 +33,207 @@ typedef struct http_server_context {
     char scratch[SCRATCH_BUFSIZE];
 } http_server_context_t;
 
-esp_err_t httpd_resp_sendstr_chunk_cr(httpd_req_t *req, const char *line ) {
+httpd_handle_t UIServer = NULL;
+httpd_handle_t streamServer = NULL;
+int authenticatedSession = -1;
 
-  char cr[10];
+esp_err_t indexHandler(httpd_req_t *req, httpd_err_code_t err) {
+  httpd_resp_set_hdr(req, "Content-Encoding", "gzip");
+  httpd_resp_set_type(req, "text/html"); 
 
-  httpd_resp_sendstr_chunk( req, line );
+  #define CHUNK_SIZE 4096
+  size_t remaining = sfs_index_html_gz_len;
+  const char *data_ptr = sfs_index_html_gz;
 
-  sprintf(cr, "\n");
-  httpd_resp_sendstr_chunk( req, cr);
+  while (remaining > 0) {
+      size_t to_send = (remaining > CHUNK_SIZE) ? CHUNK_SIZE : remaining;
+      
+      esp_err_t err = httpd_resp_send_chunk(req, data_ptr, to_send);
+      if (err != ESP_OK) {
+          SWARM_LOG_ERROR("Failed to send chunk, error: %d", err);
+          return err; 
+      }
+      
+      data_ptr += to_send;
+      remaining -= to_send;
+  }
+
+  esp_err_t final_err = httpd_resp_send_chunk(req, NULL, 0);
+  if (final_err != ESP_OK) {
+    SWARM_LOG_ERROR("Final chunk termination failed: %d", final_err);
+    return final_err;
+  }
 
   return ESP_OK;
 }
 
-static char *getBody(httpd_req_t *req) {
+#if FTSWARM_HAL_OLEDS > 0
 
-  int total_len = req->content_len;
-  int cur_len = 0;
-  char *buf = ((http_server_context_t *)(req->user_ctx))->scratch;
-  int received = 0;
-  
-  if (total_len >= SCRATCH_BUFSIZE) {
-    // Respond with 500 Internal Server Error 
-    httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "content too long");
-    return NULL;
-  }
-  
-  while (cur_len < total_len) {
-    
-    received = httpd_req_recv(req, buf + cur_len, total_len);
-    
-    if (received <= 0) {
-      // Respond with 500 Internal Server Error
-      httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to post control value");
-      return NULL;
-    }
-    
-    cur_len += received;
-  }
-  
-  buf[total_len] = '\0';
-
-  return buf;
-  
+static void pngWriteUint32(uint8_t *buf, uint32_t value) {
+    buf[0] = (value >> 24) & 0xff;
+    buf[1] = (value >> 16) & 0xff;
+    buf[2] = (value >> 8) & 0xff;
+    buf[3] = value & 0xff;
 }
 
-esp_err_t sendResponse( httpd_req_t *req, uint16_t status, bool keepOpen = false ) {
+static uint32_t pngCrc32(const uint8_t *data, size_t len) {
+    static uint32_t table[256];
+    static bool tableReady = false;
 
-  httpd_resp_set_type( req, "application/json; charset=utf-8" );
-  
-  switch (status) {
-    case 200: httpd_resp_set_status( req, HTTPD_200 ); break;
-    case 400: httpd_resp_set_status( req, HTTPD_400 ); break;
-    case 401: httpd_resp_set_status( req, HTTPD_401 ); break;
-    case 404: httpd_resp_set_status( req, HTTPD_404 ); break;
-    default:  httpd_resp_set_status( req, HTTPD_500 ); break;
-  }
-
-  if (!keepOpen) {
-    // reply noting
-    httpd_resp_sendstr(req, "{}" ); 
-    httpd_resp_sendstr(req, NULL );
-  }
-  
-  return ESP_OK;
-}
-
-cJSON *getJSON( httpd_req_t *req ) {
-  // test on valid JSON
-
-  // get body
-  char *body = getBody(req);
-  if ( body == NULL ) {
-    ESP_LOGE( LOGFTSWARM, "getJSON: getBody failed");
-    httpd_resp_set_status( req, HTTPD_400 );
-    return NULL;
-  }
-
-  // parse data
-  cJSON *root = cJSON_Parse(body);
-
-  // parsing error?
-  if ( root == NULL ) { 
-    ESP_LOGE( LOGFTSWARM, "invalid JSON string" );
-    httpd_resp_set_status( req, HTTPD_400 );
-    return NULL;
-  }
-
-  return root;
-
-}
-
-bool getParameter( httpd_req_t *req, cJSON * root, const char *parameter, int *value, bool mandatory = true ) {
-  // get a number
-
-  cJSON *p = cJSON_GetObjectItem(root, parameter );
-
-  // check if everything is ok
-  if ( p != NULL ) {
-
-    if ( p->type == cJSON_Number ) {
-      *value = p->valueint;
-      return true;
-
-    } else if ( p->type == cJSON_String ) {
-
-      char *ptr = p->valuestring;
-
-      // quoted string?
-      if ( ( ptr[0] == '"' ) && ( ptr[strlen(ptr)] == '"' ) ) { ptr[strlen(ptr)] = '\0'; ptr++; }
-      if ( ptr[0] == '\0' ) return false;
-
-      // start with #?
-      int base = 10;
-      if ( ptr[0] == '#' ) { base = 16; ptr++; }
-
-      *value = (int) strtol( ptr, NULL, base );
-      return true;
-
-    } else {
-
-      ESP_LOGE( LOGFTSWARM, "%s has wrong type", parameter );
-      httpd_resp_set_status( req, HTTPD_400 );
-      return false;
-    }
-  }
-
-  // mandatory
-  if ( mandatory ){
-    ESP_LOGE( LOGFTSWARM, "Missing parameter %s.", parameter );
-    httpd_resp_set_status( req, HTTPD_400 );
-    return false;
-  }
-  
-  // optional
-  return false;
-
-}
-
-bool getParameter( httpd_req_t *req, cJSON * root, const char *parameter, uint16_t *value, bool mandatory = true ) {
-  // get uint16_t
-  int v;
-  
-  if ( getParameter( req, root, parameter, &v, mandatory ) ) {
-    *value = (uint16_t) v;
-    return true;
-  }
-
-  return false;
-}
-
-
-bool getParameter( httpd_req_t *req, cJSON * root, const char *parameter, bool *value, bool mandatory = true ) {
-  // get a boolean
-  
-  int i;
-
-  if ( getParameter( req, root, parameter, &i, mandatory ) ) {
-    *value = (i!=0);
-    return true;
-  }
-
-  return false;
-
-}
-
-bool getParameter( httpd_req_t *req, cJSON * root, const char *parameter, char *value, bool mandatory = true ) {
-  // get a string
-
-  cJSON *p = cJSON_GetObjectItem( root, parameter );
-
-  // check if everything is ok
-  if ( ( p != NULL ) && ( p->type == cJSON_String ) ) {
-    strcpy( value, p->valuestring );
-    return true;
-  }
-
-  // missing mandatory parameter?
-  if ( ( p == NULL ) && ( mandatory ) ) {
-    ESP_LOGW( LOGFTSWARM, "Missing parameter %s.", parameter );
-    httpd_resp_set_status( req, HTTPD_400 );
-
-  // wrong type?
-  } else if ( p != NULL )  {
-    ESP_LOGW( LOGFTSWARM, "%s has wrong type", parameter );
-    httpd_resp_set_status( req, HTTPD_400 );
-  }
-  
-  return false;    
-
-}
-
-
-#define CHECK_FILE_EXTENSION(filename, ext) (strcasecmp(&filename[strlen(filename) - strlen(ext)], ext) == 0)
-
-/* Set HTTP response content type according to file extension */
-esp_err_t set_content_type_from_file(httpd_req_t *req, const char *filepath)
-{
-
-    const char *type = "text/plain";
-    if (CHECK_FILE_EXTENSION(filepath, ".html")) {
-        type = "text/html";
-    } else if (CHECK_FILE_EXTENSION(filepath, ".js")) {
-        type = "application/javascript";
-    } else if (CHECK_FILE_EXTENSION(filepath, ".css")) {
-        type = "text/css";
-    } else if (CHECK_FILE_EXTENSION(filepath, ".png")) {
-        type = "image/png";
-    } else if (CHECK_FILE_EXTENSION(filepath, ".ico")) {
-        type = "image/x-icon";
-    } else if (CHECK_FILE_EXTENSION(filepath, ".svg")) {
-        type = "image/svg+xml";
-    }
-    
-    return httpd_resp_set_type(req, type);
-}
-
-char * findlast( char *str, char ch) {
-
-  char *result = str;
-  char *test   = result;
-
-  while ( *test != '\0' ) {
-    if ( *test == ch ) result = test;
-      test++;
+    if (!tableReady) {
+        for (uint32_t i = 0; i < 256; i++) {
+            uint32_t c = i;
+            for (uint32_t j = 0; j < 8; j++) {
+                if (c & 1) c = 0xedb88320UL ^ (c >> 1);
+                else c >>= 1;
+            }
+            table[i] = c;
+        }
+        tableReady = true;
     }
 
-  if ( *result == ch )  result++;
-
-  return result;
-
+    uint32_t crc = 0xffffffffUL;
+    for (size_t i = 0; i < len; i++) {
+        crc = table[(crc ^ data[i]) & 0xff] ^ (crc >> 8);
+    }
+    return crc ^ 0xffffffffUL;
 }
 
-bool getAuthorization( httpd_req_t *req, uint16_t *token ) {
-  // needs to be called before start building a request's response
-
-  bool result = false;
-  char *authBuffer;
-
-  // get the value of Authorisation, expected value is "Bearer <number>"
-  size_t len = httpd_req_get_hdr_value_len(req, "Authorization" )+1;
-  authBuffer = (char *) malloc( len );
-  result = httpd_req_get_hdr_value_str(req, "Authorization", authBuffer, len) == ESP_OK;
-
-  // Authorisation found, check on token
-  if ( result && ( strlen( authBuffer ) > 7 ) ) {
-    char *tokenStr = authBuffer + 7; // sizeof("Bearer ") == 7
-    *token = (uint16_t) atol(tokenStr);
-  }
-
-  // cleanup
-  free(authBuffer);
-
-  return result;
-  
+static uint8_t *pngAppendChunk(uint8_t *dst, const char *type, const uint8_t *data, size_t data_len) {
+    pngWriteUint32(dst, data_len);
+    dst += 4;
+    uint8_t *chunkStart = dst;
+    memcpy(dst, type, 4);
+    dst += 4;
+    if (data && data_len) {
+        memcpy(dst, data, data_len);
+        dst += data_len;
+    }
+    uint32_t crc = pngCrc32(chunkStart, 4 + data_len);
+    pngWriteUint32(dst, crc);
+    dst += 4;
+    return dst;
 }
 
-esp_err_t indexHandler(httpd_req_t *req ) {
-  // reply on /index.html
+static esp_err_t sendOledScreenshot(httpd_req_t *req) {
+    uint8_t *fb = oled.getDisplayBuffer();
+    if (!fb) return ESP_FAIL;
 
-  httpd_resp_set_hdr( req, "Content-Encoding", "gzip" );
-  httpd_resp_set_type( req, "text/html" ); 
+    const uint32_t width = oled.getScreenWidth();
+    const uint32_t height = oled.getDisplayHeight();
+    const uint32_t outWidth = width + 4;
+    const uint32_t outHeight = height + 4;
+    const size_t bytes_per_row = outWidth * 3;
+    const size_t raw_size = outHeight * (1 + bytes_per_row);
+    const size_t zlib_size = 2 + 5 + raw_size + 4;
+    const size_t png_size = 8 + 25 + 12 + zlib_size + 12;
 
-  httpd_resp_send_chunk(req, sfs_index_html, SFS_index_html_len);
+    uint8_t *png = (uint8_t *)calloc(1, png_size);
+    if (!png) return ESP_ERR_NO_MEM;
 
-  httpd_resp_sendstr_chunk(req, NULL);
+    uint8_t *p = png;
+    static const uint8_t pngSignature[8] = {0x89, 'P', 'N', 'G', 0x0d, 0x0a, 0x1a, 0x0a};
+    memcpy(p, pngSignature, sizeof(pngSignature));
+    p += sizeof(pngSignature);
 
-  return ESP_OK;
+    uint8_t ihdr[13];
+    pngWriteUint32(ihdr + 0, outWidth);
+    pngWriteUint32(ihdr + 4, outHeight);
+    ihdr[8] = 8;    // bit depth
+    ihdr[9] = 2;    // color type: truecolor RGB
+    ihdr[10] = 0;   // compression method
+    ihdr[11] = 0;   // filter method
+    ihdr[12] = 0;   // interlace method
+    p = pngAppendChunk(p, "IHDR", ihdr, sizeof(ihdr));
+
+    uint8_t *zlib = (uint8_t *)calloc(1, zlib_size);
+    if (!zlib) { free(png); return ESP_ERR_NO_MEM; }
+
+    uint8_t *q = zlib;
+    *q++ = 0x78; // zlib CMF
+    *q++ = 0x01; // zlib FLG (no compression, fastest)
+
+    *q++ = 0x01; // DEFLATE block header: final block, no compression
+
+    uint16_t len = (uint16_t)raw_size;
+    *q++ = len & 0xff;
+    *q++ = (len >> 8) & 0xff;
+    *q++ = (~len) & 0xff;
+    *q++ = ((~len) >> 8) & 0xff;
+
+    uint32_t a = 1;
+    uint32_t b = 0;
+
+    for (uint32_t y = 0; y < outHeight; y++) {
+        *q++ = 0;
+        a += 0;
+        if (a >= 65521) a -= 65521;
+        b += a;
+        if (b >= 65521) b -= 65521;
+
+        for (uint32_t x = 0; x < outWidth; x++) {
+            uint8_t r = 0;
+            uint8_t g = 0;
+            uint8_t bcol = 0;
+            if (x >= 2 && x < width + 2 && y >= 2 && y < height + 2) {
+                uint32_t srcX = x - 2;
+                uint32_t srcY = y - 2;
+                uint32_t index = srcX + (srcY / 8) * width;
+                uint8_t pixel = (fb[index] >> (srcY & 7)) & 1;
+                if (pixel) {
+                    if (srcY < 16) {
+                        r = 255; g = 215; bcol = 0; // gold
+                    } else {
+                        r = 0; g = 255; bcol = 255; // cyan
+                    }
+                }
+            }
+            *q++ = r;
+            *q++ = g;
+            *q++ = bcol;
+            a += r;
+            if (a >= 65521) a -= 65521;
+            b += a;
+            if (b >= 65521) b -= 65521;
+            a += g;
+            if (a >= 65521) a -= 65521;
+            b += a;
+            if (b >= 65521) b -= 65521;
+            a += bcol;
+            if (a >= 65521) a -= 65521;
+            b += a;
+            if (b >= 65521) b -= 65521;
+        }
+    }
+
+    uint32_t adler = (b << 16) | a;
+    *q++ = (adler >> 24) & 0xff;
+    *q++ = (adler >> 16) & 0xff;
+    *q++ = (adler >> 8) & 0xff;
+    *q++ = adler & 0xff;
+
+    size_t actual_zlib_len = q - zlib;
+    p = pngAppendChunk(p, "IDAT", zlib, actual_zlib_len);
+    free(zlib);
+
+    p = pngAppendChunk(p, "IEND", NULL, 0);
+    size_t total_size = p - png;
+
+    httpd_resp_set_type(req, "image/png");
+    httpd_resp_set_hdr(req, "Content-Disposition", "inline; filename=\"oled_screenshot.png\"");
+    httpd_resp_set_hdr(req, "Cache-Control", "no-cache, no-store, must-revalidate");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+
+    esp_err_t err = httpd_resp_send(req, (const char *)png, total_size);
+    free(png);
+    return err;
 }
 
-esp_err_t fileHandler(httpd_req_t *req ) {
-  // reply on /assets/* or /js/* or /css/*
-  
-  char *file = findlast( (char *) req->uri, '/' );
-  set_content_type_from_file( req, file);
-  httpd_resp_set_hdr( req, "Content-Encoding", "gzip" );
-  
-  uint32_t len;
-  const char * x = sfs_get_file( (char *) req->uri, &len);
-
-  // file found?
-  if ( x[0] != '\0' ) {
-    httpd_resp_send_chunk(req, x, len);
-  } else {
-    httpd_resp_set_status( req, HTTPD_404 );
-  }
-  
-  httpd_resp_sendstr_chunk(req, NULL);
-  return ESP_OK;
-
+static esp_err_t screenshotUriHandler(httpd_req_t *req) {
+    return sendOledScreenshot(req);
 }
 
-esp_err_t apiGetSwarm(httpd_req_t *req ) {
-  // reply on /api/getSwarm
-
-  uint16_t token;
-  bool provided = getAuthorization( req, &token);  
-  bool status = false;
-
-  sendResponse( req, 200, true );
-
-  JSONize json(req);
-
-  json.startObject();
-  
-  json.startObject("auth");
-
-  if (provided) {
-    status = myOSSwarm.apiPeekIsAuthorized(token);    
-  }
-
-  json.variableB("provided", provided);
-  json.variableB("status", status);
-
-  json.endObject();
-  json.newObject(JSONObject);
-  json.text2string((char *)"swarms");
-  json.assign();
-
-  myOSSwarm.jsonize(&json);
-
-  json.endObject();
-
-  httpd_resp_sendstr_chunk(req, NULL);
-  
-  return ESP_OK;
-}
-
-esp_err_t apiGetToken(httpd_req_t *req ) {
-  // reply on /api/getToken
-
-  sendResponse( req, 200, true );
-
-  JSONize json(req);
-
-  myOSSwarm.getToken(&json);
-  
-  httpd_resp_sendstr_chunk(req, NULL);
-
-  return ESP_OK;
-}
-
-esp_err_t apiGetHandler(httpd_req_t *req ) {
-  // reply on get /api/*
-
-  httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
-
-  // check on sub urls, apiGetSwarm will lock
-  if (strcmp( req->uri, "/api/getSwarm" ) == 0 ) { return apiGetSwarm( req ); }
-  if (strcmp( req->uri, "/api/getToken" ) == 0 ) { return apiGetToken( req ); }
-
-  // unknown URL: FAIL
-  return sendResponse( req, 404, NULL );
-}
-
-
-esp_err_t apiActor( httpd_req_t *req ) {
-  // reply on /api/actor
-
-  // check on valid json 
-  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400 );
- 
-  char id[64];
-  int  cmd = 0;
-  int  speed = 0;
-  uint16_t token;
-  uint16_t status = 400;
-
-  // mandatory parameters
-  bool hasID = getParameter( req, root, "id", id, true );
-  bool hasAuthorization = getAuthorization( req, &token );
-
-  if ( !( hasID && hasAuthorization ) ) {
-    cJSON_Delete( root );
-    return sendResponse( req, 400 );
-  }
-  
-  // optional parameters
-  boolean hasCmd = ( req, getParameter( req, root, "cmd", &cmd, false ) );
-  boolean hasSpeed = ( req, getParameter( req, root, "speed", &speed, false ) );
-
-  // cleanup
-  cJSON_Delete( root );
-
-  // let's do it 
-  if ( hasCmd )   status = myOSSwarm.apiActorCmd( token, id, cmd, !hasSpeed );
-  if ( hasSpeed ) status = myOSSwarm.apiActorSpeed( token, id, speed, true); 
-
-  return sendResponse( req, status );
-
-}
-
-esp_err_t apiLED( httpd_req_t *req ) {
-  // reply on /api/led
-
-  // check on valid json 
-  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400 );
-
-  char     id[64];
-  int      brightness, color;
-  uint16_t status = 400;
-  uint16_t token;
-
-  // mandatory parameters
-  bool hasID = getParameter( req, root, "id", id, true );
-  bool hasAuthorization = getAuthorization( req, &token );
-  
-  if ( !( hasID && hasAuthorization ) ) {
-    cJSON_Delete( root );
-    return sendResponse( req, 400 );
-  }
-
-  // one of both?
-  bool hasBrightness = getParameter( req, root, "brightness", &brightness, false );
-  bool hasColor      = getParameter( req, root, "color", &color, false );
-
-  // cleanup
-  cJSON_Delete(root);
-
-  // let's do it
-  if ( hasBrightness ) status = myOSSwarm.apiLEDBrightness( token, id, brightness, !hasColor );
-  if ( hasColor )      status = myOSSwarm.apiLEDColor( token, id, color, true );
-  
-  return sendResponse( req, status );
-
-}
-
-esp_err_t apiServo(httpd_req_t *req ) {
-  // reply on /api/servo
-
-  // check on valid json 
-  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400 );
-
-  char     id[64];
-  int      offset, position;
-  uint16_t token;
-  uint16_t status = 400;
-
-  // mandatory parameters
-  bool hasID = getParameter( req, root, "id", id, true );
-  bool hasAuthorization = getAuthorization( req, &token );
-
-  if ( !( hasID && hasAuthorization ) ) {
-    cJSON_Delete( root );
-    return sendResponse( req, 400 );
-  }
-
-  // optional
-  boolean hasOffset   = getParameter( req, root, "offset", &offset, false);
-  boolean hasPosition = getParameter( req, root, "position", &position, false);
-
-  // cleanup
-  cJSON_Delete(root);
-  
-  // let's do it
-  if (hasOffset)   status = myOSSwarm.apiServoOffset( token, id, offset, !hasPosition);
-  if (hasPosition) status = myOSSwarm.apiServoPosition( token, id, position, true );
-
-  return sendResponse( req, status );
-
-}
-
-esp_err_t apiCam(httpd_req_t *req ) {
-  // reply on /api/cam
-
-  // check on valid json 
-  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400 );
-
-  char     id[64];
-  uint16_t token;
-  int      value;
-  uint16_t status = 400;
-
-  // mandatory parameters
-  bool hasID = getParameter( req, root, "id", id, true );
-  bool hasAuthorization = getAuthorization( req, &token );
-
-  if ( !( hasID && hasAuthorization ) ) {
-    cJSON_Delete( root );
-    return sendResponse( req, 400 );
-  }
-
-  // let's do it
-  if ( getParameter( req, root, "streaming", &value, false) )      status = myOSSwarm.apiCAMStreaming( token, id, value>0, false );
-  if ( getParameter( req, root, "framesize", &value, false) )      status = myOSSwarm.apiCAMFramesize( token, id, value, false );
-  if ( getParameter( req, root, "quality", &value, false) )        status = myOSSwarm.apiCAMQuality( token, id, value, false );
-  if ( getParameter( req, root, "brightness", &value, false) )     status = myOSSwarm.apiCAMBrightness( token, id, value, false );
-  if ( getParameter( req, root, "contrast", &value, false) )       status = myOSSwarm.apiCAMContrast( token, id, value, false );
-  if ( getParameter( req, root, "saturation", &value, false) )     status = myOSSwarm.apiCAMSaturation( token, id, value, false );
-  if ( getParameter( req, root, "specialEffect", &value, false) )  status = myOSSwarm.apiCAMSpecialEffect( token, id, value, false );
-  if ( getParameter( req, root, "wbMode", &value, false) )         status = myOSSwarm.apiCAMWbMode( token, id, value, false );
-  if ( getParameter( req, root, "hMirror", &value, false) )        status = myOSSwarm.apiCAMHMirror( token, id, value, false );
-  if ( getParameter( req, root, "vFlip", &value, false) )          status = myOSSwarm.apiCAMVFlip( token, id, value, false );
-  
-  // cleanup
-  cJSON_Delete(root);
-  
-  return sendResponse( req, status );
-
-}
-
-esp_err_t apiIsAuthorized( httpd_req_t *req ) {
-  // reply on api/isAuthorized
-
-  // check on valid json 
-  cJSON *root = getJSON( req ); if ( root == NULL ) return sendResponse( req, 400 );
-
-  // get Token
-  uint16_t token;
-  bool hasAuthorization = getAuthorization( req, &token );
-
-  // cleanup
-  cJSON_Delete(root);
-
-  if (!hasAuthorization ) return sendResponse( req, 400 );
-
-  // cleanup
-  cJSON_Delete(root);
-
-  uint16_t status = myOSSwarm.apiIsAuthorized( token, true );
-
-  return sendResponse( req, status );
-
-}
-
-esp_err_t apiPostHandler(httpd_req_t *req ) {
-  // reply on post /api
-
-  // check on sub url
-  if (strcmp( req->uri, "/api/led" )   == 0 )          return apiLED( req ); 
-  if (strcmp( req->uri, "/api/servo" ) == 0 )          return apiServo( req ); 
-  if (strcmp( req->uri, "/api/actor")  == 0 )          return apiActor( req ); 
-  if (strcmp( req->uri, "/api/cam")  == 0 )            return apiCam( req ); 
-  if (strcmp( req->uri, "/api/isAuthenticated") == 0 ) return apiIsAuthorized( req ); 
- 
-  // unknown URL: FAIL
-  return sendResponse( req, 404 );
-
-}
+#endif
 
 #define PART_BOUNDARY "123456789000000000000987654321"
 static const char *_STREAM_CONTENT_TYPE = "multipart/x-mixed-replace;boundary=" PART_BOUNDARY;
@@ -622,19 +291,19 @@ esp_err_t stream_handler(httpd_req_t *req)
       
       if (res == ESP_OK) {
         res = httpd_resp_send_chunk(req, _STREAM_BOUNDARY, strlen(_STREAM_BOUNDARY));
-        if (res != ESP_OK ) { printf("Error 1 %d\n", res ); }
+        if (res != ESP_OK ) { SWARM_LOG_ERROR("Stream error 1 %d", res ); }
       }
 
       
       if (res == ESP_OK) {
         size_t hlen = snprintf((char *)part_buf, 128, _STREAM_PART, _jpg_buf_len, _timestamp.tv_sec, _timestamp.tv_usec);
         res = httpd_resp_send_chunk(req, (const char *)part_buf, hlen);
-        if (res != ESP_OK ) { printf("Error 2 %d\n", res ); }
+        if (res != ESP_OK ) { SWARM_LOG_ERROR("Strem error 2 %d", res ); }
       }
         
       if (res == ESP_OK) {
         res = httpd_resp_send_chunk(req, (const char *)_jpg_buf, _jpg_buf_len);
-        if (res != ESP_OK ) { printf("Error 3 %d\n", res ); }
+        if (res != ESP_OK ) { SWARM_LOG_ERROR("Stream error 3 %d", res ); }
       }
 
       if (fb) {
@@ -665,6 +334,137 @@ esp_err_t stream_handler(httpd_req_t *req)
     return res;
 }
 
+struct async_resp_arg {
+    httpd_handle_t handle;
+    int fd;
+    uint8_t* message;
+};
+
+#define MAXWSTASKPAYLOAD 50 * 1024
+
+static void wsTask( void *args ) {
+
+  size_t max_clients = CONFIG_LWIP_MAX_LISTENING_TCP;
+
+  int client_fds[max_clients];
+  int client_info;
+  httpd_ws_frame_t ws_pkt;
+
+  memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+  ws_pkt.type    = HTTPD_WS_TYPE_BINARY;
+  ws_pkt.payload = (uint8_t*) calloc( MAXWSTASKPAYLOAD, 1 );
+  
+  Serialize        serialize( (char*) ws_pkt.payload, MAXWSTASKPAYLOAD, SERIALIZE_RAW );
+
+  while(1) {
+
+    max_clients = CONFIG_LWIP_MAX_LISTENING_TCP;
+    esp_err_t ret = httpd_get_client_list( UIServer, &max_clients, client_fds);
+
+    // anybody connected?
+    if ( max_clients != 0 ) {
+
+      serialize.reset();
+      myOSSwarm.serialize( &serialize );
+      ws_pkt.len = strlen( (char *)  ws_pkt.payload );
+
+      for (int i = 0; i < max_clients; i++) {
+
+        client_info = httpd_ws_get_fd_info( UIServer, client_fds[i]) ;
+        
+        if ( client_info == HTTPD_WS_CLIENT_WEBSOCKET ) httpd_ws_send_frame_async( UIServer, client_fds[i], &ws_pkt );
+
+      }
+
+    }
+
+    delay( GETSWARMDELAY );
+
+  }
+
+}
+
+static void wsAsyncHandler( void *varg )
+{
+    httpd_ws_frame_t ws_pkt;
+    struct async_resp_arg* arg = (async_resp_arg*) varg;
+
+    char *response;
+    SwOSCLI cli;
+    bool loggedIn = ( arg->fd == authenticatedSession );
+
+    response = cli.eval( (char*) arg->message, &loggedIn );
+
+    if ( loggedIn ) authenticatedSession = arg->fd;
+    
+    memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+    ws_pkt.payload = (uint8_t *)response;
+    ws_pkt.len     = strlen(response);
+    ws_pkt.type    = HTTPD_WS_TYPE_TEXT;
+
+    httpd_ws_send_frame_async( arg->handle, arg->fd, &ws_pkt );
+    free(response);
+    
+    free( arg->message );
+    free( arg );
+}
+
+static esp_err_t wsHandler(httpd_req_t *req) {
+
+  // http_get to open a connection
+  if (req->method == HTTP_GET) return ESP_OK;
+
+  // get frame
+  httpd_ws_frame_t ws_pkt;
+  uint8_t *buf = NULL;
+  memset( &ws_pkt, 0, sizeof( httpd_ws_frame_t ) );
+  ws_pkt.type = HTTPD_WS_TYPE_TEXT;
+  esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 0);
+  
+  // any error?
+  if (ret != ESP_OK)  {
+    SWARM_LOG_ERROR("httpd_ws_recv_frame failed to get frame len with %d", ret);
+    return ret;
+  }
+
+  // ignore messages without content
+  if (!ws_pkt.len) return ESP_OK;
+
+  // allocate a butter to get the message
+  buf = (uint8_t *) calloc(1, ws_pkt.len + 1);
+  if (buf == NULL) { SWARM_LOG_ERROR( "Failed to calloc memory for buf"); return ESP_ERR_NO_MEM; }
+
+  // catch the message
+  ws_pkt.payload = buf;
+  ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
+  if (ret != ESP_OK) { SWARM_LOG_ERROR( "httpd_ws_recv_frame failed with %d", ret); free(buf); return ret; }
+
+  // accept text only
+  if (ws_pkt.type != HTTPD_WS_TYPE_TEXT ) { free(buf); return ESP_ERR_NOT_SUPPORTED; }
+
+  // send all stuff to asyncHandler
+  struct async_resp_arg *arg = (async_resp_arg*) malloc( sizeof( struct async_resp_arg ) );
+  arg->handle  = req->handle;
+  arg->fd      = httpd_req_to_sockfd( req );
+  arg->message = buf;
+  return httpd_queue_work( req->handle, wsAsyncHandler, arg );
+
+}
+
+static esp_err_t apiGetLogHandler(httpd_req_t *req ) {
+  char buffer[STDIO_BUFFER_SIZE];
+  dumpStdIO(buffer, STDIO_BUFFER_SIZE);
+
+  httpd_resp_set_type( req, "text/plain; charset=utf-8" );
+  httpd_resp_set_status( req, HTTPD_200 );
+
+  httpd_resp_sendstr_chunk( req, buffer);
+  
+  httpd_resp_sendstr_chunk(req, NULL);
+
+  return ESP_OK;
+}
+
 bool SwOSStartWebServer( void ) {
 
   http_server_context_t *http_context = (http_server_context_t*)calloc(1, sizeof(http_server_context_t));
@@ -675,23 +475,20 @@ bool SwOSStartWebServer( void ) {
   config.stack_size = 100000;
   config.core_id = 0;
 
-  httpd_handle_t UIServer = NULL;
-  httpd_handle_t streamServer = NULL;
-
   esp_err_t x = httpd_start(&UIServer, &config);
 
   if ( x != ESP_OK) {
-      ESP_LOGE( LOGFTSWARM, "Failed to start web server! %04x", x);
+      SWARM_LOG_ERROR( "Failed to start web server! %04x", x);
       return false;
   }
 
-  if ( myOSSwarm.Ctrl[0]->getType() == FTSWARMCAM ) {
+  if ( FTSWARM_HAL_CAMS ) {
   
     config.server_port += 1;
     config.ctrl_port += 1;
     esp_err_t x = httpd_start(&streamServer, &config);
     if ( x != ESP_OK) {
-      ESP_LOGE( LOGFTSWARM, "Failed to start streaming server! %04x", x);
+      SWARM_LOG_ERROR( "Failed to start streaming server! %04x", x);
       return false;
     }
 
@@ -701,29 +498,23 @@ bool SwOSStartWebServer( void ) {
 
   }
 
-  // /
-  httpd_uri_t index = { .uri = "/", .method = HTTP_GET, .handler = &indexHandler, .user_ctx = NULL };
-  httpd_register_uri_handler(UIServer, &index);
+  // log
+  httpd_uri_t getLog = { .uri = "/api/getLog", .method = HTTP_GET, .handler = &apiGetLogHandler, .user_ctx = NULL };
+  httpd_register_uri_handler(UIServer, &getLog);
 
-  // /api/* HTTP_GET
-  httpd_uri_t apiGet = { .uri = "/api/*", .method = HTTP_GET, .handler = &apiGetHandler, .user_ctx = http_context };
-  httpd_register_uri_handler(UIServer, &apiGet);
+  #if FTSWARM_HAL_OLEDS > 0
+  httpd_uri_t getScreenshot = { .uri = "/api/screenshot", .method = HTTP_GET, .handler = &screenshotUriHandler, .user_ctx = NULL };
+  httpd_register_uri_handler(UIServer, &getScreenshot);
+  #endif
 
-  // /api/* HTTP_POST
-  httpd_uri_t apiPost = { .uri = "/api/*", .method = HTTP_POST, .handler = &apiPostHandler, .user_ctx = http_context };
-  httpd_register_uri_handler(UIServer, &apiPost);
-    
-  // css
-  httpd_uri_t cssGet = { .uri = "/css/*", .method = HTTP_GET, .handler = &fileHandler, .user_ctx = NULL };
-  httpd_register_uri_handler(UIServer, &cssGet);
+  // ws
+  httpd_uri_t ws = { .uri = "/ws", .method = HTTP_GET, .handler = &wsHandler, .user_ctx = NULL, .is_websocket  = true };
+  httpd_register_uri_handler(UIServer, &ws);
 
-  // js
-  httpd_uri_t jsGet = { .uri = "/js/*", .method = HTTP_GET, .handler = &fileHandler, .user_ctx = NULL };
-  httpd_register_uri_handler(UIServer, &jsGet);
+  // everything else
+  httpd_register_err_handler(UIServer, httpd_err_code_t::HTTPD_404_NOT_FOUND, &indexHandler);
 
-  // assets
-  httpd_uri_t assetsGet = { .uri = "/assets/*", .method = HTTP_GET, .handler = &fileHandler, .user_ctx = NULL };
-  httpd_register_uri_handler(UIServer, &assetsGet);
+  xTaskCreatePinnedToCore( wsTask, "wsTask", 10000, NULL, 1, NULL, ARDUINO_EVENT_RUNNING_CORE );
 
   return true;
 

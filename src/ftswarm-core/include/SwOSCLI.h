@@ -13,7 +13,6 @@
 #include "SwOSCLIParameter.h"
 #include "SwOSHW.h"
 
-#define CLIMAXLINE 255
 #define MAXPARAM   20
 
 typedef enum { 
@@ -26,7 +25,8 @@ typedef enum {
   EVAL_LPARANTHESIS, 
   EVAL_RPARANTHESIS, 
   EVAL_NUMBER, 
-  EVAL_LITERAL
+  EVAL_LITERAL,
+  EVAL_STRING
 } EvalResult_t;
 
 typedef enum { 
@@ -38,7 +38,7 @@ typedef enum {
   CMD_SETUP, 
   CMD_HALT, 
   CMD_STARTCLI, 
-  CMD_EXIT 
+  CMD_EXIT
 } Cmd_t;
 
 typedef enum { 
@@ -51,40 +51,57 @@ typedef enum {
   ERROR_LPARANTHESISEXPECTED,
   ERROR_RPARANTHESISEXPECTED,
   ERROR_UNKOWNCMD,
-  ERROR_WRONGNUMBEROFARGUMENTS
+  ERROR_WRONGNUMBEROFARGUMENTS,
+  ERROR_NOTAUTHENTICATED,
+  ERROR_WRONGIOTYPE,
+  ERROR_INVALIDCMD,
+  ERROR_WRONGPIN,
+  ERROR_STRINGEXPECTED,
+  ERROR_ALIASNOTNUNIQUE,
+  ERROR_PARAMETEREXPECTED,
+  ERROR_SSIDEXPECTED,
+  ERROR_PSKEXPECTED,
+  ERROR_NOTIMPLEMENTEDYET
 } Error_t;
 
 class SwOSCLI {
   protected:
 
     // user input    
-    char _line[CLIMAXLINE];
-    char prompt[2] = ">";
+    char *in = NULL;
 
-    char   *_evalPtr;
-    char   *_start;
-    SwOSIO *_io = NULL;
-    SwOSCtrl *_ctrl = NULL;
-    CLICmd_t _cmd;
-    int     _maxParameter;
-    SwOSCLIParameter _parameter[MAXPARAM];
+    // response
+    char *response = NULL;
 
+    // propmt
+    char     prompt[3] = ">";
+
+    // anything needed to analyze the string
+    char     *evalPtr  = NULL;
+    char     *start    = NULL;
+    SwOSIO   *io       = NULL;
+    SwOSCtrl *ctrl     = NULL;
+    CLICmd_t cmd;
+    int      maxParameter;
+    SwOSCLIParameter parameter[MAXPARAM];
+
+    // run mode
+    bool interactive = false;
+    bool exit        = false;
+
+    // standard messages
     void Error( Error_t error, int expected = 0, int found = 0 );
-
-    // some simple char tests    
-    bool isDigit(char ch);
-    bool isAlpha(char ch);
-    bool isLiteral(char ch);
+    void OK( void );
 
     EvalResult_t getNumber( void );
     EvalResult_t getLiteral( void );
+    EvalResult_t getString( void );
     EvalResult_t getNextToken( char* token );
     bool getIO( char *token, char *IOName, SwOSCtrl **ctrl, SwOSIO **io);
 
-    bool tokenizeConstant( char *token, int param); 
     bool tokenizeCmd( char *cmd );
     Cmd_t evalSimpleCommand( char *token );  // tests, if token is a simple command
-    void evalIOCommand( char *token );       // evals an IO command, token is already first token 
+    void evalComplexCommand( char *token, bool *loggedIn );  // evals an IO command, token is already first token 
 
     void executeInputCmd( void );
     void executeActorCmd( void ); 
@@ -94,14 +111,14 @@ class SwOSCLI {
     void executeI2CCmd( void );
     void executeIOCommand( void );
     void executeControllerCmd( void );
-    bool eval( void );
-    void help( void );
+    void executeSwarmCmd( bool *loggedIn );
+    void executeNVSCmd( bool *loggedIn );
     void startCLI( bool noEcho );
     void halt( void );
 
   public:
-    SwOSCLI();
-    void run(void);
+    char *eval( char* in, bool *loggedIn );
+    void run( void );
 };
 
 extern void mainMenu( void );
