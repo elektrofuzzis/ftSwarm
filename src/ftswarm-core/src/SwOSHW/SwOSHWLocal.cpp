@@ -291,20 +291,6 @@ void OLED::displayTask( void ) {
 void OLED::dim(bool dim) {
 
   U8G2_SSD1306_128X64_NONAME_F_HW_I2C::setContrast( dim ? 1 : 0x8F );
- 
-  /* legacy adafruit code
-  // send set contrast
-  Wire.beginTransmission( 0x3C );
-  Wire.write( (uint8_t) 0 );
-  Wire.write( 0x81 );
-  Wire.endTransmission();
- 
-  // send contast value
-  Wire.beginTransmission( 0x3C );
-  Wire.write( (uint8_t) 0 );
-  Wire.write( dim ? 1 : 0x8F );
-  Wire.endTransmission();
-  */
    
 }
 

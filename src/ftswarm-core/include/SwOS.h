@@ -4,7 +4,7 @@
  * some common SwOS defintions
  * don't use this definitions for building ftSwarm applications
  * 
- * (C) 2021/22 Christian Bergschneider & Stefan Fuss
+ * (C) 2021-2026 Christian Bergschneider & Stefan Fuss
  * 
  */
 
@@ -15,7 +15,7 @@
 #define MAXIDENTIFIER 32
 #define MAXACTORS     8
 #define MAXINPUTS     12
-#define SWOSVERSION   "0.7.0"
+#define SWOSVERSION   "0.7.1"
 
 #define SWOS_NOPORT   255
 

@@ -1154,8 +1154,6 @@ bool SwOSCtrl::recvState( SwOSCom *com ) {
   uint8_t ptr = 0;  // ptr in payload buffer
   uint8_t index;    // index of io
 
- //  com->print();
-
   for ( uint8_t i=0; i < com->data.stateCmd.items; i++ ) {
     index = com->data.stateCmd.payload[ptr++];
     if ( (index < IOs) && (io[index]) ) {
@@ -1262,7 +1260,6 @@ bool SwOSCtrl::hasGyro( void ) {
        ( CPU == FTSWARMCONTROL_1V3UC )
      ) return true;
 
-  // check on MPU6050
   Wire.beginTransmission(0x68);
   return (Wire.endTransmission(true) == 0);
 

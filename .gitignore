@@ -340,6 +340,5 @@ Backup of *.doc*
 
 
 # my ignores
-deployment/
-src/ftswarm-*/examples/
 *.gz
+build/

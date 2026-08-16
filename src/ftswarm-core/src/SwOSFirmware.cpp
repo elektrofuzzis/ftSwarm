@@ -193,7 +193,7 @@ void MenuLocalSettings::run( void ) {
     }
 
     // gyro if available
-    if ( myOSSwarm.Ctrl[0]->hasGyro() ) { 
+    if ( ( nvs.extensionPort.mode == FTSWARM_EXT_I2C_MASTER ) && ( myOSSwarm.Ctrl[0]->hasGyro() ) ) { 
       add("Gyro", ONOFF[nvs.extensionPort.gyro], MENU_GYRO, 'g' ); 
     }
 
