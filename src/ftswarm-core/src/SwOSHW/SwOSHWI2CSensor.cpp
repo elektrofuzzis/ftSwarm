@@ -541,3 +541,113 @@ uint8_t SwOSI2C::popState( uint8_t *buffer ) {
   return MAXI2CREGISTERS;
 
 }
+
+/***************************************************
+ *
+ *   TWAI
+ ***************************************************/
+
+ /*
+void SwOSTWAI::operate( ) {
+  
+}
+
+void SwOSTWAI::setupLocal( void ) {
+
+  Wire.begin(I2CAddress);
+  Wire.onReceive(I2CReceiveEvent);
+  Wire.onRequest(I2CRequestEvent);
+  
+  if ( nvs.extensionPort.interruptLine ) { 
+    I2CSlave_read=false; 
+    if (intIO) {
+      intIO->setSpeed(nvs.extensionPort.interruptOnOff[0]);
+      intIO->apply();      
+    }
+  }
+
+}
+
+SwOSI2C::SwOSI2C( const char *name, SwOSCtrl *ctrl, uint8_t flags, uint8_t I2CAddress):SwOSIO( name, ctrl, SWOSIO_I2C, flags ) {
+
+  memset(myRegister, 0, sizeof(myRegister));
+  
+  if (ctrl->isLocal()) setupLocal(I2CAddress);
+
+}
+
+void SwOSI2C::setRegister( uint8_t reg, uint8_t value ) {
+
+  // check on boundaries
+  if (reg>=MAXI2CREGISTERS) return;
+  
+  myRegister[reg] = value;
+
+  if (ctrl->isLocal()) setLocal( reg, value );
+  else                 setRemote( reg, value );
+
+}
+
+void SwOSI2C::setRemote( uint8_t reg, uint8_t value ) {
+  
+  SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_I2CREGISTER );
+  cmd.data.I2CRegisterCmd.index = ctrl->getIndex( this );
+  cmd.data.I2CRegisterCmd.reg   = reg;
+  cmd.data.I2CRegisterCmd.value = value;
+  cmd.send( );
+
+}
+
+void SwOSI2C::setLocal( uint8_t reg, uint8_t value ) {
+
+  I2CSlave_value[reg] = value;
+
+  if ( nvs.extensionPort.interruptLine ) { 
+    // Use M1/M2 as interrupt line
+    
+    // reset read semaphore
+    I2CSlave_read = false;
+
+    // get MotorIO
+    intIO = (SwOSMotor*) ctrl->getIO( SWOSIO_MOTOR, nvs.extensionPort.interruptLine - 1 + FTSWARM_M1 );
+
+    if (intIO) {
+
+      // if the remote controller didn't ack the last interrupt, so I need to reset the interupt line first 
+      if ( intIO->getSpeed() != nvs.extensionPort.interruptOnOff[0] ) {
+        intIO->setSpeed(nvs.extensionPort.interruptOnOff[0]);
+        intIO->apply();
+        delay(1);
+      }
+
+      // set interrupt
+      intIO->setSpeed(nvs.extensionPort.interruptOnOff[1]);
+      intIO->apply();
+
+    }
+
+  }
+
+}
+
+uint8_t SwOSI2C::getRegister( uint8_t reg ) {
+
+  if (reg>=MAXI2CREGISTERS) return 0;
+  else return myRegister[reg];
+
+}
+
+uint8_t SwOSI2C::pushState( uint8_t *buffer ) {
+
+  memcpy( buffer, myRegister, MAXI2CREGISTERS );
+  return MAXI2CREGISTERS;
+
+}
+
+uint8_t SwOSI2C::popState( uint8_t *buffer ) {
+
+  memcpy( myRegister, buffer, MAXI2CREGISTERS );
+  return MAXI2CREGISTERS;
+
+}
+  */

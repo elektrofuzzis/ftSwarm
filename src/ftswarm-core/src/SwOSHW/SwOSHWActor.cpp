@@ -128,11 +128,15 @@ void SwOSDCMotor::setupLocal() {
   };
   if ( IN1 != GPIO_NUM_NC ) io_conf.pin_bit_mask = io_conf.pin_bit_mask | (1ULL << IN1);
   if ( IN2 != GPIO_NUM_NC ) io_conf.pin_bit_mask = io_conf.pin_bit_mask | (1ULL << IN2);
+  if ( FTSWARM_HAL_MOTOR_SLEEP != GPIO_NUM_NC ) io_conf.pin_bit_mask = io_conf.pin_bit_mask | (1ULL << FTSWARM_HAL_MOTOR_SLEEP);
   gpio_config(&io_conf);
   
   // set motor driver off
   if ( IN1 != GPIO_NUM_NC ) gpio_set_level( IN1, 0 );
   if ( IN2 != GPIO_NUM_NC ) gpio_set_level( IN2, 0 );
+
+  // set motor driver sleep off
+  if ( FTSWARM_HAL_MOTOR_SLEEP != GPIO_NUM_NC ) gpio_set_level( FTSWARM_HAL_MOTOR_SLEEP, 1 );
 
   // just prepare led channel, don't register yet
   ledc_channel = (ledc_channel_config_t *) calloc( sizeof( ledc_channel_config_t ), 1 );
@@ -242,6 +246,8 @@ int16_t SwOSDCMotor::duty( void ) {
 }
 
 void SwOSDCMotor::setPWM( int16_t xin1, int16_t xin2, gpio_num_t pwm, uint32_t duty ) {
+
+  printf( "setPWM %d %d %d %d\n", xin1, xin2, pwm, duty );
 
   // check if it's needed to stop running pwm
   if ( ( ( duty == 0 ) || ( pwm != ledc_channel->gpio_num ) ) && ( ledc_channel->gpio_num != GPIO_NUM_NC ) ) {

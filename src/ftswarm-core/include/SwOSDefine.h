@@ -81,3 +81,13 @@
 #ifndef FTSWARM_HAL_FIRSTJPOTI
   #define FTSWARM_HAL_FIRSTJPOTI 0
 #endif
+
+#ifndef FTSWARM_HAL_MOTOR_SLEEP
+
+  #if defined(FTSWARM_HAL_MOTORS) && (FTSWARM_HAL_MOTORS == 8)
+    #define FTSWARM_HAL_MOTOR_SLEEP GPIO_NUM_47
+  #else
+    #define FTSWARM_HAL_MOTOR_SLEEP GPIO_NUM_NC
+  #endif
+
+#endif

@@ -152,3 +152,39 @@ class SwOSMotor;
     virtual uint8_t getRegister( uint8_t reg );
 
 };
+
+/***************************************************
+ *
+ *   TWAI
+ *
+ ***************************************************/
+
+ /*
+
+ class SwOSTWAI : public SwOSIO, public SwOSEventInput {
+  
+  protected:
+    
+    virtual void setupLocal( void ); 
+    virtual void setLocal( uint32_t value );
+    virtual void setRemote( uint32_t value );
+
+  public:
+
+    SwOSTWAI( const char *name, SwOSCtrl *ctrl, uint8_t flags, uint8_t I2CAddress);
+    
+    virtual bool isTWAI( void ) { return true; };
+
+    // check, if state has changed to send by data to kelda
+    virtual bool isDirty( void );
+
+    virtual uint8_t pushState( uint8_t *buffer );
+    virtual uint8_t popState( uint8_t *buffer );
+
+    virtual void operate();
+
+    virtual void set( uint32_t value );
+    virtual uint8_t getRegister( uint32_t value );
+
+};
+*/
