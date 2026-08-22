@@ -11,7 +11,9 @@
 #include "SwOSHW/SwOSHWBaseCtrl.h"
 #include "SwOSHW/SwOSHWActor.h"
 #include "SwOSLog.h"
+#include "SwOSSwarm.h"
 
+#include <driver/twai.h>
 #include <MPU6050_6Axis_MotionApps20.h>
 #include <LSM6DSRSensor.h>
 
@@ -544,110 +546,148 @@ uint8_t SwOSI2C::popState( uint8_t *buffer ) {
 
 /***************************************************
  *
- *   TWAI
+ *   CAN (TWAI)
+ *
+ * CAN datagrams are addressed by an extended 29 bit identifier, plus up to
+ * MAXCANPAYLOAD data bytes.
+ *
  ***************************************************/
 
- /*
-void SwOSTWAI::operate( ) {
-  
+#define CANID_MASK 0x1FFFFFFF
+
+SwOSCAN::SwOSCAN( const char *name, SwOSCtrl *ctrl, uint8_t flags ) : SwOSIO( name, ctrl, SWOSIO_CAN, flags ) {
+
+  if (ctrl->isLocal()) setupLocal();
+
 }
 
-void SwOSTWAI::setupLocal( void ) {
+void SwOSCAN::setupLocal( void ) {
 
-  Wire.begin(I2CAddress);
-  Wire.onReceive(I2CReceiveEvent);
-  Wire.onRequest(I2CRequestEvent);
-  
-  if ( nvs.extensionPort.interruptLine ) { 
-    I2CSlave_read=false; 
-    if (intIO) {
-      intIO->setSpeed(nvs.extensionPort.interruptOnOff[0]);
-      intIO->apply();      
-    }
+  // TWAI RX line is SDA, TX line is SCL
+  twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT( (gpio_num_t) SCL, (gpio_num_t) SDA, TWAI_MODE_NORMAL );
+  twai_timing_config_t  t_config = TWAI_TIMING_CONFIG_125KBITS();
+  twai_filter_config_t  f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
+
+  if ( twai_driver_install( &g_config, &t_config, &f_config ) != ESP_OK ) {
+    SWARM_LOG_ERROR( TRANSLATE( "CAN/TWAI driver installation failed.", "CAN/TWAI-Treiber konnte nicht installiert werden." ) );
+    return;
+  }
+
+  if ( twai_start() != ESP_OK ) {
+    SWARM_LOG_ERROR( TRANSLATE( "CAN/TWAI bus start failed.", "CAN/TWAI-Bus konnte nicht gestartet werden." ) );
   }
 
 }
 
-SwOSI2C::SwOSI2C( const char *name, SwOSCtrl *ctrl, uint8_t flags, uint8_t I2CAddress):SwOSIO( name, ctrl, SWOSIO_I2C, flags ) {
+void SwOSCAN::printCSV( uint32_t id, const uint8_t *payload, uint8_t length ) {
 
-  memset(myRegister, 0, sizeof(myRegister));
-  
-  if (ctrl->isLocal()) setupLocal(I2CAddress);
+  if (!isSubscribed) return;
 
-}
-
-void SwOSI2C::setRegister( uint8_t reg, uint8_t value ) {
-
-  // check on boundaries
-  if (reg>=MAXI2CREGISTERS) return;
-  
-  myRegister[reg] = value;
-
-  if (ctrl->isLocal()) setLocal( reg, value );
-  else                 setRemote( reg, value );
+  printf( "S: %s,%lu", subscribedIOName, (unsigned long) id );
+  for ( uint8_t i=0; i<length; i++ ) printf( ",%u", payload[i] );
+  printf( "\n" );
 
 }
 
-void SwOSI2C::setRemote( uint8_t reg, uint8_t value ) {
-  
-  SwOSCom cmd( ctrl->macAddr, ctrl->serialNumber, CMD_I2CREGISTER );
-  cmd.data.I2CRegisterCmd.index = ctrl->getIndex( this );
-  cmd.data.I2CRegisterCmd.reg   = reg;
-  cmd.data.I2CRegisterCmd.value = value;
-  cmd.send( );
+void SwOSCAN::transmitLocal( uint32_t id, const uint8_t *payload, uint8_t length ) {
+
+  if (length > MAXCANPAYLOAD) length = MAXCANPAYLOAD;
+
+  twai_message_t message = {};
+  message.extd             = 1;
+  message.identifier       = id & CANID_MASK;
+  message.data_length_code = length;
+  if (payload) memcpy( message.data, payload, length );
+
+  if ( twai_transmit( &message, pdMS_TO_TICKS(10) ) != ESP_OK ) {
+    SWARM_LOG_ERROR( TRANSLATE( "CAN/TWAI datagram transmission failed.", "CAN/TWAI-Datagramm konnte nicht gesendet werden." ) );
+  }
 
 }
 
-void SwOSI2C::setLocal( uint8_t reg, uint8_t value ) {
+void SwOSCAN::sendToMember( uint32_t id, const uint8_t *payload, uint8_t length ) {
 
-  I2CSlave_value[reg] = value;
+  if (length > MAXCANPAYLOAD) length = MAXCANPAYLOAD;
 
-  if ( nvs.extensionPort.interruptLine ) { 
-    // Use M1/M2 as interrupt line
-    
-    // reset read semaphore
-    I2CSlave_read = false;
+  SwOSCom com( ctrl->macAddr, ctrl->serialNumber, CMD_CANSEND );
+  com.data.CANDatagramCmd.index  = ctrl->getIndex( this );
+  com.data.CANDatagramCmd.id     = id;
+  com.data.CANDatagramCmd.length = length;
+  if (payload) memcpy( com.data.CANDatagramCmd.payload, payload, length );
+  com.send();
 
-    // get MotorIO
-    intIO = (SwOSMotor*) ctrl->getIO( SWOSIO_MOTOR, nvs.extensionPort.interruptLine - 1 + FTSWARM_M1 );
+}
 
-    if (intIO) {
+void SwOSCAN::sendToKelda( uint32_t id, const uint8_t *payload, uint8_t length ) {
 
-      // if the remote controller didn't ack the last interrupt, so I need to reset the interupt line first 
-      if ( intIO->getSpeed() != nvs.extensionPort.interruptOnOff[0] ) {
-        intIO->setSpeed(nvs.extensionPort.interruptOnOff[0]);
-        intIO->apply();
-        delay(1);
-      }
+  // no Kelda to report to, or I'm the Kelda myself
+  if ( ( !myOSSwarm.Kelda ) || ( ctrl == myOSSwarm.Kelda ) ) return;
 
-      // set interrupt
-      intIO->setSpeed(nvs.extensionPort.interruptOnOff[1]);
-      intIO->apply();
+  if (length > MAXCANPAYLOAD) length = MAXCANPAYLOAD;
 
-    }
+  SwOSCom com( myOSSwarm.Kelda->macAddr, ctrl->serialNumber, CMD_CANRECV );
+  com.data.CANDatagramCmd.index  = ctrl->getIndex( this );
+  com.data.CANDatagramCmd.id     = id;
+  com.data.CANDatagramCmd.length = length;
+  if (payload) memcpy( com.data.CANDatagramCmd.payload, payload, length );
+  com.send();
+
+}
+
+void SwOSCAN::sendCAN( uint32_t id, const uint8_t *payload, uint8_t length ) {
+
+  if (ctrl->isLocal()) transmitLocal( id, payload, length );
+  else                 sendToMember( id, payload, length );
+
+}
+
+void SwOSCAN::recvRemote( uint32_t id, const uint8_t *payload, uint8_t length ) {
+
+  if (length > MAXCANPAYLOAD) length = MAXCANPAYLOAD;
+
+  lastMsg.id     = id;
+  lastMsg.length = length;
+  memcpy( lastMsg.payload, payload, length );
+
+  printCSV( id, lastMsg.payload, length );
+
+}
+
+void SwOSCAN::operate() {
+
+  // no work on remote CAN buses
+  if (!ctrl->isLocal()) return;
+
+  twai_message_t rx;
+
+  while ( twai_receive( &rx, 0 ) == ESP_OK ) {
+
+    uint32_t id     = rx.identifier & CANID_MASK;
+    uint8_t  length = ( rx.data_length_code > MAXCANPAYLOAD ) ? MAXCANPAYLOAD : rx.data_length_code;
+
+    lastMsg.id     = id;
+    lastMsg.length = length;
+    memcpy( lastMsg.payload, rx.data, length );
+
+    printCSV( id, lastMsg.payload, length );
+
+    // forward received datagram to Kelda
+    sendToKelda( id, lastMsg.payload, length );
 
   }
 
 }
 
-uint8_t SwOSI2C::getRegister( uint8_t reg ) {
+uint8_t SwOSCAN::pushState( uint8_t *buffer ) {
 
-  if (reg>=MAXI2CREGISTERS) return 0;
-  else return myRegister[reg];
-
-}
-
-uint8_t SwOSI2C::pushState( uint8_t *buffer ) {
-
-  memcpy( buffer, myRegister, MAXI2CREGISTERS );
-  return MAXI2CREGISTERS;
+  memcpy( buffer, &lastMsg, sizeof( lastMsg ) );
+  return sizeof( lastMsg );
 
 }
 
-uint8_t SwOSI2C::popState( uint8_t *buffer ) {
+uint8_t SwOSCAN::popState( uint8_t *buffer ) {
 
-  memcpy( myRegister, buffer, MAXI2CREGISTERS );
-  return MAXI2CREGISTERS;
+  memcpy( &lastMsg, buffer, sizeof( lastMsg ) );
+  return sizeof( lastMsg );
 
 }
-  */

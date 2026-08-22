@@ -77,7 +77,8 @@ const IOCmdList_t IOCmdList [CLICMD_MAX] = {
   { "testPixels", true, 1, 1},
   { "print", true, 0, 0 },
   { "setBlink", true, 7, 7 },
-  { "revokeEffect", true, 1, 1 }
+  { "revokeEffect", true, 1, 1 },
+  { "send", true, 1, 1 + MAXCANPAYLOAD }
 };
 
 const char help[] = R"(help   - list all commands
@@ -188,6 +189,9 @@ I2C commands:
   getRegister( register )
   onTrigger( triggerEvent, operator, operand1, operand2, actor, p1)
   onTrigger( triggerEvent, operator, operand1, operand2, actor)
+
+CAN commands:
+  send( id, payload0, ..., payload7 )   - send a CAN datagram, up to 8 payload bytes
 )";
 
 
@@ -1051,6 +1055,32 @@ void SwOSCLI::executeI2CCmd( void ) {
 
 }
 
+void SwOSCLI::executeCANCmd( void ) {
+
+  switch ( cmd ) {
+    case CLICMD_send:          if ( parameter[0].inRange( "id",  0, 0x1FFFFFFF, response ) ) {
+
+                                  uint8_t payload[MAXCANPAYLOAD];
+                                  uint8_t length = 0;
+
+                                  for ( ; ( length < MAXCANPAYLOAD ) && ( parameter[1+length].isNumber() ); length++ ) {
+                                    if ( !parameter[1+length].inRange( "payload", 0, 255, response ) ) return;
+                                    payload[length] = (uint8_t) parameter[1+length].getNumber();
+                                  }
+
+                                  io->lock();
+                                  ((SwOSCAN *)io)->sendCAN( (uint32_t) parameter[0].getNumber(), payload, length );
+                                  io->unlock();
+                                  OK( );
+                                }
+                                break;
+
+    default:                    Error( ERROR_INVALIDCMD );
+                                break;
+  }
+
+}
+
 void SwOSCLI::executeNVSCmd( bool *loggedIn ) {
 
   switch ( cmd ) {
@@ -1202,6 +1232,8 @@ void SwOSCLI::executeIOCommand( void ) {
       case SWOSIO_PIXEL:          executePixelCmd(); break;
 
       case SWOSIO_I2C:            executeI2CCmd(); break;
+
+      case SWOSIO_CAN:            executeCANCmd(); break;
       
       default:                    sprintf( response, "Error: unsupported IO");
                                   break;

@@ -131,6 +131,7 @@ typedef enum { SWOSIO_UNDEF = -1,
                SWOSIO_RCMOTOR,
                SWOSIO_RCSERVO,
                SWOSIO_RCPOTI,
+               SWOSIO_CAN,
                SWOSIO_MAXIOTYPE 
 } SwOSIOType_t;
 
@@ -179,7 +180,8 @@ const SwOSIOClass_t SWOSIOCLASS[SWOSIO_MAXIOTYPE ] = {
   SWOSIOCLASS_MOTOR,    // SWOSIO_MMOTOR
   SWOSIOCLASS_MOTOR,    // SWOSIO_RCMOTOR
   SWOSIOCLASS_MOTOR,    // SWOSIO_RCSERVO
-  SWOSIOCLASS_SINGULAR  // SWOSIO_RCPOTI
+  SWOSIOCLASS_SINGULAR, // SWOSIO_RCPOTI
+  SWOSIOCLASS_SINGULAR  // SWOSIO_CAN
 } ;  
 
 // show via api?
@@ -227,7 +229,8 @@ const bool SHOWIOINAPI[SWOSIO_MAXIOTYPE] = {
   true,  // SWOSIO_MMOTOR
   true,  // SWOSIO_RCMOTOR
   true,  // SWOSIO_RCSERVO
-  false  // SWOSIO_RCPOTI
+  false, // SWOSIO_RCPOTI
+  false  // SWOSIO_CAN
 } ;  
 
 // show via api?
@@ -275,7 +278,8 @@ const char SWOSIOTYPE[SWOSIO_MAXIOTYPE][20] = {
   "MMotor",
   "RCMotor",
   "RCServo",
-  "RCPoti"
+  "RCPoti",
+  "CAN"
 } ;  
 
 // HW versions
@@ -346,7 +350,7 @@ typedef enum { FTSWARM_ALIGNLEFT, FTSWARM_ALIGNCENTER, FTSWARM_ALIGNRIGHT } FtSw
 typedef enum { FTSWARM_GYRO_OFF, FTSWARM_GYRO_LSM, FTSWARM_GYRO_MPU } FtSwarmGyroMode_t;
 
 // Ext Port modes
-typedef enum { FTSWARM_EXT_OFF, FTSWARM_EXT_I2C_MASTER, FTSWARM_EXT_I2C_SLAVE, FTSWARM_EXT_OUTPUT, FTSWARM_EXT_SERVO, FTSWARM_EXT_LIDAR } FtSwarmExtMode_t;
+typedef enum { FTSWARM_EXT_OFF, FTSWARM_EXT_I2C_MASTER, FTSWARM_EXT_I2C_SLAVE, FTSWARM_EXT_OUTPUT, FTSWARM_EXT_SERVO, FTSWARM_EXT_LIDAR, FTSWARM_EXT_CAN } FtSwarmExtMode_t;
 
 // trigger events
 typedef enum { FTSWARM_NOTRIGGER = -1, FTSWARM_TRIGGERDOWN, FTSWARM_TRIGGERUP, FTSWARM_TRIGGERVALUE, FTSWARM_TRIGGERI2CREAD, FTSWARM_TRIGGERI2CWRITE, FTSWARM_MAXTRIGGER } FtSwarmTrigger_t;
@@ -516,7 +520,7 @@ typedef enum { FTSWARM_OLED_NOFILL, FTSWARM_OLED_FILLBLACK, FTSWARM_OLED_FILLWHI
 
 typedef enum { FTSWARM_OLED_UPPERSCREEN, FTSWARM_OLED_MAINSCREEN, FTSWARM_OLED_BUTTONSCREEN, FTSWARM_OLED_NOSCREEN, FTSWARM_OLED_MAXSCREEN = FTSWARM_OLED_NOSCREEN, } FtSwarmOledScreen_t;
 
-const char EXTMODE[7][14] = { TRANSLATE( "off", "aus"), "I2C-Master", "I2C-Slave", "Outputs", "Servos", "Lidar", "" }; // "" just to avoid seg faults
+const char EXTMODE[8][14] = { TRANSLATE( "off", "aus"), "I2C-Master", "I2C-Slave", "Outputs", "Servos", "Lidar", "CAN", "" }; // "" just to avoid seg faults
 const char GYRO[3][8]     = { TRANSLATE( "off", "aus"), "LSM6", "MPU6050"};
 const char ONOFF[2][5]    = { TRANSLATE( "off", "aus"), TRANSLATE( "on", "an" ) };
 const char OFFM1M2[3][5]  = { TRANSLATE( "off", "aus"), "M1", "M2" };

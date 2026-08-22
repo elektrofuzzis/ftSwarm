@@ -64,6 +64,7 @@ typedef enum {
   CLICMD_print,
   CLICMD_setBlink,
   CLICMD_revokeEffect,
+  CLICMD_send,
   CLICMD_MAX
 } CLICmd_t;
 

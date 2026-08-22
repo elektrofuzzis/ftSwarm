@@ -268,11 +268,13 @@ class SwOSIO : public SwOSObj {
     virtual bool isServo( void )        { return false; };  
     virtual bool isGyro( void )         { return false; };
     virtual bool isI2C( void )          { return false; };
+    virtual bool isCAN( void )          { return false; };
     virtual bool isOLED( void )         { return false; };
     virtual bool isPixel( void )        { return false; };
     virtual bool isCAM( void )          { return false; };
     virtual bool isCounter( void )      { return false; };
     virtual bool isStepper( void )      { return false; };
+    virtual bool handlesEvents( void )  { return false; };
 
     virtual void operate( void ) { };
     virtual void onTrigger( SwOSTriggerMath triggerMath, int32_t sensor, int32_t delta, FtSwarmTriggerParameter parameter );
@@ -347,6 +349,7 @@ class SwOSInput : public SwOSIO, public SwOSEventInput {
     // administrative stuff
 	  virtual void serialize( Serialize *serialize ) {};
 	  void serializeEvents( Serialize *serialize );
+    virtual bool handlesEvents( void )  { return true; };
 
     // check, if state has changed to send by data to kelda
     virtual bool isDirty( void );

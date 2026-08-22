@@ -29,6 +29,7 @@ class SwOSPixel;
 class SwOSServo;
 class SwOSGyro;
 class SwOSI2C;
+class SwOSCAN;
 class SwOSCAM;
 class SwOSCounter;
 class SwOSStepper;
@@ -82,6 +83,8 @@ class SwOSCtrl : public SwOSObj {
     bool setStepperHomingOffset( SwOSCom *com );
     bool stepperStartStop( SwOSCom *com );
     bool I2CRegister( SwOSCom *com );
+    bool CANSend( SwOSCom *com );
+    bool CANRecv( SwOSCom *com );
     bool setParameter( SwOSCom *com );
 
     // initialize Hardware
@@ -151,6 +154,7 @@ class SwOSCtrl : public SwOSObj {
     SwOSCAM*      getCAM( char *name );                                    // get a pointer to a cam by name
     SwOSCounter*  getCounter( uint8_t index );                             // get a pointer to a counter by index
     SwOSI2C*      getI2C( uint8_t index );                                 // get a pointer to an i2c by index
+    SwOSCAN*      getCAN( uint8_t index );                                 // get a pointer to a can by index
     SwOSPixel*    getPixel( char *name );                                  // get a pointer to a pixel by name
     SwOSServo*    getServo( char *name );                                  // get a pointer to a servo by name
     SwOSServo*    getServo( uint8_t index );                               // get a pointer to a servo by index

@@ -198,8 +198,15 @@ uint8_t SwOSCtrl::setupLocalI2C( uint8_t maxIO, FtSwarmExtMode_t extensionPort )
   }
 
   // use parameter to handle remote devices correctly
-  if ( extensionPort == FTSWARM_EXT_I2C_SLAVE ) { io[ maxIO++ ] = new SwOSI2C ( "I2C", this, false, nvs.extensionPort.I2CAddr ); };
+  switch ( extensionPort ) {
+    case FTSWARM_EXT_CAN:       io[ maxIO++ ] = new SwOSCAN( "CAN", this, FTSWARM_HAL_FLAG_NONE );
+                                break;
 
+    case FTSWARM_EXT_I2C_SLAVE: io[ maxIO++ ] = new SwOSI2C ( "I2C", this, FTSWARM_HAL_FLAG_NONE, nvs.extensionPort.I2CAddr );
+                                break;
+
+  }
+  
   // ftPwrDrive
   if ( CPU == FTSWARMPWRDRIVE_1V141 ) ftPwrDrive = new FtPwrDrive( 32, &Wire ); 
 
@@ -700,6 +707,9 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, const char *name,
     case SWOSIO_I2C:              io = new SwOSI2C( name, this, flags, 0 );
                                   break; 
 
+    case SWOSIO_CAN:              io = new SwOSCAN( name, this, flags );
+                                  break; 
+
     case SWOSIO_COUNTER:          io = new SwOSCounter( name, port, SWOS_NOPORT, this, flags );       
                                   break; 
 
@@ -780,6 +790,17 @@ SwOSI2C* SwOSCtrl::getI2C( uint8_t index ) {
   if (!io->isI2C() ) return NULL;
 
   return (SwOSI2C*) io;
+
+}
+
+SwOSCAN* SwOSCtrl::getCAN( uint8_t index ) {
+
+  SwOSIO *io = this->io[ index ];
+
+  if (!io)           return NULL;
+  if (!io->isCAN() ) return NULL;
+
+  return (SwOSCAN*) io;
 
 }
 
@@ -1014,6 +1035,26 @@ bool SwOSCtrl::I2CRegister( SwOSCom *com ) {
 
 }
 
+bool SwOSCtrl::CANSend( SwOSCom *com ) {
+
+  SwOSCAN *io = getCAN( com->data.CANDatagramCmd.index );
+  if (!io) return false;
+
+  io->sendCAN( com->data.CANDatagramCmd.id, com->data.CANDatagramCmd.payload, com->data.CANDatagramCmd.length );
+  return true;
+
+}
+
+bool SwOSCtrl::CANRecv( SwOSCom *com ) {
+
+  SwOSCAN *io = getCAN( com->data.CANDatagramCmd.index );
+  if (!io) return false;
+
+  io->recvRemote( com->data.CANDatagramCmd.id, com->data.CANDatagramCmd.payload, com->data.CANDatagramCmd.length );
+  return true;
+
+}
+
 bool SwOSCtrl::setParameter( SwOSCom *com ) {
 
   if ( com->data.parameterCmd.index >= IOs ) return false;
@@ -1102,6 +1143,8 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
     case CMD_SETIOTYPE:               return changeIOType( com->data.setIOTypeCmd.index, com->data.setIOTypeCmd.newIOType, com->data.setIOTypeCmd.flags );
     case CMD_SETSERVO:                return setServo( com );
     case CMD_I2CREGISTER:             return I2CRegister( com );
+    case CMD_CANSEND:                 return CANSend( com );
+    case CMD_CANRECV:                 return CANRecv( com );
     case CMD_SETPARAMETER:            return setParameter( com );
   }
 
