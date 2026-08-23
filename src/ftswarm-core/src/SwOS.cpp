@@ -9,6 +9,7 @@
  
 #include "SwOS.h" 
 #include "SwOSSwarm.h"
+#include "SwOSHW/SwOSHWI2CSensor.h"
 #include "easyKey.h"
 #include "SwOSLog.h"
 #include <FastLed.h>
@@ -973,6 +974,36 @@ void FtSwarmI2C::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op,
   }
 
 };
+
+// **** FtSwarmCAN   ****
+FtSwarmCAN::FtSwarmCAN( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port ) : FtSwarmIO( serialNumber, port, SWOSIO_CAN ) {
+}
+
+FtSwarmCAN::FtSwarmCAN( const char *name ) : FtSwarmIO( name, SWOSIO_CAN ) {
+}
+
+void FtSwarmCAN::sendMessage( uint32_t id, uint8_t *data, uint8_t len ) {
+
+  SwOSCAN *can = static_cast<SwOSCAN *>( me );
+
+  if (can) {
+    can->lock();
+    can->sendCAN( id, data, len );
+    can->unlock();
+  }
+
+}
+
+void FtSwarmCAN::message( DataCallbackRaw callback ) {
+  SwOSCAN *can = static_cast<SwOSCAN *>( me );
+  
+  if (can) {
+    can->lock();
+    can->setReceiveCallback( reinterpret_cast<SwOSCANReceiveCallback_t>( callback ) );
+    can->unlock();
+  }
+  
+}
 
 // **** FtSwarmGyro   ****
 

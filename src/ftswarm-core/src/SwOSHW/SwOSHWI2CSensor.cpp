@@ -641,15 +641,23 @@ void SwOSCAN::sendCAN( uint32_t id, const uint8_t *payload, uint8_t length ) {
 
 }
 
-void SwOSCAN::recvRemote( uint32_t id, const uint8_t *payload, uint8_t length ) {
+void SwOSCAN::handleReceived( uint32_t id, const uint8_t *payload, uint8_t length ) {
 
   if (length > MAXCANPAYLOAD) length = MAXCANPAYLOAD;
 
   lastMsg.id     = id;
   lastMsg.length = length;
-  memcpy( lastMsg.payload, payload, length );
+  if (payload) memcpy( lastMsg.payload, payload, length );
 
-  printCSV( id, lastMsg.payload, length );
+  if ( isSubscribed ) printCSV( id, lastMsg.payload, length );
+
+  if (receiveCallback) receiveCallback( id, lastMsg.payload, length );
+
+}
+
+void SwOSCAN::recvRemote( uint32_t id, const uint8_t *payload, uint8_t length ) {
+
+  handleReceived( id, payload, length );
 
 }
 
@@ -665,11 +673,7 @@ void SwOSCAN::operate() {
     uint32_t id     = rx.identifier & CANID_MASK;
     uint8_t  length = ( rx.data_length_code > MAXCANPAYLOAD ) ? MAXCANPAYLOAD : rx.data_length_code;
 
-    lastMsg.id     = id;
-    lastMsg.length = length;
-    memcpy( lastMsg.payload, rx.data, length );
-
-    printCSV( id, lastMsg.payload, length );
+    handleReceived( id, rx.data, length );
 
     // forward received datagram to Kelda
     sendToKelda( id, lastMsg.payload, length );

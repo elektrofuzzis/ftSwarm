@@ -166,15 +166,19 @@ struct SwOSCANMsg_t {
   uint8_t  payload[MAXCANPAYLOAD] = { 0 };
 };
 
+typedef void (*SwOSCANReceiveCallback_t)( uint32_t id, const uint8_t *payload, uint8_t length );
+
 class SwOSCAN : public SwOSIO {
 
   protected:
     SwOSCANMsg_t lastMsg;
+    SwOSCANReceiveCallback_t receiveCallback = nullptr;
 
     virtual void setupLocal( void );          // initializes local TWAI HW, TX=SDA, RX=SCL, GPIO OC mode
     virtual void transmitLocal( uint32_t id, const uint8_t *payload, uint8_t length ); // transmit a datagram on the local CAN bus
     virtual void sendToMember( uint32_t id, const uint8_t *payload, uint8_t length );  // forward a send request to a remote member
     virtual void sendToKelda( uint32_t id, const uint8_t *payload, uint8_t length );   // report a received datagram to Kelda
+    void handleReceived( uint32_t id, const uint8_t *payload, uint8_t length );        // store and dispatch a received datagram
     void printCSV( uint32_t id, const uint8_t *payload, uint8_t length );              // print id & payload as csv, if subscribed
 
   public:
@@ -197,5 +201,8 @@ class SwOSCAN : public SwOSIO {
 
     // a remote member reported a datagram received from its local bus
     virtual void recvRemote( uint32_t id, const uint8_t *payload, uint8_t length );
+
+    // register a callback for local and remote incoming CAN datagrams
+    void setReceiveCallback( SwOSCANReceiveCallback_t callback ) { receiveCallback = callback; };
 
 };

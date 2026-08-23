@@ -1020,6 +1020,19 @@ class FtSwarmI2C : public FtSwarmIO {
 
 };
 
+typedef void (*DataCallbackRaw)(uint32_t id, const uint8_t* data, uint8_t len);
+
+class FtSwarmCAN : public FtSwarmIO {
+  // CAN interface
+  public:
+    FtSwarmCAN( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
+    FtSwarmCAN( const char *name );
+
+    void sendMessage( uint32_t id, uint8_t *data, uint8_t len );
+    void message( DataCallbackRaw callback );
+
+};
+
 class FtSwarmGyro : public FtSwarmIO {
   // LSM6/MPU6050 Gyro
   public:
