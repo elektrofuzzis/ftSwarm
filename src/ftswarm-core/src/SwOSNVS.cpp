@@ -440,6 +440,7 @@ void SwOSNVS::reset( bool factoryReset ) {
   swarm.IAmKelda           = true;
   swarm.communication.wifi = 1;
   swarm.speed              = 4;
+  bzero( swarm.member, sizeof( swarm.member ) );
 
   // joystick calibration
   for ( uint8_t j=0; j<4; j++ ) {

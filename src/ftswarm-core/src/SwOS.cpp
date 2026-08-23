@@ -1345,8 +1345,15 @@ FtSwarmSerialNumber_t FtSwarm::begin( bool verbose, bool waitOnControllers ) {
     ESP.restart();
   }
 
-  while (!myOSSwarm.isOnline()) {
-    delay(250);
+  if ( !myOSSwarm.isOnline() ) {
+
+    printf(TRANSLATE("Waiting for swarm members to join the swarm.\n", "Warte auf Swarm Members.\n" ) );
+    myOSSwarm.setState( WAITING );
+
+    while (!myOSSwarm.isOnline()) delay(250);
+
+    myOSSwarm.setState( RUNNING );
+
   }
 
   return result;

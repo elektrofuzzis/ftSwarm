@@ -247,8 +247,6 @@ int16_t SwOSDCMotor::duty( void ) {
 
 void SwOSDCMotor::setPWM( int16_t xin1, int16_t xin2, gpio_num_t pwm, uint32_t duty ) {
 
-  printf( "setPWM %d %d %d %d\n", xin1, xin2, pwm, duty );
-
   // check if it's needed to stop running pwm
   if ( ( ( duty == 0 ) || ( pwm != ledc_channel->gpio_num ) ) && ( ledc_channel->gpio_num != GPIO_NUM_NC ) ) {
 

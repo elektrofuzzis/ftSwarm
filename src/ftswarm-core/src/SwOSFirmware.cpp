@@ -1689,12 +1689,6 @@ void MainMenu::run( void ) {
                             delete menuIOList;
                             break;
 
-/*
-      case MENU_REMOTE:     menuEvent = new MenuEvent();
-                            menuEvent->run();
-                            delete menuEvent;
-                            break;
-*/
       case MENU_REMOTE:     menuEvent = new MenuIOConfig();
                             menuEvent->run();
                             delete menuEvent;
