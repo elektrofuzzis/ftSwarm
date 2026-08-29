@@ -476,7 +476,7 @@ static void logBuffer( uint8_t *buffer, int bufPtr ) {
 
 static void tx_RS485( SwOSCom *com ) {
 
-  #if FTSWARM_HAL_RS458 > 0
+  #if FTSWARM_HAL_RS485 > 0
 
   RS485Frame_t frame;
   bool         collision;
@@ -521,7 +521,7 @@ static void tx_RS485( SwOSCom *com ) {
 
   #ifdef DEBUG_COMMUNICATION
   if (!datasent) {
-    SWARM_LOG_INFO( TRANSLATE"[not sent]\n"); com->print();
+    SWARM_LOG_INFO( "[not sent]\n"); com->print();
   }
   #endif
 
