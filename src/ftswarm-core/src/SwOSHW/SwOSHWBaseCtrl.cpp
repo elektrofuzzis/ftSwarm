@@ -53,24 +53,6 @@ uint8_t SwOSCtrl::setupLocalInputs( uint8_t maxIO ) {
 
 }
 
-/*
-uint8_t SwOSCtrl::setupLocalMotors( uint8_t maxIO, uint8_t motors ) {
-
-  char name[10];
-
-  for (uint8_t i=0; i<motors; i++) { 
-    
-    sprintf( name, "M%d", i+1 );
-    if (CPU == FTSWARMPWRDRIVE_1V141 ) io[ maxIO++ ] = new SwOSStepper( name, i, this );
-    else                               io[ maxIO++ ] = new SwOSDCMotor( name, i, this, SWOSIO_MOTOR );
-
-  }
-
-  return maxIO;
-
-}
-  */
-
 uint8_t SwOSCtrl::setupLocalMotors( uint8_t maxIO, uint8_t motors ) {
 
   for ( uint8_t i=0; i<FTSWARM_HAL_MOTORS; i++ ) {
@@ -815,6 +797,17 @@ SwOSPixel* SwOSCtrl::getPixel( char *name ) {
 
 }
 
+SwOSPixel* SwOSCtrl::getPixel( uint8_t index ) {
+
+  SwOSIO *io = this->io[ index ];
+
+  if (!io)             return NULL;
+  if (!io->isPixel() ) return NULL;
+
+  return (SwOSPixel*) io;
+
+}
+
 SwOSServo* SwOSCtrl::getServo( char *name ) {
 
   SwOSIO *io = getIO( name );
@@ -1429,5 +1422,41 @@ void SwOSCtrl::save( FtSwarmNVSScope_t scope, uint8_t port ) {
     cmd.send();
 
   }
+
+}
+
+void SwOSCtrl::setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, uint8_t p1, uint8_t p2, uint8_t p3 ) {
+
+  FtSwarmTriggerParameter p;
+  p.setBlink( periodMS, signal, duty, pause, p1, p2, p3 );
+
+  lock();
+  
+  for ( uint8_t i=0; i < FTSWARM_HAL_DISCRETE_RGBS; i++ ) {
+
+    SwOSPixel *pixel = getPixel( i ); 
+    if ( pixel ) pixel->setEffect( p );
+    
+  }
+
+  unlock();
+
+}
+
+void SwOSCtrl::resetBlink( int32_t color ) {
+
+  FtSwarmTriggerParameter p;
+  p.resetBlink( color );
+
+  lock();
+  
+  for ( uint8_t i=0; i < FTSWARM_HAL_DISCRETE_RGBS; i++ ) {
+
+    SwOSPixel *pixel = getPixel( i ); 
+    if ( pixel ) pixel->setEffect( p );
+
+  }
+
+  unlock();
 
 }

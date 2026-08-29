@@ -417,7 +417,7 @@ struct FtSwarmTriggerParameter {
   bool getBlink( uint32_t *periodMS, uint8_t *signal, uint8_t *duty, uint8_t *pause, uint8_t *p1, uint8_t *p2, uint8_t *p3 );
 
   // set no Blink
-  void setNone( int32_t value ) { base.effectType = FTSWARM_EFFECT_NONE; base.value = value; };
+  void resetBlink( int32_t color ) { base.effectType = FTSWARM_EFFECT_NONE; base.value = color; };
 
 };
 
@@ -1029,7 +1029,8 @@ class FtSwarmCAN : public FtSwarmIO {
     FtSwarmCAN( const char *name );
 
     void sendMessage( uint32_t id, uint8_t *data, uint8_t len );
-    void message( DataCallbackRaw callback );
+    void registerCallback( DataCallbackRaw callback );
+    void unregisterCallback( void ) { registerCallback( nullptr ); };
 
 };
 
@@ -1155,11 +1156,28 @@ class FtSwarm {
   // my swarm...
     
   public:
-    FtSwarmSerialNumber_t begin( bool verbose = false, bool waitOnControllers = true );   // start my swarm
-    void halt( void );                                     // stop all actors
+
+    // start swarm, return my serial number
+    FtSwarmSerialNumber_t begin( bool verbose = false, bool waitOnControllers = true );
+
+    // stop all actors
+    void halt( void );
+
+    // wait for a user event, return true if event received, false if timeout
     bool waitOnUserEvent( int parameter[10], TickType_t xTicksToWait = 512 );
+
+    // send event data to swarm, return true if event sent, false if not
     bool sendEventData( uint8_t *buffer, size_t size );
+
+    // check if a swarm IO is available, return true if available, false if not
     bool IOAvaliable( const char *name ) { return false; };
+
+    // set Blink all internal ftPixels in Swarm
+    void setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, uint8_t p1, uint8_t p2, uint8_t p3 );
+
+    // reset Blink all internal ftPixels in Swarm
+    void resetBlink( int32_t color );
+
 };
 
 // There is one only

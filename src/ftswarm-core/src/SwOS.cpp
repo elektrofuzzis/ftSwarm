@@ -408,6 +408,7 @@ int16_t FtSwarmFrequencymeter::getFrequency() {
   static_cast<SwOSFrequencymeter *>(me)->unlock();
 
   return xReturn;
+  
 };
 
 // **** FtSwarmAnalogInput ****
@@ -757,7 +758,7 @@ void FtSwarmLamp::revokeEffect( uint8_t brightness ) {
   SwOSLamp *lamp = static_cast<SwOSLamp*>(me);
   
   FtSwarmTriggerParameter p;
-  p.setNone( brightness );
+  p.resetBlink( brightness );
 
   lamp->lock();
   lamp->setEffect( p );
@@ -928,7 +929,7 @@ void FtSwarmPixel::revokeEffect( CRGB color ) {
   SwOSPixel *pixel = static_cast<SwOSPixel*>(me);
   
   FtSwarmTriggerParameter p;
-  p.setNone( castColorToUI32( color ) );
+  p.resetBlink( castColorToUI32( color ) );
 
   pixel->lock();
   pixel->setEffect( p );
@@ -994,15 +995,15 @@ void FtSwarmCAN::sendMessage( uint32_t id, uint8_t *data, uint8_t len ) {
 
 }
 
-void FtSwarmCAN::message( DataCallbackRaw callback ) {
+void FtSwarmCAN::registerCallback( DataCallbackRaw callback ) {
   SwOSCAN *can = static_cast<SwOSCAN *>( me );
   
   if (can) {
     can->lock();
-    can->setReceiveCallback( reinterpret_cast<SwOSCANReceiveCallback_t>( callback ) );
+    can->registerCallback( reinterpret_cast<SwOSCANReceiveCallback_t>( callback ) );
     can->unlock();
   }
-  
+
 }
 
 // **** FtSwarmGyro   ****
@@ -1434,6 +1435,24 @@ bool FtSwarm::sendEventData( uint8_t *buffer, size_t size ) {
 
   // send
   return true;
+
+}
+
+void FtSwarm::setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, uint8_t p1, uint8_t p2, uint8_t p3 ) {
+
+  for ( uint8_t i=0; i < MAXCTRL; i++ ) {
+    SwOSCtrl *ctrl = myOSSwarm.Ctrl[i];
+    if( ctrl ) ctrl->setBlink( periodMS, signal, duty, pause, p1, p2, p3 );
+  }
+
+}
+
+void FtSwarm::resetBlink( int32_t color ) {
+
+  for ( uint8_t i=0; i < MAXCTRL; i++ ) {
+    SwOSCtrl *ctrl = myOSSwarm.Ctrl[i];
+    if( ctrl ) ctrl->resetBlink( color );
+  }
 
 }
 

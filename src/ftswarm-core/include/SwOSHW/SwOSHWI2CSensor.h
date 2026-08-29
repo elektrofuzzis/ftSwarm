@@ -203,6 +203,7 @@ class SwOSCAN : public SwOSIO {
     virtual void recvRemote( uint32_t id, const uint8_t *payload, uint8_t length );
 
     // register a callback for local and remote incoming CAN datagrams
-    void setReceiveCallback( SwOSCANReceiveCallback_t callback ) { receiveCallback = callback; };
+    void registerCallback( SwOSCANReceiveCallback_t callback ) { receiveCallback = callback; };
+    void unregisterCallback( void ) { receiveCallback = nullptr; };
 
 };

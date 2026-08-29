@@ -156,6 +156,7 @@ class SwOSCtrl : public SwOSObj {
     SwOSI2C*      getI2C( uint8_t index );                                 // get a pointer to an i2c by index
     SwOSCAN*      getCAN( uint8_t index );                                 // get a pointer to a can by index
     SwOSPixel*    getPixel( char *name );                                  // get a pointer to a pixel by name
+    SwOSPixel*    getPixel( uint8_t index );                               // get a pointer to a pixel by index
     SwOSServo*    getServo( char *name );                                  // get a pointer to a servo by name
     SwOSServo*    getServo( uint8_t index );                               // get a pointer to a servo by index
     SwOSStepper*  getStepper( uint8_t index );                             // get a pointer to a stepper by index
@@ -222,5 +223,11 @@ class SwOSCtrl : public SwOSObj {
 
     // ms since last received package
     unsigned long networkAge( void );
+
+    // set Blink all internal ftPixels
+    void setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, uint8_t p1, uint8_t p2, uint8_t p3 );
+
+    // reset Blink all internal ftPixels
+    void resetBlink( int32_t color );
     
 };

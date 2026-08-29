@@ -77,7 +77,7 @@ const IOCmdList_t IOCmdList [CLICMD_MAX] = {
   { "testPixels", true, 1, 1},
   { "print", true, 0, 0 },
   { "setBlink", true, 7, 7 },
-  { "revokeEffect", true, 1, 1 },
+  { "resetBlink", true, 1, 1 },
   { "send", true, 1, 1 + MAXCANPAYLOAD }
 };
 
@@ -149,7 +149,7 @@ Lamp commands (M1..M8)
   setMotionType( motionType )
   getMotionType()
   setBlink( period, signal, duty, pause, b1, b2, b3 )    
-  revokeEffect( brightness )
+  resetBlink( brightness )
 
 Stepper commands (M1..M4):
   setIOType( Stepper )
@@ -182,7 +182,7 @@ ftPixel commands (LED1..LED18):
   setBrightness( brightness )
   getBrightness()
   setBlink( period, signal, duty, pause, c1, c2, c3 )    
-  revokeEffect( color )
+  resetBlink( color )
 
 I2C commands:
   setRegister( register, value )
@@ -849,8 +849,8 @@ void SwOSCLI::executeActorCmd( void ) {
                                 } else Error( ERROR_WRONGIOTYPE, 0, stepper->getIOType() );
                                 break;
 
-    case CLICMD_revokeEffect:   if ( lamp->getIOType() == SWOSIO_LAMP ) {
-                                  p.setNone( parameter[0].getNumber() );
+    case CLICMD_resetBlink:     if ( lamp->getIOType() == SWOSIO_LAMP ) {
+                                  p.resetBlink( parameter[0].getNumber() );
                                   lamp->lock();
                                   lamp->setEffect( p );
                                   lamp->unlock();
@@ -997,7 +997,7 @@ void SwOSCLI::executePixelCmd( void ) {
                                 OK( );
                                 break;
 
-    case CLICMD_revokeEffect:   p.setNone( parameter[0].getNumber() );
+    case CLICMD_resetBlink:     p.resetBlink( parameter[0].getNumber() );
                                 pixel->lock();
                                 pixel->setEffect( p );
                                 pixel->unlock();
