@@ -61,7 +61,7 @@ static void recvTask( void *parameter ) {
     if ( xQueueReceive( myOSNetwork.recvNotification, &event, ESPNOW_MAXDELAY ) == pdTRUE ) {
 
       #ifdef DEBUG_COMMUNICATION_SWARM
-        if ( event.data.cmd != CMD_STATE ) {
+        if ( ( event.data.cmd != CMD_STATE ) && ( event.data.cmd != CMD_HARTBEAT ) ) {
           printf("\n\n-----------------------------\nmy friend sends some data...\n" ); 
           event.print();
         }
@@ -157,15 +157,17 @@ void SwOSSwarm::connect( void ) {
 
     if ( Ctrl[i] ) { 
 
+      SwOSComState_t comState = Ctrl[i]->getComState();
+
       // if controller was not seen for a longer time or is new: try to reconnect
-      if ( ( Ctrl[i]->getComState() == COMSTATE_UNDEFINED ) ||
-           ( ( Ctrl[i]->networkAge() > 1000L ) && ( Ctrl[i]->getComState() != COMSTATE_ERROR ) ) ) {
+      if ( ( comState == COMSTATE_UNDEFINED ) ||
+           ( ( Ctrl[i]->networkAge() > 1000L ) && ( comState != COMSTATE_ERROR ) ) ) {
       
         Ctrl[i]->setComState( COMSTATE_CONNECT_PHASE1 );
         joinMySwarm( MacAddr( broadcast ), Ctrl[i]->serialNumber );
 
       // if it's online send him an hart beat
-      } else {
+      } else if ( comState == COMSTATE_ONLINE ) {
         
         SwOSCom hartBeat( Ctrl[i]->macAddr, Ctrl[i]->serialNumber, CMD_HARTBEAT );
         hartBeat.send();

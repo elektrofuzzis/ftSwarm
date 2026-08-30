@@ -41,7 +41,7 @@ typedef enum {
   COMSTATE_MAX } SwOSComState_t;
 
   
-const char SWOSCOMSTATE[COMSTATE_MAX][11] = { "OFFLINE", "OFFLINE", "CONNECTING", "ONLINE", "ERROR" };
+const char SWOSCOMSTATE[COMSTATE_MAX][11] = { "OFFLINE", "PHASE1", "PHASE2", "ONLINE", "ERROR" };
 
 typedef enum {
     UICLASS_NONE,

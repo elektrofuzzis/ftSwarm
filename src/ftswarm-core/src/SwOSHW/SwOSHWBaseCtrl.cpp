@@ -1082,7 +1082,7 @@ bool SwOSCtrl::ioConfig( SwOSCom *com ) {
       setComState( COMSTATE_ONLINE );
 
     } else if ( index >= IOs ) {
-      SWARM_LOG_ERROR( TRANSLATE( "SwOSCtrl::ioConfig: index out of range %X", "SwOSCtrl::ioConfig: Index außerhalb des gültigen Bereichs %X" ), index );
+      SWARM_LOG_ERROR( TRANSLATE( "SwOSCtrl::ioConfig: SN %d index out of range %d", "SwOSCtrl::ioConfig: SN %d Index außerhalb des gültigen Bereichs %d" ), serialNumber, index );
 
     } else if ( io[index] ) {
       // set IOType + alias name as transmitted
