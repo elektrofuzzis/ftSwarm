@@ -1379,10 +1379,13 @@ FtSwarmSerialNumber_t FtSwarm::begin( bool verbose, bool waitOnControllers ) {
 
   if ( !myOSSwarm.isOnline() ) {
 
-    printf(TRANSLATE("Waiting for swarm members to join the swarm.\n", "Warte auf Swarm Members.\n" ) );
+    printf(TRANSLATE("Waiting for swarm members to join the swarm. Press any key to start setup.\n", "Warte auf Swarm Members. Drücken Sie eine beliebige Taste, um das Setup zu starten.\n" ) );
     myOSSwarm.setState( WAITING );
 
-    while (!myOSSwarm.isOnline()) delay(250);
+    while (!myOSSwarm.isOnline()) {
+      delay(250);
+      if ( anyKey() ) mainMenu();
+    }
 
     myOSSwarm.setState( RUNNING );
 
@@ -1395,6 +1398,12 @@ FtSwarmSerialNumber_t FtSwarm::begin( bool verbose, bool waitOnControllers ) {
 void FtSwarm::halt( void ) {
 
   myOSSwarm.halt( );
+
+}
+
+bool FtSwarm::IOAvaliable( const char *name ) {
+
+  return myOSSwarm.IOAvaliable( name );
 
 }
 
@@ -1438,11 +1447,11 @@ bool FtSwarm::sendEventData( uint8_t *buffer, size_t size ) {
 
 }
 
-void FtSwarm::setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, uint8_t p1, uint8_t p2, uint8_t p3 ) {
+void FtSwarm::setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, FtSwarmEffectColor_t c1, FtSwarmEffectColor_t c2, FtSwarmEffectColor_t c3 ) {
 
   for ( uint8_t i=0; i < MAXCTRL; i++ ) {
     SwOSCtrl *ctrl = myOSSwarm.Ctrl[i];
-    if( ctrl ) ctrl->setBlink( periodMS, signal, duty, pause, p1, p2, p3 );
+    if( ctrl ) ctrl->setBlink( periodMS, signal, duty, pause, c1, c2, c3 );
   }
 
 }

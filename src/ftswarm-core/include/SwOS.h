@@ -1170,10 +1170,10 @@ class FtSwarm {
     bool sendEventData( uint8_t *buffer, size_t size );
 
     // check if a swarm IO is available, return true if available, false if not
-    bool IOAvaliable( const char *name ) { return false; };
+    bool IOAvaliable( const char *name );
 
     // set Blink all internal ftPixels in Swarm
-    void setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, uint8_t p1, uint8_t p2, uint8_t p3 );
+    void setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, FtSwarmEffectColor_t c1, FtSwarmEffectColor_t c2, FtSwarmEffectColor_t c3 );
 
     // reset Blink all internal ftPixels in Swarm
     void resetBlink( int32_t color );

@@ -81,12 +81,13 @@ const IOCmdList_t IOCmdList [CLICMD_MAX] = {
   { "send", true, 1, 1 + MAXCANPAYLOAD }
 };
 
-const char help[] = R"(help   - list all commands
-setup  - start setup mode
-halt   - stop all motors
-whoami - my own hostname
-uptime - my own uptime
-exit   - end command line interface.
+const char help[] = R"(help     - list all commands
+setup    - start setup mode
+halt     - stop all motors
+whoami     - my own hostname
+uptime     - my own uptime
+statistics - RS485 send/receive statistics & memory usage
+exit       - end command line interface.
 
 nvs.print or
 swarm.<Command>(<parameter>, ...) or
@@ -366,6 +367,7 @@ Cmd_t SwOSCLI::evalSimpleCommand( char *token ) {
   else if ( strcmp( token, "setup" ) == 0 )      cmd = CMD_SETUP;
   else if ( strcmp( token, "startCLI" ) == 0 )   cmd = CMD_STARTCLI;
   else if ( strcmp( token, "halt" ) == 0 )       cmd = CMD_HALT;
+  else if ( strcmp( token, "statistics" ) == 0 ) cmd = CMD_STATISTICS;
   else if ( strcmp( token, "exit" ) == 0 )       cmd = CMD_EXIT;
   
   // command found?
@@ -406,7 +408,30 @@ Cmd_t SwOSCLI::evalSimpleCommand( char *token ) {
 
       case CMD_HALT:        halt();
                             break;
-                            
+
+      case CMD_STATISTICS:  {
+                              uint32_t heapFree = ESP.getFreeHeap();
+                              uint32_t heapSize = ESP.getHeapSize();
+                              float heapUsedPercent = heapSize ? 100.0f * (heapSize - heapFree) / heapSize : 0.0f;
+                              uint32_t psramFree = ESP.getFreePsram();
+                              uint32_t psramSize = ESP.getPsramSize();
+                              float psramUsedPercent = psramSize ? 100.0f * (psramSize - psramFree) / psramSize : 0.0f;
+
+                              // 3 lines can exceed CLIMAXLINE once RS485 counters grow large, use a bigger buffer
+                              free( response );
+                              response = (char *) calloc( 1, 400 );
+
+                              sprintf( response, "RS485 tx: sent=%u retries=%u dropped=%u, rx: received=%u malformed=%u\n",
+                                       myOSNetwork.rs485Metrics.txSent, myOSNetwork.rs485Metrics.txRetries, myOSNetwork.rs485Metrics.txDropped, myOSNetwork.rs485Metrics.rxReceived, myOSNetwork.rs485Metrics.rxMalformed );
+
+                              sprintf( response + strlen( response ), "memory: free=%u/%u bytes (%0.1f used)\n",
+                                       heapFree, heapSize, heapUsedPercent );
+
+                              sprintf( response + strlen( response ), "psram: free=%u/%u bytes (%0.1f used)",
+                                       psramFree, psramSize, psramUsedPercent );
+                            }
+                            break;
+
     }
 
   }

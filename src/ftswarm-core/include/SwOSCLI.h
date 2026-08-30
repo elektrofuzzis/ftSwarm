@@ -38,6 +38,7 @@ typedef enum {
   CMD_SETUP, 
   CMD_HALT, 
   CMD_STARTCLI, 
+  CMD_STATISTICS,
   CMD_EXIT
 } Cmd_t;
 

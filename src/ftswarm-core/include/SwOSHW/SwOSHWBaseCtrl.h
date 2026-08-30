@@ -137,6 +137,9 @@ class SwOSCtrl : public SwOSObj {
     // get a pointer to an IO port by name
 	  SwOSIO* getIO( const char *name);
 
+    // test, if an IO is available in the swarm. Returns true if available, false if not. 
+    bool IOAvaliable( const char *name );
+
     // mark communcation in lastContact
     void    tick( void );
 
@@ -225,7 +228,7 @@ class SwOSCtrl : public SwOSObj {
     unsigned long networkAge( void );
 
     // set Blink all internal ftPixels
-    void setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, uint8_t p1, uint8_t p2, uint8_t p3 );
+    void setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, FtSwarmEffectColor_t c1, FtSwarmEffectColor_t c2, FtSwarmEffectColor_t c3 );
 
     // reset Blink all internal ftPixels
     void resetBlink( int32_t color );

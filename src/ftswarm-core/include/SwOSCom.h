@@ -313,6 +313,17 @@ public:
 
 };
 
+class SwOSRS485Metrics {
+
+  public:
+    volatile uint32_t txSent      = 0;  // successfully sent frames
+    volatile uint32_t txRetries   = 0;  // collision-triggered retransmissions
+    volatile uint32_t txDropped   = 0;  // frames dropped after exhausting retries
+    volatile uint32_t rxReceived  = 0;  // valid frames received
+    volatile uint32_t rxMalformed = 0;  // malformed/invalid frames detected on rx
+
+};
+
 class SwOSNetwork {
 
   private:
@@ -331,6 +342,8 @@ class SwOSNetwork {
     uint8_t                delayTime;
     FtSwarmCommunication_t communication;
     bool                   active = false;
+
+    SwOSRS485Metrics rs485Metrics;
 
     bool begin( uint16_t swarmSecret, uint16_t swarmPIN, FtSwarmCommunication_t swarmCommunication );
     void stop( void );

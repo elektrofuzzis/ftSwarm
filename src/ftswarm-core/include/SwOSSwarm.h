@@ -109,6 +109,9 @@ public:
   // get swarm's read delay
   uint16_t getReadDelay( void ) { return readDelay; };
 
+  // test, if an IO is available in the swarm. Returns true if available, false if not. 
+  bool IOAvaliable( const char *name );
+
   // **** API ****
   size_t approxSerialize( SerialFormat_t format );
 	void serialize( Serialize *serialize );                                                        // transfer my swarm to a JSON structure

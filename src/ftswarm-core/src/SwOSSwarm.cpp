@@ -1202,3 +1202,14 @@ void SwOSSwarm::save( FtSwarmNVSScope_t scope ) {
   }
   
 }
+
+bool SwOSSwarm::IOAvaliable( const char *name ) {
+
+  for ( uint8_t i=0; i<MAXCTRL; i++ ) {
+    SwOSCtrl *ctrl = Ctrl[i];
+    if ( ctrl && ctrl->IOAvaliable( name ) ) return true;
+  }
+
+  return false;
+  
+}

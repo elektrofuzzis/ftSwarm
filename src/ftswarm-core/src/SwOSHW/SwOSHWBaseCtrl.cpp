@@ -1425,14 +1425,14 @@ void SwOSCtrl::save( FtSwarmNVSScope_t scope, uint8_t port ) {
 
 }
 
-void SwOSCtrl::setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, uint8_t p1, uint8_t p2, uint8_t p3 ) {
+void SwOSCtrl::setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, FtSwarmEffectColor_t c1, FtSwarmEffectColor_t c2, FtSwarmEffectColor_t c3 ) {
 
   FtSwarmTriggerParameter p;
-  p.setBlink( periodMS, signal, duty, pause, p1, p2, p3 );
+  p.setBlink( periodMS, signal, duty, pause, c1, c2, c3 );
 
   lock();
   
-  for ( uint8_t i=0; i < FTSWARM_HAL_DISCRETE_RGBS; i++ ) {
+  for ( uint8_t i=0; i < IOs; i++ ) {
 
     SwOSPixel *pixel = getPixel( i ); 
     if ( pixel ) pixel->setEffect( p );
@@ -1458,5 +1458,22 @@ void SwOSCtrl::resetBlink( int32_t color ) {
   }
 
   unlock();
+
+}
+
+bool SwOSCtrl::IOAvaliable( const char *name ) {
+
+  for ( uint8_t i=0; i < IOs; i++ ) {
+  
+    if ( io[i] ) {
+      
+      if ( strcmp( io[i]->getName(), name ) == 0 )  return true;
+      if ( strcmp( io[i]->getAlias(), name ) == 0 ) return true;
+
+    }
+  
+  }
+  
+  return false;
 
 }
