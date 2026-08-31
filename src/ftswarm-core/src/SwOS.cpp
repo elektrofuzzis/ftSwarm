@@ -1380,6 +1380,11 @@ FtSwarmSerialNumber_t FtSwarm::begin( bool verbose, bool waitOnControllers ) {
   if ( !myOSSwarm.isOnline() ) {
 
     printf(TRANSLATE("Waiting for swarm members to join the swarm. Press any key to start setup.\n", "Warte auf Swarm Members. Drücken Sie eine beliebige Taste, um das Setup zu starten.\n" ) );
+    for ( uint8_t i=1; i < MAXCTRL; i++ ) {
+      if ( myOSSwarm.Ctrl[i] && ( !myOSSwarm.Ctrl[i]->isOnline() ) )
+        printf("%s\n", myOSSwarm.Ctrl[i]->getName() );
+    }
+
     myOSSwarm.setState( WAITING );
 
     while (!myOSSwarm.isOnline()) {
