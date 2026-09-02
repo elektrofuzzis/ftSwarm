@@ -564,7 +564,7 @@ SwOSCAN::SwOSCAN( const char *name, SwOSCtrl *ctrl, uint8_t flags ) : SwOSIO( na
 void SwOSCAN::setupLocal( void ) {
 
   // TWAI RX line is SDA, TX line is SCL
-  twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT( (gpio_num_t) SCL, (gpio_num_t) SDA, TWAI_MODE_NORMAL );
+  twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT( (gpio_num_t) SCL, (gpio_num_t) SDA, TWAI_MODE_NO_ACK );
   twai_timing_config_t  t_config = TWAI_TIMING_CONFIG_125KBITS();
   twai_filter_config_t  f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
 
@@ -593,13 +593,13 @@ void SwOSCAN::transmitLocal( uint32_t id, const uint8_t *payload, uint8_t length
 
   if (length > MAXCANPAYLOAD) length = MAXCANPAYLOAD;
 
-  twai_message_t message = {};
+  twai_message_t message   = {};
   message.extd             = 1;
   message.identifier       = id & CANID_MASK;
   message.data_length_code = length;
   if (payload) memcpy( message.data, payload, length );
 
-  if ( twai_transmit( &message, pdMS_TO_TICKS(10) ) != ESP_OK ) {
+  if ( twai_transmit( &message, 0 ) != ESP_OK ) {
     SWARM_LOG_ERROR( TRANSLATE( "CAN/TWAI datagram transmission failed.", "CAN/TWAI-Datagramm konnte nicht gesendet werden." ) );
   }
 
