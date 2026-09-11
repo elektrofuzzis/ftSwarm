@@ -564,7 +564,7 @@ SwOSCAN::SwOSCAN( const char *name, SwOSCtrl *ctrl, uint8_t flags ) : SwOSIO( na
 void SwOSCAN::setupLocal( void ) {
 
   // TWAI RX line is SDA, TX line is SCL
-  twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT( (gpio_num_t) SCL, (gpio_num_t) SDA, TWAI_MODE_NO_ACK );
+  twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT( (gpio_num_t) SCL, (gpio_num_t) SDA, TWAI_MODE_NORMAL );
   twai_timing_config_t  t_config = TWAI_TIMING_CONFIG_125KBITS();
   twai_filter_config_t  f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
 
@@ -583,7 +583,7 @@ void SwOSCAN::printCSV( uint32_t id, const uint8_t *payload, uint8_t length ) {
 
   if (!isSubscribed) return;
 
-  printf( "S: %s,%lu", subscribedIOName, (unsigned long) id );
+  printf( "S: %s %lu", subscribedIOName, (unsigned long) id );
   for ( uint8_t i=0; i<length; i++ ) printf( ",%u", payload[i] );
   printf( "\n" );
 
@@ -669,6 +669,8 @@ void SwOSCAN::operate() {
   twai_message_t rx;
 
   while ( twai_receive( &rx, 0 ) == ESP_OK ) {
+
+    printf("got %d\n", rx.identifier & CANID_MASK);
 
     uint32_t id     = rx.identifier & CANID_MASK;
     uint8_t  length = ( rx.data_length_code > MAXCANPAYLOAD ) ? MAXCANPAYLOAD : rx.data_length_code;

@@ -166,7 +166,7 @@ struct SwOSCANMsg_t {
   uint8_t  payload[MAXCANPAYLOAD] = { 0 };
 };
 
-typedef void (*SwOSCANReceiveCallback_t)( uint32_t id, const uint8_t *payload, uint8_t length );
+typedef void (*SwOSCANReceiveCallback_t)( uint32_t id, uint8_t *payload, uint8_t length );
 
 class SwOSCAN : public SwOSIO {
 

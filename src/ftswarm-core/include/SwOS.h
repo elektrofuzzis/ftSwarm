@@ -1020,7 +1020,7 @@ class FtSwarmI2C : public FtSwarmIO {
 
 };
 
-typedef void (*DataCallbackRaw)(uint32_t id, const uint8_t* data, uint8_t len);
+typedef void (*DataCallbackRaw)(uint32_t id, uint8_t* data, uint8_t len);
 
 class FtSwarmCAN : public FtSwarmIO {
   // CAN interface
