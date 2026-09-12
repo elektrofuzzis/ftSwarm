@@ -25,6 +25,20 @@
 
 class SwOSSwarm {
 protected:
+  struct PendingIOConfigPacket {
+    SwOSCom *com;
+    PendingIOConfigPacket *next;
+  };
+
+  struct PendingIOConfig {
+    bool valid = false;
+    SwOSCtrlConfig_t ctrlConfig;
+    PendingIOConfigPacket *first = NULL;
+    PendingIOConfigPacket *last = NULL;
+  };
+
+  PendingIOConfig pendingIOConfig[MAXCTRL];
+
   uint16_t readDelay = 25;
   bool     verbose = false;
   bool     initialized = false;
@@ -34,7 +48,10 @@ protected:
   void     startWifi( void );
 
   // replace controller in swarm list
-  void replaceCtrl( SwOSCom *com, uint8_t source, uint8_t affected );
+  void replaceCtrl( SwOSCom *com, uint8_t source, uint8_t affected, const SwOSCtrlConfig_t *ctrlConfig = NULL );
+  void clearPendingIOConfig( uint8_t index );
+  bool queuePendingIOConfig( uint8_t index, SwOSCom *com );
+  void replayPendingIOConfig( uint8_t index );
 
   // process CMD_JOINMYSWARM
   void cmdJoinMySwarm( SwOSCom *com, uint8_t source, uint8_t affected );

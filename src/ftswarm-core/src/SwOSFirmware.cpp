@@ -1709,18 +1709,18 @@ void firmware( void ) {
 
   myOSSwarm.begin( true );
 
-  if ( nvs.swarm.IAmKelda ) {
+  // if ( nvs.swarm.IAmKelda ) {
     
     // only Keldas use CLI
     SwOSCLI cli;
     cli.run();
-
+/*
   } else {
 
     mainMenu();
 
   }
-
+*/
 }
 
 void mainMenu( void ) {

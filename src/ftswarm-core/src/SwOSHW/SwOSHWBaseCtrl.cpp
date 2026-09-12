@@ -1082,7 +1082,7 @@ bool SwOSCtrl::ioConfig( SwOSCom *com ) {
       setComState( COMSTATE_ONLINE );
 
     } else if ( index >= IOs ) {
-      SWARM_LOG_ERROR( TRANSLATE( "SwOSCtrl::ioConfig: SN %d index out of range %d", "SwOSCtrl::ioConfig: SN %d Index außerhalb des gültigen Bereichs %d" ), serialNumber, index );
+      SWARM_LOG_ERROR( TRANSLATE( "SwOSCtrl::ioConfig: SN %d index %d out of range %d", "SwOSCtrl::ioConfig: SN %d Index %d grösser als IOs %d" ), serialNumber, index, IOs );
 
     } else if ( io[index] ) {
       // set IOType + alias name as transmitted
@@ -1112,6 +1112,11 @@ void SwOSCtrl::tick( void ) {
 bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
 
   if (!com) return false;
+
+  if ( ( !IAmKelda ) && ( com->data.cmd != CMD_IOCONFIG ) && ( comState != COMSTATE_ONLINE ) ) {
+    // printf( "sn %d discard %d\n", serialNumber, com->data.cmd );
+    return false;
+  } 
 
   tick();
     
@@ -1258,6 +1263,11 @@ void SwOSCtrl::printNVS( void ) {
 void SwOSCtrl::sendIOConfig( MacAddr destination ) {
 
   SwOSCom ioConfig( destination, serialNumber, CMD_IOCONFIG );
+  ioConfig.data.ioConfigCmd.ctrlConfig.CPU           = getCPU();
+  ioConfig.data.ioConfigCmd.ctrlConfig.extensionPort = extensionPort;
+  ioConfig.data.ioConfigCmd.ctrlConfig.IOs           = IOs;
+  ioConfig.data.ioConfigCmd.ctrlConfig.pixels        = pixels;
+  ioConfig.data.ioConfigCmd.ctrlConfig.gyro          = hasGyro();
 
   // IOs
   for (uint8_t i=0; i<IOs;i++) {

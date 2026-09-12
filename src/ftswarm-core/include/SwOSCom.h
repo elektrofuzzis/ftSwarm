@@ -22,7 +22,7 @@
 
 #define ESPNOW_MAXDELAY     128
 #define DEFAULTSECRET       0x2506
-#define VERSIONDATA         9
+#define VERSIONDATA         10
 #define MAXIOCONFIG         5
 #define MAXUSEREVENTPAYLOAD 128
 #define MAXCONFIGPAYLOAD    200
@@ -171,6 +171,7 @@ struct effectCmd_t {
 } __attribute__((packed));
 
 struct ioConfigCmd_t { 
+  SwOSCtrlConfig_t ctrlConfig;
   uint8_t payload[MAXCONFIGPAYLOAD];
 } __attribute__((packed));
 

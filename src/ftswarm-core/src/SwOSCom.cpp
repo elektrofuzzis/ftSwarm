@@ -255,12 +255,15 @@ void SwOSCom::flushBuffer( ) {
   // end of data
   data.ioConfigCmd.payload[bufferIndex] = 255;
 
+  SwOSCtrlConfig_t ctrlConfig = data.ioConfigCmd.ctrlConfig;
+
   // send data
   send();
 
   // cleanup
   bufferIndex = 0;
   memset( &data.ioConfigCmd, 0, sizeof( data.ioConfigCmd ) );
+  data.ioConfigCmd.ctrlConfig = ctrlConfig;
   
 }
 
