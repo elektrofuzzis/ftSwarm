@@ -22,15 +22,38 @@
 
 bool easyKeyEcho = true;
 
+static SerialStatus serialStatus = SerialStatus::Boot;
+
+SerialStatus setSerialStatus( SerialStatus status ) {
+  SerialStatus previous = serialStatus;
+  serialStatus = status;
+  return previous;
+}
+
+static bool handleSerialStatus( int ch ) {
+  if ( ch != 0x05 ) return false;
+  Serial.write( static_cast<uint8_t>(serialStatus) );
+  return true;
+}
+
+void pollSerialStatus( void ) {
+  while ( Serial.peek() == 0x05 ) handleSerialStatus( Serial.read() );
+}
+
 void keyboardEcho( bool on ) {
   easyKeyEcho = false;
 }
 
 bool anyKey( void ) {
 
-  bool result = Serial.available();
+  bool result = false;
   
-  while( Serial.available() ) { Serial.read(); delay(25); }
+  while( Serial.available() ) {
+    if ( !handleSerialStatus( Serial.read() ) ) {
+      result = true;
+      delay(25);
+    }
+  }
 
   return result;
   
@@ -69,6 +92,7 @@ bool enterSomething(  const char *prompt,
 
     if ( Serial.available()>0 ) {
       ch = Serial.read();
+      if ( handleSerialStatus( ch ) ) continue;
       
       switch (ch) {
 

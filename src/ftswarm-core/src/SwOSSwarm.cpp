@@ -365,6 +365,9 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
   if (initialized) return Ctrl[0]->serialNumber;
 
+  setSerialStatus( SerialStatus::Boot );
+  pollSerialStatus();
+
   // redirect IO to feed the web console
   redirectStdIO();
 
@@ -467,7 +470,9 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   setState( BOOTING );
   
   // wifi
+  pollSerialStatus();
   if ( nvs.wifi.mode != wifiOFF ) startWifi( );
+  pollSerialStatus();
 
   // Init Communication
   if (!myOSNetwork.begin( nvs.swarm.secret, nvs.swarm.pin, nvs.swarm.communication )) SWARM_LOG_FATAL("Error initializing swarm communication.");
@@ -494,6 +499,9 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   testFactoryReset();
  
   setState( RUNNING );
+
+  setSerialStatus( SerialStatus::Running );
+  pollSerialStatus();
 
   return Ctrl[0]->serialNumber;
 

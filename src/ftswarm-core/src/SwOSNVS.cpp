@@ -47,6 +47,8 @@ uint16_t generateSecret( FtSwarmSerialNumber_t serialNumber ) {
 
 void SwOSNVS::initialSetup( void ) {
 
+  setSerialStatus( SerialStatus::Setup );
+
   version = NVSVERSION;
 
   CPU = CPUFirmware;

@@ -1727,7 +1727,9 @@ void firmware( void ) {
 
 void mainMenu( void ) {
   
+  SerialStatus previous = setSerialStatus( SerialStatus::Setup );
   MainMenu main;
   main.run();
+  setSerialStatus( previous );
 
 }
