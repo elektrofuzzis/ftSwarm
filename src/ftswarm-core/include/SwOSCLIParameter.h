@@ -77,6 +77,7 @@ class SwOSCLIParameter {
 
   public:
     ~SwOSCLIParameter();
+    void clear( void );
     void setNumber( char *value );
     long getNumber( void );
     

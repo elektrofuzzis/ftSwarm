@@ -16,19 +16,25 @@
 
 SwOSCLIParameter::~SwOSCLIParameter(){
 
+    clear();
+
+};
+
+void SwOSCLIParameter::clear( void ) {
+
     if ( num ) free( num );
     if ( str ) free( str );
-    if ( io  ) free( io  );
+    // IO objects are borrowed from the swarm, not owned by the parameter.
     
-    num = NULL;
-    str = NULL;
-    io  = NULL;
+    num = nullptr;
+    str = nullptr;
+    io  = nullptr;
 
 };
 
 void SwOSCLIParameter::setNumber( char *value ){
 
-  if ( num ) free( num );
+  clear();
 
   num = (char *) malloc( strlen(value)+1 );
   strcpy( num, value );
@@ -37,7 +43,7 @@ void SwOSCLIParameter::setNumber( char *value ){
 
 void SwOSCLIParameter::setString( char *value ){
 
-  if ( str ) free( str );
+  clear();
 
   int len = strlen( value );
   int pos = 0;
@@ -53,6 +59,7 @@ void SwOSCLIParameter::setString( char *value ){
 
 void SwOSCLIParameter::setIO( SwOSIO *io ) {
 
+  clear();
   this->io = io;
 
 }
