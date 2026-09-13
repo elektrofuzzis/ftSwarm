@@ -108,9 +108,7 @@ uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
   // RC Servos are setup in setupLocalMotors
 
   // DC Servos
-  #if FTSWARM_HAL_SERVOS > 0
-  for ( uint8_t i=0; i<FTSWARM_HAL_SERVOS; i++ ) io[ maxIO++ ] = new SwOSDigitalServo( SERVO_NAME[i], i, this, FTSWARM_HAL_FLAG_NONE );
-  #endif
+  for ( uint8_t i=0; i<servos; i++ ) io[ maxIO++ ] = new SwOSDigitalServo( SERVO_NAME[i], i, this, FTSWARM_HAL_FLAG_NONE );
 
   return maxIO;
 
