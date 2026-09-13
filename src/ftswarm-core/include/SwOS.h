@@ -15,7 +15,7 @@
 #define MAXIDENTIFIER 32
 #define MAXACTORS     8
 #define MAXINPUTS     12
-#define SWOSVERSION   "0.7.1"
+#define SWOSVERSION   "0.8.0"
 
 #define SWOS_NOPORT   255
 

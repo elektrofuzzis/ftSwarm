@@ -76,6 +76,7 @@ const IOCmdList_t IOCmdList [CLICMD_MAX] = {
   { "setHomingOffset", true, 1, 1},
   { "testPixels", true, 1, 1},
   { "print", true, 0, 0 },
+  { "clean", true, 0, 0 },
   { "setBlink", true, 7, 7 },
   { "resetBlink", true, 1, 1 },
   { "send", true, 1, 1 + MAXCANPAYLOAD }
@@ -90,6 +91,7 @@ statistics - RS485 send/receive statistics & memory usage
 exit       - end command line interface.
 
 nvs.print or
+nvs.clean()
 swarm.<Command>(<parameter>, ...) or
 <Alias-Name>.<Command>(<parameter>, ...) or
 <Hostname>.<Controller-xcommand>(<parameter>, ...) or
@@ -1131,6 +1133,15 @@ void SwOSCLI::executeNVSCmd( bool *loggedIn ) {
                         else {
                           nvs.printNVS();
                           myOSSwarm.Ctrl[0]->printNVS( );
+                        }
+                        break;
+
+    case CLICMD_clean: if ( nvs.clean() ) {
+                          nvs.save( FTSWARM_NVSSCOPE_ALL );
+                          myOSSwarm.Ctrl[0]->saveToNVS( );
+                          OK( );
+                        } else {
+                          sprintf( response, TRANSLATE( "Error: NVS clean failed.", "Fehler: NVS-Bereinigung fehlgeschlagen." ) );
                         }
                         break;
 

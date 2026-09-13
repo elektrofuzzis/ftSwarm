@@ -62,6 +62,7 @@ typedef enum {
   CLICMD_setHomingOffset,
   CLICMD_testPixels,
   CLICMD_print,
+  CLICMD_clean,
   CLICMD_setBlink,
   CLICMD_resetBlink,
   CLICMD_send,

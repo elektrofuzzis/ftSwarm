@@ -120,6 +120,14 @@ void SwOSNVS::begin() {
 
 }
 
+bool SwOSNVS::clean() {
+
+  if ( nvs_flash_erase() != ESP_OK ) return false;
+
+  return ( nvs_flash_init() == ESP_OK );
+
+}
+
 bool SwOSNVS::load() {
 
   // Open
