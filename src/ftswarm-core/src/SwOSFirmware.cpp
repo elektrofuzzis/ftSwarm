@@ -1179,7 +1179,6 @@ void MenuIOList::fillIOList( void ) {
   int item  = -1;
   maxItem   = -1;
   morePages = false;
-  pageOffset = 0;
 
   // all controllers
   for ( int8_t c=0; c<=myOSSwarm.maxCtrl; c++ ) {
@@ -1279,16 +1278,19 @@ void MenuIOList::run( void ) {
       case MENU_PIXEL:    listInputs = false;
                           listActors = false;
                           listPixels = true;
+                          pageOffset = 0;
                           break;
 
       case MENU_ACTOR:    listInputs = false;
                           listActors = true;
                           listPixels = false;
+                          pageOffset = 0;
                           break;
 
       case MENU_INPUT:    listInputs = true;
                           listActors = false;
                           listPixels = false;
+                          pageOffset = 0;
                           break;
 
       case MENU_NEXT:     pageOffset += MENUITEMSPERPAGE;
