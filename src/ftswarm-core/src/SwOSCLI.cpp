@@ -34,7 +34,7 @@ const IOCmdList_t IOCmdList [CLICMD_MAX] = {
   { "save", true, 1, 1 },
   { "useConfig", true, 1, 1 },
   { "setAlias", true, 1, 1 },
-  { "setWifi", true, 3, 3 },
+  { "setWifi", true, 3, 4 },
   { "reboot", true, 0, 0 },
   { "setMicrostepMode", true, 1, 1 },
   { "getMicrostepMode", false, 0, 0 },
@@ -51,11 +51,11 @@ const IOCmdList_t IOCmdList [CLICMD_MAX] = {
   { "getToggle", false, 0, 0},
   { "setSpeed", true, 1, 1},
   { "getSpeed", false, 0, 0},
-  { "setMotionType", true, 0, 0},
+  { "setMotionType", true, 1, 1},
   { "getMotionType", false, 0, 0},
-  { "onTrigger", true, 2, 6},
-  { "onTriggerLR", true, 2, 6},
-  { "onTriggerFB", true, 2, 6},
+  { "onTrigger", true, 5, 6},
+  { "onTriggerLR", true, 5, 6},
+  { "onTriggerFB", true, 5, 6},
   { "setPosition", true, 1, 1},
   { "getPosition", false, 0, 0},
   { "setOffset", true, 1, 1},
@@ -104,7 +104,7 @@ Controller commands:
   show                          - identify controller by blue LEDs
   reboot                        - reboot controller
   save(scope)                   - save settings to nvs - 0 all, 1 config, 2 alias, 3 events
-  setWifi(mode, SSID, PSK)      - set wifi settings
+  setWifi(mode, SSID, PSK, reboot=0) - set wifi settings
   triggerUserEvent(P1,P2,..P10) - Trigger a user remote code.
   setMicroStepMode(mode)        - set Microstep Mode / ftSwarmPwrDrive only
   getMicroStepMode()            - get Microstep Mode / ftSwarmPwrDrive only
@@ -443,6 +443,10 @@ Cmd_t SwOSCLI::evalSimpleCommand( char *token ) {
 char *SwOSCLI::eval( char* in, bool *loggedIn ) {
   // returns false on command exit
 
+  // Start every command with empty parameters, including after parse errors.
+  for (int i=0; i<MAXPARAM; i++) parameter[i].clear();
+  maxParameter = -1;
+
   this->in       = in;
   this->response = (char *) calloc( 1, CLIMAXLINE );
 
@@ -535,6 +539,11 @@ void SwOSCLI::executeControllerCmd(void ) {
 
                                     // copy parameters
                                     for (uint8_t i=0; i<=maxParameter; i++) {
+                                      if ( !parameter[i].isNumber() ) {
+                                        delete userEvent;
+                                        Error( ERROR_NUMBEREXPECTED );
+                                        return;
+                                      }
                                       p = parameter[i].getNumber();
                                       memcpy( &userEvent->data.userEventCmd.payload[i*sizeof(int)], &p, sizeof(int) );
                                     }
@@ -583,14 +592,17 @@ void SwOSCLI::executeControllerCmd(void ) {
 
     case CLICMD_setWifi:            // wifi mode in range from 0 to 2?
                                     if ( !parameter[0].inRange( "mode", 0, 3, response ) ) {}
+                                    else if ( !parameter[1].getString() ) Error( ERROR_SSIDEXPECTED );
+                                    else if ( !parameter[2].getString() ) Error( ERROR_PSKEXPECTED );
                                     // wifi is on, a SSID is needed
                                     else if ( ( parameter[0].getNumber() != wifiOFF ) && ( !parameter[1].isString() ) ) Error( ERROR_SSIDEXPECTED );
                                     // wifi is in client mode, a PSK is needed
                                     else if ( ( parameter[0].getNumber() == wifiClient ) && ( !parameter[2].isString() ) ) Error( ERROR_PSKEXPECTED );
+                                    else if ( ( maxParameter >= 3 ) && ( !parameter[3].inRange( "reboot", 0, 1, response ) ) ) {}
                                     // everything is fine
                                     else {
                                       OK( );
-                                      ctrl->setWifi( (FtSwarmWifi_t) parameter[0].getNumber(), parameter[1].getString(), parameter[2].getString(), parameter[3].getNumber() );
+                                      ctrl->setWifi( (FtSwarmWifi_t) parameter[0].getNumber(), parameter[1].getString(), parameter[2].getString(), ( maxParameter >= 3 ) ? parameter[3].getNumber() : false );
                                     }
                                     break;
 
@@ -620,17 +632,18 @@ void SwOSCLI::executeInputCmd( void ) {
                                 break;
 
     case CLICMD_setIOType:      if ( ( parameter[0].inRange( "ioType", 0, SWOSIO_MAXIOTYPE-1, response ) ) && 
-                                     ( parameter[1].inRange( "normallyOpen", 0, 1, response ) ) ) {
+                                     ( ( maxParameter < 1 ) || parameter[1].inRange( "normallyOpen", 0, 1, response ) ) ) {
 
                                   // which sensor type?
                                   newIOType =  (SwOSIOType_t) parameter[0].getNumber();
 
                                   if ( ctrl->changeIOType( index, newIOType, false ) ) {
                                     io = ctrl->io[ index ];
-                                    if (io) io->setParameter( parameter[1].getNumber() );
-                                    OK( );                                  }
+                                    if (io) io->setParameter( ( maxParameter >= 1 ) ? parameter[1].getNumber() : false );
+                                    OK( );                                  
+                                  }
 
-                                } else Error( ERROR_WRONGIOTYPE, 0, newIOType );
+                                }
 
                                 break;
 
@@ -698,9 +711,9 @@ void SwOSCLI::executeInputCmd( void ) {
                                      ( parameter[2].inRange( "operand1", 0, FTSWARM_MAXOPERAND-1, response ) ) &&
                                      ( parameter[3].inRange( "operand2", 0, FTSWARM_MAXOPERAND-1, response ) ) &&
                                      ( parameter[4].isIO() ) &&
-                                     ( parameter[5].isNumber() ) ) {
+                                     ( ( maxParameter < 5 ) || parameter[5].isNumber() ) ) {
                                   io->lock();
-                                  p.setValue( parameter[5].getNumber() );
+                                  p.setValue( ( maxParameter >= 5 ) ? parameter[5].getNumber() : 0 );
                                   ((SwOSInput *)io)->addEvent(  (FtSwarmTrigger_t)parameter[0].getNumber(), 
                                                                 (FtSwarmOperator_t)parameter[1].getNumber(), 
                                                                 (FtSwarmOperand_t)parameter[2].getNumber(), 
@@ -907,9 +920,9 @@ void SwOSCLI::executeJoystickCmd( void ) {
                                    ( parameter[2].inRange( "operand1", 0, FTSWARM_MAXOPERAND-1, response ) ) &&
                                    ( parameter[3].inRange( "operand2", 0, FTSWARM_MAXOPERAND-1, response ) ) &&
                                    ( parameter[4].isIO() ) &&
-                                   ( parameter[5].isNumber() ) ) {
+                                   ( ( maxParameter < 5 ) || parameter[5].isNumber() ) ) {
                                 io->lock();
-                                p.setValue( parameter[5].getNumber() );
+                                p.setValue( ( maxParameter >= 5 ) ? parameter[5].getNumber() : 0 );
                                 ((SwOSJoystick *)io)->lr->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), 
                                                                     (FtSwarmOperator_t)parameter[1].getNumber(), 
                                                                     (FtSwarmOperand_t)parameter[2].getNumber(), 
@@ -926,9 +939,9 @@ void SwOSCLI::executeJoystickCmd( void ) {
                                    ( parameter[2].inRange( "operand1", 0, FTSWARM_MAXOPERAND-1, response ) ) &&
                                    ( parameter[3].inRange( "operand2", 0, FTSWARM_MAXOPERAND-1, response ) ) &&
                                    ( parameter[4].isIO() ) &&
-                                   ( parameter[5].isNumber() ) ) {
+                                   ( ( maxParameter < 5 ) || parameter[5].isNumber() ) ) {
                                 io->lock();
-                                p.setValue( parameter[5].getNumber() );
+                                p.setValue( ( maxParameter >= 5 ) ? parameter[5].getNumber() : 0 );
                                 ((SwOSJoystick *)io)->fb->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), 
                                                                     (FtSwarmOperator_t)parameter[1].getNumber(), 
                                                                     (FtSwarmOperand_t)parameter[2].getNumber(), 
@@ -1060,9 +1073,9 @@ void SwOSCLI::executeI2CCmd( void ) {
                                      ( parameter[2].inRange( "operand1", 0, FTSWARM_MAXOPERAND-1, response ) ) &&
                                      ( parameter[3].inRange( "operand2", 0, FTSWARM_MAXOPERAND-1, response ) ) &&
                                      ( parameter[4].isIO() ) &&
-                                     ( parameter[5].isNumber() ) ) {
+                                     ( ( maxParameter < 5 ) || parameter[5].isNumber() ) ) {
                                   io->lock();
-                                  p.setValue( parameter[5].getNumber() );
+                                  p.setValue( ( maxParameter >= 5 ) ? parameter[5].getNumber() : 0 );
                                   ((SwOSI2C *)io)->addEvent( (FtSwarmTrigger_t)parameter[0].getNumber(), 
                                                              (FtSwarmOperator_t)parameter[1].getNumber(), 
                                                              (FtSwarmOperand_t)parameter[2].getNumber(), 
@@ -1088,7 +1101,11 @@ void SwOSCLI::executeCANCmd( void ) {
                                   uint8_t payload[MAXCANPAYLOAD];
                                   uint8_t length = 0;
 
-                                  for ( ; ( length < MAXCANPAYLOAD ) && ( parameter[1+length].isNumber() ); length++ ) {
+                                  for ( ; ( length < MAXCANPAYLOAD ) && ( 1+length <= maxParameter ); length++ ) {
+                                    if ( !parameter[1+length].isNumber() ) {
+                                      Error( ERROR_NUMBEREXPECTED );
+                                      return;
+                                    }
                                     if ( !parameter[1+length].inRange( "payload", 0, 255, response ) ) return;
                                     payload[length] = (uint8_t) parameter[1+length].getNumber();
                                   }
@@ -1270,7 +1287,7 @@ void SwOSCLI::executeIOCommand( void ) {
 
 bool SwOSCLI::tokenizeCmd( char *cmd ) {
 
-  for (uint8_t i=0; i<=CLICMD_MAX; i++) {
+  for (uint8_t i=0; i<CLICMD_MAX; i++) {
     if ( strcmp( IOCmdList[i].cmd, cmd ) == 0 ) {
       this->cmd = (CLICmd_t) i;
       return true;
@@ -1365,7 +1382,8 @@ void SwOSCLI::evalComplexCommand( char *token, bool *loggedIn ) {
         // get a parameter
         switch ( getNextToken( token ) ) {
 
-          case EVAL_LITERAL:        if ( ( getIO( token, paramIOName, &paramCtrl, &paramIO ) ) && ( &paramIO ) ) {
+          case EVAL_LITERAL:        if ( maxParameter+1 >= MAXPARAM ) { Error( ERROR_WRONGNUMBEROFARGUMENTS, MAXPARAM, maxParameter+2 ); return; }
+                                    if ( ( getIO( token, paramIOName, &paramCtrl, &paramIO ) ) && ( paramIO ) ) {
                                       maxParameter++;
                                       parameter[maxParameter].setIO( paramIO );
                                     } else {
@@ -1374,11 +1392,13 @@ void SwOSCLI::evalComplexCommand( char *token, bool *loggedIn ) {
                                     }
                                     break;
 
-          case EVAL_STRING:         maxParameter++;
+          case EVAL_STRING:         if ( maxParameter+1 >= MAXPARAM ) { Error( ERROR_WRONGNUMBEROFARGUMENTS, MAXPARAM, maxParameter+2 ); return; }
+                                    maxParameter++;
                                     parameter[maxParameter].setString( token );
                                     break;
 
-          case EVAL_NUMBER:         maxParameter++;
+          case EVAL_NUMBER:         if ( maxParameter+1 >= MAXPARAM ) { Error( ERROR_WRONGNUMBEROFARGUMENTS, MAXPARAM, maxParameter+2 ); return; }
+                                    maxParameter++;
                                     parameter[maxParameter].setNumber( token);
                                     break;
 
@@ -1419,10 +1439,16 @@ void SwOSCLI::evalComplexCommand( char *token, bool *loggedIn ) {
 
   if ( IOCmdList[ cmd ].loginNeeded && (!*loggedIn) ) { Error( ERROR_NOTAUTHENTICATED); return; }
 
+  if ( ( cmd==CLICMD_onTrigger ) || ( cmd==CLICMD_onTriggerLR ) || ( cmd==CLICMD_onTriggerFB ) ) {
+    if ( !parameter[4].isIO() ) { Error( ERROR_IOEXPECTED ); return; }
+    if ( ( maxParameter >= 5 ) && !parameter[5].isNumber() ) { Error( ERROR_NUMBEREXPECTED ); return; }
+  }
+
   if ( cmd==CLICMD_subscribe ) {
 
     // subscribe needs special handling due to non-int-parameters
-    int a = parameter[0].getNumber();
+    if ( ( maxParameter >= 0 ) && !parameter[0].isNumber() ) { Error( ERROR_NUMBEREXPECTED ); return; }
+    int a = (maxParameter >= 0) ? parameter[0].getNumber() : 0;
 
     // controller?
     if ( (!io) && (ctrl ) ) {
