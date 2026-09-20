@@ -670,8 +670,6 @@ void SwOSCAN::operate() {
 
   while ( twai_receive( &rx, 0 ) == ESP_OK ) {
 
-    printf("got %d\n", rx.identifier & CANID_MASK);
-
     uint32_t id     = rx.identifier & CANID_MASK;
     uint8_t  length = ( rx.data_length_code > MAXCANPAYLOAD ) ? MAXCANPAYLOAD : rx.data_length_code;
 

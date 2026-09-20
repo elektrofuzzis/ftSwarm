@@ -888,9 +888,9 @@ bool SwOSNetwork::begin( uint16_t swarmSecret, uint16_t swarmPIN, FtSwarmCommuni
   delayTime = 5 + (nvs.serialNumber & 0x1F); // between 5 and 36 us
 
   // create queues - recv & tx needs the size of max. controllers  in the swarm
-  myOSNetwork.recvNotification = xQueueCreate( MAXCTRL, sizeof( SwOSCom ) ); 
-  myOSNetwork.tx_queue         = xQueueCreate( MAXCTRL, sizeof( SwOSCom ) );
-  myOSNetwork.userEvent        = xQueueCreate(       5, sizeof( SwOSCom ) );
+  myOSNetwork.recvNotification = xQueueCreate( MAXCTRL*5, sizeof( SwOSCom ) ); 
+  myOSNetwork.tx_queue         = xQueueCreate( MAXCTRL*5, sizeof( SwOSCom ) );
+  myOSNetwork.userEvent        = xQueueCreate( MAXCTRL,   sizeof( SwOSCom ) );
 
   bool ok = true;
 

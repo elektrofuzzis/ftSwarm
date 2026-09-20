@@ -64,6 +64,7 @@
 
 #ifndef FTSWARM_HAL_SERVOS
   #define FTSWARM_HAL_SERVOS 0
+  static const char SERVO_NAME[][7] = { "SERVO1", "SERVO2", "SEROV3", "SERVO4" };
 #endif
 
 #ifndef FTSWARM_HAL_PIXELS

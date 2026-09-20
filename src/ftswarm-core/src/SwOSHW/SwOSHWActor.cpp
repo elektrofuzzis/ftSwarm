@@ -128,7 +128,9 @@ void SwOSDCMotor::setupLocal() {
   };
   if ( IN1 != GPIO_NUM_NC ) io_conf.pin_bit_mask = io_conf.pin_bit_mask | (1ULL << IN1);
   if ( IN2 != GPIO_NUM_NC ) io_conf.pin_bit_mask = io_conf.pin_bit_mask | (1ULL << IN2);
-  if ( FTSWARM_HAL_MOTOR_SLEEP != GPIO_NUM_NC ) io_conf.pin_bit_mask = io_conf.pin_bit_mask | (1ULL << FTSWARM_HAL_MOTOR_SLEEP);
+  #if FTSWARM_HAL_MOTOR_SLEEP != GPIO_NUM_NC
+    io_conf.pin_bit_mask = io_conf.pin_bit_mask | (1ULL << FTSWARM_HAL_MOTOR_SLEEP);
+  #endif
   gpio_config(&io_conf);
   
   // set motor driver off
@@ -136,7 +138,9 @@ void SwOSDCMotor::setupLocal() {
   if ( IN2 != GPIO_NUM_NC ) gpio_set_level( IN2, 0 );
 
   // set motor driver sleep off
-  if ( FTSWARM_HAL_MOTOR_SLEEP != GPIO_NUM_NC ) gpio_set_level( FTSWARM_HAL_MOTOR_SLEEP, 1 );
+  #if FTSWARM_HAL_MOTOR_SLEEP != GPIO_NUM_NC
+    gpio_set_level( FTSWARM_HAL_MOTOR_SLEEP, 1 );
+  #endif
 
   // just prepare led channel, don't register yet
   ledc_channel = (ledc_channel_config_t *) calloc( sizeof( ledc_channel_config_t ), 1 );
@@ -322,6 +326,11 @@ void SwOSDCMotor::setLocal() {
 
   // just in case of non-existent HW
   if ( ( IN1 == GPIO_NUM_NC ) || ( IN2 == GPIO_NUM_NC ) ) return;
+
+  if ( ( motionType == FTSWARM_ON ) && ( speed == 0 ) ) {
+    setPWM( 0, 0, IN1, 0 );
+    return;
+  }
 
   // calculate duty
   switch (motionType) {
