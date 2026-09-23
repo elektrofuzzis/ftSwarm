@@ -1,6 +1,6 @@
 {
     "name": "ftswarm",
-    "version": "0.7.1",
+    "version": "0.8.0",
     "description": "Interface libray to build robotics swarms using ftSwarm/ESP32 hardware.",
     "keywords": "ftswarm, swarm, network, controller, fischertechnik, robot, model, actuator, sensor",
     "repository": {
