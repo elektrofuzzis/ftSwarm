@@ -59,7 +59,8 @@ SwOSUIClass_t UI_CLASS[SWOSIO_MAXIOTYPE] =
     UICLASS_MOTOR,
     UICLASS_MOTOR,
     UICLASS_SERVO,
-    UICLASS_NONE
+    UICLASS_NONE,    // no rcpoti
+    UICLASS_NONE     // no can
   };
   
 

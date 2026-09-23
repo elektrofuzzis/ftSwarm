@@ -15,7 +15,7 @@
 #define MAXIDENTIFIER 32
 #define MAXACTORS     8
 #define MAXINPUTS     12
-#define SWOSVERSION   "0.7.1"
+#define SWOSVERSION   "0.8.0"
 
 #define SWOS_NOPORT   255
 
@@ -131,6 +131,7 @@ typedef enum { SWOSIO_UNDEF = -1,
                SWOSIO_RCMOTOR,
                SWOSIO_RCSERVO,
                SWOSIO_RCPOTI,
+               SWOSIO_CAN,
                SWOSIO_MAXIOTYPE 
 } SwOSIOType_t;
 
@@ -179,7 +180,8 @@ const SwOSIOClass_t SWOSIOCLASS[SWOSIO_MAXIOTYPE ] = {
   SWOSIOCLASS_MOTOR,    // SWOSIO_MMOTOR
   SWOSIOCLASS_MOTOR,    // SWOSIO_RCMOTOR
   SWOSIOCLASS_MOTOR,    // SWOSIO_RCSERVO
-  SWOSIOCLASS_SINGULAR  // SWOSIO_RCPOTI
+  SWOSIOCLASS_SINGULAR, // SWOSIO_RCPOTI
+  SWOSIOCLASS_SINGULAR  // SWOSIO_CAN
 } ;  
 
 // show via api?
@@ -227,7 +229,8 @@ const bool SHOWIOINAPI[SWOSIO_MAXIOTYPE] = {
   true,  // SWOSIO_MMOTOR
   true,  // SWOSIO_RCMOTOR
   true,  // SWOSIO_RCSERVO
-  false  // SWOSIO_RCPOTI
+  false, // SWOSIO_RCPOTI
+  false  // SWOSIO_CAN
 } ;  
 
 // show via api?
@@ -275,7 +278,8 @@ const char SWOSIOTYPE[SWOSIO_MAXIOTYPE][20] = {
   "MMotor",
   "RCMotor",
   "RCServo",
-  "RCPoti"
+  "RCPoti",
+  "CAN"
 } ;  
 
 // HW versions
@@ -346,7 +350,7 @@ typedef enum { FTSWARM_ALIGNLEFT, FTSWARM_ALIGNCENTER, FTSWARM_ALIGNRIGHT } FtSw
 typedef enum { FTSWARM_GYRO_OFF, FTSWARM_GYRO_LSM, FTSWARM_GYRO_MPU } FtSwarmGyroMode_t;
 
 // Ext Port modes
-typedef enum { FTSWARM_EXT_OFF, FTSWARM_EXT_I2C_MASTER, FTSWARM_EXT_I2C_SLAVE, FTSWARM_EXT_OUTPUT, FTSWARM_EXT_SERVO, FTSWARM_EXT_LIDAR } FtSwarmExtMode_t;
+typedef enum { FTSWARM_EXT_OFF, FTSWARM_EXT_I2C_MASTER, FTSWARM_EXT_I2C_SLAVE, FTSWARM_EXT_OUTPUT, FTSWARM_EXT_SERVO, FTSWARM_EXT_LIDAR, FTSWARM_EXT_CAN } FtSwarmExtMode_t;
 
 // trigger events
 typedef enum { FTSWARM_NOTRIGGER = -1, FTSWARM_TRIGGERDOWN, FTSWARM_TRIGGERUP, FTSWARM_TRIGGERVALUE, FTSWARM_TRIGGERI2CREAD, FTSWARM_TRIGGERI2CWRITE, FTSWARM_MAXTRIGGER } FtSwarmTrigger_t;
@@ -413,7 +417,7 @@ struct FtSwarmTriggerParameter {
   bool getBlink( uint32_t *periodMS, uint8_t *signal, uint8_t *duty, uint8_t *pause, uint8_t *p1, uint8_t *p2, uint8_t *p3 );
 
   // set no Blink
-  void setNone( int32_t value ) { base.effectType = FTSWARM_EFFECT_NONE; base.value = value; };
+  void resetBlink( int32_t color ) { base.effectType = FTSWARM_EFFECT_NONE; base.value = color; };
 
 };
 
@@ -516,7 +520,7 @@ typedef enum { FTSWARM_OLED_NOFILL, FTSWARM_OLED_FILLBLACK, FTSWARM_OLED_FILLWHI
 
 typedef enum { FTSWARM_OLED_UPPERSCREEN, FTSWARM_OLED_MAINSCREEN, FTSWARM_OLED_BUTTONSCREEN, FTSWARM_OLED_NOSCREEN, FTSWARM_OLED_MAXSCREEN = FTSWARM_OLED_NOSCREEN, } FtSwarmOledScreen_t;
 
-const char EXTMODE[7][14] = { TRANSLATE( "off", "aus"), "I2C-Master", "I2C-Slave", "Outputs", "Servos", "Lidar", "" }; // "" just to avoid seg faults
+const char EXTMODE[8][14] = { TRANSLATE( "off", "aus"), "I2C-Master", "I2C-Slave", "Outputs", "Servos", "Lidar", "CAN", "" }; // "" just to avoid seg faults
 const char GYRO[3][8]     = { TRANSLATE( "off", "aus"), "LSM6", "MPU6050"};
 const char ONOFF[2][5]    = { TRANSLATE( "off", "aus"), TRANSLATE( "on", "an" ) };
 const char OFFM1M2[3][5]  = { TRANSLATE( "off", "aus"), "M1", "M2" };
@@ -1016,6 +1020,20 @@ class FtSwarmI2C : public FtSwarmIO {
 
 };
 
+typedef void (*DataCallbackRaw)(uint32_t id, uint8_t* data, uint8_t len);
+
+class FtSwarmCAN : public FtSwarmIO {
+  // CAN interface
+  public:
+    FtSwarmCAN( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port );
+    FtSwarmCAN( const char *name );
+
+    void sendMessage( uint32_t id, uint8_t *data, uint8_t len );
+    void registerCallback( DataCallbackRaw callback );
+    void unregisterCallback( void ) { registerCallback( nullptr ); };
+
+};
+
 class FtSwarmGyro : public FtSwarmIO {
   // LSM6/MPU6050 Gyro
   public:
@@ -1138,11 +1156,28 @@ class FtSwarm {
   // my swarm...
     
   public:
-    FtSwarmSerialNumber_t begin( bool verbose = false, bool waitOnControllers = true );   // start my swarm
-    void halt( void );                                     // stop all actors
+
+    // start swarm, return my serial number
+    FtSwarmSerialNumber_t begin( bool verbose = false, bool waitOnControllers = true );
+
+    // stop all actors
+    void halt( void );
+
+    // wait for a user event, return true if event received, false if timeout
     bool waitOnUserEvent( int parameter[10], TickType_t xTicksToWait = 512 );
+
+    // send event data to swarm, return true if event sent, false if not
     bool sendEventData( uint8_t *buffer, size_t size );
-    bool IOAvaliable( const char *name ) { return false; };
+
+    // check if a swarm IO is available, return true if available, false if not
+    bool IOAvaliable( const char *name );
+
+    // set Blink all internal ftPixels in Swarm
+    void setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, FtSwarmEffectColor_t c1, FtSwarmEffectColor_t c2, FtSwarmEffectColor_t c3 );
+
+    // reset Blink all internal ftPixels in Swarm
+    void resetBlink( int32_t color );
+
 };
 
 // There is one only

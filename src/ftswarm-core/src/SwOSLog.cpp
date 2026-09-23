@@ -79,7 +79,7 @@ void redirectStdIO() {
 
     // Backup von original stdout (UART)
     original_stdout = stdout;
-    if( original_stdout ) printf("stdout\n");
+    // if( original_stdout ) printf("stdout\n");
 
     // eigene FILE mit write-Funktion erzeugen
     FILE *custom_out = funopen(NULL, NULL, my_stdout_write, NULL, NULL);

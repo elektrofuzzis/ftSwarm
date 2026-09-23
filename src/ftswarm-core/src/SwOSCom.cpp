@@ -255,12 +255,15 @@ void SwOSCom::flushBuffer( ) {
   // end of data
   data.ioConfigCmd.payload[bufferIndex] = 255;
 
+  SwOSCtrlConfig_t ctrlConfig = data.ioConfigCmd.ctrlConfig;
+
   // send data
   send();
 
   // cleanup
   bufferIndex = 0;
   memset( &data.ioConfigCmd, 0, sizeof( data.ioConfigCmd ) );
+  data.ioConfigCmd.ctrlConfig = ctrlConfig;
   
 }
 
@@ -476,7 +479,7 @@ static void logBuffer( uint8_t *buffer, int bufPtr ) {
 
 static void tx_RS485( SwOSCom *com ) {
 
-  #if FTSWARM_HAL_RS458 > 0
+  #if FTSWARM_HAL_RS485 > 0
 
   RS485Frame_t frame;
   bool         collision;
@@ -514,14 +517,23 @@ static void tx_RS485( SwOSCom *com ) {
     // stop on correct transmission
     if ( !collision ) { datasent = true; break; }
 
+    // metric: count this collision as a retry
+    myOSNetwork.rs485Metrics.txRetries++;
+
     // wait a random time to start retransmission
     ets_delay_us( (retry+1)*myOSNetwork.delayTime ); 
 
   }
 
+  if (!datasent) {
+    myOSNetwork.rs485Metrics.txDropped++;
+  } else {
+    myOSNetwork.rs485Metrics.txSent++;
+  }
+
   #ifdef DEBUG_COMMUNICATION
   if (!datasent) {
-    SWARM_LOG_INFO( TRANSLATE"[not sent]\n"); com->print();
+    SWARM_LOG_INFO( "[not sent]\n"); com->print();
   }
   #endif
 
@@ -695,12 +707,12 @@ static void RS485_rx_task(void *pvParameters) {
     SWARM_LOG_INFO(( TRANSLATE( "RS485_rx_task started", "RS485_rx_task gestartet" ) ));
   #endif
   
-  uart_event_t   event;
-  uint8_t        *buffer = (uint8_t *) calloc(1, RS485_BUF_SIZE);
-  int            buflen  = 0;
-  uint8_t *payload;
-  int     sizePayload;
-  int     cleanup;
+  uart_event_t event;
+  uint8_t      *buffer = (uint8_t *) calloc(1, RS485_BUF_SIZE);
+  int          buflen  = 0;
+  uint8_t      *payload;
+  int          sizePayload;
+  int          cleanup;
 
   while(1) {
 
@@ -751,10 +763,15 @@ static void RS485_rx_task(void *pvParameters) {
 
                                     result = RS485GetPayload( buffer, buflen, &payload, &sizePayload, &cleanup );
 
+                                    if ( result == RS485_INVALIDFRAME ) myOSNetwork.rs485Metrics.rxMalformed++;
+
                                     if ( result ==  RS485_PAYLOAD ) {
 
                                       // copy payload to a SwOSCom packet
                                       SwOSCom packet( MacAddr( noMac), payload, sizePayload );
+
+                                      // RS485 echoes our own tx back into rx, don't count that as received
+                                      if ( packet.data.sourceSN != nvs.serialNumber ) myOSNetwork.rs485Metrics.rxReceived++;
 
                                       // if needed show the packet
                                       #ifdef DEBUG_MONITOR
@@ -805,7 +822,7 @@ bool SwOSNetwork::_StartRS485( void ) {
 
   # if FTSWARM_HAL_RS485 > 0
     // ftSwarmRS, XL, PwrDrive, Duino
-    RS485_rx_queue = xQueueCreate(10, sizeof( SwOSDatagram_t ) );
+    // RS485_rx_queue is (re-)created by uart_driver_install() below, no need to allocate it here
 
     // REB & DE
     pinMode( RS485_REB, OUTPUT );
@@ -868,12 +885,12 @@ bool SwOSNetwork::begin( uint16_t swarmSecret, uint16_t swarmPIN, FtSwarmCommuni
   active = true;
   communication = swarmCommunication;
   myOSNetwork.setSecret( swarmSecret, swarmPIN );
-  delayTime = 5 + nvs.serialNumber & 0x1F; // between 5 and 36 us
+  delayTime = 5 + (nvs.serialNumber & 0x1F); // between 5 and 36 us
 
   // create queues - recv & tx needs the size of max. controllers  in the swarm
-  myOSNetwork.recvNotification = xQueueCreate( MAXCTRL, sizeof( SwOSCom ) ); 
-  myOSNetwork.tx_queue         = xQueueCreate( MAXCTRL, sizeof( SwOSCom ) );
-  myOSNetwork.userEvent        = xQueueCreate(       5, sizeof( SwOSCom ) );
+  myOSNetwork.recvNotification = xQueueCreate( MAXCTRL*5, sizeof( SwOSCom ) ); 
+  myOSNetwork.tx_queue         = xQueueCreate( MAXCTRL*5, sizeof( SwOSCom ) );
+  myOSNetwork.userEvent        = xQueueCreate( MAXCTRL,   sizeof( SwOSCom ) );
 
   bool ok = true;
 

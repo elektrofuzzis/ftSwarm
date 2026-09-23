@@ -45,6 +45,15 @@ Controller commands follow the syntax \<Hostname\>.\<Controller-Command\>\(\<par
 | save(scope)                   | save settings in nvs. scope 0 - all, 1 - controller settings only, 2 - alias names only, 3 - event configs only
 | setAlias( alias )             | set alias name, e.g. ftSwam123.setAlias("MainCtrl")
 
+## NVS Commands
+
+NVS commands use the keyword `nvs`, e.g. `nvs.clean()`.
+
+| command       | description |
+|:--------------|:------------|
+| print         | print stored NVS settings |
+| clean()       | erase NVS, then rewrite all current settings and aliases |
+
 ---
 
 ## IO Commands

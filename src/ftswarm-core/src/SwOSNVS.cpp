@@ -47,6 +47,8 @@ uint16_t generateSecret( FtSwarmSerialNumber_t serialNumber ) {
 
 void SwOSNVS::initialSetup( void ) {
 
+  setSerialStatus( SerialStatus::Setup );
+
   version = NVSVERSION;
 
   CPU = CPUFirmware;
@@ -117,6 +119,14 @@ void SwOSNVS::begin() {
     printf("       Board    %s\n", FTSWARMVERSION[CPU] );
     while (1) delay(1000);
   }
+
+}
+
+bool SwOSNVS::clean() {
+
+  if ( nvs_flash_erase() != ESP_OK ) return false;
+
+  return ( nvs_flash_init() == ESP_OK );
 
 }
 
@@ -440,6 +450,7 @@ void SwOSNVS::reset( bool factoryReset ) {
   swarm.IAmKelda           = true;
   swarm.communication.wifi = 1;
   swarm.speed              = 4;
+  bzero( swarm.member, sizeof( swarm.member ) );
 
   // joystick calibration
   for ( uint8_t j=0; j<4; j++ ) {

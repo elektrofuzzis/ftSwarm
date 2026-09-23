@@ -38,6 +38,7 @@ typedef enum {
   CMD_SETUP, 
   CMD_HALT, 
   CMD_STARTCLI, 
+  CMD_STATISTICS,
   CMD_EXIT
 } Cmd_t;
 
@@ -109,6 +110,7 @@ class SwOSCLI {
     void executeServoCmd( void );
     void executePixelCmd( void );
     void executeI2CCmd( void );
+    void executeCANCmd( void );
     void executeIOCommand( void );
     void executeControllerCmd( void );
     void executeSwarmCmd( bool *loggedIn );

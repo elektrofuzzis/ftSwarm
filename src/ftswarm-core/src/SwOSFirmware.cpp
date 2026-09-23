@@ -285,7 +285,7 @@ void MenuLocalSettings::run( void ) {
                                 nvs.extensionPort.mode = FTSWARM_EXT_OFF;
 
                             } else if ( ( cpu == FTSWARMJST_1V15 ) || ( cpu == FTSWARMRS_2V1 ) || ( cpu == FTSWARMXL_1V00 ) ) {
-                              nvs.extensionPort.mode = (FtSwarmExtMode_t) enterNumber( TRANSLATE( "Extension Port Mode: OFF (0), I2C-MASTER (1), I2C-SLAVE (2), OUTPUT (3), SERVO (4), LIDA (5): ", "Modus Extension Port: aus (0), I2C_MASTER (1), I2C_SLAVE (2), OUTPUT (3), SERVO (4), LIDA (5): "), nvs.extensionPort.mode, 0, FTSWARM_EXT_LIDAR );
+                              nvs.extensionPort.mode = (FtSwarmExtMode_t) enterNumber( TRANSLATE( "Extension Port Mode: OFF (0), I2C-MASTER (1), I2C-SLAVE (2), OUTPUT (3), SERVO (4), LIDA (5), CAN (6):", "Modus Extension Port: aus (0), I2C_MASTER (1), I2C_SLAVE (2), OUTPUT (3), SERVO (4), LIDA (5), CAN (6): "), nvs.extensionPort.mode, 0, FTSWARM_EXT_CAN );
                             
                             }
                             
@@ -1052,13 +1052,17 @@ void MenuIOConfig::run( void ) {
     if (pageOffset > 0) add( TRANSLATE("previous page", "Vorherige Seite"), "", MENU_PREVIOUS, '<' );
     if ( ( morePages ) || (pageOffset > 0) ) printf("\n");
 
-    if ( maxEvent < MAXNVSEVENTS ) add( TRANSLATE("add event", "neues Event"), "", MENU_ADD, '+' );
-    if ( maxEvent >= 0           ) {
-      add( TRANSLATE("delete one event", "Event löschen"), "", MENU_DEL,   '-' );
-      add( TRANSLATE("delete all events", "alle Events löschen"), "", MENU_DELALL, '*' );
-    }
+    if ( io->handlesEvents() ) {
 
-    add( TRANSLATE( "switch configuration", "Konfiguration wechseln"), "", MENU_CFG, 's' );
+      if ( maxEvent < MAXNVSEVENTS ) add( TRANSLATE("add event", "neues Event"), "", MENU_ADD, '+' );
+      if ( maxEvent >= 0           ) {
+        add( TRANSLATE("delete one event", "Event löschen"), "", MENU_DEL,   '-' );
+        add( TRANSLATE("delete all events", "alle Events löschen"), "", MENU_DELALL, '*' );
+      }
+
+      add( TRANSLATE( "switch configuration", "Konfiguration wechseln"), "", MENU_CFG, 's' );
+
+    }
     
     addExit();
 
@@ -1175,7 +1179,6 @@ void MenuIOList::fillIOList( void ) {
   int item  = -1;
   maxItem   = -1;
   morePages = false;
-  pageOffset = 0;
 
   // all controllers
   for ( int8_t c=0; c<=myOSSwarm.maxCtrl; c++ ) {
@@ -1188,7 +1191,7 @@ void MenuIOList::fillIOList( void ) {
 
         if ( ( myOSSwarm.Ctrl[c]->io[i] ) && 
              ( !myOSSwarm.Ctrl[c]->io[i]->testFlag( FTSWARM_HAL_FLAG_HIDDEN ) ) &&
-             ( ( listInputs && myOSSwarm.Ctrl[c]->io[i]->isInput() || ( myOSSwarm.Ctrl[c]->io[i]->getIOType() == SWOSIO_JOYSTICK ) ) ||
+             ( ( listInputs && myOSSwarm.Ctrl[c]->io[i]->isInput() || ( myOSSwarm.Ctrl[c]->io[i]->getIOType() == SWOSIO_JOYSTICK ) || ( myOSSwarm.Ctrl[c]->io[i]->getIOType() == SWOSIO_CAN )) ||
                ( listActors && myOSSwarm.Ctrl[c]->io[i]->isActor() && !myOSSwarm.Ctrl[c]->io[i]->isPixel() ) ||
                ( listPixels && myOSSwarm.Ctrl[c]->io[i]->isPixel() ) ) ) {
 
@@ -1275,16 +1278,19 @@ void MenuIOList::run( void ) {
       case MENU_PIXEL:    listInputs = false;
                           listActors = false;
                           listPixels = true;
+                          pageOffset = 0;
                           break;
 
       case MENU_ACTOR:    listInputs = false;
                           listActors = true;
                           listPixels = false;
+                          pageOffset = 0;
                           break;
 
       case MENU_INPUT:    listInputs = true;
                           listActors = false;
                           listPixels = false;
+                          pageOffset = 0;
                           break;
 
       case MENU_NEXT:     pageOffset += MENUITEMSPERPAGE;
@@ -1685,12 +1691,6 @@ void MainMenu::run( void ) {
                             delete menuIOList;
                             break;
 
-/*
-      case MENU_REMOTE:     menuEvent = new MenuEvent();
-                            menuEvent->run();
-                            delete menuEvent;
-                            break;
-*/
       case MENU_REMOTE:     menuEvent = new MenuIOConfig();
                             menuEvent->run();
                             delete menuEvent;
@@ -1711,23 +1711,25 @@ void firmware( void ) {
 
   myOSSwarm.begin( true );
 
-  if ( nvs.swarm.IAmKelda ) {
+  // if ( nvs.swarm.IAmKelda ) {
     
     // only Keldas use CLI
     SwOSCLI cli;
     cli.run();
-
+/*
   } else {
 
     mainMenu();
 
   }
-
+*/
 }
 
 void mainMenu( void ) {
   
+  SerialStatus previous = setSerialStatus( SerialStatus::Setup );
   MainMenu main;
   main.run();
+  setSerialStatus( previous );
 
 }

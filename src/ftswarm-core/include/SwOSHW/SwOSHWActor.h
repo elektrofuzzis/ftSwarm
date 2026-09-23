@@ -52,6 +52,7 @@ class SwOSMotor : public SwOSIO {
     virtual void            operate( void );
     virtual bool            isMotor( void ) { return true; };
     virtual bool            isActor( void ) { return true; };
+    virtual bool            handlesEvents( void )  { return true; };
     virtual int16_t         getMaxSpeed( void );
     
     // get my raw value

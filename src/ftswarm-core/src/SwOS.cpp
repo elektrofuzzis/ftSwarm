@@ -9,6 +9,7 @@
  
 #include "SwOS.h" 
 #include "SwOSSwarm.h"
+#include "SwOSHW/SwOSHWI2CSensor.h"
 #include "easyKey.h"
 #include "SwOSLog.h"
 #include <FastLed.h>
@@ -407,6 +408,7 @@ int16_t FtSwarmFrequencymeter::getFrequency() {
   static_cast<SwOSFrequencymeter *>(me)->unlock();
 
   return xReturn;
+  
 };
 
 // **** FtSwarmAnalogInput ****
@@ -756,7 +758,7 @@ void FtSwarmLamp::revokeEffect( uint8_t brightness ) {
   SwOSLamp *lamp = static_cast<SwOSLamp*>(me);
   
   FtSwarmTriggerParameter p;
-  p.setNone( brightness );
+  p.resetBlink( brightness );
 
   lamp->lock();
   lamp->setEffect( p );
@@ -927,7 +929,7 @@ void FtSwarmPixel::revokeEffect( CRGB color ) {
   SwOSPixel *pixel = static_cast<SwOSPixel*>(me);
   
   FtSwarmTriggerParameter p;
-  p.setNone( castColorToUI32( color ) );
+  p.resetBlink( castColorToUI32( color ) );
 
   pixel->lock();
   pixel->setEffect( p );
@@ -973,6 +975,36 @@ void FtSwarmI2C::onTrigger( FtSwarmTrigger_t triggerEvent, FtSwarmOperator_t op,
   }
 
 };
+
+// **** FtSwarmCAN   ****
+FtSwarmCAN::FtSwarmCAN( FtSwarmSerialNumber_t serialNumber, FtSwarmPort_t port ) : FtSwarmIO( serialNumber, port, SWOSIO_CAN ) {
+}
+
+FtSwarmCAN::FtSwarmCAN( const char *name ) : FtSwarmIO( name, SWOSIO_CAN ) {
+}
+
+void FtSwarmCAN::sendMessage( uint32_t id, uint8_t *data, uint8_t len ) {
+
+  SwOSCAN *can = static_cast<SwOSCAN *>( me );
+
+  if (can) {
+    can->lock();
+    can->sendCAN( id, data, len );
+    can->unlock();
+  }
+
+}
+
+void FtSwarmCAN::registerCallback( DataCallbackRaw callback ) {
+  SwOSCAN *can = static_cast<SwOSCAN *>( me );
+  
+  if (can) {
+    can->lock();
+    can->registerCallback( reinterpret_cast<SwOSCANReceiveCallback_t>( callback ) );
+    can->unlock();
+  }
+
+}
 
 // **** FtSwarmGyro   ****
 
@@ -1345,8 +1377,23 @@ FtSwarmSerialNumber_t FtSwarm::begin( bool verbose, bool waitOnControllers ) {
     ESP.restart();
   }
 
-  while (!myOSSwarm.isOnline()) {
-    delay(250);
+  if ( !myOSSwarm.isOnline() ) {
+
+    printf(TRANSLATE("Waiting for swarm members to join the swarm. Press any key to start setup.\n", "Warte auf Swarm Members. Drücken Sie eine beliebige Taste, um das Setup zu starten.\n" ) );
+    for ( uint8_t i=1; i < MAXCTRL; i++ ) {
+      if ( myOSSwarm.Ctrl[i] && ( !myOSSwarm.Ctrl[i]->isOnline() ) )
+        printf("%s\n", myOSSwarm.Ctrl[i]->getName() );
+    }
+
+    myOSSwarm.setState( WAITING );
+
+    while (!myOSSwarm.isOnline()) {
+      delay(250);
+      if ( anyKey() ) mainMenu();
+    }
+
+    myOSSwarm.setState( RUNNING );
+
   }
 
   return result;
@@ -1356,6 +1403,12 @@ FtSwarmSerialNumber_t FtSwarm::begin( bool verbose, bool waitOnControllers ) {
 void FtSwarm::halt( void ) {
 
   myOSSwarm.halt( );
+
+}
+
+bool FtSwarm::IOAvaliable( const char *name ) {
+
+  return myOSSwarm.IOAvaliable( name );
 
 }
 
@@ -1396,6 +1449,24 @@ bool FtSwarm::sendEventData( uint8_t *buffer, size_t size ) {
 
   // send
   return true;
+
+}
+
+void FtSwarm::setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, FtSwarmEffectColor_t c1, FtSwarmEffectColor_t c2, FtSwarmEffectColor_t c3 ) {
+
+  for ( uint8_t i=0; i < MAXCTRL; i++ ) {
+    SwOSCtrl *ctrl = myOSSwarm.Ctrl[i];
+    if( ctrl ) ctrl->setBlink( periodMS, signal, duty, pause, c1, c2, c3 );
+  }
+
+}
+
+void FtSwarm::resetBlink( int32_t color ) {
+
+  for ( uint8_t i=0; i < MAXCTRL; i++ ) {
+    SwOSCtrl *ctrl = myOSSwarm.Ctrl[i];
+    if( ctrl ) ctrl->resetBlink( color );
+  }
 
 }
 

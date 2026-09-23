@@ -1762,25 +1762,24 @@ void FtSwarmScreenRemote::configurePixel( SwOSCtrl *ctrl, FtSwarmSerialNumber_t 
   FtSwarmTriggerParameter blink;
   blink.setBlink( 3000, 1, 1, 0, 5, 0, 0 );
 
-  FtSwarmTriggerParameter revokeBlink;
-  revokeBlink.setNone( 0 );
+  FtSwarmTriggerParameter resetBlink;
+  resetBlink.resetBlink( 0 );
 
   // blink left
   if (!trailer) {
     nvs.addEvent( new SwOSNVSEvent( S1UID, blinkLeftFrontUID, set,   blink ) );
-    nvs.addEvent( new SwOSNVSEvent( S1UID, blinkLeftFrontUID, reset, revokeBlink  ) );
+    nvs.addEvent( new SwOSNVSEvent( S1UID, blinkLeftFrontUID, reset, resetBlink  ) );
   }
   nvs.addEvent( new SwOSNVSEvent( S1UID, blinkLeftBackUID,  set,   blink ) );
-  nvs.addEvent( new SwOSNVSEvent( S1UID, blinkLeftBackUID,  reset, revokeBlink  ) );
+  nvs.addEvent( new SwOSNVSEvent( S1UID, blinkLeftBackUID,  reset, resetBlink  ) );
   strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_S1 ], "BL" );
 
   // blink right
   if (!trailer) {
-    nvs.addEvent( new SwOSNVSEvent( S2UID, blinkRightFrontUID, set,   blink ) );
-    nvs.addEvent( new SwOSNVSEvent( S2UID, blinkRightFrontUID, reset, revokeBlink  ) );
+    nvs.addEvent( new SwOSNVSEvent( S2UID, blinkRightFrontUID, set,   resetBlink  ) );
   }
   nvs.addEvent( new SwOSNVSEvent( S2UID, blinkRightBackUID,  set,   blink ) );
-  nvs.addEvent( new SwOSNVSEvent( S2UID, blinkRightBackUID,  reset, revokeBlink  ) );
+  nvs.addEvent( new SwOSNVSEvent( S2UID, blinkRightBackUID,  reset, resetBlink  ) );
   strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_S2 ], "BR" );
 
   // lights
@@ -1815,17 +1814,17 @@ void FtSwarmScreenRemote::configureLamp( SwOSCtrl *ctrl, FtSwarmSerialNumber_t l
   FtSwarmTriggerParameter blink;
   blink.setBlink( 3000, 1, 1, 0, 100, 0, 0 );
 
-  FtSwarmTriggerParameter revokeBlink;
-  revokeBlink.setNone( 0 );
+  FtSwarmTriggerParameter resetBlink;
+  resetBlink.resetBlink( 0 );
 
   // blink left
   nvs.addEvent( new SwOSNVSEvent( S1UID, blinkLeftUID, set,   blink ) );
-  nvs.addEvent( new SwOSNVSEvent( S1UID, blinkLeftUID, reset, revokeBlink ) );
+  nvs.addEvent( new SwOSNVSEvent( S1UID, blinkLeftUID, reset, resetBlink ) );
   strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_S1 ], "BL" );
 
   // blink right
   nvs.addEvent( new SwOSNVSEvent( S2UID, blinkRightUID, set,   blink ) );
-  nvs.addEvent( new SwOSNVSEvent( S2UID, blinkRightUID, reset, revokeBlink ) );
+  nvs.addEvent( new SwOSNVSEvent( S2UID, blinkRightUID, reset, resetBlink ) );
   strcpy( nvs.events.oledLabel[ nvs.events.activeConfig ][ SWOSLABEL_S2 ], "BR" );
 
   // lights

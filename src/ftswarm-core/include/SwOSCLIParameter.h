@@ -62,8 +62,10 @@ typedef enum {
   CLICMD_setHomingOffset,
   CLICMD_testPixels,
   CLICMD_print,
+  CLICMD_clean,
   CLICMD_setBlink,
-  CLICMD_revokeEffect,
+  CLICMD_resetBlink,
+  CLICMD_send,
   CLICMD_MAX
 } CLICmd_t;
 
@@ -76,6 +78,7 @@ class SwOSCLIParameter {
 
   public:
     ~SwOSCLIParameter();
+    void clear( void );
     void setNumber( char *value );
     long getNumber( void );
     

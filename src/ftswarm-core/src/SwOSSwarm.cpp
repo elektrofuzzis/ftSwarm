@@ -33,6 +33,8 @@
 #include "SwOSLog.h"
 #include "SwOSHW/SwOSHWLocal.h"
 
+#include <string.h>
+
 // There can only be once!
 SwOSSwarm myOSSwarm;
 
@@ -61,7 +63,7 @@ static void recvTask( void *parameter ) {
     if ( xQueueReceive( myOSNetwork.recvNotification, &event, ESPNOW_MAXDELAY ) == pdTRUE ) {
 
       #ifdef DEBUG_COMMUNICATION_SWARM
-        if ( event.data.cmd != CMD_STATE ) {
+        if ( ( event.data.cmd != CMD_STATE ) && ( event.data.cmd != CMD_HARTBEAT ) ) {
           printf("\n\n-----------------------------\nmy friend sends some data...\n" ); 
           event.print();
         }
@@ -157,15 +159,17 @@ void SwOSSwarm::connect( void ) {
 
     if ( Ctrl[i] ) { 
 
+      SwOSComState_t comState = Ctrl[i]->getComState();
+
       // if controller was not seen for a longer time or is new: try to reconnect
-      if ( ( Ctrl[i]->getComState() == COMSTATE_UNDEFINED ) ||
-           ( ( Ctrl[i]->networkAge() > 1000L ) && ( Ctrl[i]->getComState() != COMSTATE_ERROR ) ) ) {
+      if ( ( comState == COMSTATE_UNDEFINED ) ||
+           ( ( Ctrl[i]->networkAge() > 1000L ) && ( comState != COMSTATE_ERROR ) ) ) {
       
         Ctrl[i]->setComState( COMSTATE_CONNECT_PHASE1 );
         joinMySwarm( MacAddr( broadcast ), Ctrl[i]->serialNumber );
 
       // if it's online send him an hart beat
-      } else {
+      } else if ( comState == COMSTATE_ONLINE ) {
         
         SwOSCom hartBeat( Ctrl[i]->macAddr, Ctrl[i]->serialNumber, CMD_HARTBEAT );
         hartBeat.send();
@@ -361,6 +365,9 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
 
   if (initialized) return Ctrl[0]->serialNumber;
 
+  setSerialStatus( SerialStatus::Boot );
+  pollSerialStatus();
+
   // redirect IO to feed the web console
   redirectStdIO();
 
@@ -463,7 +470,9 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   setState( BOOTING );
   
   // wifi
+  pollSerialStatus();
   if ( nvs.wifi.mode != wifiOFF ) startWifi( );
+  pollSerialStatus();
 
   // Init Communication
   if (!myOSNetwork.begin( nvs.swarm.secret, nvs.swarm.pin, nvs.swarm.communication )) SWARM_LOG_FATAL("Error initializing swarm communication.");
@@ -490,6 +499,9 @@ FtSwarmSerialNumber_t SwOSSwarm::begin( bool verbose ) {
   testFactoryReset();
  
   setState( RUNNING );
+
+  setSerialStatus( SerialStatus::Running );
+  pollSerialStatus();
 
   return Ctrl[0]->serialNumber;
 
@@ -837,20 +849,25 @@ void SwOSSwarm::joinMySwarm( MacAddr destinationMac, FtSwarmSerialNumber_t desti
   Ctrl[0]->registerMe( &com );
   com.send();
 
+  // printf("joinMySwarm\n");
+  // com.print();
+
 }
 
-void SwOSSwarm::replaceCtrl( SwOSCom *com, uint8_t source, uint8_t affected ) {
+void SwOSSwarm::replaceCtrl( SwOSCom *com, uint8_t source, uint8_t affected, const SwOSCtrlConfig_t *ctrlConfig ) {
   // replace controller in swarm list
       
   SwOSCtrl *newCtrl = NULL;
   SwOSCtrl *oldCtrl = Ctrl[source];
   
-  if ( com->data.registerCmd.ctrlConfig.CPU >= FTSWARMMAXVERSION ) {
+  const SwOSCtrlConfig_t *config = ctrlConfig ? ctrlConfig : &com->data.registerCmd.ctrlConfig;
+
+  if ( config->CPU >= FTSWARMMAXVERSION ) {
     SWARM_LOG_ERROR( TRANSLATE( "Unknown controller type while adding a new controller to my swarm.", "Unbekannter Controller-Typ möchte dem Swarm beitreten." ) ); return;
 
   } else {
     
-    newCtrl = new SwOSCtrl( com->data.sourceSN , com->macAddr, false, com->data.registerCmd.ctrlConfig );
+    newCtrl = new SwOSCtrl( com->data.sourceSN , com->macAddr, false, *config );
     
     if (verbose) { 
       SWARM_LOG_INFO( TRANSLATE( "ftSwarm%d joined the swarm.", "ftSwarm%d ist dem Swarm beigetreten." ), com->data.sourceSN ); 
@@ -863,6 +880,60 @@ void SwOSSwarm::replaceCtrl( SwOSCom *com, uint8_t source, uint8_t affected ) {
   Ctrl[source] = newCtrl;
   if (oldCtrl) delete oldCtrl; 
   
+}
+
+void SwOSSwarm::clearPendingIOConfig( uint8_t index ) {
+
+  PendingIOConfigPacket *packet = pendingIOConfig[index].first;
+  while ( packet ) {
+    PendingIOConfigPacket *next = packet->next;
+    delete packet->com;
+    delete packet;
+    packet = next;
+  }
+
+  pendingIOConfig[index].valid = false;
+  pendingIOConfig[index].first = NULL;
+  pendingIOConfig[index].last = NULL;
+
+}
+
+bool SwOSSwarm::queuePendingIOConfig( uint8_t index, SwOSCom *com ) {
+
+  if ( !pendingIOConfig[index].valid ) {
+    pendingIOConfig[index].ctrlConfig = com->data.ioConfigCmd.ctrlConfig;
+    pendingIOConfig[index].valid = true;
+  } else if ( memcmp( &pendingIOConfig[index].ctrlConfig,
+                      &com->data.ioConfigCmd.ctrlConfig,
+                      sizeof( SwOSCtrlConfig_t ) ) != 0 ) {
+    SWARM_LOG_ERROR( TRANSLATE( "SwOSSwarm: inconsistent IOConfig for controller %d.", "SwOSSwarm: Uneinheitliche IOConfig für Controller %d." ), Ctrl[index]->serialNumber );
+    clearPendingIOConfig( index );
+    return false;
+  }
+
+  PendingIOConfigPacket *packet = new PendingIOConfigPacket;
+  packet->com = new SwOSCom( *com );
+  packet->com->bufferIndex = 0;
+  packet->next = NULL;
+
+  if ( pendingIOConfig[index].last ) pendingIOConfig[index].last->next = packet;
+  else                                  pendingIOConfig[index].first = packet;
+  pendingIOConfig[index].last = packet;
+
+  return true;
+
+}
+
+void SwOSSwarm::replayPendingIOConfig( uint8_t index ) {
+
+  PendingIOConfigPacket *packet = pendingIOConfig[index].first;
+  while ( packet ) {
+    Ctrl[index]->ioConfig( packet->com );
+    packet = packet->next;
+  }
+
+  clearPendingIOConfig( index );
+
 }
 
 void SwOSSwarm::cmdJoinMySwarm( SwOSCom *com, uint8_t source, uint8_t affected ) {
@@ -927,7 +998,14 @@ void SwOSSwarm::cmdJoinAck( SwOSCom *com, uint8_t source, uint8_t affected ) {
   if ( Ctrl[source] )  {
 
     // if it's an unkown controller, update controller data
-    if ( Ctrl[source]->getCPU() == FTSWARM_NOVERSION ) replaceCtrl( com, source, affected );
+    if ( Ctrl[source]->getCPU() == FTSWARM_NOVERSION ) {
+      if ( pendingIOConfig[source].valid ) replaceCtrl( com, source, affected, &pendingIOConfig[source].ctrlConfig );
+      else                              replaceCtrl( com, source, affected );
+      if ( Ctrl[source]->getCPU() != FTSWARM_NOVERSION ) {
+        replayPendingIOConfig( source );
+        if ( Ctrl[0]->IAmKelda ) addEvents( nvs.events.activeConfig, Ctrl[source]->serialNumber );
+      }
+    }
     // ToDo else - send the controller his state
 
     // wait for alias settings
@@ -980,6 +1058,15 @@ void SwOSSwarm::OnDataRecv(SwOSCom *com) {
                               break;
 
     case CMD_IOCONFIG:        // needs to be initiated at swarm level to be able to start events
+                              if ( !Ctrl[affected] ) break;
+                              if ( Ctrl[affected]->IOs == 0 ) {
+                                queuePendingIOConfig( affected, com );
+                                break;
+                              }
+                              if ( Ctrl[affected]->IOs != com->data.ioConfigCmd.ctrlConfig.IOs ) {
+                                SWARM_LOG_ERROR( TRANSLATE( "SwOSSwarm: SN %d IO count %d differs from received %d.", "SwOSSwarm: SN %d IO-Anzahl %d unterscheidet sich von empfangenen %d." ), Ctrl[affected]->serialNumber, Ctrl[affected]->IOs, com->data.ioConfigCmd.ctrlConfig.IOs );
+                                break;
+                              }
                               if ( ( Ctrl[affected]->ioConfig( com ) ) && ( Ctrl[0]->IAmKelda ) ) {
                                 addEvents( nvs.events.activeConfig, Ctrl[affected]->serialNumber );
                               }
@@ -1026,6 +1113,7 @@ void SwOSSwarm::newSwarm( void ) {
       nvs.deleteController( Ctrl[i]->serialNumber );
       SwOSCtrl *oldCtrl = Ctrl[i]; 
       Ctrl[i] = NULL;
+      clearPendingIOConfig( i );
       oldCtrl->lock();
       delete oldCtrl;
     }
@@ -1122,6 +1210,7 @@ bool SwOSSwarm::deleteController( FtSwarmSerialNumber_t serialNumber ) {
   // delete
   SwOSCtrl *oldCtrl = Ctrl[i]; 
   Ctrl[i] = NULL;
+  clearPendingIOConfig( i );
   oldCtrl->lock();
   delete oldCtrl;
   nvs.deleteController( serialNumber );
@@ -1200,5 +1289,16 @@ void SwOSSwarm::save( FtSwarmNVSScope_t scope ) {
   for (uint8_t i=0; i<=maxCtrl; i++) {
     if ( Ctrl[i] ) Ctrl[i]->save( scope, SWOS_NOPORT );
   }
+  
+}
+
+bool SwOSSwarm::IOAvaliable( const char *name ) {
+
+  for ( uint8_t i=0; i<MAXCTRL; i++ ) {
+    SwOSCtrl *ctrl = Ctrl[i];
+    if ( ctrl && ctrl->IOAvaliable( name ) ) return true;
+  }
+
+  return false;
   
 }

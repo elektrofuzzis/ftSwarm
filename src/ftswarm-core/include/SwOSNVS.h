@@ -190,6 +190,9 @@ class SwOSNVS {
     // save config to flash
 	  void save( FtSwarmNVSScope_t scope );
 
+    // erase and remount the NVS partition
+    bool clean();
+
     // save config & restart
     void saveAndRestart( FtSwarmNVSScope_t scope );
 

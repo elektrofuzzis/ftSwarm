@@ -22,7 +22,7 @@
 
 #define ESPNOW_MAXDELAY     128
 #define DEFAULTSECRET       0x2506
-#define VERSIONDATA         9
+#define VERSIONDATA         10
 #define MAXIOCONFIG         5
 #define MAXUSEREVENTPAYLOAD 128
 #define MAXCONFIGPAYLOAD    200
@@ -61,6 +61,8 @@ typedef enum {
   CMD_RESETCOUNTER,           // Reset counter
   CMD_CALIBRATE,              // Calibrate a RC Servo
   CMD_SETEFFECT,              // set effect
+  CMD_CANSEND,                // Kelda to Member: transmit a CAN datagram on the local bus
+  CMD_CANRECV,                // Member to Kelda: report a CAN datagram received from the local bus
   CMD_MAX
 } SwOSCommand_t;
 
@@ -169,6 +171,7 @@ struct effectCmd_t {
 } __attribute__((packed));
 
 struct ioConfigCmd_t { 
+  SwOSCtrlConfig_t ctrlConfig;
   uint8_t payload[MAXCONFIGPAYLOAD];
 } __attribute__((packed));
 
@@ -176,6 +179,15 @@ struct I2CRegisterCmd_t {
   uint8_t index;
   uint8_t reg; 
   uint8_t value;
+} __attribute__((packed));
+
+#define MAXCANPAYLOAD 8
+
+struct CANDatagramCmd_t { 
+  uint8_t  index;
+  uint32_t id;
+  uint8_t  length;
+  uint8_t  payload[MAXCANPAYLOAD];
 } __attribute__((packed));
 
 struct ctrlCmd_t{ 
@@ -242,6 +254,7 @@ struct SwOSDatagram_t {
     effectCmd_t effectCmd;
     ioConfigCmd_t ioConfigCmd;
     I2CRegisterCmd_t I2CRegisterCmd;
+    CANDatagramCmd_t CANDatagramCmd;
     ctrlCmd_t ctrlCmd;
     userEventCmd_t userEventCmd;
     setIOTypeCmd_t setIOTypeCmd;
@@ -301,6 +314,17 @@ public:
 
 };
 
+class SwOSRS485Metrics {
+
+  public:
+    volatile uint32_t txSent      = 0;  // successfully sent frames
+    volatile uint32_t txRetries   = 0;  // collision-triggered retransmissions
+    volatile uint32_t txDropped   = 0;  // frames dropped after exhausting retries
+    volatile uint32_t rxReceived  = 0;  // valid frames received
+    volatile uint32_t rxMalformed = 0;  // malformed/invalid frames detected on rx
+
+};
+
 class SwOSNetwork {
 
   private:
@@ -319,6 +343,8 @@ class SwOSNetwork {
     uint8_t                delayTime;
     FtSwarmCommunication_t communication;
     bool                   active = false;
+
+    SwOSRS485Metrics rs485Metrics;
 
     bool begin( uint16_t swarmSecret, uint16_t swarmPIN, FtSwarmCommunication_t swarmCommunication );
     void stop( void );

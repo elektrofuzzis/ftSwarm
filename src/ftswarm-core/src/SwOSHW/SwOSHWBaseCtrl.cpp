@@ -53,24 +53,6 @@ uint8_t SwOSCtrl::setupLocalInputs( uint8_t maxIO ) {
 
 }
 
-/*
-uint8_t SwOSCtrl::setupLocalMotors( uint8_t maxIO, uint8_t motors ) {
-
-  char name[10];
-
-  for (uint8_t i=0; i<motors; i++) { 
-    
-    sprintf( name, "M%d", i+1 );
-    if (CPU == FTSWARMPWRDRIVE_1V141 ) io[ maxIO++ ] = new SwOSStepper( name, i, this );
-    else                               io[ maxIO++ ] = new SwOSDCMotor( name, i, this, SWOSIO_MOTOR );
-
-  }
-
-  return maxIO;
-
-}
-  */
-
 uint8_t SwOSCtrl::setupLocalMotors( uint8_t maxIO, uint8_t motors ) {
 
   for ( uint8_t i=0; i<FTSWARM_HAL_MOTORS; i++ ) {
@@ -126,9 +108,7 @@ uint8_t SwOSCtrl::setupLocalServos( uint8_t maxIO, uint8_t servos ) {
   // RC Servos are setup in setupLocalMotors
 
   // DC Servos
-  #if FTSWARM_HAL_SERVOS > 0
-  for ( uint8_t i=0; i<FTSWARM_HAL_SERVOS; i++ ) io[ maxIO++ ] = new SwOSDigitalServo( SERVO_NAME[i], i, this, FTSWARM_HAL_FLAG_NONE );
-  #endif
+  for ( uint8_t i=0; i<servos; i++ ) io[ maxIO++ ] = new SwOSDigitalServo( SERVO_NAME[i], i, this, FTSWARM_HAL_FLAG_NONE );
 
   return maxIO;
 
@@ -198,8 +178,15 @@ uint8_t SwOSCtrl::setupLocalI2C( uint8_t maxIO, FtSwarmExtMode_t extensionPort )
   }
 
   // use parameter to handle remote devices correctly
-  if ( extensionPort == FTSWARM_EXT_I2C_SLAVE ) { io[ maxIO++ ] = new SwOSI2C ( "I2C", this, false, nvs.extensionPort.I2CAddr ); };
+  switch ( extensionPort ) {
+    case FTSWARM_EXT_CAN:       io[ maxIO++ ] = new SwOSCAN( "CAN", this, FTSWARM_HAL_FLAG_NONE );
+                                break;
 
+    case FTSWARM_EXT_I2C_SLAVE: io[ maxIO++ ] = new SwOSI2C ( "I2C", this, FTSWARM_HAL_FLAG_NONE, nvs.extensionPort.I2CAddr );
+                                break;
+
+  }
+  
   // ftPwrDrive
   if ( CPU == FTSWARMPWRDRIVE_1V141 ) ftPwrDrive = new FtPwrDrive( 32, &Wire ); 
 
@@ -700,6 +687,9 @@ SwOSIO* SwOSCtrl::createIO( SwOSIOType_t ioType, uint8_t port, const char *name,
     case SWOSIO_I2C:              io = new SwOSI2C( name, this, flags, 0 );
                                   break; 
 
+    case SWOSIO_CAN:              io = new SwOSCAN( name, this, flags );
+                                  break; 
+
     case SWOSIO_COUNTER:          io = new SwOSCounter( name, port, SWOS_NOPORT, this, flags );       
                                   break; 
 
@@ -783,9 +773,31 @@ SwOSI2C* SwOSCtrl::getI2C( uint8_t index ) {
 
 }
 
+SwOSCAN* SwOSCtrl::getCAN( uint8_t index ) {
+
+  SwOSIO *io = this->io[ index ];
+
+  if (!io)           return NULL;
+  if (!io->isCAN() ) return NULL;
+
+  return (SwOSCAN*) io;
+
+}
+
 SwOSPixel* SwOSCtrl::getPixel( char *name ) {
 
   SwOSIO *io = getIO( name );
+
+  if (!io)             return NULL;
+  if (!io->isPixel() ) return NULL;
+
+  return (SwOSPixel*) io;
+
+}
+
+SwOSPixel* SwOSCtrl::getPixel( uint8_t index ) {
+
+  SwOSIO *io = this->io[ index ];
 
   if (!io)             return NULL;
   if (!io->isPixel() ) return NULL;
@@ -1014,6 +1026,26 @@ bool SwOSCtrl::I2CRegister( SwOSCom *com ) {
 
 }
 
+bool SwOSCtrl::CANSend( SwOSCom *com ) {
+
+  SwOSCAN *io = getCAN( com->data.CANDatagramCmd.index );
+  if (!io) return false;
+
+  io->sendCAN( com->data.CANDatagramCmd.id, com->data.CANDatagramCmd.payload, com->data.CANDatagramCmd.length );
+  return true;
+
+}
+
+bool SwOSCtrl::CANRecv( SwOSCom *com ) {
+
+  SwOSCAN *io = getCAN( com->data.CANDatagramCmd.index );
+  if (!io) return false;
+
+  io->recvRemote( com->data.CANDatagramCmd.id, com->data.CANDatagramCmd.payload, com->data.CANDatagramCmd.length );
+  return true;
+
+}
+
 bool SwOSCtrl::setParameter( SwOSCom *com ) {
 
   if ( com->data.parameterCmd.index >= IOs ) return false;
@@ -1048,7 +1080,7 @@ bool SwOSCtrl::ioConfig( SwOSCom *com ) {
       setComState( COMSTATE_ONLINE );
 
     } else if ( index >= IOs ) {
-      SWARM_LOG_ERROR( TRANSLATE( "SwOSCtrl::ioConfig: index out of range %X", "SwOSCtrl::ioConfig: Index außerhalb des gültigen Bereichs %X" ), index );
+      SWARM_LOG_ERROR( TRANSLATE( "SwOSCtrl::ioConfig: SN %d index %d out of range %d", "SwOSCtrl::ioConfig: SN %d Index %d grösser als IOs %d" ), serialNumber, index, IOs );
 
     } else if ( io[index] ) {
       // set IOType + alias name as transmitted
@@ -1079,6 +1111,11 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
 
   if (!com) return false;
 
+  if ( ( !IAmKelda ) && ( com->data.cmd != CMD_IOCONFIG ) && ( comState != COMSTATE_ONLINE ) ) {
+    // printf( "sn %d discard %d\n", serialNumber, com->data.cmd );
+    return false;
+  } 
+
   tick();
     
   switch (com->data.cmd) {
@@ -1102,6 +1139,8 @@ bool SwOSCtrl::OnDataRecv(SwOSCom *com ) {
     case CMD_SETIOTYPE:               return changeIOType( com->data.setIOTypeCmd.index, com->data.setIOTypeCmd.newIOType, com->data.setIOTypeCmd.flags );
     case CMD_SETSERVO:                return setServo( com );
     case CMD_I2CREGISTER:             return I2CRegister( com );
+    case CMD_CANSEND:                 return CANSend( com );
+    case CMD_CANRECV:                 return CANRecv( com );
     case CMD_SETPARAMETER:            return setParameter( com );
   }
 
@@ -1222,6 +1261,11 @@ void SwOSCtrl::printNVS( void ) {
 void SwOSCtrl::sendIOConfig( MacAddr destination ) {
 
   SwOSCom ioConfig( destination, serialNumber, CMD_IOCONFIG );
+  ioConfig.data.ioConfigCmd.ctrlConfig.CPU           = getCPU();
+  ioConfig.data.ioConfigCmd.ctrlConfig.extensionPort = extensionPort;
+  ioConfig.data.ioConfigCmd.ctrlConfig.IOs           = IOs;
+  ioConfig.data.ioConfigCmd.ctrlConfig.pixels        = pixels;
+  ioConfig.data.ioConfigCmd.ctrlConfig.gyro          = hasGyro();
 
   // IOs
   for (uint8_t i=0; i<IOs;i++) {
@@ -1386,5 +1430,58 @@ void SwOSCtrl::save( FtSwarmNVSScope_t scope, uint8_t port ) {
     cmd.send();
 
   }
+
+}
+
+void SwOSCtrl::setBlink( uint32_t periodMS, uint8_t signal, uint8_t duty, uint8_t pause, FtSwarmEffectColor_t c1, FtSwarmEffectColor_t c2, FtSwarmEffectColor_t c3 ) {
+
+  FtSwarmTriggerParameter p;
+  p.setBlink( periodMS, signal, duty, pause, c1, c2, c3 );
+
+  lock();
+  
+  for ( uint8_t i=0; i < IOs; i++ ) {
+
+    SwOSPixel *pixel = getPixel( i ); 
+    if ( pixel ) pixel->setEffect( p );
+    
+  }
+
+  unlock();
+
+}
+
+void SwOSCtrl::resetBlink( int32_t color ) {
+
+  FtSwarmTriggerParameter p;
+  p.resetBlink( color );
+
+  lock();
+  
+  for ( uint8_t i=0; i < FTSWARM_HAL_DISCRETE_RGBS; i++ ) {
+
+    SwOSPixel *pixel = getPixel( i ); 
+    if ( pixel ) pixel->setEffect( p );
+
+  }
+
+  unlock();
+
+}
+
+bool SwOSCtrl::IOAvaliable( const char *name ) {
+
+  for ( uint8_t i=0; i < IOs; i++ ) {
+  
+    if ( io[i] ) {
+      
+      if ( strcmp( io[i]->getName(), name ) == 0 )  return true;
+      if ( strcmp( io[i]->getAlias(), name ) == 0 ) return true;
+
+    }
+  
+  }
+  
+  return false;
 
 }

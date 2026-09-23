@@ -16,6 +16,11 @@
 #define MENU_DEACTIVATED 101
 #define MENU_NOKEY       1
 
+// Serial ENQ (0x05) replies: NAK = boot/not ready, ACK = running, STX = setup.
+enum class SerialStatus : uint8_t { Boot = 0x15, Running = 0x06, Setup = 0x02 };
+SerialStatus setSerialStatus( SerialStatus status ); // returns previous status
+void pollSerialStatus( void ); // services leading ENQ bytes without consuming keyboard input
+
 int isValidFloat( char *str );
 // test, if str is a valid float number
 
